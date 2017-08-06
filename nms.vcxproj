@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- project: configurations -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <!--property: global -->
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <!--property: config-->
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <!--import-->
+  <ImportGroup Label="PropertySheets">
+    <Import Project="nms.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)publish\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(VC_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(VC_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <!--cpp: items -->
+  <ItemGroup>
+    <ClCompile Include="nms\core\list.cc" />
+    <ClCompile Include="nms\core\property.cc" />
+    <ClCompile Include="nms\hpc\cuda\array.cc" />
+    <ClCompile Include="nms\io\file.cc" />
+    <ClCompile Include="nms\math\array.cc" />
+    <ClCompile Include="nms\serialization\xml.cc" />
+    <ClCompile Include="nms\thread\condvar.cc" />
+    <ClCompile Include="nms\thread\mutex.cc" />
+    <ClCompile Include="nms\thread\semaphore.cc" />
+    <ClCompile Include="nms\thread\thread.cc" />
+    <ClCompile Include="nms\util\library.cc" />
+    <ClCompile Include="nms\util\stacktrace.cc" />
+    <ClCompile Include="nms\util\system.cc" />
+    <ClInclude Include="nms\config.h" />
+    <ClInclude Include="nms\core.h" />
+    <ClInclude Include="nms\core\base.h" />
+    <ClInclude Include="nms\core\cpp.h" />
+    <ClInclude Include="nms\core\delegate.h" />
+    <ClInclude Include="nms\core\exception.h" />
+    <ClInclude Include="nms\core\format.h" />
+    <ClInclude Include="nms\core\list.h" />
+    <ClInclude Include="nms\core\memory.h" />
+    <ClInclude Include="nms\core\property.h" />
+    <ClInclude Include="nms\core\string.h" />
+    <ClInclude Include="nms\core\time.h" />
+    <ClInclude Include="nms\core\trait.h" />
+    <ClInclude Include="nms\core\type.h" />
+    <ClInclude Include="nms\core\view.h" />
+    <ClInclude Include="nms\hpc.h" />
+    <ClInclude Include="nms\hpc\cuda.h" />
+    <ClInclude Include="nms\hpc\cuda\array.h" />
+    <ClInclude Include="nms\hpc\cuda\cuda.h" />
+    <ClInclude Include="nms\hpc\cuda\engine.h" />
+    <ClInclude Include="nms\hpc\cuda\nvrtc.h" />
+    <ClInclude Include="nms\hpc\cuda\runtime.h" />
+    <ClInclude Include="nms\hpc\cuda\texture.h" />
+    <ClInclude Include="nms\io.h" />
+    <ClInclude Include="nms\io\console.h" />
+    <ClInclude Include="nms\io\file.h" />
+    <ClInclude Include="nms\io\log.h" />
+    <ClInclude Include="nms\io\mfile.h" />
+    <ClInclude Include="nms\io\path.h" />
+    <ClInclude Include="nms\math.h" />
+    <ClInclude Include="nms\math\array.h" />
+    <ClInclude Include="nms\math\base.h" />
+    <ClInclude Include="nms\math\blas.h" />
+    <ClInclude Include="nms\math\complex.h" />
+    <ClInclude Include="nms\math\eye.h" />
+    <ClInclude Include="nms\math\foreach.h" />
+    <ClInclude Include="nms\math\lambda.h" />
+    <ClInclude Include="nms\math\linspace.h" />
+    <ClInclude Include="nms\math\norm.h" />
+    <ClInclude Include="nms\serialization\base.h" />
+    <ClInclude Include="nms\serialization\json.h" />
+    <ClInclude Include="nms\serialization\node.h" />
+    <ClInclude Include="nms\serialization.h" />
+    <ClCompile Include="nms\core\exception.cc" />
+    <ClCompile Include="nms\core\format.cc" />
+    <ClCompile Include="nms\core\memory.cc" />
+    <ClCompile Include="nms\core\string.cc" />
+    <ClCompile Include="nms\core\time.cc" />
+    <ClCompile Include="nms\hpc\cuda\engine.cc" />
+    <ClInclude Include="nms\serialization\xml.h" />
+    <ClInclude Include="nms\util.h" />
+    <ClInclude Include="nms\util\arraylist.h" />
+    <ClInclude Include="nms\util\library.h" />
+    <ClInclude Include="nms\util\ringbuf.h" />
+    <ClInclude Include="nms\util\stacktrace.h" />
+    <ClInclude Include="nms\util\system.h" />
+    <ClCompile Include="nms.inl">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <FileType>Document</FileType>
+    </ClCompile>
+    <None Include="nms\hpc\cuda\kernel.h">
+      <Link>..\include\nms.hpc.cuda.kernel.h</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <ClCompile Include="nms\hpc\cuda\runtime.cc" />
+    <ClCompile Include="nms\io\mfile.cc" />
+    <ClInclude Include="nms\test.h" />
+    <ClInclude Include="nms\test\assert.h" />
+    <ClInclude Include="nms\test\test.h" />
+    <ClInclude Include="nms\thread.h" />
+    <ClCompile Include="nms\io\path.cc" />
+    <ClCompile Include="nms\serialization\json.cc" />
+    <ClCompile Include="nms\serialization\node.cc" />
+    <ClCompile Include="nms\thread\task.cc" />
+    <ClInclude Include="nms\thread\condvar.h" />
+    <ClInclude Include="nms\thread\mutex.h" />
+    <ClInclude Include="nms\thread\semaphore.h" />
+    <ClInclude Include="nms\thread\task.h" />
+    <ClInclude Include="nms\thread\thread.h" />
+    <ClCompile Include="nms\io\console.cc" />
+    <ClCompile Include="nms\io\log.cc" />
+    <ClCompile Include="nms\test\test.cc" />
+    <Natvis Include="nms.natvis" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

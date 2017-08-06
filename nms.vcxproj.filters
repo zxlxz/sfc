@@ -1,0 +1,304 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="nms\test.h" />
+    <ClInclude Include="nms\test\test.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\test\assert.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\io\file.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\io.h" />
+    <ClInclude Include="nms\io\log.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\io\path.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\thread.h" />
+    <ClInclude Include="nms\io\console.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math.h" />
+    <ClInclude Include="nms\io\mfile.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\serialization\json.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\serialization.h" />
+    <ClInclude Include="nms\core.h" />
+    <ClInclude Include="nms\thread\thread.h">
+      <Filter>thread</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\thread\mutex.h">
+      <Filter>thread</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\thread\semaphore.h">
+      <Filter>thread</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\thread\condvar.h">
+      <Filter>thread</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\thread\task.h">
+      <Filter>thread</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc.h" />
+    <ClInclude Include="nms\core\cpp.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\delegate.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\exception.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\format.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\list.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\memory.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\string.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\time.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\type.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\view.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\array.h">
+      <Filter>hpc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\runtime.h">
+      <Filter>hpc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\engine.h">
+      <Filter>hpc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda.h">
+      <Filter>hpc</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\array.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\base.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\complex.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\eye.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\foreach.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\lambda.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\linspace.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util\arraylist.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util\system.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util\stacktrace.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util\ringbuf.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util.h" />
+    <ClInclude Include="nms\config.h" />
+    <ClInclude Include="nms\math\blas.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\math\norm.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\cuda.h">
+      <Filter>hpc\cuda\{external}</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\nvrtc.h">
+      <Filter>hpc\cuda\{external}</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\hpc\cuda\texture.h">
+      <Filter>hpc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\trait.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\serialization\node.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\serialization\base.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\property.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\serialization\xml.h">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\util\library.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\core\base.h">
+      <Filter>core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{ba743bc8-5dda-4ea5-84cf-1df665e861ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math">
+      <UniqueIdentifier>{bba12711-26f9-4608-b453-997ba82c8e4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="io">
+      <UniqueIdentifier>{a35e3af3-9d95-4cd4-bc2e-9f161ec9ecfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="serialization">
+      <UniqueIdentifier>{4ec0bfe2-92b5-48c7-a6b3-fd7d63ea35b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{29d12a80-b87b-4be0-abc9-781ff9b7cf68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="thread">
+      <UniqueIdentifier>{3adf9a9f-d14e-4586-9b46-c35ad5ef3742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hpc">
+      <UniqueIdentifier>{c14d1b30-446a-4c3d-8ca7-176b6d4d67ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hpc\cuda">
+      <UniqueIdentifier>{bb16caee-1444-460a-b80b-a5c980051532}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="{msbuild}">
+      <UniqueIdentifier>{ecbcd46d-afb5-485a-b27d-e82cec44134b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{d276c55f-6293-4af1-891d-eb5a2e2e4dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hpc\cuda\{external}">
+      <UniqueIdentifier>{e2b67fa5-17c3-467c-8ce5-729099072ace}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hpc\opencl">
+      <UniqueIdentifier>{bc9582d8-615e-408c-8b66-be69a2952303}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="nms\test\test.cc">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\log.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\log.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\console.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\mfile.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\serialization\json.cc">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\path.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\hpc\cuda\runtime.cc">
+      <Filter>hpc\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\hpc\cuda\engine.cc">
+      <Filter>hpc\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\exception.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\format.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\memory.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\string.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\time.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\thread\task.cc">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\util\system.cc">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\util\stacktrace.cc">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\io\file.cc">
+      <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\serialization\node.cc">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\math\array.cc">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\hpc\cuda\array.cc">
+      <Filter>hpc\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\serialization\xml.cc">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\property.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\list.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\util\library.cc">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="nms.inl">
+      <Filter>{msbuild}</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\thread\semaphore.cc">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\thread\condvar.cc">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\thread\mutex.cc">
+      <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\thread\thread.cc">
+      <Filter>thread</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="nms\hpc\cuda\kernel.h">
+      <Filter>hpc\cuda</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="nms.natvis">
+      <Filter>{msbuild}</Filter>
+    </Natvis>
+  </ItemGroup>
+</Project>
