@@ -148,7 +148,7 @@ NMS_API const Path& prefix() {
         static char exe_path_buf[512];
 #if defined(NMS_OS_WINDOWS)
         const auto mod = GetModuleHandleA(nullptr);
-        GetModuleFileNameA(mod, exe_path_tmp, sizeof(exe_path_tmp));
+        GetModuleFileNameA(mod, exe_path_buf, sizeof(exe_path_buf));
 #elif defined(NMS_OS_MACOS)
         auto exe_path_len = u32(sizeof(exe_path_buf));
         _NSGetExecutablePath(exe_path_buf, &exe_path_len);
@@ -203,7 +203,11 @@ NMS_API void mkdir(const Path& path) {
         return;
     }
 
+#ifdef NMS_CC_MSVC
+    const auto ret = ::mkdir(cpath.data());
+#else
     const auto ret = ::mkdir(cpath.data(), 0755);
+#endif
 
     if (ret != 0) {
         log::error("nms.io.mkdir: failed");
