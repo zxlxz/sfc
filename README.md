@@ -17,7 +17,7 @@ c++14 common library.
 - lamda expression
 
 ### nms.hpc
-- cuda
+- [cuda](/doc/cuda.md)
 - opencl
 
 ### nms.thread
