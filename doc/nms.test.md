@@ -3,34 +3,64 @@
 
 ![nms.test](https://github.com/lumpyzhu/nmscc/blob/master/doc/nms.test.gif)
 
-使用单元测试是很简单的，无论是库，还是可执行文件中，都可以使用
+如果有以下代码:
 ```cpp
-nms_test(my_test) {
-    // codes here
+namespace my_ns
+{
+class T
+{
+public:
+   void func_1();
+   void func_2();
+private:
+   //...
+};
 }
 ```
-创建一个测试。
 
-如果出现异常，则测试失败，也可以使用断言来产生异常，比如：
+我们我们的项目中，有如下代码， 想对此做单元测试，方法如下:
 ```cpp
-nms::assert_eq(a, b);       // 判断是否相等
-nms::assert_neq(a, b);      // 判断是否不等
+#include <nms/test.h>        // 包含单元测试头文件
+
+namespace my_ns
+{
+class Foo
+{
+public:
+   void func_1();
+   bool func_2();
+private:
+   //...
+};
+
+nms_test(Test1) {          // 创建一个测试,命名为Test1
+   Foo t;
+   t.func_1();             // 调用func_1，如果没有发生异常，认为测试成功
+}
+
+nms_test(Test2) {
+   Foo t;
+   auto ret = t.func_2();
+   nms::assert_eq(ret, true); // 也可以用assert进行断言测试
+}
+
+}
 ```
 
-之后，这个动态库或可执行程序就包含了测试信息。
-使用nms.test对它进行单元测试
+之后，编译这个项目，会生成动态库或者可执行程序。
+使用nms.test对它进行单元测试，下面假设生成的动态库为my_lib.dll
 
 
 ```shell
 % 全部测试
-# nms.test  my_library.dll
+# nms.test  my_lib.dll
    ....
    
-% 只包含my_namespace下面的测试   
-# nms.test my_library.dll my_namespace::
+% 请注意到， Test1和Test2在my_ns名字空间下，如果只想开启这个名字空间下的单元测试：
+# nms.test my_lib.dll my_ns::
 ...
 
-% 排除my_namespace下面的测试
-# nms.test my_library.dll -my_namespace::my_class 
+% 排除my_ns下面的测试
+# nms.test my_lib.dll -my_ns::
 ```
 
