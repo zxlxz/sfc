@@ -28,7 +28,7 @@ c++14 common library.
 - task
 
 ### nms.test
-- test
+- [test](/doc/nms.test.md)
 
 ### nms.serialization
 - tree
