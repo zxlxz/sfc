@@ -228,7 +228,7 @@ arr_t arr_new(u32(&dims)[N]) {
  */
 template<class T>
 void mcpy(T*  dst, const T* src, u64 n, Stream& stream = Stream::global()) {
-    return _mcpy  (dst, src, n * sizeof(T), stream);
+    return _mcpy(dst, src, n * sizeof(T), stream);
 }
 
 /**

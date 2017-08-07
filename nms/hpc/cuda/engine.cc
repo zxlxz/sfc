@@ -164,7 +164,7 @@ nms_test(Engine) {
 
     host::Array<f32, 2> hv(dv.size());
     hv <<= dv;
-    io::console::writeln("v = {|}", hv);
+    io::console::writeln("v = {|}", hv.slice({ 0u, 8u }, { 0u, 8u }));
 }
 #pragma endregion
 

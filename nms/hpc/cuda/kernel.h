@@ -322,6 +322,7 @@ __device__ void foreach(Tret& ret, const Targ& arg) {
 
 using namespace nms;
 using namespace nms::hpc;
+using namespace nms::hpc::cuda;
 using namespace nms::math;
 
 #endif
