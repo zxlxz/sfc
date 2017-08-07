@@ -6,6 +6,7 @@
 #include <nms/util/library.h>
 #include <nms/io/log.h>
 #include <nms/hpc/cuda/runtime.h>
+#include <nms/hpc/cuda/engine.h>
 
 namespace nms::hpc::cuda
 {
@@ -388,7 +389,7 @@ NMS_API Module::fun_t Module::get_kernel(StrView name) const {
 
 NMS_API Module::fun_t Module::get_kernel(u32 index) const {
     char name[64];
-    auto count = snprintf(name, sizeof(name), "nms_hpc_cuda_foreach_v%u", index);
+    auto count = snprintf(name, sizeof(name), "nms_hpc_cuda_foreach_%u", index);
     auto func = get_kernel(StrView(name, { u32(count) }));
     return func;
 }
@@ -413,6 +414,32 @@ NMS_API void Module::run_kernel(fun_t kernel, const void* kernel_args[], u32 ran
     const auto stat = NMS_CUDA_DO(cuLaunchKernel)(kernel, grid_dim[0], grid_dim[1], grid_dim[2], block_dim[0], block_dim[1], block_dim[2], shared_mem_bytes, h_stream, const_cast<void**>(kernel_args), extra);
     void(stat || "nms.hpc.cuda.invoke: failed.");
 }
+
+NMS_API Module& gModule() {
+    static StrView ptx_src = [=] {
+        const io::Path src_path("#/config/nms.hpc.cuda.program.cu");
+        const io::Path ptx_path("#/config/nms.hpc.cuda.program.ptx");
+        auto& program = gProgram();
+
+        // if not exists, try save
+        if (!io::exists(ptx_path)) {
+            program.compile();
+
+            io::TxtFile src_file(src_path, io::TxtFile::Write);
+            src_file.write(program.src());
+
+            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+            ptx_file.write(program.ptx());
+        }
+
+        static auto ptx = io::loadString(ptx_path);
+        return StrView(ptx);
+    }();
+
+    static Module value(ptx_src);
+    return value;
+}
+
 #pragma endregion
 
 }

@@ -1,4 +1,3 @@
-
 #include <nms/core.h>
 #include <nms/io/log.h>
 #include <nms/io/console.h>

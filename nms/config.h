@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #ifdef NMS_BUILD
-
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -32,7 +31,7 @@
 
 #endif
 
-#pragma region NMS_OS_???
+#pragma region NMS_OS_X
 #ifdef _WIN32
 #define NMS_OS_WINDOWS      // check if os == windows
 #endif
@@ -51,7 +50,7 @@
 #endif
 #pragma endregion
 
-#pragma region NMS_CC_???
+#pragma region NMS_CC_X
 #ifdef _MSC_VER
 #   define NMS_CC_MSVC         // check if compiler == msvc
 #   define __PRETTY_FUNCTION__ __FUNCSIG__

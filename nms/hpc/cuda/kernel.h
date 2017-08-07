@@ -1,5 +1,8 @@
 static const char kernel_src[] = R"(
 
+#ifndef _NMS_HPC_CUDA_KERNEL_H
+#define _NMS_HPC_CUDA_KERNEL_H
+
 #ifndef __constant__
 #define __constant__
 #endif
@@ -281,40 +284,46 @@ protected:
 };
 
 template<class Tfunc, class Tret, class Targ>
-__device__ void foreach_switch(Tfunc func, Tret& ret, const Targ& arg, Version<1>) {
+__device__ void foreach_switch(Tret& ret, const Targ& arg, Version<1>) {
     const auto x = blockIdx.x*blockDim.x + threadIdx.x;
 
     if (x >= ret.size(0)) return;
 
-    f(ret(x), (x));
+    Tfunc::run(ret(x), (x));
 }
 
 template<class Tfunc, class Tret, class Targ>
-__device__ void foreach_switch(Tfunc func, Tret& ret, const Targ& arg, Version<2>) {
+__device__ void foreach_switch(Tret& ret, const Targ& arg, Version<2>) {
     const auto x = blockIdx.x*blockDim.x + threadIdx.x;
     const auto y = blockIdx.y*blockDim.y + threadIdx.y;
 
     if (x >= ret.size(0) || y >= ret.size(1) ) return;
 
-    f(ret(x,y), arg(x,y));
+    Tfunc::run(ret(x,y), arg(x,y));
 }
 
 template<class Tfunc, class Tret, class Targ>
-__device__ void foreach_switch(Tfunc func, Tret& ret, const Targ& arg, Version<3>) {
+__device__ void foreach_switch(Tret& ret, const Targ& arg, Version<3>) {
     const auto x = blockIdx.x*blockDim.x + threadIdx.x;
     const auto y = blockIdx.y*blockDim.y + threadIdx.y;
     const auto z = blockIdx.z*blockDim.z + threadIdx.z;
 
     if (x >= ret.size(0) || y >= ret.size(1) || z >= ret.size(2) ) return;
 
-    func(ret(x,y,z),arg(x,y,z));
+    Tfunc::run(ret(x,y,z),arg(x,y,z));
 }
 
 template<class Tfunc, class Tret, class Targ>
-__device__ void foreach(Tfunc func, Tret& ret, const Targ& arg) {
-    foreach_switch(func, ret, arg, Version<Tret::rank()>{});
+__device__ void foreach(Tret& ret, const Targ& arg) {
+    foreach_switch<Tfunc>(ret, arg, Version<Tret::rank()>{});
 }
 
 }}}
+
+using namespace nms;
+using namespace nms::hpc;
+using namespace nms::math;
+
+#endif
 
 )";

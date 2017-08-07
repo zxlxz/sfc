@@ -23,11 +23,9 @@
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <!--debug-->
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      
       <!--library-->
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
-
       <!-- optimization -->
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
@@ -41,7 +39,7 @@
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <WarningLevel>Level3</WarningLevel>
       <!--cpp: langauge-->
-      <AdditionalOptions>/utf-8 /analyze /std:c++latest</AdditionalOptions>
+      <AdditionalOptions>/std:c++latest /analyze:WX- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link />

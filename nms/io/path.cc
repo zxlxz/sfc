@@ -86,7 +86,6 @@ protected:
     }
 };
 
-
 NMS_API void Path::init(StrView s) {
     XPath xpath(s);
     str_ = move(xpath.toPath());
@@ -226,5 +225,16 @@ NMS_API bool exists(const Path& path) {
     return ret == 0;
 }
 
+NMS_API u64 fsize(const Path& path) {
+    auto cpath = path.cstr();
+#ifdef NMS_OS_WINDOWS
+    struct _stat64 st;
+    ::_stat64(cpath, &st);
+#else
+    struct stat st;
+    ::stat(path.cstr(), &st);
+#endif
+    return st.st_size;
+}
 
 }

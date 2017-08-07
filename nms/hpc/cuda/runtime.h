@@ -99,10 +99,18 @@ public:
     NMS_API ~Module();
 
     /* invoke lambda */
-    template<class Tfunc, class ...Targs>
-    void invoke(u32 rank, const u32 dims[], Tfunc func, const Targs& ...args) {
+    template<class Tfunc, class Tret, class ...Targs>
+    void invoke(Tfunc func, Tret& ret, const Targs& ...args) {
         static const auto kernel = get_kernel(func);
-        const void* argv[] = { &args... };
+        invoke(kernel, ret, args...);
+    }
+
+    /* invoke kernel */
+    template<class Tret, class ...Targs>
+    void invoke(fun_t kernel, Tret& ret, const Targs& ...args) {
+        static const auto rank = Tret::rank();
+        const auto  dims = ret.size().data();
+        const void* argv[] = { &ret, &args... };
         run_kernel(kernel, argv, rank, dims);
     }
 
@@ -116,6 +124,25 @@ public:
 protected:
     CUmod_st* module_ = nullptr;
 };
+
+NMS_API Module&  gModule();
+
+/*!
+* invoke cuda device function
+* @param func:     cuda device function
+*/
+static auto cufun(StrView name) {
+    return gModule().get_kernel(name);
+}
+
+/*!
+ * invoke cuda device function
+ * @param func:     cuda device function
+ */
+template<class ...Targ>
+void invoke(Module::fun_t func, const Targ& ...arg) {
+    gModule().invoke(func, lambda_cast(arg)...);
+}
 
 
 NMS_API void*_mnew(u64   size);
@@ -251,16 +278,5 @@ enum TexFilterMode
 NMS_API u64   tex_new(arr_t arr, TexAddressMode border_mode, TexFilterMode filter_mode);
 NMS_API void  tex_del(u64 obj);
 
-
-NMS_API void _invoke(void* func, u32 rank, const u32 dims[], Stream& stream, const void* args[] = nullptr);
-/**
- * invoke cuda device function
- * @param func:     cuda device function
- */
-template<u32 N>
-void invoke(void* func, const Vec<u32, N>& dims, Stream& stream=Stream::global()) {
-    constexpr auto rank = N;
-    _invoke(func, rank, dims, stream);
-}
 
 }

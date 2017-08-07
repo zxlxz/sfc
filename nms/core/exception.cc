@@ -24,7 +24,7 @@ NMS_API u32 ESystem::current() {
 NMS_API void ESystem::format(String& buf) const {
     char tmp[256] = { "" };
 
-#ifdef _WIN32
+#ifdef NMS_OS_WINDOWS
     strerror_s(static_cast<char*>(tmp), sizeof(tmp), id_);
 #else
     strerror_r(id_, tmp, sizeof(tmp));
