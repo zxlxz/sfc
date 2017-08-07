@@ -9,7 +9,7 @@ an c++14 common library for scientific computing.
 
 因为C+STL的命名规范，设计理念和本库区别较大，所以这里没有使用STL。
 
-![nms.test](https://github.com/lumpyzhu/nmscc/blob/master/doc/nms.test.gif)
+![nms.test](https://raw.githubusercontent.com/lumpyzhu/nmscc/master/doc/nms.test.gif)
 
 ### nms.core
 - type
