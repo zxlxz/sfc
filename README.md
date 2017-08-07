@@ -3,6 +3,8 @@ c++14 common library.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ry9oa2mxrj8hk613/branch/master?svg=true)](https://ci.appveyor.com/project/lumpyzhu/nmscc/branch/master)
 
+![nms.test](https://github.com/lumpyzhu/nmscc/blob/master/doc/nms.test.gif)
+
 ### nms.core
 - type
 - view
