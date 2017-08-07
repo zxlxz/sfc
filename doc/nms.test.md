@@ -1,6 +1,8 @@
 
 # unit test
 
+![nms.test](https://github.com/lumpyzhu/nmscc/blob/master/doc/nms.test.gif)
+
 使用单元测试是很简单的，无论是库，还是可执行文件中，都可以使用
 ```cpp
 nms_test(my_test) {
