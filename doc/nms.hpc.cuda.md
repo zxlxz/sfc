@@ -1,6 +1,16 @@
 
 # cuda is simple
 
+## cuda-kernel.cu
+```cpp
+__global__ void cuda_kernel(View<float,2> a) {
+    auto x = blockIdx.x;
+    auto y = threadIdx.x;
+    a(x, y) = x+0.1 * y;                        // using View<float,2> as matlab.
+}
+```
+
+## main.cpp
 ```cpp
 
 using namespace nms::hpc;
@@ -14,9 +24,4 @@ arr_2d <<= vsin(arr_2d);                        // for each: arr_2d(x, y) = sin(
 
 cuda_run_kernel<<<32, 32>>>(arr2d);             // invoke cuda.
 
-__global__ void cuda_kernel(View<float,2> a) {
-    auto x = blockIdx.x;
-    auto y = threadIdx.x;
-    a(x, y) = x+0.1 * y;                        // using View<float,2> as matlab.
-}
 ```
