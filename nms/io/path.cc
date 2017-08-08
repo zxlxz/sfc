@@ -143,7 +143,7 @@ NMS_API StrView Path::base() const {
 
 NMS_API const Path& prefix() {
 
-    static auto exe_path = [] {
+    static String exe_path = [] {
         static char exe_path_buf[512];
 #if defined(NMS_OS_WINDOWS)
         const auto mod = GetModuleHandleA(nullptr);

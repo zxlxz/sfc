@@ -10,7 +10,6 @@ namespace nms::io::log
 
 using namespace nms::thread;
 
-
 Level   gLevel = Level::None;
 
 NMS_API Level getLevel() {

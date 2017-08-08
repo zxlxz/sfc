@@ -3,8 +3,8 @@
 #undef module
 
 #include <nms/core.h>
+#include <nms/io.h>
 #include <nms/util/library.h>
-#include <nms/io/log.h>
 #include <nms/hpc/cuda/runtime.h>
 #include <nms/hpc/cuda/engine.h>
 

@@ -1,35 +1,7 @@
 #pragma once
 
-#ifdef _MSC_VER
-#   define _CRT_NONSTDC_NO_WARNINGS     1
-#   define _CRT_SECURE_NO_WARNINGS      1
-#   define _CRT_OBSOLETE_NO_DEPRECATE   1
-#endif
-
 #include <stdlib.h>
 #include <stdint.h>
-
-#ifdef NMS_BUILD
-#include <stdio.h>
-#include <math.h>
-#include <time.h>
-#include <ctype.h>
-#include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/stat.h>
-
-#if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
-#   include <unistd.h>
-#endif
-
-#ifdef _MSC_VER
-#   include <io.h>
-#   include <direct.h>
-#   include <process.h>
-#endif
-
-#endif
 
 #pragma region NMS_OS_X
 #ifdef _WIN32

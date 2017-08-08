@@ -29,8 +29,7 @@ struct alignas(T) ListBuff
     Tcond<$is_pod<T>, T, ubyte[sizeof(T)]> buff_[N] = {};
 };
 
-
-/* list */
+/* list: move able */
 template<class T, u32 BuffSize=0>
 class List
     : public View<T>
@@ -39,43 +38,14 @@ class List
 
 public:
     static constexpr u32 $BlockSize = 32;           // block  size
-    static constexpr u32 $BuffSize  = BuffSize;     // buff   size
+    static constexpr u32 $BuffSize = BuffSize;     // buff   size
 
 public:
 #pragma region constructor
     /*! constructor */
     constexpr List() noexcept
-        : base{ nullptr, {0}, {1} }
-    {
+        : base{ nullptr,{ 0 },{ 1 } } {
         base::data_ = buff_;
-    }
-
-    List(const T* data, u32 count)
-        : base{ nullptr, {0}, {1} }
-    {
-        base::data_ = buff_;
-        appends(data, count);
-    }
-
-
-    List(const View<T>& v)
-        : List{ v.data(), v.count() }
-    {}
-
-    List(const View<const T>& v)
-        : List {v.data(), v.count() }
-    {}
-
-    template<u32 N>
-    List(const T(&v)[N])
-        : List {v, N }
-    {}
-
-    template<class ...U>
-    List(u32 count, U&& ...args)
-        : List{}
-    {
-        appends(count, fwd<U>(args)...);
     }
 
     /* destruct */
@@ -87,26 +57,30 @@ public:
             mdel(base::data_);
         }
         base::size_[0] = 0;
-        base::data_    = nullptr;
+        base::data_ = nullptr;
+    }
+
+    template<class ...Targs>
+    List(u32 size, const Targs&& ...args) {
+        appends(size, fwd<Targs>(args)...);
     }
 
     /* move construct */
     List(List&& rhs) noexcept
-        : base(rhs), buff_(rhs.buff_)
-    {
+        : base(rhs), buff_(rhs.buff_) {
         // check if using buff?
         if (rhs.data_ == rhs.buff_) {
             base::data_ = buff_;
         }
 
         // clear rhs
-        rhs.data_    = rhs.buff_;
+        rhs.data_ = rhs.buff_;
         rhs.size_[0] = 0;
     }
 
-    List(const List& rhs)
-        : List(rhs.data(), rhs.count())
-    {}
+    List(const List& rhs) {
+        appends(rhs.data(), rhs.count());
+    }
 
 #pragma endregion
 
@@ -135,8 +109,9 @@ public:
         if (this == &rhs) {
             return *this;
         }
-        List tmp(rhs.data(), rhs.count());
-        *this = static_cast<List&&>(tmp);
+        List tmp;
+        tmp.appends(rhs.data(), rhs.count());
+        *this = move(tmp);
         return *this;
     }
 #pragma endregion
@@ -148,7 +123,7 @@ public:
             return $BuffSize;
         }
         const auto mem_size = msize(base::data_);
-        const auto count    = (mem_size - sizeof(u32)) / sizeof(T);
+        const auto count = (mem_size - sizeof(u32)) / sizeof(T);
         return u32(count);
     }
 
@@ -163,10 +138,10 @@ public:
     }
 
     /*!
-     * reserves storge
-     * if (newlen <= capicity()) { do nothing }
-     * else { new storge is allocated }
-     */
+    * reserves storge
+    * if (newlen <= capicity()) { do nothing }
+    * else { new storge is allocated }
+    */
     List& reserve(u32 newlen) {
         const auto oldcap = capicity();
 
@@ -192,8 +167,8 @@ public:
     }
 
     /*!
-     * change number of elements
-     */
+    * change number of elements
+    */
     template<class U>
     List& reset(u32 n, U&& u) {
         List tmp(n, fwd<U>(u));
@@ -217,8 +192,8 @@ public:
     }
 
     /*!
-     * append elements to the end 
-     */
+    * append elements to the end
+    */
     template<class ...U>
     List& appends(u32 cnt, U&& ...u) {
         const auto oldlen = base::count();
@@ -233,9 +208,10 @@ public:
         return *this;
     }
 
+
     /*!
-     * append elements to the end
-     */
+    * append(copy) elements to the end
+    */
     List& appends(const T* ext, u32 ext_cnt) {
         auto old_cnt = base::count();
         reserve(old_cnt + ext_cnt);
@@ -247,10 +223,10 @@ public:
     }
 
     /*!
-     * append an element to the end
-     */
+    * append an element to the end
+    */
     template<class U>
-    auto operator+=(U&& u) {
+    List& operator+=(U&& u) {
         append(fwd<U>(u));
         return *this;
     }

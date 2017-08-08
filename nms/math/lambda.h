@@ -12,42 +12,6 @@ template<class T, u32 N> struct Linespace;
 template<class F, class ...Ts> struct Parallel;
 template<class F, class ...Ts> struct Reduce;
 
-#pragma region lambda_cast
-// lambda_cast: -> Scalar
-template<class X>
-auto _lambda_cast(const X& x, const void*) -> decltype(Scalar<X>{x}) {
-    return Scalar<X>{x};
-}
-
-// lambda_cast: -> toLambda
-template<class X>
-auto _lambda_cast(const X& x, const X*) -> decltype(toLambda(x)) {
-    return toLambda(x);
-}
-
-template<class X>
-auto lambda_cast(const X& x) -> decltype(_lambda_cast(x, &x)) {
-    return _lambda_cast(x, &x);
-}
-#pragma endregion
-
-#pragma region toLambda2
-template<class X, class Y>
-auto _toLambda2(const X& x, const Y&y, const X*) ->decltype(toLambda(x)) {
-    return toLambda(x);
-}
-
-template<class X, class Y>
-auto _toLambda2(const X& x, const Y&y, const void*) ->decltype(toLambda(y)) {
-    return toLambda(y);
-}
-
-template<class X, class Y>
-auto toLambda2(const X& x, const Y& y) -> decltype(_toLambda2(x, y, &x)) {
-    return _toLambda2(x, y, &x);
-}
-#pragma endregion
-
 #pragma region scalar
 template<class X>
 struct Scalar
@@ -55,8 +19,8 @@ struct Scalar
     static constexpr auto $rank = 0u;
 
     Scalar(const X& x)
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -82,12 +46,19 @@ auto toLambda(const Scalar<X>& x) {
     return x;
 }
 
-/* mk scalar */
-template<class X>
-Scalar<X> mkScalar(const X& x) {
-    return x;
+template<class T>
+auto toScalar(const T& t) -> decltype($when_is<$number, T>{}, Scalar<T>{}) {
+    return { t };
 }
+
+/* mk scalar */
+template<class T>
+Scalar<T> mkScalar(const T& t) {
+    return { t };
+}
+
 #pragma endregion
+
 
 #pragma region Parallel
 template<class F, class X>
@@ -96,8 +67,8 @@ struct Parallel<F, X>
     static constexpr const auto $rank = X::$rank;
 
     Parallel(const X& x)
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -105,13 +76,12 @@ struct Parallel<F, X>
 
     template<class I>
     auto size(I idx) const noexcept {
-         return x_.size(idx);
+        return x_.size(idx);
     }
 
     template<class ...I>
     auto operator()(I ...idx) const noexcept {
-        decltype(auto) x = x_(idx...);
-        return F::run(x);
+        return F::run(x_(idx...));
     }
 
 protected:
@@ -125,8 +95,7 @@ struct Parallel<F, X, Y>
     static constexpr F    $func = {};
 
     Parallel(const X& x, const Y& y)
-        : x_(x), y_(y)
-    {
+        : x_(x), y_(y) {
         static_assert(X::$rank == Y::$rank || X::$rank == 0 || Y::$rank == 0, "nms.math.Parallel: $rank not match");
     }
 
@@ -159,7 +128,7 @@ auto toLambda(const Parallel<F, T...>& val) {
 
 /* make Parallel<F(x)> */
 template<class F, class X>
-auto mkParallel(const X& x) -> Parallel<F, decltype(lambda_cast(x))>{
+auto mkParallel(const X& x) -> Parallel<F, decltype(lambda_cast(x))> {
     return { lambda_cast(x) };
 }
 
@@ -177,8 +146,8 @@ struct Reduce<F, X>
     static constexpr auto   $rank = X::$rank - 1;
 
     Reduce(const X& x) noexcept
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -191,7 +160,7 @@ struct Reduce<F, X>
 
     template<class ...I>
     auto operator()(I ...idx) const {
-        const auto  n   = x_.size(0);
+        const auto  n = x_.size(0);
 
         if (n < 2) {
             return x_(0, idx...);
@@ -222,6 +191,47 @@ auto mkReduce(const X& x) -> Reduce<F, decltype(lambda_cast(x))> {
 
 #pragma endregion
 
+#pragma region lambda_cast
+// lambda_cast: -> Scalar
+template<class X>
+auto _lambda_cast(const X& x, const void*) -> decltype(Scalar<X>{x}) {
+    return Scalar<X>{x};
+}
+
+// lambda_cast: -> toLambda
+template<class X>
+auto _lambda_cast(const X& x, const X*) -> decltype(toLambda(x)) {
+    return toLambda(x);
+}
+
+template<class X>
+auto lambda_cast(const X& x) -> decltype(_lambda_cast(x, &x)) {
+    return _lambda_cast(x, &x);
+}
+#pragma endregion
+
+#pragma region testLambda2
+template<class X, class Y>
+constexpr auto _testLambda2(const X& x, const Y&y, Version<2>) ->decltype(toLambda(x), toLambda(y), 0 ) {
+    return 0;
+}
+
+template<class X, class Y, class=$when_is<$number, Y> >
+constexpr auto _testLambda2(const X& x, const Y&y, Version<1>) ->decltype(toLambda(x), 0) {
+    return 0;
+}
+
+template<class X, class Y, class=$when_is<$number, X> >
+constexpr auto _testLambda2(const X& x, const Y&y, Version<0>) ->decltype(toLambda(y), 0) {
+    return 0;
+}
+
+template<class X, class Y>
+constexpr auto testLambda2(const X& x, const Y& y) -> decltype(_testLambda2(x, y, Version<2>{})) {
+    return 0;
+}
+#pragma endregion
+
 #pragma region math operators
 
 /* parallel: +x */
@@ -243,7 +253,7 @@ constexpr auto operator-(const X& x) noexcept
 /* parallel: a+b */
 template<class X, class Y>
 constexpr auto operator+(const X& x, const Y& y) noexcept 
-    -> decltype(toLambda2(x, y), mkParallel<Add>(x, y) )
+    -> decltype(testLambda2(x, y), mkParallel<Add>(x, y) )
 {
     return mkParallel<Add>(x, y);
 }
@@ -251,7 +261,7 @@ constexpr auto operator+(const X& x, const Y& y) noexcept
 /* parallel: a-b */
 template<class X, class Y>
 constexpr auto operator-(const X& x, const Y& y) noexcept 
-    -> decltype(toLambda2(x, y), mkParallel<Sub>(x, y) ) 
+    -> decltype(testLambda2(x, y), mkParallel<Sub>(x, y) ) 
 {
     return mkParallel<Sub>(x, y); 
 }
@@ -259,7 +269,7 @@ constexpr auto operator-(const X& x, const Y& y) noexcept
 /* parallel: a*b */
 template<class X, class Y>
 constexpr auto operator*(const X& x, const Y& y) noexcept 
-    -> decltype(toLambda2(x, y), mkParallel<Mul>(x, y) ) 
+    -> decltype(testLambda2(x, y), mkParallel<Mul>(x, y) ) 
 {
     return mkParallel<Mul>(x, y); 
 }
@@ -267,7 +277,7 @@ constexpr auto operator*(const X& x, const Y& y) noexcept
 /* parallel: a/b */
 template<class X, class Y>
 constexpr auto operator/(const X& x, const Y& y) noexcept 
-    -> decltype(toLambda2(x, y), mkParallel<Div>(x, y) ) 
+    -> decltype(testLambda2(x, y), mkParallel<Div>(x, y) ) 
 {
     return mkParallel<Div>(x, y); 
 }
@@ -275,7 +285,7 @@ constexpr auto operator/(const X& x, const Y& y) noexcept
 /* parallel: a^b */
 template<class X, class Y>
 constexpr auto operator^(const X& x, const Y& y) noexcept 
-    -> decltype(toLambda2(x, y), mkParallel<Pow>(x, y) ) 
+    -> decltype(testLambda2(x, y), mkParallel<Pow>(x, y) ) 
 {
     return mkParallel<Pow>(x, y); 
 }
@@ -286,7 +296,7 @@ constexpr auto operator^(const X& x, const Y& y) noexcept
 /* parallel: a==b */
 template<class A, class B>
 constexpr auto operator==(const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel< Eq>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel< Eq>(a, b))
 {
     return mkParallel< Eq>(a, b);
 }
@@ -294,7 +304,7 @@ constexpr auto operator==(const A& a, const B& b) noexcept
 /* parallel: a!=b */
 template<class A, class B>
 constexpr auto operator!=(const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel<Neq>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel<Neq>(a, b))
 {
     return mkParallel<Neq>(a, b);
 }
@@ -302,7 +312,7 @@ constexpr auto operator!=(const A& a, const B& b) noexcept
 /* parallel: a<b */
 template<class A, class B>
 constexpr auto operator< (const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel< Lt>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel< Lt>(a, b))
 {
     return mkParallel< Lt>(a, b);
 }
@@ -310,7 +320,7 @@ constexpr auto operator< (const A& a, const B& b) noexcept
 /* parallel: a>b */
 template<class A, class B>
 constexpr auto operator> (const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel< Gt>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel< Gt>(a, b))
 {
     return mkParallel< Gt>(a, b);
 }
@@ -318,7 +328,7 @@ constexpr auto operator> (const A& a, const B& b) noexcept
 /* parallel: a<=b */
 template<class A, class B>
 constexpr auto operator<=(const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel< Le>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel< Le>(a, b))
 {
     return mkParallel< Le>(a, b);
 }
@@ -326,7 +336,7 @@ constexpr auto operator<=(const A& a, const B& b) noexcept
 /* parallel: a>=b */
 template<class A, class B>
 constexpr auto operator>=(const A& a, const B& b) noexcept
-    -> decltype(toLambda2(a, b), mkParallel< Ge>(a, b))
+    -> decltype(testLambda2(a, b), mkParallel< Ge>(a, b))
 {
     return mkParallel< Ge>(a, b);
 }

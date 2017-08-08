@@ -4,6 +4,7 @@
 
 #include <nms/core.h>
 #include <nms/io.h>
+#include <nms/test.h>
 #include <nms/util/library.h>
 
 #include <nms/hpc/cuda/runtime.h>

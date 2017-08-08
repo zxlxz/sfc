@@ -1,3 +1,4 @@
+#include <nms/config.h>
 #include <nms/io/file.h>
 #include <nms/io/mfile.h>
 #include <nms/io/log.h>

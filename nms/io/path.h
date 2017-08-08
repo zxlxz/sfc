@@ -19,6 +19,10 @@ public:
         init(s);
     }
 
+    Path(const String& s) 
+        : Path(StrView{s})
+    {}
+
     template<u32 N>
     Path(const char(&s)[N])
         : Path(StrView{ s })
