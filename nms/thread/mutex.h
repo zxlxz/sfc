@@ -5,6 +5,14 @@
 namespace nms::thread
 {
 
+#ifndef NMS_BUILD
+#ifdef NMS_OS_WINDOWS
+#   using mtx_t = u32[1];
+#else
+#   using mtx_t = u32[8];
+#endif
+#endif
+
 class Thread;
 class Mutex;
 class CondVar;
@@ -21,11 +29,7 @@ public:
 
 private:
     friend class CondVar;
-#ifdef _WIN32
-    u64 impl_[1];
-#else
-    u64 impl_[8];     // 64 byte is enough
-#endif
+    mtx_t impl_ = {};
 };
 
 struct LockGuard final

@@ -70,7 +70,7 @@ constexpr ForeachExecutor mkForeachExecutor(const View<T, N>&) {
 }
 
 template<class T, u32 N>
-nms::View<T, N> toLambda(View<T, N> v) {
+nms::View<T, N> toLambda(const View<T, N>& v) {
     return v;
 }
 

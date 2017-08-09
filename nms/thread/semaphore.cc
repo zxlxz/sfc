@@ -1,9 +1,5 @@
 #include <nms/thread/semaphore.h>
 
-#ifdef NMS_OS_POSIX
-#   include <semaphore.h>
-#endif
-
 #ifdef NMS_OS_WINDOWS
 extern "C" {
     struct sem_t;

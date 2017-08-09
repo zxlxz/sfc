@@ -27,7 +27,7 @@ target("nms")
     set_kind("shared")
 
     -- set flags
-    add_cxxflags("-std=c++1z", "-frtti", "-isystem .", "-DNMS_BUILD", "-DNMS_HPC_CUDA_BEGIN=R(\"", "-DNMS_HPC_CUDA_END=)\"")
+    add_cxxflags("-std=c++1z", "-frtti", "-isystem .", "-DNMS_BUILD")
     set_targetdir("bin")
     set_objectdir("/tmp/nmscc")
 

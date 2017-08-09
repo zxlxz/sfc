@@ -72,7 +72,6 @@ public:
         cuda_exec(func, ret, args...);
     }
 
-protected:
     static NMS_API Program& gProgram();
     static NMS_API Module&  gModule();
 

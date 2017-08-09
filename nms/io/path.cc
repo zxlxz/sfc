@@ -2,10 +2,6 @@
 #include <nms/io/path.h>
 #include <nms/io/log.h>
 
-#ifdef NMS_OS_MACOS
-#   include <mach-o/dyld.h>
-#endif
-
 namespace nms::io
 {
 

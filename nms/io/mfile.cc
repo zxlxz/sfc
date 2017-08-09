@@ -2,10 +2,6 @@
 #include <nms/io/mfile.h>
 #include <nms/io/log.h>
 
-#ifdef NMS_OS_POSIX
-#   include <sys/mman.h>
-#endif
-
 namespace nms::io
 {
 

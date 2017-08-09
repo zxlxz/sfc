@@ -2,27 +2,70 @@
 #include <nms/util/system.h>
 #include <nms/io/log.h>
 
-#ifdef NMS_OS_POSIX
-#   include <pthread.h>
-#endif
-
+#ifdef NMS_OS_WINDOWS
 extern "C" {
     using namespace nms;
+    typedef int(__stdcall *thrd_start_t)(void*);
+
     int CloseHandle(void* handle);
     int WaitForSingleObjectEx(void* hHandle, u32 dwMilliseconds, int bAlertable);
     int SwitchToThread();
     void RaiseException(u32 dwExceptionCode, u32 dwExceptionFlags, u32 nNumberOfArguments, const void* lpArguments);
+
+    static int thrd_create(thrd_t* thr, thrd_start_t func, void* arg) {
+        u32  tid = 0;
+        auto obj = _beginthreadex(nullptr, 0u, func, nullptr, 0, &tid);
+        thr = reinterpret_cast<void*>(obj);
+        return int(tid);
+    }
+
+    static int thrd_detach(thrd_t thr) {
+        ::CloseHandle(thr);
+        return 0;
+    }
+
+    static int thrd_join(thrd_t thr, int* res) {
+        ::WaitForSingleObject(thr, 0xFFFFFFFF, 0);
+    }
+
+    static void thrd_yeild() {
+        ::SwitchToThread();
+    }
 }
+#else
+
+extern "C" {
+    typedef void*(thrd_start_t)(void*);
+
+    static int thrd_create(thrd_t* thr, thrd_start_t func, void* arg) {
+        return pthread_create(thr, nullptr, func, arg);
+    }
+
+    static int thrd_detach(thrd_t thr) {
+        return pthread_detach(thr);
+    }
+
+    static int thrd_join(thrd_t thr, int* res) {
+        (void)res;
+        return pthread_join(thr, nullptr);
+    }
+
+    static void thrd_yeild() {
+        sched_yield();
+    }
+}
+#endif
 
 
 namespace nms::thread
 {
 
-#if defined(NMS_OS_POSIX)
-static void*  _thread_callback(void* raw) {
-#elif defined(NMS_OS_WINDOWS)
-static unsigned __stdcall _thread_callback(void* raw) {
+#ifdef NMS_OS_WINDOWS
+static unsigned __stdcall _thread_callback(void* raw){
+#else
+static void*  _thread_callback(void* raw)
 #endif
+{
     auto pfun = static_cast<delegate<void()>*>(raw);
 
     if (pfun != nullptr) {
@@ -32,75 +75,50 @@ static unsigned __stdcall _thread_callback(void* raw) {
         catch (...) {
         }
     }
-
-#if defined(NMS_OS_POSIX)
-    return nullptr;
-#elif defined(NMS_OS_WINDOWS)
     return 0;
-#endif
 }
 
 NMS_API void Thread::start() {
-    idx_ = 0;
+    impl_ = nullptr;
+    idx_  = 0;
 
-    if (!static_cast<bool>(*fun_)) {
-        io::log::warn("nms.thread.Thread.start: fun_[{}] is empty.", fun_);
+    if (!bool(*func_)) {
+        io::log::warn("nms.thread.Thread.start: fun_[{}] is empty.", func_);
     }
     else {
-#if defined(NMS_OS_POSIX)
-        auto ret = pthread_create((pthread_t*)&obj_, nullptr, _thread_callback, fun_);
-#elif defined(NMS_OS_WINDOWS)
-        auto obj = _beginthreadex(nullptr, 0u, &_thread_callback, fun_, 0, &idx_);
-        obj_ = reinterpret_cast<void*>(obj);
+        auto ret = thrd_create(&impl_, &_thread_callback, func_);
+#ifdef NMS_OS_WINDOWS
+        idx_ = ret;
 #endif
-        if (obj_ == nullptr || idx_ == 0) {
+        if (impl_ == nullptr) {
             io::log::error("nms.thread.Thread.start: start thread failed.");
         }
     }
 }
 
-NMS_API void Thread::detach() {
-    if (obj_ == nullptr) {
-        return;
+NMS_API int Thread::detach() {
+    if (impl_ == nullptr) {
+        return 0;
     }
-#if defined(NMS_OS_POSIX)
-    auto ret = pthread_detach(pthread_t(obj_));
-#elif defined(NMS_OS_WINDOWS)
-    auto ret = CloseHandle(obj_);
-    obj_ = nullptr;
-#endif
-    (void)ret;
+    auto ret = thrd_detach(impl_);
+    impl_ = nullptr;
+    return ret;
 }
 
-NMS_API bool Thread::join() {
-    if (obj_ == nullptr) {
-        return true;
+NMS_API int Thread::join() {
+    if (impl_ == nullptr) {
+        return 0;
     }
-
-#if defined(NMS_OS_POSIX)
-    const auto ret = ::pthread_join(pthread_t(obj_), 0);
-#elif defined(NMS_OS_WINDOWS)
-    const auto ret = WaitForSingleObjectEx(obj_, 0 - 1u, 0);
-#endif
-
-    if (ret != 0) {
-        return false;
-    }
-    detach();
-    return true;
+    return thrd_join(impl_, nullptr);
 }
 
 NMS_API void Thread::yield() {
-#if defined(NMS_OS_POSIX)
-    const auto ret = sched_yield();
-#elif defined(NMS_OS_WINDOWS)
-    const auto ret = SwitchToThread();
-#endif
-    (void)ret;
+    thrd_yeild();
 }
 
-NMS_API void Thread::sleep(double duration) {
+NMS_API int Thread::sleep(double duration) {
     system::sleep(duration);
+    return 0;
 }
 
 NMS_API void Thread::setName(StrView name) {

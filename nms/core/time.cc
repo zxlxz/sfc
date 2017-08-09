@@ -31,7 +31,7 @@ NMS_API f64 clock() {
 }
 #endif
 
-#ifdef NMS_OS_POSIX
+#ifdef NMS_OS_UNIX
 NMS_API f64 system_clock() {
     struct timespec spec;
     clock_gettime(CLOCK_MONOTONIC, &spec);

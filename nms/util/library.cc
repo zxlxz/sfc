@@ -1,10 +1,6 @@
 #include <nms/util/library.h>
 #include <nms/io/log.h>
 
-#ifdef NMS_OS_POSIX
-#include <dlfcn.h>
-#endif
-
 #ifdef NMS_OS_WINDOWS
 extern "C"
 {

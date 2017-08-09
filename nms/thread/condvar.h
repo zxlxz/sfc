@@ -5,6 +5,14 @@
 namespace nms::thread
 {
 
+#ifndef NMS_BUILD
+#ifdef NMS_OS_WINDOWS
+#   using cnd_t = u32[1];
+#else
+#   using cnd_t = u32[8];
+#endif
+#endif
+
 class Mutex;
 
 class CondVar : public INocopyable
@@ -13,19 +21,12 @@ public:
     NMS_API CondVar();
     NMS_API ~CondVar();
 
-    NMS_API void notify()       noexcept;
-    NMS_API void notifyAll()    noexcept;
-
-    NMS_API bool wait(Mutex& lock, double sec);
-
-    bool wait(Mutex& lock)  { return wait(lock, -1); }
+    NMS_API int signal()       noexcept;
+    NMS_API int broadcast()    noexcept;
+    NMS_API int wait(Mutex& lock);
 
 private:
-#ifdef _WIN32
-    u64  impl_[1];
-#else
-    u64  impl_[8];
-#endif
+    cnd_t impl_;
 };
 
 }

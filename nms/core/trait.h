@@ -10,12 +10,24 @@ template<class T>               constexpr bool $is_class            = __is_class
 template<class T>               constexpr bool $is_pod              = __is_pod(T);
 template<class T>               constexpr bool $is_union            = __is_union(T);
 template<class T>               constexpr bool $is_empty            = __is_empty(T);
-template<class F, class    T>   constexpr bool $is_convert_to       = __is_convertible_to(F, T);
-template<class T, class    F>   constexpr bool $is_assignable       = __is_assignable(T, F);
 template<class B, class    T>   constexpr bool $is_base_of          = __is_base_of(B, T);
 
-template<class T, class ...X>   constexpr bool $is_constructable    = __is_constructible(T, X...);
+#ifdef NMS_CC_GNUC
+template<class T, class ...X>
+constexpr auto is_constructible(Version<0>) -> bool {
+    return false;
+}
+
+template<class T, class ...X>
+constexpr auto is_constructible(Version<1>) -> decltype(T(declval<X>()...)) {
+    return true;
+}
+template<class T, class ...X>   constexpr bool $is_constructible    = is_constructible<T, X...>();
+
+#else
+template<class T, class ...X>   constexpr bool $is_constructible    = __is_constructible(T, X...);
 template<class T, class ...X>   constexpr bool $is_trivially_constructible = __is_trivially_constructible(T, X...);
+#endif
 
 namespace impl
 {

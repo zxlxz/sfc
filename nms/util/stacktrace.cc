@@ -2,12 +2,6 @@
 #include <nms/util/stacktrace.h>
 #include <nms/util/library.h>
 
-#ifdef NMS_OS_POSIX
-#   include <cxxabi.h>
-#   include <dlfcn.h>
-#   include <execinfo.h>
-#endif
-
 #ifdef NMS_CC_MSVC
 using namespace nms;
 

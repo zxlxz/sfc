@@ -12,7 +12,7 @@ public:
         init();
     }
 
-    constexpr u32 count() const {
+    u32 count() const {
         return count_;
     }
 

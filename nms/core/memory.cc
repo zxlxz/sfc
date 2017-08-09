@@ -37,6 +37,17 @@ NMS_API void  _mmov(void* dst, const void* src, u64 size) {
     ::memcpy(dst, src, size);
 }
 
+NMS_API u64 msize(const void* ptr) {
+#if     defined(NMS_OS_WINDOWS)
+    const auto mem_size = ::_msize(const_cast<void*>(ptr));
+#elif   defined(NMS_OS_APPLE)
+    const auto mem_size = ::malloc_size(ptr);
+#elif   defined(NMS_OS_UNIX)
+    const auto mem_size = ::malloc_usable_size(const_cast<void*>(ptr));
+#endif
+    return mem_size;
+}
+
 #pragma region IPool
 NMS_API IPool::IPool(u64 size)
         : memsize_(min(size, u64{sizeof(void*)}))

@@ -2,10 +2,6 @@
 #include <nms/config.h>
 #include <nms/core.h>
 
-#ifdef NMS_OS_POSIX
-#include <curses.h>
-#endif
-
 namespace nms::system
 {
 

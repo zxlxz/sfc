@@ -11,44 +11,46 @@ class  Thread final
 public:
     template<class F>
     explicit Thread(F&& f)
-        : fun_(new delegate<void()>(fwd<F>(f)))
+        : func_(new delegate<void()>(fwd<F>(f)))
     {
         start();
     }
 
     Thread(Thread&& t) noexcept
-        : fun_(move(t.fun_))
-        , obj_(move(t.obj_))
-        , idx_(move(t.idx_))
+        : func_(move(t.func_))
+        , impl_(move(t.impl_))
+        , idx_ (move(t.idx_))
     {
-        t.fun_ = {};
-        t.obj_ = nullptr;
+        t.func_ = {};
+        t.impl_ = nullptr;
         t.idx_  = 0;
     }
 
     ~Thread() {
         detach();
-        delete fun_;
+        if (func_ != nullptr) {
+            delete func_;
+        }
     }
 
     Thread& operator=(Thread&& rhs) noexcept {
-        nms::swap(fun_, rhs.fun_);
-        nms::swap(obj_, rhs.obj_);
-        nms::swap(idx_, rhs.idx_);
+        nms::swap(func_, rhs.func_);
+        nms::swap(impl_, rhs.impl_);
+        nms::swap(idx_,  rhs.idx_);
         return *this;
     }
 
     NMS_API void setName(StrView name);
-    NMS_API bool join();
-    NMS_API void detach();
+    NMS_API int join();
+    NMS_API int detach();
 
     NMS_API static void yield();
-    NMS_API static void sleep(double duration);
+    NMS_API static int  sleep(double duration);
 
 private:
-    delegate<void()>*   fun_ = nullptr;
-    void*               obj_ = nullptr;
-    u32                 idx_ = 0;
+    delegate<void()>*   func_   = nullptr;
+    thrd_t              impl_   = nullptr;
+    u32                 idx_    = 0;
     NMS_API void start();
 };
 

@@ -2,10 +2,6 @@
 #include <nms/thread/condvar.h>
 #include <nms/thread/mutex.h>
 
-#ifdef NMS_OS_POSIX
-#   include <pthread.h>
-#endif
-
 #ifdef NMS_OS_WINDOWS
 extern "C" {
     using namespace nms;
@@ -13,71 +9,77 @@ extern "C" {
     void WakeConditionVariable(void*);
     void WakeAllConditionVariable(void*);
     int  SleepConditionVariableSRW(void*, void* lock, u32 ms, ulong flags);
+
+    static int cnd_init(cnd_t* cond){
+        return InitializeConditionVariable(cond);
+    }
+
+    static int cnd_destroy(cnd_t* cond) {
+        return 0;
+    }
+
+    static int cnd_signal(cnd_t* cond) {
+        return WakeConditionVariable(&impl_);
+    }
+
+    static int  cnd_brodcast(cnd_t* cond){
+        return WakeAllConditionVariable(cond);
+    }
+
+    static int cnd_wait(cnd_t* cond, mtx_t* mutex) {
+        const auto infinite = 0xFFFFFFFF;
+        const auto msec = seconds*1e6;
+        const auto time = (msec<0 || msec > infinite) ? infinite : u32(msec);
+        const auto eid  = SleepConditionVariableSRW(cond, mutex, time, 0);
+        return eid;
+    }
+}
+#else
+extern "C" {
+    static int cnd_init(cnd_t* cond){
+        return pthread_cond_init(cond, nullptr);
+    }
+
+    static int cnd_destroy(cnd_t* cond) {
+        return pthread_cond_destroy(cond);
+    }
+
+    static int cnd_signal(cnd_t* cond) {
+        return pthread_cond_signal(cond);
+    }
+
+    static int  cnd_brodcast(cnd_t* cond){
+        return pthread_cond_broadcast(cond);
+    }
+
+    static int cnd_wait(cnd_t* cond, mtx_t* mutex) {
+        return pthread_cond_wait(cond, mutex);
+    }
 }
 #endif
+
 
 namespace nms::thread
 {
 
 NMS_API CondVar::CondVar() {
-#if defined(NMS_OS_POSIX)
-    static_assert(sizeof(pthread_mutex_t) <= sizeof(impl_), "nms::thread::CondVar is too small");
-    pthread_cond_init(reinterpret_cast<pthread_cond_t*>(impl_), nullptr);
-#elif defined(NMS_OS_WINDOWS)
-    InitializeConditionVariable(&impl_);
-#else
-#   error "not impl yet"
-#endif
+    cnd_init(&impl_);
 }
 
 NMS_API CondVar::~CondVar() {
-#if defined(NMS_OS_POSIX)
-    pthread_cond_destroy(reinterpret_cast<pthread_cond_t*>(impl_));
-#elif defined(NMS_OS_WINDOWS)
-#else
-#   error "not impl yet"
-#endif
+    cnd_destroy(&impl_);
 }
 
-NMS_API void CondVar::notify() noexcept {
-#if defined(NMS_OS_POSIX)
-    pthread_cond_signal(reinterpret_cast<pthread_cond_t*>(impl_));
-#elif defined(NMS_OS_WINDOWS)
-    WakeConditionVariable(&impl_);
-#else
-#   error "not impl yet"
-#endif
+NMS_API int CondVar::signal() noexcept {
+    return cnd_signal(&impl_);
 }
 
-NMS_API void CondVar::notifyAll() noexcept {
-#if defined(NMS_OS_POSIX)
-    pthread_cond_broadcast(reinterpret_cast<pthread_cond_t*>(impl_));
-#elif defined(NMS_OS_WINDOWS)
-    WakeAllConditionVariable(&impl_);
-#else
-#   error "not impl yet"
-#endif
+NMS_API int CondVar::broadcast() noexcept {
+    return cnd_brodcast(&impl_);
 }
 
-NMS_API bool CondVar::wait(Mutex& mutex, double seconds) {
-#if defined(NMS_OS_POSIX)
-    auto eid = 0;
-    if (seconds<0) {
-        eid = pthread_cond_wait(reinterpret_cast<pthread_cond_t*>(impl_), reinterpret_cast<pthread_mutex_t*>(mutex.impl_));
-    }
-    else {
-        timespec ts = { u32(seconds), u32( (seconds-u32(seconds)) * 1e9) };
-        eid = pthread_cond_timedwait(reinterpret_cast<pthread_cond_t*>(impl_), reinterpret_cast<pthread_mutex_t*>(mutex.impl_), &ts);
-    }
-#elif defined(NMS_OS_WINDOWS)
-    const auto infinite = 0xFFFFFFFF;
-    const auto msec = seconds*1e6;
-    const auto time = (msec<0 || msec > infinite) ? infinite : u32(msec);
-    const auto eid  = SleepConditionVariableSRW(&impl_, &mutex.impl_, time, 0);
-#else
-#   error "not impl yet"
-#endif
-    return eid == 0;
+NMS_API int CondVar::wait(Mutex& mutex) {
+    return cnd_wait(&impl_, &mutex.impl_);
 }
 
 }

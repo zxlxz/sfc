@@ -92,15 +92,12 @@ static auto& gTests() {
 
 NMS_API u32 install(StrView name, void(*func)()) {
     static auto& gtests = gTests();
-#if defined(NMS_CC_MSVC)
-    Testor testor{ name.slice(i32(sizeof("auto __cdecl ")), -i32(sizeof("_func(void)"))), func };
-#elif defined(NMS_CC_CLANG)
-    // "auto "   : 5
-    // "_func( )": 8
-    Testor testor{ name.slice(5, -8), func };
+#ifdef NMS_CC_MSVC
+    Testor testor{ name.slice(0, -4), func };
+#else
+    Testor testor{ name.slice(5, -4), func };    
 #endif
     gtests += testor;
-
     return 0;
 }
 

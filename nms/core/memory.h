@@ -3,33 +3,15 @@
 #include <nms/core/type.h>
 #include <nms/core/trait.h>
 
-#ifndef __PLACEMENT_NEW_INLINE
-#define __PLACEMENT_NEW_INLINE
-inline void* operator new(size_t size, void* address)   throw() {    (void)size;    return address; }
-inline void  operator delete(void*, void*)              throw() {}
-#endif
-
-#ifndef __PLACEMENT_VEC_NEW_INLINE
-#define __PLACEMENT_VEC_NEW_INLINE
-inline void* operator new[](size_t size, void* address) throw() {   (void)size;     return address; }
-inline void operator delete[](void*, void*)             throw() {}
-#endif
-
-#ifdef NMS_OS_MACOS
-extern "C"
-{
-size_t malloc_size(const void* ptr);
-}
-#endif
-
 namespace nms
 {
 
-NMS_API void* _mnew  (u64 size);
-NMS_API void  _mdel  (void* dat);
-NMS_API void  _mzero (void* dat, u64 size);
-NMS_API void  _mcpy  (void* dst, const void* src, u64 size);
-NMS_API void  _mmov  (void* dst, const void* src, u64 size);
+NMS_API void* _mnew (u64 size);
+NMS_API void  _mdel (void* dat);
+NMS_API void  _mzero(void* dat, u64 size);
+NMS_API void  _mcpy (void* dst, const void* src, u64 size);
+NMS_API void  _mmov (void* dst, const void* src, u64 size);
+NMS_API u64   msize (const void* ptr);
 
 class EBadAlloc: public IException
 {};
@@ -83,16 +65,6 @@ __forceinline void mmov (T* dst, T* src, u64 n) {
             new(&dst[i])T(static_cast<T&&>(src[i]));
         }
     }
-}
-
-__forceinline u64 msize(const void* ptr) {
-#ifdef NMS_OS_WINDOWS
-    const auto mem_size = reinterpret_cast<const u64*>(ptr)[-2];
-#endif
-#ifdef NMS_OS_MACOS
-    const auto mem_size = ::malloc_size(ptr);
-#endif
-    return mem_size;
 }
 
 class IPool
