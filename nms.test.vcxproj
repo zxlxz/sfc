@@ -14,7 +14,6 @@
   <!--property: global -->
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <!--property: config-->
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

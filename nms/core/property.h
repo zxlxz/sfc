@@ -42,7 +42,7 @@ static constexpr auto $property_idx = 0;
     auto    operator[](I32<$##member##_id>) const  { return make_property(#member, member); }           \
     T##member member
 
-#define _NMS_ENUM_CASE(i, value)  case TEnum::value: return mkView(#value);
+#define _NMS_ENUM_CASE(i, value)  case TEnum::value: return StrView{#value};
 #define _NMS_ENUM_IF(i,   value)  if (str == #value) { val = TEnum::value; return true; }
 
 #define NMS_ENUM(type, ...)                                     \

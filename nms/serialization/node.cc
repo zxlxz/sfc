@@ -105,7 +105,7 @@ NMS_API NodeEx NodeEx::operator[](StrView key) {
     // not find, insert new key/val
     auto pval = add(idx_, last, key, Node(Type::null));
 
-    return { lst_, pval };
+    return NodeEx{ lst_, pval };
 }
 
 NMS_API i32 NodeEx::add(i32 root, i32 prev, const Node& val) {

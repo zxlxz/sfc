@@ -491,13 +491,12 @@ private:
 class INocopyable : public INoassignable
 {
 protected:
-    INocopyable() = default;
-    virtual ~INocopyable() = default;
+    INocopyable()  = default;
+    ~INocopyable() = default;
 
     //! move-constructor is default
     INocopyable(INocopyable&&) = default;
 
-private:
     //! copy-constructor is disabled
     INocopyable(const INocopyable&) = delete;
 };

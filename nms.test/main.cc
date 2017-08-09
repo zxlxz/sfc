@@ -59,3 +59,6 @@ int main(int argc, const char* argv[]) {
     auto ret    = (*ftest)(argc - 2, argv + 2);
     return ret;
 }
+
+#include <vector>
+std::vector<int> x;

@@ -14,7 +14,6 @@
   <!--property: global -->
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <!--property: config-->
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -30,12 +29,8 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)publish\bin\</OutDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath)</IncludePath>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <!--cpp: items -->
   <ItemGroup>
     <ClCompile Include="nms\core\list.cc" />

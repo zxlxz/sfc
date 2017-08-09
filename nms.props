@@ -3,7 +3,6 @@
   <!-- globals -->
   <PropertyGroup Label="Globals">
     <RootNamespace>nms</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
     <PlatformToolset>v140</PlatformToolset>
@@ -21,28 +20,29 @@
       <!-- path -->
       <ObjectFileName>$(IntDir)\%(RelativeDir)\%(FileName).obj</ObjectFileName>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      
       <!--debug-->
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       
       <!--library-->
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
-
+      
       <!-- optimization -->
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
       <InlineFunctionExpansion Condition="'$(Configuration)' == 'Debug'">OnlyExplicitInline</InlineFunctionExpansion>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      
       <!-- pre compile-->
       <PrecompiledHeader Condition="Exists('$(ProjectName).inl')">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="Exists('$(ProjectName).inl')">$(ProjectName).inl</PrecompiledHeaderFile>
       <ForcedIncludeFiles Condition="Exists('$(ProjectName).inl')">$(ProjectName).inl</ForcedIncludeFiles>
+      
       <!--compile: info-->
-      <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <WarningLevel>Level3</WarningLevel>
+      
       <!--cpp: langauge-->
-      <AdditionalOptions>/utf-8 /analyze /std:c++latest</AdditionalOptions>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/std:c++latest  %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link />
   </ItemDefinitionGroup>

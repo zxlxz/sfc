@@ -283,7 +283,7 @@ public:
         return *this;
     }
 
-    auto& operator>>(String&  x) const {
+    auto& operator>>(String& x) const {
         StrView y;
         *this >> y;
         x = y;

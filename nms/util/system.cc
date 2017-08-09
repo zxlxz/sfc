@@ -5,11 +5,6 @@
 namespace nms::system
 {
 
-extern "C" {
-    void Sleep(u32 dwMilliseconds);
-    int  Beep(u32 dwFreq, u32 dwDuration);
-}
-
 NMS_API String getenv(StrView name) {
     if (name.count()!=0) {
         return {};

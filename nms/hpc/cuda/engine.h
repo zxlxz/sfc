@@ -38,6 +38,11 @@ public:
      */
     NMS_API bool compile();
 
+    /*!
+     * add source to the program
+     */
+    NMS_API void addSrc(StrView src);
+
     template<class F, class ...T>
     void addfunc() {
         const auto      func = typeof<F>().name();
@@ -61,6 +66,8 @@ protected:
     NMS_API u32 add_foreach(StrView func_type, StrView ret_type, StrView arg_type);
 };
 
+NMS_API Program& gProgram();
+
 /**
  * cuda-foreach-executor
  */
@@ -71,9 +78,6 @@ public:
     static void run(Tfunc func, Tret& ret, const Targs& ...args) {
         cuda_exec(func, ret, args...);
     }
-
-    static NMS_API Program& gProgram();
-    static NMS_API Module&  gModule();
 
     template<class Tret, class ...Targs>
     struct ID;
@@ -100,7 +104,7 @@ public:
     template<class Tfunc, class Tret, class Targ>
     static void cuda_foreach(Tfunc func, Tret& ret, const Targ& arg) {
         static auto  fid = static_run< &cuda_foreach_id<Tfunc, Tret, Targ>, ID<Tret, Targ> >();
-        gModule().invoke(ret.$rank, ret.size().data(), fid, ret, arg);
+        gModule().invoke(fid, ret, arg);
     }
 
     template<class Tfunc, class Tret, class Targ>
@@ -110,6 +114,10 @@ public:
         return func_id;
     }
 };
+
+inline ForeachExecutor operator||(const cuda::ForeachExecutor&, const cuda::ForeachExecutor&) {
+    return {};
+}
 
 inline ForeachExecutor operator||(const math::ForeachExecutor&, const cuda::ForeachExecutor&) {
     return {};

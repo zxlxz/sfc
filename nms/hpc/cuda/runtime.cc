@@ -3,9 +3,10 @@
 #undef module
 
 #include <nms/core.h>
+#include <nms/io.h>
 #include <nms/util/library.h>
-#include <nms/io/log.h>
 #include <nms/hpc/cuda/runtime.h>
+#include <nms/hpc/cuda/engine.h>
 
 namespace nms::hpc::cuda
 {
@@ -18,6 +19,7 @@ namespace nms::hpc::cuda
     F(cuStreamCreate),      F(cuStreamDestroy_v2),      F(cuStreamSynchronize),                             \
     F(cuMemAlloc_v2),       F(cuMemFree_v2),            F(cuMemHostAlloc),              F(cuMemFreeHost),   \
     F(cuArray3DCreate_v2),  F(cuArrayDestroy),          F(cuArray3DGetDescriptor_v2),                       \
+    F(cuMemcpy),            F(cuMemcpyHtoD_v2),         F(cuMemcpyDtoH_v2),                                 \
     F(cuMemcpyAsync),       F(cuMemcpyHtoDAsync_v2),    F(cuMemcpyDtoHAsync_v2),                            \
     F(cuTexObjectCreate),   F(cuTexObjectDestroy),                                                          \
     F(cuModuleLoadData),    F(cuModuleUnload),                                                              \
@@ -91,6 +93,10 @@ void driver_init() {
     }
 }
 
+void device_sync() {
+    NMS_CUDA_DO(cuCtxSynchronize)() || "nms.hpc.cuda.Device.sync: failed";
+}
+
 NMS_API u32 Device::count() {
     driver_init();
 
@@ -132,12 +138,13 @@ NMS_API void Device::sync() const {
         NMS_CUDA_DO(cuCtxSetCurrent)(gDevCtx[nid]) || "nms.hpc.cuda: cannot set context";
     }
 
-    NMS_CUDA_DO(cuCtxSynchronize)() || "nms.hpc.cuda.Device.sync: failed";
+    device_sync();
 
     if (oid!=nid) {
         NMS_CUDA_DO(cuCtxSetCurrent)(gDevCtx[oid])|| "nms.hpc.cuda: cannot set context";
     }
 }
+
 #pragma endregion
 
 #pragma region stream
@@ -255,17 +262,38 @@ NMS_API void _mcpy(void* dst, const void* src, u64 size, Stream& stream) {
     }
     auto dptr = reinterpret_cast<CUdeviceptr>(dst);
     auto sptr = reinterpret_cast<CUdeviceptr>(src);
-    NMS_CUDA_DO(cuMemcpyAsync)(dptr, sptr, size_t(size), stream.id()) || "nms.hpc.cuda.mcpy: failed";
+    NMS_CUDA_DO(cuCtxSynchronize)() || "nms.hpc.cuda.Device.sync: failed"; 
+
+    auto sid = stream.id();
+    auto ret = sid == nullptr
+        ? NMS_CUDA_DO(cuMemcpy)(dptr, sptr, size_t(size))
+        : NMS_CUDA_DO(cuMemcpyAsync)(dptr, sptr, size_t(size), sid);
+
+    ret || "nms.hpc.cuda.mcpy: failed";
 }
 
 NMS_API void _h2dcpy(void* dst, const void* src, u64 size, Stream& stream) {
-    if (dst == nullptr || src == nullptr || size == 0) return;
-    NMS_CUDA_DO(cuMemcpyHtoDAsync_v2)(reinterpret_cast<CUdeviceptr>(dst), src, size, stream.id()) || "nms.hpc.cuda.h2dcpy: failed";
+    if (dst == nullptr || src == nullptr || size == 0) {
+        return;
+    }
+    auto sid = stream.id();
+    auto ret = sid == nullptr
+        ? NMS_CUDA_DO(cuMemcpyHtoD_v2)(reinterpret_cast<CUdeviceptr>(dst), src, size)
+        : NMS_CUDA_DO(cuMemcpyHtoDAsync_v2)(reinterpret_cast<CUdeviceptr>(dst), src, size, sid);
+
+    ret || "nms.hpc.cuda.h2dcpy: failed";
 }
 
 NMS_API void _d2hcpy(void* dst, const void* src, u64 size, Stream& stream) {
-    if (dst == nullptr || src == nullptr || size == 0) return;
-    NMS_CUDA_DO(cuMemcpyDtoHAsync_v2)(dst, reinterpret_cast<CUdeviceptr>(src), size, stream.id()) || "nms.hpc.cuda.d2hcpy: failed";
+    if (dst == nullptr || src == nullptr || size == 0) {
+        return;
+    }
+    auto sid = stream.id();
+    auto ret = sid == nullptr
+        ? NMS_CUDA_DO(cuMemcpyDtoH_v2)(dst, reinterpret_cast<CUdeviceptr>(src), size)
+        : NMS_CUDA_DO(cuMemcpyDtoHAsync_v2)(dst, reinterpret_cast<CUdeviceptr>(src), size, sid);
+
+    ret || "nms.hpc.cuda.d2hcpy: failed";
 }
 
 #pragma endregion
@@ -388,7 +416,7 @@ NMS_API Module::fun_t Module::get_kernel(StrView name) const {
 
 NMS_API Module::fun_t Module::get_kernel(u32 index) const {
     char name[64];
-    auto count = snprintf(name, sizeof(name), "nms_hpc_cuda_foreach_v%u", index);
+    auto count = snprintf(name, sizeof(name), "nms_hpc_cuda_foreach_%u", index);
     auto func = get_kernel(StrView(name, { u32(count) }));
     return func;
 }
@@ -413,6 +441,32 @@ NMS_API void Module::run_kernel(fun_t kernel, const void* kernel_args[], u32 ran
     const auto stat = NMS_CUDA_DO(cuLaunchKernel)(kernel, grid_dim[0], grid_dim[1], grid_dim[2], block_dim[0], block_dim[1], block_dim[2], shared_mem_bytes, h_stream, const_cast<void**>(kernel_args), extra);
     void(stat || "nms.hpc.cuda.invoke: failed.");
 }
+
+NMS_API Module& gModule() {
+    static StrView ptx_src = [=] {
+        const io::Path src_path("#/config/nms.hpc.cuda.program.cu");
+        const io::Path ptx_path("#/config/nms.hpc.cuda.program.ptx");
+        auto& program = gProgram();
+
+        // if not exists, try save
+        if (!io::exists(ptx_path)) {
+            program.compile();
+
+            io::TxtFile src_file(src_path, io::TxtFile::Write);
+            src_file.write(program.src());
+
+            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+            ptx_file.write(program.ptx());
+        }
+
+        static auto ptx = io::loadString(ptx_path);
+        return StrView(ptx);
+    }();
+
+    static Module value(ptx_src);
+    return value;
+}
+
 #pragma endregion
 
 }

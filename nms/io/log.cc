@@ -1,4 +1,3 @@
-
 #include <nms/core.h>
 #include <nms/io/log.h>
 #include <nms/io/console.h>
@@ -10,7 +9,6 @@ namespace nms::io::log
 {
 
 using namespace nms::thread;
-
 
 Level   gLevel = Level::None;
 

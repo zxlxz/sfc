@@ -21,16 +21,28 @@ class String final
 public:
 #pragma region constructor
     /*! construct a empty string */
-    constexpr String() noexcept 
-    {}
+    constexpr String() noexcept {
+    }
 
     /* destructor */
     ~String() = default;
 
+    String(const char* buff, u32 count) {
+        base::appends(buff, count);
+    }
+
     /* constructor: redirect to List */
-    template<class ...U>
-    __forceinline String(U&& ...args)
-        : base(fwd<U>(args)...) 
+    template<u32 N>
+    __forceinline String(const char(&s)[N])
+        : String{ s, N - 1 } {
+    }
+
+    String(const StrView& rhs)
+        : String(rhs.data(), rhs.count()) {
+    }
+
+    String(const String& rhs)
+        : String{ rhs.data(), rhs.count() }
     {}
 
 #ifdef _M_CEE

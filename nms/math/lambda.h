@@ -19,8 +19,8 @@ struct Scalar
     static constexpr auto $rank = 0u;
 
     Scalar(const X& x)
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -44,6 +44,11 @@ protected:
 template<class X>
 auto toLambda(const Scalar<X>& x) {
     return x;
+}
+
+template<class T>
+auto toScalar(const T& t) -> decltype($when_is<$number, T>{}, Scalar<T>{}) {
+    return { t };
 }
 
 /* mk scalar */
@@ -107,7 +112,9 @@ template<class X, class Y>
 auto lambda_test(const X& x, const Y& y) -> decltype(_lambda_test(x, y, Version<1>{}), 0) {
     return 0;
 }
+
 #pragma endregion
+
 
 #pragma region Parallel
 template<class F, class X>
@@ -116,8 +123,8 @@ struct Parallel<F, X>
     static constexpr const auto $rank = X::$rank;
 
     Parallel(const X& x)
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -125,13 +132,12 @@ struct Parallel<F, X>
 
     template<class I>
     auto size(I idx) const noexcept {
-         return x_.size(idx);
+        return x_.size(idx);
     }
 
     template<class ...I>
     auto operator()(I ...idx) const noexcept {
-        decltype(auto) x = x_(idx...);
-        return F::run(x);
+        return F::run(x_(idx...));
     }
 
 protected:
@@ -145,8 +151,7 @@ struct Parallel<F, X, Y>
     static constexpr F    $func = {};
 
     Parallel(const X& x, const Y& y)
-        : x_(x), y_(y)
-    {
+        : x_(x), y_(y) {
         static_assert(X::$rank == Y::$rank || X::$rank == 0 || Y::$rank == 0, "nms.math.Parallel: $rank not match");
     }
 
@@ -204,8 +209,8 @@ struct Reduce<F, X>
     static constexpr auto   $rank = X::$rank - 1;
 
     Reduce(const X& x) noexcept
-        : x_(x)
-    {}
+        : x_(x) {
+    }
 
     static constexpr auto rank() {
         return $rank;
@@ -218,7 +223,7 @@ struct Reduce<F, X>
 
     template<class ...I>
     auto operator()(I ...idx) const {
-        const auto  n   = x_.size(0);
+        const auto  n = x_.size(0);
 
         if (n < 2) {
             return x_(0, idx...);
