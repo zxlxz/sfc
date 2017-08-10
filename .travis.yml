@@ -5,7 +5,7 @@ matrix:
     - os: osx
     - os: linux
       dist: trusty
-      compiler: clang
+      compiler: clang-3.8
       addons:
         apt:
           sources:
