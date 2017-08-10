@@ -1,15 +1,15 @@
 
-CXX				= g++
+CXX				= clang++
 
 debug ?= 1
 ifeq ($(debug), 1)
-	CXXFLAGS		= -std=c++1z -frtti -fexceptions -g  -fPIC -DNMS_BUILD -I. 
+	CXXFLAGS	= -std=c++1z -frtti -fexceptions -g  -fPIC -DNMS_BUILD -I. 
 else
-	CXXFLAGS		= -std=c++1z -frtti -fexceptions -O2 -fPIC -DNMS_BUILD -I. 
+	CXXFLAGS	= -std=c++1z -frtti -fexceptions -O2 -fPIC -DNMS_BUILD -I. 
 endif
 
-nms_lib_srcs	=  $(wildcard nms/*.cc nms/*/*.cc nms/*/*/*.cc)
-nms_lib_objs	=  $(patsubst %.cc, %.o, $(nms_lib_srcs))
+nms_lib_srcs	= $(wildcard nms/*.cc nms/*/*.cc nms/*/*/*.cc)
+nms_lib_objs	= $(patsubst %.cc, %.o, $(nms_lib_srcs))
 
 nms_test_srcs	= $(wildcard nms.test/*.cc)
 nms_test_objs	= $(patsubst %.cc, %.o, $(nms_test_srcs))
@@ -24,13 +24,13 @@ nms_test		= bin/nms.test
 
 all: $(nms_lib) $(nms_test)
 
-$(nms_lib):	$(nms_lib_objs)
+$(nms_lib): $(nms_lib_objs)
 	@mkdir -p bin/
 	$(CXX) -shared -o $@ $^
 
-$(nms_test):		$(nms_test_objs)
+$(nms_test): $(nms_test_objs) $(nms_lib)
 	@mkdir -p bin/
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ $(nms_test_objs) -Lbin/ -lnms -lpthread -ldl
 
 .o: %.cc
 

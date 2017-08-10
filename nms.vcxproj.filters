@@ -307,6 +307,9 @@
     <None Include="nms\hpc\cuda\kernel.h">
       <Filter>hpc\cuda</Filter>
     </None>
+    <None Include="makefile">
+      <Filter>{msbuild}</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="nms.natvis">

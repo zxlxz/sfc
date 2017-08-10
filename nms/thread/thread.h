@@ -22,7 +22,7 @@ public:
         , idx_ (move(t.idx_))
     {
         t.func_ = {};
-        t.impl_ = nullptr;
+        t.impl_ = thrd_t(0);
         t.idx_  = 0;
     }
 
@@ -49,7 +49,7 @@ public:
 
 private:
     delegate<void()>*   func_   = nullptr;
-    thrd_t              impl_   = nullptr;
+    thrd_t              impl_   = thrd_t(0);
     u32                 idx_    = 0;
     NMS_API void start();
 };

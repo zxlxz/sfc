@@ -80,7 +80,7 @@ static void*  _thread_callback(void* raw)
 }
 
 NMS_API void Thread::start() {
-    impl_ = nullptr;
+    impl_ = thrd_t(0);
     idx_  = 0;
 
     if (!bool(*func_)) {
@@ -91,23 +91,23 @@ NMS_API void Thread::start() {
 #ifdef NMS_OS_WINDOWS
         idx_ = ret;
 #endif
-        if (impl_ == nullptr) {
+        if (impl_ == thrd_t(0) ) {
             io::log::error("nms.thread.Thread.start: start thread failed.");
         }
     }
 }
 
 NMS_API int Thread::detach() {
-    if (impl_ == nullptr) {
+    if (impl_ == thrd_t(0) ) {
         return 0;
     }
     auto ret = thrd_detach(impl_);
-    impl_ = nullptr;
+    impl_ = thrd_t(0);
     return ret;
 }
 
 NMS_API int Thread::join() {
-    if (impl_ == nullptr) {
+    if (impl_ == thrd_t(0) ) {
         return 0;
     }
     return thrd_join(impl_, nullptr);

@@ -3,9 +3,6 @@
 #include <nms/core.h>
 #include <nms/io/path.h>
 
-struct _iobuf;      // msvc
-struct __sFILE;     // GNU
-
 namespace nms
 {
 template<class T, u32 BookSize, u32 PageSize>
@@ -174,10 +171,10 @@ public:
 #pragma endregion
 
 protected:
-#ifdef _WIN32
-    using fid_t = _iobuf;
+#ifndef NMS_BUILD
+    struct fid_t;
 #else
-    using fid_t = __sFILE;
+    using fid_t = ::FILE;
 #endif
 
     fid_t*  fid_;   // the FILE* object

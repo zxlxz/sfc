@@ -2,6 +2,8 @@
 
 #ifdef NMS_OS_UNIX
 
+#include <cxxabi.h>
+
 // stdc
 #include <stdlib.h>
 #include <stdint.h>
@@ -13,15 +15,19 @@
 #include <errno.h>
 
 // posix
+#include <unistd.h>
 #include <fcntl.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <dlfcn.h>
+#include <execinfo.h>
 
 // linux
 #include <malloc.h>
 
 // system
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 // c11-threads
 using thrd_t    = pthread_t;

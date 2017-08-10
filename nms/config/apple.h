@@ -2,6 +2,8 @@
 
 #ifdef NMS_OS_APPLE
 
+#include <cxxabi.h>
+
 // stdc
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,6 +20,7 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <dlfcn.h>
+#include <execinfo.h>
 
 // system
 #include <sys/stat.h>
@@ -26,7 +29,7 @@
 // macos
 #include <malloc/malloc.h>
 #include <mach-o/dyld.h>
-#include <execinfo.h>
+
 
 
 // c11-threads

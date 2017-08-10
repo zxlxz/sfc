@@ -109,6 +109,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <FileType>Document</FileType>
     </ClCompile>
+    <None Include="makefile" />
     <None Include="nms\hpc\cuda\kernel.h">
       <Link>..\include\nms.hpc.cuda.kernel.h</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
