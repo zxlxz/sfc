@@ -13,4 +13,4 @@ matrix:
           packages:
             - clang-3.8
 script:
-  - CXX=clang3.8 && make
+  - CXX=clang3.8 make

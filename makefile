@@ -1,6 +1,4 @@
 
-CXX				= clang++
-
 debug ?= 1
 ifeq ($(debug), 1)
 	CXXFLAGS	= -std=c++1z -frtti -fexceptions -g  -fPIC -DNMS_BUILD -I. 
