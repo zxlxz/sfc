@@ -37,5 +37,10 @@
   <ItemGroup>
     <ClCompile Include="nms.test\main.cc" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="nms.vcxproj">
+      <Project>{7facc7ef-77dc-4537-8265-bc993efce1ec}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

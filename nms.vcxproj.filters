@@ -160,6 +160,15 @@
     <ClInclude Include="nms\core\base.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="nms\config\apple.h">
+      <Filter>config</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\config\unix.h">
+      <Filter>config</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\config\windows.h">
+      <Filter>config</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">
@@ -197,6 +206,9 @@
     </Filter>
     <Filter Include="hpc\opencl">
       <UniqueIdentifier>{bc9582d8-615e-408c-8b66-be69a2952303}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="config">
+      <UniqueIdentifier>{055636f7-e8c2-4618-973f-81dd89168331}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

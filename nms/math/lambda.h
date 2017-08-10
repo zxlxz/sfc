@@ -94,12 +94,12 @@ auto lambda_cast(const X& x) -> decltype(_lambda_cast(x, Version<1>{})){
 
 #pragma region lambda_test
 template<class X, class Y>
-auto _lambda_test(const X& x, const Y&y, Version<1>) ->decltype(toLambda(x), toLambda(y), 0) {
+auto _lambda_test(const X& x, const Y&y, Version<2>) ->decltype(toLambda(x), toLambda(y), 0) {
     return 0;
 }
 
 template<class X, class Y>
-auto _lambda_test(const X& x, const Y&y, Version<0>) ->decltype(toLambda(x), toScalar(y), 0) {
+auto _lambda_test(const X& x, const Y&y, Version<1>) ->decltype(toLambda(x), toScalar(y), 0) {
     return 0;
 }
 
@@ -109,7 +109,7 @@ auto _lambda_test(const X& x, const Y&y, Version<0>) ->decltype(toScalar(x), toL
 }
 
 template<class X, class Y>
-auto lambda_test(const X& x, const Y& y) -> decltype(_lambda_test(x, y, Version<1>{}), 0) {
+auto lambda_test(const X& x, const Y& y) -> decltype(_lambda_test(x, y, Version<2>{}), 0) {
     return 0;
 }
 

@@ -5,7 +5,7 @@
 #ifdef NMS_OS_WINDOWS
 extern "C" {
     using namespace nms;
-    typedef int(__stdcall *thrd_start_t)(void*);
+    using thrd_start_t = _beginthreadex_proc_type;
 
     int CloseHandle(void* handle);
     int WaitForSingleObjectEx(void* hHandle, u32 dwMilliseconds, int bAlertable);
@@ -14,8 +14,8 @@ extern "C" {
 
     static int thrd_create(thrd_t* thr, thrd_start_t func, void* arg) {
         u32  tid = 0;
-        auto obj = _beginthreadex(nullptr, 0u, func, nullptr, 0, &tid);
-        thr = reinterpret_cast<void*>(obj);
+        auto obj = _beginthreadex(nullptr, 0u, func, arg, 0, &tid);
+        *thr = reinterpret_cast<thrd_t*>(obj);
         return int(tid);
     }
 
@@ -25,7 +25,8 @@ extern "C" {
     }
 
     static int thrd_join(thrd_t thr, int* res) {
-        ::WaitForSingleObject(thr, 0xFFFFFFFF, 0);
+        const auto ret = ::WaitForSingleObjectEx(thr, 0xFFFFFFFFu, 0);
+        return ret;
     }
 
     static void thrd_yeild() {
@@ -61,7 +62,7 @@ namespace nms::thread
 {
 
 #ifdef NMS_OS_WINDOWS
-static unsigned __stdcall _thread_callback(void* raw){
+static unsigned __stdcall _thread_callback(void* raw)
 #else
 static void*  _thread_callback(void* raw)
 #endif

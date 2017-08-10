@@ -51,4 +51,9 @@ __forceinline constexpr Type typeof() {
     return Type::make<T>();
 }
 
+template<class T>
+__forceinline constexpr Type typeof(const T&) {
+    return Type::make<T>();
+}
+
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef NMS_OS_APPLE
+
 // stdc
 #include <stdlib.h>
 #include <stdint.h>
@@ -31,3 +33,5 @@
 using thrd_t    = pthread_t;
 using mtx_t     = pthread_mutex_t;
 using cnd_t     = pthread_cond_t;
+
+#endif

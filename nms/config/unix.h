@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef NMS_OS_UNIX
+
 // stdc
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,3 +22,10 @@
 
 // system
 #include <sys/stat.h>
+
+// c11-threads
+using thrd_t    = pthread_t;
+using mtx_t     = pthread_mutex_t;
+using cnd_t     = pthread_cond_t;
+
+#endif

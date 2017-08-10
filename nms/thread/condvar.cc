@@ -11,7 +11,8 @@ extern "C" {
     int  SleepConditionVariableSRW(void*, void* lock, u32 ms, ulong flags);
 
     static int cnd_init(cnd_t* cond){
-        return InitializeConditionVariable(cond);
+        InitializeConditionVariable(cond);
+        return 0;
     }
 
     static int cnd_destroy(cnd_t* cond) {
@@ -19,18 +20,17 @@ extern "C" {
     }
 
     static int cnd_signal(cnd_t* cond) {
-        return WakeConditionVariable(&impl_);
+        WakeConditionVariable(cond);
+        return 0;
     }
 
     static int  cnd_brodcast(cnd_t* cond){
-        return WakeAllConditionVariable(cond);
+        WakeAllConditionVariable(cond);
+        return 0;
     }
 
     static int cnd_wait(cnd_t* cond, mtx_t* mutex) {
-        const auto infinite = 0xFFFFFFFF;
-        const auto msec = seconds*1e6;
-        const auto time = (msec<0 || msec > infinite) ? infinite : u32(msec);
-        const auto eid  = SleepConditionVariableSRW(cond, mutex, time, 0);
+        const auto eid  = SleepConditionVariableSRW(cond, mutex, 0xFFFFFFFFu, 0);
         return eid;
     }
 }

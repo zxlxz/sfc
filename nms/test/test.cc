@@ -19,31 +19,35 @@ struct Testor
     void    (*func)();
 
     bool match(const StrView& mask) const {
-        if (mask.isEmpty()) return true;
+        if (mask.isEmpty()) {
+            return true;
+        }
+
+        auto mask_dat = mask.slice(1,  -1);
+        auto name_dat = name.slice(0u, mask_dat.count());
 
         if (mask[0] == '-') {
-            auto stat = match(mask.slice(1, -1));
-            return !stat;
+            return mask_dat != name_dat;
         }
 
-        if (mask.count() > name.count()) {
-            return false;
-        }
-
-        auto test = name.slice(0u, mask.count() - 1);
-        if (mask == test) {
-            return true;
+        if (mask[0] == '+') {
+            return mask_dat == name_dat;
         }
 
         return false;
     }
 
-    bool match(const StrView masks[], u32 count) const {
-        if (count == 0) return true;
-
-        for (u32 i = 0; i < count; ++i) {
-            if (match(masks[i])) return true;
+    bool match(const View<StrView> masks) const {
+        if (masks.count() == 0) {
+            return true;
         }
+
+        for(auto& mask: masks) {
+            if (match(mask)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -92,16 +96,19 @@ static auto& gTests() {
 
 NMS_API u32 install(StrView name, void(*func)()) {
     static auto& gtests = gTests();
+
+    // sizeof("struct ") = 7
+    // sizeof("_tag")    = 4
 #ifdef NMS_CC_MSVC
-    Testor testor{ name.slice(0, -4), func };
+    Testor testor{ name.slice(7, -5), func };
 #else
-    Testor testor{ name.slice(5, -4), func };    
+    Testor testor{ name.slice(0, -5), func };    
 #endif
     gtests += testor;
     return 0;
 }
 
-NMS_API u32 invoke(const StrView masks[], u32 count) {
+NMS_API u32 invoke(const View<StrView>& masks) {
     auto&   tests = gTests();
 
     List<const Testor*> failes;
@@ -112,7 +119,7 @@ NMS_API u32 invoke(const StrView masks[], u32 count) {
     console::writeln("[===== nms.test ======]");
 
     for (auto& test: tests) {
-        auto stat = test.match(masks, count);
+        auto stat = test.match(masks);
         auto ret  = test.invoke(stat);
 
         if (!stat) {
@@ -142,16 +149,5 @@ NMS_API u32 invoke(const StrView masks[], u32 count) {
     return fail_count;
 }
 
-}
-
-NMS_ABI int test(int argc, const char* argv[]) {
-    using namespace nms;
-
-    StrView masks[256];
-    for (auto i = 0; i < 256 && i < argc; ++i) {
-        masks[i] = cstr(argv[i]);
-    }
-    auto ret = nms::test::invoke(masks, argc);
-    return int(ret);
 }
 

@@ -10,26 +10,26 @@ extern "C" {
     void ReleaseSRWLockExclusive(void* mutex);
 
     static int mtx_init(mtx_t* mutex, int type) {
+        (void)type;
         InitializeSRWLock(mutex);
-    }
-    
-    static void mtx_destroy(mtx_t* mutex) {
-        (void)mutex;
-    }
-
-    static int mtx_lock(mtx_t* mutex) {
-        AcquireSRWLockExclusive(impl_);
         return 0;
-    } 
-
-    static int mtx_trylock(mtx_t* mutex) {
-        return TryAcquireSRWLockExclusive(&impl_);
     }
 
     static int mtx_destroy(mtx_t* mutex) {
         ReleaseSRWLockExclusive(mutex);
         return 0;
     }
+
+    static int mtx_lock(mtx_t* mutex) {
+        AcquireSRWLockExclusive(mutex);
+        return 0;
+    } 
+
+    static int mtx_trylock(mtx_t* mutex) {
+        return TryAcquireSRWLockExclusive(mutex);
+    }
+
+
 }
 #else
 extern "C" {

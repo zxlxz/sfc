@@ -25,7 +25,7 @@
 #if defined(_MSC_VER)
 #   define NMS_CC_MSVC              // check if compiler == msvc
 #   define __PRETTY_FUNCTION__ __FUNCSIG__
-#   pragma warning(disable:6326)    // potential comparison of a constant with another constant
+#   pragma warning(disable:6326)    // E6326: potential comparison of a constant with another constant
 #elif defined(__GNUC__)
 #   define NMS_CC_GNUC              // check if compiler == gcc
 #   define __forceinline inline __attribute__((always_inline))
@@ -34,10 +34,12 @@
 #   define __forceinline inline __attribute__((always_inline))
 #endif
 
-#if !defined(NMS_BUILD) && defined(NMS_CC_MSVC)
+#ifndef NMS_API
+#ifdef NMS_CC_MSVC
 #   define NMS_API __declspec(dllimport)
 #else
 #   define NMS_API
+#endif
 #endif
 
 #ifndef NMS_ABI

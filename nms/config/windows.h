@@ -22,6 +22,8 @@
 
 // system
 #include <sys/stat.h>
-
 #define NMS_API __declspec(dllexport)
 
+using thrd_t = void*;
+using mtx_t  = void*;
+using cnd_t  = void*;

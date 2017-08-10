@@ -47,6 +47,9 @@
     <ClCompile Include="nms\util\stacktrace.cc" />
     <ClCompile Include="nms\util\system.cc" />
     <ClInclude Include="nms\config.h" />
+    <ClInclude Include="nms\config\apple.h" />
+    <ClInclude Include="nms\config\unix.h" />
+    <ClInclude Include="nms\config\windows.h" />
     <ClInclude Include="nms\core.h" />
     <ClInclude Include="nms\core\base.h" />
     <ClInclude Include="nms\core\cpp.h" />
