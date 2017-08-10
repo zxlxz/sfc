@@ -23,15 +23,16 @@ struct Testor
             return true;
         }
 
-        auto mask_dat = mask.slice(1,  -1);
-        auto name_dat = name.slice(0u, mask_dat.count());
+        const auto mask_dat = mask.slice(1,  -1);
+        const auto name_dat = name.slice(0u, mask_dat.count()-1);
+        const auto stat = mask_dat == name_dat;
 
         if (mask[0] == '-') {
-            return mask_dat != name_dat;
+            return !stat;
         }
 
         if (mask[0] == '+') {
-            return mask_dat == name_dat;
+            return stat;
         }
 
         return false;
