@@ -310,6 +310,9 @@
     <None Include="makefile">
       <Filter>{msbuild}</Filter>
     </None>
+    <None Include=".travis.yml">
+      <Filter>{msbuild}</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="nms.natvis">
