@@ -5,14 +5,25 @@ matrix:
     - os: osx
     - os: linux
       dist: trusty
+<<<<<<< HEAD
       compiler: clang-3.8
+=======
+      compiler: clang
+>>>>>>> + .travis
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+<<<<<<< HEAD
             - clang-3.8
 
 script:
   - make
   
+=======
+            - clang
+
+script:
+  - make
+>>>>>>> + .travis
