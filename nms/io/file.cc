@@ -28,10 +28,10 @@ NMS_API File::File(const Path& path, OpenMode mode) {
     default: break;
     }
 
-    fid_            = ::fopen(cpath, smod);
+    obj_            = ::fopen(cpath, smod);
     const auto eid  = errno;
     
-    if (fid_ == nullptr) {
+    if (obj_ == nullptr) {
         auto dir = cwd();
         log::error("nms.io.File: fopen failed\n"
             "    dir : {}\n"
@@ -41,44 +41,31 @@ NMS_API File::File(const Path& path, OpenMode mode) {
 }
 
 NMS_API File::~File() {
-    if (fid_ == nullptr) {
+    if (obj_ == nullptr) {
         return;
     }
-    ::fclose(fid_);
-    fid_ = nullptr;
+    ::fclose(obj_);
+    obj_ = nullptr;
 }
 
 NMS_API u64 File::size() const {
-    constexpr auto seek_set = 0;
-    constexpr auto seek_cur = 1;    (void)seek_cur;
-    constexpr auto seek_end = 2;
-#ifdef NMS_OS_WINDOWS
-    const auto cur = _ftelli64(fid_);
-    const auto end = _fseeki64(fid_, 0, seek_end);      (void)end;
-    const auto len = _ftelli64(fid_);
-    const auto ret = _fseeki64(fid_, cur, seek_set);    (void)ret;
-#else
-    const auto cur = ftell(fid_);
-    const auto end = fseek(fid_, 0, seek_end);          (void)end;
-    const auto len = ftell(fid_);
-    const auto ret = fseek(fid_, cur, seek_end);        (void)ret;
-#endif
-    return u64(len);
+    auto fid = fileno(obj_);
+    return fsize(fid);
 }
 
 NMS_API u64 File::readRaw(void* dat, u64 size, u64 n) {
-    if (fid_ == nullptr || size == 0 || n == 0) {
+    if (obj_ == nullptr || size == 0 || n == 0) {
         return 0;
     }
-    const auto ret = ::fread(dat, size, n, fid_);
+    const auto ret = ::fread(dat, size, n, obj_);
     return ret;
 }
 
 NMS_API u64 File::writeRaw(const void* dat, u64 size, u64 n) {
-    if (fid_ == nullptr || size == 0 || n == 0) {
+    if (obj_ == nullptr || size == 0 || n == 0) {
         return 0;
     }
-    const auto ret = ::fwrite(dat, size, n, fid_);
+    const auto ret = ::fwrite(dat, size, n, obj_);
     return ret;
 }
 
@@ -90,7 +77,7 @@ NMS_API TxtFile::~TxtFile()
 {}
 
 NMS_API void File::sync() const {
-    fflush(fid_);
+    fflush(obj_);
 }
 
 NMS_API String loadString(const Path& path) {

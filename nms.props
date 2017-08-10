@@ -23,7 +23,7 @@
       
       <!--debug-->
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      
+
       <!--library-->
       <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
       <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
@@ -32,12 +32,7 @@
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
       <InlineFunctionExpansion Condition="'$(Configuration)' == 'Debug'">OnlyExplicitInline</InlineFunctionExpansion>
-      
-      <!-- pre compile-->
-      <PrecompiledHeader Condition="Exists('$(ProjectName).inl')">Use</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="Exists('$(ProjectName).inl')">$(ProjectName).inl</PrecompiledHeaderFile>
-      <ForcedIncludeFiles Condition="Exists('$(ProjectName).inl')">$(ProjectName).inl</ForcedIncludeFiles>
-      
+
       <!--compile: info-->
       <WarningLevel>Level3</WarningLevel>
       

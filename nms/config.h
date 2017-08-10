@@ -49,6 +49,8 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
+
 #include <new>
 
 #endif  // _NMS_CONFIG_H_

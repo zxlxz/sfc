@@ -64,6 +64,7 @@ NMS_API void  chdir(const Path& path);
 NMS_API void  mkdir(const Path&);
 NMS_API bool  exists(const Path& path);
 NMS_API u64   fsize(const Path& path);
+NMS_API u64   fsize(int fid);
 
 inline void formatImpl(String& buf, const Path& value, StrView fmt) {
     StrView strval = value;

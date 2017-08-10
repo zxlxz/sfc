@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef _NMS_CORE_H_
+#define _NMS_CORE_H_
+
 #include <nms/config.h>
 
 #include <nms/core/type.h>
@@ -14,3 +17,5 @@
 #include <nms/core/list.h>
 #include <nms/core/property.h>
 #include <nms/core/time.h>
+
+#endif

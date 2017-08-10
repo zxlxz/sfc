@@ -19,30 +19,23 @@ MFile::MFile(const Path& path, u64 size)
     : size_(size)
 {
     // open/create file
-    fid_ = ::open(path.cstr(), O_CREAT);
+    obj_ = ::open(path.cstr(), O_CREAT);
     const auto eid = errno;
 
-    if (eid !=0 || fid_ < 0) {
+    if (eid !=0 || obj_ < 0) {
         log::error("nms.io.MFile: cannot open/create {}", path);
         throw ESystem(eid);
     }
 
-
-#ifdef NMS_CC_MSVC
-    struct _stat64 st;
-    _fstat64(fid_, &st);
-#else
-    struct stat st;
-    ::fstat(fid_, &st);
-#endif
-    size_ = st.st_size;
+    stat_t st;
+    ::fstat(obj_, &st);
 
 #ifdef NMS_CC_MSVC
     // map
     const u32 size_high = (size >> 32);
     const u32 size_low  = (size << 32) >> 32;
 
-    auto hfile = reinterpret_cast<void*>(_get_osfhandle(fid_));
+    auto hfile = reinterpret_cast<void*>(_get_osfhandle(obj_));
     auto hmmap = CreateFileMappingA(hfile, nullptr, 0x04, size_high, size_low, nullptr);
 
     // view
@@ -57,7 +50,7 @@ MFile::MFile(const Path& path, u64 size)
         CloseHandle(hfile);
     }
 #else
-    data_ = mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fid_, 0);
+    data_ = mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, obj_, 0);
 #endif
 }
 
@@ -69,8 +62,8 @@ MFile::~MFile() {
         munmap(data_, size_);
 #endif
     }
-    if (fid_ != -1 ) {
-        ::close(fid_);
+    if (obj_ != -1 ) {
+        ::close(obj_);
     }
 }
 

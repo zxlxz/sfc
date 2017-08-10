@@ -20,7 +20,7 @@ public:
     void*       data()        noexcept { return data_;   }
 
 private:
-    int     fid_     = -1;
+    int     obj_     = -1;
     void*   data_    = nullptr;
     u64     size_    = 0;
 };

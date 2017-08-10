@@ -38,13 +38,13 @@ public:
     NMS_API ~File();
 
     File(File&& rhs) noexcept
-        : fid_(rhs.fid_)
+        : obj_(rhs.obj_)
     {
-        rhs.fid_ = nullptr;
+        rhs.obj_ = nullptr;
     }
 
     File& operator=(File&& rhs) noexcept {
-        nms::swap(fid_, rhs.fid_);
+        nms::swap(obj_, rhs.obj_);
         return *this;
     }
 
@@ -177,7 +177,7 @@ protected:
     using fid_t = ::FILE;
 #endif
 
-    fid_t*  fid_;   // the FILE* object
+    fid_t*  obj_;   // the FILE* object
 
     NMS_API u64 readRaw (void*       buffer, u64 size, u64 count);
     NMS_API u64 writeRaw(const void* buffer, u64 size, u64 count);

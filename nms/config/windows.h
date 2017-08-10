@@ -27,3 +27,13 @@
 using thrd_t = void*;
 using mtx_t  = void*;
 using cnd_t  = void*;
+
+using stat_t = struct ::_stat64;
+
+static inline int fstat(int fd, stat_t* st) {
+    return ::_fstat64(fd, st);
+}
+
+static inline int stat(const char* path, stat_t* st) {
+    return ::_stat64(path, st);
+}

@@ -1,5 +1,5 @@
 #define module cumodule
-#include <nms/hpc/cuda/nvrtc.h>
+#include <nms/cuda/nvrtc.h>
 #undef module
 
 #include <nms/core.h>
@@ -7,11 +7,11 @@
 #include <nms/test.h>
 #include <nms/util/library.h>
 
-#include <nms/hpc/cuda/runtime.h>
-#include <nms/hpc/cuda/engine.h>
-#include <nms/hpc/cuda/array.h>
+#include <nms/cuda/runtime.h>
+#include <nms/cuda/engine.h>
+#include <nms/cuda/array.h>
 
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
 #pragma region library
@@ -64,16 +64,21 @@ NMS_API void Program::addSrc(StrView src) {
     src_ += src;
 }
 
+NMS_API void Program::addFile(const io::Path& path) {
+    auto src = io::loadString(path);
+    addSrc(src);
+}
+
 NMS_API u32 Program::add_foreach(StrView func, StrView ret_type, StrView arg_type) {
     if (src_.count() == 0) {
         return 0;
     }
 
-    sformat(src_, "__kernel__ void nms_hpc_cuda_foreach_{}(\n", cnt_);
+    sformat(src_, "__kernel__ void nms_cuda_foreach_{}(\n", cnt_);
     sformat(src_, "    {} ret,\n", ret_type);
     sformat(src_, "    {} arg)\n", arg_type);
     src_ += "{\n";
-    sformat(src_, "    nms::hpc::cuda::foreach<{}>(ret, arg);\n", func);
+    sformat(src_, "    nms::cuda::foreach<{}>(ret, arg);\n", func);
     src_ += "}\n\n";
 
     return cnt_++;
@@ -87,7 +92,7 @@ NMS_API bool Program::compile() {
     nvrtcProgram nvrtc = nullptr;
     NMS_NVRTC_DO(nvrtcCreateProgram)(&nvrtc, src_.cstr(), nullptr, 0, nullptr, nullptr);
     if (nvrtc == nullptr) {
-        io::log::error("nms.hpc.cuda.Program: cannot create program.");
+        io::log::error("nms.cuda.Program: cannot create program.");
     }
 
     // compile
@@ -120,56 +125,68 @@ NMS_API bool Program::compile() {
 
     return true;
 }
-
-
 #pragma endregion
 
 
 NMS_API Program& gProgram() {
-#include <nms/hpc/cuda/kernel.h>
+#include <nms/cuda/kernel.h>
+    static auto _init = [] {
+        const char path[] = "#/include/nms.cuda.kernel.h";
+
+        try {
+            if (!io::exists(path)) {
+                io::TxtFile file(path, io::TxtFile::Write);
+                file.write(kernel_src);
+            }
+        }
+        catch (...) {
+        }
+
+        return 0;
+    }();
+
     static Program program(kernel_src);
     return program;
+}
+
 }
 
 
 #pragma region unittest
 
-struct _EngineTestInitor {
-    _EngineTestInitor() {
-        (void)static_var_;
+struct nms_cuda_Engine_test_kernel
+{
+    template<class ...Targ>
+    auto operator()(Targ&& ...args) {
+        return nms_cuda_Engine_test_kernel(nms::math::lambda_cast(args)...);
     }
+};
 
-    static auto static_init() {
-        static const char cuda_src[] = R"(
-__kernel__ void nms_hpc_cuda_Engine_test(nms::View<nms::f32,2> v) {
+static const char nms_cuda_Engine_test_kernel[] = R"(
+__kernel__ void nms_cuda_Engine_test(nms::View<nms::f32,2> v) {
     const auto ix = blockIdx.x*blockDim.x+threadIdx.x;
     const auto iy = blockIdx.y*blockDim.y+threadIdx.y;
     v(ix, iy) = ix+iy*0.1f;
-}
-)";
-        gProgram().addSrc(cuda_src);
+})";
 
-        return 0;
-    }
-
-    static int static_var_;
-};
-
-int _EngineTestInitor::static_var_ = static_init();
+namespace nms::cuda
+{
 
 nms_test(Engine) {
-    _EngineTestInitor init;
+    gProgram().addSrc(nms_cuda_Engine_test_kernel);
+
     cuda::Array<f32, 2> dv({ 16, 16 });
-    auto fid = cufun("nms_hpc_cuda_Engine_test");
-    invoke(fid, dv);
+    invoke<struct nms_cuda_Engine_test_kernel>(dv);
 
     host::Array<f32, 2> hv(dv.size());
     hv <<= dv;
     io::console::writeln("v = {|}", hv.slice({ 0u, 8u }, { 0u, 8u }));
 }
+
+}
+
 #pragma endregion
 
 
-}
 
 

@@ -1,7 +1,7 @@
 static const char kernel_src[] = R"(
 
-#ifndef _NMS_HPC_CUDA_KERNEL_H
-#define _NMS_HPC_CUDA_KERNEL_H
+#ifndef _NMS_CUDA_KERNEL_H
+#define _NMS_CUDA_KERNEL_H
 
 #ifndef __constant__
 #define __constant__
@@ -227,8 +227,8 @@ struct Mul2{ template<class D, class S> __device__ static D& run(D& d, S s) noex
 struct Div2{ template<class D, class S> __device__ static D& run(D& d, S s) noexcept { return d /= s; } };
 } }
 
-/* nms::hpc::cuda */
-namespace nms{ namespace hpc{ namespace cuda{
+/* nms::cuda */
+namespace nms{ namespace cuda{
 
 using nms::View;
 
@@ -321,8 +321,7 @@ __device__ void foreach(Tret& ret, const Targ& arg) {
 }}}
 
 using namespace nms;
-using namespace nms::hpc;
-using namespace nms::hpc::cuda;
+using namespace nms::cuda;
 using namespace nms::math;
 
 #endif

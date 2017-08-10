@@ -37,8 +37,13 @@ using   usize = u64;
 using   nullptr_t = decltype(nullptr);
 
 template<class T>
-constexpr T& declval() {
-    throw;
+constexpr T* declptr() {
+    return static_cast<T*>(nullptr);
+}
+
+template<class T>
+constexpr const T& declval() {
+    return *(T*)(nullptr);
 }
 
 template<class T>constexpr T* $declptr = nullptr;

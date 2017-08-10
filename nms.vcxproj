@@ -31,11 +31,23 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NMS_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NMS_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!--cpp: items -->
   <ItemGroup>
     <ClCompile Include="nms\core\list.cc" />
     <ClCompile Include="nms\core\property.cc" />
-    <ClCompile Include="nms\hpc\cuda\array.cc" />
+    <ClCompile Include="nms\cuda\array.cc" />
+    <ClCompile Include="nms\cuda\engine.cc" />
+    <ClCompile Include="nms\cuda\runtime.cc" />
     <ClCompile Include="nms\io\file.cc" />
     <ClCompile Include="nms\math\array.cc" />
     <ClCompile Include="nms\serialization\xml.cc" />
@@ -46,7 +58,14 @@
     <ClCompile Include="nms\util\library.cc" />
     <ClCompile Include="nms\util\stacktrace.cc" />
     <ClCompile Include="nms\util\system.cc" />
-    <ClInclude Include="nms\config.h" />
+    <ClCompile Include="nms\config.h">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nms/config.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nms/config.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nms/config.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nms/config.h</ForcedIncludeFiles>
+    </ClCompile>
     <ClInclude Include="nms\config\apple.h" />
     <ClInclude Include="nms\config\unix.h" />
     <ClInclude Include="nms\config\windows.h" />
@@ -64,14 +83,14 @@
     <ClInclude Include="nms\core\trait.h" />
     <ClInclude Include="nms\core\type.h" />
     <ClInclude Include="nms\core\view.h" />
-    <ClInclude Include="nms\hpc.h" />
-    <ClInclude Include="nms\hpc\cuda.h" />
-    <ClInclude Include="nms\hpc\cuda\array.h" />
-    <ClInclude Include="nms\hpc\cuda\cuda.h" />
-    <ClInclude Include="nms\hpc\cuda\engine.h" />
-    <ClInclude Include="nms\hpc\cuda\nvrtc.h" />
-    <ClInclude Include="nms\hpc\cuda\runtime.h" />
-    <ClInclude Include="nms\hpc\cuda\texture.h" />
+    <ClInclude Include="nms\cuda\array.h" />
+    <ClInclude Include="nms\cuda\base.h" />
+    <ClInclude Include="nms\cuda\cuda.h" />
+    <ClInclude Include="nms\cuda\engine.h" />
+    <ClInclude Include="nms\cuda\kernel.h" />
+    <ClInclude Include="nms\cuda\nvrtc.h" />
+    <ClInclude Include="nms\cuda\runtime.h" />
+    <ClInclude Include="nms\cuda\texture.h" />
     <ClInclude Include="nms\io.h" />
     <ClInclude Include="nms\io\console.h" />
     <ClInclude Include="nms\io\file.h" />
@@ -97,7 +116,6 @@
     <ClCompile Include="nms\core\memory.cc" />
     <ClCompile Include="nms\core\string.cc" />
     <ClCompile Include="nms\core\time.cc" />
-    <ClCompile Include="nms\hpc\cuda\engine.cc" />
     <ClInclude Include="nms\serialization\xml.h" />
     <ClInclude Include="nms\util.h" />
     <ClInclude Include="nms\util\arraylist.h" />
@@ -105,17 +123,8 @@
     <ClInclude Include="nms\util\ringbuf.h" />
     <ClInclude Include="nms\util\stacktrace.h" />
     <ClInclude Include="nms\util\system.h" />
-    <ClCompile Include="nms.inl">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-      <FileType>Document</FileType>
-    </ClCompile>
     <None Include=".travis.yml" />
     <None Include="makefile" />
-    <None Include="nms\hpc\cuda\kernel.h">
-      <Link>..\include\nms.hpc.cuda.kernel.h</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <ClCompile Include="nms\hpc\cuda\runtime.cc" />
     <ClCompile Include="nms\io\mfile.cc" />
     <ClInclude Include="nms\test.h" />
     <ClInclude Include="nms\test\assert.h" />

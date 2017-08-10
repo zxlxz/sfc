@@ -1,18 +1,8 @@
 #pragma once
 
-#include <nms/core.h>
-#include <nms/math.h>
+#include <nms/cuda/base.h>
 
-#ifndef __cuda_cuda_h__
-struct CUstream_st;
-struct CUarray_st;
-struct CUmod_st;
-struct CUfunc_st;
-struct CUsymbol_st;
-enum   cudaError_enum {};
-#endif
-
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
 using arr_t = CUarray_st*;
@@ -129,20 +119,15 @@ protected:
 NMS_API Module&  gModule();
 
 /*!
-* invoke cuda device function
-* @param func:     cuda device function
-*/
-static auto cufun(StrView name) {
-    return gModule().get_kernel(name);
-}
-
-/*!
  * invoke cuda device function
  * @param func:     cuda device function
  */
-template<class ...Targ>
-void invoke(Module::fun_t func, Targ&& ...arg) {
-    gModule().invoke(func, lambda_cast(fwd<Targ>(arg)...));
+template<class Tag, class ...Targ>
+void invoke(Targ&& ...arg) {
+    static auto kernel = gModule().get_kernel(typeof<Tag>().name());
+    using  result_t    = decltype(declptr<Tag>()->operator()(lambda_cast(fwd<Targ>(arg)...)));
+
+    gModule().invoke(kernel, lambda_cast(fwd<Targ>(arg))...);
 }
 
 

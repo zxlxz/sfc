@@ -46,7 +46,6 @@
     <ClInclude Include="nms\thread\task.h">
       <Filter>thread</Filter>
     </ClInclude>
-    <ClInclude Include="nms\hpc.h" />
     <ClInclude Include="nms\core\cpp.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -76,18 +75,6 @@
     </ClInclude>
     <ClInclude Include="nms\core\view.h">
       <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\array.h">
-      <Filter>hpc\cuda</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\runtime.h">
-      <Filter>hpc\cuda</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\engine.h">
-      <Filter>hpc\cuda</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda.h">
-      <Filter>hpc</Filter>
     </ClInclude>
     <ClInclude Include="nms\math\array.h">
       <Filter>math</Filter>
@@ -123,21 +110,11 @@
       <Filter>util</Filter>
     </ClInclude>
     <ClInclude Include="nms\util.h" />
-    <ClInclude Include="nms\config.h" />
     <ClInclude Include="nms\math\blas.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="nms\math\norm.h">
       <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\cuda.h">
-      <Filter>hpc\cuda\{external}</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\nvrtc.h">
-      <Filter>hpc\cuda\{external}</Filter>
-    </ClInclude>
-    <ClInclude Include="nms\hpc\cuda\texture.h">
-      <Filter>hpc\cuda</Filter>
     </ClInclude>
     <ClInclude Include="nms\core\trait.h">
       <Filter>core</Filter>
@@ -169,6 +146,30 @@
     <ClInclude Include="nms\config\windows.h">
       <Filter>config</Filter>
     </ClInclude>
+    <ClInclude Include="nms\cuda\array.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\engine.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\kernel.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\runtime.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\texture.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\cuda.h">
+      <Filter>cuda\{external}</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\nvrtc.h">
+      <Filter>cuda\{external}</Filter>
+    </ClInclude>
+    <ClInclude Include="nms\cuda\base.h">
+      <Filter>cuda</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">
@@ -189,26 +190,20 @@
     <Filter Include="thread">
       <UniqueIdentifier>{3adf9a9f-d14e-4586-9b46-c35ad5ef3742}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hpc">
-      <UniqueIdentifier>{c14d1b30-446a-4c3d-8ca7-176b6d4d67ba}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hpc\cuda">
-      <UniqueIdentifier>{bb16caee-1444-460a-b80b-a5c980051532}</UniqueIdentifier>
-    </Filter>
     <Filter Include="{msbuild}">
       <UniqueIdentifier>{ecbcd46d-afb5-485a-b27d-e82cec44134b}</UniqueIdentifier>
     </Filter>
     <Filter Include="util">
       <UniqueIdentifier>{d276c55f-6293-4af1-891d-eb5a2e2e4dad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hpc\cuda\{external}">
-      <UniqueIdentifier>{e2b67fa5-17c3-467c-8ce5-729099072ace}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hpc\opencl">
-      <UniqueIdentifier>{bc9582d8-615e-408c-8b66-be69a2952303}</UniqueIdentifier>
-    </Filter>
     <Filter Include="config">
       <UniqueIdentifier>{055636f7-e8c2-4618-973f-81dd89168331}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cuda">
+      <UniqueIdentifier>{bdf0dcac-1035-4ab1-afe0-30d82997932b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cuda\{external}">
+      <UniqueIdentifier>{916d14c7-e6de-4243-9f7a-8d313352f7e2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -232,12 +227,6 @@
     </ClCompile>
     <ClCompile Include="nms\io\path.cc">
       <Filter>io</Filter>
-    </ClCompile>
-    <ClCompile Include="nms\hpc\cuda\runtime.cc">
-      <Filter>hpc\cuda</Filter>
-    </ClCompile>
-    <ClCompile Include="nms\hpc\cuda\engine.cc">
-      <Filter>hpc\cuda</Filter>
     </ClCompile>
     <ClCompile Include="nms\core\exception.cc">
       <Filter>core</Filter>
@@ -272,9 +261,6 @@
     <ClCompile Include="nms\math\array.cc">
       <Filter>math</Filter>
     </ClCompile>
-    <ClCompile Include="nms\hpc\cuda\array.cc">
-      <Filter>hpc\cuda</Filter>
-    </ClCompile>
     <ClCompile Include="nms\serialization\xml.cc">
       <Filter>serialization</Filter>
     </ClCompile>
@@ -286,9 +272,6 @@
     </ClCompile>
     <ClCompile Include="nms\util\library.cc">
       <Filter>util</Filter>
-    </ClCompile>
-    <ClCompile Include="nms.inl">
-      <Filter>{msbuild}</Filter>
     </ClCompile>
     <ClCompile Include="nms\thread\semaphore.cc">
       <Filter>thread</Filter>
@@ -302,11 +285,18 @@
     <ClCompile Include="nms\thread\thread.cc">
       <Filter>thread</Filter>
     </ClCompile>
+    <ClCompile Include="nms\config.h" />
+    <ClCompile Include="nms\cuda\array.cc">
+      <Filter>cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\cuda\engine.cc">
+      <Filter>cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\cuda\runtime.cc">
+      <Filter>cuda</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="nms\hpc\cuda\kernel.h">
-      <Filter>hpc\cuda</Filter>
-    </None>
     <None Include="makefile">
       <Filter>{msbuild}</Filter>
     </None>

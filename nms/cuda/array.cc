@@ -1,9 +1,9 @@
-#include <nms/hpc/cuda.h>
+#include <nms/cuda.h>
 #include <nms/io/console.h>
 #include <nms/io/log.h>
 #include <nms/test.h>
 
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
 #pragma region unittest

@@ -223,13 +223,14 @@ NMS_API bool exists(const Path& path) {
 
 NMS_API u64 fsize(const Path& path) {
     auto cpath = path.cstr();
-#ifdef NMS_OS_WINDOWS
-    struct _stat64 st;
-    ::_stat64(cpath, &st);
-#else
-    struct stat st;
+    ::stat_t st;
     ::stat(path.cstr(), &st);
-#endif
+    return st.st_size;
+}
+
+NMS_API u64 fsize(int fid) {
+    ::stat_t st;
+    ::fstat(fid, &st);
     return st.st_size;
 }
 

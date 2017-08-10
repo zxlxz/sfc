@@ -1,19 +1,14 @@
 #pragma once
 
-#include <nms/core.h>
-#include <nms/math.h>
-#include <nms/hpc/cuda/runtime.h>
+#include <nms/cuda/base.h>
+#include <nms/cuda/runtime.h>
 
 struct _nvrtcProgram;
 
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
-template<class T, u32 N>
-struct View;
 
-class Program;
-class Module;
 
 struct ForeachExecutor;
 
@@ -42,6 +37,11 @@ public:
      * add source to the program
      */
     NMS_API void addSrc(StrView src);
+
+    /*!
+     * add source file to the program
+     */
+    NMS_API void addFile(const io::Path& path);
 
     template<class F, class ...T>
     void addfunc() {

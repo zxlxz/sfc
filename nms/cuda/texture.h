@@ -1,9 +1,9 @@
 #pragma once
 
-#include <nms/hpc/cuda/runtime.h>
-#include <nms/hpc/cuda/array.h>
+#include <nms/cuda/runtime.h>
+#include <nms/cuda/array.h>
 
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
 template<class T, u32 N>
@@ -61,7 +61,7 @@ namespace nms::math
 {
 
 template<class T, u32 N>
-hpc::cuda::TexView<T, N> toLambda(hpc::cuda::TexView<T, N> v) {
+cuda::TexView<T, N> toLambda(cuda::TexView<T, N> v) {
     return v;
 }
 

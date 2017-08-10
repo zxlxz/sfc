@@ -2,10 +2,10 @@
 
 #include <nms/core.h>
 #include <nms/math.h>
-#include <nms/hpc/cuda/runtime.h>
-#include <nms/hpc/cuda/engine.h>
+#include <nms/cuda/runtime.h>
+#include <nms/cuda/engine.h>
 
-namespace nms::hpc::cuda
+namespace nms::cuda
 {
 
 template<class T, u32 N>
@@ -74,7 +74,7 @@ nms::View<T, N> toLambda(const View<T, N>& v) {
     return v;
 }
 
-inline namespace device
+namespace device
 {
 template<class T, u32 N>
 class Array
