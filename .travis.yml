@@ -1,0 +1,18 @@
+language: C++
+
+matrix:
+  include:
+    - os: osx
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang
+
+script:
+  - make
+  
