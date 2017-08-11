@@ -8,8 +8,6 @@ struct _nvrtcProgram;
 namespace nms::cuda
 {
 
-
-
 struct ForeachExecutor;
 
 /**
@@ -38,18 +36,6 @@ public:
      */
     NMS_API void addSrc(StrView src);
 
-    /*!
-     * add source file to the program
-     */
-    NMS_API void addFile(const io::Path& path);
-
-    template<class F, class ...T>
-    void addfunc() {
-        const auto      func = typeof<F>().name();
-        const StrView   args[] = { typeof<T>().name()... };
-        addfunc(func, mkView(args));
-    }
-
     StrView src() const {
         return src_;
     }
@@ -63,10 +49,7 @@ protected:
     String  ptx_;
     u32     cnt_;
 
-    NMS_API u32 add_foreach(StrView func_type, StrView ret_type, StrView arg_type);
 };
-
-NMS_API Program& gProgram();
 
 /**
  * cuda-foreach-executor
@@ -74,45 +57,51 @@ NMS_API Program& gProgram();
 struct ForeachExecutor
 {
 public:
-    template<class Tfunc, class Tret, class ...Targs>
-    static void run(Tfunc func, Tret& ret, const Targs& ...args) {
-        cuda_exec(func, ret, args...);
+    template<class Tfunc, class Tret, class Targ>
+    static void run(Tfunc func, Tret& ret, const Targ& arg) {
+        _run(func, ret, arg, Version<1>{});
     }
 
-    template<class Tret, class ...Targs>
-    struct ID;
+protected:
+    NMS_API static Program& sProgram();
+    NMS_API static Module&  sModule();
 
-    /* cuda-exec: try copy, than invoke */
+private:
+    /* run: try copy, than invoke */
     template<class T, u32 N>
-    static void cuda_exec(Ass2 func, nms::View<T,N>& dst, const nms::View<T,N>& src) {
+    static void _run(Ass2 func, const nms::View<T, N>& dst, const nms::View<T, N>& src, Version<1>) {
         if (dst.isNormal() && src.isNormal()) {
-            auto count = dst.numel();
-            cuda::mcpy(dst.data(), src.data(), count);
+            auto count = dst.count();
+            cuda::mcpy(const_cast<T*>(dst.data()), src.data(), count);
         }
         else {
-            cuda_foreach(func, dst, src);
+            _run(func, dst, src, Version<0>{});
         }
     }
 
-    /* cuda-exec: redirect to invoke */
-    template<class Tfunc, class Tret, class ...Targs>
-    static void cuda_exec(Tfunc func, Tret& ret, const Targs& ...args) {
-        cuda_foreach(func, ret, args...);
+    /* run: redirect to invoke */
+    template<class Tfunc, class Tret, class Targ>
+    static void _run(Tfunc func, const Tret& ret, const Targ& arg, Version<0>) {
+        static auto fid  = nms::static_run< &add_func<Tfunc, Tret, Targ>, void(Tfunc, Tret, Targ)>();
+        static auto kid  = _get_kernel(fid);
+        static auto&mod  = sModule();
+
+        const auto dims  = ret.size();
+        mod.invoke(kid, dims.$rank, dims.data(), ret, arg);
     }
 
-    /* cuda-invoke */
+    /* get kernel */
+    NMS_API static Module::fun_t _get_kernel(u32 fid);
+
+    /* add func */
     template<class Tfunc, class Tret, class Targ>
-    static void cuda_foreach(Tfunc func, Tret& ret, const Targ& arg) {
-        static auto  fid = static_run< &cuda_foreach_id<Tfunc, Tret, Targ>, ID<Tret, Targ> >();
-        gModule().invoke(fid, ret, arg);
+    static u32 add_func() {
+        static const auto fid = _add_func(typeof<Tfunc>().name(), typeof<Tret>().name(), typeof<Targ>().name());
+        return fid;
     }
 
-    template<class Tfunc, class Tret, class Targ>
-    static u32 cuda_foreach_id() {
-        static auto&   program = gProgram();
-        static auto    func_id = program.add_foreach(typeof<Tfunc>().name(), typeof<Tret>().name(), typeof<Targ>().name());
-        return func_id;
-    }
+    /* add func */
+    NMS_API static u32 _add_func(StrView func, StrView ret_type, StrView arg_type);
 };
 
 inline ForeachExecutor operator||(const cuda::ForeachExecutor&, const cuda::ForeachExecutor&) {
@@ -127,4 +116,65 @@ inline ForeachExecutor operator||(const cuda::ForeachExecutor&, const math::Fore
     return {};
 }
 
+namespace engine
+{
+
+NMS_API Program& gProgram();
+NMS_API Module&  gModule();
+
+inline void add_src(StrView src) {
+    gProgram().addSrc(src);
 }
+
+template<class Tfunc, Tfunc* func>
+struct Kfunc;
+
+template<class ...Targ, void(*func)(Targ...)>
+struct Kfunc< void(Targ...), func >
+{
+    Kfunc(StrView name)
+    {
+        static auto& mod = gModule();
+        kid_ = mod.get_kernel(name);
+    }
+
+    template<u32 N>
+    struct Runner
+    {
+    public:
+        void operator()(Targ ...args) {
+            static auto& mod = gModule();
+            mod.invoke(kid_, N, size_.data(), args...);
+        }
+
+    protected:
+        Module::fun_t   kid_;
+        Vec<u32, N>     size_;
+
+    private:
+        friend struct Kfunc;
+        Runner(Module::fun_t kid, const u32(&dims)[N]) 
+            : kid_(kid), size_(dims)
+        {}
+    };
+
+    template<u32 N>
+    Runner<N> operator[](const u32(&dims)[N]) {
+        return { kid_, dims };
+    }
+
+protected:
+    Module::fun_t kid_;
+};
+
+template<class Tfunc, Tfunc* func, u32 N, class ...Targ>
+void invoke(StrView name, const u32 (&dims)[N], Targ&& ...args) {
+    Kfunc<Tfunc, func> kfunc(name);
+    kfunc[dims](args...);
+}
+
+}
+
+}
+
+#define nms_cuda_kfunc(func)   nms::cuda::engine::Kfunc<decltype(func), &func>{#func}

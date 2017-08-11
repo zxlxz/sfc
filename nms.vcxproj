@@ -124,6 +124,8 @@
     <ClInclude Include="nms\util\stacktrace.h" />
     <ClInclude Include="nms\util\system.h" />
     <None Include=".travis.yml" />
+    <None Include="doc\nms.hpc.cuda.md" />
+    <None Include="doc\nms.test.md" />
     <None Include="makefile" />
     <ClCompile Include="nms\io\mfile.cc" />
     <ClInclude Include="nms\test.h" />
@@ -143,6 +145,9 @@
     <ClCompile Include="nms\io\log.cc" />
     <ClCompile Include="nms\test\test.cc" />
     <Natvis Include="nms.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="doc\nms.test.gif" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

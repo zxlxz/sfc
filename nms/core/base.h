@@ -525,7 +525,7 @@ public:
 #pragma endregion
 
 #pragma region static init
-template<class Tret, Tret(*func)(), class ...ID>
+template<class Tret, Tret(*func)(), class Tid>
 struct StaticRunner
 {
     StaticRunner() {
@@ -535,12 +535,12 @@ struct StaticRunner
     static Tret value;
 };
 
-template<class Tret, Tret(*func)(), class ...ID>
-Tret StaticRunner<Tret, func, ID...>::value = (*func)();
+template<class Tret, Tret(*func)(), class Tid>
+Tret StaticRunner<Tret, func, Tid>::value = (*func)();
 
-template<u32(*func)(), class ...ID>
-auto static_run() {
-    StaticRunner<u32, func, ID...> static_runner;
+template<u32(*func)(), class Tid>
+u32 static_run() {
+    StaticRunner<u32, func, Tid> static_runner;
     return static_runner.value;
 }
 

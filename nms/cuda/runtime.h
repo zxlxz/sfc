@@ -86,50 +86,25 @@ public:
     using   sym_t = struct CUsymbol_st*;
     using   fun_t = CUfunc_st*;
 
-    NMS_API explicit Module(StrView ptx_src);
     NMS_API ~Module();
-
-    /* invoke lambda */
-    template<class Tfunc, class Tret, class ...Targ>
-    void invoke(Tfunc func, Tret&& ret, Targ&& ...args) {
-        static const auto kernel = get_kernel(func);
-        invoke(kernel, fwd<Tret>(ret), fwd<Targ>(args)...);
-    }
+    NMS_API explicit Module(StrView ptx_src);
 
     /* invoke kernel */
-    template<class Tret, class ...Targ>
-    void invoke(fun_t kernel, Tret&& ret, Targ&& ...args) {
-        static const auto rank  = ret.rank();
-        const auto  dims        = ret.size().data();
-        const void* argv[]      = { &ret, &args... };
-        run_kernel(kernel, argv, rank, dims);
+    template<class ...Targ>
+    void invoke(fun_t kernel, u32 rank, const u32 dims[], Targ&& ...args) {
+        const void* argv[] = { &args... };
+        run_kernel(kernel, rank, dims, argv);
     }
 
     NMS_API sym_t   get_symbol(StrView name) const;
     NMS_API void    set_symbol(sym_t   symbol, const void* value, u32 size) const;
 
     NMS_API fun_t   get_kernel(StrView name) const;
-    NMS_API fun_t   get_kernel(u32     index)const;
-    NMS_API void    run_kernel(fun_t   func, const void* argv[], u32 rank, const u32 dims[], Stream& stream=Stream::global()) const;
+    NMS_API void    run_kernel(fun_t   func, u32 rank, const u32 dims[], const void* argv[], Stream& stream=Stream::global()) const;
 
 protected:
     CUmod_st* module_ = nullptr;
 };
-
-NMS_API Module&  gModule();
-
-/*!
- * invoke cuda device function
- * @param func:     cuda device function
- */
-template<class Tag, class ...Targ>
-void invoke(Targ&& ...arg) {
-    static auto kernel = gModule().get_kernel(typeof<Tag>().name());
-    using  result_t    = decltype(declptr<Tag>()->operator()(lambda_cast(fwd<Targ>(arg)...)));
-
-    gModule().invoke(kernel, lambda_cast(fwd<Targ>(arg))...);
-}
-
 
 NMS_API void*_mnew(u64   size);
 NMS_API void _mdel(void* data);

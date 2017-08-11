@@ -205,6 +205,9 @@
     <Filter Include="cuda\{external}">
       <UniqueIdentifier>{916d14c7-e6de-4243-9f7a-8d313352f7e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="{doc}">
+      <UniqueIdentifier>{13b21fd6-ff55-423e-840f-f6764c6a3e34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nms\test\test.cc">
@@ -303,10 +306,21 @@
     <None Include=".travis.yml">
       <Filter>{msbuild}</Filter>
     </None>
+    <None Include="doc\nms.hpc.cuda.md">
+      <Filter>{doc}</Filter>
+    </None>
+    <None Include="doc\nms.test.md">
+      <Filter>{doc}</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="nms.natvis">
       <Filter>{msbuild}</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="doc\nms.test.gif">
+      <Filter>{doc}</Filter>
+    </Image>
   </ItemGroup>
 </Project>

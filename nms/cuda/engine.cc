@@ -1,7 +1,3 @@
-#define module cumodule
-#include <nms/cuda/nvrtc.h>
-#undef module
-
 #include <nms/core.h>
 #include <nms/io.h>
 #include <nms/test.h>
@@ -10,6 +6,28 @@
 #include <nms/cuda/runtime.h>
 #include <nms/cuda/engine.h>
 #include <nms/cuda/array.h>
+#include <nms/cuda/kernel.h>
+
+extern "C"
+{
+    typedef struct _nvrtcProgram *nvrtcProgram;
+
+    enum nvrtcResult
+    { };
+
+    const char *nvrtcGetErrorString(nvrtcResult result);
+
+    nvrtcResult nvrtcCreateProgram(nvrtcProgram *prog, const char *src, const char *name, int numHeaders, const char * const *headers, const char * const *includeNames);
+    nvrtcResult nvrtcDestroyProgram(nvrtcProgram *prog);
+
+    nvrtcResult nvrtcCompileProgram(nvrtcProgram prog, int numOptions, const char * const *options);
+
+    nvrtcResult nvrtcGetProgramLogSize(nvrtcProgram prog, size_t *logSizeRet);
+    nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, char *log);
+
+    nvrtcResult nvrtcGetPTXSize(nvrtcProgram prog, size_t *ptxSizeRet);
+    nvrtcResult nvrtcGetPTX(nvrtcProgram prog, char *ptx);
+}
 
 namespace nms::cuda
 {
@@ -64,26 +82,6 @@ NMS_API void Program::addSrc(StrView src) {
     src_ += src;
 }
 
-NMS_API void Program::addFile(const io::Path& path) {
-    auto src = io::loadString(path);
-    addSrc(src);
-}
-
-NMS_API u32 Program::add_foreach(StrView func, StrView ret_type, StrView arg_type) {
-    if (src_.count() == 0) {
-        return 0;
-    }
-
-    sformat(src_, "__kernel__ void nms_cuda_foreach_{}(\n", cnt_);
-    sformat(src_, "    {} ret,\n", ret_type);
-    sformat(src_, "    {} arg)\n", arg_type);
-    src_ += "{\n";
-    sformat(src_, "    nms::cuda::foreach<{}>(ret, arg);\n", func);
-    src_ += "}\n\n";
-
-    return cnt_++;
-}
-
 NMS_API bool Program::compile() {
     static const char*  argv[] = { "--std=c++11", "-default-device", "-restrict", "--use_fast_math", "-arch=compute_30"};
     static const int    argc = sizeof(argv) / sizeof(argv[0]);
@@ -127,42 +125,105 @@ NMS_API bool Program::compile() {
 }
 #pragma endregion
 
+NMS_API Program& ForeachExecutor::sProgram() {
+    static Program program(nms_cuda_kernel_src);
+    return program;
+}
 
-NMS_API Program& gProgram() {
-#include <nms/cuda/kernel.h>
-    static auto _init = [] {
-        const char path[] = "#/include/nms.cuda.kernel.h";
+NMS_API Module& ForeachExecutor::sModule() {
+    static StrView ptx_src = [=] {
+        const io::Path src_path("#/config/nms.cuda.kernel.cu");
+        const io::Path ptx_path("#/config/nms.cuda.kernel.ptx");
+        auto& program = sProgram();
 
-        try {
-            if (!io::exists(path)) {
-                io::TxtFile file(path, io::TxtFile::Write);
-                file.write(kernel_src);
-            }
+        // if not exists, try save
+        if (!io::exists(ptx_path)) {
+            program.compile();
+
+            io::TxtFile src_file(src_path, io::TxtFile::Write);
+            src_file.write(program.src());
+
+            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+            ptx_file.write(program.ptx());
         }
-        catch (...) {
-        }
 
-        return 0;
+        static auto ptx = io::loadString(ptx_path);
+        return StrView(ptx);
     }();
 
-    static Program program(kernel_src);
+    static Module value(ptx_src);
+    return value;
+}
+
+NMS_API Module::fun_t ForeachExecutor::_get_kernel(u32 fid) {
+    static auto& mod = sModule();
+
+    char name[64];
+    auto count = snprintf(name, sizeof(name), "nms_cuda_foreach_%u", fid);
+    auto func  = mod.get_kernel(StrView(name, { u32(count) }));
+    return func;
+}
+
+NMS_API u32 ForeachExecutor::_add_func(StrView func, StrView ret_type, StrView arg_type) {
+    static auto func_id = 0;
+
+    static String src;
+    src.resize(0);
+
+    sformat(src, "__kernel__ void nms_cuda_foreach_{}(\n", func_id);
+    sformat(src, "    {} ret,\n", ret_type);
+    sformat(src, "    {} arg)\n", arg_type);
+    src += "{\n";
+    sformat(src, "    nms::cuda::foreach<{}>(ret, arg);\n", func);
+    src += "}\n\n";
+
+    sProgram().addSrc(src);
+
+    return func_id++;
+}
+
+namespace engine
+{
+
+NMS_API Program& gProgram() {
+    static Program program(nms_cuda_kernel_src);
     return program;
+}
+
+NMS_API Module&  gModule() {
+    static StrView ptx_src = [=] {
+        const io::Path src_path("#/config/nms.cuda.program.cu");
+        const io::Path ptx_path("#/config/nms.cuda.program.ptx");
+        auto& program = gProgram();
+
+        // if not exists, try save
+        if (!io::exists(ptx_path)) {
+            program.compile();
+
+            io::TxtFile src_file(src_path, io::TxtFile::Write);
+            src_file.write(program.src());
+
+            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+            ptx_file.write(program.ptx());
+        }
+
+        static auto ptx = io::loadString(ptx_path);
+        return StrView(ptx);
+    }();
+
+    static Module value(ptx_src);
+    return value;
+}
+
 }
 
 }
 
 
 #pragma region unittest
+__kernel__ void nms_cuda_Engine_test(nms::View<nms::f32, 2> v);
 
-struct nms_cuda_Engine_test_kernel
-{
-    template<class ...Targ>
-    auto operator()(Targ&& ...args) {
-        return nms_cuda_Engine_test_kernel(nms::math::lambda_cast(args)...);
-    }
-};
-
-static const char nms_cuda_Engine_test_kernel[] = R"(
+static const char nms_cuda_Engine_test_src[] = R"(
 __kernel__ void nms_cuda_Engine_test(nms::View<nms::f32,2> v) {
     const auto ix = blockIdx.x*blockDim.x+threadIdx.x;
     const auto iy = blockIdx.y*blockDim.y+threadIdx.y;
@@ -173,10 +234,10 @@ namespace nms::cuda
 {
 
 nms_test(Engine) {
-    gProgram().addSrc(nms_cuda_Engine_test_kernel);
+    engine::add_src(nms_cuda_Engine_test_src);
 
     cuda::Array<f32, 2> dv({ 16, 16 });
-    invoke<struct nms_cuda_Engine_test_kernel>(dv);
+    nms_cuda_kfunc(nms_cuda_Engine_test)[{ 16, 16 }](dv);
 
     host::Array<f32, 2> hv(dv.size());
     hv <<= dv;

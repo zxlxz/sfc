@@ -414,14 +414,8 @@ NMS_API Module::fun_t Module::get_kernel(StrView name) const {
     return reinterpret_cast<fun_t>(fun);
 }
 
-NMS_API Module::fun_t Module::get_kernel(u32 index) const {
-    char name[64];
-    auto count = snprintf(name, sizeof(name), "nms_cuda_foreach_%u", index);
-    auto func = get_kernel(StrView(name, { u32(count) }));
-    return func;
-}
 
-NMS_API void Module::run_kernel(fun_t kernel, const void* kernel_args[], u32 rank, const u32 dims[], Stream& stream) const {
+NMS_API void Module::run_kernel(fun_t kernel, u32 rank, const u32 dims[], const void* kernel_args[], Stream& stream) const {
     u32 block_dim[3] = {
         rank == 1 ? 256u : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
         rank == 1 ? 001u : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
@@ -440,31 +434,6 @@ NMS_API void Module::run_kernel(fun_t kernel, const void* kernel_args[], u32 ran
 
     const auto stat = NMS_CUDA_DO(cuLaunchKernel)(kernel, grid_dim[0], grid_dim[1], grid_dim[2], block_dim[0], block_dim[1], block_dim[2], shared_mem_bytes, h_stream, const_cast<void**>(kernel_args), extra);
     void(stat || "nms.cuda.invoke: failed.");
-}
-
-NMS_API Module& gModule() {
-    static StrView ptx_src = [=] {
-        const io::Path src_path("#/config/nms.cuda.program.cu");
-        const io::Path ptx_path("#/config/nms.cuda.program.ptx");
-        auto& program = gProgram();
-
-        // if not exists, try save
-        if (!io::exists(ptx_path)) {
-            program.compile();
-
-            io::TxtFile src_file(src_path, io::TxtFile::Write);
-            src_file.write(program.src());
-
-            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
-            ptx_file.write(program.ptx());
-        }
-
-        static auto ptx = io::loadString(ptx_path);
-        return StrView(ptx);
-    }();
-
-    static Module value(ptx_src);
-    return value;
 }
 
 #pragma endregion

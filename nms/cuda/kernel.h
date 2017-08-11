@@ -1,4 +1,4 @@
-static const char kernel_src[] = R"(
+static const char nms_cuda_kernel_src[] = R"(
 
 #ifndef _NMS_CUDA_KERNEL_H
 #define _NMS_CUDA_KERNEL_H
@@ -318,7 +318,7 @@ __device__ void foreach(Tret& ret, const Targ& arg) {
     foreach_switch<Tfunc>(ret, arg, Version<Tret::rank()>{});
 }
 
-}}}
+}}
 
 using namespace nms;
 using namespace nms::cuda;
