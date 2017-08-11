@@ -7,22 +7,51 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms", "nms.vcxproj", "{7FAC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.test", "nms.test.vcxproj", "{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{EE0FCDC5-6B54-4A99-BD7F-F3FBB45D0DEB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.compiler", "nms.compiler.vcxproj", "{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.cuda.simple", "samples\nms.cuda.simple\nms.cuda.simple.vcxproj", "{BD340428-9815-4425-803F-FE2EEEB70616}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x64.ActiveCfg = Debug|x64
 		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x64.Build.0 = Debug|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x86.ActiveCfg = Debug|x64
 		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x64.ActiveCfg = Release|x64
 		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x64.Build.0 = Release|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x86.ActiveCfg = Release|x64
 		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x64.ActiveCfg = Debug|x64
 		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x64.Build.0 = Debug|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x86.ActiveCfg = Debug|x64
 		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x64.ActiveCfg = Release|x64
 		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x64.Build.0 = Release|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x86.ActiveCfg = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x64.ActiveCfg = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x64.Build.0 = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x86.ActiveCfg = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.ActiveCfg = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.Build.0 = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x86.ActiveCfg = Release|x64
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x64.ActiveCfg = Debug|x64
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x64.Build.0 = Debug|x64
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x86.ActiveCfg = Debug|Win32
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x86.Build.0 = Debug|Win32
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x64.ActiveCfg = Release|x64
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x64.Build.0 = Release|x64
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x86.ActiveCfg = Release|Win32
+		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BD340428-9815-4425-803F-FE2EEEB70616} = {EE0FCDC5-6B54-4A99-BD7F-F3FBB45D0DEB}
 	EndGlobalSection
 EndGlobal

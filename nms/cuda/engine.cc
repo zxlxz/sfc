@@ -71,7 +71,6 @@ void driver_init();
 NMS_API Program::Program(StrView src)
     : src_{ src }
     , ptx_{}
-    , cnt_{ 0 }
 {}
 
 
@@ -97,8 +96,6 @@ NMS_API bool Program::compile() {
     auto ret = NMS_NVRTC_DO(nvrtcCompileProgram)(nvrtc, argc, argv);
 
     if (int(ret) != 0) {
-        io::log::error("cuda compile failed.");
-
         size_t nvrtc_log_size = 0;
         NMS_NVRTC_DO(nvrtcGetProgramLogSize)(nvrtc, &nvrtc_log_size);
 
@@ -132,19 +129,25 @@ NMS_API Program& ForeachExecutor::sProgram() {
 
 NMS_API Module& ForeachExecutor::sModule() {
     static StrView ptx_src = [=] {
-        const io::Path src_path("#/config/nms.cuda.kernel.cu");
-        const io::Path ptx_path("#/config/nms.cuda.kernel.ptx");
+        const io::Path src_path("nms.cuda.kernel.cu");
+        const io::Path ptx_path("nms.cuda.kernel.ptx");
         auto& program = sProgram();
 
         // if not exists, try save
         if (!io::exists(ptx_path)) {
-            program.compile();
+            auto stat = program.compile();
 
-            io::TxtFile src_file(src_path, io::TxtFile::Write);
-            src_file.write(program.src());
+            auto src = program.src();
+            if (!stat && src.count() > 0) {
+                io::TxtFile src_file(src_path, io::TxtFile::Write);
+                src_file.write(src);
+            }
 
-            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
-            ptx_file.write(program.ptx());
+            auto ptx = program.ptx();
+            if (stat && ptx.count() > 0) {
+                io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+                ptx_file.write(ptx);
+            }
         }
 
         static auto ptx = io::loadString(ptx_path);
@@ -192,19 +195,18 @@ NMS_API Program& gProgram() {
 
 NMS_API Module&  gModule() {
     static StrView ptx_src = [=] {
-        const io::Path src_path("#/config/nms.cuda.program.cu");
-        const io::Path ptx_path("#/config/nms.cuda.program.ptx");
+        const io::Path ptx_path("nms.cuda.program.ptx");
         auto& program = gProgram();
 
         // if not exists, try save
         if (!io::exists(ptx_path)) {
-            program.compile();
+            const auto stat = program.compile();
 
-            io::TxtFile src_file(src_path, io::TxtFile::Write);
-            src_file.write(program.src());
-
-            io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
-            ptx_file.write(program.ptx());
+            const auto ptx = program.ptx();
+            if (ptx.count() > 0) {
+                io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+                ptx_file.write(ptx);
+            }
         }
 
         static auto ptx = io::loadString(ptx_path);

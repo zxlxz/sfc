@@ -156,7 +156,7 @@ struct View
      */
     template<class ...I>
     __forceinline const T& at(I ...idx) const noexcept {
-        static_assert($all_is<$int,I...>,	"unexpect type");
+        static_assert($all_is<$int,I...>,   "unexpect type");
         static_assert(sizeof...(I)==$rank,  "unexpect arguments count");
         return data_[offsets_of(idx...)];
     }
@@ -177,7 +177,7 @@ struct View
     * @see at
     */
     template<class ...I>
-    __forceinline auto operator()(I ...idx) noexcept -> decltype(at(idx...))& {
+    __forceinline decltype(auto) operator()(I ...idx) noexcept {
         return at(idx...);
     }
 
@@ -187,7 +187,7 @@ struct View
      * @see at
      */
     template<class ...I>
-    __forceinline auto operator()(I ...idx) const noexcept -> decltype(at(idx...))& {
+    __forceinline decltype(auto) operator()(I ...idx) const noexcept {
         return at(idx...);
     }
 

@@ -1,7 +1,7 @@
 static const char nms_cuda_kernel_src[] = R"(
 
-#ifndef _NMS_CUDA_KERNEL_H
-#define _NMS_CUDA_KERNEL_H
+#ifndef _NMS_CUDA_KERNEL_H_
+#define _NMS_CUDA_KERNEL_H_
 
 #ifndef __constant__
 #define __constant__
@@ -171,9 +171,9 @@ struct Linespace
     static constexpr u32 rank()         { return N; }
     static constexpr u32 size(u32 i)    { return 0; }
 
-    template<class I> T operator()(I x)           const noexcept { return x*k[0]; }
-    template<class I> T operator()(I x, I y)      const noexcept { return x*k[0] + y*k[1]; }
-    template<class I> T operator()(I x, I y, I z) const noexcept { return x*k[0] + y*k[1] + z*k[2]; }
+    template<class I> T operator()(I x)           const noexcept { return T(x)*k[0]; }
+    template<class I> T operator()(I x, I y)      const noexcept { return T(x)*k[0] + T(y)*k[1]; }
+    template<class I> T operator()(I x, I y, I z) const noexcept { return T(x)*k[0] + T(y)*k[1] + T(z)*k[2]; }
 };
 
 }}

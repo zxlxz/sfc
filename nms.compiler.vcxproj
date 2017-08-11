@@ -13,7 +13,8 @@
   </ItemGroup>
   <!--property: global -->
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DDA38061-E4C9-46FD-BF54-7D69122718CA}</ProjectGuid>
+    <ProjectGuid>{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <!--property: config-->
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -24,7 +25,7 @@
   </PropertyGroup>
   <!--import-->
   <ImportGroup Label="PropertySheets">
-    <Import Project="..\nms.props" />
+    <Import Project="nms.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)publish\bin\</OutDir>
@@ -32,28 +33,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)publish\bin\</OutDir>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\;$(SolutionDir)publish\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\;$(SolutionDir)publish\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <!--project: imports-->
   <!--cpp: items -->
   <ItemGroup>
-    <ClInclude Include="nms.cuda.sample\vadd.cuda.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\nms.vcxproj">
+    <ProjectReference Include="nms.vcxproj">
       <Project>{7facc7ef-77dc-4537-8265-bc993efce1ec}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="nms.cuda.sample\main.cc" />
+    <ClCompile Include="nms.compiler\main.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

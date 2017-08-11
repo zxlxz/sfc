@@ -91,7 +91,7 @@ public:
 
     /* invoke kernel */
     template<class ...Targ>
-    void invoke(fun_t kernel, u32 rank, const u32 dims[], Targ&& ...args) {
+    void invoke(fun_t kernel, u32 rank, const u32 dims[], const Targ& ...args) {
         const void* argv[] = { &args... };
         run_kernel(kernel, rank, dims, argv);
     }

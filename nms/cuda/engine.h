@@ -47,8 +47,6 @@ public:
 protected:
     String  src_;
     String  ptx_;
-    u32     cnt_;
-
 };
 
 /**
@@ -82,7 +80,7 @@ private:
     /* run: redirect to invoke */
     template<class Tfunc, class Tret, class Targ>
     static void _run(Tfunc func, const Tret& ret, const Targ& arg, Version<0>) {
-        static auto fid  = nms::static_run< &add_func<Tfunc, Tret, Targ>, void(Tfunc, Tret, Targ)>();
+        static auto fid  = nms::static_run< &add_func<Tfunc, Tret, Targ>, Tfunc(Tret, Targ)>();
         static auto kid  = _get_kernel(fid);
         static auto&mod  = sModule();
 

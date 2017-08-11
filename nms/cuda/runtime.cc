@@ -417,9 +417,9 @@ NMS_API Module::fun_t Module::get_kernel(StrView name) const {
 
 NMS_API void Module::run_kernel(fun_t kernel, u32 rank, const u32 dims[], const void* kernel_args[], Stream& stream) const {
     u32 block_dim[3] = {
-        rank == 1 ? 256u : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
-        rank == 1 ? 001u : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
-        rank == 1 ? 001u : rank == 2 ? 01u : rank == 3 ? 8u : 8u,
+        rank == 1 ? min(256u, dims[0]) : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
+        rank == 1 ? min(001u, dims[0]) : rank == 2 ? 16u : rank == 3 ? 8u : 8u,
+        rank == 1 ? min(001u, dims[0]) : rank == 2 ? 01u : rank == 3 ? 8u : 8u,
     };
 
     u32 grid_dim[3] = {
