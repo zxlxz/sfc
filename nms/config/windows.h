@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef NMS_OS_WINDOWS
+
+#ifdef NMS_BUILD
 #define _CRT_NONSTDC_NO_WARNINGS     1
 #define _CRT_SECURE_NO_WARNINGS      1
 #define _CRT_OBSOLETE_NO_DEPRECATE   1
@@ -24,10 +27,6 @@
 #include <sys/stat.h>
 #define NMS_API __declspec(dllexport)
 
-using thrd_t = void*;
-using mtx_t  = void*;
-using cnd_t  = void*;
-
 using stat_t = struct ::_stat64;
 
 static inline int fstat(int fd, stat_t* st) {
@@ -37,3 +36,12 @@ static inline int fstat(int fd, stat_t* st) {
 static inline int stat(const char* path, stat_t* st) {
     return ::_stat64(path, st);
 }
+
+#endif
+
+
+using thrd_t = void*;
+using mtx_t = void*;
+using cnd_t = void*;
+
+#endif

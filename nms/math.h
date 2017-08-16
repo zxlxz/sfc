@@ -1,7 +1,6 @@
 #pragma once
 
 #include <nms/math/base.h>
-#include <nms/math/complex.h>
 #include <nms/math/array.h>
 
 #ifndef _M_CEE

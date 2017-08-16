@@ -36,7 +36,7 @@ extern "C" {
 namespace nms::thread
 {
 
-Semaphore::Semaphore(u32 value) {
+NMS_API Semaphore::Semaphore(u32 value) {
 #ifdef NMS_OS_WINDOWS
     static auto pid = i32(::_getpid());
 #else
@@ -52,13 +52,17 @@ Semaphore::Semaphore(u32 value) {
     impl_ = sem_open(sem_name, O_CREAT, 0, value);
 }
 
-Semaphore::~Semaphore() {
+NMS_API Semaphore::Semaphore() 
+    : Semaphore(0)
+{}
+
+NMS_API Semaphore::~Semaphore() {
     if (impl_ == nullptr)   return;
     sem_close(static_cast<sem_t*>(impl_));
     impl_ = nullptr;
 }
 
-Semaphore& Semaphore::operator+=(u32 n) {
+NMS_API Semaphore& Semaphore::operator+=(u32 n) {
     if (n == 0) {
         return *this;
     }
@@ -70,12 +74,12 @@ Semaphore& Semaphore::operator+=(u32 n) {
     return *this;
 }
 
-Semaphore& Semaphore::operator++() {
+NMS_API Semaphore& Semaphore::operator++() {
     sem_post(static_cast<sem_t*>(impl_));
     return *this;
 }
 
-Semaphore& Semaphore::operator--() {
+NMS_API Semaphore& Semaphore::operator--() {
     auto stat = sem_wait(static_cast<sem_t*>(impl_));
     (void)stat;
     return *this;

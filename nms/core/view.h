@@ -205,14 +205,14 @@ struct View
     }
 
     /*! slice */
-    template<class ...I, u32 ...S, class =$when<sizeof...(I) == $rank>>
+    template<class ...I, u32 ...S>
     __forceinline auto slice(const I(&...idxs)[S]) const noexcept {
         static_assert(all((S<=2)...),       "unexpect array size");
         return _slice(idxs...)._select(Index<(S > 1)...>{} );
     }
 
     /*! slice */
-    template<class ...I, u32 ...S, class = $when<sizeof...(I) == $rank>>
+    template<class ...I, u32 ...S>
     __forceinline auto slice(const I(&...idxs)[S]) noexcept {
         static_assert(all((S<=2)...),       "unexpect array size");
         return _slice(idxs...)._select(Index<(S > 1)...>{});
@@ -224,7 +224,7 @@ struct View
      * @param secs sections
      * @see slice
      */
-    template<class ...I, u32 ...S, class = $when<sizeof...(I) == $rank> >
+    template<class ...I, u32 ...S >
     __forceinline auto operator()(const I(&...secs)[S]) noexcept {
         return slice(secs...);
     }
@@ -234,7 +234,7 @@ struct View
      * @param secs sections
      * @see slice
      */
-    template<class ...I, u32 ...S, class = $when<sizeof...(I) == $rank> >
+    template<class ...I, u32 ...S >
     __forceinline auto operator()(const I(&...secs)[S]) const noexcept {
         return slice(secs...);
     }
@@ -445,7 +445,7 @@ auto permute(const View<T, N> &view, const u32(&order)[N]) {
         new_size[i]     = view.size(order[i]);
         new_stride[i]   = view.stride(order[i]);
     }
-    return mkView(view.data(), new_size, new_stride);
+    return mkView(const_cast<T*>(view.data()), new_size, new_stride);
 }
 
 

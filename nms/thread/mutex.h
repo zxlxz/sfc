@@ -7,9 +7,9 @@ namespace nms::thread
 
 #ifndef NMS_BUILD
 #ifdef NMS_OS_WINDOWS
-#   using mtx_t = u32[1];
+using mtx_t = u32[1];
 #else
-#   using mtx_t = u32[8];
+using mtx_t = u32[8];
 #endif
 #endif
 
@@ -48,3 +48,4 @@ private:
 };
 
 }
+

@@ -153,7 +153,7 @@ template<class Tfunc, class Tret, class ...Targs>
 bool foreach(Tfunc func, Tret& ret, const Targs& ...args) {
     auto executor = get_foreach_executor(ret, args...);
 
-    if (!_foreach_check_size(ret, args...)) {
+    if (!_foreach_check_size(ret, lambda_cast(args)...)) {
         io::log::error("nms.math.foreach: check size failed");
         return false;
     }
@@ -189,5 +189,46 @@ auto operator>>=(const X& x, Y& y) -> decltype(_foreach_check_runable(y), y)& {
     foreach(Ass2{}, y, x);
     return y;
 }
+
+/**
+ * foreach element:
+ * y += x
+ */
+template<class T, u32 N, class X, class=$when<N!=0> >
+auto& operator+=(View<T, N>& y, const X& x) {
+    foreach(Add2{}, y, x);
+    return y;
+}
+
+/**
+* foreach element:
+* y += x
+*/
+template<class T, u32 N, class X, class=$when<N!=0> >
+auto& operator-=(View<T, N>& y, const X& x) {
+    foreach(Sub2{}, y, x);
+    return y;
+}
+
+/**
+* foreach element:
+* y *= x
+*/
+template<class T, u32 N, class X, class=$when<N!=0> >
+auto& operator*=(View<T, N>& y, const X& x) {
+    foreach(Mul2{}, y, x);
+    return y;
+}
+
+/**
+* foreach element:
+* y *= x
+*/
+template<class T, u32 N, class X, class=$when<N!=0> >
+auto& operator/=(View<T, N>& y, const X& x) {
+    foreach(Div2{}, y, x);
+    return y;
+}
+
 
 }

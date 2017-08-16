@@ -8,9 +8,9 @@ namespace nms::thread
 
 #ifndef NMS_BUILD
 #ifdef NMS_OS_WINDOWS
-#   using cnd_t = u64;
+using cnd_t = u64;
 #else
-#   using cnd_t = u32[8];
+using cnd_t = u32[8];
 #endif
 #endif
 
@@ -31,3 +31,4 @@ private:
 };
 
 }
+

@@ -61,7 +61,7 @@ public:
     }
 
     template<class ...Targs>
-    List(u32 size, const Targs&& ...args) {
+    List(u32 size, Targs&& ...args) {
         appends(size, fwd<Targs>(args)...);
     }
 

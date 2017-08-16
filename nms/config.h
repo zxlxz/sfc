@@ -5,20 +5,14 @@
 /* check Operating System */
 #if defined(_WIN32)
 #   define NMS_OS_WINDOWS           // check if os == windows
-#   ifdef NMS_BUILD
-#       include <nms/config/windows.h>
-#   endif
+#   include <nms/config/windows.h>
 #elif defined(__APPLE__)
 #   define NMS_OS_APPLE             // check if os == macos
 #   define NMS_OS_UNIX              // check if os == macos
-#   ifdef NMS_BUILD
-#       include <nms/config/apple.h>
-#   endif
+#   include <nms/config/apple.h>
 #elif defined(__unix__)
 #   define NMS_OS_UNIX              // check if os == linux
-#   ifdef NMS_BUILD
-#       include <nms/config/unix.h>
-#   endif
+#   include <nms/config/unix.h>
 #endif
 
 /* check compilier */

@@ -16,7 +16,7 @@ constexpr f64 abs(f64 val) { return val < 0 ? -val : val; }
 /* isnan */
 template<class T>
 inline auto (isnan)(const T& value) {
-    return isnan(value);
+    return ::isnan(value);
 }
 #ifndef isnan
 #undef isnan

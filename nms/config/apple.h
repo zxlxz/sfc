@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef NMS_OS_APPLE
+#ifdef NMS_BUILD
 
 #include <cxxabi.h>
 
@@ -30,11 +31,12 @@
 #include <malloc/malloc.h>
 #include <mach-o/dyld.h>
 
-
+using stat_t = struct ::stat;
+#endif
 
 // c11-threads
 using thrd_t    = pthread_t;
 using mtx_t     = pthread_mutex_t;
 using cnd_t     = pthread_cond_t;
-using stat_t    = struct ::stat;
+
 #endif

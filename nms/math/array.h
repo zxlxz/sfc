@@ -69,7 +69,7 @@ class Array
     }
 
     auto dup() const {
-        Array tmp(base::length());
+        Array tmp(base::size());
         tmp <<= *this;
         return tmp;
     }
@@ -95,7 +95,7 @@ class Array
 
 protected:
     Array(const Array& rhs)
-        : Array(rhs.len()) {
+        : Array(rhs.size()) {
         *this <<= rhs;
     }
 
