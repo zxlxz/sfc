@@ -4,9 +4,7 @@
   <PropertyGroup Label="Globals">
     <RootNamespace>nms</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration">
-    <PlatformToolset>v140</PlatformToolset>
-  </PropertyGroup>
+
   <!-- cpp: defaults -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -14,12 +12,11 @@
   </PropertyGroup>
   <!-- cpp: environment -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  
   <PropertyGroup>
     <IntDir Condition="Exists('z:\vc')">z:\vc\$(SolutionName)\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
     <IntDir Condition="!Exists('z:\vc')">$(SolutionDir)\.vs\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)publish\bin\</OutDir>
   </PropertyGroup>
-  
   <!-- cpp: compile/link -->
   <ItemDefinitionGroup>
     <ClCompile>
@@ -41,5 +38,8 @@
       <AdditionalOptions>/std:c++latest  %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link />
+    <Link>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

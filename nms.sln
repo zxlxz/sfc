@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26730.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms", "nms.vcxproj", "{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.test", "nms.test.vcxproj", "{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.compiler", "nms.compiler.vcxproj", "{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{90254F8C-1EA
 		doc\nms.test.md = doc\nms.test.md
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.cuda.compiler", "nms.cuda.compiler.vcxproj", "{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,5 +46,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {74E8844E-C1CA-4DF2-BE79-EF5EF60A8E78}
 	EndGlobalSection
 EndGlobal
