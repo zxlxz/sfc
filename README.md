@@ -25,9 +25,8 @@ an c++14 common library for scientific computing.
 ### nms.math
 - lamda expression
 
-### nms.hpc
-- [cuda](/doc/nms.hpc.cuda.md)
-- opencl
+### nms.cuda
+- [cuda](/doc/nms.cuda.md)
 
 ### nms.thread
 - thread

@@ -7,11 +7,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms", "nms.vcxproj", "{7FAC
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.test", "nms.test.vcxproj", "{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{EE0FCDC5-6B54-4A99-BD7F-F3FBB45D0DEB}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.compiler", "nms.compiler.vcxproj", "{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.cuda.simple", "samples\nms.cuda.simple\nms.cuda.simple.vcxproj", "{BD340428-9815-4425-803F-FE2EEEB70616}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}"
+	ProjectSection(SolutionItems) = preProject
+		doc\nms.cuda.md = doc\nms.cuda.md
+		doc\nms.test.gif = doc\nms.test.gif
+		doc\nms.test.md = doc\nms.test.md
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,19 +43,8 @@ Global
 		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.ActiveCfg = Release|x64
 		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.Build.0 = Release|x64
 		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x86.ActiveCfg = Release|x64
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x64.ActiveCfg = Debug|x64
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x64.Build.0 = Debug|x64
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x86.ActiveCfg = Debug|Win32
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Debug|x86.Build.0 = Debug|Win32
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x64.ActiveCfg = Release|x64
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x64.Build.0 = Release|x64
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x86.ActiveCfg = Release|Win32
-		{BD340428-9815-4425-803F-FE2EEEB70616}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{BD340428-9815-4425-803F-FE2EEEB70616} = {EE0FCDC5-6B54-4A99-BD7F-F3FBB45D0DEB}
 	EndGlobalSection
 EndGlobal
