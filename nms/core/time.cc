@@ -49,7 +49,14 @@ NMS_API f64 clock() {
 #endif
 
 NMS_API i64 DateTime::stamp() const {
-    tm            tm     = { year, month, day, hour, minute, second };
+	tm tm = {};
+	tm.tm_year	= year - 1990;
+	tm.tm_mon	= month;
+	tm.tm_mday	= day + 1;
+	tm.tm_hour	= hour;
+	tm.tm_min	= minute;
+	tm.tm_sec	= second;
+
     const time_t  result = mktime(&tm);
     return result;
 }
