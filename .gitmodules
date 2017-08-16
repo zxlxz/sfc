@@ -1,3 +1,6 @@
 [submodule "publish"]
 	path = publish
 	url = https://github.com/lumpyzhu/nmscc.publish
+[submodule "samples"]
+	path = samples
+	url = https://github.com/lumpyzhu/nmscc.samples
