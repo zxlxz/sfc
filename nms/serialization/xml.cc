@@ -96,7 +96,7 @@ static void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
     }
 }
 
-NMS_API void formatImpl(String& buf, const NodeEx& tree, StrView fmt) {
+NMS_API void formatImpl(String& buf, const NodeEx& tree, StrView/*fmt*/) {
     const auto capicity = tree.count() * 8 + tree.strlen();
     buf.reserve(buf.count() + capicity);
 

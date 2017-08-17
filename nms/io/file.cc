@@ -81,7 +81,7 @@ NMS_API void File::sync() const {
 }
 
 NMS_API String loadString(const Path& path) {
-    TxtFile file(path, TxtFile::Read);
+    TxtFile file(path, File::Read);
     const auto len = u32(file.size());
 
     String str;

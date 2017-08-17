@@ -46,11 +46,6 @@ auto toLambda(const Scalar<X>& x) {
     return x;
 }
 
-template<class T>
-auto toScalar(const T& t) -> decltype($when_is<$number, T>{}, Scalar<T>{}) {
-    return { t };
-}
-
 /* mk scalar */
 template<class X>
 Scalar<X> mkScalar(const X& x) {
@@ -58,12 +53,13 @@ Scalar<X> mkScalar(const X& x) {
 }
 
 /* to scalar */
-inline auto toScalar(const bool& t) {
-    return Scalar<bool>{t};
+template<class T, u32 N>
+auto toScalar(const Vec<T,N>& t) {
+    return Scalar< Vec<T,N> >{t};
 }
 
 /* to scalar */
-template<class T, class = $when_is<$number, T> >
+template<class T, class = $when< $is<$number, T> || $is<bool, T> > >
 auto toScalar(const T& t) {
     return Scalar<T>{t};
 }

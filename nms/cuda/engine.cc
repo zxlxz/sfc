@@ -139,13 +139,13 @@ NMS_API Module& ForeachExecutor::sModule() {
 
             auto src = program.src();
             if (!stat && src.count() > 0) {
-                io::TxtFile src_file(src_path, io::TxtFile::Write);
+                io::TxtFile src_file(src_path, io::File::Write);
                 src_file.write(src);
             }
 
             auto ptx = program.ptx();
             if (stat && ptx.count() > 0) {
-                io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+                io::TxtFile ptx_file(ptx_path, io::File::Write);
                 ptx_file.write(ptx);
             }
         }
@@ -204,7 +204,7 @@ NMS_API Module&  gModule() {
 
             const auto ptx = program.ptx();
             if (ptx.count() > 0) {
-                io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+                io::TxtFile ptx_file(ptx_path, io::File::Write);
                 ptx_file.write(ptx);
             }
         }

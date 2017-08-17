@@ -37,8 +37,12 @@ namespace nms
 NMS_API Library::Library(const io::Path& path) {
     auto full_path  = path.cstr();
     object_ = dlopen(full_path, RTLD_LAZY);
+
     if (object_ ==  nullptr) {
-        io::log::error("nms.Library.Library: cannot load {}", path);
+        io::log::error("nms.Library: load {} failed", path);
+    }
+    else {
+        io::log::info("nms.Library: load {} ok", path);
     }
 }
 

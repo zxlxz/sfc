@@ -118,6 +118,12 @@ NMS_API Path& Path::operator+=(const Path& rhs) {
     return *this;
 }
 
+NMS_API Path Path::operator+(const Path& rhs) const {
+    auto ret(*this);
+    ret += rhs;
+    return ret;
+}
+
 NMS_API StrView Path::ext() const {
     const auto  n = str_.count();
     auto        i = n - 1;

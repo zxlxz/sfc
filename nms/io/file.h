@@ -138,36 +138,6 @@ public:
         return *this;
     }
 
-    template<class T, u32 N>
-    File& operator>>(View<T,N>& v) {
-        auto& self = *this;
-        self >> v.typeinfo();
-        self >> v.size();
-        self.read(v.data(), v.count());
-        return *this;
-    }
-
-    template<class T, u32 N>
-    File& operator<<(const View<T, N>& v) {
-        auto& self = *this;
-        self << v.typeinfo();
-        self << v.size();
-        self.write(v.data(), v.count());
-        return *this;
-    }
-
-    template<class T>
-    File& load(T& val) {
-        *this >> val;
-        return *this;
-    }
-
-    template<class T>
-    File& save(T& val) {
-        *this << val;
-        return *this;
-    }
-
 #pragma endregion
 
 protected:
@@ -208,7 +178,7 @@ void save(const View<T, N>& view, const char* path) {
 }
 
 class TxtFile
-    : public File
+    : protected File
 {
 protected:
     using base = File;
@@ -217,8 +187,13 @@ public:
     NMS_API TxtFile(const Path& path, File::OpenMode mode);
     NMS_API ~TxtFile();
 
+    using base::OpenMode;
     using base::size;
     using base::sync;
+
+    u64 read(char* buff, u64 size) {
+        return base::read(buff, size);
+    }
 
     u64 write(StrView str) {
         return base::write(str.data(), str.count());

@@ -8,4 +8,15 @@ namespace nms::serialization::xml
 
 NMS_API void formatImpl(String& buf, const NodeEx& tree, StrView fmt);
 
+template<class T, class = $when<$is_base_of<ISerializable, T> > >
+String format(const T& t) {
+    Tree tree;
+    tree << t;
+
+    String str;
+    formatImpl(str, tree, StrView{});
+
+    return str;
+}
+
 }

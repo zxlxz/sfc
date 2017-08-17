@@ -107,7 +107,6 @@ protected:
     };
 };
 
-
 struct NodeEx
 {
 

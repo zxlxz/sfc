@@ -1,11 +1,7 @@
 #pragma once
 
 #include <nms/core/view.h>
-
-namespace nms::io
-{
-class File;
-}
+#include <nms/io/file.h>
 
 namespace nms::math
 {
@@ -93,6 +89,40 @@ class Array
         return *this;
     }
 
+#pragma region save/load
+    void save(io::File& os) const {
+        const auto info = base::typeinfo();
+        os << info;
+        os.write(data(), count());
+    }
+
+    void save(const io::Path& path) const {
+        io::File file(path, io::File::Write);
+        save(file);
+    }
+
+    static Array load(io::File& is) {
+        u8x4        info;
+        Vec<u32, N> size;
+
+        is >> info;
+        is >> size;
+        if (info != base::typeinfo()) {
+            throw EBadType{};
+        }
+
+        Array tmp(size);
+        is.read(tmp.data(), tmp.count());
+        return tmp;
+    }
+
+    static Array load(const io::Path& path) {
+        io::File file(path, io::File::Read);
+        auto ret = load(file);
+        return ret;
+    }
+#pragma endregion
+
 protected:
     Array(const Array& rhs)
         : Array(rhs.size()) {
@@ -101,24 +131,6 @@ protected:
 
 private:
     delegate<void()>    deleter_;
-
-private:
-    /* trait: io::LoadAble */
-    template<class IS>
-    friend auto operator>>(IS& is, Array& array) -> $when<$is_base_of<io::File, IS>, IS&> {
-        u8x4        file_info;
-        Vec<u32, N> file_size;
-
-        is >> file_info;
-        is >> file_size;
-        if (file_info != array.typeinfo()) {
-            throw EBadType{};
-        }
-        array.resize(file_size);
-        is.read(array);
-
-        return is;
-    }
 };
 
 }

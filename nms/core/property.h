@@ -28,18 +28,18 @@ __forceinline Property<const T&> make_property(StrView name, const T& member) {
     return { name, member };
 }
 
-static constexpr auto $property_idx = 0;
+static constexpr auto _$property_idx = __COUNTER__;
 
 }
 
-#define NMS_PROPERTY_BEGIN enum:i32 { $property_idx = __COUNTER__ + 1 }
-#define NMS_PROPERTY_END   enum:i32 { $property_cnt = __COUNTER__ - $property_idx}
+#define NMS_PROPERTY_BEGIN enum:i32 { _$property_idx = __COUNTER__ + 1 }
+#define NMS_PROPERTY_END   enum:i32 { _$property_cnt = __COUNTER__ - _$property_idx}
 
 #define NMS_PROPERTY(member)                                                                            \
     T##member;                                                                                          \
-    enum:i32 { $##member##_id = i32(__COUNTER__) - $property_idx};                                      \
-    auto    operator[](I32<$##member##_id>)        { return make_property(#member, member); }           \
-    auto    operator[](I32<$##member##_id>) const  { return make_property(#member, member); }           \
+    enum:i32 { _$##member##_id = i32(__COUNTER__) - _$property_idx};                                    \
+    auto    operator[](I32<_$##member##_id>)        { return make_property(#member, member); }          \
+    auto    operator[](I32<_$##member##_id>) const  { return make_property(#member, member); }          \
     T##member member
 
 #define _NMS_ENUM_CASE(i, value)  case TEnum::value: return StrView{#value};

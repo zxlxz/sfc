@@ -18,9 +18,9 @@ int main(int argc, const char* argv[]) {
     for (auto i = 1; i < argc; ++i) {
         auto str = cstr(argv[i]);
         if (str[0] == '@') {
-            libs += str;
+            libs += str.slice(1, -1);
         }
-        if (str[0] == '+' || str[0] == '-') {
+        else if (str[0] == '+' || str[0] == '-') {
             masks += str;
         }
         else {

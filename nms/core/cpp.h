@@ -4,6 +4,14 @@
 // 50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 //  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 
+#define NMSCPP_STR(x)               NMSCPP_STR1((x))
+#define NMSCPP_STR1(...)            NMSCPP_STR2 __VA_ARGS__
+#define NMSCPP_STR2(...)            #__VA_ARGS__
+
+#define NMSCPP_MESSAGE(a,b,c,d,...) __pragma(message(a b c d __VA_ARGS__))
+#define NMSCPP_WARN_MSG(...)         NMSCPP_MESSAGE(__FILE__, "(", NMSCPP_STR(__LINE__), "): warning user: ", __VA_ARGS__)
+#define NMSCPP_ERROR_MSG(...)        NMSCPP_MESSAGE(__FILE__, "(", NMSCPP_STR(__LINE__), "): error user: ", __VA_ARGS__)
+
 #define NMSCPP_AT_A(...)            __VA_ARGS__
 #define NMSCPP_AT(id, ...)          NMSCPP_AT_A(NMSCPP_AT_##id(__VA_ARGS__))
 

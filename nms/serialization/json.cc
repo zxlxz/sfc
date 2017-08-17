@@ -78,7 +78,7 @@ static void formatNode(String& buf, const NodeEx& node, i32 level=0) {
     }
 }
 
-NMS_API void formatImpl(String& buf, const NodeEx& tree, StrView fmt) {
+NMS_API void formatImpl(String& buf, const NodeEx& tree, StrView/*fmt*/) {
     const auto capicity = tree.count() * 8 + tree.strlen();
     buf.reserve(buf.count()+capicity);
     formatNode(buf, tree, 0);
@@ -320,20 +320,19 @@ struct TestObject
     : public IFormatable
     , public ISerializable
 {
+    NMS_PROPERTY_BEGIN;
     typedef String NMS_PROPERTY(a);
-    typedef u32x3  NMS_PROPERTY(b);
+    typedef i32x3  NMS_PROPERTY(b);
+    NMS_PROPERTY_END;
 };
 
 
 nms_test(serialization) {
     TestObject obj;
     obj.a = "hello";
-    obj.b = u32x3{ 1u, 2u, 3u };
-
-    Tree tree;
-    tree << obj;
-    auto out = format("{:json}", tree);
-    io::console::writeln("out = {}\n", out);
+    obj.b = { 1, 2, 3 };
+    auto jstr = json::format(obj);
+    io::console::writeln("json = {}\n", jstr);
 }
 
 nms_test(deserialization) {

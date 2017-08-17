@@ -28,7 +28,9 @@ public:
         : Path(StrView{ s })
     {}
 
-    NMS_API Path  operator/ (const Path& rhs) const;
+    NMS_API Path  operator/(const Path& rhs) const;
+    NMS_API Path  operator+(const Path& rhs) const;
+
     NMS_API Path& operator/=(const Path& rhs);
     NMS_API Path& operator+=(const Path& rhs);
 
