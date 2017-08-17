@@ -93,7 +93,7 @@ class Array
     void save(io::File& os) const {
         const auto info = base::typeinfo();
         os << info;
-        os.write(data(), count());
+        os.write(base::data(), base::count());
     }
 
     void save(const io::Path& path) const {

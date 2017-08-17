@@ -223,7 +223,7 @@ NMS_API Module&  gModule() {
 
 
 #pragma region unittest
-__kernel__ void nms_cuda_Engine_test(nms::View<nms::f32, 2> v);
+void nms_cuda_Engine_test(nms::View<nms::f32, 2> v);
 
 static const char nms_cuda_Engine_test_src[] = R"(
 __kernel__ void nms_cuda_Engine_test(nms::View<nms::f32,2> v) {

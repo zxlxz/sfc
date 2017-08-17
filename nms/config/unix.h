@@ -31,9 +31,9 @@
 #include <sys/mman.h>
 
 using stat_t = struct ::stat;
-
 #endif
 
+#include <pthread.h>
 // c11-threads
 using thrd_t    = pthread_t;
 using mtx_t     = pthread_mutex_t;

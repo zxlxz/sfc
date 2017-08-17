@@ -28,7 +28,7 @@ target("nms")
 
     -- set flags
     add_cxxflags("-std=c++1z", "-frtti", "-isystem .", "-DNMS_BUILD")
-    set_targetdir("bin")
+    set_targetdir("publish/bin")
     set_objectdir("/tmp/nmscc")
 
     -- add files
@@ -41,11 +41,12 @@ target("nms.test")
     set_kind("binary")
 
     -- set flags
-    add_cxxflags("-std=c++1z", "-frtti")
-    set_targetdir("bin")
+    add_cxxflags("-std=c++1z", "-frtti", "-isystem .")
+    set_targetdir("publish/bin")
     set_objectdir("/tmp/nmscc")
 
     -- add files
+    add_deps("nms")
     add_files("nms.test/**.cc")
 
 

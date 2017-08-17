@@ -16,7 +16,11 @@ constexpr f64 abs(f64 val) { return val < 0 ? -val : val; }
 /* isnan */
 template<class T>
 inline auto (isnan)(const T& value) {
+#ifdef NMS_CC_MSVC
     return ::isnan(value);
+#else
+    return isnan(value);
+#endif
 }
 #ifndef isnan
 #undef isnan
@@ -25,7 +29,11 @@ inline auto (isnan)(const T& value) {
 /* isinf */
 template<class T>
 inline auto (isinf)(const T& value) {
+#ifdef NMS_CC_MSVC    
+    return ::isinf(value);
+#else
     return isinf(value);
+#endif
 }
 #ifdef isinf
 #undef isinf

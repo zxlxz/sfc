@@ -153,30 +153,6 @@ protected:
     NMS_API u64 writeRaw(const void* buffer, u64 size, u64 count);
 };
 
-template<class T, u32 N>
-void load(View<T, N>& view, const Path& path) {
-    File file(path, File::Read);
-    file.load(view);
-}
-
-template<class T, u32 N>
-void save(const View<T, N>& view, const Path& path) {
-    File file(path, File::Write);
-    file.save(view);
-}
-
-template<class T, u32 N>
-void load(View<T, N>& view, const char* path) {
-    File file(cstr(path), File::Read);
-    file.load(view);
-}
-
-template<class T, u32 N>
-void save(const View<T, N>& view, const char* path) {
-    File file(cstr(path), File::Write);
-    file.save(view);
-}
-
 class TxtFile
     : protected File
 {
