@@ -186,3 +186,45 @@ NMS_API String loadString(const Path& path);
 
 }
 
+namespace nms
+{
+template<class T, u32 BS>
+void List<T,BS>::save(io::File& os) const {
+    const auto info = base::typeinfo();
+    const auto size = base::size();
+    os << info;
+    os << size;
+
+    os.write(data(), count());
+}
+
+template<class T, u32 BS>
+void List<T, BS>::save(const io::Path& path) const {
+    io::File file(path, io::File::Write);
+    save(file);
+}
+
+template<class T, u32 BS>
+List<T,BS> List<T, BS>::load(io::File& is) {
+    u8x4        info;
+    Vec<u32, 1> size;
+
+    is >> info;
+    is >> size;
+    if (info != base::typeinfo()) {
+        throw EBadType{};
+    }
+
+    List<T,BS> tmp(size[0]);
+    is.read(tmp.data(), tmp.count());
+    return tmp;
+}
+
+template<class T, u32 BS>
+List<T,BS> List<T, BS>::load(const io::Path& path) {
+    io::File file(path, io::File::Read);
+    auto ret = load(file);
+    return ret;
+}
+
+}

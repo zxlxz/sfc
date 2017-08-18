@@ -8,7 +8,7 @@ namespace nms
 
 struct Type
 {
-    __forceinline constexpr StrView name() const {
+    __forceinline StrView name() const {
         return get_name_();
     }
 

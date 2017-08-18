@@ -46,7 +46,7 @@ public:
     {}
 
 #ifdef _M_CEE
-    __forceinline String(System::String^ str)
+    String(System::String^ str)
     {
         const auto cnt = u32(str->Length);
         resize(cnt);

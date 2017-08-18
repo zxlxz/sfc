@@ -45,7 +45,7 @@ int main(int argc, const char* argv[]) {
     }
 
     auto ptx = program.ptx();
-    io::TxtFile ptx_file(ptx_path, io::TxtFile::Write);
+    io::TxtFile ptx_file(ptx_path, io::File::Write);
     ptx_file.write(ptx);
 
     return 0;

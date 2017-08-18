@@ -7,26 +7,48 @@
 namespace nms
 {
 
-template<class T, u32 N>
+namespace io
+{
+class File;
+class Path;
+}
+
+template<class T, u32 N, bool=$is_pod<T> >
 struct ListBuff;
 
 template<class T>
-struct ListBuff<T, 0>
+struct ListBuff<T, 0, true>
 {
     constexpr operator T* () const noexcept {
         return nullptr;
     }
 };
 
-
-template<class T, u32 N>
-struct alignas(T) ListBuff
+template<class T>
+struct ListBuff<T, 0, false>
 {
     constexpr operator T* () const noexcept {
-        return (T*)(buff_);
+        return nullptr;
+    }
+};
+
+template<class T, u32 N>
+struct ListBuff<T, N, true> {
+    constexpr operator T* () const noexcept {
+        return const_cast<T*>(buff_);
     }
 
-    Tcond<$is_pod<T>, T, ubyte[sizeof(T)]> buff_[N] = {};
+    T buff_[N] = {};
+};
+
+template<class T, u32 N>
+struct alignas(T) ListBuff<T, N, false>
+{
+    constexpr operator T* () const noexcept {
+        return const_cast<T*>(reinterpret_cast<const T*>(buff_));
+    }
+
+    ubyte buff_[N*sizeof(T)] = {};
 };
 
 /* list: move able */
@@ -169,27 +191,35 @@ public:
     }
 
     /*!
-    * change number of elements
-    */
-    template<class U>
-    List& reset(u32 n, U&& u) {
-        List tmp(n, fwd<U>(u));
+     * change number of elements
+     */
+    template<class ...U>
+    List& reset(u32 n, U&& ...u) {
+        List tmp(n, fwd<U>(u)...);
         nms::swap(*this, tmp);
         return *this;
     }
 
     /*!
-    * append elements to the end
-    */
+     * append elements to the end
+     */
+    template<class ...U>
+    List& _append(U&& ...u) {
+        auto ptr = base::data();
+        auto idx = base::size_[0]++;
+        new(&ptr[idx])T(fwd<U>(u)...);
+        return *this;
+    }
+
+    /*!
+     * append elements to the end
+     */
     template<class ...U>
     List& append(U&& ...u) {
         const auto oldlen = base::count();
         const auto newlen = oldlen + 1;
         reserve(newlen);
-        base::size_[0] = newlen;
-
-        auto ptr = base::data();
-        new(&ptr[oldlen])T(fwd<U>(u)...);
+        _append(fwd<U>(u)...);
         return *this;
     }
 
@@ -214,13 +244,20 @@ public:
     /*!
     * append(copy) elements to the end
     */
-    List& appends(const T* ext, u32 ext_cnt) {
+    template<class U>
+    List& appends(const U* src, u32 cnt) {
+        noexcept(T(src[0]));
+
         auto old_cnt = base::count();
-        reserve(old_cnt + ext_cnt);
-        for (u32 i = 0; i < ext_cnt; ++i) {
-            new(&base::data_[old_cnt + i])T(ext[i]);
+        reserve(old_cnt + cnt);
+        base::size_[0] += cnt;
+
+        // modify data
+        auto ptr = base::data_ + old_cnt;
+        for (u32 i = 0; i < cnt; ++i, ++ptr) {
+            new(ptr)T(src[i]);
         }
-        base::size_[0] += ext_cnt;
+
         return *this;
     }
 
@@ -232,6 +269,13 @@ public:
         append(fwd<U>(u));
         return *this;
     }
+#pragma endregion
+
+#pragma region save/load
+    void save(io::File& os) const;
+    void save(const io::Path& path) const;
+    static List load(io::File& is);
+    static List load(const io::Path& path);
 #pragma endregion
 
 protected:

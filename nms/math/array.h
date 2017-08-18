@@ -92,7 +92,10 @@ class Array
 #pragma region save/load
     void save(io::File& os) const {
         const auto info = base::typeinfo();
+        const auto size = base::size();
+
         os << info;
+        os << size;
         os.write(base::data(), base::count());
     }
 

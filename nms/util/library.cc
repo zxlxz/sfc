@@ -42,7 +42,7 @@ NMS_API Library::Library(const io::Path& path) {
         io::log::error("nms.Library: load {} failed", path);
     }
     else {
-        io::log::info("nms.Library: load {} ok", path);
+        io::log::debug("nms.Library: load {} ok", path);
     }
 }
 

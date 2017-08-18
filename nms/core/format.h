@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nms/core/type.h>
+#include <nms/core/cpp.h>
 #include <nms/core/view.h>
 #include <nms/core/string.h>
 #include <nms/core/exception.h>
@@ -14,37 +15,29 @@ struct IFormatable
 {
     friend class Formatter;
 
-private:
+protected:
     template<class T>
     static void _format(String& buf, const T& obj) {
-        format_begin<0>(&buf, &obj, nullptr);
+        buf += "{\n";
+
+#define call_do_format(n, ...)    _do_format(I32<n>{}, obj, &buf);
+        NMSCPP_LOOP(99, call_do_format)
+#undef call_do_format
+
+        buf += "}\n";
     }
 
-    // format-begin
-    template<u32 I, class T>
-    static void format_begin(String* buf, const T* obj, ...) {
-        format_begin<I+1>(buf, obj, nullptr);
-    }
-
-    // format-switch
-    template<u32 I, class T>
-    static auto format_begin(String* buf, const T* obj, nullptr_t)-> decltype((*obj)[I32<I>{}], 0) {
-        format_do<I>(buf, obj);
-        return 0;
-    }
-
+private:
     // format-do
-    template<u32 I, class T>
-    static auto format_do(String* buf, const T* obj)-> decltype((*obj)[I32<I>{}], 0) {
-        auto t = (*obj)[I32<I>{}];
-        sformat(*buf, I==1 ? cstr("{}: {}") : cstr("{}: {}, "), t.name, t.value);
-        format_do<I+1>(buf, obj);
-        return 0;
+    template<class T, i32 I, class = $when<(I<T::_$property_cnt)> >
+    static void _do_format(I32<I> idx, const T& obj, String* buf) {
+        auto t = (obj)[idx];
+        sformat(*buf, "    {}: {}\n", t.name, t.value);
     }
 
     // format-end
-    template<u32 I>
-    static void format_do(...)
+    template<class T, i32 I, class = $when<(I>=T::_$property_cnt)> >
+    static void _do_format(I32<I>, const T&, ...)
     {}
 };
 
@@ -66,7 +59,7 @@ NMS_API void formatImpl(String& buf, cstr_t   val, StrView fmt);
 NMS_API void formatImpl(String& buf, const IException&  val, StrView fmt);
 
 inline void formatImpl(String& buf, const String& val, StrView fmt) {
-    formatImpl(buf, StrView(val), fmt);
+    formatImpl(buf, val.operator StrView(), fmt);
 }
 
 template<u32 N>
