@@ -17,27 +17,32 @@
     <IntDir Condition="!Exists('z:\vc')">$(SolutionDir)\.vs\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)publish\bin\</OutDir>
   </PropertyGroup>
+  
   <!-- cpp: compile/link -->
   <ItemDefinitionGroup>
+    
     <ClCompile>
-      <!-- path -->
-      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(FileName).obj</ObjectFileName>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <!--debug-->
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <!--library-->
-      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
-      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <!--cpp: langauge-->
+      <AdditionalOptions>/std:c++latest  %(AdditionalOptions)</AdditionalOptions>
+      <WarningLevel>Level3</WarningLevel>
+
       <!-- optimization -->
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
       <InlineFunctionExpansion Condition="'$(Configuration)' == 'Debug'">OnlyExplicitInline</InlineFunctionExpansion>
-      <!--compile: info-->
-      <WarningLevel>Level3</WarningLevel>
-      <!--cpp: langauge-->
-      <AdditionalOptions>/std:c++latest  %(AdditionalOptions)</AdditionalOptions>
+
+      <!--debug-->
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      
+      <!--library-->
+      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+
+      <!-- path -->
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(FileName).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link />
+
     <Link>
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
