@@ -471,6 +471,7 @@ protected:
         if (v.type() == Type::number) {
             const_cast<T&>(*p)          = parse<T>( v.str());
             const_cast<Type&>(v.type_)  = t;
+            x = *p;
             return;
         }
         throw EUnexpectType{ Type::number, v.type() };

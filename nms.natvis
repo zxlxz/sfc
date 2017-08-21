@@ -81,7 +81,7 @@
 
   <!-- nms::serialization::Node -->
   <Type Name="nms::serialization::Node">
-    <DisplayString Condition="type_==0 ">{{}}       </DisplayString>
+    <DisplayString Condition="type_==0 ">null    </DisplayString>
     <DisplayString Condition="type_==1 ">{bool_val_}</DisplayString>
     <DisplayString Condition="type_==2 ">{u8_val_ }</DisplayString>
     <DisplayString Condition="type_==3 ">{i8_val_ }</DisplayString>
@@ -96,8 +96,8 @@
     <DisplayString Condition="type_==12">{num_val_, [size_]s}</DisplayString>
     <DisplayString Condition="type_==13">{str_val_, [size_]s}</DisplayString>
     <DisplayString Condition="type_==14">{key_val_, [size_]s}=> {*(this+1)}</DisplayString>
-    <DisplayString Condition="type_==15">array</DisplayString>
-    <DisplayString Condition="type_==16">object</DisplayString>
+    <DisplayString Condition="type_==15">[size={size_}]</DisplayString>
+    <DisplayString Condition="type_==16">{{size={size_}}}</DisplayString>
     <Expand>
       <Item Name="[key]"   Condition="type_==14">key_val_, [size_]</Item>
       <Item Name="[value]" Condition="type_==14">*(this+1)</Item>

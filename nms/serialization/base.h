@@ -141,8 +141,9 @@ private:
     // serialize-do
     template<u32 I, class T>
     static auto serialize_do(NodeEx* node, const T* obj)-> decltype((*obj)[I32<I>{}], 0) {
-        auto t = (*obj)[I32<I>{}];
-        (*node)[t.name] << t.value;
+        auto src = (*obj)[I32<I>{}];
+        auto dst = (*node)[src.name];
+        dst << src.value;
         serialize_do<I + 1>(node, obj);
         return 0;
     }
@@ -173,8 +174,9 @@ private:
     // deserialize-do
     template<u32 I, class T>
     static auto deserialize_do(const NodeEx* node, T* obj)-> decltype((*obj)[I32<I>{}], 0) {
-        auto t = (*obj)[I32<I>{}];
-        (*node)[t.name] >> t.value;
+        auto dst = (*obj)[I32<I>{}];
+        auto src = (*node)[dst.name];
+        src >> dst.value;
         deserialize_do<I + 1>(node, obj);
         return 0;
     }
