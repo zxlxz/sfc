@@ -246,8 +246,6 @@ public:
     */
     template<class U>
     List& appends(const U* src, u32 cnt) {
-        noexcept(T(src[0]));
-
         auto old_cnt = base::count();
         reserve(old_cnt + cnt);
         base::size_[0] += cnt;

@@ -72,11 +72,12 @@ void Mutex::lock() noexcept {
 }
 
 bool Mutex::trylock() {
-    return mtx_trylock(&impl_)== 0;
+    auto stat =  mtx_trylock(&impl_);
+    return stat == 0;
 }
 
 void Mutex::unlock() noexcept {
-    mtx_destroy(&impl_);
+    mtx_unlock(&impl_);
 }
 
 }

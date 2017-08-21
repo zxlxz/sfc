@@ -5,14 +5,6 @@
 namespace nms::thread
 {
 
-#ifndef NMS_BUILD
-#ifdef NMS_OS_WINDOWS
-using mtx_t = u32[1];
-#else
-using mtx_t = u32[8];
-#endif
-#endif
-
 class Thread;
 class Mutex;
 class CondVar;
@@ -35,16 +27,19 @@ private:
 struct LockGuard final
 {
 public:
-    explicit LockGuard(Mutex& lock)
-        : lock_(lock) {
-        lock_.lock();
+    explicit LockGuard(Mutex& mutex)
+        : mutex_(mutex) {
+        auto stat = mutex_.trylock();
+        if (!stat) {
+            mutex_.lock();
+        }
     }
 
     ~LockGuard() {
-        lock_.unlock();
+        mutex_.unlock();
     }
 private:
-    Mutex&   lock_;
+    Mutex&  mutex_;
 };
 
 }

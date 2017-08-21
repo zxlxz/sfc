@@ -66,6 +66,7 @@ struct Testor
         try {
             func();
             console::writeln(fmt_ok, clock(), name);
+            return true;
         }
         catch (const IException& e) {
             log::error("throw nms::IException {}", e);
@@ -84,6 +85,7 @@ struct Testor
             return false;
         }
         catch (...) {
+            std::exception_ptr
             return false;
         }
         return true;

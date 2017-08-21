@@ -39,7 +39,6 @@ static inline int stat(const char* path, stat_t* st) {
 
 #endif
 
-
 using thrd_t = void*;
 using mtx_t = void*;
 using cnd_t = void*;

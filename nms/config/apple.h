@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef NMS_OS_APPLE
+
 #ifdef NMS_BUILD
 
 #include <cxxabi.h>
@@ -30,15 +31,29 @@
 // macos
 #include <malloc/malloc.h>
 #include <mach-o/dyld.h>
-
-#define NMS_API __attribute__((visibility("default")))
-using stat_t = struct ::stat;
-#endif
-
 #include <pthread.h>
+
+using stat_t = struct stat;
+
 // c11-threads
 using thrd_t    = pthread_t;
 using mtx_t     = pthread_mutex_t;
 using cnd_t     = pthread_cond_t;
 
+#else
+
+// c11-threads
+using thrd_t    = struct pthread_st*;
+
+struct mtx_t {
+    long sig;
+    char opaque[56];
+};
+
+struct cnd_t {
+    long sig;
+    char opaque[40];
+};
+
+#endif
 #endif

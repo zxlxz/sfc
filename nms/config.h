@@ -32,7 +32,7 @@
 #ifdef NMS_CC_MSVC
 #   define NMS_API __declspec(dllimport)
 #else
-#   define NMS_API
+#   define NMS_API __attribute__((visibility("default")))
 #endif
 #endif
 
