@@ -30,7 +30,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-using stat_t = struct ::stat;
+using stat_t = struct stat;
 #endif
 
 #include <pthread.h>

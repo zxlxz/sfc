@@ -13,22 +13,22 @@ nms_test_srcs	= $(wildcard nms.test/*.cc)
 nms_test_objs	= $(patsubst %.cc, %.o, $(nms_test_srcs))
 
 ifeq ($(shell uname), Darwin)
-	nms_lib 	= bin/libnms.dylib
+	nms_lib 	= publish/bin/libnms.dylib
 else
-	nms_lib		= bin/libnms.so
+	nms_lib		= publish/bin/libnms.so
 endif
 
-nms_test		= bin/nms.test
+nms_test		= publish/bin/nms.test
 
 all: $(nms_lib) $(nms_test)
 
 $(nms_lib): $(nms_lib_objs)
-	@mkdir -p bin/
+	@mkdir -p publish/bin/
 	$(CXX) -shared -o $@ $^
 
 $(nms_test): $(nms_test_objs) $(nms_lib)
-	@mkdir -p bin/
-	$(CXX) -o $@ $(nms_test_objs) -Lbin/ -lnms -lpthread -ldl
+	@mkdir -p publish/bin/
+	$(CXX) -o $@ $(nms_test_objs) -Lpublish/bin/ -lnms -lpthread -ldl
 
 .o: %.cc
 

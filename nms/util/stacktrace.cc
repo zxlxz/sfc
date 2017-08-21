@@ -78,9 +78,14 @@ namespace nms
 NMS_API void ProcStacks::init() {
     auto ret = backtrace(stacks_, nms::count(stacks_));
     count_ = u32(ret);
+    if (count_ >= 2) {
+        count_ -= 2;
+    }
 }
 
 NMS_API String ProcStacks::operator[](u32 id) const {
+    id += 2;
+
     if (id >= count_) {
         return {};
     }
@@ -112,9 +117,12 @@ NMS_API String ProcStacks::operator[](u32 id) const {
 #pragma region unittest
 nms_test(stacktrace) {
     ProcStacks stacks;
-    for (u32 i = 0; i < 64 && i + 6 < stacks.count(); ++i) {
+    auto cnt = min(64u, stacks.count());
+
+    io::log::info("nms.Stack.backtrace:");
+    for (u32 i = 0; i+6 < cnt; ++i) {
         auto stack = stacks[i];
-        io::log::info("stack [{}] {}", i, stack);
+        io::log::info("  |- [{:2}] {}", i, stack);
     }
 }
 #pragma endregion

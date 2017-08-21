@@ -60,6 +60,13 @@ public:
         _run(func, ret, arg, Version<1>{});
     }
 
+    /* add func */
+    template<class Tfunc, class Tret, class Targ>
+    static u32 add_func() {
+        static const auto fid = _add_func(typeof<Tfunc>().name(), typeof<Tret>().name(), typeof<Targ>().name());
+        return fid;
+    }
+
 protected:
     NMS_API static Program& sProgram();
     NMS_API static Module&  sModule();
@@ -90,13 +97,6 @@ private:
 
     /* get kernel */
     NMS_API static Module::fun_t _get_kernel(u32 fid);
-
-    /* add func */
-    template<class Tfunc, class Tret, class Targ>
-    static u32 add_func() {
-        static const auto fid = _add_func(typeof<Tfunc>().name(), typeof<Tret>().name(), typeof<Targ>().name());
-        return fid;
-    }
 
     /* add func */
     NMS_API static u32 _add_func(StrView func, StrView ret_type, StrView arg_type);

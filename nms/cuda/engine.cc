@@ -239,7 +239,7 @@ nms_test(Engine) {
     engine::add_src(nms_cuda_Engine_test_src);
 
     cuda::Array<f32, 2> dv({ 16, 16 });
-    nms_cuda_kfunc(nms_cuda_Engine_test)[{ 16, 16 }](dv);
+    nms_cuda_kfunc(nms_cuda_Engine_test)[{ 16u, 16u }](dv);
 
     host::Array<f32, 2> hv(dv.size());
     hv <<= dv;

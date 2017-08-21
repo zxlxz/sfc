@@ -195,7 +195,7 @@ void List<T,BS>::save(io::File& os) const {
     os << info;
     os << size;
 
-    os.write(data(), count());
+    os.write(this->data(), this->count());
 }
 
 template<class T, u32 BS>
