@@ -33,7 +33,7 @@ public:
     using base::BorderMode;
     using base::FilterMode;
 
-    Texture(const u32(&dim)[N], TexBorderMode border_mode, FilterMode filter_mode =FilterMode::Point)
+    Texture(const u32(&dim)[N], TexAddressMode border_mode, TexFilterMode filter_mode =FilterMode::Point)
         : base(), arr_(nullptr), dim_(dim)
     {
         arr_        = arr_new<T>(dim);
@@ -41,7 +41,7 @@ public:
     }
 
     ~Texture() {
-        if (obj_ != 0) {
+        if (base::obj_ != 0) {
             tex_del(base::obj_);
         }
         if (arr_ != nullptr) {

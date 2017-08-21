@@ -1,48 +1,52 @@
 # nmscc
-an c++14 common library for scientific computing.
-
 [![Build status](https://img.shields.io/appveyor/ci/lumpyzhu/nmscc/master.svg)](https://ci.appveyor.com/project/lumpyzhu/nmscc/branch/master)
 [![license](https://img.shields.io/github/license/lumpyzhu/nmscc.svg)]()
 
-这是一个面向科学计算的C++库。
-主要包含对多维数组的惰性表达式求值，及一些辅助功能，如单元测试，字符串格式化，Json/Xml序列化等。
+nmscc is a C++14/CUDA Template library for scientific computation:liner algebra(nd-array), unit test, string format, logging, json/xml serialization etc.
 
-因为C++STL的命名规范，设计理念和本库区别较大，所以这里没有使用STL。
+nmscc是一个C++14/CUDA的科学计算库，包含线性代数(多维数组)，单元测试，格式化输出，日志，json/xml序列化等等。
 
-![nms.test](https://raw.githubusercontent.com/lumpyzhu/nmscc/master/doc/nms.test.gif)
+![nms.test](./doc/test/test.gif)
 
 ### nms.core
-- type 类型支持
-- view 多维向量视图
-- list 类似c++ std::vector
-- string 字符串
+- [type](/doc/core/type.md) 类型支持
+- [view](/doc/core/view.md) 多维向量视图
+- [list](/doc/core/list.md) 类似c++ std::vector
+- [string](/doc/core/string.md) 字符串
 
 ### nms.io
-- path 文件系统
-- file 文件
+- [path](/doc/io/path.md) 文件系统
+- [file](/doc/io/file.md) 文件
 
 ### nms.math
-- array 多维数组
-- lazy expression 多维向量惰性计算
+- [complex](/doc/math/complex.md) 复数
+- [array](/doc/math/array.md) 多维数组
+- [lazy-expression](/doc/math/lambda.md) 表达式计算
 
 ### nms.cuda
-- [cuda](/doc/nms.cuda.md)  
-- nms.compiler cuda编译器(nvrtc封装)
+- [cuda](/doc/cuda/cuda.md) cuda
+- [array](/doc/cuda/array.md) 数组
+- [texture](/doc/cuda/array.md) 纹理
+- [nms.compiler](/doc/nms.cuda.compiler.md) 编译器(nvrtc封装)
 
 ### nms.thread
-- thread
-- mutex
-- semaphore
-- condition variable
-- task 任务/工作流
+- [thread](/doc/thread/thread.md) 线程
+- [mutex](/doc/thread/mutex.md) 锁
+- [semaphore](/doc/thread/semaphore.md) 信号量
+- [condition variable](/doc/thread/condvar.md) 条件变量
+- [task](/doc/thread/task.md) 任务/工作流
 
 ### nms.test
-- [test](/doc/nms.test.md)
+- [test](/doc/nms.test.md) 单元测试
 
 ### nms.serialization
-- tree 
-- json
-- xml
+- [tree](/doc/serialization/tree.md) 属性树
+- [json](/doc/serialization/json.md) json支持
+- [xml](/doc/serialization/xml.md) xml支持
 
 ### nms.util
-
+- [ArrayList](/doc/util/arraylist.md) 动态数组
+- [Library](/doc/util/library.md) 动态库
+- [RingBuf](/doc/util/ringbuf.md) 环形缓冲区
+- [StackTrace](/doc/util/stacktrace.md) 栈回溯
+- [System](/doc/util/system.md) 系统调用

@@ -1,6 +1,12 @@
-
+﻿
 # cuda is simple
 
+有两种方式使用cuda
+- 数学表达式
+- 直接调用cuda kernel函数。
+
+## 1. 数学表达式
+凡是
 ## cuda-kernel.cu
 ```cpp
 __global__ void cuda_kernel(View<float,2> a) {
