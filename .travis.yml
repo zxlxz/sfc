@@ -15,5 +15,5 @@ matrix:
           packages:
             - g++-7
 script:
-  - if["$TRAVIS_OS_NAME" = 'osx'];   then  make; fi
-  - if["$TRAVIS_OS_NAME" = 'linux']; then  CXX=g++-7 make; fi
+  - if [ "$TRAVIS_OS_NAME" = 'osx' ]; then make -j9 ; fi
+  - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then  CXX=g++-7 make -j9; fi
