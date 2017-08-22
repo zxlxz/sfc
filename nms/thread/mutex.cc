@@ -15,9 +15,7 @@ extern "C" {
         return 0;
     }
 
-    static int mtx_destroy(mtx_t* mutex) {
-        ReleaseSRWLockExclusive(mutex);
-        return 0;
+    static void mtx_destroy(mtx_t* mutex) {
     }
 
     static int mtx_lock(mtx_t* mutex) {
@@ -29,7 +27,10 @@ extern "C" {
         return TryAcquireSRWLockExclusive(mutex);
     }
 
-
+    static int mtx_unlock(mtx_t* mutex) {
+        ReleaseSRWLockExclusive(mutex);
+        return 0;
+    }
 }
 #else
 extern "C" {

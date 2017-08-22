@@ -29,10 +29,7 @@ struct LockGuard final
 public:
     explicit LockGuard(Mutex& mutex)
         : mutex_(mutex) {
-        auto stat = mutex_.trylock();
-        if (!stat) {
-            mutex_.lock();
-        }
+        mutex_.lock();
     }
 
     ~LockGuard() {

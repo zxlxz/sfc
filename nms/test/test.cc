@@ -85,7 +85,6 @@ struct Testor
             return false;
         }
         catch (...) {
-            std::exception_ptr
             return false;
         }
         return true;
