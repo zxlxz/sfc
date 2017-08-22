@@ -88,6 +88,7 @@ NMS_API void Thread::start() {
     }
     else {
         auto ret = thrd_create(&impl_, &_thread_callback, func_);
+        (void)ret;
 #ifdef NMS_OS_WINDOWS
         idx_ = ret;
 #endif

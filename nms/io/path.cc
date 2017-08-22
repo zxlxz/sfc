@@ -13,7 +13,7 @@ extern "C" {
 struct XPath
 {
 public:
-    XPath(StrView str) {
+    explicit XPath(StrView str) {
         if (is_delimiter(str[0])) {
             dir_[count_++] = StrView();
             str = str.slice(1u, str.count()-1);
@@ -230,7 +230,7 @@ NMS_API bool exists(const Path& path) {
 NMS_API u64 fsize(const Path& path) {
     auto cpath = path.cstr();
     ::stat_t st;
-    ::stat(path.cstr(), &st);
+    ::stat(cpath, &st);
     return st.st_size;
 }
 

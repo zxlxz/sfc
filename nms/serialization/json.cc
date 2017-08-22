@@ -7,7 +7,7 @@ namespace nms::serialization::json
 {
 
 // format
-static void formatNode(String& buf, const NodeEx& node, i32 level=0) {
+void formatNode(String& buf, const NodeEx& node, i32 level=0) {
     StrView fmt(nullptr, { 0 });
 
     auto& v = node.val();

@@ -19,7 +19,12 @@ MFile::MFile(const Path& path, u64 size)
     : size_(size)
 {
     // open/create file
-    obj_ = ::open(path.cstr(), O_CREAT);
+#ifdef NMS_CC_MSVC
+    obj_ = ::_open(path.cstr(), O_CREAT);
+#else
+    obj_ = ::open(path.cstr(), O_CREAT, 0644);
+#endif
+
     const auto eid = errno;
 
     if (eid !=0 || obj_ < 0) {

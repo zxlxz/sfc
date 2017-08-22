@@ -295,8 +295,9 @@ NMS_API bool Formatter::next(u32& id, StrView& fmt) {
 template<class T>
 static bool _parse(StrView str, T& val, const char* fmt) {
     const auto buf = str.data();
-    const auto cnt = str.count();
+
 #ifdef _MSC_VER
+    const auto cnt = str.count();
     const auto ret = _snscanf_s(buf, cnt, fmt, &val);
 #else
     const auto ret = sscanf(buf, fmt, &val);

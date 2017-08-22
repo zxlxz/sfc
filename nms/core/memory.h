@@ -31,7 +31,7 @@ T* mnew(u64 n){
 /* deallocation */
 template<class T>
 __forceinline void mdel(T* dat) {
-    return _mdel(dat);
+    _mdel(dat);
 }
 
 /* fills a buffer with 0 */

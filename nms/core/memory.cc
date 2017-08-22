@@ -130,13 +130,13 @@ nms_test(memory) {
 
     for (auto loop = 0; loop < 2; ++loop) {
         auto t0 = clock();
-        for (u32 i = 0; i < count; ++i) {
+        for (auto i = 0u; i < count; ++i) {
             auto p = static_cast<Block*>(::malloc(sizeof(Block)));
             ptrs[i] = p;
         }
         auto t1 = clock();
 
-        for (auto i = 0; i < count; ++i) {
+        for (auto i = 0u; i < count; ++i) {
             free(ptrs[i]);
         }
         auto t2 = clock();
@@ -148,7 +148,7 @@ nms_test(memory) {
 
     for (auto loop = 0; loop < 2; ++loop) {
         auto t0 = clock();
-        for (u32 i = 0; i < count; ++i) {
+        for (auto i = 0u; i < count; ++i) {
             auto p = new Block();
             ptrs[i] = p;
         }
@@ -164,7 +164,7 @@ nms_test(memory) {
 
     for (auto loop = 0; loop < 2; ++loop) {
         auto t0 = clock();
-        for (u32 i = 0; i < count; ++i) {
+        for (auto i = 0u; i < count; ++i) {
             auto p = mnew<Block>(1);
             new(p)Block();
             ptrs[i] = p;

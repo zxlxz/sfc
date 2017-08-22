@@ -513,13 +513,17 @@ class String;
 class IException
 {
 protected:
-    NMS_API IException();
+    IException() {
+        _init_stack_trace();
+    }
 
 public:
     virtual ~IException() {}
 
     virtual void format(String& buf) const {}
 
+private:
+    NMS_API void _init_stack_trace();
 };
 
 #pragma endregion

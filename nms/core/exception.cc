@@ -10,7 +10,7 @@ NMS_API const ProcStacks& gExceptionStacks() {
     return stacks;
 }
 
-NMS_API IException::IException()
+NMS_API void IException::_init_stack_trace()
 {
     auto& global_stacks  = const_cast<ProcStacks&>(gExceptionStacks());
     auto  current_stacks = ProcStacks();
@@ -23,13 +23,13 @@ NMS_API u32 ESystem::current() {
 
 NMS_API void ESystem::format(String& buf) const {
     char tmp[256] = { "" };
-
+    auto ptr = tmp;
 #ifdef NMS_OS_WINDOWS
     strerror_s(static_cast<char*>(tmp), sizeof(tmp), id_);
 #else
-    strerror_r(id_, tmp, sizeof(tmp));
+    ptr = strerror_r(id_, tmp, sizeof(tmp));
 #endif
-    StrView str(tmp, { strlen(tmp) });
+    StrView str(ptr, { strlen(ptr) });
     sformat(buf, "system error({}): {}", id_, str);
 }
 

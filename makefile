@@ -1,9 +1,12 @@
 
+
+_CXXFLAGS		= -std=c++1z -Wall -Wno-unknown-pragmas -fPIC -DNMS_BUILD -I. 
+
 debug ?= 1
 ifeq ($(debug), 1)
-	CXXFLAGS	= -std=c++1z -frtti -fexceptions -g  -fPIC -DNMS_BUILD -I. 
+	CXXFLAGS	= $(_CXXFLAGS) -g
 else
-	CXXFLAGS	= -std=c++1z -frtti -fexceptions -O2 -fPIC -DNMS_BUILD -I. 
+	CXXFLAGS	= $(_CXXFLAGS) -O2
 endif
 
 nms_lib_srcs	= $(wildcard nms/*.cc nms/*/*.cc nms/*/*/*.cc)

@@ -3,14 +3,17 @@ language: C++
 matrix:
   include:
     - os: osx
+      dist: trusty
+      compiler: clang
     - os: linux
       dist: trusty
-      compiler: clang-3.8
+      compiler: g++-7
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - clang-3.8
+            - g++-7
 script:
-  - CXX=clang-3.8 make
+  - if["$TRAVIS_OS_NAME" = 'osx'];   then  make; fi
+  - if["$TRAVIS_OS_NAME" = 'linux']; then  CXX=g++-7 make; fi

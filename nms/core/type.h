@@ -32,15 +32,20 @@ private:
         : get_name_(func_name)
     {}
 
-#ifdef NMS_CC_MSVC
+#if defined(NMS_CC_MSVC)
     static constexpr auto funcsig_head_size_ = sizeof("struct nms::View<char const ,0> __cdecl nms::Type::_get_name<") - 1;
     static constexpr auto funcsig_tail_size_ = sizeof(">(void)") - 1;
-#else
+#elif defined(NMS_CC_CLANG)
     static constexpr auto funcsig_head_size_ = sizeof("static StrView nms::Type::_get_name() [T = ") - 1;
     static constexpr auto funcsig_tail_size_ = sizeof("]") - 1;
+#elif defined(NMS_CC_GNUC)
+    static constexpr auto funcsig_head_size_ = sizeof("static nms::View<const char> nms::Type::_get_name() [with T = ") -1;
+    static constexpr auto funcsig_tail_size_ = sizeof("]") -1;
+#else
+#   error("unknow c++ compiler")
 #endif
     template<class T>
-    static StrView _get_name() {
+    static View<const char> _get_name() {
         const StrView name =  { __PRETTY_FUNCTION__ + funcsig_head_size_, { u32(sizeof(__PRETTY_FUNCTION__) - funcsig_head_size_ - funcsig_tail_size_ - 1) } };
         return name;
     }

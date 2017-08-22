@@ -65,7 +65,7 @@ void Exception::format(String& buf) const {
 */
 template<u32 N>
 __forceinline void operator||(cudaError_enum eid,  const char(&msg)[N]) {
-    if (eid == 0) {
+    if (eid == cudaError_enum(0)) {
         return;
     }
     io::log::error(msg);
@@ -81,7 +81,7 @@ CUctx_st*   gDevCtx[32];
 void driver_init() {
     static const auto stat = [] {
         const auto init_stat = NMS_CUDA_DO(cuInit)(0);
-        if (init_stat != 0) {
+        if (init_stat != CUDA_SUCCESS) {
             return init_stat;
         }
 
@@ -105,20 +105,20 @@ NMS_API u32 Device::count() {
     static auto static_init = [&] {
 
         const auto dev_stat = NMS_CUDA_DO(cuDeviceGetCount)(&dev_count);
-        if (dev_stat != 0) {
+        if (dev_stat != CUDA_SUCCESS) {
             return dev_stat;
         }
 
         for (auto i = 0; i < dev_count; ++i) {
             const auto ctx_stat = NMS_CUDA_DO(cuCtxCreate_v2)(&gDevCtx[i], 0, i);
-            if (ctx_stat != 0) {
+            if (ctx_stat != CUDA_SUCCESS) {
                 io::log::error("nms.cuda: create context failed.");
                 return ctx_stat;
             }
         }
 
         const auto ctx_stat = NMS_CUDA_DO(cuCtxSetCurrent)(gDevCtx[0]);
-        if (ctx_stat != 0) {
+        if (ctx_stat != CUDA_SUCCESS) {
             io::log::error("nms.cuda: set context failed.");
             return ctx_stat;
         }
@@ -132,7 +132,7 @@ NMS_API u32 Device::count() {
 
 NMS_API void Device::sync() const {
     auto oid = gDevID;
-    auto nid = id_;
+    auto nid = i32(id_);
 
     if (oid!=nid) {
         NMS_CUDA_DO(cuCtxSetCurrent)(gDevCtx[nid]) || "nms.cuda: cannot set context";

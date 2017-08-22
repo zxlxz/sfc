@@ -201,6 +201,7 @@ NMS_API Module&  gModule() {
         // if not exists, try save
         if (!io::exists(ptx_path)) {
             const auto stat = program.compile();
+            (void)stat;
 
             const auto ptx = program.ptx();
             if (ptx.count() > 0) {

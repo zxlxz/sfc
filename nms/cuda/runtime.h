@@ -13,13 +13,14 @@ using arr_t = CUarray_st*;
 class Exception: public IException
 {
   public:
-    Exception(u32 id):id_(id)
+    explicit Exception(u32 id)
+        :id_(id)
     {}
 
     void format(String& buf) const override;
 
   protected:
-    u32     id_;
+    u32 id_;
 };
 
 /**
@@ -27,10 +28,13 @@ class Exception: public IException
  */
 class Device : public INocopyable
 {
-  public:
-    Device(u32 id):id_(id) {
-        if (id_ > count()) {
-            id_ = 0;
+public:
+    explicit Device(i32 id)
+        : id_(id) {
+        const auto cnt = i32(count());
+
+        if (id_ > cnt) {
+            id_ = -1;
         }
     }
 
@@ -44,8 +48,8 @@ class Device : public INocopyable
      */
     NMS_API static u32 count();
 
-  protected:
-    u32     id_     = 0;
+protected:
+    i32 id_ = -1;
 };
 
 /**
@@ -62,6 +66,9 @@ class Stream : public INocopyable
      */
     NMS_API void sync() const;
 
+    /**
+     * get id
+     */
     auto id() const {
         return id_;
     }

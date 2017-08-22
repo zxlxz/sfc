@@ -29,10 +29,12 @@
 #endif
 
 #ifndef NMS_API
-#ifdef NMS_CC_MSVC
+#if defined(NMS_CC_MSVC)
 #   define NMS_API __declspec(dllimport)
-#else
+#elif defined(NMS_CC_CLANG)
 #   define NMS_API __attribute__((visibility("default")))
+#else
+#   define NMS_API
 #endif
 #endif
 

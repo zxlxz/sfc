@@ -6,19 +6,6 @@ namespace nms
 {
 #pragma region unittest
 
-static void uncopyable_list_test() {
-    class Uncopyable
-    {
-    public:
-        Uncopyable(int)
-        {}
-    };
-
-    List<Uncopyable> list;
-    Uncopyable x(0);
-    list.append(move(x));
-}
-
 nms_test(list) {
     /* copy able */
     List<u32> list;

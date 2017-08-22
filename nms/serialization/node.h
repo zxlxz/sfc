@@ -7,12 +7,12 @@ namespace  nms::serialization
 
 namespace json
 {
-static void formatNode(String& buf, const NodeEx& node, i32 level);
+void formatNode(String& buf, const NodeEx& node, i32 level);
 }
 
 namespace xml
 {
-static void formatNode(String& buf, const NodeEx& node, i32 level);
+void formatNode(String& buf, const NodeEx& node, i32 level);
 }
 
 struct Node

@@ -7,7 +7,7 @@ namespace nms::serialization::xml
 {
 
 // format
-static void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
+void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
     static const auto $indent = 2;
     buf.appends((level + 0)*$indent, ' ');
 
@@ -44,7 +44,7 @@ static void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
     }
 
     case Type::array: {
-        auto k = 0;
+        auto k = 0u;
         for (auto itr = node.begin(); itr != node.end(); ++k, ++itr) {
             if (k != 0) {
                 buf.appends((level + 0) * $indent, ' ');
@@ -67,7 +67,7 @@ static void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
         break;
     }
     case Type::object: {
-        auto k = 0;
+        auto k = 0u;
         for (auto itr = node.begin(); itr != node.end(); ++k, ++itr) {
             if (k != 0) {
                 buf.appends((level + 0)*$indent, ' ');

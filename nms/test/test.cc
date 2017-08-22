@@ -16,7 +16,7 @@ using namespace nms::io;
 struct Testor
 {
     StrView name;
-    void    (*func)();
+    void(*func)();
 
     bool match(const StrView& mask) const {
         if (mask.isEmpty()) {
@@ -68,7 +68,7 @@ struct Testor
             console::writeln(fmt_ok, clock(), name);
             return true;
         }
-        catch (const IException& e) {
+        catch (IException& e) {
             log::error("throw nms::IException {}", e);
             {
                 String str;
@@ -101,10 +101,14 @@ NMS_API u32 install(StrView name, void(*func)()) {
 
     // sizeof("struct ") = 7
     // sizeof("_tag")    = 4
-#ifdef NMS_CC_MSVC
+#if defined(NMS_CC_MSVC)
     Testor testor{ name.slice(7, -5), func };
+#elif defined(NMS_CC_CLANG)
+    Testor testor{ name.slice(0, -5), func };
+#elif defined(NMS_CC_GNUC)
+    Testor testor{ name.slice(0, -5), func };
 #else
-    Testor testor{ name.slice(0, -5), func };    
+    Testor testor{ name, func };
 #endif
     gtests += testor;
     return 0;
