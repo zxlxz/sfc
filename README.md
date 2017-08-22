@@ -1,4 +1,5 @@
 # nmscc
+[![Build Status](https://travis-ci.org/lumpyzhu/nmscc.svg?branch=master)](https://travis-ci.org/lumpyzhu/nmscc)
 [![Build status](https://img.shields.io/appveyor/ci/lumpyzhu/nmscc/master.svg)](https://ci.appveyor.com/project/lumpyzhu/nmscc/branch/master)
 [![license](https://img.shields.io/github/license/lumpyzhu/nmscc.svg)]()
 
