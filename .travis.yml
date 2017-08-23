@@ -9,11 +9,12 @@ matrix:
 
     - os: linux
       dist: trusty
-      compiler: gcc-7
-      env: "CXX=g++-7"
+      compiler: gcc
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-7
 
-script: make -j9
+script: 
+    - if ["$CXX" == "g++" ]; then export CXX="g++-7"; fi
+    - make -j9
