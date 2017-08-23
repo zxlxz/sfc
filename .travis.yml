@@ -16,5 +16,5 @@ matrix:
           packages: g++-7
 
 script: 
-    - if ["$CXX" == "g++" ]; then export CXX="g++-7"; fi
+    - if [ "$CXX" == "g++" ]; then export CXX="g++-7"; fi
     - make -j9
