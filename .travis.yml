@@ -9,11 +9,11 @@ matrix:
 
     - os: linux
       dist: trusty
-      compiler: gcc
-      env: CXX=g++-7
+      compiler: gcc-7
+      env: "CXX=g++-7"
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-7
-script:
-  make -j9
+
+script: make -j9
