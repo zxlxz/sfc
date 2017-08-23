@@ -11,6 +11,8 @@ NMS_API void  _mdel (void* dat);
 NMS_API void  _mzero(void* dat, u64 size);
 NMS_API void  _mcpy (void* dst, const void* src, u64 size);
 NMS_API void  _mmov (void* dst, const void* src, u64 size);
+NMS_API int   _mcmp (const void* lhs, const void* rhs, u64 size);
+
 NMS_API u64   msize (const void* ptr);
 
 class EBadAlloc: public IException
@@ -39,6 +41,12 @@ template<class T>
 __forceinline T*  mzero(T* dat, u64 n) {
     _mzero(dat, n * sizeof(T));
     return dat;
+}
+
+/* test one buffer to another */
+template<class T>
+__forceinline void mcmp(const T* dst, const T* src, u64 n) {
+    return _mcmp(dst, src, n * sizeof(T));
 }
 
 /* copies one buffer to another */

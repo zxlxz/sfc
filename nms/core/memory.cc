@@ -29,12 +29,17 @@ NMS_API void _mzero(void* dat, u64 size) {
     ::memset(dat, 0, size);
 }
 
+NMS_API int  _mcmp(const void* dst, const void* src, u64 size) {
+    return ::memcmp(dst, src, size);
+}
+
+
 NMS_API void  _mcpy(void* dst, const void* src, u64 size) {
     ::memcpy(dst, src, size);
 }
 
 NMS_API void  _mmov(void* dst, const void* src, u64 size) {
-    ::memcpy(dst, src, size);
+    ::memmove(dst, src, size);
 }
 
 NMS_API u64 msize(const void* ptr) {
