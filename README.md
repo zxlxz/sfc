@@ -1,6 +1,6 @@
 # nmscc
-[![Build Status](https://travis-ci.org/lumpyzhu/nmscc.svg?branch=master)](https://travis-ci.org/lumpyzhu/nmscc)
-[![Build status](https://img.shields.io/appveyor/ci/lumpyzhu/nmscc/master.svg)](https://ci.appveyor.com/project/lumpyzhu/nmscc/branch/master)
+[![Travis](https://img.shields.io/travis/lumpyzhu/nmscc.svg)](https://travis-ci.org/lumpyzhu/nmscc)
+[![AppVeyor](https://img.shields.io/appveyor/ci/lumpyzhu/nmscc.svg)](https://ci.appveyor.com/project/lumpyzhu/nmscc)
 [![license](https://img.shields.io/github/license/lumpyzhu/nmscc.svg)]()
 
 nmscc is a C++14/CUDA Template library for scientific computation:liner algebra(nd-array), unit test, string format, logging, json/xml serialization etc.
