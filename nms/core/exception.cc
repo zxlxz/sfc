@@ -24,9 +24,16 @@ NMS_API u32 ESystem::current() {
 NMS_API void ESystem::format(String& buf) const {
     char tmp[256] = { "" };
     auto ptr = tmp;
-#ifdef NMS_OS_WINDOWS
+#if defined(NMS_OS_WINDOWS)
     strerror_s(static_cast<char*>(tmp), sizeof(tmp), id_);
-#else
+#elif defined(NMS_OS_APPLE)
+    // XSI version
+    const auto ret = strerror_r(id_, tmp, sizeof(tmp));
+    if (ret != 0) { 
+        return;
+    }
+#elif defined(NMS_OS_UNIX)
+    // GNU version
     ptr = strerror_r(id_, tmp, sizeof(tmp));
 #endif
     StrView str(ptr, { strlen(ptr) });
