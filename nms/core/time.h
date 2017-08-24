@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nms/core/base.h>
+#include <nms/core/string.h>
 
 namespace nms
 {
@@ -28,6 +29,9 @@ struct DateTime
         : year(u16(year)), month(u16(month)), day(u16(day))
         , hour(u16(hour)), minute(u16(minute)), second(u16(second))
     {}
+
+    NMS_API static DateTime parse(StrView str);
+    NMS_API        String   format(StrView fmt) const;
 
 #ifdef _M_CEE
     __forceinline DateTime(System::DateTime v)

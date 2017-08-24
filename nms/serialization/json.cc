@@ -13,29 +13,25 @@ void formatNode(String& buf, const NodeEx& node, i32 level=0) {
     auto& v = node.val();
 
     switch (v.type()) {
-    case Type::null:    formatImpl(buf, "", fmt); break;
-    case Type::boolean: formatImpl(buf, v.bool_val_, fmt); break;
-
-    case Type::u16:     formatImpl(buf, v.u16_val_, fmt); break;
-    case Type::i16:     formatImpl(buf, v.i16_val_, fmt); break;
-
-    case Type::u32:     formatImpl(buf, v.u32_val_, fmt); break;
-    case Type::i32:     formatImpl(buf, v.i32_val_, fmt); break;
-
-    case Type::u64:     formatImpl(buf, v.u64_val_, fmt); break;
-    case Type::i64:     formatImpl(buf, v.i64_val_, fmt); break;
-
-    case Type::f32:     formatImpl(buf, v.f32_val_, fmt); break;
-    case Type::f64:     formatImpl(buf, v.f64_val_, fmt); break;
+    case Type::null:    formatImpl(buf, fmt, "");           break;
+    case Type::boolean: formatImpl(buf, fmt, v.bool_val_);  break;
+    case Type::u16:     formatImpl(buf, fmt, v.u16_val_);   break;
+    case Type::i16:     formatImpl(buf, fmt, v.i16_val_);   break;
+    case Type::u32:     formatImpl(buf, fmt, v.u32_val_);   break;
+    case Type::i32:     formatImpl(buf, fmt, v.i32_val_);   break;
+    case Type::u64:     formatImpl(buf, fmt, v.u64_val_);   break;
+    case Type::i64:     formatImpl(buf, fmt, v.i64_val_);   break;
+    case Type::f32:     formatImpl(buf, fmt, v.f32_val_);   break;
+    case Type::f64:     formatImpl(buf, fmt, v.f64_val_);   break;
 
     case Type::number: {
-        formatImpl(buf, v.str(), fmt);
+        formatImpl(buf, fmt, v.str());
         break;
     }
 
     case Type::key: case Type::string: {
         buf += "\"";
-        formatImpl(buf, v.str(), fmt);
+        formatImpl(buf, fmt, v.str());
         buf += "\"";
         break;
     }
@@ -48,7 +44,7 @@ void formatNode(String& buf, const NodeEx& node, i32 level=0) {
                 buf += ' ';
             }
             formatNode(buf, *itr, level + 1);
-            formatImpl(buf, (++itr == node.end()) ? StrView{ "\n" } : StrView{ ",\n" }, fmt);
+            formatImpl(buf, fmt, (++itr == node.end()) ? StrView{ "\n" } : StrView{ ",\n" });
         }
 
         for (auto i = 0; i < level * 4; ++i) buf += ' ';
@@ -66,7 +62,7 @@ void formatNode(String& buf, const NodeEx& node, i32 level=0) {
             buf += itr.key();
             buf += "\": ";
             formatNode(buf, *itr, level + 1);
-            formatImpl(buf, (++itr == node.end()) ? StrView{ "\n" } : StrView{ ",\n" }, fmt);
+            formatImpl(buf, fmt, (++itr == node.end()) ? StrView{ "\n" } : StrView{ ",\n" });
         }
 
         for (auto i = 0; i < level * 4; ++i) buf += ' ';

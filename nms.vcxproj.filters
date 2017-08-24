@@ -170,6 +170,9 @@
     <ClInclude Include="nms\cuda\base.h">
       <Filter>cuda</Filter>
     </ClInclude>
+    <ClInclude Include="nms\core\parse.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="test">
@@ -294,6 +297,9 @@
     </ClCompile>
     <ClCompile Include="nms\cuda\runtime.cc">
       <Filter>cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\parse.cc">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

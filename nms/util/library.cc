@@ -41,9 +41,6 @@ NMS_API Library::Library(const io::Path& path) {
     if (object_ ==  nullptr) {
         io::log::error("nms.Library: load {} failed", path);
     }
-    else {
-        io::log::debug("nms.Library: load {} ok", path);
-    }
 }
 
 NMS_API Library::~Library() {

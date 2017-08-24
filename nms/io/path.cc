@@ -179,7 +179,7 @@ NMS_API Path cwd() {
 
 NMS_API void chdir(const Path& path) {
     const StrView cpath = path;
-    if (cpath.count()!=0) {
+    if (cpath.count()==0) {
         log::error("nms.io.chdir: null path!!");
         throw ESystem(0);
     }
@@ -195,7 +195,7 @@ NMS_API void chdir(const Path& path) {
 NMS_API void mkdir(const Path& path) {
     const StrView cpath = path;
 
-    if (cpath.count()!=0) {
+    if (cpath.count()==0) {
         log::error("nms.io.chdir: null path!!");
         return;
     }

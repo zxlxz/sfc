@@ -4,100 +4,192 @@
 #include <nms/core/cpp.h>
 #include <nms/core/view.h>
 #include <nms/core/string.h>
-#include <nms/core/exception.h>
 
 namespace nms
 {
 
-using cstr_t = const char*;
+template<class T>
+auto format_switch(String& buf, StrView fmt, const T& t);
 
 struct IFormatable
 {
-    friend class Formatter;
-
-protected:
     template<class T>
     static void _format(String& buf, const T& obj) {
         buf += "{\n";
 
 #define call_do_format(n, ...)    _do_format(I32<n>{}, obj, &buf);
-        NMSCPP_LOOP(99, call_do_format)
+        NMSCPP_LOOP(99, call_do_format);
 #undef call_do_format
-
         buf += "}\n";
     }
 
 private:
     // format-do
-    template<class T, i32 I, class = $when<(I<T::_$property_cnt)> >
-    static void _do_format(I32<I> idx, const T& obj, String* buf) {
+    template<class T, i32 I>
+     static auto _do_format(I32<I> idx, const T& obj, String* buf) ->$when<(I < T::_$property_cnt)> {
         auto t = (obj)[idx];
         sformat(*buf, "    {}: {}\n", t.name, t.value);
+        return;
     }
 
     // format-end
-    template<class T, i32 I, class = $when<(I>=T::_$property_cnt)> >
-    static void _do_format(I32<I>, const T&, ...)
-    {}
+    template<class T, i32 I >
+    static auto _do_format(I32<I>, const T&, ...) -> $when<(I >= T::_$property_cnt)> {
+        return;
+    }
 };
 
-/* format value */
-NMS_API void formatImpl(String& buf, i8       val, StrView fmt);
-NMS_API void formatImpl(String& buf, u8       val, StrView fmt);
-NMS_API void formatImpl(String& buf, i16      val, StrView fmt);
-NMS_API void formatImpl(String& buf, u16      val, StrView fmt);
-NMS_API void formatImpl(String& buf, i32      val, StrView fmt);
-NMS_API void formatImpl(String& buf, u32      val, StrView fmt);
-NMS_API void formatImpl(String& buf, i64      val, StrView fmt);
-NMS_API void formatImpl(String& buf, u64      val, StrView fmt);
-NMS_API void formatImpl(String& buf, f32      val, StrView fmt);
-NMS_API void formatImpl(String& buf, f64      val, StrView fmt);
-NMS_API void formatImpl(String& buf, void*    val, StrView fmt);
-NMS_API void formatImpl(String& buf, StrView  val, StrView fmt);
-NMS_API void formatImpl(String& buf, cstr_t   val, StrView fmt);
+#pragma region format impl
 
-NMS_API void formatImpl(String& buf, const IException&  val, StrView fmt);
+NMS_API void formatImpl(String& buf, StrView fmt, i8       val);
+NMS_API void formatImpl(String& buf, StrView fmt, u8       val);
+NMS_API void formatImpl(String& buf, StrView fmt, i16      val);
+NMS_API void formatImpl(String& buf, StrView fmt, u16      val);
+NMS_API void formatImpl(String& buf, StrView fmt, i32      val);
+NMS_API void formatImpl(String& buf, StrView fmt, u32      val);
+NMS_API void formatImpl(String& buf, StrView fmt, i64      val);
+NMS_API void formatImpl(String& buf, StrView fmt, u64      val);
+NMS_API void formatImpl(String& buf, StrView fmt, f32      val);
+NMS_API void formatImpl(String& buf, StrView fmt, f64      val);
+NMS_API void formatImpl(String& buf, StrView fmt, void*    val);
+NMS_API void formatImpl(String& buf, StrView fmt, StrView  val);
 
-inline void formatImpl(String& buf, const String& val, StrView fmt) {
-    formatImpl(buf, val.operator StrView(), fmt);
+NMS_API void formatImpl(String& buf, StrView fmt, const IException&  val);
+
+inline  void formatImpl(String& buf, StrView fmt, const String& val) {
+    formatImpl(buf, StrView(val), fmt);
 }
 
 template<u32 N>
-void formatImpl(String& buf, const char(&v)[N], StrView fmt) {
+void formatImpl(String& buf, StrView fmt, const char(&v)[N]) {
     formatImpl(buf, cstr(v), fmt);
+}
+
+inline void formatImpl(String& buf, StrView fmt, const char* str) {
+    formatImpl(buf, cstr(str), fmt);
 }
 
 
 template<class T, u32 N>
-void formatImpl(String& buf, const Vec<T, N>& v, StrView fmt) {
+void formatImpl(String& buf, StrView fmt, const Vec<T, N>& v) {
     buf += "[";
     for (u32 i = 0; i < N; ++i) {
-        formatImpl(buf, v[i], fmt);
+        format_switch(buf, fmt, v[i]);
         if (i != N - 1) buf += ", ";
     }
     buf += "]";
 }
 
 template<class T, u32 N>
-void formatImpl(String& buf, const T(&v)[N], StrView fmt) {
+void formatImpl(String& buf, StrView fmt, const T(&v)[N]) {
     buf += "[";
-    for(u32 i = 0; i < N; ++i) {
-        formatImpl(buf, v[i], fmt);
-        if (i!=N-1) buf += ", ";
+    for (u32 i = 0; i < N; ++i) {
+        format_switch(buf, fmt, v[i]);
+        if (i != N - 1) buf += ", ";
     }
     buf += "]";
 }
 
 template<class T, u32 N>
-void formatImpl(String& buf, const List<T, N>& v, StrView fmt) {
+void formatImpl(String& buf, StrView fmt, const List<T, N>& v) {
     const auto n = v.count();
     buf += "[";
     for (u32 i = 0; i < n; ++i) {
-        formatImpl(buf, v[i], fmt);
+        format_switch(buf, fmt, v[i]);
         if (i != n - 1) buf += ", ";
     }
     buf += "]";
 }
+
+
+/*!
+* format:
+* type: view<T,1>
+* fmt:  ?...?
+*/
+template<class T>
+void formatImpl(String& buf, StrView fmt, const View<T, 1>& v) {
+    buf.reserve(buf.count() + v.count() * 8);
+
+    const auto nx = v.count();
+    const auto delimiters = fmt.count() == 0 ? StrView{ ", " } : fmt;
+
+    for (u32 x = 0; x < nx; ++x) {
+        format_switch(buf, fmt, v(x));
+        if (x != nx - 1) {
+            buf += delimiters;
+        }
+    }
+}
+
+
+/* format: view<T,2> */
+template<class T>
+void formatImpl(String& buf, StrView fmt, const View<T, 2>& v) {
+    buf.reserve(buf.count() + v.count() * 8);
+
+    const auto vmod = fmt == "|";
+    const auto fmt0 = vmod ? fmt.slice(1, -1) : fmt;
+
+    if (vmod) {
+        buf += StrView{ "\n" };
+    }
+    for (u32 i1 = 0; i1 < v.size(1); ++i1) {
+        buf += vmod ? StrView{ "    [" } : StrView{ "[" };
+        format_switch(buf, fmt0, v.slice({ 0, -1 }, { i1 }));
+        buf += "]";
+        if (i1 < v.size(1) - 1) {
+            buf += vmod ? StrView{ ",\n" } : StrView{ "," };
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region format switch
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<4>) -> decltype(t.format(buf, fmt)) {
+    return t.format(buf, fmt);
+}
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<3>) -> decltype(t.format(buf)) {
+    (void)fmt;
+    return t.format(buf);
+}
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t,Version<2>) -> $when<$is_base_of<IFormatable, T>> {
+    (void)fmt;
+    return IFormatable::_format(buf, t);
+}
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<1>) ->decltype(static_cast<StrView>(t), 0) {
+    auto str = static_cast<StrView>(t);
+    formatImpl(buf, fmt, str);
+    return 0;
+}
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<0>) ->decltype(formatImpl(buf, fmt, t)) {
+    return formatImpl(buf, fmt, t);
+}
+
+template<class T>
+__forceinline auto format_switch(String& buf, StrView fmt, const T& t) {
+    return _format_switch(buf, fmt, t, Version<4>{});
+}
+
+template<class T>
+String tostr(const T& t) {
+    String buf;
+    format_switch(buf, StrView{}, t);
+    return buf;
+}
+
+#pragma endregion
 
 class Formatter
 {
@@ -108,8 +200,6 @@ public:
     Formatter(String& buff, StrView fmts)
         : buff_(buff), fmts_(fmts)
     {}
-
-    NMS_API bool next(u32& id, StrView& fmt);
 
     template<class ...U>
     void operator()(const U& ...u) {
@@ -126,6 +216,8 @@ protected:
     String& buff_;
     StrView fmts_;
 
+    NMS_API bool next(u32& id, StrView& fmt);
+
     void doFormat(i32 id, StrView fmt) const {
         throw EOutOfRange{};
     }
@@ -133,32 +225,11 @@ protected:
     template<class T, class ...U>
     void doFormat(i32 id, StrView fmt, const T& t, const U& ...u) {
         if (id == 0) {
-            format_select(t, fmt, Version<1>{});
+            format_switch(buff_, fmt, t);
         }
         else {
             doFormat(id - 1, fmt, u...);
         }
-    }
-
-    template<class T>
-    __forceinline auto format_select(const T& t, StrView fmt, Version<1>) -> decltype(t.format(buff_, fmt)) {
-        return t.format(buff_, fmt);
-    }
-
-    template<class T>
-    __forceinline auto format_select(const T& t, StrView fmt, Version<1>) -> decltype(t.format(buff_)) {
-        return t.format(buff_);
-    }
-
-    template<class T>
-    __forceinline auto format_select(const T& t, StrView fmt, Version<0>) -> $when<$is_base_of<IFormatable, T>> {
-        (void)fmt;
-        return IFormatable::_format(buff_, t);
-    }
-
-    template<class T>
-    __forceinline auto format_select(const T& t, StrView fmt, ...) ->decltype(formatImpl(buff_, t, fmt)) {
-        return formatImpl(buff_, t, fmt);
     }
 };
 
@@ -175,75 +246,6 @@ String format(StrView fmt, const T& ...t) {
     Formatter fmtter(buf, fmt);
     fmtter(t...);
     return buf;
-}
-
-NMS_API bool parse(StrView str, u8&   val, StrView fmt={});
-NMS_API bool parse(StrView str, i8&   val, StrView fmt={});
-NMS_API bool parse(StrView str, u16&  val, StrView fmt={});
-NMS_API bool parse(StrView str, i16&  val, StrView fmt={});
-NMS_API bool parse(StrView str, u32&  val, StrView fmt={});
-NMS_API bool parse(StrView str, i32&  val, StrView fmt={});
-NMS_API bool parse(StrView str, u64&  val, StrView fmt={});
-NMS_API bool parse(StrView str, i64&  val, StrView fmt={});
-NMS_API bool parse(StrView str, f32&  val, StrView fmt={});
-NMS_API bool parse(StrView str, f64&  val, StrView fmt={});
-
-class EParseFailed
-    : public IException
-{};
-
-
-template<class T>
-T parse(StrView str, StrView fmt = {}) {
-    T    val;
-    auto ret = parse(str, val, fmt);
-
-    if (!ret) {
-        throw EParseFailed{};
-    }
-    return val;
-}
-
-/*!
- * format: 
- * type: view<T,1> 
- * fmt:  ?...?
- */
-template<class T>
-void formatImpl(String& buf, const View<T, 1>& v, StrView fmt) {
-    buf.reserve(buf.count() + v.count() * 8);
-
-    const auto nx         = v.count();
-    const auto delimiters = fmt.count() == 0 ? StrView{ ", " } : fmt;
-
-    for (u32 x = 0; x < nx; ++x) {
-        formatImpl(buf, v(x), fmt);
-        if (x != nx - 1) {
-            buf += delimiters;
-        }
-    }
-}
-
-
-/* format: view<T,2> */
-template<class T>
-void formatImpl(String& buf, const View<T, 2>& v, StrView fmt) {
-    buf.reserve(buf.count() + v.count() * 8);
-
-    const auto vmod = fmt == "|";
-    const auto fmt0 = vmod ? fmt.slice(1, -1) : fmt;
-
-    if (vmod) {
-        buf += StrView{ "\n" };
-    }
-    for (u32 i1 = 0; i1 < v.size(1); ++i1) {
-        buf += vmod ? StrView{ "    [" } : StrView{ "[" };
-        formatImpl(buf, v.slice({ 0, -1 }, { i1 }), fmt0);
-        buf += "]";
-        if (i1 < v.size(1) - 1) {
-            buf += vmod ? StrView{ ",\n" } : StrView{ "," };
-        }
-    }
 }
 
 }

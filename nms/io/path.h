@@ -68,9 +68,4 @@ NMS_API bool  exists(const Path& path);
 NMS_API u64   fsize(const Path& path);
 NMS_API u64   fsize(int fid);
 
-inline void formatImpl(String& buf, const Path& value, StrView fmt) {
-    StrView strval = value;
-    formatImpl(buf, strval, fmt);
-}
-
 }

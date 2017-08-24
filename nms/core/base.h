@@ -43,7 +43,7 @@ constexpr T* declptr() {
 
 template<class T>
 constexpr const T& declval() {
-    return *(T*)(nullptr);
+    return *static_cast<T*>(nullptr);
 }
 
 template<class T>constexpr T* $declptr = nullptr;

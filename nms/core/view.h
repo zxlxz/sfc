@@ -65,12 +65,6 @@ struct View
         : data_{ data }, size_{ size }, stride_{ mkStride(size) }
     {}
 
-    /*! view -> view */
-    template<class Ttype, u32 Urank>
-    __forceinline explicit View(const View<Ttype, Urank>& v)
-        : data_{ v.data_ }, size_{ v.size_ }, stride_{ v.stride_ }
-    {}
-
     /*! convert to const View */
     __forceinline operator View<const T, N>() const noexcept {
         return { data_, size_, stride_ };

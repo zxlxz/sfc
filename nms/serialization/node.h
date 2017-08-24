@@ -290,6 +290,20 @@ public:
     }
 #pragma endregion
 
+#pragma region datetime
+    auto& operator<<(const DateTime& t) {
+        *this << t.format("{}");
+        return *this;
+    }
+
+    auto& operator>>(DateTime& x) const {
+        String str;
+        *this >> str;
+        x = DateTime::parse(str);
+        return *this;
+    }
+#pragma endregion
+
 #pragma region array
     /* array: index */
     NMS_API NodeEx operator[](u32 k);
@@ -401,7 +415,7 @@ public:
     /* node <- enum */
     template<class T>
     auto operator<<(const T& x) -> $when<$is_enum<T>, NodeEx&> {
-        StrView str = str_cast(x);
+        StrView str = tostr(x);
         *this << str;
         return *this;
     }
@@ -469,7 +483,7 @@ protected:
         }
 
         if (v.type() == Type::number) {
-            const_cast<T&>(*p)          = parse<T>( v.str());
+            const_cast<T&>(*p)          = parse<T>(v.str());
             const_cast<Type&>(v.type_)  = t;
             x = *p;
             return;

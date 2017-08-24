@@ -42,20 +42,19 @@ static constexpr auto _$property_idx = __COUNTER__;
     auto    operator[](I32<_$##member##_id>) const  { return make_property(#member, member); }          \
     T##member member
 
-#define _NMS_ENUM_CASE(i, value)  case TEnum::value: return StrView{#value};
-#define _NMS_ENUM_IF(i,   value)  if (str == #value) { val = TEnum::value; return true; }
+#define _NMS_ENUM_FORMAT(i, value)  case TEnum::value: buf += StrView{#value}; break;
+#define _NMS_ENUM_PARSE(i,  value)  if (str == #value) { val = TEnum::value; return true; }
 
-#define NMS_ENUM(type, ...)                                     \
-enum class type{ __VA_ARGS__ };                                 \
-static StrView str_cast(type value) {                           \
-    using TEnum = type;                                         \
-    switch(value) {                                             \
-        NMSCPP_FOR(_NMS_ENUM_CASE, __VA_ARGS__)                 \
-    }                                                           \
-    return {};                                                  \
-}                                                               \
-static bool parse(StrView str, type& val, StrView fmt={}) {     \
-    using TEnum = type;                                         \
-    NMSCPP_FOR(_NMS_ENUM_IF, __VA_ARGS__)                       \
-    return false;                                               \
+#define NMS_ENUM(type, ...)                                         \
+enum class type{ __VA_ARGS__ };                                     \
+static void formatImpl(String& buf, StrView fmt, type value) {      \
+    using TEnum = type;                                             \
+    switch(value) {                                                 \
+        NMSCPP_FOR(_NMS_ENUM_FORMAT, __VA_ARGS__)                   \
+    }                                                               \
+}                                                                   \
+static bool parseImpl(StrView str, StrView fmt, type& val) {        \
+    using TEnum = type;                                             \
+    NMSCPP_FOR(_NMS_ENUM_PARSE, __VA_ARGS__)                        \
+    return false;                                                   \
 }

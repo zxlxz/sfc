@@ -30,7 +30,7 @@ enum class Type :u16
     object,
 };
 
-inline void formatImpl(String& buf, Type type, StrView fmt) {
+inline void formatImpl(String& buf, StrView fmt, Type type) {
     switch (type) {
     case Type::null:    buf += "null";      break;
     case Type::boolean: buf += "bool";      break;

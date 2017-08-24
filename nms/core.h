@@ -11,6 +11,8 @@
 #include <nms/core/delegate.h>
 #include <nms/core/string.h>
 #include <nms/core/format.h>
+#include <nms/core/parse.h>
+
 #include <nms/core/time.h>
 #include <nms/core/exception.h>
 #include <nms/core/view.h>
