@@ -43,10 +43,7 @@
 #endif
 #pragma endregion
 
+#include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
-
-#include <new>
-
 #endif  // _NMS_CONFIG_H_

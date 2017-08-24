@@ -3,6 +3,19 @@
 #include <nms/core/type.h>
 #include <nms/core/trait.h>
 
+#include <new>
+
+#if !defined(_LIBCPP_NEW) && !defined(_NEW_) && !defined(_NEW)
+#define NMS_NEW
+#endif
+
+#ifdef NMS_NEW
+inline void* operator new     (size_t, void* p) noexcept {return p;}
+inline void* operator new[]   (size_t, void* p) noexcept {return p;}
+inline void  operator delete  (void*, void*) noexcept {}
+inline void  operator delete[](void*, void*) noexcept {}
+#endif
+
 namespace nms
 {
 
