@@ -26,16 +26,7 @@ struct Testor
         const auto mask_dat = mask.slice(1,  -1);
         const auto name_dat = name.slice(0u, mask_dat.count()-1);
         const auto stat = mask_dat == name_dat;
-
-        if (mask[0] == '-') {
-            return !stat;
-        }
-
-        if (mask[0] == '+') {
-            return stat;
-        }
-
-        return false;
+        return stat;
     }
 
     bool match(const View<StrView> masks) const {
@@ -43,13 +34,27 @@ struct Testor
             return true;
         }
 
+        auto cnt_pos = 0;
+        auto cnt_neg = 0;
         for(auto& mask: masks) {
-            if (match(mask)) {
-                return true;
+            if (mask.isEmpty()) {
+                continue;
+            }
+            auto c = mask[0];
+            auto s = mask.slice(1, -1);
+            if (c == '+') {
+                if (match(s)) {
+                    ++cnt_pos;
+                }
+            }
+            if (c == '-') {
+                if (match(s)) {
+                    ++cnt_neg;
+                }
             }
         }
 
-        return false;
+        return cnt_pos>=0 && cnt_neg ==0;
     }
 
     bool invoke(bool stat) const {
@@ -68,7 +73,7 @@ struct Testor
             console::writeln(fmt_ok, clock(), name);
             return true;
         }
-        catch (IException& e) {
+        catch (const IException& e) {
             log::error("throw nms::IException {}", e);
             {
                 String str;
@@ -87,7 +92,6 @@ struct Testor
         catch (...) {
             return false;
         }
-        return true;
     }
 };
 

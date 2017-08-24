@@ -38,7 +38,7 @@ nmscc是一个C++14/CUDA的科学计算库，包含线性代数(多维数组)，
 - [task](/doc/thread/task.md) 任务/工作流
 
 ### nms.test
-- [test](/doc/nms.test.md) 单元测试
+- [test](/doc/nms/test.md) 单元测试
 
 ### nms.serialization
 - [tree](/doc/serialization/tree.md) 属性树
