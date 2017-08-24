@@ -32,8 +32,13 @@ enum CudaLibTable
 #undef  NMS_CUDA_IDX
 };
 
-static Library::Function cudaFun(u32 id) {
+static auto& cudaLib() {
     static Library lib("NVCUDA.DLL");
+    return lib;
+}
+
+static auto cudaFun(u32 id) {
+    static auto& lib = cudaLib();
 
     static Library::Function funcs[] = {
 #define NMS_CUDA_FUN(name) lib[cstr(#name)]
@@ -41,11 +46,15 @@ static Library::Function cudaFun(u32 id) {
 #undef  NMS_CUDA_FUN
     };
 
-    auto ret = funcs[id];
+    if (!lib) {
+        throw Exception(CUDA_ERROR_NOT_INITIALIZED);
+    }
 
+    auto ret = funcs[id];
     if (!ret) {
         throw Exception(CUDA_ERROR_NOT_INITIALIZED);
     }
+
     return ret;
 }
 
@@ -55,9 +64,18 @@ static Library::Function cudaFun(u32 id) {
 
 #pragma region exception
 void Exception::format(String& buf) const {
-    const char* errmsg = nullptr;
-    NMS_CUDA_DO(cuGetErrorName)(static_cast<CUresult>(id_), &errmsg);
-    sformat(buf, "nms.cuda: error({}), {}", id_, cstr(errmsg));
+    static auto& lib = cudaLib();
+    if (!lib) {
+        buf += StrView("nms.cuda: cuda error not initialized");
+        return;
+    }
+
+    try {
+        const char* errmsg = nullptr;
+        NMS_CUDA_DO(cuGetErrorName)(static_cast<CUresult>(id_), &errmsg);
+        sformat(buf, "nms.cuda: error({}), {}", id_, cstr(errmsg));
+    } catch(...)
+    {}
 }
 
 /**

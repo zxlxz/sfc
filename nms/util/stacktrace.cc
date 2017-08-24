@@ -101,7 +101,7 @@ NMS_API String ProcStacks::operator[](u32 id) const {
     }
     auto name = cstr(info_ext.info.dli_sname);
 
-#ifdef NMS_OS_POSIX
+#ifndef NMS_CC_MSVC
     size_t length = 0;
     int status = 0;
     auto cxx_buff = abi::__cxa_demangle(name.data(), nullptr, &length, &status);

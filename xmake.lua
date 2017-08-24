@@ -28,12 +28,14 @@ target("nms")
 
     -- set flags
     add_cxxflags("-std=c++1z", "-frtti", "-isystem .", "-DNMS_BUILD")
-    set_targetdir("publish/bin")
-    set_objectdir("/tmp/nmscc")
 
     -- add files
     add_files("nms/**.cc")
+    -- set_pcxxheader("nms/config.h")
 
+    -- build dir
+    set_targetdir("publish/bin")
+    set_objectdir("/tmp/nmscc")
 -- add target
 target("nms.test")
 

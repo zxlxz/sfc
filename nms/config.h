@@ -16,15 +16,15 @@
 #endif
 
 /* check compilier */
-#if defined(_MSC_VER)
+#if   defined(__clang__)
+#   define NMS_CC_CLANG             // check if compiler == clang
+#   define __forceinline inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
 #   define NMS_CC_MSVC              // check if compiler == msvc
 #   define __PRETTY_FUNCTION__ __FUNCSIG__
 #   pragma warning(disable:6326)    // E6326: potential comparison of a constant with another constant
 #elif defined(__GNUC__)
 #   define NMS_CC_GNUC              // check if compiler == gcc
-#   define __forceinline inline __attribute__((always_inline))
-#elif defined(__clang__)
-#   define NMS_CC_CLANG             // check if compiler == clang
 #   define __forceinline inline __attribute__((always_inline))
 #endif
 

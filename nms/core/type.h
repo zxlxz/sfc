@@ -36,7 +36,7 @@ private:
     static constexpr auto funcsig_head_size_ = sizeof("struct nms::View<char const ,0> __cdecl nms::Type::_get_name<") - 1;
     static constexpr auto funcsig_tail_size_ = sizeof(">(void)") - 1;
 #elif defined(NMS_CC_CLANG)
-    static constexpr auto funcsig_head_size_ = sizeof("static StrView nms::Type::_get_name() [T = ") - 1;
+    static constexpr auto funcsig_head_size_ = sizeof("static View<const char> nms::Type::_get_name() [T = ") - 1;
     static constexpr auto funcsig_tail_size_ = sizeof("]") - 1;
 #elif defined(NMS_CC_GNUC)
     static constexpr auto funcsig_head_size_ = sizeof("static nms::View<const char> nms::Type::_get_name() [with T = ") -1;
