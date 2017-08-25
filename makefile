@@ -42,7 +42,7 @@ $(nms_gch): nms/config.h
 %.o: nms/config.h.gch %.cc
 
 test:
-	cd publish/bin && LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):. ./nms.test
+	cd publish/bin && LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):. ./nms.test -nms::cuda
 
 clean:
 	@rm -rf $(nms_lib) $(nms_test)

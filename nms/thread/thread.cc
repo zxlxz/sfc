@@ -111,7 +111,9 @@ NMS_API int Thread::join() {
     if (impl_ == thrd_t(0) ) {
         return 0;
     }
-    return thrd_join(impl_, nullptr);
+    auto ret = thrd_join(impl_, nullptr);
+    impl_ = thrd_t(0);
+    return ret;
 }
 
 NMS_API void Thread::yield() {

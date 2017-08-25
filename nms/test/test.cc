@@ -41,14 +41,13 @@ struct Testor
                 continue;
             }
             auto c = mask[0];
-            auto s = mask.slice(1, -1);
             if (c == '+') {
-                if (match(s)) {
+                if (match(mask)) {
                     ++cnt_pos;
                 }
             }
             if (c == '-') {
-                if (match(s)) {
+                if (match(mask)) {
                     ++cnt_neg;
                 }
             }
