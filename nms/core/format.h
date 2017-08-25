@@ -4,6 +4,8 @@
 #include <nms/core/cpp.h>
 #include <nms/core/view.h>
 #include <nms/core/string.h>
+#include <nms/core/exception.h>
+#include <nms/util/stacktrace.h>
 
 namespace nms
 {
@@ -57,16 +59,16 @@ NMS_API void formatImpl(String& buf, StrView fmt, StrView  val);
 NMS_API void formatImpl(String& buf, StrView fmt, const IException&  val);
 
 inline  void formatImpl(String& buf, StrView fmt, const String& val) {
-    formatImpl(buf, StrView(val), fmt);
+    formatImpl(buf, fmt, StrView(val));
 }
 
 template<u32 N>
 void formatImpl(String& buf, StrView fmt, const char(&v)[N]) {
-    formatImpl(buf, cstr(v), fmt);
+    formatImpl(buf, fmt, cstr(v));
 }
 
 inline void formatImpl(String& buf, StrView fmt, const char* str) {
-    formatImpl(buf, cstr(str), fmt);
+    formatImpl(buf, fmt, cstr(str));
 }
 
 
@@ -149,37 +151,45 @@ void formatImpl(String& buf, StrView fmt, const View<T, 2>& v) {
 #pragma region format switch
 
 template<class T>
-__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<4>) -> decltype(t.format(buf, fmt)) {
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<5>) -> decltype(t.format(buf, fmt)) {
     return t.format(buf, fmt);
 }
 
 template<class T>
-__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<3>) -> decltype(t.format(buf)) {
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<4>) -> decltype(t.format(buf)) {
     (void)fmt;
     return t.format(buf);
 }
 
 template<class T>
-__forceinline auto _format_switch(String& buf, StrView fmt, const T& t,Version<2>) -> $when<$is_base_of<IFormatable, T>> {
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<3>) -> decltype(formatImpl(buf, fmt, t)) {
+    return formatImpl(buf, fmt, t);
+}
+
+template<class T>
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<2>) -> $when<$is_base_of<IFormatable, T>> {
     (void)fmt;
     return IFormatable::_format(buf, t);
 }
 
 template<class T>
-__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<1>) ->decltype(static_cast<StrView>(t), 0) {
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<1>) -> decltype(static_cast<StrView>(t), 0) {
     auto str = static_cast<StrView>(t);
     formatImpl(buf, fmt, str);
     return 0;
 }
 
 template<class T>
-__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<0>) ->decltype(formatImpl(buf, fmt, t)) {
-    return formatImpl(buf, fmt, t);
+__forceinline auto _format_switch(String& buf, StrView fmt, const T& t, Version<0>) -> $when<$is_enum<T>> {
+    auto str = mkEnum(t).name();
+    formatImpl(buf, fmt, str);
+    return;
 }
+
 
 template<class T>
 __forceinline auto format_switch(String& buf, StrView fmt, const T& t) {
-    return _format_switch(buf, fmt, t, Version<4>{});
+    return _format_switch(buf, fmt, t, Version<5>{});
 }
 
 template<class T>
@@ -219,7 +229,7 @@ protected:
     NMS_API bool next(u32& id, StrView& fmt);
 
     void doFormat(i32 id, StrView fmt) const {
-        throw EOutOfRange{};
+        NMS_THROW(EOutOfRange{});
     }
 
     template<class T, class ...U>

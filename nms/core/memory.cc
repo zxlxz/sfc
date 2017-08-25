@@ -1,5 +1,6 @@
 #include <nms/core/memory.h>
 #include <nms/test.h>
+#include <nms/util/stacktrace.h>
 
 namespace nms
 {
@@ -14,6 +15,9 @@ NMS_API void* _mnew(u64 size) {
     }
 
     const auto ptr = static_cast<void**>(::malloc(size));
+    if (ptr == nullptr) {
+        NMS_THROW(EBadAlloc{});
+    }
     return ptr;
 }
 
@@ -130,7 +134,7 @@ nms_test(memory) {
         f64 y;
         char c[24];
     };
-    const u32 count = 1024 * 1024;
+    const u32 count = 1024;
     auto ptrs = new Block*[count];
 
     for (auto loop = 0; loop < 2; ++loop) {

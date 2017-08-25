@@ -48,7 +48,7 @@
   <ItemGroup>
     <ClCompile Include="nms\core\list.cc" />
     <ClCompile Include="nms\core\parse.cc" />
-    <ClCompile Include="nms\core\property.cc" />
+    <ClCompile Include="nms\core\type.cc" />
     <ClCompile Include="nms\cuda\array.cc" />
     <ClCompile Include="nms\cuda\engine.cc" />
     <ClCompile Include="nms\cuda\runtime.cc" />
@@ -82,7 +82,6 @@
     <ClInclude Include="nms\core\list.h" />
     <ClInclude Include="nms\core\memory.h" />
     <ClInclude Include="nms\core\parse.h" />
-    <ClInclude Include="nms\core\property.h" />
     <ClInclude Include="nms\core\string.h" />
     <ClInclude Include="nms\core\time.h" />
     <ClInclude Include="nms\core\trait.h" />

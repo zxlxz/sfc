@@ -27,6 +27,10 @@ void formatNode(String& buf, const NodeEx& node, i32 level = 0) {
     case Type::f32:     formatImpl(buf, fmt, v.f32_val_);   break;
     case Type::f64:     formatImpl(buf, fmt, v.f64_val_);   break;
 
+    case Type::datetime:
+        DateTime(v.i64_val_).format(buf, fmt);
+        break;
+
     case Type::number: {
         formatImpl(buf, fmt, v.str());
         break;

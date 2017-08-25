@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nms/core.h>
+#include <nms/util/stacktrace.h>
 
 namespace nms::serialization
 {
@@ -11,8 +12,7 @@ namespace json {}
 struct Node;
 struct NodeEx;
 
-enum class Type :u16
-{
+NMS_ENUM_EX(enum class Type : u16, Type,
     null,
     boolean,
 
@@ -28,32 +28,8 @@ enum class Type :u16
 
     array,
     object,
-};
-
-inline void formatImpl(String& buf, StrView fmt, Type type) {
-    switch (type) {
-    case Type::null:    buf += "null";      break;
-    case Type::boolean: buf += "bool";      break;
-
-    case Type::i8:      buf += "i8";        break;
-    case Type::u8:      buf += "u8";        break;
-    case Type::i16:     buf += "i16";       break;
-    case Type::u16:     buf += "u16";       break;
-    case Type::i32:     buf += "i32";       break;
-    case Type::u32:     buf += "u32";       break;
-    case Type::i64:     buf += "i64";       break;
-    case Type::u64:     buf += "u64";       break;
-    case Type::f32:     buf += "f32";       break;
-    case Type::f64:     buf += "f64";       break;
-    case Type::number:  buf += "number";    break;
-    case Type::string:  buf += "string";    break;
-    case Type::key:     buf += "key";       break;
-    case Type::array:   buf += "array";     break;
-    case Type::object:  buf += "object";    break;
-
-    default: break;
-    }
-}
+    datetime,
+    );
 
 class EUnexpectType : public IException
 {

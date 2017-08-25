@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <nms/core/base.h>
 #include <nms/core/view.h>
@@ -6,6 +6,11 @@
 
 namespace nms
 {
+
+// ┌──┬─┐
+// ├──┼─┤
+// │  │ │
+// └──┴─┘
 
 class String;
 

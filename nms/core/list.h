@@ -1,6 +1,5 @@
 #pragma once
 
-#include <nms/core/type.h>
 #include <nms/core/view.h>
 #include <nms/core/memory.h>
 

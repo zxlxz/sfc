@@ -9,9 +9,9 @@ namespace nms
 /* wall time */
 struct DateTime
 {
-    u16 year;           // year         [0~65535]
-    u16 month;          // month        [0~11]
-    u16 day;            // day of month [1~31]
+    u16 year    = 0;    // year         [0~65535]
+    u16 month   = 0;    // month        [1~12]
+    u16 day     = 0;    // day of month [1~31]
 
     u16 hour    = 0;    // hour         [0~23]
     u16 minute  = 0;    // minute       [0~59]
@@ -20,6 +20,10 @@ struct DateTime
     constexpr DateTime()
         : year(1990), month(1), day(1)
     {}
+
+    explicit DateTime(i64 stamp) {
+        init_stamp(stamp);
+    }
 
     constexpr DateTime(u32 year, u32 month, u32 day)
         : year(u16(year)), month(u16(month)), day(u16(day))
@@ -31,7 +35,7 @@ struct DateTime
     {}
 
     NMS_API static DateTime parse(StrView str);
-    NMS_API        String   format(StrView fmt) const;
+    NMS_API        void     format(String& buff, StrView fmt) const;
 
 #ifdef _M_CEE
     __forceinline DateTime(System::DateTime v)
@@ -48,6 +52,9 @@ struct DateTime
         const auto tb = b.stamp();
         return ta - tb;
     }
+
+private:
+    NMS_API void init_stamp(i64 stamp);
 };
 
 /*!

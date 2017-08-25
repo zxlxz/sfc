@@ -1,11 +1,11 @@
-
+﻿
 #include <nms/test.h>
 #include <nms/io.h>
 #include <nms/util/stacktrace.h>
 
 namespace nms
 {
-const ProcStacks& gExceptionStacks();
+const CallStacks& gExceptionStacks();
 }
 
 namespace nms::test
@@ -79,8 +79,10 @@ struct Testor
                 auto& stacks = gExceptionStacks();
 
                 const auto stacks_cnt = stacks.count();
-                for (auto i = 4u; i < 64 && i + 6 < stacks_cnt; ++i) {
-                    sformat(str, "\t|-[{:2}] -> {}\n", i, stacks[i]);
+                for (auto i = 0u; i < stacks_cnt; ++i) {
+                    (i + 1 != stacks_cnt)
+                        ? sformat(str, cstr("\t ├─{:2}: {}\n"), i, stacks[i])
+                        : sformat(str, cstr("\t └─{:2}: {}"),   i, stacks[i]);
                 }
                 console::writeln(str);
             }
@@ -152,7 +154,7 @@ NMS_API u32 invoke(const View<StrView>& masks) {
     console::writeln("\033[1;33m[ignore]\033[0m {}", ignore_count);
     console::writeln("\033[1;31m[fail  ]\033[0m {}", fail_count);
     for(auto test: failes) {
-        console::writeln("  |- {}", test->name);
+        console::writeln("  ├─{}", test->name);
     }
     console::writeln("[===== nms.test ======]");
     return fail_count;

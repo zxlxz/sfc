@@ -11,21 +11,21 @@ struct AssertFailed: public IException
 
 inline void assert_eq(bool bFlag) {
     if (!bFlag) {
-        throw AssertFailed{};
+        NMS_THROW(AssertFailed{});
     }
 }
 
 template<class A, class B>
 void assert_eq(const A& a, const B& b) {
     if (!(a == b)) {
-        throw AssertFailed{};
+        NMS_THROW(AssertFailed{});
     }
 }
 
 template<class A, class B>
 void assert_neq(const A& a, const B& b) {
     if (a == b) {
-        throw AssertFailed{};
+        NMS_THROW(AssertFailed{});
     }
 }
 

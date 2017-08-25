@@ -34,14 +34,18 @@ public:
     // |         |
     template<class U>
     Ringbuf& push(U&& val) {
-        if (isFull()) throw EOverflow();
+        if (isFull()) {
+            NMS_THROW(EOverflow());
+        }
         new(&data_[top_++])T(fwd<U>(val));
         if (top_ > cap_) top_ = 0;
         return *this;
     }
 
     T pop() {
-        if (isEmpty()) throw EEmpty();
+        if (isEmpty()) {
+            NMS_THROW(EEmpty());
+        }
         auto tmp(move(data_[tail_++]));
         if (tail_ >= cap_) tail_ = 0;
         return tmp;

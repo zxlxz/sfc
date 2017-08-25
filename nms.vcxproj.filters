@@ -125,9 +125,6 @@
     <ClInclude Include="nms\serialization\base.h">
       <Filter>serialization</Filter>
     </ClInclude>
-    <ClInclude Include="nms\core\property.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="nms\serialization\xml.h">
       <Filter>serialization</Filter>
     </ClInclude>
@@ -267,9 +264,6 @@
     <ClCompile Include="nms\serialization\xml.cc">
       <Filter>serialization</Filter>
     </ClCompile>
-    <ClCompile Include="nms\core\property.cc">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="nms\core\list.cc">
       <Filter>core</Filter>
     </ClCompile>
@@ -299,6 +293,9 @@
       <Filter>cuda</Filter>
     </ClCompile>
     <ClCompile Include="nms\core\parse.cc">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="nms\core\type.cc">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

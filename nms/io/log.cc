@@ -145,7 +145,7 @@ NMS_API void message(Level level, StrView msg) {
         console::writes(strs, numel(strs));
 
         if (level >= Level::Fatal) {
-            ProcStacks stacks;
+            CallStacks stacks;
             const auto n = stacks.count() - 4;
             for (u32 i = 0; i < n; ++i) {
                 console::writeln("\t|-[{}] {}", i, stacks[i]);

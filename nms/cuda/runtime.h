@@ -57,7 +57,7 @@ protected:
  */
 class Stream : public INocopyable
 {
-  public:
+public:
     NMS_API Stream();
     NMS_API ~Stream();
 
@@ -77,14 +77,16 @@ class Stream : public INocopyable
      * the cuda global stream.
      */
     static Stream& global() {
-        static Stream value(nullptr);
+        static Stream value(static_cast<CUstream_st*>(nullptr));
         return value;
     }
 
-  protected:
-    CUstream_st*    id_;
+protected:
+    CUstream_st*    id_ = nullptr;;
 
-    NMS_API explicit Stream(nullptr_t);
+    explicit Stream(CUstream_st* id) {
+        id_ = id;
+    }
 };
 
 class Module : public INocopyable

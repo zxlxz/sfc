@@ -36,10 +36,6 @@ template<class T>
 T* mnew(u64 n){
     const auto size = n * sizeof(T);
     const auto ptr  = static_cast<T*>(_mnew(size));
-
-    if (ptr == nullptr) {
-        throw EBadAlloc{};
-    }
     return ptr;
 }
 
@@ -59,7 +55,7 @@ __forceinline T*  mzero(T* dat, u64 n) {
 /* test one buffer to another */
 template<class T>
 __forceinline void mcmp(const T* dst, const T* src, u64 n) {
-    return _mcmp(dst, src, n * sizeof(T));
+    _mcmp(dst, src, n * sizeof(T));
 }
 
 /* copies one buffer to another */

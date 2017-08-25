@@ -50,28 +50,61 @@ NMS_API f64 clock() {
 }
 #endif
 
+// UTC
+NMS_API void DateTime::init_stamp(i64 stamp) {
+    struct tm tm = {};
+#ifdef NMS_OS_WINDOWS
+    ::gmtime_s(&tm, &stamp);
+    tm.tm_year += 1900;
+#else
+    ::gmtime_r(&stamp, &tm);
+    tm.tm_year += 1970;
+#endif
+    year    = tm.tm_year;
+    month   = tm.tm_mon + 1;
+    day     = tm.tm_mday;
+    hour    = tm.tm_hour;
+    minute  = tm.tm_min;
+    second  = tm.tm_sec;
+}
+
+// UTC
 NMS_API i64 DateTime::stamp() const {
     tm tm = {};
-    tm.tm_year  = year - 1990;
-    tm.tm_mon   = month;
-    tm.tm_mday  = day + 1;
+    tm.tm_year  = year;
+    tm.tm_mon   = month- 1;
+    tm.tm_mday  = day;
     tm.tm_hour  = hour;
     tm.tm_min   = minute;
     tm.tm_sec   = second;
 
-    const time_t  result = mktime(&tm);
+#ifdef NMS_OS_WINDOWS
+    // since 1900
+    tm.tm_year -= 1900;
+    const auto result = ::_mkgmtime(&tm);
+#else
+    tm.tm_year -= 1970;
+    const auto result = ::timegm(&tm);
+#endif
     return result;
 }
 
 NMS_API DateTime DateTime::now() {
-    const auto  stamp = time(nullptr);
+    const auto  stamp = ::time(nullptr);
     struct tm   tm;
 #ifdef NMS_OS_WINDOWS
-    localtime_s(&tm, &stamp);
+    ::localtime_s(&tm, &stamp);
 #else
-    localtime_r(&stamp, &tm);
+    ::localtime_r(&stamp, &tm);
 #endif
-    return { u32(tm.tm_year), u32(tm.tm_mon), u32(tm.tm_mday), u32(tm.tm_hour), u32(tm.tm_min), u32(tm.tm_sec) };
+    return { 
+        u32(tm.tm_year)+1990,
+        u32(tm.tm_mon)+1,
+        u32(tm.tm_mday),
+        u32(tm.tm_hour),
+        u32(tm.tm_min),
+        u32(tm.tm_sec)
+    };
 }
 
 
@@ -80,16 +113,11 @@ NMS_API DateTime DateTime::parse(StrView str) {
     char c;
     auto cstr = str.data();
     sscanf(cstr, "%hu-%hu-%hu%c%hu:%hu:%hu", &dt.year, &dt.month, &dt.day, &c, &dt.hour, &dt.minute, &dt.second);
-
-    if (dt.month > 0) --dt.month;
-    if (dt.day   > 0) --dt.day;
-
     return dt;
 }
 
-NMS_API String DateTime::format(StrView fmt) const {
-    auto str = nms::format("{}-{}-{}T{}:{}:{}", year, month+1, day+1, hour, minute, second);
-    return str;
+NMS_API void DateTime::format(String& buff, StrView fmt) const {
+    nms::sformat(buff, "{}-{}-{}T{}:{}:{}", year, month, day, hour, minute, second);
 }
 
 }

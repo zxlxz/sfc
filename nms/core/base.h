@@ -6,28 +6,23 @@ namespace nms
 {
 
 #pragma region core types
-using   i8  = int8_t;   using   u8  = uint8_t;
-using   i16 = int16_t;  using   u16 = uint16_t;
-using   i32 = int32_t;  using   u32 = uint32_t;
-using   i64 = int64_t;  using   u64 = uint64_t;
+using   i8          = int8_t;       using   u8      = uint8_t;
+using   i16         = int16_t;      using   u16     = uint16_t;
+using   i32         = int32_t;      using   u32     = uint32_t;
+using   i64         = int64_t;      using   u64     = uint64_t;
 
-using   byte    = signed char;
-using   ubyte   = unsigned char;
+using   byte        = i8;
+using   ubyte       = u8;
+using   f32         = float;
+using   f64         = double;
 
-using   f32     = float;
-using   f64     = double;
-
-using uchar     = unsigned char;
-using ushort    = unsigned short;
-using uint      = unsigned int;
-using ulong     = unsigned long;
-using llong     = long long;
-using ullong    = unsigned long long;
-
-using   isize = i64;
-using   usize = u64;
-
-using   nullptr_t = decltype(nullptr);
+using   uchar       = unsigned char;
+using   ushort      = unsigned short;
+using   uint        = unsigned int;
+using   ulong       = unsigned long;
+using   llong       = long long;
+using   ullong      = unsigned long long;
+using   nullptr_t   = decltype(nullptr);
 
 template<class T>
 constexpr T* declptr() {
@@ -507,16 +502,12 @@ class IException
 {
 protected:
     IException() {
-        _init_stack_trace();
     }
 
 public:
     virtual ~IException() {}
 
     virtual void format(String& buf) const {}
-
-private:
-    NMS_API void _init_stack_trace();
 };
 
 #pragma endregion

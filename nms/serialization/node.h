@@ -27,23 +27,24 @@ struct Node
 public:
     Node() = default;
 
-    explicit Node(bool    val) : type_(Type::boolean), bool_val_(val){}
+    explicit Node(bool      val) : type_(Type::boolean),    bool_val_(val){}
 
-    explicit Node(u8      val) : type_(Type::u8),   u8_val_(val) {}
-    explicit Node(i8      val) : type_(Type::i8),   i8_val_(val) {}
+    explicit Node(u8        val) : type_(Type::u8),         u8_val_(val) {}
+    explicit Node(i8        val) : type_(Type::i8),         i8_val_(val) {}
 
-    explicit Node(u16     val) : type_(Type::u16),  u16_val_(val) {}
-    explicit Node(i16     val) : type_(Type::i16),  i16_val_(val) {}
+    explicit Node(u16       val) : type_(Type::u16),        u16_val_(val) {}
+    explicit Node(i16       val) : type_(Type::i16),        i16_val_(val) {}
 
-    explicit Node(u32     val) : type_(Type::u32),  u32_val_(val) {}
-    explicit Node(i32     val) : type_(Type::i32),  i32_val_(val) {}
+    explicit Node(u32       val) : type_(Type::u32),        u32_val_(val) {}
+    explicit Node(i32       val) : type_(Type::i32),        i32_val_(val) {}
 
-    explicit Node(u64     val) : type_(Type::u64),  u64_val_(val) {}
-    explicit Node(i64     val) : type_(Type::i64),  i64_val_(val) {}
-    explicit Node(f32     val) : type_(Type::f32),  f32_val_(val) {}
-    explicit Node(f64     val) : type_(Type::f64),  f64_val_(val) {}
+    explicit Node(u64       val) : type_(Type::u64),        u64_val_(val) {}
+    explicit Node(i64       val) : type_(Type::i64),        i64_val_(val) {}
+    explicit Node(f32       val) : type_(Type::f32),        f32_val_(val) {}
+    explicit Node(f64       val) : type_(Type::f64),        f64_val_(val) {}
+    explicit Node(DateTime  val) : type_(Type::datetime),   i64_val_(val.stamp()) {}
 
-    explicit Node(StrView val, Type type=Type::string)
+    explicit Node(StrView   val, Type type=Type::string)
         : type_(type), size_(val.count()), str_val_(val.data())
     {}
 
@@ -69,7 +70,7 @@ public:
 
     StrView str() const {
         if ((type_ != Type::string) && (type_ != Type::key) && (type_ != Type::number) ) {
-            throw EUnexpectType(Type::string, type_);
+            NMS_THROW(EUnexpectType(Type::string, type_));
         }
         return { str_val_, {size_} };
     }
@@ -154,7 +155,7 @@ public:
         StrView key() const {
             auto& x = lst_[idx_ - 1];
             if (x.type_ != Type::key) {
-                throw EUnexpectType{ Type::key, x.type_ };
+                NMS_THROW(EUnexpectType{ Type::key, x.type_ });
             }
             return { x.key_val_, {x.size_} };
         }
@@ -185,12 +186,10 @@ public:
         if (type == Type::array) {
             return { lst_, idx_ + 1 };
         }
-        else if (type == Type::object) {
+        if (type == Type::object) {
             return { lst_, idx_ + 2 };
         }
-        else {
-            throw EUnexpectType(Type::array, type);
-        }
+        NMS_THROW(EUnexpectType(Type::array, type));
     }
 
     /* iterator: end */
@@ -219,7 +218,7 @@ public:
     StrView key() const {
         auto k = lst_[idx_ - 1];
         if (k.type_ != Type::key) {
-            throw EUnexpectType{ Type::key, k.type_ };
+            NMS_THROW(EUnexpectType{ Type::key, k.type_ });
         }
         StrView val = { k.str_val_, {k.size_} };
         return val;
@@ -250,31 +249,33 @@ public:
 #pragma endregion
 
 #pragma region core types
-    auto& operator<<(bool     x) { set_val(Node(x));          return *this; }
-    auto& operator<<(i8       x) { set_val(Node(x));          return *this; }
-    auto& operator<<(u8       x) { set_val(Node(x));          return *this; }
-    auto& operator<<(i16      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(u16      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(i32      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(u32      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(i64      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(u64      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(f32      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(f64      x) { set_val(Node(x));          return *this; }
-    auto& operator<<(StrView  x) { set_val(Node(x));          return *this; }
+    auto& operator<<(bool     x) { set_val(Node(x));    return *this; }
+    auto& operator<<(i8       x) { set_val(Node(x));    return *this; }
+    auto& operator<<(u8       x) { set_val(Node(x));    return *this; }
+    auto& operator<<(i16      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(u16      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(i32      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(u32      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(i64      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(u64      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(f32      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(f64      x) { set_val(Node(x));    return *this; }
+    auto& operator<<(StrView  x) { set_val(Node(x));    return *this; }
+    auto& operator<<(DateTime x) { set_val(Node(x));    return *this; }
 
-    auto& operator>>(bool&    x) const { get_val(x, Type::boolean); return *this; }
-    auto& operator>>(i8&      x) const { get_val(x, Type::i8);      return *this; }
-    auto& operator>>(u8&      x) const { get_val(x, Type::u8);      return *this; }
-    auto& operator>>(i16&     x) const { get_val(x, Type::i16);     return *this; }
-    auto& operator>>(u16&     x) const { get_val(x, Type::u16);     return *this; }
-    auto& operator>>(i32&     x) const { get_val(x, Type::i32);     return *this; }
-    auto& operator>>(u32&     x) const { get_val(x, Type::u32);     return *this; }
-    auto& operator>>(i64&     x) const { get_val(x, Type::i64);     return *this; }
-    auto& operator>>(u64&     x) const { get_val(x, Type::u64);     return *this; }
-    auto& operator>>(f32&     x) const { get_val(x, Type::f32);     return *this; }
-    auto& operator>>(f64&     x) const { get_val(x, Type::f64);     return *this; }
-    auto& operator>>(StrView& x) const { get_val(x, Type::string);  return *this; }
+    auto& operator>>(bool&    x) const { get_val(x, Type::boolean);     return *this; }
+    auto& operator>>(i8&      x) const { get_val(x, Type::i8);          return *this; }
+    auto& operator>>(u8&      x) const { get_val(x, Type::u8);          return *this; }
+    auto& operator>>(i16&     x) const { get_val(x, Type::i16);         return *this; }
+    auto& operator>>(u16&     x) const { get_val(x, Type::u16);         return *this; }
+    auto& operator>>(i32&     x) const { get_val(x, Type::i32);         return *this; }
+    auto& operator>>(u32&     x) const { get_val(x, Type::u32);         return *this; }
+    auto& operator>>(i64&     x) const { get_val(x, Type::i64);         return *this; }
+    auto& operator>>(u64&     x) const { get_val(x, Type::u64);         return *this; }
+    auto& operator>>(f32&     x) const { get_val(x, Type::f32);         return *this; }
+    auto& operator>>(f64&     x) const { get_val(x, Type::f64);         return *this; }
+    auto& operator>>(StrView& x) const { get_val(x, Type::string);      return *this; }
+    auto& operator>>(DateTime&x) const { get_val(x, Type::datetime);    return *this; }
 
 #pragma region string
     auto& operator<<(const String& x)  {
@@ -286,20 +287,6 @@ public:
         StrView y;
         *this >> y;
         x = y;
-        return *this;
-    }
-#pragma endregion
-
-#pragma region datetime
-    auto& operator<<(const DateTime& t) {
-        *this << t.format("{}");
-        return *this;
-    }
-
-    auto& operator>>(DateTime& x) const {
-        String str;
-        *this >> str;
-        x = DateTime::parse(str);
         return *this;
     }
 #pragma endregion
@@ -340,11 +327,11 @@ public:
     template<class T, u32 N>
     const NodeEx& operator>>(Vec<T,N>& vec) const {
         if (type() != Type::array) {
-            throw EUnexpectType(Type::array, type());
+            NMS_THROW(EUnexpectType(Type::array, type()));
         }
         const auto n = count();
         if (n != N) {
-            throw EUnexpectElementCount{ N, n };
+            NMS_THROW(EUnexpectElementCount{ N, n });
         }
         auto i = 0u;
         for (auto e : *this) {
@@ -373,7 +360,7 @@ public:
     template<class T, u32 S>
     const NodeEx& operator>>(List<T,S>& x) const {
         if (type() != Type::array) {
-            throw EUnexpectType{ Type::array, type() };
+            NMS_THROW(EUnexpectType{ Type::array, type() });
         }
         const auto n = count();
         x.reserve(n);
@@ -407,16 +394,17 @@ public:
     /* node -> enum */
     template<class T>
     auto operator>>(T& x) const -> $when<$is_enum<T>, const NodeEx&> {
-        StrView str = val().str();
-        x = parse<T>(str);
+        const auto name = val().str();
+        const auto value = Enum<T>::parse(name);
+        x = value;
         return *this;
     }
 
     /* node <- enum */
     template<class T>
     auto operator<<(const T& x) -> $when<$is_enum<T>, NodeEx&> {
-        StrView str = tostr(x);
-        *this << str;
+        const auto name = mkEnum(x).name();
+        *this << name;
         return *this;
     }
 #pragma endregion
@@ -469,7 +457,23 @@ protected:
             return;
         }
 
-        throw EUnexpectType{ Type::boolean, v.type() };
+        NMS_THROW(EUnexpectType{ Type::boolean, v.type() });
+    }
+
+    void get_val(DateTime& x, Type t) const {
+        auto& v = val();
+        if (v.type() == t) {
+            x = DateTime(v.i64_val_);
+            return;
+        }
+
+        if (v.type() == Type::string) {
+            x = DateTime::parse(v.str());
+            const_cast<Type&>(v.type_)   = t;
+            const_cast<i64&>(v.i64_val_) = x.stamp();
+            return;
+        }
+        NMS_THROW(EUnexpectType{ Type::number, v.type() });
     }
 
     template<class T>
@@ -483,12 +487,12 @@ protected:
         }
 
         if (v.type() == Type::number) {
-            const_cast<T&>(*p)          = parse<T>(v.str());
-            const_cast<Type&>(v.type_)  = t;
-            x = *p;
+            x = parse<T>(v.str()); 
+            const_cast<Type&>(v.type_) = t;
+            const_cast<T&>(*p)         = x;
             return;
         }
-        throw EUnexpectType{ Type::number, v.type() };
+        NMS_THROW(EUnexpectType{ Type::number, v.type() });
     }
 
     void set_val(const Node& x) {
@@ -498,7 +502,7 @@ protected:
             v = x;
         }
         else {
-            throw EUnexpectType{ v.type(), x.type() };
+            NMS_THROW(EUnexpectType{ v.type(), x.type() });
         }
     }
 #pragma endregion

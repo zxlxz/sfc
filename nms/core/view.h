@@ -27,15 +27,6 @@ __forceinline constexpr auto mkStride(const Tint(&size)[N]) {
 }
 #pragma endregion
 
-namespace io
-{
-class Path;
-template<class T, u32 N>void save(const View<T, N>& view, const Path& path);
-template<class T, u32 N>void save(const View<T, N>& view, const char* path);
-template<class T, u32 N>void load(View<T, N>& view, const Path& path);
-template<class T, u32 N>void load(View<T, N>& view, const char* path);
-}
-
 template<class T, u32 N>
 struct View
 {

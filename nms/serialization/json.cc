@@ -13,16 +13,22 @@ void formatNode(String& buf, const NodeEx& node, i32 level=0) {
     auto& v = node.val();
 
     switch (v.type()) {
-    case Type::null:    formatImpl(buf, fmt, "");           break;
-    case Type::boolean: formatImpl(buf, fmt, v.bool_val_);  break;
-    case Type::u16:     formatImpl(buf, fmt, v.u16_val_);   break;
-    case Type::i16:     formatImpl(buf, fmt, v.i16_val_);   break;
-    case Type::u32:     formatImpl(buf, fmt, v.u32_val_);   break;
-    case Type::i32:     formatImpl(buf, fmt, v.i32_val_);   break;
-    case Type::u64:     formatImpl(buf, fmt, v.u64_val_);   break;
-    case Type::i64:     formatImpl(buf, fmt, v.i64_val_);   break;
-    case Type::f32:     formatImpl(buf, fmt, v.f32_val_);   break;
-    case Type::f64:     formatImpl(buf, fmt, v.f64_val_);   break;
+    case Type::null:    formatImpl(buf, fmt, "");               break;
+    case Type::boolean: formatImpl(buf, fmt, v.bool_val_);      break;
+    case Type::u16:     formatImpl(buf, fmt, v.u16_val_);       break;
+    case Type::i16:     formatImpl(buf, fmt, v.i16_val_);       break;
+    case Type::u32:     formatImpl(buf, fmt, v.u32_val_);       break;
+    case Type::i32:     formatImpl(buf, fmt, v.i32_val_);       break;
+    case Type::u64:     formatImpl(buf, fmt, v.u64_val_);       break;
+    case Type::i64:     formatImpl(buf, fmt, v.i64_val_);       break;
+    case Type::f32:     formatImpl(buf, fmt, v.f32_val_);       break;
+    case Type::f64:     formatImpl(buf, fmt, v.f64_val_);       break;
+
+    case Type::datetime:
+        buf += "\"";
+        DateTime(v.i64_val_).format(buf, fmt);
+        buf += "\"";
+        break;
 
     case Type::number: {
         formatImpl(buf, fmt, v.str());
@@ -180,8 +186,6 @@ static i32 parseArray(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
         }
         return -1;
     }
-
-    return -1;
 }
 
 static i32 parseObject(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
@@ -193,8 +197,8 @@ static i32 parseObject(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
         return pobj;
     }
 
-    i32 prev_key = -1;
-    i32 prev_val = -1;
+    auto prev_key = -1;
+    auto prev_val = -1;
 
     while (true) {
         // key
@@ -317,8 +321,9 @@ struct TestObject
     , public ISerializable
 {
     NMS_PROPERTY_BEGIN;
-    typedef String NMS_PROPERTY(a);
-    typedef i32x3  NMS_PROPERTY(b);
+    typedef String      NMS_PROPERTY(a);
+    typedef i32x3       NMS_PROPERTY(b);
+    typedef DateTime    NMS_PROPERTY(c);
     NMS_PROPERTY_END;
 };
 
@@ -327,6 +332,7 @@ nms_test(serialization) {
     TestObject obj;
     obj.a = "hello";
     obj.b = { 1, 2, 3 };
+    obj.c = DateTime(2017, 9, 3, 8, 30, 12);
     auto jstr = json::format(obj);
     io::console::writeln("json = {}\n", jstr);
 }
@@ -335,7 +341,8 @@ nms_test(deserialization) {
     const char text[] = R"(
 {
     "a": "hello",
-    "b": [ 1, 2, 3]
+    "b": [ 1, 2, 3],
+    "c": "2017-9-3T8:30:12"
 }
 )";
     // json_str -> json_tree

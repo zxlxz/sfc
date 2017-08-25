@@ -1,22 +1,39 @@
 #pragma once
 
-#include <nms/core.h>
+#include <nms/config.h>
 
 namespace nms
 {
 
-class ProcStacks
+class String;
+
+class CallStacks
 {
 public:
-    ProcStacks() {
+    CallStacks() {
         init();
     }
 
     u32 count() const {
-        return count_;
+        if (count_ > 4) {
+            return count_ - 4;
+        }
+        return 0;
     }
 
-    NMS_API String operator[](u32 idx) const;
+    struct Stack
+    {
+        void* ptr;
+        NMS_API void format(String& buf) const;
+    };
+
+    Stack operator[](u32 idx) const {
+        if (idx + 2 >= count_) {
+            return Stack{ nullptr };
+        }
+
+        return Stack{ stacks_[idx+2] };
+    }
 
 protected:
     u32     count_  = 0;

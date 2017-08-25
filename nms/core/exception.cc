@@ -5,16 +5,14 @@
 namespace nms
 {
 
-NMS_API const ProcStacks& gExceptionStacks() {
-    static thread_local ProcStacks stacks;
+NMS_API const CallStacks& gExceptionStacks() {
+    static thread_local CallStacks stacks;
     return stacks;
 }
 
-NMS_API void IException::_init_stack_trace()
-{
-    auto& global_stacks  = const_cast<ProcStacks&>(gExceptionStacks());
-    auto  current_stacks = ProcStacks();
-    global_stacks = current_stacks;
+NMS_API void gSetExceptionStacks(CallStacks&& stack) {
+    auto& gstack = const_cast<CallStacks&>(gExceptionStacks());
+    gstack = move(stack);
 }
 
 NMS_API u32 ESystem::current() {

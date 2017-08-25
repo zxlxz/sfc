@@ -1,7 +1,7 @@
 #pragma once
 
-#include <nms/core/type.h>
 #include <nms/core/list.h>
+#include <nms/core/exception.h>
 
 namespace nms
 {
@@ -133,7 +133,7 @@ private:
 
     ILambda* lambda() {
         if (buff_[sizeof(buff_) - 1] == 0) {
-            throw EInvalid{};
+            NMS_THROW(EInvalid{});
         }
         if (buff_[sizeof(buff_) - 1] < sizeof(buff_) ) {
             return reinterpret_cast<ILambda*>(buff_);

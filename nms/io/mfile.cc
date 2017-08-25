@@ -29,7 +29,7 @@ MFile::MFile(const Path& path, u64 size)
 
     if (eid !=0 || obj_ < 0) {
         log::error("nms.io.MFile: cannot open/create {}", path);
-        throw ESystem(eid);
+        NMS_THROW(ESystem(eid));
     }
 
     stat_t st;
@@ -47,7 +47,7 @@ MFile::MFile(const Path& path, u64 size)
     data_ = MapViewOfFile(hmmap, 0x0002, 0, 0, size);
     if (data_ == nullptr) {
         log::error("nms.io.MFile: map view of file failed");
-        throw ESystem();
+        NMS_THROW(ESystem());
     }
 
     // finalize

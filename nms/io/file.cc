@@ -15,15 +15,15 @@ static constexpr auto AppendTxt= TxtMode | File::Append;
 NMS_API File::File(const Path& path, OpenMode mode) {
     const auto cpath = path.cstr();
 
-    auto smod = "rb+";
+    auto smod = "rb";
     switch (u32(mode)) {
-    case Read:      smod = "rb+"; break;
-    case Write:     smod = "wb+"; break;
-    case Append:    smod = "ab+"; break;
+    case Read:      smod = "rb"; break;
+    case Write:     smod = "wb"; break;
+    case Append:    smod = "ab"; break;
 
-    case ReadTxt:   smod = "rt+"; break;
-    case WriteTxt:  smod = "wt+"; break;
-    case AppendTxt: smod = "at+"; break;
+    case ReadTxt:   smod = "r"; break;
+    case WriteTxt:  smod = "w"; break;
+    case AppendTxt: smod = "a"; break;
 
     default: break;
     }
@@ -36,7 +36,7 @@ NMS_API File::File(const Path& path, OpenMode mode) {
         log::error("nms.io.File: fopen failed\n"
             "    dir : {}\n"
             "    path: {}", dir, path);
-        throw ESystem{eid};
+        NMS_THROW(ESystem{eid});
     }
 }
 

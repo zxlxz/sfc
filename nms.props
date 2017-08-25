@@ -20,7 +20,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <!--cpp: langauge-->
-      <AdditionalOptions>/std:c++latest  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /std:c++latest  %(AdditionalOptions)</AdditionalOptions>
       <WarningLevel>Level3</WarningLevel>
       <!-- optimization -->
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>

@@ -1,6 +1,7 @@
-#include <nms/test.h>
+﻿#include <nms/test.h>
 #include <nms/util/stacktrace.h>
 #include <nms/util/library.h>
+#include <nms/io/console.h>
 
 #ifdef NMS_CC_MSVC
 using namespace nms;
@@ -50,12 +51,12 @@ static auto gDbgHelpLibrary(StrView name) {
 
 #define NMS_DBGHELP_FUNC(name) static_cast<decltype(name)*>(gDbgHelpLibrary(#name))
 
-static auto backtrace(void** stacks, int count) {
+auto backtrace(void** stacks, int count) {
     static auto proc        = getCurrentProcess();
     static auto sym_init    = NMS_DBGHELP_FUNC(SymInitialize);
     static auto init        = sym_init(proc, nullptr, true);  (void)init;
 
-    const  auto ret = RtlCaptureStackBackTrace(0, count, stacks, nullptr);
+    auto ret = RtlCaptureStackBackTrace(0, count, stacks, nullptr);
     return ret;
 }
 
@@ -75,19 +76,15 @@ static auto dladdr(void* handle, Dl_info* info) {
 namespace nms
 {
 
-NMS_API void ProcStacks::init() {
+NMS_API void CallStacks::init() {
     auto ret = backtrace(stacks_, nms::count(stacks_));
     count_ = u32(ret);
-    if (count_ >= 2) {
-        count_ -= 2;
-    }
 }
 
-NMS_API String ProcStacks::operator[](u32 id) const {
-    id += 2;
-
-    if (id >= count_) {
-        return {};
+NMS_API void CallStacks::Stack::format(String& buf) const {
+    if (ptr == nullptr) {
+        buf += cstr("<null>");
+        return;
     }
 
     struct {
@@ -95,35 +92,45 @@ NMS_API String ProcStacks::operator[](u32 id) const {
         char    buff[512];
     } info_ext;
 
-    auto ret = dladdr(stacks_[id], &info_ext.info);
+    auto ret = dladdr(ptr, &info_ext.info);
     if (ret == 0) {
-        return {};
+        buf += cstr("<unknow>");
+        return;
     }
     auto name = cstr(info_ext.info.dli_sname);
 
-#ifndef NMS_CC_MSVC
+#ifdef NMS_CC_MSVC
+    buf += name;
+#else
     size_t length = 0;
     int status = 0;
     auto cxx_buff = abi::__cxa_demangle(name.data(), nullptr, &length, &status);
     if (status == 0) {
-        String cxx_name(cxx_buff, u32(length));
+        buf += cstr(cxx_buff);
         ::free(cxx_buff);
-        return cxx_name;
+    }
+    else if (cxx_buff != nullptr) {
+        buf += cstr(cxx_buff);
+    }
+    else {
+        buf += cstr("<empty>");
     }
 #endif
-    return name;
 }
 
 #pragma region unittest
 nms_test(stacktrace) {
-    ProcStacks stacks;
+    CallStacks stacks;
     auto cnt = min(64u, stacks.count());
 
-    io::log::info("nms.Stack.backtrace:");
-    for (u32 i = 0; i+6 < cnt; ++i) {
+    String buff = "nms.Stack.backtrace:";
+    for (u32 i = 0; i < cnt; ++i) {
         auto stack = stacks[i];
-        io::log::info("  |- [{:2}] {}", i, stack);
+        i + 1 < cnt
+            ? sformat(buff, "\n  ├─{:2}: {}", i, stack)
+            : sformat(buff, "\n  └─{:2}: {}", i, stack);
     }
+    io::log::info(buff);
 }
 #pragma endregion
 
