@@ -52,12 +52,14 @@ NMS_API f64 clock() {
 
 // UTC
 NMS_API void DateTime::init_stamp(i64 stamp) {
+    const time_t clock = stamp;
+
     struct tm tm = {};
 #ifdef NMS_OS_WINDOWS
-    ::gmtime_s(&tm, &stamp);
+    ::gmtime_s(&tm, &clock);
     tm.tm_year += 1900;
 #else
-    ::gmtime_r(&stamp, &tm);
+    ::gmtime_r(&clock, &tm);
     tm.tm_year += 1970;
 #endif
     year    = tm.tm_year;
