@@ -506,8 +506,8 @@ protected:
 
 public:
     virtual ~IException() {}
-
     virtual void format(String& buf) const {}
+    NMS_API void dump() const;
 };
 
 #pragma endregion

@@ -1,3 +1,5 @@
+﻿#include <typeinfo>
+
 #include <nms/thread/task.h>
 #include <nms/thread/thread.h>
 #include <nms/test.h>
@@ -13,7 +15,8 @@ NMS_API ITask::ITask()
     , query_cnt_{ 0 }
     , semaphore_{ 0 } {}
 
-NMS_API ITask::~ITask() {}
+NMS_API ITask::~ITask()
+{}
 
 bool ITask::addDepend(ITask& task) {
     for (auto pdepend : depends_) {
@@ -44,39 +47,33 @@ NMS_API void ITask::invoke() {
     status_ = Waiting;
 
     // 2. query depend tasks status
-    auto failed_cnt = 0;
+    auto depends_failed_cnt = 0;
     for (auto ptask : depends_) {
         const auto stat = ptask->status();
 
         if (stat == Failed) {
-            ++failed_cnt;
+            ++depends_failed_cnt;
         }
     }
-    status_ = failed_cnt == 0 ? Running : Failed;
 
     // 3. run this task
-    if (status_ == Running) {
+    if (depends_failed_cnt == Running) {
         try {
-            onRun();
-            run();
-            status_ = Success;
+            status_ = Running;
+            auto ret = exec();
+            status_ = ret ? Success : Failed;
         }
         catch (...) {
-            status_ = Failed;
         }
+    }
+    else {
+        status_ = Failed;
     }
 
     // 4. notify 
     semaphore_ += query_cnt_;
-
-    // 5. invoke events
-    if (status_ == Success) {
-        this->onSuccess();
-    }
-    if (status_ == Failed) {
-        this->onFailed();
-    }
 }
+
 #pragma endregion
 
 #pragma region scheduler
@@ -116,7 +113,7 @@ NMS_API void Scheduler::run() {
 class TestTask: public ITask
 {
 public:
-    TestTask(char id)
+    explicit TestTask(char id)
         : id_(id)
         , name_(format("{:c}", id))
     {}
@@ -134,16 +131,23 @@ private:
         Thread::sleep(0.1);
     }
 
-    void onRun() override {
-        io::log::warn("nms.thread.TestTask[{:c}]: start...", id_);
-    }
-
-    void onSuccess() override {
-        io::log::debug("nms.thread.TestTask[{:c}]: success...", id_);
-    }
-
-    void onFailed() override {
-        io::log::error("nms.thread.TestTask[{:c}]: failed", id_);
+    /* task exec method */
+    bool exec() override {
+        try {
+            io::log::info(">> task[{}] running...", name_);
+            run();
+            io::log::info("<< task[{}] success.", name_);
+            return true;
+        }
+        catch (const IException& e) {
+            e.dump();
+            io::log::error("<< task[{}] failed.", name_);
+            return false;
+        }
+        catch (...) {
+            io::log::error("<< task[{}] failed.", name_);
+            return false;
+        }
     }
 };
 

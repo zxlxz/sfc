@@ -13,7 +13,10 @@ class CallStacks;
 NMS_API const CallStacks& gExceptionStacks();
 NMS_API void gSetExceptionStacks(CallStacks&&);
 
-#define NMS_THROW(...)  nms::gSetExceptionStacks(nms::CallStacks{}); throw(__VA_ARGS__)
+__forceinline void throw_exception(const IException& exception) {
+    nms::gSetExceptionStacks(nms::CallStacks{});
+    throw(exception);
+}
 
 class ESystem: public IException
 {

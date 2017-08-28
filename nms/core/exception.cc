@@ -1,5 +1,8 @@
+﻿#include <typeinfo>
+
 #include <nms/core/exception.h>
 #include <nms/core/format.h>
+#include <nms/io/log.h>
 #include <nms/util/stacktrace.h>
 
 namespace nms
@@ -13,6 +16,20 @@ NMS_API const CallStacks& gExceptionStacks() {
 NMS_API void gSetExceptionStacks(CallStacks&& stack) {
     auto& gstack = const_cast<CallStacks&>(gExceptionStacks());
     gstack = move(stack);
+}
+
+NMS_API void IException::dump() const {
+    auto  name   = cstr(typeid(*this).name());
+    auto  str    = nms::format("throw {}: {}\n", name);
+    auto& stacks = gExceptionStacks();
+
+    const auto stacks_cnt = stacks.count();
+    for (auto i = 0u; i < stacks_cnt; ++i) {
+        (i + 1 != stacks_cnt)
+            ? sformat(str, cstr("\t ├─{:2}: {}\n"), i, stacks[i])
+            : sformat(str, cstr("\t └─{:2}: {}"), i, stacks[i]);
+    }
+    io::log::error(str);
 }
 
 NMS_API u32 ESystem::current() {

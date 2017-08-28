@@ -98,7 +98,7 @@ public:
     template<class T, u32 N>
     void read(View<T, N>& view) {
         if (!view.isNormal()) {
-            NMS_THROW(EBadType{});
+            throw_exception(EBadType{});
         }
 
         read(view.data(), view.count());
@@ -108,7 +108,7 @@ public:
     template<class T, u32 N>
     void write(const View<T, N>& view) {
         if (!view.isNormal()) {
-            NMS_THROW(EBadType{});
+            throw_exception(EBadType{});
         }
         write(view.data(), view.count());
     }
@@ -212,7 +212,7 @@ List<T,BS> List<T, BS>::load(io::File& is) {
     is >> info;
     is >> size;
     if (info != base::typeinfo()) {
-        NMS_THROW(EBadType{});
+        throw_exception(EBadType{});
     }
 
     List<T,BS> tmp(size[0]);

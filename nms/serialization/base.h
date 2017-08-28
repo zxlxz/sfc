@@ -40,7 +40,7 @@ public:
     {}
 
     void format(String& buf) const override {
-        sformat(buf, "unexpect type");
+        sformat(buf, "unexpect type, expect={}, value={}", expect_, value_);
     }
 protected:
     Type    expect_;
@@ -94,73 +94,53 @@ struct ISerializable
 {
     friend struct NodeEx;
 
-private:
+protected:
     template<class T>
     static void _serialize(NodeEx& node, const T& obj) {
-        serialize_begin<0>(&node, &obj, nullptr);
+#define call_serialize_impl(n, ...)    _serialize_impl(I32<n>{}, &obj, &node);
+        NMSCPP_LOOP(99, call_serialize_impl);
+#undef call_serialize_impl
     }
-
-    // serialize-begin
-    template<u32 I, class T>
-    static void serialize_begin(NodeEx* node, const T* obj, ...) {
-        serialize_begin<I+1>(node, obj, nullptr);
-        return;
-    }
-
-    // serialize-switch
-    template<u32 I, class T>
-    static auto serialize_begin(NodeEx* node, const T* obj, nullptr_t)-> decltype((*obj)[I32<I>{}], 0) {
-        serialize_do<I>(node, obj);
-        return 0;
-    }
-
-    // serialize-do
-    template<u32 I, class T>
-    static auto serialize_do(NodeEx* node, const T* obj)-> decltype((*obj)[I32<I>{}], 0) {
-        auto src = (*obj)[I32<I>{}];
-        auto dst = (*node)[src.name];
-        dst << src.value;
-        serialize_do<I + 1>(node, obj);
-        return 0;
-    }
-
-    // serialize-end
-    template<u32 I>
-    static void serialize_do(...)
-    {}
 
     template<class T>
     static void _deserialize(const NodeEx& node, T& obj) {
-        deserialize_begin<0>(&node, &obj, nullptr);
+#define call_deserialize_impl(n, ...)    _deserialize_impl(I32<n>{}, &obj, &node);
+        NMSCPP_LOOP(99, call_deserialize_impl);
+#undef call_deserialize_impl
     }
 
-    // deserialize-begin
-    template<u32 I, class T>
-    static void deserialize_begin(const NodeEx* node, T* obj, ...) {
-        deserialize_begin<I+1>(node, obj, nullptr);
+private:
+    // serialize-impl
+    template<class T, i32 I>
+    static auto _serialize_impl(I32<I> idx, const T* pobj, NodeEx* pnod)->$when<(I < T::_$property_cnt)> {
+        auto obj_item = (*pobj)[I32<I>{}];
+        auto nod_item = (*pnod)[obj_item.name];
+        nod_item << obj_item.value;
+        return;
     }
 
-    // deserialize-switch
-    template<u32 I, class T>
-    static auto deserialize_begin(const NodeEx* node, T* obj, nullptr_t)-> decltype((*obj)[I32<I>{}], 0) {
-        deserialize_do<I>(node, obj);
-        return 0;
+    // serialize-impl
+    template<class T, i32 I >
+    static auto _serialize_impl(I32<I>, const T* pobj, ...) -> $when<(I >= T::_$property_cnt)> {
+        (void)pobj;
+        return;
     }
 
-    // deserialize-do
-    template<u32 I, class T>
-    static auto deserialize_do(const NodeEx* node, T* obj)-> decltype((*obj)[I32<I>{}], 0) {
-        auto dst = (*obj)[I32<I>{}];
-        auto src = (*node)[dst.name];
-        src >> dst.value;
-        deserialize_do<I + 1>(node, obj);
-        return 0;
+    // deserialize-impl
+    template<class T, i32 I>
+    static auto _deserialize_impl(I32<I> idx, T* pobj, const NodeEx* pnod)->$when<(I < T::_$property_cnt)> {
+        auto obj_item = (*pobj)[I32<I>{}];
+        auto nod_item = (*pnod)[obj_item.name];
+        nod_item >> obj_item.value;
+        return;
     }
 
-    // deserialize-end
-    template<u32 I>
-    static void deserialize_do(...)
-    {}
+    // deserialize-impl
+    template<class T, i32 I >
+    static auto _deserialize_impl(I32<I>, T* pobj, ...) -> $when<(I >= T::_$property_cnt)> {
+        (void)pobj;
+        return;
+    }
 };
 
 }

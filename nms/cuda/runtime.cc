@@ -47,12 +47,12 @@ static auto cudaFun(u32 id) {
     };
 
     if (!lib) {
-        NMS_THROW(Exception(CUDA_ERROR_NOT_INITIALIZED));
+        throw_exception(Exception(CUDA_ERROR_NOT_INITIALIZED));
     }
 
     auto ret = funcs[id];
     if (!ret) {
-        NMS_THROW(Exception(CUDA_ERROR_NOT_INITIALIZED));
+        throw_exception(Exception(CUDA_ERROR_NOT_INITIALIZED));
     }
 
     return ret;
@@ -87,7 +87,7 @@ __forceinline void operator||(cudaError_enum eid,  const char(&msg)[N]) {
         return;
     }
     io::log::error(msg);
-    NMS_THROW(Exception(eid));
+    throw_exception(Exception(eid));
 }
 
 #pragma endregion
@@ -107,7 +107,7 @@ void driver_init() {
     }();
 
     if (stat != 0) {
-        NMS_THROW(Exception(stat));
+        throw_exception(Exception(stat));
     }
 }
 
@@ -244,7 +244,7 @@ static CUarray_format_enum arr_fmt(char type, u32 size) {
         default:break;
         }
     }
-    NMS_THROW(Exception(CUDA_ERROR_INVALID_VALUE));
+    throw_exception(Exception(CUDA_ERROR_INVALID_VALUE));
 }
 
 NMS_API arr_t arr_new(char type, u32 size, u32 channels, u32 rank, const u32 dims[]) {
@@ -400,7 +400,7 @@ NMS_API Module::sym_t Module::get_symbol(StrView name) const {
     const auto  ret = NMS_CUDA_DO(cuModuleGetGlobal_v2)(&ptr, &size, module_, cname);
     if (ret != 0 || ptr == 0) {
         io::log::error("nms.cuda.Module.getArg: cannot get arg => cufun_{}_{}", name);
-        NMS_THROW(Exception(ret));
+        throw_exception(Exception(ret));
     }
     return reinterpret_cast<sym_t>(ptr);
 }
@@ -421,7 +421,7 @@ NMS_API Module::fun_t Module::get_kernel(StrView name) const {
     auto ret = NMS_CUDA_DO(cuModuleGetFunction)(&fun, module_, cname);
     if (ret != 0) {
         io::log::error("nms.cuda.Program.get_kernel: cannot get {}", name);
-        NMS_THROW(Exception(ret));
+        throw_exception(Exception(ret));
     }
 
     return reinterpret_cast<fun_t>(fun);

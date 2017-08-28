@@ -55,6 +55,7 @@ NMS_API void formatImpl(String& buf, StrView fmt, f32      val);
 NMS_API void formatImpl(String& buf, StrView fmt, f64      val);
 NMS_API void formatImpl(String& buf, StrView fmt, void*    val);
 NMS_API void formatImpl(String& buf, StrView fmt, StrView  val);
+NMS_API void formatImpl(String& buf, StrView fmt, bool     val);
 
 NMS_API void formatImpl(String& buf, StrView fmt, const IException&  val);
 
@@ -229,7 +230,7 @@ protected:
     NMS_API bool next(u32& id, StrView& fmt);
 
     void doFormat(i32 id, StrView fmt) const {
-        NMS_THROW(EOutOfRange{});
+        throw_exception(EOutOfRange{});
     }
 
     template<class T, class ...U>

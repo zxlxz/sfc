@@ -198,6 +198,21 @@ NMS_API void formatImpl(String& buf, StrView fmt, u64     val) { _formatInt(buf,
 NMS_API void formatImpl(String& buf, StrView fmt, void*   val) { _formatInt(buf, fmt, u64(val), "%p");   }
 NMS_API void formatImpl(String& buf, StrView fmt, f32     val) { _formatFlt(buf, fmt, val); }
 NMS_API void formatImpl(String& buf, StrView fmt, f64     val) { _formatFlt(buf, fmt, val); }
+
+NMS_API void formatImpl(String& buf, StrView fmt, bool    val) {
+    if (fmt.count() > 0) {
+        if (fmt[0] == 'C') {
+            buf += val ? cstr("True") : cstr("False");
+            return;
+        }
+        if (fmt[0] == 'U') {
+            buf += val ? cstr("TRUE") : cstr("FALSE");
+            return;
+        }
+    }
+    buf += val ? cstr("true") : cstr("false");
+}
+
 NMS_API void formatImpl(String& buf, StrView fmt, const IException& val) {
     (void)fmt;
     val.format(buf);

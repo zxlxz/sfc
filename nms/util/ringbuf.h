@@ -35,7 +35,7 @@ public:
     template<class U>
     Ringbuf& push(U&& val) {
         if (isFull()) {
-            NMS_THROW(EOverflow());
+            throw_exception(EOverflow());
         }
         new(&data_[top_++])T(fwd<U>(val));
         if (top_ > cap_) top_ = 0;
@@ -44,7 +44,7 @@ public:
 
     T pop() {
         if (isEmpty()) {
-            NMS_THROW(EEmpty());
+            throw_exception(EEmpty());
         }
         auto tmp(move(data_[tail_++]));
         if (tail_ >= cap_) tail_ = 0;

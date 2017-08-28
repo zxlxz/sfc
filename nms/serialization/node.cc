@@ -9,12 +9,12 @@ namespace nms::serialization
 
 NMS_API NodeEx NodeEx::operator[](u32 k) const {
     if ( type() != Type::array) {
-        NMS_THROW(EUnexpectType{ Type::array, type() });
+        throw_exception(EUnexpectType{ Type::array, type() });
     }
 
     const auto n = count();
     if (k >= n) {
-        NMS_THROW(EUnexpectElementCount{ k + 1, n });
+        throw_exception(EUnexpectElementCount{ k + 1, n });
     }
 
     // find index
@@ -32,7 +32,7 @@ NMS_API NodeEx NodeEx::operator[](u32 k) {
         this->idx_ = 1;
     }
     else if (type() != Type::array) {
-        NMS_THROW(EUnexpectType{ Type::array, type() });
+        throw_exception(EUnexpectType{ Type::array, type() });
     }
 
     // find index
@@ -50,7 +50,7 @@ NMS_API NodeEx NodeEx::operator[](u32 k) {
 
 NMS_API NodeEx::Iterator NodeEx::find(StrView expect) const {
     if (type() != Type::object) {
-        NMS_THROW(EUnexpectType{ Type::object, type() });
+        throw_exception(EUnexpectType{ Type::object, type() });
     }
 
     auto n      = count();
@@ -88,7 +88,7 @@ NMS_API NodeEx NodeEx::operator[](StrView key) {
         v.type_ = Type::object;
     }
     else if (type() != Type::object) {
-        NMS_THROW(EUnexpectType{ Type::object, type() });
+        throw_exception(EUnexpectType{ Type::object, type() });
     }
 
     auto n      = v.count();

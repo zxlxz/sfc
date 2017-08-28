@@ -111,7 +111,7 @@ class Array
         is >> info;
         is >> size;
         if (info != base::typeinfo()) {
-            NMS_THROW(EBadType{});
+            throw_exception(EBadType{});
         }
 
         Array tmp(size);

@@ -57,10 +57,20 @@ protected:
     /* task run method */
     virtual void run() = 0;
 
-    /* events */
-    virtual void onRun()    {}
-    virtual void onSuccess(){}
-    virtual void onFailed() {}
+    /* task exec method */
+    virtual bool exec() {
+        try {
+            run();
+            return true;
+        }
+        catch (const IException& e) {
+            e.dump();
+            return false;
+        }
+        catch (...) {
+            return false;
+        }
+    }
 
 private:
     mutable volatile u32    query_cnt_;

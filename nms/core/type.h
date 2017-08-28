@@ -67,16 +67,20 @@ __forceinline constexpr Type typeof(const T&) {
 template<class T>
 struct Enum
 {
-    T value;
+   T value;
 
-    StrView name() const {
+   StrView name() const {
         const auto& names = enum_names(static_cast<T>(0));
-        return names[static_cast<u32>(value)];
+        const auto  idx   = static_cast<u32>(value);
+        if (idx >= names.count()) {
+            return {};
+        }
+        return names[idx];
     }
 
-    T parse(StrView name) {
+    static T parse(StrView name) {
         const auto& names = enum_names(static_cast<T>(0));
-        const auto  cnt = numel(names);
+        const auto  cnt = names.count();
 
         for (u32 i = 0; i < cnt; ++i) {
             if (names[i] == name) {
@@ -88,7 +92,7 @@ struct Enum
 };
 
 template<class T>
-Enum<T> mkEnum(const T& t) {
+__forceinline Enum<T> mkEnum(const T& t) {
     return { t };
 }
 

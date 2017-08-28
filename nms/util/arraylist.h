@@ -64,7 +64,7 @@ public:
 
         // check if out of range?
         if (bid >= $BookSize) {
-            NMS_THROW(EOutOfRange{});
+            throw_exception(EOutOfRange{});
         }
 
         // check book
