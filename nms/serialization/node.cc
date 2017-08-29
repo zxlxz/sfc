@@ -70,7 +70,8 @@ NMS_API NodeEx NodeEx::operator[](StrView key) const {
         return *itr;
     }
 
-    throw(EKeyNotFound{ key });
+    throw_exception(EKeyNotFound{ key });
+    return *itr;
 }
 
 

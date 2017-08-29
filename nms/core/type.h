@@ -75,7 +75,12 @@ struct Enum
         if (idx >= names.count()) {
             return {};
         }
-        return names[idx];
+
+        const auto str = names[idx];
+        if (str[0] == '$') {
+            return str.slice(1u, str.count()-1);
+        }
+        return str;
     }
 
     static T parse(StrView name) {
@@ -96,7 +101,7 @@ __forceinline Enum<T> mkEnum(const T& t) {
     return { t };
 }
 
-#define _NMS_ENUM_NAMES(i, value)  #value,
+#define _NMS_ENUM_NAMES(i, value)  #value
 #define NMS_ENUM_NAMES(type, ...)                                                           \
 inline auto enum_names(type) {                                                              \
     static StrView names[] = { NMSCPP_FOR(_NMS_ENUM_NAMES, __VA_ARGS__) "unknow" };         \
@@ -114,18 +119,18 @@ struct Property
     StrView name;
     T       value;
 
-    __forceinline constexpr Property(StrView name, T value)
+    constexpr Property(StrView name, T value)
         : name(name), value(value)
     {}
 };
 
-template<class T>
-__forceinline Property<T&> make_property(StrView name, T& member) {
+template<class T, u32 N>
+Property<T&> make_property(const char(&name)[N], T& member) {
     return { name, member };
 }
 
-template<class T>
-__forceinline Property<const T&> make_property(StrView name, const T& member) {
+template<class T, u32 N>
+Property<const T&> make_property(const char(&name)[N], const T& member) {
     return { name, member };
 }
 
@@ -134,12 +139,14 @@ static constexpr auto _$property_idx = __COUNTER__;
 #define NMS_PROPERTY_BEGIN enum:i32 { _$property_idx = __COUNTER__ + 1 }
 #define NMS_PROPERTY_END   enum:i32 { _$property_cnt = __COUNTER__ - _$property_idx}
 
-#define NMS_PROPERTY(member)                                                                            \
-    T##member;                                                                                          \
-    enum:i32 { _$##member##_id = i32(__COUNTER__) - _$property_idx};                                    \
-    auto    operator[](I32<_$##member##_id>)        { return make_property(#member, member); }          \
-    auto    operator[](I32<_$##member##_id>) const  { return make_property(#member, member); }          \
+#define NMS_PROPERTY_IMPL(member, name, ...)                                                        \
+    T##member;                                                                                      \
+    enum:i32 { _$##member##_id = i32(__COUNTER__) - _$property_idx};                                \
+    auto    operator[](I32<_$##member##_id>)        { return nms::make_property(name, member); }    \
+    auto    operator[](I32<_$##member##_id>) const  { return nms::make_property(name, member); }    \
     T##member member
+
+#define NMS_PROPERTY(member, ...)   NMS_PROPERTY_IMPL(member, ##__VA_ARGS__, #member)
 
 #pragma endregion
 

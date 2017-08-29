@@ -6,7 +6,8 @@ namespace nms::system
 {
 
 NMS_API String getenv(StrView name) {
-    if (name.count()!=0) {
+    // check if name is empty
+    if (name.count()==0) {
         return {};
     }
 

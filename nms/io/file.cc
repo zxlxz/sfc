@@ -38,6 +38,19 @@ NMS_API File::File(const Path& path, OpenMode mode) {
             "    path: {}", dir, path);
         throw_exception(ESystem{eid});
     }
+
+    if (u32(mode) == ReadTxt) {
+        Vec<char, 3> bom = { '\xEF', '\xBB', '\xBF' };
+        Vec<char, 3> buf;
+        auto cnt = ::fread(buf.data_, 1, 3, obj_);
+
+        if (cnt == 3 && bom == buf) {
+            // UTF-8 BOM
+        }
+        else {
+            fseek(obj_, 0, SEEK_SET);
+        }
+    }
 }
 
 NMS_API File::~File() {
@@ -69,6 +82,12 @@ NMS_API u64 File::writeRaw(const void* dat, u64 size, u64 n) {
     return ret;
 }
 
+
+NMS_API void File::sync() const {
+    fflush(obj_);
+}
+
+#pragma region TxtFile
 NMS_API TxtFile::TxtFile(const Path& path, File::OpenMode mode)
     : base{ path, OpenMode(TxtMode | mode) }
 {}
@@ -76,9 +95,16 @@ NMS_API TxtFile::TxtFile(const Path& path, File::OpenMode mode)
 NMS_API TxtFile::~TxtFile()
 {}
 
-NMS_API void File::sync() const {
-    fflush(obj_);
+NMS_API u64 TxtFile::_read(char* u8_buf, u64 size) {
+    auto ret = base::read(u8_buf, size);
+    return ret;
 }
+
+NMS_API u64 TxtFile::_write(const char* u8_buf, u64 size) {
+    auto ret = base::write(u8_buf, size);
+    return ret;
+}
+#pragma endregion
 
 NMS_API String loadString(const Path& path) {
     TxtFile file(path, File::Read);

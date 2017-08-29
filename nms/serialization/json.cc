@@ -102,11 +102,6 @@ static bool isBlank(char c) {
     return false;
 }
 
-static bool isNum(char c) {
-    if ((c >= '0' && c <= '9') || c == '.')  return true;
-    return false;
-}
-
 static char peekChar(StrView& text) {
     u32 pos = 0;
     u32 len = u32(text.count());
@@ -126,14 +121,17 @@ static char parseChar(StrView& text) {
 static i32 parseAny(StrView& text, NodeEx* ptree, i32 proot, i32 pleft);
 
 static i32 parseNum(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
-    // 0123456789
+    // 0123456789,
     // ^         ^
-    // b         e
-    u32 b = 0;
-    u32 e = 1;
-    while (isNum(text[e])) e++;
-    auto ret = ptree->add(proot, pleft, Node(StrView{ text.data() + b, { e - b } }, Type::number));
-    text = text.slice(e, u32(text.count() - 1));
+    // s         p
+    auto s = text.data();
+    auto p = s;
+    while (*p != ',' && *p != '}' && *p != ']' && *p != '\n') {
+        ++p;
+    }
+
+    auto ret = ptree->add(proot, pleft, Node(StrView{ s, { u32(p-s) } }, Type::number));
+    text     = StrView{p, {u32(text.count() - 1)}};
     return ret;
 }
 
@@ -141,11 +139,26 @@ static i32 parseStr(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
     // "abcdefg"
     // ^ ......^
     // b       e
+    auto ptr    = text.data();
+    auto pos    = text.data() + 1;
 
-    u32 b = 0;
-    u32 e = 1;
-    while (text[e] != '"' && text[e - 1] != '\\') ++e;
-    auto ret = ptree->add(proot, pleft, Node(StrView{ text.data() + b + 1, { e - b - 1 } }, Type::string));
+    while (true) {
+        auto c = *pos;
+
+        if (c == '\\') {
+            pos += 2;
+        }
+        else if (c == '"') {
+            break;
+        }
+        else {
+            pos += 1;
+        }
+    }
+
+    const auto b = 0;
+    const auto e = u32(pos-ptr);
+    const auto ret = ptree->add(proot, pleft, Node(StrView{ text.data() + b + 1, { e - b - 1 } }, Type::string));
     text = text.slice(e+1, u32(text.count()) - 1);
     return ret;
 }
@@ -210,7 +223,7 @@ static i32 parseObject(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
 
         const auto next_colon = parseChar(text);
         if (next_colon != ':') {
-            io::log::error("nms.serialization.json.parse_object: unexpect {} ", next_colon);
+            io::log::error("nms.serialization.json.parse_object: expect ':', but '{:c}' ", next_colon);
             return -1;
         }
         const auto this_val  = parseAny(text, ptree, -1, prev_val);
@@ -226,7 +239,7 @@ static i32 parseObject(StrView& text, NodeEx* ptree, i32 proot, i32 pleft) {
         if (next_char == ',') {
             continue;
         }
-        io::log::error("nms.serialization.json.parse_object: unexpect {} ", next_char);
+        io::log::error("nms.serialization.json.parse_object: expect ',' or '}', but '{:c}' ", next_char);
         return -1;
     }
     return pobj;

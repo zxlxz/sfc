@@ -43,6 +43,7 @@ ITask::State ITask::status() const {
 }
 
 NMS_API void ITask::invoke() {
+
     // 1. set status = Waiting
     status_ = Waiting;
 
@@ -57,7 +58,7 @@ NMS_API void ITask::invoke() {
     }
 
     // 3. run this task
-    if (depends_failed_cnt == Running) {
+    if (depends_failed_cnt == 0) {
         try {
             status_ = Running;
             auto ret = exec();

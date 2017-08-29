@@ -25,7 +25,7 @@
       <!-- optimization -->
       <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)' == 'Debug'">OnlyExplicitInline</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)' == 'Debug'">Disabled</InlineFunctionExpansion>
       <!--debug-->
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <!--library-->

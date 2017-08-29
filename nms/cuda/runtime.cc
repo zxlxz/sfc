@@ -245,6 +245,7 @@ static CUarray_format_enum arr_fmt(char type, u32 size) {
         }
     }
     throw_exception(Exception(CUDA_ERROR_INVALID_VALUE));
+    return CUarray_format_enum(0);
 }
 
 NMS_API arr_t arr_new(char type, u32 size, u32 channels, u32 rank, const u32 dims[]) {

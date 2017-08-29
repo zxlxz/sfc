@@ -167,12 +167,12 @@ public:
     using base::size;
     using base::sync;
 
-    u64 read(char* buff, u64 size) {
-        return base::read(buff, size);
+    u64 read(char* u8_buf, u64 size) {
+        return _read(u8_buf, size);
     }
 
-    u64 write(StrView str) {
-        return base::write(str.data(), str.count());
+    u64 write(StrView u8_str) {
+        return _write(u8_str.data(), u8_str.count());
     }
 
     template<class ...U>
@@ -180,6 +180,10 @@ public:
         auto s = format(fmt, args...);
         return write(s);
     }
+
+private:
+    NMS_API u64 _read(char* u8_buf, u64 size);
+    NMS_API u64 _write(const char* u8_buf, u64 size);
 };
 
 NMS_API String loadString(const Path& path);

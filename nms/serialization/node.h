@@ -189,7 +189,9 @@ public:
         if (type == Type::object) {
             return { lst_, idx_ + 2 };
         }
+
         throw_exception(EUnexpectType(Type::array, type));
+        return {lst_, 0};
     }
 
     /* iterator: end */
