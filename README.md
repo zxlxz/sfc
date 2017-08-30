@@ -41,4 +41,4 @@ git clone --recursive https://github.com/lumpyzhu/nmscc.git
 ```
 
 ## docs
-[中文文档](https://github.com/lumpyzhu/nmscc.docs/index.md)
+[中文文档](https://github.com/lumpyzhu/nmscc.docs/blob/master/index.md)
