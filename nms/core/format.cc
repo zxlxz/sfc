@@ -149,7 +149,7 @@ static void _formatInt(String& buf, StrView sfmt, T val, StrView type) {
 // [align:<>=][sign:+-][width:number].[prec:number]
 template<class T>
 static void _formatFlt(String& buf, StrView sfmt, T val) {
-    const auto fmt = sfmt.count() > 0 ? FmtSpec(sfmt): $is<float, T> ? FmtSpec(6, 3) : FmtSpec(9, 6);
+    const auto fmt = sfmt.count() > 0 ? FmtSpec(sfmt): $is<float, T> ? FmtSpec(3, 3) : FmtSpec(6, 6);
 
     char tmp[256];
     auto uval = val < 0 ? -val : val;

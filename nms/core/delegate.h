@@ -133,7 +133,7 @@ private:
 
     ILambda* lambda() {
         if (buff_[sizeof(buff_) - 1] == 0) {
-            throw_exception(EInvalid{});
+            NMS_THROW(EInvalid{});
         }
         if (buff_[sizeof(buff_) - 1] < sizeof(buff_) ) {
             return reinterpret_cast<ILambda*>(buff_);

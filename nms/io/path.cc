@@ -181,13 +181,13 @@ NMS_API void chdir(const Path& path) {
     const StrView cpath = path;
     if (cpath.count()==0) {
         log::error("nms.io.chdir: null path!!");
-        throw_exception(ESystem(0));
+        NMS_THROW(ESystem(0));
     }
     const auto ret = ::chdir(cpath.data());
     
     if (ret != 0) {
         log::error("nms.io.chdir: failed");
-        throw_exception(ESystem());
+        NMS_THROW(ESystem());
     }
 
 }
@@ -212,7 +212,7 @@ NMS_API void mkdir(const Path& path) {
 
     if (ret != 0) {
         log::error("nms.io.mkdir: failed");
-        throw_exception(ESystem());
+        NMS_THROW(ESystem());
     }
 }
 

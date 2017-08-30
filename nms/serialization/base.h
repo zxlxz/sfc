@@ -28,7 +28,7 @@ NMS_ENUM_EX(enum class Type : u16, Type,
 
     array,
     object,
-    datetime,
+    datetime
     );
 
 class EUnexpectType : public IException

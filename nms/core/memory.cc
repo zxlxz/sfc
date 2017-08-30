@@ -16,7 +16,7 @@ NMS_API void* _mnew(u64 size) {
 
     const auto ptr = static_cast<void**>(::malloc(size));
     if (ptr == nullptr) {
-        throw_exception(EBadAlloc{});
+        NMS_THROW(EBadAlloc{});
     }
     return ptr;
 }

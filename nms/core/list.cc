@@ -9,7 +9,7 @@ namespace nms
 nms_test(list) {
     /* copy able */
     List<u32> list;
-    for (u32 i = 0; i < 100; ++i) {
+    for (u32 i = 0; i < 10; ++i) {
         list.append(i);
     }
     io::console::writeln("list = {}", list);

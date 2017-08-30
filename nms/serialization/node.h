@@ -69,8 +69,12 @@ public:
     }
 
     StrView str() const {
+        if (type_ == Type::null) {
+            return {};
+        }
+
         if ((type_ != Type::string) && (type_ != Type::key) && (type_ != Type::number) ) {
-            throw_exception(EUnexpectType(Type::string, type_));
+            NMS_THROW(EUnexpectType(Type::string, type_));
         }
         return { str_val_, {size_} };
     }
@@ -155,7 +159,7 @@ public:
         StrView key() const {
             auto& x = lst_[idx_ - 1];
             if (x.type_ != Type::key) {
-                throw_exception(EUnexpectType{ Type::key, x.type_ });
+                NMS_THROW(EUnexpectType{ Type::key, x.type_ });
             }
             return { x.key_val_, {x.size_} };
         }
@@ -190,7 +194,7 @@ public:
             return { lst_, idx_ + 2 };
         }
 
-        throw_exception(EUnexpectType(Type::array, type));
+        NMS_THROW(EUnexpectType(Type::array, type));
         return {lst_, 0};
     }
 
@@ -220,7 +224,7 @@ public:
     StrView key() const {
         auto k = lst_[idx_ - 1];
         if (k.type_ != Type::key) {
-            throw_exception(EUnexpectType{ Type::key, k.type_ });
+            NMS_THROW(EUnexpectType{ Type::key, k.type_ });
         }
         StrView val = { k.str_val_, {k.size_} };
         return val;
@@ -329,11 +333,11 @@ public:
     template<class T, u32 N>
     const NodeEx& operator>>(Vec<T,N>& vec) const {
         if (type() != Type::array) {
-            throw_exception(EUnexpectType(Type::array, type()));
+            NMS_THROW(EUnexpectType(Type::array, type()));
         }
         const auto n = count();
         if (n != N) {
-            throw_exception(EUnexpectElementCount{ N, n });
+            NMS_THROW(EUnexpectElementCount{ N, n });
         }
         auto i = 0u;
         for (auto e : *this) {
@@ -362,7 +366,7 @@ public:
     template<class T, u32 S>
     const NodeEx& operator>>(List<T,S>& x) const {
         if (type() != Type::array) {
-            throw_exception(EUnexpectType{ Type::array, type() });
+            NMS_THROW(EUnexpectType{ Type::array, type() });
         }
         const auto n = count();
         x.reserve(n);
@@ -396,9 +400,18 @@ public:
     /* node -> enum */
     template<class T>
     auto operator>>(T& x) const -> $when<$is_enum<T>, const NodeEx&> {
-        const auto name = val().str();
-        const auto value = Enum<T>::parse(name);
-        x = value;
+        auto& v = const_cast<Node&>(val());
+
+        if (v.type() == Type::number || v.type() == Type::i32) {
+            auto uval = 0;
+            *this >> uval;
+            x = T(uval);
+        }
+        else if (v.type() == Type::string) {
+            auto sval = v.str();
+            auto eval = Enum<T>::parse(sval);
+            x = eval;
+        }
         return *this;
     }
 
@@ -447,54 +460,15 @@ protected:
     List<Node>& lst_;
     i32         idx_;
 
-    void get_val(StrView& x, Type t) const {
-        auto& v = val();
-        x = v.str();
-    }
-
-    void get_val(bool & x, Type t) const {
-        auto& v = val();
-        if (v.type() == t) {
-            x = v.bool_val_;
-            return;
-        }
-
-        throw_exception(EUnexpectType{ Type::boolean, v.type() });
-    }
-
-    void get_val(DateTime& x, Type t) const {
-        auto& v = val();
-        if (v.type() == t) {
-            x = DateTime(v.i64_val_);
-            return;
-        }
-
-        if (v.type() == Type::string) {
-            x = DateTime::parse(v.str());
-            const_cast<Type&>(v.type_)   = t;
-            const_cast<i64&>(v.i64_val_) = x.stamp();
-            return;
-        }
-        throw_exception(EUnexpectType{ Type::number, v.type() });
-    }
 
     template<class T>
-    void get_val(T& x, Type t) const {
-        auto& v = val();
-        auto  p = const_cast<T*>(reinterpret_cast<const T*>(&v.obj_val_));
-
-        if (v.type() == t) {
-            x = *p;
-            return;
+    bool get_val(T& x, Type t) const {
+        auto v = val();
+        if (v.type() == Type::null) {
+            return false;
         }
-
-        if (v.type() == Type::number) {
-            x = parse<T>(v.str()); 
-            const_cast<Type&>(v.type_) = t;
-            const_cast<T&>(*p)         = x;
-            return;
-        }
-        throw_exception(EUnexpectType{ Type::number, v.type() });
+        _get_val(v, x, t);
+        return true;
     }
 
     void set_val(const Node& x) {
@@ -504,11 +478,60 @@ protected:
             v = x;
         }
         else {
-            throw_exception(EUnexpectType{ v.type(), x.type() });
+            NMS_THROW(EUnexpectType{ v.type(), x.type() });
         }
     }
 #pragma endregion
 
+private:
+    static void _get_val(Node& v, StrView& x, Type t) {
+        x = v.str();
+    }
+
+    static void _get_val(Node& v, bool & x, Type t) {
+        if (v.type() == t) {
+            x = v.bool_val_;
+            return;
+        }
+        NMS_THROW(EUnexpectType{ Type::boolean, v.type() });
+    }
+
+    static void _get_val(Node& v, DateTime& x, Type t) {
+        if (v.type() == t) {
+            x = DateTime(v.i64_val_);
+            return;
+        }
+
+        if (v.type() == Type::string) {
+            x = DateTime::parse(v.str());
+            const_cast<Type&>(v.type_) = t;
+            const_cast<i64&>(v.i64_val_) = x.stamp();
+            return;
+        }
+
+        NMS_THROW(EUnexpectType{ Type::number, v.type() });
+    }
+
+    template<class T>
+    static void _get_val(Node& v, T& x, Type t) {
+        auto  p = const_cast<T*>(reinterpret_cast<const T*>(&v.obj_val_));
+
+        // type match
+        if (v.type() == t) {
+            x = *p;
+            return;
+        }
+
+        // type is number, convert
+        if (v.type() == Type::number) {
+            x = parse<T>(v.str());
+            const_cast<Type&>(v.type_) = t;
+            const_cast<T&>(*p) = x;
+            return;
+        }
+
+        NMS_THROW(EUnexpectType{ Type::number, v.type() });
+    }
 };
 
 class Tree

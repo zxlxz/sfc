@@ -50,7 +50,7 @@ auto parse(StrView str, StrView fmt = {}) {
     auto ret = parse_switch(str, fmt, val);
 
     if (ret!=0) {
-        throw_exception(EParseFailed{});
+        NMS_THROW(EParseFailed{});
     }
     return val;
 }

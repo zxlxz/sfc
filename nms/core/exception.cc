@@ -18,9 +18,9 @@ NMS_API void gSetExceptionStacks(CallStacks&& stack) {
     gstack = move(stack);
 }
 
-NMS_API void IException::dump() const {
-    auto  name   = cstr(typeid(*this).name());
-    auto  str    = nms::format("throw {}: {}\n", name, *this);
+NMS_API void dump(const IException& e)  {
+    auto  name   = cstr(typeid(e).name());
+    auto  str    = nms::format("throw {}: {}\n", name, e);
     auto& stacks = gExceptionStacks();
 
     const auto stacks_cnt = stacks.count();

@@ -9,11 +9,31 @@ namespace nms::thread
 
 #pragma region task
 
-NMS_API ITask::ITask()
+NMS_API ITask::ITask(StrView name)
     : status_(State::None)
     , depends_{}
+    , name_{name}
     , query_cnt_{ 0 }
-    , semaphore_{ 0 } {}
+    , semaphore_{ 0 }
+{}
+
+NMS_API bool ITask::exec() {
+    try {
+        io::log::info(">> task[{}] running...", name_);
+        run();
+        io::log::info("<< task[{}] success.", name_);
+        return true;
+    }
+    catch (const IException& e) {
+        dump(e);
+        io::log::error("<< task[{}] failed.", name_);
+        return false;
+    }
+    catch (...) {
+        io::log::error("<< task[{}] failed.", name_);
+        return false;
+    }
+}
 
 NMS_API ITask::~ITask()
 {}
@@ -115,8 +135,8 @@ class TestTask: public ITask
 {
 public:
     explicit TestTask(char id)
-        : id_(id)
-        , name_(format("{:c}", id))
+        : ITask(format("{:c}", id))
+        , id_(id)
     {}
 
     StrView name() const override {
@@ -133,23 +153,7 @@ private:
     }
 
     /* task exec method */
-    bool exec() override {
-        try {
-            io::log::info(">> task[{}] running...", name_);
-            run();
-            io::log::info("<< task[{}] success.", name_);
-            return true;
-        }
-        catch (const IException& e) {
-            e.dump();
-            io::log::error("<< task[{}] failed.", name_);
-            return false;
-        }
-        catch (...) {
-            io::log::error("<< task[{}] failed.", name_);
-            return false;
-        }
-    }
+
 };
 
 nms_test(Task) {

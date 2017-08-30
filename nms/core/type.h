@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nms/core/base.h>
+#include <nms/core/cpp.h>
 #include <nms/core/view.h>
 
 namespace nms
@@ -30,8 +31,7 @@ private:
     StrView(*get_name_)();
 
     explicit constexpr Type(StrView(*func_name)())
-        : get_name_(func_name)
-    {}
+        : get_name_(func_name) {}
 
 #if defined(NMS_CC_MSVC)
     static constexpr auto funcsig_head_size_ = sizeof("struct nms::View<char const ,0> __cdecl nms::Type::_get_name<") - 1;
@@ -40,14 +40,14 @@ private:
     static constexpr auto funcsig_head_size_ = sizeof("static View<const char> nms::Type::_get_name() [T = ") - 1;
     static constexpr auto funcsig_tail_size_ = sizeof("]") - 1;
 #elif defined(NMS_CC_GNUC)
-    static constexpr auto funcsig_head_size_ = sizeof("static nms::View<const char> nms::Type::_get_name() [with T = ") -1;
-    static constexpr auto funcsig_tail_size_ = sizeof("]") -1;
+    static constexpr auto funcsig_head_size_ = sizeof("static nms::View<const char> nms::Type::_get_name() [with T = ") - 1;
+    static constexpr auto funcsig_tail_size_ = sizeof("]") - 1;
 #else
 #   error("unknow c++ compiler")
 #endif
     template<class T>
     static View<const char> _get_name() {
-        const StrView name =  { __PRETTY_FUNCTION__ + funcsig_head_size_, { u32(sizeof(__PRETTY_FUNCTION__) - funcsig_head_size_ - funcsig_tail_size_ - 1) } };
+        const StrView name = { __PRETTY_FUNCTION__ + funcsig_head_size_, { u32(sizeof(__PRETTY_FUNCTION__) - funcsig_head_size_ - funcsig_tail_size_ - 1) } };
         return name;
     }
 };
@@ -67,48 +67,61 @@ __forceinline constexpr Type typeof(const T&) {
 template<class T>
 struct Enum
 {
-   T value;
+    T value;
 
-   StrView name() const {
+    StrView name() const {
         const auto& names = enum_names(static_cast<T>(0));
-        const auto  idx   = static_cast<u32>(value);
+        const auto  idx = static_cast<u32>(value);
         if (idx >= names.count()) {
             return {};
         }
 
         const auto str = names[idx];
-        if (str[0] == '$') {
-            return str.slice(1u, str.count()-1);
-        }
         return str;
     }
 
-    static T parse(StrView name) {
+    static T parse(StrView str) {
         const auto& names = enum_names(static_cast<T>(0));
         const auto  cnt = names.count();
 
         for (u32 i = 0; i < cnt; ++i) {
-            if (names[i] == name) {
+            auto name = names[i];
+            if (name == str) {
                 return static_cast<T>(i);
             }
         }
-        return static_cast<T>(cnt);
+        return static_cast<T>(0);
     }
 };
 
 template<class T>
-__forceinline Enum<T> mkEnum(const T& t) {
+__forceinline constexpr Enum<T> mkEnum(const T& t) {
     return { t };
 }
 
-#define _NMS_ENUM_NAMES(i, value)  #value
-#define NMS_ENUM_NAMES(type, ...)                                                           \
-inline auto enum_names(type) {                                                              \
-    static StrView names[] = { NMSCPP_FOR(_NMS_ENUM_NAMES, __VA_ARGS__) "unknow" };         \
-    return View<const StrView>{names, {numel(names)}};                                      \
+template<u32 N>
+__forceinline StrView mkEnumName(const char(&s)[N]) {
+    if (s[0] == '$') {
+        return StrView{ s + 1, {N - 2} };
+    }
+    return { s, {N-1} };
 }
-#define NMS_ENUM(type, ...) enum class type { __VA_ARGS__}; NMS_ENUM_NAMES(type, __VA_ARGS__)
-#define NMS_ENUM_EX(decl, type, ...) decl { __VA_ARGS__};   NMS_ENUM_NAMES(type, __VA_ARGS__)
+
+#define _NMS_ENUM_NAME(value)  nms::mkEnumName(#value),
+
+#define NMS_ENUM(type, ...)                                                                 \
+enum class type { __VA_ARGS__};                                                             \
+inline auto enum_names(type) {                                                              \
+    static StrView names[] = { NMSCPP_FOR(_NMS_ENUM_NAME, __VA_ARGS__)};                    \
+    return View<const StrView>{names, { u32(sizeof(names) / sizeof(names[0])) }};           \
+}
+
+#define NMS_ENUM_EX(enum_decl, type, ...)                                                   \
+enum_decl { __VA_ARGS__};                                                                   \
+inline auto enum_names(type) {                                                              \
+    static StrView names[] = { NMSCPP_FOR(_NMS_ENUM_NAME, __VA_ARGS__)};                    \
+    return View<const StrView>{names, { u32(sizeof(names) / sizeof(names[0])) }};           \
+}
 
 #pragma endregion
 
@@ -134,19 +147,22 @@ Property<const T&> make_property(const char(&name)[N], const T& member) {
     return { name, member };
 }
 
-static constexpr auto _$property_idx = __COUNTER__;
-
 #define NMS_PROPERTY_BEGIN enum:i32 { _$property_idx = __COUNTER__ + 1 }
 #define NMS_PROPERTY_END   enum:i32 { _$property_cnt = __COUNTER__ - _$property_idx}
 
-#define NMS_PROPERTY_IMPL(member, name, ...)                                                        \
+#define NMS_PROPERTY_(id, member, name)                                                             \
     T##member;                                                                                      \
-    enum:i32 { _$##member##_id = i32(__COUNTER__) - _$property_idx};                                \
+    enum:i32 { _$##member##_id = i32(id) - _$property_idx};                                         \
     auto    operator[](I32<_$##member##_id>)        { return nms::make_property(name, member); }    \
     auto    operator[](I32<_$##member##_id>) const  { return nms::make_property(name, member); }    \
     T##member member
 
-#define NMS_PROPERTY(member, ...)   NMS_PROPERTY_IMPL(member, ##__VA_ARGS__, #member)
+#define NMS_PROPERTY_1(id, member, ____)    NMS_PROPERTY_(id, member, #member)
+#define NMS_PROPERTY_2(id, member, name)    NMS_PROPERTY_(id, member, name)
+
+#define NMS_PROPERTY_$(id, x, y, n,...)     NMS_PROPERTY_##n(id, x, y)
+#define NMS_PROPERTY_X(...)                 NMS_PROPERTY_$ __VA_ARGS__
+#define NMS_PROPERTY(...)                   NMS_PROPERTY_X((__COUNTER__, __VA_ARGS__, 2, 1, ~))
 
 #pragma endregion
 

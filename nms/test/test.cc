@@ -127,7 +127,18 @@ NMS_API u32 invoke(const View<StrView>& masks) {
     u32 ok_count        = 0;
     u32 ignore_count    = 0;
 
-    console::writeln("[===== nms.test ======]");
+    const char logo[] = R"(
+         _   _ ___  ___ _____ _____         _   
+        | \ | ||  \/  |/  ___|_   _|       | |  
+        |  \| || .  . |\ `--.  | | ___  ___| |_ 
+        | . ` || |\/| | `--. \ | |/ _ \/ __| __|
+        | |\  || |  | |/\__/ / | |  __/\__ \ |_ 
+        \_| \_/\_|  |_/\____(_)\_/\___||___/\__|
+
+)";
+    printf("%s", logo);
+    auto now = DateTime::now();
+    printf("[ %04d-%02d-%02d %02d:%02d:%02d ]\n", now.year, now.month, now.day, now.hour, now.minute, now.second);
 
     for (auto& test: tests) {
         auto stat = test.match(masks);

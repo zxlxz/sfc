@@ -143,7 +143,7 @@ nms_test(serialization) {
     Tree tree;
     tree << obj;
     auto out = format("{:xml}", tree);
-    io::console::writeln("out = {}\n", out);
+    io::console::writeln("out = {}", out);
 }
 
 

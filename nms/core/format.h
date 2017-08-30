@@ -15,28 +15,51 @@ auto format_switch(String& buf, StrView fmt, const T& t);
 
 struct IFormatable
 {
+
     template<class T>
     static void _format(String& buf, const T& obj) {
-        buf += "{\n";
+        auto name_len = 4u;
+        _do_format(nullptr, obj, name_len);
+        name_len = (name_len + 3) / 4 * 4;  // 4 spaces indent
+        _do_format(&buf   , obj, name_len);
+    }
+private:
+    template<class T>
+    static void _do_format(String* buf, const T& obj, u32& name_len) {
+        if (buf!=nullptr) *buf += "{\n";
 
-#define call_do_format(n, ...)    _do_format(I32<n>{}, obj, &buf);
-        NMSCPP_LOOP(99, call_do_format);
+#define call_do_format(n, ...)    _do_format(I32<n>{}, buf, obj, name_len);
+        NMSCPP_LOOP_99(call_do_format)
 #undef call_do_format
-        buf += "}\n";
+
+        if (buf!=nullptr) *buf += "}\n";
     }
 
-private:
     // format-do
     template<class T, i32 I>
-     static auto _do_format(I32<I> idx, const T& obj, String* buf) ->$when<(I < T::_$property_cnt)> {
+     static auto _do_format(I32<I> idx, String* buf, const T& obj, u32& name_len) ->$when<(I < T::_$property_cnt)> {
         auto t = (obj)[idx];
-        sformat(*buf, "    {}: {}\n", t.name, t.value);
+        auto name  = t.name;
+        auto value = t.value;
+        if (buf != nullptr) {
+            buf->appends(4, ' ');
+            *buf += name;
+            buf->appends(name_len - name.count(), ' ');
+            *buf += StrView(": ");
+            format_switch(*buf, {}, value);
+            *buf += StrView("\n");
+        }
+        else {
+            if (name_len < name.count()) {
+                name_len = name.count();
+            }
+        }
         return;
     }
 
     // format-end
     template<class T, i32 I >
-    static auto _do_format(I32<I>, const T&, ...) -> $when<(I >= T::_$property_cnt)> {
+    static auto _do_format(I32<I>, String* , const T&, ...) -> $when<(I >= T::_$property_cnt)> {
         return;
     }
 };
@@ -112,15 +135,15 @@ void formatImpl(String& buf, StrView fmt, const List<T, N>& v) {
 */
 template<class T>
 void formatImpl(String& buf, StrView fmt, const View<T, 1>& v) {
+    static const StrView delimiter = ", ";
     buf.reserve(buf.count() + v.count() * 8);
 
     const auto nx = v.count();
-    const auto delimiters = fmt.count() == 0 ? StrView{ ", " } : fmt;
 
     for (u32 x = 0; x < nx; ++x) {
         format_switch(buf, fmt, v(x));
         if (x != nx - 1) {
-            buf += delimiters;
+            buf += delimiter;
         }
     }
 }
@@ -131,18 +154,15 @@ template<class T>
 void formatImpl(String& buf, StrView fmt, const View<T, 2>& v) {
     buf.reserve(buf.count() + v.count() * 8);
 
-    const auto vmod = fmt == "|";
-    const auto fmt0 = vmod ? fmt.slice(1, -1) : fmt;
-
-    if (vmod) {
-        buf += StrView{ "\n" };
-    }
+    buf += StrView{ "\n" };
     for (u32 i1 = 0; i1 < v.size(1); ++i1) {
-        buf += vmod ? StrView{ "    [" } : StrView{ "[" };
-        format_switch(buf, fmt0, v.slice({ 0, -1 }, { i1 }));
-        buf += "]";
-        if (i1 < v.size(1) - 1) {
-            buf += vmod ? StrView{ ",\n" } : StrView{ "," };
+        buf += StrView{ "    |" };
+        formatImpl(buf, fmt, v.slice({ 0, -1 }, { i1 }));
+        if (i1 + 1 != v.size(1)) {
+            buf += "|\n";
+        }
+        else {
+            buf += "|";
         }
     }
 }
@@ -230,7 +250,7 @@ protected:
     NMS_API bool next(u32& id, StrView& fmt);
 
     void doFormat(i32 id, StrView fmt) const {
-        throw_exception(EOutOfRange{});
+        NMS_THROW(EOutOfRange{});
     }
 
     template<class T, class ...U>

@@ -51,26 +51,15 @@ public:
 protected:
     State               status_;
     List<ITask*>        depends_;
+    String              name_;
 
-    NMS_API ITask();
+    NMS_API explicit ITask(StrView name);
 
     /* task run method */
     virtual void run() = 0;
 
     /* task exec method */
-    virtual bool exec() {
-        try {
-            run();
-            return true;
-        }
-        catch (const IException& e) {
-            e.dump();
-            return false;
-        }
-        catch (...) {
-            return false;
-        }
-    }
+    NMS_API virtual bool exec();
 
 private:
     mutable volatile u32    query_cnt_;

@@ -347,7 +347,7 @@ nms_test(serialization) {
     obj.b = { 1, 2, 3 };
     obj.c = DateTime(2017, 9, 3, 8, 30, 12);
     auto jstr = json::format(obj);
-    io::console::writeln("json = {}\n", jstr);
+    io::console::writeln("json = {}", jstr);
 }
 
 nms_test(deserialization) {

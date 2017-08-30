@@ -36,7 +36,7 @@ NMS_API File::File(const Path& path, OpenMode mode) {
         log::error("nms.io.File: fopen failed\n"
             "    dir : {}\n"
             "    path: {}", dir, path);
-        throw_exception(ESystem{eid});
+        NMS_THROW(ESystem{eid});
     }
 
     if (u32(mode) == ReadTxt) {

@@ -507,9 +507,9 @@ protected:
 public:
     virtual ~IException() {}
     virtual void format(String& buf) const {}
-    NMS_API void dump() const;
 };
 
+NMS_API void dump(const IException& e);
 #pragma endregion
 
 #pragma region static init

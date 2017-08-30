@@ -9,12 +9,12 @@ namespace nms::serialization
 
 NMS_API NodeEx NodeEx::operator[](u32 k) const {
     if ( type() != Type::array) {
-        throw_exception(EUnexpectType{ Type::array, type() });
+        NMS_THROW(EUnexpectType{ Type::array, type() });
     }
 
     const auto n = count();
     if (k >= n) {
-        throw_exception(EUnexpectElementCount{ k + 1, n });
+        NMS_THROW(EUnexpectElementCount{ k + 1, n });
     }
 
     // find index
@@ -32,7 +32,7 @@ NMS_API NodeEx NodeEx::operator[](u32 k) {
         this->idx_ = 1;
     }
     else if (type() != Type::array) {
-        throw_exception(EUnexpectType{ Type::array, type() });
+        NMS_THROW(EUnexpectType{ Type::array, type() });
     }
 
     // find index
@@ -50,7 +50,7 @@ NMS_API NodeEx NodeEx::operator[](u32 k) {
 
 NMS_API NodeEx::Iterator NodeEx::find(StrView expect) const {
     if (type() != Type::object) {
-        throw_exception(EUnexpectType{ Type::object, type() });
+        NMS_THROW(EUnexpectType{ Type::object, type() });
     }
 
     auto n      = count();
@@ -70,7 +70,7 @@ NMS_API NodeEx NodeEx::operator[](StrView key) const {
         return *itr;
     }
 
-    throw_exception(EKeyNotFound{ key });
+    NMS_THROW(EKeyNotFound{ key });
     return *itr;
 }
 
@@ -89,7 +89,7 @@ NMS_API NodeEx NodeEx::operator[](StrView key) {
         v.type_ = Type::object;
     }
     else if (type() != Type::object) {
-        throw_exception(EUnexpectType{ Type::object, type() });
+        NMS_THROW(EUnexpectType{ Type::object, type() });
     }
 
     auto n      = v.count();
