@@ -5,3 +5,6 @@
 	path = samples
 	url = https://github.com/lumpyzhu/nmscc.samples.git
 
+[submodule "docs"]
+	path = docs
+	url = https://github.com/lumpyzhu/nmscc.docs.git
