@@ -205,6 +205,9 @@
     <Filter Include="cuda\{external}">
       <UniqueIdentifier>{916d14c7-e6de-4243-9f7a-8d313352f7e2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="{doc}">
+      <UniqueIdentifier>{c07cb8e3-c4b4-46e0-8689-70a5112d13a3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nms\test\test.cc">
@@ -305,6 +308,9 @@
     </None>
     <None Include=".travis.yml">
       <Filter>{msbuild}</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>{doc}</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
