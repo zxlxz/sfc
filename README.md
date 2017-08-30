@@ -1,11 +1,8 @@
-# nmscc
+NMSCC: NMS Common C++ Library
+------------------------------
 [![Travis](https://img.shields.io/travis/lumpyzhu/nmscc.svg)](https://travis-ci.org/lumpyzhu/nmscc)
 [![AppVeyor](https://img.shields.io/appveyor/ci/lumpyzhu/nmscc.svg)](https://ci.appveyor.com/project/lumpyzhu/nmscc)
 [![license](https://img.shields.io/github/license/lumpyzhu/nmscc.svg)]()
-
-NMSCC: NMS Common C++ Library
-------------------------------
-
 
 ### What is `nmscc`?
 nmscc is a library of C++14 components designed for for scientific computation.
@@ -43,6 +40,10 @@ git clone --recursive https://github.com/lumpyzhu/nmscc.git
   make test           # run unittest
 ```
 
+## docs
+  作者不善于表达，不会写文档，期待您的支持。
+
+  (以下文档页，欢迎补充并提PR)
 ### nms.core
 - [type](/docs/core/type.md) 类型支持
 - [view](/docs/core/view.md) 多维向量视图
