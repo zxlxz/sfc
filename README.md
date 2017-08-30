@@ -41,48 +41,4 @@ git clone --recursive https://github.com/lumpyzhu/nmscc.git
 ```
 
 ## docs
-  作者不善于表达，不会写文档，期待您的支持。
-
-  (以下文档页，欢迎补充并提PR)
-### nms.core
-- [type](/docs/core/type.md) 类型支持
-- [view](/docs/core/view.md) 多维向量视图
-- [list](/docs/core/list.md) 类似c++ std::vector
-- [string](/docs/core/string.md) 字符串
-
-### nms.io
-- [path](/docs/io/path.md) 文件系统
-- [file](/docs/io/file.md) 文件
-
-### nms.math
-- [complex](/docs/math/complex.md) 复数
-- [array](/docs/math/array.md) 多维数组
-- [lazy-expression](/docs/math/lambda.md) 表达式计算
-
-### nms.cuda
-- [cuda](/docs/cuda/cuda.md) cuda
-- [array](/docs/cuda/array.md) 数组
-- [texture](/docs/cuda/array.md) 纹理
-- [nms.compiler](/docs/nms.cuda.compiler.md) 编译器(nvrtc封装)
-
-### nms.thread
-- [thread](/docs/thread/thread.md) 线程
-- [mutex](/docs/thread/mutex.md) 锁
-- [semaphore](/docs/thread/semaphore.md) 信号量
-- [condition variable](/docs/thread/condvar.md) 条件变量
-- [task](/docs/thread/task.md) 任务/工作流
-
-### nms.test
-- [test](/docs/test/test.md) 单元测试
-
-### nms.serialization
-- [tree](/docs/serialization/tree.md) 属性树
-- [json](/docs/serialization/json.md) json支持
-- [xml](/docs/serialization/xml.md) xml支持
-
-### nms.util
-- [ArrayList](/docs/util/arraylist.md) 动态数组
-- [Library](/docs/util/library.md) 动态库
-- [RingBuf](/docs/util/ringbuf.md) 环形缓冲区
-- [StackTrace](/docs/util/stacktrace.md) 栈回溯
-- [System](/docs/util/system.md) 系统调用
+[中文文档](https://github.com/lumpyzhu/nmscc.docs/index.md)
