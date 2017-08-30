@@ -73,7 +73,7 @@ git clone --recursive https://github.com/lumpyzhu/nmscc.git
 - [task](/docs/thread/task.md) 任务/工作流
 
 ### nms.test
-- [test](/docs/nms/test.md) 单元测试
+- [test](/docs/test/test.md) 单元测试
 
 ### nms.serialization
 - [tree](/docs/serialization/tree.md) 属性树
