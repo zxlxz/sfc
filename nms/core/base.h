@@ -181,7 +181,7 @@ struct Vec<T, N>
     T data_[$count];
 
     __forceinline constexpr Vec() noexcept
-        : data_{ T(0) }
+        : data_{ T() }
     {}
 
     template<class ...U>

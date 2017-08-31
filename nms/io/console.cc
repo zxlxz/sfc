@@ -2,18 +2,25 @@
 #include <nms/io/console.h>
 #include <nms/thread.h>
 
+extern "C"
+{
+    void* GetStdHandle(long fildno);
+    int SetConsoleMode(void*, unsigned long);
+}
+
 namespace nms::io::console
 {
 
-NMS_API void writes(const StrView text[], u32 n) {
-
+static auto _init_console() {
 #ifdef NMS_OS_WINDOWS
-    static auto _static_init = [] {
-        ::system("chcp 65001 > NUL");
-        return 0;
-    }();
-    (void)_static_init;
+    auto hout = ::GetStdHandle(-11);
+    ::SetConsoleMode(hout, 0xF);
 #endif
+    return 0;
+}
+
+NMS_API void writes(const StrView text[], u32 n) {
+    static auto init = _init_console();
 
     static thread::Mutex _mutex;
     thread::LockGuard lock(_mutex);

@@ -10,90 +10,47 @@ extern "C" {
     u32   GetModuleFileNameA(void* hModule, char lpFileName[], u32 nSize);
 }
 
-struct XPath
-{
-public:
-    explicit XPath(StrView str) {
-        if (is_delimiter(str[0])) {
-            dir_[count_++] = StrView();
-            str = str.slice(1u, str.count()-1);
-        }
+static StrView _get_usr_dir() {
+    printf("????\n");
+    static char exe_path_buf[1024];
+#if defined(NMS_OS_WINDOWS)
+    const auto mod = GetModuleHandleA(nullptr);
+    GetModuleFileNameA(mod, exe_path_buf, sizeof(exe_path_buf));
+#elif defined(NMS_OS_MACOS)
+    auto exe_path_len = u32(sizeof(exe_path_buf));
+    _NSGetExecutablePath(exe_path_buf, &exe_path_len);
+    exe_path_buf[exe_path_len] = '\0';
+#elif defined(NMS_OS_POSIX)
+    const auto exe_path_len = ::readlink("/proc/self/exe", exe_path_buf, sizeof(exe_path_buf));
+    exe_path_buf[exe_path_len] = '\0';
+#endif
 
-        while (true) {
-            const auto n = str.count();
-            if (n == 0) {
-                break;
-            }
-
-            auto b = 0u;
-            while (is_delimiter(str[b]) == true && b < n) ++b;
-            auto e = b + 1;
-            while (is_delimiter(str[e]) == false && e < n) ++e;
-            auto s = str.slice(b, e - 1);
-
-            if (s.count() == 0) {
-                break;
-            }
-
-            if (s == ".") {
-            }
-            if (s == ".." && count_ > 0) {
-                --count_;
-            }
-            else {
-                dir_[count_] = s;
-                ++count_;
-            }
-
-            if (e + 1 >= n) break;
-            str = str.slice(e + 1, n - 1);
+    static char usr_path_buf[1024];
+#ifdef NMS_OS_WINDOWS
+    ::strncat(exe_path_buf, "/../../", 8);
+    ::_fullpath(usr_path_buf, exe_path_buf, sizeof(usr_path_buf));
+    const auto  path_len = ::strlen(usr_path_buf);
+    for (auto i = 0; i < path_len; ++i) {
+        if (usr_path_buf[i] == '\\') {
+            usr_path_buf[i] = '/';
         }
     }
+#else
+    const auto  path_len = snprintf(usr_path_buf, sizeof(usr_path_buf), "%s/../../", exe_path_buf);
+#endif
+    return StrView{ usr_path_buf, {u32(path_len)} };
+}
 
-    String toPath() {
-        if (count_ == 0) {
-            return String();
-        }
-
-        auto len = 0u;
-        for (u32 i = 0; i < count_; ++i) {
-            len += dir_[i].count();
-        }
-
-        String tmp;
-        tmp.reserve(len + (count_ - 1));
-        for (u32 i = 0; i < count_; ++i) {
-            tmp += dir_[i];
-            if (i != count_ - 1) {
-                tmp += "/";
-            }
-        }
-        tmp.cstr();
-        return tmp;
+NMS_API void Path::init(StrView str) {
+    if (str.count() >=2  && str[0] == '#' && str[1] == '/') {
+        static auto usr_dir = _get_usr_dir();
+        str_ = usr_dir;
+        auto   sub_path = str.slice(2, -1);
+        str_ += sub_path;
     }
-
-protected:
-    u32     count_  = 0;
-    StrView dir_[64];
-
-    bool is_delimiter(char c) const {
-        const auto stat = c == '/' || c == '\\';
-        return stat;
+    else {
+        str_ = str;
     }
-};
-
-NMS_API void Path::init(StrView s) {
-    XPath xpath(s);
-    str_ = move(xpath.toPath());
-
-    if (str_.count() > 2 && str_[0] == '#' && str_[1] == '/') {
-        auto& prefix_path = prefix();
-        String full_path{StrView{prefix_path}};
-        auto sub_path = str_.slice(1, -1);
-        full_path += sub_path;
-        nms::swap(str_, full_path);
-    }
-
     str_.cstr();
 }
 
@@ -143,27 +100,6 @@ NMS_API StrView Path::base() const {
     }
 }
 
-NMS_API const Path& prefix() {
-
-    static String exe_path = [] {
-        static char exe_path_buf[512];
-#if defined(NMS_OS_WINDOWS)
-        const auto mod = GetModuleHandleA(nullptr);
-        GetModuleFileNameA(mod, exe_path_buf, sizeof(exe_path_buf));
-#elif defined(NMS_OS_MACOS)
-        auto exe_path_len = u32(sizeof(exe_path_buf));
-        _NSGetExecutablePath(exe_path_buf, &exe_path_len);
-        exe_path_buf[exe_path_len] = '\0';
-#elif defined(NMS_OS_POSIX)
-        const auto exe_path_len = ::readlink("/proc/self/exe", exe_path_buf, sizeof(exe_path_buf));
-        exe_path_buf[exe_path_len] = '\0';
-#endif
-        return cstr(exe_path_buf);
-    }();
-
-    static Path dir(exe_path+"/../..");
-    return dir;
-}
 
 NMS_API Path cwd() {
     char buf[256];
@@ -216,6 +152,11 @@ NMS_API void mkdir(const Path& path) {
     }
 }
 
+NMS_API void remove(const Path& path) {
+    auto cpath = path.cstr();
+    ::remove(cpath);
+}
+
 NMS_API bool exists(const Path& path) {
     const StrView cpath = path;
     if (cpath.count()==0) {
@@ -227,17 +168,9 @@ NMS_API bool exists(const Path& path) {
     return ret == 0;
 }
 
-NMS_API u64 fsize(const Path& path) {
-    auto cpath = path.cstr();
-    ::stat_t st;
-    ::stat(cpath, &st);
-    return st.st_size;
+NMS_API void rename(const Path& oldpath, const Path& newpath) {
+    auto old_cpath = oldpath.cstr();
+    auto new_cpath = newpath.cstr();
+    ::rename(old_cpath, new_cpath);
 }
-
-NMS_API u64 fsize(int fid) {
-    ::stat_t st;
-    ::fstat(fid, &st);
-    return st.st_size;
-}
-
 }

@@ -7,11 +7,6 @@
 namespace nms::io
 {
 
-static constexpr auto TxtMode  = 0x10;
-static constexpr auto ReadTxt  = TxtMode | File::Read;
-static constexpr auto WriteTxt = TxtMode | File::Write;
-static constexpr auto AppendTxt= TxtMode | File::Append;
-
 NMS_API File::File(const Path& path, OpenMode mode) {
     const auto cpath = path.cstr();
 
@@ -20,11 +15,6 @@ NMS_API File::File(const Path& path, OpenMode mode) {
     case Read:      smod = "rb"; break;
     case Write:     smod = "wb"; break;
     case Append:    smod = "ab"; break;
-
-    case ReadTxt:   smod = "r"; break;
-    case WriteTxt:  smod = "w"; break;
-    case AppendTxt: smod = "a"; break;
-
     default: break;
     }
 
@@ -38,19 +28,6 @@ NMS_API File::File(const Path& path, OpenMode mode) {
             "    path: {}", dir, path);
         NMS_THROW(ESystem{eid});
     }
-
-    if (u32(mode) == ReadTxt) {
-        Vec<char, 3> bom = { '\xEF', '\xBB', '\xBF' };
-        Vec<char, 3> buf;
-        auto cnt = ::fread(buf.data_, 1, 3, obj_);
-
-        if (cnt == 3 && bom == buf) {
-            // UTF-8 BOM
-        }
-        else {
-            fseek(obj_, 0, SEEK_SET);
-        }
-    }
 }
 
 NMS_API File::~File() {
@@ -59,6 +36,15 @@ NMS_API File::~File() {
     }
     ::fclose(obj_);
     obj_ = nullptr;
+}
+
+NMS_API int File::id() const {
+#ifdef NMS_OS_WINDOWS
+    auto fid = ::_fileno(obj_);
+#else
+    auto fid = ::fileno(obj_);
+#endif
+    return fid;
 }
 
 NMS_API u64 File::size() const {
@@ -89,8 +75,25 @@ NMS_API void File::sync() const {
 
 #pragma region TxtFile
 NMS_API TxtFile::TxtFile(const Path& path, File::OpenMode mode)
-    : base{ path, OpenMode(TxtMode | mode) }
-{}
+    : base{ path, OpenMode(mode) }
+{
+    static const Vec<char, 3> bom = { '\xEF', '\xBB', '\xBF' };
+
+#ifdef NMS_OS_WINDOWS
+    auto fid = id();
+    _setmode(fid, _O_TEXT);
+#endif
+    if (mode == File::OpenMode::Read) {
+        Vec<char, 3> buf;
+        auto cnt = ::fread(buf.data_, 1, 3, obj_);
+        if (cnt == 3 && bom == buf) {
+            // UTF-8 BOM
+        }
+        else {
+            fseek(obj_, 0, SEEK_SET);
+        }
+    }
+}
 
 NMS_API TxtFile::~TxtFile()
 {}
@@ -120,6 +123,21 @@ NMS_API String loadString(const Path& path) {
 
     return str;
 }
+
+
+NMS_API u64 fsize(const Path& path) {
+    auto cpath = path.cstr();
+    ::stat_t st;
+    ::stat(cpath, &st);
+    return st.st_size;
+}
+
+NMS_API u64 fsize(int fid) {
+    ::stat_t st;
+    ::fstat(fid, &st);
+    return st.st_size;
+}
+
 
 #pragma region unittest
 nms_test(file) {

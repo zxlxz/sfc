@@ -162,7 +162,7 @@ struct View
     * @see at
     */
     template<class ...I>
-    __forceinline decltype(auto) operator()(I ...idx) noexcept {
+    __forceinline T& operator()(I ...idx) noexcept {
         return at(idx...);
     }
 
@@ -172,7 +172,7 @@ struct View
      * @see at
      */
     template<class ...I>
-    __forceinline decltype(auto) operator()(I ...idx) const noexcept {
+    __forceinline const T& operator()(I ...idx) const noexcept {
         return at(idx...);
     }
 

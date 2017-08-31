@@ -36,6 +36,7 @@ public:
 
     NMS_API File(const Path& path, OpenMode mode);
     NMS_API ~File();
+    
 
     File(File&& rhs) noexcept
         : obj_(rhs.obj_)
@@ -49,6 +50,7 @@ public:
     }
 
     NMS_API u64 size() const;
+    NMS_API int id()   const;
 
 #pragma region read/write
 
@@ -186,6 +188,9 @@ private:
     NMS_API u64 _write(const char* u8_buf, u64 size);
 };
 
+NMS_API u64   fsize(const Path& path);
+NMS_API u64   fsize(int fid);
+
 NMS_API String loadString(const Path& path);
 
 }
@@ -193,13 +198,13 @@ NMS_API String loadString(const Path& path);
 namespace nms
 {
 template<class T, u32 BS>
-void List<T,BS>::save(io::File& os) const {
+void List<T,BS>::save(io::File& file) const {
     const auto info = base::typeinfo();
     const auto size = base::size();
-    os << info;
-    os << size;
+    file << info;
+    file << size;
 
-    os.write(this->data(), this->count());
+    file.write(this->data(), this->count());
 }
 
 template<class T, u32 BS>
@@ -209,18 +214,18 @@ void List<T, BS>::save(const io::Path& path) const {
 }
 
 template<class T, u32 BS>
-List<T,BS> List<T, BS>::load(io::File& is) {
+List<T,BS> List<T, BS>::load(io::File& file) {
     u8x4        info;
     Vec<u32, 1> size;
 
-    is >> info;
-    is >> size;
+    file >> info;
+    file >> size;
     if (info != base::typeinfo()) {
         NMS_THROW(EBadType{});
     }
 
     List<T,BS> tmp(size[0]);
-    is.read(tmp.data(), tmp.count());
+    file.read(tmp.data(), tmp.count());
     return tmp;
 }
 

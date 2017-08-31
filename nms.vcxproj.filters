@@ -208,6 +208,9 @@
     <Filter Include="{doc}">
       <UniqueIdentifier>{c07cb8e3-c4b4-46e0-8689-70a5112d13a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="{doc}\test">
+      <UniqueIdentifier>{c56ed325-b8dc-4668-ab06-c47ed19c08d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nms\test\test.cc">
@@ -309,7 +312,10 @@
     <None Include=".travis.yml">
       <Filter>{msbuild}</Filter>
     </None>
-    <None Include="README.md">
+    <None Include="docs\test\test.md">
+      <Filter>{doc}\test</Filter>
+    </None>
+    <None Include="docs\index.md">
       <Filter>{doc}</Filter>
     </None>
   </ItemGroup>
@@ -317,5 +323,10 @@
     <Natvis Include="nms.natvis">
       <Filter>{msbuild}</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="docs\test\test.gif">
+      <Filter>{doc}\test</Filter>
+    </Image>
   </ItemGroup>
 </Project>
