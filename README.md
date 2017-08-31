@@ -9,7 +9,7 @@ nmscc is a library of C++14 components designed for for scientific computation.
 
 nmscc是一个为科学计算设计的C++14库，关注运行效率与开发效率，并在商业科学计算领域己有了一些应用。
 
-nmscc涉及矩阵代数，并行计算，序列化等方面，也包含了STL,BOOST的一些概念，但这里从设计的统一性考虑，没有依赖STL,BOOST。
+nmscc涉及矩阵代数，GPU/CPU并行计算，序列化，单元测试等。
 
 ## Dependencies
   nmscc 支持windows/linux/macos平台
