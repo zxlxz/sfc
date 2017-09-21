@@ -105,6 +105,8 @@ nms_test(array_save_load) {
             test::assert_eq(a(i, j), b(i, j));
         }
     }
+
+    io::remove("nms.math.array.dat");
 }
 
 }

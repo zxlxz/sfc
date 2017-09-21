@@ -15,7 +15,6 @@ NMS_API Program& Vrun::sProgram() {
         _init = true;
 
         static auto& srcs = program.src_;
-        srcs.reserve(4 * 1024 * 1024);  // 4M
         srcs += mkStrView(nms_cuda_kernel_src);
     }
 

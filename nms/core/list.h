@@ -45,7 +45,7 @@ public:
 
 #pragma region method
     void reserve(Tsize newcnt) {
-        if (newcnt >= base::capacity_) {
+        if (newcnt > base::capacity_) {
             NMS_THROW(EOutOfRange<Tsize>(0, base::capacity_, newcnt));
         }
     }
@@ -197,7 +197,7 @@ struct ListBuffer<T, 0>
     constexpr static u32 $size = 0;
 
 protected:
-    constexpr static auto buff_ = nullptr;
+    constexpr static T* buff_ = nullptr;
 };
 
 template<class T, u32 Icapacity, class = ListTrait<T> >
@@ -268,6 +268,15 @@ public:
         rhs.View<Tdata>::operator=(View<Tdata>{});
     }
 
+    List(const List& rhs): List{} {
+        base::appends(rhs.data(), rhs.count());
+    }
+
+    List dup() const {
+        auto tmp(*this);
+        return tmp;
+    }
+
     List& operator=(List&& rhs) {
         if (this != &rhs) {
             this->clear();
@@ -277,10 +286,6 @@ public:
             rhs.View<Tdata>::operator=(View<Tdata>{});
         }
         return *this;
-    }
-
-    List(const List& rhs): List{} {
-        base::appends(rhs.data(), rhs.count());
     }
 
     List& operator=(const List& rhs) {

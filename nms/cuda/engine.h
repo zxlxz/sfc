@@ -26,6 +26,8 @@ public:
     }
 
     Program()
+        : src_({4*1024*1024})
+        , ptx_({4*1024*1024})
     { }
 
     ~Program()
@@ -35,18 +37,23 @@ public:
     NMS_API bool compile();
 
     /*! get cuda src */
-    StrView src() const {
+    auto& src() {
+        return src_;
+    }
+
+    /*! get cuda src */
+    auto& src() const {
         return src_;
     }
 
     /*! get cuda ptx */
-    StrView ptx() const {
+    auto& ptx() const {
         return ptx_;
     }
 
 protected:
-    U8String<64*1024*1024>  src_;
-    U8String<64*1024*1024>  ptx_;
+    U8String<0>  src_;
+    U8String<0>  ptx_;
 };
 
 }

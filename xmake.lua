@@ -57,3 +57,19 @@ target("nms.test")
     -- add files
     add_deps("nms")
     add_files("nms.test/**.cc")
+
+-- add target
+target("nms.cuda.compiler")
+
+    -- set kind
+    set_kind("binary")
+
+    -- set flags
+    add_cxxflags("-std=c++1z", "-frtti", "-I .")
+    add_includedirs(".")
+    set_targetdir("publish/bin")
+    set_objectdir("/tmp/nmscc")
+
+    -- add files
+    add_deps("nms")
+    add_files("nms.cuda.compiler/**.cc")
