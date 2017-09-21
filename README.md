@@ -73,5 +73,5 @@ git clone --recursive https://github.com/lumpyzhu/nmscc.git
 
 ## Contributing
 
-- [参与开发](Contributing.md)
-- 加入Q群讨论组：596765241
+- [参与开发](CONTRIBUTING.md)
+- 加入讨论组：[![](http://pub.idqqimg.com/wpa/images/group.png)](http://shang.qq.com/wpa/qunwpa?idkey=a0620b52bdec9dd90ac5e705dafadd5a8668341aeb9126db745413e8dee0bc87)
