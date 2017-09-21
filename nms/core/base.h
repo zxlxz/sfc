@@ -44,15 +44,12 @@ template<class T> struct _Tconst<const T>   { using U = const T; };
 template<class T> struct _Tmutable          { using U = T;       };
 template<class T> struct _Tmutable<const T> { using U = T;       };
 
-template<class T> struct _Treference        { using U = T&;      };
-template<class T> struct _Treference<T&>    { using U = T&;      };
-
 template<class T> struct _Tvalue            { using U = T;       };
 template<class T> struct _Tvalue<T&>        { using U = T;       };
+template<class T> struct _Tvalue<T&&>       { using U = T;       };
 
 template<class T> using Tconst      = typename _Tconst<T>::U;
 template<class T> using Tmutable    = typename _Tmutable<T>::U;
-template<class T> using Treference  = typename _Treference<T>::U;
 template<class T> using Tvalue      = typename _Tvalue<T>::U;
 
 template<class T>

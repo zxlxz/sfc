@@ -229,28 +229,28 @@ public:
         base::capacity_ = $capacity;
     }
 
-    template<class Isize, class=$when<$capacity==0, Isize> >
-    explicit List(const Isize(&size)[1]) {
-        base::data_     = mnew<T>(size[0]);
+    template<u32 N, class=$when<$capacity==0 && N==1> >
+    explicit List(const Tsize(&size)[N]) {
+        base::data_     = mnew<T>(Tsize(size[0]));
         base::capacity_ = size[0];
     }
 
-    template<class ...U, class=$when<$capacity!=0 && $as<Tdata, U...> > >
+    template<class ...U, class=$when<($capacity!=0) && As<Tdata, U...>::$value > >
     explicit List(Tsize count, U&& ...us) : List{} {
         base::appends(count, fwd<U>(us)...);
     }
 
-    template<class U, class=$when_as<T, U>, class=$when<$capacity!=0, U> >
+    template<class U, class=$when_as<Tdata, const U&> >
     List(const View<U>& view) : List{} {
         base::appends(view.data(), view.count());
     }
 
-    template<class U, class=$when_as<T, const U>, class=$when<$capacity!=0, U> >
+    template<class U, class=$when_as<Tdata, const U&> >
     List(const View<const U>& view) : List{} {
         base::appends(view.data(), view.count());
     }
 
-    template<class U, u32 SN, class=$when<$capacity!=0, U> >
+    template<class U, u32 SN, class=$when_as<Tdata, const U&> >
     List(const U(&array)[SN]) : List{} {
         base::appends(View<const U>{array});
     }
