@@ -1,0 +1,9 @@
+[submodule "docs"]
+	path = docs
+	url = https://github.com/lumpyzhu/nmscc.docs.git
+[submodule "samples"]
+	path = samples
+	url = https://github.com/lumpyzhu/nmscc.samples.git
+[submodule "publish"]
+	path = publish
+	url = https://github.com/lumpyzhu/nmscc.publish.git

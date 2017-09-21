@@ -1,0 +1,83 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        // config: release
+        {
+            "taskName": "config: release",
+            "type": "shell",
+            "command": "xmake",
+            "args": [
+                "f",
+                "--mode=release"
+            ],
+            "group":"build",
+            "problemMatcher": {}
+        },
+        // config: debug
+        {
+            "taskName": "config: debug",
+            "type": "shell",
+            "command": "xmake",
+            "args": [
+                "f",
+                "--mode=debug"
+            ],
+            "group": "build",
+            "problemMatcher": {}
+        },
+        {
+            "taskName": "build",
+            "type": "shell",
+            "command": "xmake",
+            "args": [
+                "-b"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "cpp", 
+                "fileLocation":"relative",
+                "pattern":[
+                    {
+                        "regexp": "^([a-z]*): (.*):([0-9]*):([0-9]*): (.*)$",
+                        "severity": 1,
+                        "file": 2,
+                        "line": 3,
+                        "column": 4,
+                        "message": 5
+                    }
+                ]
+            }
+        },
+        {
+            "taskName": "clean",
+            "type": "shell",
+            "command": "xmake",
+            "args": [
+                "c"
+            ],
+            "group": "build",
+            "problemMatcher": {}
+        },
+        {
+            "taskName": "test",
+            "type": "shell",
+            "command": "xmake",
+            "args": [
+                "r",
+                "nms.test",
+                "+nms::",
+                "-nms::cuda::"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": {}
+        }
+    ]
+}

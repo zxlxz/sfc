@@ -1,0 +1,17 @@
+{
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "(lldb) Launch",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceRoot}/publish/bin/nms.test",
+                "args": ["+nms::", "-nms::cuda::"],
+                "stopAtEntry": false,
+                "cwd": "${workspaceRoot}/publish/bin",
+                "environment": [],
+                "externalConsole": true,
+                "MIMode": "lldb"
+            }
+        ]
+    }

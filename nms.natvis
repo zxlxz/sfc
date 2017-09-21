@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- nms::Vec -->
+  <Type Name="nms::Vec&lt;*,*&gt;">
+    <Expand>
+      <ArrayItems>
+        <Size>$T2</Size>
+        <ValuePointer>data_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- nms::View<*, 0>-->
+  <Type Name="nms::View&lt;*,0&gt;">
+    <Expand>
+      <Item Name="[size]">size_</Item>
+      <ArrayItems>
+        <Size>size_</Size>
+        <ValuePointer>data_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- nms::View -->
+  <Type Name="nms::View&lt;*,*&gt;">
+    <Expand>
+      <Item Name="[size]">size_</Item>
+      <Item Name="[step]">step_</Item>
+      <ArrayItems>
+        <Direction>Backward</Direction>
+        <Rank>$T2==0?1:$T2</Rank>
+        <Size>size_.data[$i]</Size>
+        <ValuePointer>data_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!--nms::StrView-->
+  <Type Name="nms::View&lt;char const, 0&gt;">
+    <DisplayString Condition="size_ !=0">{data_, [size_]s}</DisplayString>
+    <DisplayString Condition="size_ ==0">{{nullptr}} </DisplayString>
+    <Expand>
+      <ArrayItems Condition="size_ != 0">
+        <Size>size_</Size>
+        <ValuePointer>data_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- nms::String -->
+  <Type Name="nms::List&lt;char,*&gt;">
+    <DisplayString>{data_, [size_]s}</DisplayString>
+  </Type>
+
+  <!-- nms::Linspace -->
+  <Type Name="nms::math::Linspace&lt;*,*&gt;">
+    <Expand>
+      <ArrayItems>
+        <Size>$T2</Size>
+        <ValuePointer>step_.dat_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- nms::io::Path -->
+  <Type Name="nms::io::Path">
+    <DisplayString>{str_}</DisplayString>
+  </Type>
+
+  <Type Name="nms::delegate&lt;*&gt;">
+  </Type>
+
+  <!-- nms::json::Json -->
+  <Type Name="nms::json::Json">
+    <DisplayString Condition="type==$str">{str,s}</DisplayString>
+    <DisplayString Condition="type==$num">{num}  </DisplayString>
+    <DisplayString Condition="type==$bool">{boo} </DisplayString>
+    <DisplayString Condition="type==$none">{{}}  </DisplayString>
+    <Expand>
+      <ArrayItems Condition="type==$obj">
+        <Size>len</Size>
+        <ValuePointer>(nms::json::Json(*)[2])obj</ValuePointer>
+      </ArrayItems>
+      <ArrayItems Condition="type==$arr">
+        <Size>len</Size>
+        <ValuePointer>arr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+
+  <!-- nms::serialization::Node -->
+  <Type Name="nms::serialization::Node">
+    <DisplayString Condition="type_==0 ">null    </DisplayString>
+    <DisplayString Condition="type_==1 ">{bool_val_}</DisplayString>
+    <DisplayString Condition="type_==2 ">{u8_val_ }</DisplayString>
+    <DisplayString Condition="type_==3 ">{i8_val_ }</DisplayString>
+    <DisplayString Condition="type_==4 ">{u16_val_}</DisplayString>
+    <DisplayString Condition="type_==5 ">{i16_val_}</DisplayString>
+    <DisplayString Condition="type_==6 ">{u32_val_}</DisplayString>
+    <DisplayString Condition="type_==7 ">{i32_val_}</DisplayString>
+    <DisplayString Condition="type_==8 ">{u64_val_}</DisplayString>
+    <DisplayString Condition="type_==9 ">{i64_val_}</DisplayString>
+    <DisplayString Condition="type_==10">{f32_val_}</DisplayString>
+    <DisplayString Condition="type_==11">{f64_val_}</DisplayString>
+    <DisplayString Condition="type_==12">{num_val_, [size_]s}</DisplayString>
+    <DisplayString Condition="type_==13">{str_val_, [size_]s}</DisplayString>
+    <DisplayString Condition="type_==14">{key_val_, [size_]s}=> {*(this+1)}</DisplayString>
+    <DisplayString Condition="type_==15">[size={size_}]</DisplayString>
+    <DisplayString Condition="type_==16">{{size={size_}}}</DisplayString>
+    <Expand>
+      <Item Name="[key]"   Condition="type_==14">key_val_, [size_]</Item>
+      <Item Name="[value]" Condition="type_==14">*(this+1)</Item>
+      <LinkedListItems Condition="type_==15 || type_ == 16">
+        <HeadPointer>this+1</HeadPointer>
+        <NextPointer>next_ == 0 ? 0 : this+next_</NextPointer>
+        <ValueNode>*this</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>

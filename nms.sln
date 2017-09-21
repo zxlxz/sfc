@@ -1,0 +1,112 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.10
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms", "nms.vcxproj", "{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.test", "nms.test.vcxproj", "{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nms.cuda.compiler", "nms.cuda.compiler.vcxproj", "{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "io", "io", "{88999D7D-F788-4835-A697-62792649E58F}"
+	ProjectSection(SolutionItems) = preProject
+		doc\io\file.md = doc\io\file.md
+		doc\io\path.md = doc\io\path.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cuda", "cuda", "{B5FBD3C3-565E-4458-85A1-3EA68A03733B}"
+	ProjectSection(SolutionItems) = preProject
+		doc\cuda\array.md = doc\cuda\array.md
+		doc\cuda\compiler.md = doc\cuda\compiler.md
+		doc\cuda\cuda.md = doc\cuda\cuda.md
+		doc\cuda\texture.md = doc\cuda\texture.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{466457FD-6F4A-463A-891A-759563822EEB}"
+	ProjectSection(SolutionItems) = preProject
+		doc\test\test.gif = doc\test\test.gif
+		doc\test\test.md = doc\test\test.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{3DC2AF53-5163-4BE5-BDA0-06D2AA343D73}"
+	ProjectSection(SolutionItems) = preProject
+		doc\core\list.md = doc\core\list.md
+		doc\core\string.md = doc\core\string.md
+		doc\core\type.md = doc\core\type.md
+		doc\core\view.md = doc\core\view.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thread", "thread", "{1E43B170-B66C-4F0F-894A-5294D49FBE8B}"
+	ProjectSection(SolutionItems) = preProject
+		doc\thread\condvar.md = doc\thread\condvar.md
+		doc\thread\mutex.md = doc\thread\mutex.md
+		doc\thread\semaphore.md = doc\thread\semaphore.md
+		doc\thread\task.md = doc\thread\task.md
+		doc\thread\thread.md = doc\thread\thread.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "serialization", "serialization", "{C6A69755-5CF2-4726-BE54-0570B1A24571}"
+	ProjectSection(SolutionItems) = preProject
+		doc\serialization\json.md = doc\serialization\json.md
+		doc\serialization\tree.md = doc\serialization\tree.md
+		doc\serialization\xml.md = doc\serialization\xml.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "util", "util", "{677F6AB7-4575-42DB-8D8D-50A4FCAC031E}"
+	ProjectSection(SolutionItems) = preProject
+		doc\util\arraylist.md = doc\util\arraylist.md
+		doc\util\library.md = doc\util\library.md
+		doc\util\ringbuf.md = doc\util\ringbuf.md
+		doc\util\stacktrace.md = doc\util\stacktrace.md
+		doc\util\system.md = doc\util\system.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x64.ActiveCfg = Debug|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x64.Build.0 = Debug|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Debug|x86.ActiveCfg = Debug|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x64.ActiveCfg = Release|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x64.Build.0 = Release|x64
+		{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}.Release|x86.ActiveCfg = Release|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x64.ActiveCfg = Debug|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x64.Build.0 = Debug|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Debug|x86.ActiveCfg = Debug|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x64.ActiveCfg = Release|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x64.Build.0 = Release|x64
+		{3CA9F8F4-F081-43A4-B827-C23D5B38ADF9}.Release|x86.ActiveCfg = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x64.ActiveCfg = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x64.Build.0 = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Debug|x86.ActiveCfg = Debug|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.ActiveCfg = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x64.Build.0 = Release|x64
+		{98C9BA59-EC5E-4FB7-9FDB-E92591CA92EB}.Release|x86.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{88999D7D-F788-4835-A697-62792649E58F} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{B5FBD3C3-565E-4458-85A1-3EA68A03733B} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{466457FD-6F4A-463A-891A-759563822EEB} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{3DC2AF53-5163-4BE5-BDA0-06D2AA343D73} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{1E43B170-B66C-4F0F-894A-5294D49FBE8B} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{C6A69755-5CF2-4726-BE54-0570B1A24571} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+		{677F6AB7-4575-42DB-8D8D-50A4FCAC031E} = {90254F8C-1EA6-4E2B-8A3A-7358550F1EAF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {74E8844E-C1CA-4DF2-BE79-EF5EF60A8E78}
+	EndGlobalSection
+EndGlobal

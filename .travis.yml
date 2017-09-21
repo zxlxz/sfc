@@ -1,0 +1,19 @@
+language: C++
+
+matrix:
+  include:
+    - os: osx
+      osx_image: xcode9
+      compiler: clang++
+
+    - os: linux
+      dist: trusty
+      compiler: g++-7
+      addons:
+        apt:
+          sources: ubuntu-toolchain-r-test
+          packages: g++-7
+
+script: 
+    - if [ "$CXX" == "g++" ]; then export CXX="g++-7"; fi
+    - make -j9

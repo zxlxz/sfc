@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- globals -->
+  <PropertyGroup Label="Globals">
+    <RootNamespace>nms</RootNamespace>
+  </PropertyGroup>
+  <!-- cpp: defaults -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <WholeProgramOptimization Condition="'$(Configuration)'=='Release'">true</WholeProgramOptimization>
+  </PropertyGroup>
+  <!-- cpp: environment -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <IntDir Condition=" Exists($(RamDisk))">$(RamDisk)\VC++\$(SolutionName)\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
+    <IntDir Condition="!Exists($(RamDisk))">$(SolutionDir)\.vs\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)publish\bin\</OutDir>
+  </PropertyGroup>
+  <!-- cpp: compile/link -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!--cpp: langauge-->
+      <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <!-- optimization -->
+      <Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
+      <InlineFunctionExpansion Condition="'$(Configuration)'=='Debug'">Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)'=='Release'">AnySuitable</InlineFunctionExpansion>
+      <!--debug-->
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <!--library-->
+      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary>
+      <!-- path -->
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(FileName)%(Extension).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- project: configurations -->
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <!--property: global -->
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7FACC7EF-77DC-4537-8265-BC993EFCE1EC}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <!--property: config-->
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <!--import-->
+  <ImportGroup Label="PropertySheets">
+    <Import Project="nms.props" />
+    <Import Project="packages\OpenBLAS.0.2.14.1\build\native\openblas.targets" Condition="Exists('packages\OpenBLAS.0.2.14.1\build\native\openblas.targets')" />
+  </ImportGroup>
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)publish\bin\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NMS_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>nms/test.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>nms/test.h</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NMS_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>nms/test.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>nms/test.h</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!--doc: items-->
+  <ItemGroup>
+    <Natvis Include="nms.natvis">
+      <SubType>Designer</SubType>
+    </Natvis>
+    <None Include="xmake.lua" />
+    <None Include=".travis.yml" />
+    <None Include="docs\index.md" />
+    <None Include="docs\io\file.md" />
+    <None Include="docs\io\path.md" />
+    <None Include="docs\test\test.md" />
+    <None Include="makefile" />
+  </ItemGroup>
+  <!--cpp: items -->
+  <ItemGroup>
+    <!--config-->
+    <ClInclude Include="nms\config.h" />
+    <ClInclude Include="nms\config\compiler.h" />
+    <ClInclude Include="nms\config\posix.h" />
+    <ClInclude Include="nms\config\stdc++.h" />
+    <ClInclude Include="nms\config\stdc.h" />
+    <!--core-->
+    <ClInclude Include="nms\core.h" />
+    <ClInclude Include="nms\core\base.h" />
+    <ClInclude Include="nms\core\cpp.h" />
+    <ClInclude Include="nms\core\cpp.msvc.h" />
+    <ClInclude Include="nms\core\exception.h" />
+    <ClInclude Include="nms\core\format.h" />
+    <ClInclude Include="nms\core\list.h" />
+    <ClInclude Include="nms\core\memory.h" />
+    <ClInclude Include="nms\core\parse.h" />
+    <ClInclude Include="nms\core\string.h" />
+    <ClInclude Include="nms\core\time.h" />
+    <ClInclude Include="nms\core\trait.h" />
+    <ClInclude Include="nms\core\type.h" />
+    <ClInclude Include="nms\core\vec.h" />
+    <ClInclude Include="nms\core\view.h" />
+    <ClCompile Include="nms\core\cpp.cc" />
+    <ClCompile Include="nms\core\list.cc" />
+    <ClCompile Include="nms\core\parse.cc" />
+    <ClCompile Include="nms\core\type.cc" />
+    <ClCompile Include="nms\core\vec.cc" />
+    <ClCompile Include="nms\core\view.cc" />
+    <ClCompile Include="nms\core\exception.cc" />
+    <ClCompile Include="nms\core\format.cc" />
+    <ClCompile Include="nms\core\memory.cc" />
+    <ClCompile Include="nms\core\string.cc" />
+    <ClCompile Include="nms\core\time.cc" />
+    <!--cuda-->
+    <ClInclude Include="nms\cuda\array.h" />
+    <ClInclude Include="nms\cuda\base.h" />
+    <ClInclude Include="nms\cuda\cuda.h" />
+    <ClInclude Include="nms\cuda\engine.h" />
+    <ClInclude Include="nms\cuda\kernel.h" />
+    <ClInclude Include="nms\cuda\nvrtc.h" />
+    <ClInclude Include="nms\cuda\runtime.h" />
+    <ClInclude Include="nms\cuda\texture.h" />
+    <ClInclude Include="nms\cuda\vrun.h" />
+    <ClCompile Include="nms\cuda\array.cc" />
+    <ClCompile Include="nms\cuda\engine.cc" />
+    <ClCompile Include="nms\cuda\runtime.cc" />
+    <ClCompile Include="nms\cuda\vrun.cc" />
+    <!--io-->
+    <ClInclude Include="nms\io.h" />
+    <ClCompile Include="nms\io\file.cc" />
+    <ClInclude Include="nms\io\console.h" />
+    <ClInclude Include="nms\io\file.h" />
+    <ClInclude Include="nms\io\log.h" />
+    <ClInclude Include="nms\io\path.h" />
+    <ClCompile Include="nms\io\path.cc" />
+    <ClCompile Include="nms\io\console.cc" />
+    <ClCompile Include="nms\io\log.cc" />
+    <!--math-->
+    <ClInclude Include="nms\math.h" />
+    <ClInclude Include="nms\math\array.h" />
+    <ClInclude Include="nms\math\avx.h" />
+    <ClInclude Include="nms\math\base.h" />
+    <ClInclude Include="nms\math\complex.h" />
+    <ClInclude Include="nms\math\fft.h" />
+    <ClInclude Include="nms\math\view.h" />
+    <ClInclude Include="nms\math\vrun.h" />
+    <ClCompile Include="nms\math\array.cc" />
+    <ClCompile Include="nms\math\blas.cc" />
+    <ClCompile Include="nms\math\fft.cc" />
+    <ClCompile Include="nms\math\vrun.cc" />
+    <!--serialization-->
+    <ClInclude Include="nms\serialization.h" />
+    <ClInclude Include="nms\serialization\base.h" />
+    <ClInclude Include="nms\serialization\dom.h" />
+    <ClCompile Include="nms\serialization\xml.cc" />
+    <ClCompile Include="nms\serialization\json.cc" />
+    <ClCompile Include="nms\serialization\dom.cc" />
+    <!--thread-->
+    <ClInclude Include="nms\thread.h" />
+    <ClCompile Include="nms\thread\condvar.cc" />
+    <ClCompile Include="nms\thread\mutex.cc" />
+    <ClCompile Include="nms\thread\semaphore.cc" />
+    <ClCompile Include="nms\thread\thread.cc" />
+    <ClCompile Include="nms\thread\task.cc" />
+    <ClInclude Include="nms\thread\condvar.h" />
+    <ClInclude Include="nms\thread\mutex.h" />
+    <ClInclude Include="nms\thread\semaphore.h" />
+    <ClInclude Include="nms\thread\task.h" />
+    <ClInclude Include="nms\thread\thread.h" />
+    <!--util-->
+    <ClInclude Include="nms\util.h" />
+    <ClInclude Include="nms\util\arraylist.h" />
+    <ClInclude Include="nms\util\library.h" />
+    <ClInclude Include="nms\util\ringbuf.h" />
+    <ClInclude Include="nms\util\stackinfo.h" />
+    <ClInclude Include="nms\util\system.h" />
+    <ClCompile Include="nms\util\library.cc" />
+    <ClCompile Include="nms\util\stackinfo.cc" />
+    <ClCompile Include="nms\util\system.cc" />
+    <!--test-->
+    <ClCompile Include="nms\test.h">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClInclude Include="nms\test\assert.h" />
+    <ClInclude Include="nms\test\test.h" />
+    <ClCompile Include="nms\test\test.cc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
