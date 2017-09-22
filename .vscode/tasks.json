@@ -32,7 +32,8 @@
             "type": "shell",
             "command": "xmake",
             "args": [
-                "-b"
+                "-b",
+                "-v"
             ],
             "group": {
                 "kind": "build",
@@ -43,12 +44,12 @@
                 "fileLocation":"relative",
                 "pattern":[
                     {
-                        "regexp": "^([a-z]*): (.*):([0-9]*):([0-9]*): (.*)$",
-                        "severity": 1,
+                        "regexp": "^(error: )?(.*):([0-9]*):([0-9]*): (.*): (.*)$",
                         "file": 2,
                         "line": 3,
                         "column": 4,
-                        "message": 5
+                        "severity": 5,
+                        "message": 6
                     }
                 ]
             }
