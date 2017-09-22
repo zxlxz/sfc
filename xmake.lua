@@ -1,5 +1,6 @@
 -- the debug mode
 if is_mode("debug") then
+
     -- enable the debug symbols
     set_symbols("debug")
 
@@ -29,7 +30,7 @@ add_cxxflags("-Wall", "-Wextra", "-Wconversion", "-Wno-unknown-pragmas")
 -- app: dir
 add_includedirs(".")
 set_targetdir("publish/bin")
-set_objectdir("/tmp/nmscc")
+set_objectdir("$(tmpdir)/nmscc")
 
 -- add target
 target("nms")
