@@ -74,6 +74,11 @@ protected:
     T   val_;
 };
 
+template<class T>
+EOutOfRange<T> out_of_range(const T& min_val, const T& max_val, const T& val) {
+    return { min_val, max_val, val };
+}
+
 class IEunexpect
     : public IException
 {};
@@ -95,5 +100,10 @@ protected:
     T   expect_;
     T   value_;
 };
+
+template<class T>
+Eunexpect<T> unexpect(const T& expect, const T& value) {
+    return { expect, value };
+}
 
 }

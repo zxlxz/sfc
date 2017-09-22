@@ -6,7 +6,7 @@ namespace nms::system
 {
 
 /*! the the system environment  */
-NMS_API StrView  getenv(StrView name);
+NMS_API StrView  getenv(const StrView& name);
 
 /*! pause the program until press any key  */
 NMS_API void    pause();

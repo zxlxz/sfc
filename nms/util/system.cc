@@ -5,7 +5,7 @@
 namespace nms::system
 {
 
-NMS_API StrView getenv(StrView name) {
+NMS_API StrView getenv(const StrView& name) {
     // check if name is empty
     if (name.count()==0) {
         return {};

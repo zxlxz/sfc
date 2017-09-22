@@ -4,6 +4,11 @@
 #include <nms/core/memory.h>
 #include <nms/core/exception.h>
 
+#ifndef NMS_LIST_DEBUG
+#   define NMS_LIST_DEBUG   1
+#endif
+
+
 namespace nms
 {
 
@@ -13,12 +18,8 @@ class File;
 class Path;
 }
 
-#if defined(_DEBUG) && !defined(NDEBUG)
-#   define NMS_LIST_DEBUG
-#endif
-
 template<class T>
-class IList: public View<T>
+struct IList: public View<T>
 {
 public:
     using base  = View<T>;
@@ -31,7 +32,22 @@ protected:
     constexpr IList() noexcept: base()
     {}
 
+    constexpr IList(Tsize size) : base() {
+        base::capacity_ = (size+63)/64*64;
+        base::data_     = mnew<T>(base::capacity_);
+    }
+
 public:
+    ~IList() {
+        this->clear();
+        if (base::capacity_ == 0) {
+            if (base::data_ != nullptr) {
+                mdel(base::data_);
+            }
+            base::data_ = nullptr;
+        }
+    }
+
     IList(IList&& rhs)        = delete;
     IList(const IList& rhs)   = delete;
 
@@ -44,17 +60,20 @@ public:
 #pragma endregion
 
 #pragma region method
+    /*! reserve storage */
     void reserve(Tsize newcnt) {
         if (newcnt > base::capacity_) {
-            NMS_THROW(EOutOfRange<Tsize>(0, base::capacity_, newcnt));
+            NMS_THROW(out_of_range(0u, base::capacity_, newcnt));
         }
     }
 
-    void resize(Tsize newcnt) {
+    /*! resize element count */
+    void _resize(Tsize newcnt) {
         static_assert($is<$pod, Tdata>, "nms.List.resize: Tdata shold be POD type");
         base::size_ = newcnt;
     }
 
+    /*! clear all elements */
     void clear() {
         // clear
         for (Tsize i = 0; i < base::size_; ++i) {
@@ -65,63 +84,37 @@ public:
 
 #pragma endregion
 
-#pragma region append
-    /*! append elements to the end */
-    template<class ...U>
-    IList& append(U&& ...u) {
-    #ifdef NMS_LIST_DEBUG
-        if (base::size_+1 > base::capacity_) {
-            NMS_THROW(EOutOfRange<Tsize>{0, base::capacity_, base::size_+1});
-        }
-    #endif
-        new(&base::data_[base::size_++]) Tdata(fwd<U>(u)...);
+#pragma region operator=
+    template<class U, class = $when_is<Tdata, U> >
+    IList& operator=(const View<const U>& rhs) {
+        clear();
+        appends(rhs.data(), rhs.count());
         return *this;
     }
 
-    /*! append elements to the end */
-    template<class ...U>
-    IList& appends(Tsize cnt, U&& ...u) {
-    #ifdef NMS_LIST_DEBUG
-        if (base::size_+cnt > base::capacity_) {
-            NMS_THROW(EOutOfRange<Tsize>{0, base::capacity_, base::size_+cnt});
-        }
-    #endif
-        for (Tsize i = 0; i < cnt; ++i) {
-            new(&base::data_[base::size_++])Tdata(fwd<U>(u)...);
-        }
+    template<class U, class = $when_is<Tdata, U> >
+    IList& operator=(const View<U>& rhs) {
+        clear();
+        appends(rhs.data(), rhs.count());
         return *this;
     }
 
-    /*! append(copy) elements to the end */
-    template<class U>
-    IList& appends(const U dat[], Tsize cnt) {
-    #ifdef NMS_LIST_DEBUG
-        if (base::size_+cnt > base::capacity_) {
-            NMS_THROW(EOutOfRange<Tsize>{0, base::capacity_, base::size_+cnt});
-        }
-    #endif        
-        for (Tsize i = 0; i < cnt; ++i) {
-            new(&base::data_[base::size_++])Tdata(dat[i]);
-        }
-        return *this;
-    }
-
-    /*! append elements to the end */
-    template<class U>
-    IList& appends(const View<U>& view) {
-        appends(view.data(), view.count());
+    template<u32 SN>
+    IList& operator=(const Tdata(&rhs)[SN]) {
+        clear();
+        appends(View<const Tdata>{rhs});
         return *this;
     }
 #pragma endregion
 
 #pragma region operator+=
-    template<class U, class = $when_as<Tdata, U> >
+    template<class U, class = $when_is<Tdata, U> >
     IList& operator+=(const View<const U>& rhs) {
         appends(rhs.data(), rhs.count());
         return *this;
     }
 
-    template<class U, class = $when_as<Tdata, U> >
+    template<class U, class = $when_is<Tdata, U> >
     IList& operator+=(const View<U>& rhs) {
         appends(rhs.data(), rhs.count());
         return *this;
@@ -140,6 +133,51 @@ public:
     }
 #pragma endregion
 
+#pragma region append
+    /*! append elements to the end */
+    template<class ...U>
+    IList& appends(Tsize cnt, U&& ...u) {
+    #if NMS_LIST_DEBUG
+        if (base::size_ + cnt > base::capacity_) {
+            NMS_THROW(out_of_range(0u, base::capacity_, base::size_ + cnt));
+        }
+    #endif
+        for (Tsize i = 0; i < cnt; ++i) {
+            new(&base::data_[base::size_++])Tdata(fwd<U>(u)...);
+        }
+        return *this;
+    }
+
+    /*! append(copy) elements to the end */
+    template<class U>
+    IList& appends(const U dat[], Tsize cnt) {
+    #if NMS_LIST_DEBUG
+        if (base::size_ + cnt > base::capacity_) {
+            NMS_THROW(out_of_range(0u, base::capacity_, base::size_ + cnt));
+        }
+    #endif
+        for (Tsize i = 0; i < cnt; ++i) {
+            new(&base::data_[base::size_++])Tdata(dat[i]);
+        }
+        return *this;
+    }
+
+    /*! append elements to the end */
+    template<class U>
+    IList& appends(const View<U>& view) {
+        appends(view.data(), view.count());
+        return *this;
+    }
+
+    /*! append elements to the end */
+    template<class ...U>
+    IList& append(U&& ...u) {
+        appends(1, fwd<U>(u)...);
+        return *this;
+    }
+
+#pragma endregion
+
 #pragma region save/load
     void save(io::File& file) const {
         saveFile(*this, file);
@@ -153,6 +191,7 @@ public:
 protected:
     template<class File>
     static void saveFile(const IList& list, File& file) {
+        static_assert($is<$pod, Tdata>, "nms.IList.saveFile: should be POD type");
         const auto info = list.info();
         const auto dims = list.size();
         const auto data = list.data();
@@ -164,17 +203,21 @@ protected:
 
     template<class File>
     static void loadFile(IList& list, const File& file) {
+        static_assert($is<$pod, Tdata>, "nms.IList.loadFile: should be POD type");
 
-        Tinfo info;
-        file.read(&info, 1);
-        if (info != base::$info) {
-            NMS_THROW(Eunexpect<Tinfo>(base::$info, info));
+        static const auto info_expect = base::info;
+
+        Tinfo info_value;
+        file.read(&info_value, 1);
+
+        if (info_value != info_expect) {
+            NMS_THROW(unexpect(info_expect, info_value));
         }
 
         typename base::Tdims dims;
         file.read(&dims, 1);
 
-        list.resize(dims[0]);
+        list._resize(dims[0]);
         file.read(list.data(), dims[0]);
     }
 };
@@ -182,61 +225,27 @@ protected:
 template<class T>
 using ListTrait =Tcond< Is<$copyable, T>::$value, $copyable, Tcond<Is<$moveable, T>::$value, $moveable, void> >;
 
-template<class T, u32 Icapacity>
-struct ListBuffer
-{
-    constexpr static u32 $size = Icapacity;
-
-protected:
-    alignas(T) char buff_[Icapacity * sizeof(T)];
-};
-
-template<class T>
-struct ListBuffer<T, 0>
-{
-    constexpr static u32 $size = 0;
-
-protected:
-    constexpr static T* buff_ = nullptr;
-};
-
-template<class T, u32 Icapacity, class = ListTrait<T> >
+template<class T, u32 Icapacity=0, class = ListTrait<T> >
 class List;
 
 template<class T, u32 Icapacity>
-class List<T, Icapacity, $copyable>
-    : public    IList<T>
-    , protected ListBuffer<T, Icapacity>
+class List<T, Icapacity, $copyable>: public IList<T>
 {
 public:
     using base  = IList<T>;
-    using Tbuff = ListBuffer<T, Icapacity>;
     using Tdata = typename base::Tdata;
     using Tsize = typename base::Tsize;
 
     constexpr static Tsize $capacity = Icapacity;
 
 #pragma region constructor
-    ~List() {
-        base::clear();
-        if ($capacity == 0) {
-            mdel(base::data_);
-        }
-    }
-
     List() noexcept {
-        base::data_     = reinterpret_cast<T*>(Tbuff::buff_);
+        base::data_     = reinterpret_cast<T*>(this->buff_);
         base::capacity_ = $capacity;
     }
 
-    template<u32 N, class=$when<$capacity==0 && N==1> >
-    explicit List(const Tsize(&size)[N]) {
-        base::data_     = mnew<T>(Tsize(size[0]));
-        base::capacity_ = size[0];
-    }
-
-    template<class ...U, class=$when<($capacity!=0) && As<Tdata, U...>::$value > >
-    explicit List(Tsize count, U&& ...us) : List{} {
+    template<class ...U, class=$when_as<Tdata, U...> >
+    explicit List(Tsize count, U&& ...us): List{} {
         base::appends(count, fwd<U>(us)...);
     }
 
@@ -256,14 +265,8 @@ public:
     }
 
     List(List&& rhs) noexcept : List{} {
-        if (Tbuff::$size == 0) {
-            base::size_ = rhs.size_;
-            base::data_ = rhs.data_;
-        }
-        else {
-            for (auto i = 0u; i < rhs.size_; ++i) {
-                new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
-            }
+        for (auto i = 0u; i < rhs.size_; ++i) {
+            new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
         }
         rhs.View<Tdata>::operator=(View<Tdata>{});
     }
@@ -278,17 +281,167 @@ public:
     }
 
     List& operator=(List&& rhs) {
+        if (this == &rhs) {
+            return *this;
+        }
+
+        base::clear();
+        for (auto i = 0u; i < rhs.size_; ++i) {
+            new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
+        }
+        rhs.View<Tdata>::operator=(View<Tdata>{});
+        return *this;
+    }
+
+    List& operator=(const List& rhs) {
+        base::clear();
+        base::appends(rhs.data(), rhs.count());
+        return *this;
+    }
+#pragma endregion
+
+#pragma region save/load
+    static List load(const io::File& file) {
+        List list;
+        base::loadFile(list, file);
+        return list;
+    }
+#pragma endregion
+
+protected:
+    alignas(T) char buff_[sizeof(Tdata)*$capacity];
+};
+
+template<class T, u32 Icapacity>
+class List<T, Icapacity, $moveable>: public IList<T>
+{
+public:
+    using base  = IList<T>;
+    using Tdata = typename base::Tdata;
+    using Tsize = typename base::Tsize;
+
+    constexpr static Tsize $capacity = Icapacity;
+
+#pragma region constructor
+    List() noexcept {
+        base::data_     = reinterpret_cast<T*>(this->buff_);
+        base::capacity_ = $capacity;
+    }
+
+    template<class ...U, class=$when_as<Tdata, U...> >
+    explicit List(Tsize count, U&& ...us) : List{} {
+        base::appends(count, fwd<U>(us)...);
+    }
+
+    List(List&& rhs) noexcept : List{} {
+        for (auto i = 0u; i < rhs.size_; ++i) {
+            new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
+        }
+        rhs.View<Tdata>::operator=(View<Tdata>{});
+    }
+
+    List& operator=(List&& rhs) {
+        if (this == &rhs) {
+            return *this;
+        }
+
+        this->clear();
+        for (auto i = 0u; i < rhs.size_; ++i) {
+            new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
+        }
+
+        rhs.View<Tdata>::operator=(View<Tdata>{});
+
+        return *this;
+    }
+
+    List(const List&)               = delete;
+    List& operator=(const List&)    = delete;
+#pragma endregion
+
+protected:
+    alignas(T) char buff_[sizeof(Tdata)*$capacity];
+};
+
+template<class T, u32 Icapacity>
+class List<T, Icapacity, void>: public IList<T>
+{
+public:
+    using base  = IList<T>;
+    using Tdata = typename base::Tdata;
+    using Tsize = typename base::Tsize;
+
+    constexpr static Tsize $capacity = Icapacity;
+
+ #pragma region constructor
+     List() noexcept {
+        base::data_     = reinterpret_cast<T*>(this->buff_);
+        base::capacity_ = $capacity;
+    }
+
+    template<class ...U, class=$when_as<Tdata, U...> >
+    explicit List(Tsize count, U&& ...us): List{} {
+        base::appends(count, fwd<U>(us)...);
+    }
+
+    List(List&&)                    = delete;
+    List(const List&)               = delete;
+    List& operator=(List&&)         = delete;
+    List& operator=(const List&)    = delete;
+#pragma endregion
+
+protected:
+    alignas(T) char buff_[sizeof(Tdata)*$capacity];
+};
+
+template<class T>
+class List<T, 0, $copyable>: public IList<T>
+{
+public:
+    using base  = IList<T>;
+    using Tdata = typename base::Tdata;
+    using Tsize = typename base::Tsize;
+
+#pragma region constructor
+    List()
+    {}
+
+    explicit List(Tsize size): base(size)
+    {}
+
+    ~List() {
+        base::capacity_ = 0;
+    }
+
+    List(List&& rhs) noexcept {
+        View<Tdata>::operator=(rhs);
+        rhs.View<Tdata>::operator=(View<Tdata>{});
+    }
+
+    List(const List& rhs): List({ rhs.count() }) {
+        base::appends(rhs.data(), rhs.count());
+    }
+
+    List dup() const {
+        auto tmp(*this);
+        return tmp;
+    }
+
+    List& operator=(List&& rhs) {
         if (this != &rhs) {
-            this->clear();
-            for (auto i = 0u; i < rhs.size_; ++i) {
-                new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
-            }
-            rhs.View<Tdata>::operator=(View<Tdata>{});
+            // this -> tmp
+            auto tmp(static_cast<List&&>(*this));
+            (void)tmp;
+
+            // rhs -> this
+            new(this)List(static_cast<List&&>(rhs));
         }
         return *this;
     }
 
     List& operator=(const List& rhs) {
+        base::clear();
+        base::reserve(rhs.count());
         base::appends(rhs.data(), rhs.count());
         return *this;
     }
@@ -304,116 +457,71 @@ public:
 
 };
 
-template<class T, u32 Icapacity>
-class List<T, Icapacity, $moveable>
-    : public    IList<T>
-    , protected ListBuffer<T, Icapacity>
+template<class T>
+class List<T, 0, $moveable>: public IList<T>
 {
 public:
     using base  = IList<T>;
-    using Tbuff = ListBuffer<T, Icapacity>;
     using Tdata = typename base::Tdata;
     using Tsize = typename base::Tsize;
 
-    constexpr static Tsize $capacity = Icapacity;
-
 #pragma region constructor
+    List()
+    { }
+
+    explicit List(Tsize size): base(size)
+    {}
+
     ~List() {
-        base::clear();
-        if ($capacity == 0) {
-            mdel(base::data_);
-        }
+        base::capacity_ = 0;
     }
 
-    List() noexcept {
-        base::data_     = reinterpret_cast<T*>(Tbuff::buff_);
-        base::capacity_ = $capacity;
-    }
-
-    template<class Isize, class=$when<$capacity==0, Isize> >
-    explicit List(const Isize(&size)[1]) {
-        base::data_     = mnew<T>(size[0]);
-        base::capacity_ = size[0];
-    }
-
-    template<class ...U, class=$when<$capacity!=0> >
-    explicit List(Tsize count, U&& ...us) : List{} {
-        base::appends(count, fwd<U>(us)...);
-    }
-
-    List(List&& rhs) noexcept : List{} {
-        if (Tbuff::$size == 0) {
-            base::size_ = rhs.size_;
-            base::data_ = rhs.data_;
-        }
-        else {
-            for (auto i = 0u; i < rhs.size_; ++i) {
-                new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
-            }
-        }
+    List(List&& rhs) noexcept {
+        View<Tdata>::operator=(rhs);
         rhs.View<Tdata>::operator=(View<Tdata>{});
     }
 
     List& operator=(List&& rhs) {
-        if (this == &rhs) {
-            return *this;
-        }
+        if (this != &rhs) {
+            // this -> tmp
+            auto tmp(static_cast<List&&>(*this));
+            (void)tmp;
 
-        this->clear();
-        if (Tbuff::$size == 0) {
-            base::size_ = rhs.size_;
-            base::data_ = rhs.data_;
+            // rhs -> this
+            new(this)List(static_cast<List&&>(rhs));
         }
-        else {
-            for (auto i = 0u; i < rhs.size_; ++i) {
-                new(&base::data_[base::size_++])Tdata(static_cast<Tdata&&>(rhs.data_[i]));
-            }
-        }
-        rhs.View<Tdata>::operator=(View<Tdata>{});
-        
         return *this;
     }
 
-    List(const List& rhs)               = delete;
-    List& operator=(const List& rhs)    = delete;
+    List(const List&)               = delete;
+    List& operator=(const List&)    = delete;
 #pragma endregion
 
 };
 
-template<class T, u32 Icapacity>
-class List<T, Icapacity, void>
-    : public    IList<T>
-    , protected ListBuffer<T, Icapacity>
+template<class T>
+class List<T, 0, void>: public IList<T>
 {
 public:
     using base  = IList<T>;
-    using Tbuff = ListBuffer<T, Icapacity>;
     using Tdata = typename base::Tdata;
     using Tsize = typename base::Tsize;
 
-    constexpr static Tsize $capacity = Icapacity;
+#pragma region constructor
+    List()
+    { }
 
- #pragma region constructor
-     List() noexcept {
-        base::data_     = reinterpret_cast<T*>(Tbuff::buff_);
-        base::capacity_ = $capacity;
+    explicit List(Tsize size): base(size)
+    {}
+
+    ~List() {
+        base::capacity_ = 0;
     }
 
-    template<class Isize, class=$when<$capacity==0, Isize> >
-    explicit List(const Isize(&size)[1]) {
-        base::data_     = mnew<T>(size[0]);
-        base::capacity_ = size[0];
-    }
-
-    template<class ...U, class=$when<$capacity!=0> >
-    explicit List(Tsize count, U&& ...us): List{} {
-        base::appends(count, fwd<U>(us)...);
-    }
-
-    List(List&& rhs)                = delete;
-    List& operator=(List&& rhs)     = delete;
-    List(const List& rhs)           = delete;
-    List& operator=(const List& rhs)= delete;
+    List(List&&)                    = delete;
+    List(const List&)               = delete;
+    List& operator=(List&&)         = delete;
+    List& operator=(const List&)    = delete;
 #pragma endregion
 
 };

@@ -1,3 +1,5 @@
+CC              = clang
+CXX             = clang++
 
 _CPPPATH        = -I.
 _CPPDEFS        = -DNMS_BUILD

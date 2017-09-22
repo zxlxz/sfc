@@ -116,7 +116,7 @@ NMS_API void DateTime::format(IString& buf, StrView /*fmt*/) const {
     const auto dat = buf.data();
     const auto ret = ::snprintf(dat+len, 32, "%hu-%02hu-%02huT%02hu:%02hu:%02hu", year, month, day, hour, minute, second);
     if (ret > 0) {
-        buf.resize(len + u32(ret));
+        buf._resize(len + u32(ret));
     }
 }
 

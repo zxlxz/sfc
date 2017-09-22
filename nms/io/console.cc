@@ -40,8 +40,9 @@ NMS_API bool _init() {
     return has_init;
 }
 
+/*! console string buffer */
 NMS_API IString& _gStrBuff() {
-    static thread_local U8String<128*1024> str;   // 128KB
+    static thread_local U8String<4*1024*1024> str;   // 4MB
     return str;
 }
 
@@ -59,7 +60,7 @@ NMS_API void writes(const StrView text[], u32 n) {
     }
     else {
         static thread_local U8String<128 * 1024> buff;
-        buff.resize(0);
+        buff._resize(0);
         for (u32 i = 0; i < n; ++i) {
             buff += text[i];
         }

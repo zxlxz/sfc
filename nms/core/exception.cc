@@ -39,7 +39,7 @@ NMS_API void ESystem::format(IString& buf) const {
     }
 #endif
     const auto message_len = strlen(message.data());
-    message.resize(message_len);
+    message._resize(message_len);
     sformat(buf, "system error({}): {}", eid_, message);
 }
 

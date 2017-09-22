@@ -170,8 +170,9 @@ nms_test(file) {
 
         File file(path, File::Read);
         test::assert_true(file.size() == data_out.$capacity *sizeof(u32));
+
         file.read(data_out.data(), data_out.$capacity);
-        data_out.resize(data_out.$capacity);
+        data_out._resize(data_out.$capacity);
 
         for (u32 i = 0; i < data_out.$capacity; ++i) {
             test::assert_eq(data_in[i], data_out[i]);

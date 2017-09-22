@@ -31,7 +31,7 @@ template<class T, u32 N = 0>
 struct View;
 
 template<class T>
-class IList;
+struct IList;
 
 using StrView   = View<const char>;
 using IString   = IList<char>;

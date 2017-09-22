@@ -98,13 +98,14 @@ nms_test(Task) {
     c >> e;
     d >> e;
 
-    Scheduler<16> scheduler;
+    Scheduler<8> scheduler;
     scheduler += a;
     scheduler += b;
     scheduler += c;
     scheduler += d;
     scheduler += e;
 
+    (void)scheduler;
     scheduler.run();
 }
 #pragma endregion

@@ -23,7 +23,7 @@
 #   define NMS_CC_MSVC                      // check if compiler == msvc
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) || defined(__clang_version__)
 #   define NMS_CC_CLANG                     // check if compiler == clang
 #endif
 

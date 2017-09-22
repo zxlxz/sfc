@@ -28,7 +28,7 @@ struct ViewInfo
 namespace
 {
 template<class T, u32 N>
-static constexpr ViewInfo mk_viewinfo() {
+constexpr static ViewInfo mk_viewinfo() {
     return { '$',
              $is<$uint, T> ? 'u' : $is<$sint, T> ? 'i' : $is<$float, T> ? 'f' : '?',
              char('0' + sizeof(T)),
@@ -57,16 +57,15 @@ struct View
     template<class U, u32 M>
     friend struct View;
 
-    static const Tinfo $info;
 #pragma endregion
 
 #pragma region constructors
-    /* default constructor */
+    /*! default constructor */
     constexpr View() noexcept
         : data_{nullptr}, size_{0}, step_{0}
     { }
 
-    /* default destructor */
+    /*! default destructor */
     ~View() = default;
 
     /*! construct view with data, size, step */
@@ -116,32 +115,27 @@ struct View
         return iprod(Tseq<$rank>{}, size_);
     }
 
-    /*!
-     * get idx-dim size
-     * @see size
-     */
+    /*! get idx-dim size  @see size */
     template<class Tdim>
     constexpr Tsize size(Tdim dim) const noexcept {
         return size_[dim];
     }
 
-    /*!
-     * get idx-dim step
-     * @see step
-     */
+    /*! get idx-dim step @see step */
     template<class Tdim>
     constexpr Tstep step(Tdim dim) const noexcept {
         return step_[dim];
     }
 
-    /*!
-     * test if empty (count()==0)
-     * @see count
-     */
+    /*! * test if empty (count()==0)  @see count */
     constexpr auto isEmpty() const noexcept {
         return count() == 0;
     }
 
+    /*! get type-info */
+    constexpr static Tinfo info() {
+        return mk_viewinfo<Tdata, $rank>();
+    }
 #pragma endregion
 
 #pragma region access
@@ -349,8 +343,6 @@ struct View<T, 0>
 
     template<class U, u32 M>
     friend struct View;
-
-    static const Tinfo $info;
 #pragma endregion
 
 #pragma region constructors
@@ -416,6 +408,10 @@ struct View<T, 0>
         return count() == 0;
     }
 
+    /*! get type-info */
+    constexpr static Tinfo info() {
+        return mk_viewinfo<Tdata, $rank>();
+    }
 #pragma endregion
 
 #pragma region access
@@ -596,9 +592,6 @@ protected:
         return s1 - s0 + 1;
     }
 };
-
-template<class T, u32 N>
-const ViewInfo View<T, N>::$info = mk_viewinfo<T, N>();
 
 template<class T>
 struct Scalar

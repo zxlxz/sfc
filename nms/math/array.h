@@ -135,7 +135,7 @@ protected:
 private:
     template<class File>
     void saveFile(File& file) const {
-        const typename base::Tinfo info = this->$info;
+        const typename base::Tinfo info = this->info();
         const typename base::Tdims size = this->size();
 
         file.write(&info, 1);
@@ -145,12 +145,13 @@ private:
 
     template<class File>
     static auto loadFile(const File& file) {
-        typename base::Tinfo info;
+        typename base::Tinfo info_value;
         typename base::Tdims size;
+        static const auto info_expect = base::info();
 
-        file.read(&info, 1);
-        if (info != base::$info) {
-            NMS_THROW(Eunexpect<Tinfo>(base::$info, info));
+        file.read(&info_value, 1);
+        if (info_value != info_expect) {
+            NMS_THROW(unexpect(info_expect, info_value));
         }
 
         file.read(&size, 1);

@@ -57,6 +57,7 @@ static const char $bg_cyn[] = "\033[46m";
 static const char $bg_wht[] = "\033[47m";
 }
 
+/*! console string buffer */
 NMS_API IString& _gStrBuff();
 
 NMS_API void writes(const StrView texts[], u32 n);
@@ -78,7 +79,7 @@ inline void  writeln(const StrView& text) {
 template<class T, class ...U>
 void write(const StrView& fmt, const T& t, const U& ...u) {
     auto& buf = _gStrBuff();
-    buf.resize(0);
+    buf._resize(0);
     sformat(buf, fmt, t, u...);
     write(buf);
 }
@@ -86,7 +87,7 @@ void write(const StrView& fmt, const T& t, const U& ...u) {
 template<class T, class ...U>
 void writeln(const StrView& fmt, const T& t, const U& ...u) {
     auto& buf = _gStrBuff();
-    buf.resize(0);
+    buf._resize(0);
     sformat(buf, fmt, t, u...);
     buf += '\n';
     write(buf);

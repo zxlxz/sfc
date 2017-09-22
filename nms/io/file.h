@@ -5,7 +5,7 @@
 
 namespace nms
 {
-template<class T, u32 BookSize, u32 PageSize>
+template<class T, u32 Ibooksize, u32 Ipagesize>
 class ArrayList;
 }
 
@@ -176,7 +176,7 @@ public:
 
         const auto ret  = _read(u8_str.data() + oldcnt, size);
         const auto newcnt = oldcnt + u32(ret);
-        u8_str.resize(newcnt);
+        u8_str._resize(newcnt);
 
         return ret;
     }

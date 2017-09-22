@@ -47,7 +47,7 @@ NMS_API void    _message(Level level, IString& s);
 template<class ...T>
 void message(Level level, const StrView& fmt, const T& ...args) {
     IString& buf = _gStrBuff();
-    buf.resize(64);
+    buf._resize(64);
     sformat(buf, fmt, args...);
     _message(level, buf);
 }

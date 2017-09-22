@@ -311,7 +311,7 @@ NMS_API bool Formatter::next(u32* pid, StrView* pfmt) {
 
         if (i == fmts_.count() - 1) {
             fmts_ = {};
-            pbuf_->resize(new_len);
+            pbuf_->_resize(new_len);
             return false;
         }
     }
@@ -336,7 +336,7 @@ NMS_API bool Formatter::next(u32* pid, StrView* pfmt) {
 
     if (fmt.count() < 2) {
         fmts_ = {};
-        pbuf_->resize(new_len);
+        pbuf_->_resize(new_len);
         return false;
     }
 
@@ -357,7 +357,7 @@ NMS_API bool Formatter::next(u32* pid, StrView* pfmt) {
         fmt = fmt.slice(1u, fmt.count() - 1);
     }
 
-    pbuf_->resize(new_len);
+    pbuf_->_resize(new_len);
     return true;
 }
 

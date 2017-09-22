@@ -86,8 +86,7 @@ NMS_API bool Program::compile() {
         size_t nvrtc_log_size = 0;
         NMS_NVRTC_DO(nvrtcGetProgramLogSize)(nvrtc, &nvrtc_log_size);
 
-        U8String<> nvrtc_log({ u32(nvrtc_log_size) });
-        nvrtc_log.resize(u32(nvrtc_log_size));
+        U8String<> nvrtc_log(static_cast<u32>(nvrtc_log_size));
         NMS_NVRTC_DO(nvrtcGetProgramLog)(nvrtc, nvrtc_log.data());
         io::console::writeln(nvrtc_log);
 
@@ -100,7 +99,7 @@ NMS_API bool Program::compile() {
 
     ptx_.reserve(u32(ptx_len));
     NMS_NVRTC_DO(nvrtcGetPTX)(nvrtc, ptx_.data());
-    ptx_.resize(u32(ptx_len) - 1);
+    ptx_._resize(u32(ptx_len) - 1);
 
     // destroy program
     NMS_NVRTC_DO(nvrtcDestroyProgram)(&nvrtc);

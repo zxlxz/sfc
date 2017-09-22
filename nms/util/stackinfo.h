@@ -14,19 +14,21 @@ public:
         NMS_API void format(IString& buf) const;
     };
 
-
-    StackInfo(u32 skip_cnt=0) {
+    /*! capture current stackinfo */
+    StackInfo(u32 num_frames_to_skip=0) {
         init();
 
-        if (count_ > skip_cnt) {
-            count_ -= skip_cnt;
+        if (count_ > num_frames_to_skip) {
+            count_ -= num_frames_to_skip;
         }
     }
 
+    /*! get stack-frame count */
     u32 count() const {
         return count_;
     }
 
+    /*! get stack-frame */
     Frame operator[](u32 idx) const {
         if (idx+3 >= count_) {
             return Frame{ nullptr };

@@ -24,7 +24,7 @@ static StrView _get_app_dir() {
 #if defined(NMS_OS_WINDOWS)
     const auto mod = GetModuleHandleA(nullptr);
     exe_len   = GetModuleFileNameA(mod, exe_path.data(), exe_path.capacity());
-    exe_path.resize(exe_len);
+    exe_path._resize(exe_len);
     exe_path.replace('\\', '/');
 
 #elif defined(NMS_OS_MACOS)
@@ -72,12 +72,10 @@ static StrView _get_app_dir() {
 
 #ifdef NMS_OS_WINDOWS
 static StrView _get_home_dir() {
-    static U8String<256> home_dir;
-
 #if defined(NMS_OS_UNIX)
-    home_dir = system::getenv("HOME");
+    static U8String<256> home_dir = system::getenv("HOME");
 #elif  defined(NMS_OS_WINDOWS)
-    home_dir = system::getenv("USERPROFILE");
+    static U8String<256> home_dir = system::getenv("USERPROFILE");
     home_dir.replace('\\', '/');
 #else
 #   error "unexpected system"
@@ -138,7 +136,7 @@ NMS_API StrView Path::path() const {
 #endif
 
     static thread_local U8String<1024>  full_path;
-    full_path.resize(0);
+    full_path._resize(0);
 
     // check if empty
     if (str_.count() == 0) {
@@ -193,7 +191,7 @@ NMS_API Path cwd() {
     }
 
     const auto len = strlen(buff.data());
-    buff.resize(len);
+    buff._resize(len);
 
 #ifdef NMS_OS_WINDOWS
     buff.replace('\\', '/');

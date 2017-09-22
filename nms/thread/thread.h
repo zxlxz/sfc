@@ -40,9 +40,8 @@ public:
         detach();
     }
 
-    Thread(Thread&&) = delete;
-    Thread(const Thread&) = delete;
-
+    Thread(Thread&&)                    = delete;
+    Thread(const Thread&)               = delete;
     Thread& operator=(Thread&&)         = delete;
     Thread& operator=(const Thread&)    = delete;
 
