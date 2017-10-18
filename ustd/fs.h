@@ -32,8 +32,8 @@ class File
     void operator=(const File&) = delete;
 
     /* constructor */
-    template<typename P> static fn open  (str path) noexcept;
-    template<typename P> static fn create(str path) noexcept;
+    template<typename P> static fn open  (P path) noexcept;
+    template<typename P> static fn create(P path) noexcept;
 
     /* read */
     fn read(Slice<u8> buf) noexcept -> Result<usize>;
@@ -47,8 +47,8 @@ class File
     static fn _create(int* handle, str path) noexcept -> Error;
 };
 
-template<typename P> fn File::open  (str path) noexcept {   }
-template<typename P> fn File::create(str path) noexcept {   }
+template<typename P> fn File::open  (P path) noexcept {   }
+template<typename P> fn File::create(P path) noexcept {   }
 
 }
 

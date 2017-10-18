@@ -26,8 +26,8 @@ enum class Error
     TimedOut,
     WriteZero,
     Interrupted,
-    Other,
     UnexpectedEof,
+    Other,
 };
 
 template<typename T=void>
@@ -69,7 +69,7 @@ class Stdout
     {
         Stdout& _ref;
     public:
-        Lock(sync::Mutex& mutex, Stdout& ref): sync::Mutex::Guard(mutex), _ref(ref)
+        Lock(sync::MutexGuard&& guard, Stdout& ref): sync::Mutex::Guard(as_mov(guard)), _ref(ref)
         {}
 
         Lock(Lock&& lock)
@@ -95,8 +95,8 @@ class Stdout
         }
     };
 
-    [[nodiscard]] fn lock()->Lock {
-        return Lock(_mutex, *this);
+    [[nodiscard]] fn lock() -> Lock {
+        return Lock(_mutex.lock().unwrap(), *this);
     }
 
   private:

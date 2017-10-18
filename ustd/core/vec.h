@@ -23,6 +23,7 @@ class Vec: public Vec<T, 0>
     Vec& operator=(const Vec&)  = delete;
 
   public:
+
     // constructor[default]
     Vec() noexcept
         : Vec<T, 0>{_buf, 0, u32(N)}, _nul(0)

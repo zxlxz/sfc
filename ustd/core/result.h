@@ -289,7 +289,7 @@ class Result<T, E, $class, $value>
     }
 
     ~Result() {}
-   
+
     Result(const Result&)         = delete;
     fn operator=(const Result&)  = delete;
 

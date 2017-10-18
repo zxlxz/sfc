@@ -15,6 +15,16 @@ union alignas(void*) mtx_t {
 #endif
 };
 
+enum LockError
+{
+    Success,
+    WouldBlock,
+    Other
+};
+
+template<class T>
+using LockResult = result::Result<T, int>;
+
 class Mutex
 {
     mtx_t   _mtx;
@@ -42,14 +52,16 @@ class Mutex
   public:
     class Guard
     {
+        friend class Mutex;
+
         Mutex*  _mutex;
 
-      public:
+      protected:
         Guard(Mutex& mutex) noexcept
             : _mutex(&mutex) {
-            _mutex->_lock();
         }
 
+      public:
         ~Guard() noexcept {
             if (_mutex == nullptr) {
                 return;
@@ -67,15 +79,20 @@ class Mutex
         void operator=(const Guard&) = delete;
     };
 
-    fn lock() noexcept -> Guard {
-        return {*this};
+    fn lock() noexcept -> LockResult<Guard> {
+        using Result = LockResult<Guard>;
+
+        let stat = _lock();
+        return stat == LockError::Success ? Result::Ok(Guard(*this)) : Result::Err(stat);
     }
 
   private:
-   fn _init() -> void;
-   fn _destroy() -> void;
-   fn _lock() -> void;
-   fn _unlock() ->void;
+   fn _init()       -> LockError;
+   fn _destroy()    -> void;
+   fn _lock()       -> LockError;
+   fn _unlock()     -> LockError;
 };
+
+using MutexGuard = Mutex::Guard;
 
 }
