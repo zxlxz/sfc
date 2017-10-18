@@ -38,5 +38,4 @@
 
 # user settings
 *.vcxproj.user
-publish/
-docs/
+
