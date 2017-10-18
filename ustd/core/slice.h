@@ -73,7 +73,7 @@ struct Slice
 
     // method: slice
     template<typename ...Tidx, usize ...Icnt>
-    fn slice(const Tidx(&...s)[Icnt]) const noexcept -> Slice<T, ustd::sum((Icnt == 0 ? 0 : 1)...)> {
+    fn slice(const Tidx(&...s)[Icnt]) const noexcept {
         static_assert(all((Icnt <= 2)...), "unexpect array size");
         return _slice(s...)._select_dims($index_if<(Icnt!=0)...>{});
     }
