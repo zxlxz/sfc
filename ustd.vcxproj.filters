@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ustd\core\fmt.cc">
+      <Filter>ustd\core</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\core\str.cc">
+      <Filter>ustd\core</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\io.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\sync.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\test.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\time.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\thread.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\core\tuple.cc">
+      <Filter>ustd\core</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\core\panic.cc">
+      <Filter>ustd\core</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\console.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="config.h" />
+    <ClCompile Include="ustd.ixx" />
+    <ClCompile Include="ustd\fs.cc">
+      <Filter>ustd</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ustd\core\array.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\enum.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\fmt.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\macro.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\option.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\result.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\slice.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\str.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\string.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\trait.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\tuple.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\vec.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\fs.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\io.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\test.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\time.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\thread.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\type.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\logging.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\path.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\_.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\panic.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\boxed.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\console.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ustd">
+      <UniqueIdentifier>{d07e4af9-7c85-47af-8650-374d2c90bf2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\core">
+      <UniqueIdentifier>{c7d5bdda-520f-47a3-ab1e-2c885114e324}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="ustd.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
+    <None Include="xmake.lua" />
+  </ItemGroup>
+</Project>

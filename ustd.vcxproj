@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{72FAC65D-C779-4CFA-ADB3-1D261CDE226A}</ProjectGuid>
+    <RootNamespace>ustd</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)publish\lib\</OutDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="ustd\console.cc" />
+    <ClCompile Include="ustd\core\panic.cc" />
+    <ClCompile Include="ustd\core\str.cc" />
+    <ClCompile Include="ustd\core\tuple.cc" />
+    <ClCompile Include="ustd\fs.cc" />
+    <ClCompile Include="ustd\thread.cc" />
+    <ClCompile Include="ustd\time.cc" />
+    <ClCompile Include="config.h" />
+    <ClInclude Include="ustd.h" />
+    <ClInclude Include="ustd\boxed.h" />
+    <ClInclude Include="ustd\console.h" />
+    <ClInclude Include="ustd\core.h" />
+    <ClInclude Include="ustd\core\panic.h" />
+    <ClInclude Include="ustd\core\_.h" />
+    <ClInclude Include="ustd\core\array.h" />
+    <ClInclude Include="ustd\core\enum.h" />
+    <ClInclude Include="ustd\core\fmt.h" />
+    <ClInclude Include="ustd\core\macro.h" />
+    <ClInclude Include="ustd\core\option.h" />
+    <ClInclude Include="ustd\core\result.h" />
+    <ClInclude Include="ustd\core\slice.h" />
+    <ClInclude Include="ustd\core\str.h" />
+    <ClInclude Include="ustd\core\string.h" />
+    <ClInclude Include="ustd\core\trait.h" />
+    <ClInclude Include="ustd\core\tuple.h" />
+    <ClInclude Include="ustd\core\type.h" />
+    <ClInclude Include="ustd\core\vec.h" />
+    <ClCompile Include="ustd\core\fmt.cc" />
+    <ClInclude Include="ustd\fs.h" />
+    <ClInclude Include="ustd\io.h" />
+    <ClCompile Include="ustd\io.cc" />
+    <ClInclude Include="ustd\logging.h" />
+    <ClInclude Include="ustd\path.h" />
+    <ClInclude Include="ustd\sync.h" />
+    <ClCompile Include="ustd\sync.cc" />
+    <ClInclude Include="ustd\test.h" />
+    <ClCompile Include="ustd\test.cc" />
+    <ClInclude Include="ustd\thread.h" />
+    <ClInclude Include="ustd\time.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
+    <ClCompile Include="ustd.ixx">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/module:output $(SolutionDir)publish\ifc\ustd.ifc</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/module:output $(SolutionDir)publish\ifc\ustd.ifc</AdditionalOptions>
+    </ClCompile>
+    <None Include="xmake.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="ustd.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="sys\ustd.sys.vcxproj">
+      <Project>{f21b564b-c9cc-4b13-8dbf-3ab3370c26d7}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

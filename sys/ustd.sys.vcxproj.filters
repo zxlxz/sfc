@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="posix">
+      <UniqueIdentifier>{19d18b41-0074-47dc-b724-34cbcadca232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win32">
+      <UniqueIdentifier>{16587836-5720-4d1e-92bb-b42ac258786d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="apple">
+      <UniqueIdentifier>{8a7f160a-d9a4-400b-a932-d298a81efed3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="win32.h" />
+    <ClInclude Include="apple.h" />
+    <ClInclude Include="linux.h" />
+    <ClInclude Include="posix\threads.h">
+      <Filter>posix</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="win32\time.c">
+      <Filter>win32</Filter>
+    </ClCompile>
+    <ClCompile Include="posix\threads.c">
+      <Filter>posix</Filter>
+    </ClCompile>
+    <ClCompile Include="win32\threads.c">
+      <Filter>win32</Filter>
+    </ClCompile>
+    <ClCompile Include="win32\unistd.c">
+      <Filter>win32</Filter>
+    </ClCompile>
+    <ClCompile Include="win32\exeinfo.c">
+      <Filter>win32</Filter>
+    </ClCompile>
+    <ClCompile Include="win32\ioctl.c">
+      <Filter>win32</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
