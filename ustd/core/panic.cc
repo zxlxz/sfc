@@ -1,6 +1,4 @@
 #include "config.h"
-#include "ustd/core.h"
-#include "ustd/io.h"
 
 namespace ustd
 {

@@ -38,21 +38,42 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)publish\lib\</OutDir>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>config.h</PrecompiledHeaderFile>
+      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>config.h</PrecompiledHeaderFile>
+      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ustd\console.cc" />
     <ClCompile Include="ustd\core\panic.cc" />
     <ClCompile Include="ustd\core\str.cc" />
     <ClCompile Include="ustd\core\tuple.cc" />
     <ClCompile Include="ustd\fs.cc" />
-    <ClCompile Include="ustd\thread.cc" />
+    <ClCompile Include="ustd\io\stdout.cc" />
+    <ClCompile Include="ustd\sync\mutex.cc" />
+    <ClCompile Include="ustd\thread\funcs.cc" />
+    <ClCompile Include="ustd\thread\thread.cc" />
     <ClCompile Include="ustd\time.cc" />
-    <ClCompile Include="config.h" />
+    <ClCompile Include="config.h">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">config.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">config.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">config.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">config.h</ForcedIncludeFiles>
+    </ClCompile>
     <ClInclude Include="ustd.h" />
     <ClInclude Include="ustd\boxed.h" />
-    <ClInclude Include="ustd\console.h" />
     <ClInclude Include="ustd\core.h" />
     <ClInclude Include="ustd\core\panic.h" />
-    <ClInclude Include="ustd\core\_.h" />
     <ClInclude Include="ustd\core\array.h" />
     <ClInclude Include="ustd\core\enum.h" />
     <ClInclude Include="ustd\core\fmt.h" />
@@ -67,16 +88,22 @@
     <ClInclude Include="ustd\core\type.h" />
     <ClInclude Include="ustd\core\vec.h" />
     <ClCompile Include="ustd\core\fmt.cc" />
+    <ClInclude Include="ustd\detail\thread_types.h" />
     <ClInclude Include="ustd\fs.h" />
     <ClInclude Include="ustd\io.h" />
-    <ClCompile Include="ustd\io.cc" />
+    <ClInclude Include="ustd\io\stdout.h" />
     <ClInclude Include="ustd\logging.h" />
     <ClInclude Include="ustd\path.h" />
     <ClInclude Include="ustd\sync.h" />
-    <ClCompile Include="ustd\sync.cc" />
+    <ClInclude Include="ustd\sync\arc.h" />
+    <ClInclude Include="ustd\sync\barrier.h" />
+    <ClInclude Include="ustd\sync\mutex.h" />
+    <ClInclude Include="ustd\sync\rwlock.h" />
     <ClInclude Include="ustd\test.h" />
     <ClCompile Include="ustd\test.cc" />
     <ClInclude Include="ustd\thread.h" />
+    <ClInclude Include="ustd\thread\funcs.h" />
+    <ClInclude Include="ustd\thread\thread.h" />
     <ClInclude Include="ustd\time.h" />
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +111,8 @@
     <ClCompile Include="ustd.ixx">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/module:output $(SolutionDir)publish\ifc\ustd.ifc</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/module:output $(SolutionDir)publish\ifc\ustd.ifc</AdditionalOptions>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <None Include="xmake.lua" />
   </ItemGroup>

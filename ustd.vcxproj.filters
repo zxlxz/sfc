@@ -7,19 +7,10 @@
     <ClCompile Include="ustd\core\str.cc">
       <Filter>ustd\core</Filter>
     </ClCompile>
-    <ClCompile Include="ustd\io.cc">
-      <Filter>ustd</Filter>
-    </ClCompile>
-    <ClCompile Include="ustd\sync.cc">
-      <Filter>ustd</Filter>
-    </ClCompile>
     <ClCompile Include="ustd\test.cc">
       <Filter>ustd</Filter>
     </ClCompile>
     <ClCompile Include="ustd\time.cc">
-      <Filter>ustd</Filter>
-    </ClCompile>
-    <ClCompile Include="ustd\thread.cc">
       <Filter>ustd</Filter>
     </ClCompile>
     <ClCompile Include="ustd\core\tuple.cc">
@@ -28,13 +19,22 @@
     <ClCompile Include="ustd\core\panic.cc">
       <Filter>ustd\core</Filter>
     </ClCompile>
-    <ClCompile Include="ustd\console.cc">
-      <Filter>ustd</Filter>
-    </ClCompile>
     <ClCompile Include="config.h" />
     <ClCompile Include="ustd.ixx" />
     <ClCompile Include="ustd\fs.cc">
       <Filter>ustd</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\sync\mutex.cc">
+      <Filter>ustd\sync</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\io\stdout.cc">
+      <Filter>ustd\io</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\thread\thread.cc">
+      <Filter>ustd\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\thread\funcs.cc">
+      <Filter>ustd\thread</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -104,19 +104,37 @@
     <ClInclude Include="ustd\path.h">
       <Filter>ustd</Filter>
     </ClInclude>
-    <ClInclude Include="ustd\core\_.h">
-      <Filter>ustd\core</Filter>
-    </ClInclude>
     <ClInclude Include="ustd\core\panic.h">
       <Filter>ustd\core</Filter>
     </ClInclude>
     <ClInclude Include="ustd\boxed.h">
       <Filter>ustd</Filter>
     </ClInclude>
-    <ClInclude Include="ustd\console.h">
-      <Filter>ustd</Filter>
+    <ClInclude Include="ustd\detail\thread_types.h">
+      <Filter>ustd\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync\rwlock.h">
+      <Filter>ustd\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync\arc.h">
+      <Filter>ustd\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync\mutex.h">
+      <Filter>ustd\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync\barrier.h">
+      <Filter>ustd\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\io\stdout.h">
+      <Filter>ustd\io</Filter>
     </ClInclude>
     <ClInclude Include="ustd.h" />
+    <ClInclude Include="ustd\thread\thread.h">
+      <Filter>ustd\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\thread\funcs.h">
+      <Filter>ustd\thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ustd">
@@ -124,6 +142,18 @@
     </Filter>
     <Filter Include="ustd\core">
       <UniqueIdentifier>{c7d5bdda-520f-47a3-ab1e-2c885114e324}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\detail">
+      <UniqueIdentifier>{89b55d50-01f3-4a2e-bcd5-f69b7be9940c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\sync">
+      <UniqueIdentifier>{1c538611-ee7a-461c-93fe-33e8852201e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\io">
+      <UniqueIdentifier>{f52c4d8f-0545-477f-8da2-4ccf094e349f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\thread">
+      <UniqueIdentifier>{9d82daec-0bc1-4988-b4de-abc7f3931c15}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#ifndef _THREADS_C
+#ifndef _THREAD_TYPES
 struct _thrd_st;
 typedef struct _thrd_st* thrd_t;
 

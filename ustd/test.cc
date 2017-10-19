@@ -1,15 +1,12 @@
 #include "config.h"
-#include "ustd/test.h"
-#include "ustd/io.h"
-#include "ustd/time.h"
-#include "ustd/thread.h"
+
+namespace ustd::test
+{
 
 using namespace ustd::vec;
 using namespace ustd::string;
 using namespace ustd::fmt;
-
-namespace ustd::test
-{
+using namespace ustd::io;
 
 class Worker
 {
@@ -34,10 +31,10 @@ class Worker
 
         on(Running);
 
-        thread::spawn([=] {(_func)();})
+        thread::spawn([=] { (_func)(); })
             .join()
-            .and_then([&]      {on(Success); })
-            .or_else ([&](int) {on(Error);   });
+            .and_then([&]       {on(Success); })
+            .or_else ([&](int)  {on(Error);   });
 
         return 1;
     }
@@ -71,7 +68,7 @@ class Worker
     }
 
     fn on(State stat) -> void {
-        static const console::Color colors[] = { console::YEL, console::CYN, console::GRN, console::RED };
+        static const TermColor colors[] = { TermColor::YEL, TermColor::CYN, TermColor::GRN, TermColor::RED };
         static const char*     signs[]  ={ "--", ">>", "<<", "!!" };
 
         char text[256];

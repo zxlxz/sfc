@@ -1,6 +1,12 @@
-#ifndef _USTD_POSIX_H_
-#define _USTD_POSIX_H_
+#ifndef _USTD_CONFIG_H
+#define _USTD_CONFIG_H
 
+#include "ustd/detail/thread_types.h"
+using thrd_t = ustd::thrd_t;
+using mtx_t  = ustd::mtx_t;
+using cnd_t  = ustd::cnd_t;
+
+#define _THREADS_C
 #if     defined(_WIN32)
 #include "sys/win32.h"
 #elif   defined(__linux)
@@ -13,5 +19,9 @@
 #undef stdout   // 1
 #undef stderr   // 2
 
-#define _USTD_IMPL  1
+#define _USTD_MODULE 0
+#include "ustd.h"
+
 #endif
+
+

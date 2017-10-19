@@ -29,11 +29,14 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
-
+#include "posix/threads.h"
+#define STDOUT_FILENO   1
+#define STDIN_FILENO    1
+#define STDERR_FILENO   1
 
 /* sys */
 #include <sys/stat.h>
-#include "posix/threads.h"
+#undef  _stat
 
 /* ucrt */
 #include <corecrt_io.h>
@@ -42,9 +45,6 @@
 #include <intrin.h>
 #endif
 
-#define STDOUT_FILENO   1
-#define STDIN_FILENO    1
-#define STDERR_FILENO   1
 #pragma warning(pop)
 
 #ifdef __cplusplus

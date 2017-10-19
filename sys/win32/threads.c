@@ -5,7 +5,7 @@ typedef HANDLE                  thrd_t;
 typedef RTL_CRITICAL_SECTION    mtx_t;
 typedef RTL_CONDITION_VARIABLE  cnd_t;
 
-#define _THREADS_C
+#define _THREAD_TYPES
 #include "posix/threads.h"
 
 #pragma region threads

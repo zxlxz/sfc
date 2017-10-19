@@ -48,13 +48,13 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalOptions>/std:c++latest /experimental:module /module:search $(SolutionDir)publish\ifc </AdditionalOptions>
+      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc </AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalOptions>/std:c++latest /experimental:module /module:search $(SolutionDir)publish\ifc </AdditionalOptions>
+      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc </AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>

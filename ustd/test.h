@@ -65,11 +65,3 @@ fn (assert_ne)(const Ta& a, const Tb& b, const T& ...args) -> void {
 
 }
 
-#define _unittest_var(...)  _unittest_var1 __VA_ARGS__
-#define _unittest_var1(id)  _ustd_test_##id
-
-#if defined(_MSC_VER)  && defined(__INTELLISENSE__)
-#define unittest(...) []] let _unittest_var((__COUNTER__)) = [
-#else
-#define unittest(...) []] let _unittest_var((__COUNTER__)) = ::ustd::test::scheduler().install<struct _>(#__VA_ARGS__) << [
-#endif

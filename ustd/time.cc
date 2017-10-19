@@ -1,12 +1,10 @@
 #include "config.h"
-#include "ustd/time.h"
-#include "ustd/test.h"
-
-using namespace ustd::string;
-using namespace ustd::fmt;
 
 namespace ustd::time
 {
+
+using namespace ustd::fmt;
+using namespace ustd::string;
 
 static let g_proc_start_time = Duration::since_monotonic();
 

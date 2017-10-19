@@ -1,9 +1,13 @@
-#ifndef __INTELLISENSE__
+
+/* c++ -> rust */
+#define let const auto
+#define mut auto
+#define fn  auto
+#define use using
+
 module ustd;
+
 export {
-#endif
-
-
 #include <ustd/core.h>
 #include <ustd/boxed.h>
 #include <ustd/fs.h>
@@ -13,7 +17,4 @@ export {
 #include <ustd/test.h>
 #include <ustd/thread.h>
 #include <ustd/time.h>
-
-#ifndef __INTELLISENSE__
 }
-#endif

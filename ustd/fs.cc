@@ -1,5 +1,4 @@
 #include "config.h"
-#include "ustd/fs.h"
 
 namespace ustd::fs
 {

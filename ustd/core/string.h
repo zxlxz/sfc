@@ -11,15 +11,10 @@ using option::Option;
 template<>
 class Vec<char, 0>: public Slice<char>
 {
-  public:
-    using Slice<char>::_data;
-    using Slice<char>::_size;
-    using Slice<char>::_capacity;
-
   public:    
     // method: clear
     fn clear() -> void {
-        Slice::_size = 0;
+        this->_size = 0;
     }
 
     // method: push
@@ -32,7 +27,7 @@ class Vec<char, 0>: public Slice<char>
     // method: pop
     fn pop () noexcept -> Option<char> {
         using Option = Option<char>;
-        return _size != 0 ? Option::Some(_data[--_size]) : Option::None();
+        return this->_size != 0 ? Option::Some(this->_data[--this->_size]) : Option::None();
     }
 
     // method: push str
@@ -48,7 +43,7 @@ class Vec<char, 0>: public Slice<char>
     // method: push str
     template<u32 N>
     fn push_str(const char (&s)[N]) noexcept -> bool {
-        return push_str(s, N - 1);
+        return push_str(static_cast<const char*>(s), N - 1);
     }
 
   protected:
@@ -57,11 +52,11 @@ class Vec<char, 0>: public Slice<char>
     {}
 
     fn push_str(const char* s, u32 n) -> bool {
-        if (_size + n > _capacity) { return false; }
+        if (this->_size + n > _capacity) { return false; }
 
-        let p = _data + _size;
+        let p = this->_data + this->_size;
         for(u32 i = 0; i < n; ++i) { p[i] = s[i]; }
-        _size += n;
+        this->_size += n;
 
         return true;
     }
@@ -71,9 +66,6 @@ template<usize N>
 class Vec<char, N>: public Vec<char>
 {
   public:
-    using Slice<char>::_data;
-    using Slice<char>::_size;
-    using Slice<char>::_capacity;
     char _buf[N];
 
     // constructor[default]

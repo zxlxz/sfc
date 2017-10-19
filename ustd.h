@@ -1,17 +1,21 @@
 #pragma once
 
-#ifndef __INTELLISENSE__
-#   define _USED_MODULE_
+#ifndef _USTD_MODULE
+#   define _USTD_MODULE 1
 #endif
 
-#ifdef _USTD_MODULE_
-module ustd;
+/* ustd: c++->rust */
 #define let const auto
 #define mut auto
 #define fn  auto
-#endif
+#define use using
 
-#ifndef _USTD_MODULE_
+#define _ustd_unittest_var(...)  _ustd_unittest_var1 __VA_ARGS__
+#define _ustd_unittest_var1(id)  _ustd_test_##id
+#define unittest(...)            []]  let _ustd_unittest_var((__COUNTER__)) = ::ustd::test::scheduler().install<struct _>(#__VA_ARGS__) << [
+
+/* ustd: headers */
+#if _USTD_MODULE==0
 #include <ustd/core.h>
 #include <ustd/boxed.h>
 #include <ustd/fs.h>
@@ -22,3 +26,10 @@ module ustd;
 #include <ustd/thread.h>
 #include <ustd/time.h>
 #endif
+
+/* ustd: module */
+#if _USTD_MODULE==1
+import ustd;
+#endif
+
+

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ustd/core/_.h>
-
 namespace ustd
 {
 
@@ -128,10 +126,10 @@ template<typename T> __forceinline constexpr fn as_fwd(val_t<T>&& ref) noexcept 
 #pragma endregion
 
 #pragma region funcs: numeric convert
-__forceinline fn to_uint(i8  val) -> u8  { return u8(val); }
-__forceinline fn to_uint(i16 val) -> u16 { return u16(val); }
-__forceinline fn to_uint(i32 val) -> u32 { return u32(val); }
-__forceinline fn to_uint(i64 val) -> u64 { return u64(val); }
+__forceinline fn to_uint(i8  val) -> u8  { return static_cast<u8> (val); }
+__forceinline fn to_uint(i16 val) -> u16 { return static_cast<u16>(val); }
+__forceinline fn to_uint(i32 val) -> u32 { return static_cast<u32>(val); }
+__forceinline fn to_uint(i64 val) -> u64 { return static_cast<u64>(val); }
 
 __forceinline fn to_uint(u8  val) -> u8  { return val; }
 __forceinline fn to_uint(u16 val) -> u16 { return val; }
@@ -143,10 +141,10 @@ __forceinline fn to_sint(i16 val) -> i16 { return val; }
 __forceinline fn to_sint(i32 val) -> i32 { return val; }
 __forceinline fn to_sint(i64 val) -> i64 { return val; }
 
-__forceinline fn to_sint(u8  val) -> i8  { return i8(val); }
-__forceinline fn to_sint(u16 val) -> i16 { return i16(val); }
-__forceinline fn to_sint(u32 val) -> i32 { return i32(val); }
-__forceinline fn to_sint(u64 val) -> i64 { return i64(val); }
+__forceinline fn to_sint(u8  val) -> i8  { return static_cast<i8 >(val); }
+__forceinline fn to_sint(u16 val) -> i16 { return static_cast<i16>(val); }
+__forceinline fn to_sint(u32 val) -> i32 { return static_cast<i32>(val); }
+__forceinline fn to_sint(u64 val) -> i64 { return static_cast<i64>(val); }
 #pragma endregion
 
 #pragma region funcs: numeric

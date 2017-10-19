@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ustd/core/_.h>
 #include <ustd/core/type.h>
 #include <ustd/core/tuple.h>
 #include <ustd/core/trait.h>

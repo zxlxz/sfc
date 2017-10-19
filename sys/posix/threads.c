@@ -6,7 +6,7 @@ typedef pthread_t       thrd_t;
 typedef pthread_mutex_t mtx_t;
 typedef pthread_cond_t  cnd_t;
 
-#define _THREADS_C
+#define _THREAD_TYPES
 #include "posix/threads.h"
 
 #pragma region thread

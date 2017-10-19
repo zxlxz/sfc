@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ustd/core/_.h>
 #include <ustd/core/str.h>
 
 namespace ustd
