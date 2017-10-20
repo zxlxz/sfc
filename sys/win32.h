@@ -82,6 +82,7 @@ inline int ustd_isatty(int fd) {
 
 /* === time === */
 typedef enum {
+    CLOCK_REALTIME,
     CLOCK_MONOTONIC
 } clockid_t;
 
@@ -89,6 +90,8 @@ int clock_gettime_monotonic(struct timespec* tp);
 
 inline int clock_gettime(clockid_t clk_id, struct timespec* tp) {
     switch(clk_id) {
+    case CLOCK_REALTIME:
+        return timespec_get(tp, TIME_UTC);
     case CLOCK_MONOTONIC:
         return clock_gettime_monotonic(tp);
     default:

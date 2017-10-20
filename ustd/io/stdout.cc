@@ -64,14 +64,15 @@ static fn write(int fid, str s) -> Result<usize> {
     }
 }
 
+let _g_instant = time::Instant::now();
 static fn writeln(int fid, str s) -> Result<usize> {
     using Result = Result<usize>;
 
     vec::Vec<char, 4096> line_buf;
 
     if (term::is_term(fid)) {
-        let  time_dur = time::Duration::since_proc_start();
-        let  time_secs = time_dur._secs + time_dur._nanos*1e-9;
+        let  time_dur  = _g_instant.elapsed();
+        let  time_secs = time_dur.as_secs() + time_dur.subsec_nanos()*1e-9;
         let  term_columns = term::columns(fid);
 
         if (term_columns > 0 && time_secs > 0.0) {

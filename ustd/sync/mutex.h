@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ustd/core.h>
-#include <ustd/detail/thread_types.h>
+#include <ustd/os/threads.h>
 
 namespace ustd::sync
 {
@@ -13,10 +13,10 @@ enum LockError
     Other
 };
 
-auto _mtx_init   (mtx_t *mtx) -> LockError;
-auto _mtx_destroy(mtx_t* mtx) -> void;
-auto _mtx_lock   (mtx_t* mtx) -> LockError;
-auto _mtx_unlock (mtx_t* mtx) -> LockError;
+auto _mtx_init   (os::mtx_t *mtx) -> LockError;
+auto _mtx_destroy(os::mtx_t* mtx) -> void;
+auto _mtx_lock   (os::mtx_t* mtx) -> LockError;
+auto _mtx_unlock (os::mtx_t* mtx) -> LockError;
 
 template<class U>   using LockResult = result::Result<U, typename U::Error>;
 template<class T>   class Mutex;
@@ -43,8 +43,8 @@ class Mutex
   protected:
     friend class MutexGuard<T>;
 
-    mtx_t _handle;
-    T     _value;
+    os::mtx_t   _handle;
+    T           _value;
 };
 
 template<class T=int>

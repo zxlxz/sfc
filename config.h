@@ -1,12 +1,13 @@
 #ifndef _USTD_CONFIG_H
 #define _USTD_CONFIG_H
 
-#include "ustd/detail/thread_types.h"
-using thrd_t = ustd::thrd_t;
-using mtx_t  = ustd::mtx_t;
-using cnd_t  = ustd::cnd_t;
+#include "ustd/os.h"
+#define _THREAD_TYPES
 
-#define _THREADS_C
+using thrd_t = ustd::os::thrd_t;
+using mtx_t  = ustd::os::mtx_t;
+using cnd_t  = ustd::os::cnd_t;
+
 #if     defined(_WIN32)
 #include "sys/win32.h"
 #elif   defined(__linux)

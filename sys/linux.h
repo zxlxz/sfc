@@ -2,7 +2,6 @@
 
 #ifdef __linux
 
-
 /* stdc */
 #include <stdio.h>
 #include <time.h>

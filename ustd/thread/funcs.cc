@@ -4,7 +4,7 @@ namespace ustd::thread
 {
 
 fn sleep(time::Duration dur) -> void {
-    let ts_dur = timespec{ dur._secs , dur._nanos };
+    let ts_dur = timespec{ time_t(dur.as_secs()) , long(dur.subsec_nanos()) };
     mut ts_rem = timespec{};
     let ret = ::thrd_sleep(&ts_dur, &ts_rem);
     (void)ret;

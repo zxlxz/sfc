@@ -36,10 +36,10 @@ class File
     template<typename P> static fn create(P path) noexcept;
 
     /* read */
-    fn read(Slice<u8> buf) noexcept -> Result<usize>;
+    fn read(View<u8> buf) noexcept -> Result<usize>;
 
     /* write*/
-    fn write(Slice<const u8> buf) noexcept -> Result<usize>;
+    fn write(View<const u8> buf) noexcept -> Result<usize>;
 
   private:
     static fn _close (int  handle)           noexcept -> void;

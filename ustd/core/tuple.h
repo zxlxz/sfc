@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ustd/core/type.h>
-#include <ustd/core/slice.h>
+#include <ustd/core/view.h>
 #include <ustd/core/str.h>
 #include <ustd/core/macro.h>
 
@@ -41,8 +41,8 @@ template<USTD_LOOP_19(ustd_tuple_decl) class T19> struct Tuple<USTD_LOOP_19(ustd
 #undef ustd_tuple_type
 #undef ustd_tuple_body
 
-template<class T>           struct _tuple_element           { using type = T;           };
-template<class T, usize N>  struct _tuple_element<T(&)[N]>  { using type = Slice<T, 0>; };
+template<class T>           struct _tuple_element           { using type = T;       };
+template<class T, usize N>  struct _tuple_element<T(&)[N]>  { using type = View<T>; };
 
 template<class ...T>
 fn tuple(T&& ...args) -> Tuple<typename _tuple_element<T>::type ...> {

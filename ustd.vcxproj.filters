@@ -36,6 +36,12 @@
     <ClCompile Include="ustd\thread\funcs.cc">
       <Filter>ustd\thread</Filter>
     </ClCompile>
+    <ClCompile Include="ustd\math\vop.cc">
+      <Filter>ustd\math</Filter>
+    </ClCompile>
+    <ClCompile Include="ustd\math\funcs.cc">
+      <Filter>ustd\math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ustd\core\array.h">
@@ -54,9 +60,6 @@
       <Filter>ustd\core</Filter>
     </ClInclude>
     <ClInclude Include="ustd\core\result.h">
-      <Filter>ustd\core</Filter>
-    </ClInclude>
-    <ClInclude Include="ustd\core\slice.h">
       <Filter>ustd\core</Filter>
     </ClInclude>
     <ClInclude Include="ustd\core\str.h">
@@ -110,9 +113,6 @@
     <ClInclude Include="ustd\boxed.h">
       <Filter>ustd</Filter>
     </ClInclude>
-    <ClInclude Include="ustd\detail\thread_types.h">
-      <Filter>ustd\detail</Filter>
-    </ClInclude>
     <ClInclude Include="ustd\sync\rwlock.h">
       <Filter>ustd\sync</Filter>
     </ClInclude>
@@ -135,6 +135,39 @@
     <ClInclude Include="ustd\thread\funcs.h">
       <Filter>ustd\thread</Filter>
     </ClInclude>
+    <ClInclude Include="ustd\core\iter.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\os.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\sync\condvar.h">
+      <Filter>ustd\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\os\default.h">
+      <Filter>ustd\os</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\os\threads.h">
+      <Filter>ustd\os</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\math\vop.h">
+      <Filter>ustd\math</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\core\view.h">
+      <Filter>ustd\core</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\math\funcs.h">
+      <Filter>ustd\math</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\math.h">
+      <Filter>ustd</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\math\array.h">
+      <Filter>ustd\math</Filter>
+    </ClInclude>
+    <ClInclude Include="ustd\math\view.h">
+      <Filter>ustd\math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ustd">
@@ -142,9 +175,6 @@
     </Filter>
     <Filter Include="ustd\core">
       <UniqueIdentifier>{c7d5bdda-520f-47a3-ab1e-2c885114e324}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ustd\detail">
-      <UniqueIdentifier>{89b55d50-01f3-4a2e-bcd5-f69b7be9940c}</UniqueIdentifier>
     </Filter>
     <Filter Include="ustd\sync">
       <UniqueIdentifier>{1c538611-ee7a-461c-93fe-33e8852201e6}</UniqueIdentifier>
@@ -154,6 +184,15 @@
     </Filter>
     <Filter Include="ustd\thread">
       <UniqueIdentifier>{9d82daec-0bc1-4988-b4de-abc7f3931c15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\os">
+      <UniqueIdentifier>{89b55d50-01f3-4a2e-bcd5-f69b7be9940c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\collections">
+      <UniqueIdentifier>{63d715cf-2d0c-4952-ba8b-72148553a499}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ustd\math">
+      <UniqueIdentifier>{b111af63-5e17-407d-ad8a-267893eef53b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

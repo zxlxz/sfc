@@ -55,8 +55,8 @@ class Result<void, void, void, void >
         return _type == Type::Ok ? UResult::Ok() : UResult::Err(op());
     }
 
-    template<typename ...Targ>
-    fn except(str fmt, const Targ& ...args) const -> void {
+    template<typename ...T>
+    fn except(str fmt, const T& ...args) const -> void {
         if (_type != Type::Ok) { panic(fmt, args...); }
     }
 
@@ -138,8 +138,8 @@ class Result<T, E, void, $value>
         return;
     }
 
-    template<typename ...Targ>
-    fn except(str fmt, const Targ& ...args) const -> void {
+    template<typename ...T>
+    fn except(str fmt, const T& ...args) const -> void {
         if (_type != Type::Ok) { panic(fmt, args...); }
     }
 
@@ -246,8 +246,8 @@ class Result<T, E, $value, $value>
         return _type == Type::Ok ? _ok : def;
     }
 
-    template<typename ...Targ>
-    fn except(str fmt, const Targ& ...args) const -> T {
+    template<typename ...U>
+    fn except(str fmt, const U& ...args) const -> T {
         if (_type != Type::Ok)  { panic(fmt, args...); }
         return _ok;
     }
@@ -352,8 +352,8 @@ class Result<T, E, $class, $value>
         return _type == Type::Ok ? as_mov(_ok) : def;
     }
 
-    template<typename ...Targ>
-    fn except(str fmt, const Targ& ...args)&& -> T {
+    template<typename ...U>
+    fn except(str fmt, const U& ...args)&& -> T {
         if (_type != Type::Ok)  { panic(fmt, args...); }
         return _ok;
     }

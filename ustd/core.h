@@ -4,7 +4,7 @@
 #include <ustd/core/tuple.h>
 #include <ustd/core/trait.h>
 #include <ustd/core/array.h>
-#include <ustd/core/slice.h>
+#include <ustd/core/view.h>
 #include <ustd/core/str.h>
 
 #include <ustd/core/option.h>

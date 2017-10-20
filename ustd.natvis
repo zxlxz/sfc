@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- ustd::Slice<T, N=0>-->
-  <Type Name="ustd::Slice&lt;*,0&gt;">
+  <!-- ustd::View<T, N=0>-->
+  <Type Name="ustd::View&lt;*,0&gt;">
     <Expand>
       <Item Name="[size]">_size</Item>
       <ArrayItems>
@@ -12,22 +12,22 @@
     </Expand>
   </Type>
 
-  <!-- ustd::Slice<T, N> -->
-  <Type Name="ustd::Slice&lt;*,*&gt;">
+  <!-- ustd::View<T, N> -->
+  <Type Name="ustd::View&lt;*,*&gt;">
     <Expand>
-      <Item Name="[size]">_size</Item>
+      <Item Name="[dims]">_dims</Item>
       <Item Name="[step]">_step</Item>
       <ArrayItems>
         <Direction>Backward</Direction>
         <Rank>$T2==0?1:$T2</Rank>
-        <Size>_size[$i]</Size>
+        <Size>_dims[$i]</Size>
         <ValuePointer>_data</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
 
-  <!--str = ustd::Slice<const char, 0>-->
-  <Type Name="ustd::Slice&lt;char const,0&gt;">
+  <!--str = ustd::View<const char, 0>-->
+  <Type Name="ustd::View&lt;char const,0&gt;">
     <DisplayString Condition="_size !=0">{_data, [_size]s}</DisplayString>
     <DisplayString Condition="_size ==0">{{nullptr}} </DisplayString>
     <Expand>
@@ -38,8 +38,8 @@
     </Expand>
   </Type>
 
-  <!--str = ustd::Slice<char, 0>-->
-  <Type Name="ustd::slice&lt;char,0&gt;">
+  <!--str = ustd::View<char, 0>-->
+  <Type Name="ustd::View&lt;char,0&gt;">
     <DisplayString Condition="_size !=0">{_data, [_size]s}</DisplayString>
     <DisplayString Condition="_size ==0">{{nullptr}} </DisplayString>
     <Expand>

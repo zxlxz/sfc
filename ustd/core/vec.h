@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ustd/core/slice.h>
+#include <ustd/core/view.h>
 #include <ustd/core/option.h>
 
 namespace ustd::vec
@@ -41,11 +41,13 @@ class Vec: public Vec<T, 0>
 };
 
 template<typename T>
-class Vec<T, 0>: public Slice<T>
+class Vec<T, 0>: public View<T>
 {
+    using base = View<T>;
+
   protected:
     Vec(T* ptr, u32 length, u32 capacity) noexcept
-        : Slice<T> { ptr, length, capacity }
+        : base{ ptr, length, capacity }
     {}
        
   public:
@@ -54,19 +56,19 @@ class Vec<T, 0>: public Slice<T>
         // do: clear elements
         if (!$is<$value, T>) {
             for (u32 i = 0; i < Slice<T>::_size; ++i) {
-                Slice<T>::_data[i].~T();
+                base::_data[i].~T();
             }
         }
-        Slice<T>::_size = 0;
+        base::_size = 0;
     }
 
     // method: push
     template<typename U>
     fn push(U&& u) noexcept -> bool {
-        if (Slice<T>::_size + 1 >= Slice<T>::_capacity) {
+        if (base::_size + 1 >= base::_capacity) {
             return false;
         }
-        let ptr = &Slice<T>::_data[Slice<T>::_size++];
+        let ptr = &base::_data[base::_size++];
         $new(ptr, as_fwd<U>(u));
 
         return true;
@@ -77,7 +79,7 @@ class Vec<T, 0>: public Slice<T>
         if (this->_size == 0) {
             return {};
         }
-        let ret = Option<T>{as_mov(Slice<T>::_data[Slice<T>::_size]) };
+        let ret = Option<T>{as_mov(base::_data[base::_size]) };
         return ret;
     }
 };

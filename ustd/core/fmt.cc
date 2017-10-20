@@ -4,7 +4,7 @@ namespace ustd::fmt
 {
 
 #pragma region fmt: str
-static void format_str_impl(const Formatter& spec, String& outbuf, const char text[], u32 text_len) {
+static void fmt_str_impl(const Formatter& spec, String& outbuf, const char text[], u32 text_len) {
     let num_width = i32(spec.width);
     let num_chars = i32(text_len);
 
@@ -52,8 +52,8 @@ static void format_str_impl(const Formatter& spec, String& outbuf, const char te
 }
 
 template<u32 N>
-static fn format_str_impl(const Formatter& spec, String& outbuf, const char (&text)[N]) -> void {
-    format_str_impl(spec, outbuf, text, N-1);
+static fn fmt_str_impl(const Formatter& spec, String& outbuf, const char (&text)[N]) -> void {
+    fmt_str_impl(spec, outbuf, text, N-1);
 }
 
 #pragma endregion
@@ -115,7 +115,7 @@ static fn count_digits(u8 n) -> u32 {
     return count_digits(u32(n));
 }
 
-static fn format_int_box(const Formatter& spec, String& outbuf, const char prefix[], u32 num_prefix, u32 num_digits) -> char* {
+static fn fmt_int_box(const Formatter& spec, String& outbuf, const char prefix[], u32 num_prefix, u32 num_digits) -> char* {
     let s = outbuf.data() + outbuf.len();
 
     // check: spec.width is small
@@ -187,7 +187,7 @@ END:
     return p;
 }
 
-static fn format_int_body(char* p, u64 value) -> void {
+static fn fmt_int_body(char* p, u64 value) -> void {
     static const char digits[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
@@ -213,7 +213,7 @@ static fn format_int_body(char* p, u64 value) -> void {
 }
 
 template<typename Tint>
-static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> void {
+static fn fmt_int_impl(const Formatter& spec, String& outbuf, Tint value) -> void {
     let abs_value = to_uint(value > 0 ? Tint(value) : Tint(0 - value));
 
     char prefix[4];
@@ -235,8 +235,8 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
     switch (spec.type) {
     case 0: case 'd': {
         let num_digits = count_digits(abs_value);
-        let p          = format_int_box(spec, outbuf, prefix, num_prefix, num_digits);
-        format_int_body(p, abs_value);
+        let p          = fmt_int_box(spec, outbuf, prefix, num_prefix, num_digits);
+        fmt_int_body(p, abs_value);
         break;
     }
     case 'x': case 'X': {
@@ -253,7 +253,7 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
 
         let digits = spec.type == 'x' ? "0123456789abcdef" : "0123456789ABCDEF";
 
-        mut p = format_int_box(spec, outbuf, prefix, u32(num_prefix), num_digits);
+        mut p = fmt_int_box(spec, outbuf, prefix, u32(num_prefix), num_digits);
         mut n = abs_value;
         do {
             *--p = digits[n & 0xf];
@@ -272,7 +272,7 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
             } while ((n >>= 3) != 0);
         }
 
-        mut p = format_int_box(spec, outbuf, prefix, num_prefix, num_digits);
+        mut p = fmt_int_box(spec, outbuf, prefix, num_prefix, num_digits);
         mut n = abs_value;
         do {
             *--p = char('0' + (n & 7));
@@ -291,7 +291,7 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
             } while ((n >>= 1) != 0);
         }
 
-        mut p = format_int_box(spec, outbuf, prefix, num_prefix, num_digits);
+        mut p = fmt_int_box(spec, outbuf, prefix, num_prefix, num_digits);
         mut n = abs_value;
         do {
             *--p = char('0' + (n & 1));
@@ -299,7 +299,7 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
         break;
     }
     case 'c' : {
-        mut p = format_int_box(spec, outbuf, prefix, num_prefix, 1);
+        mut p = fmt_int_box(spec, outbuf, prefix, num_prefix, 1);
         *--p = char(value);
         break;
     }
@@ -312,13 +312,13 @@ static fn format_int_impl(const Formatter& spec, String& outbuf, Tint value) -> 
 
 #pragma region fmt: float
 template<typename Tfloat>
-static fn format_float_impl(const Formatter& spec, String& outbuf, Tfloat value) -> void {
+static fn fmt_float_impl(const Formatter& spec, String& outbuf, Tfloat value) -> void {
     if (isinf(value)) {
-        format_str_impl(spec, outbuf, "inf");
+        fmt_str_impl(spec, outbuf, "inf");
         return;
     }
     if (isnan(value)) {
-        format_str_impl(spec, outbuf, "nan");
+        fmt_str_impl(spec, outbuf, "nan");
         return;
     }
 
@@ -353,7 +353,7 @@ static fn format_float_impl(const Formatter& spec, String& outbuf, Tfloat value)
     }
 
     if (p == buff) {
-        format_str_impl(spec, outbuf, buff, u32(num_digits));
+        fmt_str_impl(spec, outbuf, buff, u32(num_digits));
     }
     else {
         outbuf._size += num_digits;
@@ -362,7 +362,7 @@ static fn format_float_impl(const Formatter& spec, String& outbuf, Tfloat value)
 #pragma endregion
 
 #pragma region fmt: parse
-fn _sformat_parse(String& outbuf, str& fmtstrs, str *fmtstr, i32* idx) -> bool {
+fn _sfmt_parse(String& outbuf, str& fmtstrs, str *fmtstr, i32* idx) -> bool {
     // ......{........}....
     //       ^        ^    ^
     //       p        q    e
@@ -477,46 +477,46 @@ fn Formatter::from_str(str text) -> Formatter {
     return spec;
 }
 
-fn Formatter::sformat_val(String& outbuf, i8   val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, u8   val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, i16  val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, u16  val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, i32  val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, u32  val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, i64  val) const -> void { format_int_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, u64  val) const -> void { format_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, i8   val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, u8   val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, i16  val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, u16  val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, i32  val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, u32  val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, i64  val) const -> void { fmt_int_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, u64  val) const -> void { fmt_int_impl(*this, outbuf, val); }
 
-fn Formatter::sformat_val(String& outbuf, f32  val) const -> void { format_float_impl(*this, outbuf, val); }
-fn Formatter::sformat_val(String& outbuf, f64  val) const -> void { format_float_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, f32  val) const -> void { fmt_float_impl(*this, outbuf, val); }
+fn Formatter::sfmt_val(String& outbuf, f64  val) const -> void { fmt_float_impl(*this, outbuf, val); }
 
-fn Formatter::sformat_val(String& outbuf, str  val) const -> void {
+fn Formatter::sfmt_val(String& outbuf, str  val) const -> void {
     if (this->type != 's') {
         if (this->width < 2) {
-            format_str_impl(*this, outbuf, val.data(), val.len());
+            fmt_str_impl(*this, outbuf, val.data(), val.len());
         }
         else {
             mut tmp = *this;
             tmp.width -= 2;
-            format_str_impl(tmp, outbuf, val.data(), val.len());
+            fmt_str_impl(tmp, outbuf, val.data(), val.len());
         }
         outbuf.push('"');
     }
     else {
-        format_str_impl(*this, outbuf, val.data(), val.len());
+        fmt_str_impl(*this, outbuf, val.data(), val.len());
     }
 }
 
-fn Formatter::sformat_val(String& outbuf, bool val) const -> void {
+fn Formatter::sfmt_val(String& outbuf, bool val) const -> void {
     val
-        ? format_str_impl(*this, outbuf, "true")
-        : format_str_impl(*this, outbuf, "false");
+        ? fmt_str_impl(*this, outbuf, "true")
+        : fmt_str_impl(*this, outbuf, "false");
 }
 
 #pragma endregion
 
 #pragma region unittest
 
-[unittest(Formatter::sformat_val<i32>)]
+[unittest(Formatter::sfmt_val<i32>)]
 {
     let num = 12345;
     println("    fmt |{^20s}|{^20s}|{^20s}|{^20s}|", ">", "<", "^", "~");
@@ -527,7 +527,7 @@ fn Formatter::sformat_val(String& outbuf, bool val) const -> void {
     println("    HEX |{>20X}|{<20X}|{^20X}|{20X}|",  num, num, num, num);
 };
 
-[unittest(Formatter::sformat_val<f32>)]
+[unittest(Formatter::sfmt_val<f32>)]
 {
     let num = 123.45;
     println("    fmt  |{^20s}|{^20s}|{^20s}|{^20s}|",        ">", "<", "^", "~");
@@ -537,7 +537,7 @@ fn Formatter::sformat_val(String& outbuf, bool val) const -> void {
     println("    20.2f|{>20.2f}|{<20.2f}|{^20.2f}|{20.2f}|", num, num, num, num);
 };
 
-[unittest(Formatter::sformat_tuple)]
+[unittest(Formatter::sfmt_tuple)]
 {
     let t = tuple("a", 1, "b", 2);
     println("    tuple| {}", t);

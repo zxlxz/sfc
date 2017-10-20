@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ustd/boxed.h>
-#include <ustd/detail/thread_types.h>
+#include <ustd/os/threads.h>
 
 namespace ustd::thread
 {
@@ -18,7 +18,7 @@ class JoinHandle;
 
 struct Thread
 {
-    thrd_t _handle;
+    os::thrd_t  _handle;
 
     fn id() const -> int;
 
@@ -28,7 +28,7 @@ private:
     friend struct Builder;
     template<class T> friend class JoinHandle;
 
-    Thread(thrd_t handle) : _handle(handle) {}
+    Thread(os::thrd_t handle) : _handle(handle) {}
 
     fn _detach() -> void;
 };

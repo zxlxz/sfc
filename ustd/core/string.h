@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ustd/core/vec.h>
+#include <ustd/core/str.h>
 #include <ustd/core/option.h>
 
 namespace ustd::vec
@@ -9,7 +9,7 @@ namespace ustd::vec
 using option::Option;
 
 template<>
-class Vec<char, 0>: public Slice<char>
+class Vec<char, 0>: public View<char>
 {
   public:    
     // method: clear
@@ -31,12 +31,12 @@ class Vec<char, 0>: public Slice<char>
     }
 
     // method: push str
-    fn push_str(Slice<char> v) noexcept -> bool {
+    fn push_str(View<char> v) noexcept -> bool {
         return push_str(v.data(), v.len());
     }
 
     // method: push str
-    fn push_str(Slice<const char> v) noexcept -> bool {
+    fn push_str(View<const char> v) noexcept -> bool {
         return push_str(v.data(), v.len());
     }
 
@@ -48,7 +48,7 @@ class Vec<char, 0>: public Slice<char>
 
   protected:
     Vec(char* ptr, u32 length, u32 capacity) noexcept
-        : Slice<char>{ ptr, length, capacity }
+        : View<char>{ ptr, length, capacity }
     {}
 
     fn push_str(const char* s, u32 n) -> bool {

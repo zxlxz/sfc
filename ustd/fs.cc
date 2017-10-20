@@ -58,7 +58,7 @@ fn File::_close(int handle) noexcept -> void {
     ::close(handle);
 }
 
-fn File::read(Slice<u8> buf) noexcept ->Result<usize> {
+fn File::read(View<u8> buf) noexcept ->Result<usize> {
     using Result = Result<usize>;
 
     let ret = ::read(_handle, buf.data(), buf.capacity());
@@ -79,7 +79,7 @@ fn File::read(Slice<u8> buf) noexcept ->Result<usize> {
     return Result::Ok(usize(ret));
 }
 
-fn File::write(Slice<const u8> buf) noexcept ->Result<usize> {
+fn File::write(View<const u8> buf) noexcept ->Result<usize> {
     using Result = Result<usize>;
 
     let ret = ::write(_handle, buf.data(), buf.len());

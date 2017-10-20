@@ -158,13 +158,8 @@ constexpr fn sum(Ta a, Tb b, Tc... c) {
     return a + sum(b, c...);
 }
 
-template<typename Tv>
-constexpr fn vsum($usize<>, const Tv& v) {
-    return decltype(v[0])(0);
-}
-
 template<usize ...Idim, typename Tv>
-constexpr fn vsum($usize<Idim...>, const Tv& v) {
+constexpr fn isum($usize<Idim...>, const Tv& v) {
     return sum(v[Idim]...);
 }
 
@@ -173,37 +168,32 @@ constexpr fn prod(Ta a) {
     return a;
 }
 
-template<typename Ta, typename Tb, typename ...Tc>
-constexpr fn prod(Ta a, Tb b, Tc... c) {
+template<typename T, typename ...U>
+constexpr fn prod(T a, T b, U... c) {
     return a * prod(b, c...);
 }
 
-template<typename Tv>
-constexpr fn vprod($usize<>, const Tv& v) {
-    return decltype(v[0])(1);
+template<usize ...I, typename V>
+constexpr fn iprod($usize<I...>, const V& v) {
+    return prod(v[I]...);
 }
 
-template<usize ...Idim, typename Tv>
-constexpr fn vprod($usize<Idim...>, const Tv& v) {
-    return prod(v[Idim]...);
-}
-
-template<typename Ta>
-constexpr fn (max)(Ta a) {
+template<typename T>
+constexpr fn (max)(T a) -> T{
     return a;
 }
 
-template<typename Ta, typename Tb, typename ...Tc>
-constexpr fn (max)(Ta a, Tb b, Tc... c) {
+template<typename T, typename ...U>
+constexpr fn (max)(T a, T b, U... c) {
     return a > (max)(b, c...) ? a : (max)(b, c...);
 }
 
-template<typename Ta>
-constexpr fn (min)(Ta a) {
+template<typename T>
+constexpr fn (min)(T a) {
     return a;
 }
-template<typename Ta, typename Tb, typename ...Tc>
-constexpr fn (min)(Ta a, Tb b, Tc... c) {
+template<typename T, typename ...U>
+constexpr fn (min)(T a, T b, U... c) {
     return a < (min)(b, c...) ? a : (min)(b, c...);
 }
 #pragma endregion
@@ -225,6 +215,13 @@ fn $for(F&& f) -> void {
     _$for($usize<0>{}, $usize<N>{}, f);
 }
 
+#pragma endregion
+
+#pragma region $ver
+template<usize Major, usize Minor=0> struct $ver;
+template<usize Major, usize Minor>   struct $ver            : $ver<Major, Minor - 1> {};
+template<usize Major>                struct $ver<Major, 0>  : $ver<Major - 1, 0> {};
+template<>                           struct $ver<0, 0> {};
 #pragma endregion
 
 }

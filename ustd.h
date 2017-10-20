@@ -10,9 +10,9 @@
 #define fn  auto
 #define use using
 
-#define _ustd_unittest_var(...)  _ustd_unittest_var1 __VA_ARGS__
-#define _ustd_unittest_var1(id)  _ustd_test_##id
-#define unittest(...)            []]  let _ustd_unittest_var((__COUNTER__)) = ::ustd::test::scheduler().install<struct _>(#__VA_ARGS__) << [
+#define _ustd_test_var(...)  _ustd_test_var1 __VA_ARGS__
+#define _ustd_test_var1(id)  _ustd_test_##id
+#define unittest(...)        []] int _ustd_test_var((__LINE__)) = ::ustd::test::scheduler().install<struct _>(#__VA_ARGS__) << [
 
 /* ustd: headers */
 #if _USTD_MODULE==0
@@ -20,6 +20,7 @@
 #include <ustd/boxed.h>
 #include <ustd/fs.h>
 #include <ustd/io.h>
+#include <ustd/math.h>
 #include <ustd/path.h>
 #include <ustd/sync.h>
 #include <ustd/test.h>

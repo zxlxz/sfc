@@ -21,86 +21,69 @@ struct Formatter
    static fn from_str(str spec) -> Formatter;
 
     template<class T> 
-    fn sformat(String& outbuf, const T& val) const -> void {
+    fn sfmt(String& outbuf, const T& val) const -> void {
         using U = $cond<$is<$struct, T> || $is<$class, T>, $class, void>;
-        _sformat_switch(outbuf, val, $type<U>{});
+        _sfmt_switch(outbuf, val, $type<U>{});
     }
 
     template<usize N>
-    fn sformat(String& outbuf, const char(&s)[N]) const -> void {
-        sformat_val(outbuf, str(s));
+    fn sfmt(String& outbuf, const char(&s)[N]) const -> void {
+        sfmt_val(outbuf, str(s));
     }
 
-    template<class T, usize N>
-    fn sformat(String& outbuf, const Slice<T,N>& s) const -> void {
-        sformat_slice(outbuf, s);
-    }
-
-    template<usize N>
-    fn sformat(String& outbuf, const Slice<char, N>& s) const -> void {
-        sformat_val(outbuf, str(s));
-    }
-
-    template<usize N>
-    fn sformat(String& outbuf, const Slice<const char, N>& s) const -> void {
-        sformat_val(outbuf, str(s));
+    template<class T>
+    fn sfmt(String& outbuf, const View<T>& s) const -> void {
+        sfmt_view(outbuf, s);
     }
 
     template<class ...T>
-    fn sformat(String& outbuf, const Tuple<T...>& v) const -> void {
-        sformat_tuple(outbuf, v);
+    fn sfmt(String& outbuf, const Tuple<T...>& v) const -> void {
+        sfmt_tuple(outbuf, v);
     }
   public:
-   fn sformat_val(String& outbuf, i8   val) const -> void;
-   fn sformat_val(String& outbuf, u8   val) const -> void;
-   fn sformat_val(String& outbuf, i16  val) const -> void;
-   fn sformat_val(String& outbuf, u16  val) const -> void;
-   fn sformat_val(String& outbuf, i32  val) const -> void;
-   fn sformat_val(String& outbuf, u32  val) const -> void;
-   fn sformat_val(String& outbuf, i64  val) const -> void;
-   fn sformat_val(String& outbuf, u64  val) const -> void;
-   fn sformat_val(String& outbuf, f32  val) const -> void;
-   fn sformat_val(String& outbuf, f64  val) const -> void;
-   fn sformat_val(String& outbuf, bool val) const -> void;
-   fn sformat_val(String& outbuf, str  val) const -> void;
+   fn sfmt_val(String& outbuf, i8   val) const -> void;
+   fn sfmt_val(String& outbuf, u8   val) const -> void;
+   fn sfmt_val(String& outbuf, i16  val) const -> void;
+   fn sfmt_val(String& outbuf, u16  val) const -> void;
+   fn sfmt_val(String& outbuf, i32  val) const -> void;
+   fn sfmt_val(String& outbuf, u32  val) const -> void;
+   fn sfmt_val(String& outbuf, i64  val) const -> void;
+   fn sfmt_val(String& outbuf, u64  val) const -> void;
+   fn sfmt_val(String& outbuf, f32  val) const -> void;
+   fn sfmt_val(String& outbuf, f64  val) const -> void;
+   fn sfmt_val(String& outbuf, bool val) const -> void;
+   fn sfmt_val(String& outbuf, str  val) const -> void;
 
     template<class T>
-    fn sformat_slice(String& outbuf, const Slice<T, 0>& v) -> void {
+    fn sfmt_view(String& outbuf, const View<T>& v) const -> void {
         outbuf.push('[');
         for (let& t : v) {
-            this->sformat(outbuf, t);
+            this->sfmt(outbuf, t);
             outbuf.push_str(", ");
         }
         outbuf.push(']');
     }
 
-    template<class T>
-    fn sformat_slice(String& outbuf, const Slice<T, 1>& v) -> void {
-
+    fn sfmt_view(String& outbuf, const View<const char>& v) const -> void {
+        sfmt_val(outbuf, str(v));
     }
 
-    template<class T>
-    fn sformat_slice(String& outbuf, const Slice<T, 2>& v) -> void {
-
+    fn sfmt_view(String& outbuf, const View<char>& v) const  -> void {
+        sfmt_val(outbuf, str(v));
     }
 
-    template<class T>
-    fn sformat_slice(String& outbuf, const Slice<T, 3>& v) -> void {
-
-    }
-
-    fn sformat_tuple(String& outbuf, const Tuple<>& v) const -> void {
+    fn sfmt_tuple(String& outbuf, const Tuple<>& v) const -> void {
         (void)v;
         outbuf.push_str("()");
     }
 
     template<class ...T>
-    fn sformat_tuple(String& outbuf, const Tuple<T...>& v) const -> void {
+    fn sfmt_tuple(String& outbuf, const Tuple<T...>& v) const -> void {
         enum { N = sizeof...(T) };
 
         outbuf.push('(');
         $for<N>([&](let idx) {
-            sformat(outbuf, v[idx]);
+            sfmt(outbuf, v[idx]);
             if (!$is<decltype(idx), $usize<N-1> >) {
                 outbuf.push_str(", ");
             }
@@ -109,32 +92,32 @@ struct Formatter
     }
   private:
     template<class T>
-    fn _sformat_switch(String& outbuf, const T& val, $type<void>) const -> void {
-        sformat_val(outbuf, val);
+    fn _sfmt_switch(String& outbuf, const T& val, $type<void>) const -> void {
+        sfmt_val(outbuf, val);
     }
 
     template<class T>
-    fn _sformat_switch(String& outbuf, const T& val, $type<$class>) const -> void {
+    fn _sfmt_switch(String& outbuf, const T& val, $type<$class>) const -> void {
         val.sfmt(outbuf, *this);
     }
 };
 
-fn _sformat_parse(String& outbuf, str& fmtstr, str *fmtspec, i32 *argidx) -> bool;
+fn _sfmt_parse(String& outbuf, str& fmtstr, str *fmtspec, i32 *argidx) -> bool;
 
-inline fn _sformat_val(i32 idx, String& outbuf, str fmtstr) -> void {
+inline fn _sfmt_val(i32 idx, String& outbuf, str fmtstr) -> void {
     (void)idx;
     (void)outbuf;
     (void)fmtstr;
 }
 
 template<class T, typename ...U>
-fn _sformat_val(i32 idx, String& outbuf, str fmtstr, const T& t, const U& ...args) -> void {
+fn _sfmt_val(i32 idx, String& outbuf, str fmtstr, const T& t, const U& ...args) -> void {
     if (idx != 0) {
-        _sformat_val(idx - 1, outbuf, fmtstr, args...);
+        _sfmt_val(idx - 1, outbuf, fmtstr, args...);
     }
     else {
         let fmtspec = Formatter::from_str(fmtstr);
-        fmtspec.sformat(outbuf, t);
+        fmtspec.sfmt(outbuf, t);
     }
 }
 
@@ -150,8 +133,8 @@ fn sformat(string::String& outbuf, str fmtstrs, const T& ...args) -> void {
     i32 arg_idx  = -1;
     str fmt_str = {};
 
-    while(fmt::_sformat_parse(outbuf, fmtstrs, &fmt_str, &arg_idx)) {
-        fmt::_sformat_val(arg_idx, outbuf, fmt_str, args...);
+    while(fmt::_sfmt_parse(outbuf, fmtstrs, &fmt_str, &arg_idx)) {
+        fmt::_sfmt_val(arg_idx, outbuf, fmt_str, args...);
     }
 }
 

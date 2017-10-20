@@ -49,12 +49,12 @@ class Worker
         for (let& pattern : patterns) {
             switch (pattern[0]) {
             case '+':
-                if (_name.starts_with(pattern(1, -1))) {
+                if (_name.starts_with(pattern.slice(1, -1))) {
                     ++cnts;
                 }
 
             case '-':
-                if (_name.starts_with(pattern(1, -1))) {
+                if (_name.starts_with(pattern.slice(1, -1))) {
                     return false;
                 }
             default:
