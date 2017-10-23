@@ -324,9 +324,9 @@ static fn fmt_float_impl(const Formatter& spec, String& outbuf, Tfloat value) ->
 
     let abs_value = value >= 0 ? value : -value;
 
-    char buff[256];
+    char tmp_buf[256];
 
-    let p = spec.width == 0 ? (outbuf.data() + outbuf.len()) : buff;
+    let p = spec.width == 0 ? (outbuf.data() + outbuf.len()) : tmp_buf;
     mut num_digits = 0;
 
     if (value < 0) {
@@ -341,19 +341,19 @@ static fn fmt_float_impl(const Formatter& spec, String& outbuf, Tfloat value) ->
 
     if (spec.prec == 0) { // default
         num_digits += spec.type == 'e'
-            ? ::snprintf(p, 64, "%e", abs_value) : spec.type == 'g'
-            ? ::snprintf(p, 64, "%g", abs_value)
-            : ::snprintf(p, 64, "%f", abs_value);
+            ? ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%e", abs_value) : spec.type == 'g'
+            ? ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%g", abs_value)
+            : ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%f", abs_value);
     }
     else {
         num_digits += spec.type == 'e'
-            ? ::snprintf(p, 64, "%.*e", spec.prec, abs_value) : spec.type == 'g'
-            ? ::snprintf(p, 64, "%.*g", spec.prec, abs_value)
-            : ::snprintf(p, 64, "%.*f", spec.prec, abs_value);
+            ? ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%.*e", spec.prec, abs_value) : spec.type == 'g'
+            ? ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%.*g", spec.prec, abs_value)
+            : ::snprintf(p+num_digits, sizeof(tmp_buf)-2, "%.*f", spec.prec, abs_value);
     }
 
-    if (p == buff) {
-        fmt_str_impl(spec, outbuf, buff, u32(num_digits));
+    if (p == tmp_buf) {
+        fmt_str_impl(spec, outbuf, tmp_buf, u32(num_digits));
     }
     else {
         outbuf._size += num_digits;

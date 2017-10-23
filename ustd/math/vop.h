@@ -202,14 +202,15 @@ protected:
 
 namespace detail
 {
-template<typename T, typename = $when_is<$number, T> >
-fn _to_view(const T& t, $ver<0>) -> Scalar<T> {
-    return { t };
-}
 
 template<typename T>
 fn _to_view(const T& t, $ver<1>) -> typename T::$MathVopView {
     return t;
+}
+
+template<typename T, typename = $when_is<$number, T> >
+fn _to_view(const T& t, $ver<0>) -> Scalar<T> {
+    return { t };
 }
 
 template<typename T>
@@ -295,8 +296,7 @@ fn foreach(F func, R& ret, const T& ...args) -> bool {
         return false;
     }
 
-    using VR = typename R::$MathVopView;
-    detail::get_runner(ret, args...).foreach(func, static_cast<VR&>(ret), detail::to_view(args)...);
+    detail::get_runner(ret, args...).foreach(func, static_cast<typename R::$MathVopView&>(ret), detail::to_view(args)...);
     return true;
 }
 
@@ -377,32 +377,32 @@ USTD_MATH_VOP_FOREACH(*=, Fmul_to)
 USTD_MATH_VOP_FOREACH(/=, Fdiv_to)
 #undef USTD_MATH_VOP_FOREACH
 
-#define USTD_MATH_VOP_FOREACH(op, F)                                \
-struct F {                                                          \
+#define USTD_MATH_VOP_FOREACH(op)                                   \
+struct F##op {                                                      \
     template<class T>                                               \
     static fn run(T x) noexcept {                                   \
         return op(x);                                               \
     }                                                               \
 };                                                                  \
 template<class T>                                                   \
-fn op(const T& t) noexcept {                                        \
-    return detail::make_parallel<F>(t);                             \
+fn v##op(const T& t) noexcept {                                     \
+    return detail::make_parallel<F##op>(t);                         \
 }
 
-USTD_MATH_VOP_FOREACH(vabs,     Fabs)
-USTD_MATH_VOP_FOREACH(vsqrt,    Fsqrt)
-USTD_MATH_VOP_FOREACH(vpow2,    Fpow2)
-USTD_MATH_VOP_FOREACH(vexp,     Fexp)
-USTD_MATH_VOP_FOREACH(vln,      Fln)
-USTD_MATH_VOP_FOREACH(vlog10,   Flog10)
+USTD_MATH_VOP_FOREACH(abs)
+USTD_MATH_VOP_FOREACH(sqrt)
+USTD_MATH_VOP_FOREACH(pow2)
+USTD_MATH_VOP_FOREACH(exp)
+USTD_MATH_VOP_FOREACH(ln)
+USTD_MATH_VOP_FOREACH(log10)
 
-USTD_MATH_VOP_FOREACH(vsin,     Fsin)
-USTD_MATH_VOP_FOREACH(vcos,     Fcos)
-USTD_MATH_VOP_FOREACH(vtan,     Ftan)
+USTD_MATH_VOP_FOREACH(sin)
+USTD_MATH_VOP_FOREACH(cos)
+USTD_MATH_VOP_FOREACH(tan)
 
-USTD_MATH_VOP_FOREACH(vasin,    Fasin)
-USTD_MATH_VOP_FOREACH(vacos,    Facos)
-USTD_MATH_VOP_FOREACH(vatan,    Fatan)
+USTD_MATH_VOP_FOREACH(asin)
+USTD_MATH_VOP_FOREACH(acos)
+USTD_MATH_VOP_FOREACH(atan)
 #undef USTD_MATH_VOP_FOREACH
 
 #define USTD_MATH_VOP_REDUCE(op, F)                             \

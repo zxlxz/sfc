@@ -173,6 +173,12 @@ constexpr fn prod(T a, T b, U... c) {
     return a * prod(b, c...);
 }
 
+template<typename V>
+constexpr fn iprod($usize<>, const V& v) {
+    using T = decltype(v[0]);
+    return T(1);
+}
+
 template<usize ...I, typename V>
 constexpr fn iprod($usize<I...>, const V& v) {
     return prod(v[I]...);

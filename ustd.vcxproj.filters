@@ -201,5 +201,6 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="xmake.lua" />
+    <None Include="README.md" />
   </ItemGroup>
 </Project>

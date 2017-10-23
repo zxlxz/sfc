@@ -91,7 +91,7 @@ struct View
     /* construct: step=default */
     template<usize ...Idim>
     constexpr View($usize<Idim...>, T* data, const u32(&dims)[N])
-        : _data{ data }, _dims{ dims[Idim]... }, _step{ 1, iprod($usize<Idim-1>{}, dims)... }
+        : _data{ data }, _dims{ dims[Idim]... }, _step{ iprod($index_seq<Idim>{}, dims)... }
     {}
 
     /* construct: */
