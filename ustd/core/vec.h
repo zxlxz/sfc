@@ -30,11 +30,11 @@ class Vec: public Vec<T, 0>
     {}
 
     // constructor[move]
-    Vec(Vec&& v)noexcept : Vec() {
-        Slice<T>::_size = v._size;
+    Vec(Vec&& v) noexcept : Vec() {
+        View<T>::_size = v._size;
         v._size = 0;
 
-        for(u32 i = 0; i < Slice<T>::_size; ++i) {
+        for(u32 i = 0; i < View<T>::_size; ++i) {
             new(&_buf[i])T(as_mov(v._buf[i]));
         }
     }
@@ -55,7 +55,7 @@ class Vec<T, 0>: public View<T>
     fn clear() {
         // do: clear elements
         if (!$is<$value, T>) {
-            for (u32 i = 0; i < Slice<T>::_size; ++i) {
+            for (u32 i = 0; i < View<T>::_size; ++i) {
                 base::_data[i].~T();
             }
         }

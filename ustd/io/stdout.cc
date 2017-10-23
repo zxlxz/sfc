@@ -147,7 +147,7 @@ fn Stdout::writeln()->Result<usize> {
     handle.set_fg(TermColor::CYN); handle.write("[CYN]"); handle.set_fg(TermColor::RST);
     handle.set_fg(TermColor::WHT); handle.write("[WHT]"); handle.set_fg(TermColor::RST);
     handle.writeln();
-};
+}
 
 [unittest(set_bg)]
 {
@@ -162,7 +162,7 @@ fn Stdout::writeln()->Result<usize> {
     handle.set_bg(TermColor::CYN); handle.write("[CYN]"); handle.set_bg(TermColor::RST);
     handle.set_bg(TermColor::WHT); handle.write("[WHT]"); handle.set_bg(TermColor::RST);
     handle.writeln();
-};
+}
 
 [unittest(Color)]{
     mut handle = io::stdout().lock();
@@ -178,7 +178,7 @@ fn Stdout::writeln()->Result<usize> {
         handle.writeln();
     }
     handle.set_fg(TermColor::RST);
-};
+}
 
 }
 

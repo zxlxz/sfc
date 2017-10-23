@@ -48,7 +48,7 @@ class Mutex
 };
 
 template<class T=int>
-class MutexGuard
+class MutexGuard: $class
 {
 public:
     friend class Mutex<T>;

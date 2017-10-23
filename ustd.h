@@ -1,7 +1,11 @@
 #pragma once
 
 #ifndef _USTD_MODULE
+#ifdef _MSC_VER
 #   define _USTD_MODULE 1
+#else
+#   define _USTD_MODULE 0
+#endif
 #endif
 
 /* ustd: c++->rust */
@@ -9,10 +13,20 @@
 #define mut auto
 #define fn  auto
 #define use using
+#define pub
 
-#define _ustd_test_var(...)  _ustd_test_var1 __VA_ARGS__
-#define _ustd_test_var1(id)  _ustd_test_##id
-#define unittest(...)        []] int _ustd_test_var((__LINE__)) = ::ustd::test::scheduler().install<struct _>(#__VA_ARGS__) << [
+#define _ustd_cat(a, b)         _ustd_cat_1((a, b))
+#define _ustd_cat_1(...)        _ustd_cat_2 __VA_ARGS__
+#define _ustd_cat_2(a, b)       a##b
+
+#define unittest(...)           _ustd_test_1((__LINE__, #__VA_ARGS__))
+#define _ustd_test_1(...)       _ustd_test_2 __VA_ARGS__
+
+#define _ustd_test_2(id, name)                                                              \
+[]] void _ustd_test_func_##id();                                                            \
+let _ustd_test_init_##id = ustd::test::install<struct _, id> (name, &_ustd_test_func_##id); \
+void _ustd_test_func_##id() [[]
+
 
 /* ustd: headers */
 #if _USTD_MODULE==0

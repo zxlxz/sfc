@@ -8,7 +8,8 @@ int main(int argc, const char* argv[]) {
         let s = str::from_raw(argv[i]);
         args.push(s);
     }
-    test::scheduler().invoke(args);
+    test::Scheduler::instance().invoke(args);
 
     return 0;
 }
+

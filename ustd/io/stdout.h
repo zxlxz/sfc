@@ -48,7 +48,7 @@ using Result = result::Result<T, Error>;
 class Stdout;
 class StdoutLock;
 
-class Stdout
+class Stdout: public $class
 {
   public:
     friend class StdoutLock;
@@ -126,7 +126,7 @@ inline fn Stdout::instance() -> Stdout& {
     return obj;
 }
 
-inline [[nodiscard]] fn Stdout::lock()->StdoutLock {
+[[nodiscard]] inline fn Stdout::lock()->StdoutLock {
     return StdoutLock(_mutex.lock().unwrap(), *this);
 }
 

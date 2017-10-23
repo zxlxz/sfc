@@ -7,7 +7,7 @@ typedef pthread_mutex_t mtx_t;
 typedef pthread_cond_t  cnd_t;
 
 #define _THREAD_TYPES
-#include "posix/threads.h"
+#include "sys/posix/threads.h"
 
 #pragma region thread
 
@@ -20,11 +20,15 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg) {
 }
 
 int thrd_id(thrd_t thr) {
+#ifdef __APPLE__
     unsigned long long thread_id = 0;
     if (pthread_threadid_np(thr, &thread_id) == 0) {
         return (int)thread_id;
     }
     return -1;
+#else
+    return (int)thr;
+#endif
 }
 
 thrd_t thrd_current(void) {
@@ -40,14 +44,14 @@ int thrd_equal(thrd_t thr0, thrd_t thr1) {
 }
 
 void thrd_exit(int res) {
-    pthread_exit((void*)(intptr_t)res);
+    pthread_exit((void*)(size_t)res);
 }
 
 int thrd_join(thrd_t thr, int* res) {
     void* tmp = NULL;
     int eid = pthread_join(thr, &tmp);
     if (eid == 0 || eid == ESRCH) {
-        *res = (int)(int64_t)tmp;
+        *res = (int)(long long)tmp;
         return thrd_success;
     }
     return thrd_error;

@@ -42,14 +42,14 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>config.h</PrecompiledHeaderFile>
-      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc %(AdditionalOptions)</AdditionalOptions>
+      <CppLanguageStandard>Default</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>config.h</PrecompiledHeaderFile>
-      <AdditionalOptions> /module:search $(SolutionDir)publish\ifc %(AdditionalOptions)</AdditionalOptions>
+      <CppLanguageStandard>Default</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

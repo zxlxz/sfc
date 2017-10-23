@@ -8,41 +8,46 @@ namespace ustd::test
 class Scheduler
 {
   public:
-   fn invoke(strs pattern) -> int;
+    fn invoke(strs pattern) -> int;
 
     static fn instance() -> Scheduler& {
         static mut ret = Scheduler{};
         return ret;
     }
 
-  public:
-    struct Installer {
-        str _type;
-        str _name;
-
-       fn install(void(*func)()) -> void;
-
-        template<typename F>
-        fn operator<<(F&& f) -> int {
-            install(f);
-            return 0;
+    template<typename T, int Id>
+    struct Installer
+    {
+        Installer(str name, void(*func)()) {
+            _id = Scheduler::instance().install(type_name<T>(), name, func);
         }
+
+        fn id() const {
+            return _id;
+        }
+
+    private:
+        int _id;
     };
 
-    template<class T>
-    Installer install(str func) {
-        return { type_name<T>(), func };
-    }
   private:
+
     Scheduler() = default;
 
     Scheduler(Scheduler&&)           = default;
     Scheduler(const Scheduler&)      = delete;
     void operator=(const Scheduler&) = delete;
+
+    fn install(str type, str name, void(*func)()) -> int;
 };
 
-inline fn scheduler() -> Scheduler& {
-    return Scheduler::instance();
+template<typename T, int Id>
+using Installer = Scheduler::Installer<T, Id>;
+
+template<class T, int Id>
+int install(str name, void(*func)()) {
+    static Scheduler::Installer<T, Id> obj(name, func);
+    return obj.id();
 }
 
 template<class ...T>

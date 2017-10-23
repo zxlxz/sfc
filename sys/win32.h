@@ -52,6 +52,7 @@ extern "C" {
 #endif
 
 /* === built in === */
+#if defined(_MSC_VER) && !defined(__clang__)
 inline unsigned __builtin_clz(unsigned __int32 x) {
     unsigned long r = 0;
     _BitScanReverse(&r, x);
@@ -63,6 +64,7 @@ inline unsigned __builtin_clzll(unsigned __int64 x) {
     _BitScanReverse64(&r, x);
     return 63 - r;
 }
+#endif
 
 /* === unistd === */
 void _init_tty(int fd);

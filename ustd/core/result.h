@@ -358,7 +358,7 @@ class Result<T, E, $class, $value>
         return _ok;
     }
 
-    template<typename F, typename U = decltype(declval<F>()(op(as_mov(_ok)))) >
+    template<typename F, typename U = decltype(declval<F>()(as_mov(_ok))) >
     fn map(F&& op)&& -> Result<U, E> {
         using Result = Result<U, E>;
         return _type == Type::Ok ? Result::Ok(op(as_mov(_ok))) : Result::Err(_err);

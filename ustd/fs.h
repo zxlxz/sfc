@@ -9,12 +9,12 @@ namespace ustd::fs
 using io::Error;
 using io::Result;
 
-
-class File
+class File: public $class
 {
     int _handle;
 
-    File() = default;
+    File(int handle) : _handle(handle)
+    {}
 
   public:
     File(File&& other) noexcept : _handle(other._handle) {
@@ -47,8 +47,23 @@ class File
     static fn _create(int* handle, str path) noexcept -> Error;
 };
 
-template<typename P> fn File::open  (P path) noexcept {   }
-template<typename P> fn File::create(P path) noexcept {   }
+template<typename P>
+fn File::open(P path) noexcept { 
+    using Result = Result<File>;
+
+    let fid = int(0);
+    let eid = File::_open(&fid, path);
+    return eid == Error::Success ? Result::Ok(File(fid)) : Result::Err(eid);
+}
+
+template<typename P>
+fn File::create(P path) noexcept {
+    using Result = Result<File>;
+
+    let fid = int(0);
+    let eid = File::_create(&fid, path);
+    return eid == Error::Success ? Result::Ok(File(fid)) : Result::Err(eid);
+}
 
 }
 

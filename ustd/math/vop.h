@@ -49,7 +49,7 @@ struct Linspace
     }
 
 private:
-    template<u32 ...Idim, typename ...Tidx>
+    template<usize ...Idim, typename ...Tidx>
     fn get_value($usize<Idim...>, Tidx ...idxs) const -> T {
         return ustd::sum((T(_step[Idim])*idxs)...);
     }
@@ -57,7 +57,7 @@ private:
 
 template<typename T, typename ...U>
 constexpr auto vline(const T& t, const U& ...u) {
-    return Linspace<T, u32(1 + sizeof...(U))>({ T(t), T(u)... });
+    return Linspace<T, u32(1 + sizeof...(U))>{ { T{ t }, T{ u }... }};
 }
 
 template<typename F, typename ...T>
@@ -122,8 +122,8 @@ struct Reduce<F, T>
 
         mut ret = F::run(_t(0, i...), _t(1, i...));
 
-        for (u32 i = 2u; i < cnt; ++i) {
-            ret = F::run(ret, vt(i, i...));
+        for (u32 k = 2u; k < cnt; ++k) {
+            ret = F::run(ret, vt(k, i...));
         }
         return ret;
     }
@@ -296,25 +296,37 @@ fn foreach(F func, R& ret, const T& ...args) -> bool {
         return false;
     }
 
-    detail::get_runner(ret, args...).foreach(func, static_cast<typename R::$MathVopView&>(ret), detail::to_view(args)...);
+    detail::get_runner(ret, args...).foreach(func, (typename R::$MathVopView&)(ret), detail::to_view(args)...);
     return true;
 }
 
 #pragma region functions
 
-#define USTD_MATH_VOP_FOREACH(op, type)                     \
+#define USTD_MATH_VOP_FOREACH(op, F)                        \
+    struct F {                                              \
+        template<class T>                                   \
+        static fn run(T t) noexcept {                       \
+            return op t;                                    \
+        }                                                   \
+    };                                                      \
     template<class T, class = typename T::$MathVopView>     \
     fn operator op(const T& t) noexcept {                   \
-        return detail::make_parallel<type>(t);              \
+        return detail::make_parallel<F>(t);                 \
     }
 USTD_MATH_VOP_FOREACH(+, Pos)
 USTD_MATH_VOP_FOREACH(-, Neg)
 #undef USTD_MATH_VOP_FOREACH
 
-#define USTD_MATH_VOP_FOREACH(op, type)                                         \
+#define USTD_MATH_VOP_FOREACH(op, F)                                            \
+    struct F {                                                                  \
+        template<class A, class B>                                              \
+        static fn run(A a, B b) noexcept {                                      \
+            return a op b;                                                      \
+        }                                                                       \
+    };                                                                          \
     template<class A, class B, class = decltype(detail::view_test2<A, B>())>    \
     fn operator op(const A& a, const B& b) noexcept {                           \
-        return detail::make_parallel<type>(x, y);                               \
+        return detail::make_parallel<F>(a, b);                                  \
     }
 
 USTD_MATH_VOP_FOREACH(+, Add)
@@ -352,7 +364,7 @@ fn operator>>=(const T& arg, R& res) -> R& {
 
 template<class R, class F, class ...T, class = $when_is<$number, R> >
 fn operator<<=(R& ref, const Reduce<F, T...>& arg) -> R& {
-    Scalar<R> tmp = { val };
+    Scalar<R> tmp = { ref };
     foreach(Fassign{}, tmp, arg);
     ref = tmp._t;
     return ref;
@@ -410,7 +422,7 @@ struct F                                                        \
 {                                                               \
     template<class T>                                           \
     static fn run(T& a, T& b)  noexcept -> T& {                 \
-        return x > y ? x : y;                                   \
+        return a > b ? a : b;                                   \
     }                                                           \
 };                                                              \
 template<class T>                                               \

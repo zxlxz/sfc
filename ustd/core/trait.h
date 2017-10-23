@@ -59,7 +59,7 @@ struct $value{};    // trait: value  type
 template<typename T> struct _is<$enum,  T>: $bool<__is_enum (T) > {};
 template<typename T> struct _is<$union, T>: $bool<__is_union(T) > {};
 template<typename T> struct _is<$empty, T>: $bool<__is_empty(T) > {};
-template<typename T> struct _is<$value, T>: $bool<__has_trivial_copy(T) > {};
+template<typename T> struct _is<$value, T>: $bool<__has_trivial_copy(T) && !__is_base_of($class, T)> {};
 template<typename T> struct _is<$struct,T>: $bool<__is_class(T) &&  _is<$value, T>::value > {};
 template<typename T> struct _is<$class, T>: $bool<__is_class(T) && !_is<$value, T>::value > {};
 #pragma endregion

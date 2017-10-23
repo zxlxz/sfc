@@ -24,11 +24,11 @@ end
 -- c++: language
 set_languages("cxx1z")
 add_cxxflags("-fms-extensions", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-include config.h")
+add_ldflags("Ur")
 
 -- c++: dir
 add_includedirs(".")
 set_objectdir("$(tmpdir)/ustd")
-
 
 -- add target
 target("ustd.sys")

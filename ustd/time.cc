@@ -73,6 +73,7 @@ fn Duration::operator-(Duration rhs) const noexcept->Duration {
 fn Instant::now() -> Instant {
     mut res = timespec{};
     let ret = clock_gettime(CLOCK_MONOTONIC, &res);
+    (void)ret;
     return Instant{ u64(res.tv_sec), u32(res.tv_nsec) };
 }
 
@@ -108,6 +109,6 @@ fn SystemTime::duration_since(const SystemTime& earlier) const -> Duration {
 
 [unittest(SystemTime::now)]{
 
-};
+}
 
 }

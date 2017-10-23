@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ustd/core/type.h>
+#include <ustd/core/trait.h>
 #include <ustd/core/iter.h>
 
 extern "C"
@@ -36,7 +37,7 @@ struct View<T, 0>
         : _data{ptr}, _size{length}, _capacity{capacity}
     {}
 
-    template<u32 N, class=$when<$is<const char, T> && N!=0> >
+    template<u32 N, typename=$when<$is<const char, T> && N!=0> >
     View(const char(&s)[N])
         : _data{s}, _size{N-1}, _capacity{N-1}
     {}

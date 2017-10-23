@@ -525,7 +525,7 @@ fn Formatter::sfmt_val(String& outbuf, bool val) const -> void {
     println("    oct |{>20o}|{<20o}|{^20o}|{20o}|",  num, num, num, num);
     println("    hex |{>20x}|{<20x}|{^20x}|{20x}|",  num, num, num, num);
     println("    HEX |{>20X}|{<20X}|{^20X}|{20X}|",  num, num, num, num);
-};
+}
 
 [unittest(Formatter::sfmt_val<f32>)]
 {
@@ -535,13 +535,13 @@ fn Formatter::sfmt_val(String& outbuf, bool val) const -> void {
     println("    20e  |{>20e}|{<20e}|{^20e}|{20e}|",         num, num, num, num);
     println("    20.2e|{>20.2e}|{<20.2e}|{^20.2e}|{20.2e}|", num, num, num, num);
     println("    20.2f|{>20.2f}|{<20.2f}|{^20.2f}|{20.2f}|", num, num, num, num);
-};
+}
 
 [unittest(Formatter::sfmt_tuple)]
 {
     let t = tuple("a", 1, "b", 2);
     println("    tuple| {}", t);
-};
+}
 
 #pragma endregion
 

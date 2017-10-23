@@ -88,9 +88,11 @@ fn _get_tests() -> Vec<Worker>& {
     return tests;
 }
 
-fn Scheduler::Installer::install(void(*func)()) -> void {
+fn Scheduler::install(str type, str name, void(*func)()) -> int {
     static mut& tests = _get_tests();
-    tests.push(Worker{_type, _name, func});
+    tests.push(Worker{type, name, func});
+    let cnt = tests.len();
+    return i32(cnt);
 }
 
 fn Scheduler::invoke(strs pattern) -> int {

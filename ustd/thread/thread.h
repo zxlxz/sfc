@@ -34,7 +34,7 @@ private:
 };
 
 template<>
-class JoinHandle<void>
+class JoinHandle<void>: public $class
 {
 public:
     JoinHandle(Thread thr) : _thr{ thr } {}
