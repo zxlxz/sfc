@@ -20,7 +20,7 @@ ustd核心部分借鉴Rust的标准库，并增加了反射，序列化，单元
 
 
 ### Windows
-  请下载https://github.com/lumpyzhu/ustd.publish.git 的win32分支
+  请下载https://github.com/lumpyzhu/ustd.publish.git 的win32分支  
   ```git clone -b win32 https://github.com/lumpyzhu/ustd.publish.git```
 
 
