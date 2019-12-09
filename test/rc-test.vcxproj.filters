@@ -16,6 +16,9 @@
     <Filter Include="rc\serial">
       <UniqueIdentifier>{0370a9d4-21b4-4e86-a9b1-c868311c7b96}</UniqueIdentifier>
     </Filter>
+    <Filter Include="rc\collections">
+      <UniqueIdentifier>{936975f5-bf87-40d3-be0c-99318ee1f3a9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cxx" />
@@ -33,6 +36,9 @@
     </ClCompile>
     <ClCompile Include="rc\serial\json.cxx">
       <Filter>rc\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="rc\collections\vec_deque.cxx">
+      <Filter>rc\collections</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

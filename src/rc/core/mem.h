@@ -5,13 +5,14 @@
 namespace rc::mem {
 
 template <class T>
-auto drop(T& val) -> void {
-  if constexpr (!__is_trivially_destructible(T)) return;
-  val.~T();
+void drop(T& val) {
+  if constexpr (!__is_trivially_destructible(T)) {
+    val.~T();
+  }
 }
 
 template <class T>
-auto swap(T& x, T& y) -> void {
+void swap(T& x, T& y) {
   T z(static_cast<T&&>(x));
   ::new (&x) T(static_cast<T&&>(y));
   ::new (&y) T(static_cast<T&&>(z));

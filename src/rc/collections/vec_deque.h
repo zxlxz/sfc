@@ -6,17 +6,32 @@ namespace rc::collections::vec_deque {
 
 using vec::RawVec;
 
-template<class T>
+template <class T>
 struct Cursor {
-};
+  T*    _ptr;
+  usize _mask;
+  usize _idx;
 
-template<class T>
-struct Iter {
+  auto operator++() noexcept -> void { _idx = (_idx + 1) & _mask; }
+  auto operator--() noexcept -> void { _idx = (_idx - 1) & _mask; }
+  auto operator*() const noexcept -> T& { return *_ptr; }
 
+  auto operator!=(const Cursor& other) const noexcept -> bool {
+    return _idx != other._idx;
+  }
 };
 
 template <class T>
+struct Iter {};
+
+template <class T>
 struct VecDeque {
+
+  using Iter = vec_deque::Iter<const T>;
+  using IterMut = vec_deque::Iter<T>;
+  using Cursor = vec_deque::Cursor<const T>;
+  using CursorMut = vec_deque::Cursor<T>;
+
   RawVec<T> _buf;
   usize _head;
   usize _tail;
@@ -25,9 +40,15 @@ struct VecDeque {
   VecDeque() noexcept : _buf{}, _head(0), _tail(0) {}
 
   VecDeque(vec::RawVec<T>&& buf, usize head, usize tail) noexcept
-      : _buf{rc::move(buf)}, _head{head}, _tail{tail} {}
+      : _buf{rc::move(buf)}, _head{head}, _tail{tail}, _mask{0} {}
 
-  VecDeque(VecDeque&&) noexcept = default;
+  VecDeque(VecDeque&& other) noexcept
+      : _buf{rc::move(other._buf)},
+        _head{other._head},
+        _tail{other._tail},
+        _mask{other._mask} {
+    ptr::write(&other, VecDeque{});
+  }
 
   ~VecDeque() { this->clear(); }
 
@@ -42,39 +63,56 @@ struct VecDeque {
 
   auto is_empty() const noexcept -> usize { return _head == _tail; }
 
+  auto begin() const noexcept -> Cursor {
+    return Cursor{_buf._ptr, _mask, _head};
+  }
+
+  auto end() const noexcept -> Cursor {
+    return Cursor{_buf._ptr, _mask, _tail};
+  }
+
+  auto begin() noexcept -> CursorMut {
+    return CursorMut{_buf._ptr, _mask, _head};
+  }
+
+  auto end() noexcept -> CursorMut {
+    return CursorMut{_buf._ptr, _mask, _tail};
+  }
+
+  constexpr auto get_unchecked(usize idx) const noexcept -> const T& {
+    return _buf._ptr[(_head + idx) & _mask];
+  }
+
+  constexpr auto get_unchecked_mut(usize idx) noexcept -> T& {
+    return _buf._ptr[(_head + idx) & _mask];
+  }
+
   auto operator[](usize idx) const noexcept -> const T& {
     const auto cnt = this->len();
     rc::assert(idx < cnt, u8"rc::collections::VecDeque: empty");
-
-    const auto pos = (_head + idx) & _mask;
-    return _buf._ptr[pos];
+    return this->get_unchecked(idx);
   }
 
   auto operator[](usize idx) noexcept -> T& {
     const auto cnt = this->len();
     rc::assert(idx < cnt, u8"rc::collections::VecDeque: empty");
-
-    const auto pos = (_head + idx) & _mask;
-    return _buf._ptr[pos];
+    return this->get_unchecked_mut(idx);
   }
 
   auto front() const -> const T& {
     rc::assert(!this->is_empty(), u8"rc::collections::VecDeque: empty");
-    const auto pos = _head;
-    return _buf._ptr[pos];
+    return _buf._ptr[_head];
   }
 
   auto back() const -> const T& {
     rc::assert(_head != _tail, u8"rc::collections::VecDeque: empty");
-    const auto pos = (_tail-1)& _mask;
-    return _buf._ptr[pos];
+    return _buf._ptr[(_tail - 1) & _head];
   }
 
   auto clear() -> void {
     const auto cnt = this->len();
-    for (usize idx = 0; idx < cnt; ++idx) {
-      const auto pos = (_head + idx) & _mask;
-      mem::drop(&_buf._ptr[pos]);
+    for (auto& val: *this) {
+      mem::drop(val);
     }
     _head = 0;
     _tail = 0;
@@ -84,55 +122,62 @@ struct VecDeque {
   auto push_front(T val) {
     this->reserve(1);
     _head = (_head - 1) & _mask;
-    const auto pos = _head;
-    ptr::write(&_buf[pos], static_cast<T&&>(val));
+    ptr::write<T>(&_buf._ptr[_head], static_cast<T&&>(val));
   }
 
   auto pop_front() -> T {
     rc::assert(!this->is_empty(), u8"rc::collections::VecDeque: empty");
-    const auto pos = _head;
-    _head = (_head + 1) & (_buf._cap - 1);
-    return ptr::read(&_buf[pos]);
+    const auto old_head = _head;
+    _head = (_head + 1) & _mask;
+    return ptr::read(&_buf._ptr[old_head]);
   }
 
   auto push_back(T val) -> void {
     this->reserve(1);
-    const auto pos = _tail;
-    _tail = (_tail - 1) & (_buf._cap - 1);
-    ptr::write(&_buf[pos], static_cast<T&&>(val));
+    const auto old_tail = _tail;
+    _tail = (_tail + 1) & _mask;
+    ptr::write(&_buf._ptr[old_tail], static_cast<T&&>(val));
   }
 
   auto pop_back() -> T {
     rc::assert(!this->is_empty(), u8"rc::collections::VecDeque: empty");
-    _tail = (_tail + 1) & _mask;
-    const auto pos = _tail;
-    return ptr::read(&_buf[pos]);
+    _tail = (_tail - 1) & _mask;
+    return ptr::read(&_buf[_tail]);
   }
 
   auto reserve(usize additional) -> void {
-    auto old_cap = cap();
-    auto old_len = len();
-    auto req_len = wrap_idx(old_len + additional);
-    if (req_len < old_cap) {
-      return;
-    }
+    const auto old_cap = this->capacity();
+    const auto old_len = this->len();
+    const auto req_len = old_len + additional;
+    if (req_len < old_cap) return;
 
-    auto new_cap = num::next_power_of_tow(req_len);
+    const auto new_cap = num::next_power_of_two(req_len);
     auto new_buf = RawVec<T>::with_capacity(new_cap);
 
-    if (!is_empty()) {
-      auto old_ptr = _buf.ptr();
-      auto new_ptr = new_buf.ptr();
-      if (_pos + _len < old_cap) {
-        ptr::copy(old_ptr + _pos, new_ptr, old_len);
+    if (!this->is_empty()) {
+      const auto old_ptr = _buf._ptr;
+      const auto new_ptr = new_buf._ptr;
+      if (_head + old_len < _tail) {
+        ptr::copy(old_ptr + _head, new_ptr, old_len);
       } else {
-        ptr::copy(old_ptr + _pos, new_ptr, old_cap - _pos);
-        ptr::copy(old_ptr, new_ptr + old_cap - _pos,
-                  old_len - (old_cap - _pos));
+        const auto len1 = old_cap - _head;
+        const auto len2 = old_len - len1;
+        ptr::copy(old_ptr + _head, new_ptr, len1);
+        ptr::copy(old_ptr, new_ptr + len1, len2);
       }
     }
     mem::swap(_buf, new_buf);
-    _pos = 0;
+    _head = 0;
+    _tail = old_len;
+    _mask = new_cap - 1;
+  }
+
+  template<class Out>
+  void fmt(fmt::Formatter<Out>& formatter) const {
+    auto dbg = formatter.debug_list();
+    for(const auto& t: *this) {
+      dbg.entry(t);
+    }
   }
 };
 

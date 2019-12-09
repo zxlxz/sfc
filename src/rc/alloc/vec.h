@@ -74,7 +74,7 @@ struct Vec {
 
   Vec(Vec&&) noexcept = default;
 
-  ~Vec() { ptr::drop(_buf._ptr, _len); }
+  ~Vec() { ptr::drop_n(_buf._ptr, _len); }
 
   static auto with_capacity(usize capacity) -> Vec {
     return {RawVec<T>::with_capacity(capacity), 0};
@@ -127,14 +127,14 @@ struct Vec {
 
   auto clear() noexcept -> void {
     if (_len != 0) {
-      ptr::drop(_buf._ptr, _len);
+      ptr::drop_n(_buf._ptr, _len);
     }
     _len = 0;
   }
 
   auto truncate(usize new_len) noexcept -> void {
     if (new_len < _len) {
-      ptr::drop(_buf._ptr + new_len, _len - new_len);
+      ptr::drop_n(_buf._ptr + new_len, _len - new_len);
     }
     _len = new_len;
   }

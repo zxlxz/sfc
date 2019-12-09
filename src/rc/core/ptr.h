@@ -27,9 +27,14 @@ constexpr __forceinline auto cast(F* p) {
 }
 
 template <class T>
-__forceinline auto drop(T* ptr, usize cnt)->void {
-  auto end = ptr + cnt;
-  for (auto p = ptr; p != end; ++p) {
+__forceinline void drop_n(T* p) {
+  mem::drop(*p);
+}
+
+template <class T>
+__forceinline void drop_n(T* p, usize n) {
+  const auto end = p+ n;
+  for (; p != end; ++p) {
     mem::drop(*p);
   }
 }

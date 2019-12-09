@@ -14,7 +14,6 @@ struct Cursor {
 
   auto operator++() noexcept -> void { ++_ptr; }
   auto operator--() noexcept -> void { --_ptr; }
-
   auto operator*() const noexcept -> T& { return *_ptr; }
 
   auto operator!=(const Cursor& other) const noexcept -> bool {
