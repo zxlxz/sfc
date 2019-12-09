@@ -1,0 +1,439 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\rc\serial\json.cc">
+      <Filter>rc\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\fs.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\io.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\os.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\thread.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\time.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\mod.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\fs.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\io.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\mod.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\os.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\thread.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\time.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\alloc.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\panicking.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\alloc\mod.cc">
+      <Filter>rc\alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\env.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\term.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\sync.cc">
+      <Filter>rc\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\log\backends.cc">
+      <Filter>rc\log</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\log\logger.cc">
+      <Filter>rc\log</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\test\test.cc">
+      <Filter>rc\test</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\serial\mod.cc">
+      <Filter>rc\serial</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\core\fmt\mod.cc">
+      <Filter>rc\core\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\core\fmt\num.cc">
+      <Filter>rc\core\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\alloc.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\env.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\panicking.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\sync.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\term.cc">
+      <Filter>rc\sys\unix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\core\panicking.cc">
+      <Filter>rc\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\os.cc">
+      <Filter>rc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\env.cc">
+      <Filter>rc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\io\mod.cc">
+      <Filter>rc\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\time.cc">
+      <Filter>rc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\term\mod.cc">
+      <Filter>rc\term</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\fs\file.cc">
+      <Filter>rc\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\fs\path.cc">
+      <Filter>rc\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\ffi\cstring.cc">
+      <Filter>rc\ffi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\gpu\imp\cuda.cc">
+      <Filter>rc\gpu\imp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sync\mutex.cc">
+      <Filter>rc\sync</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\sync\condvar.cc">
+      <Filter>rc\sync</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\rc\sync.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\time.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\log.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\fs.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\env.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\io.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\serial.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\math.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\math\ndarray.h">
+      <Filter>rc\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\test.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\binary_heap.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\btree.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\hash_map.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\hash_table.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\linked_list.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\collections\vec_deque.h">
+      <Filter>rc\collections</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\alloc.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\serial\mod.h">
+      <Filter>rc\serial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\io\stdio.h">
+      <Filter>rc\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\io\read.h">
+      <Filter>rc\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\io\write.h">
+      <Filter>rc\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sys.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\cmp.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\fmt.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\iter.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\mem.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\mod.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\num.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\ops.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\option.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\ptr.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\slice.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\str.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\intrin.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sys\unix.h">
+      <Filter>rc\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\panicking.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\ffi.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\thread.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\alloc\boxed.h">
+      <Filter>rc\alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\alloc\vec.h">
+      <Filter>rc\alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\alloc\string.h">
+      <Filter>rc\alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\alloc\mod.h">
+      <Filter>rc\alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\term.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\fs\file.h">
+      <Filter>rc\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\fs\path.h">
+      <Filter>rc\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\io\mod.h">
+      <Filter>rc\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sys\windows.h">
+      <Filter>rc\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sync\condvar.h">
+      <Filter>rc\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sync\mutex.h">
+      <Filter>rc\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\ffi\cstring.h">
+      <Filter>rc\ffi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\macros.h">
+      <Filter>rc\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\os.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\log\mod.h">
+      <Filter>rc\log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\log\backends.h">
+      <Filter>rc\log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\term\color.h">
+      <Filter>rc\term</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\fmt\mod.h">
+      <Filter>rc\core\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\log\logger.h">
+      <Filter>rc\log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\test\benchmark.h">
+      <Filter>rc\test</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\test\test.h">
+      <Filter>rc\test</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\num\parse.h">
+      <Filter>rc\core\num</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\num\mod.h">
+      <Filter>rc\core\num</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\fmt\num.h">
+      <Filter>rc\core\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\fmt\buffer.h">
+      <Filter>rc\core\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\term\mod.h">
+      <Filter>rc\term</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\fs\mod.h">
+      <Filter>rc\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\math\tensor.h">
+      <Filter>rc\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\math\ndslice.h">
+      <Filter>rc\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\math\mod.h">
+      <Filter>rc\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\gpu\mod.h">
+      <Filter>rc\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\gpu\imp.h">
+      <Filter>rc\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\gpu\imp\cuda.h">
+      <Filter>rc\gpu\imp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\serial\encoder.h">
+      <Filter>rc\serial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\serial\decoder.h">
+      <Filter>rc\serial</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\gpu.h">
+      <Filter>rc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="rc">
+      <UniqueIdentifier>{3625e5e7-1491-43ca-b5fc-e4fe5b1d8a13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="docs">
+      <UniqueIdentifier>{a915a338-994f-4052-baf1-41e869f9d7f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\io">
+      <UniqueIdentifier>{e6526b37-8d6e-4047-8609-c0596570d121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\serial">
+      <UniqueIdentifier>{09a2996a-0ed6-4056-b894-b3329a5c886d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\math">
+      <UniqueIdentifier>{9fca70cd-91d1-46c6-b019-7b753d1f4ea4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\collections">
+      <UniqueIdentifier>{03769995-5c52-4eb0-8ee0-741a105a65da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\core">
+      <UniqueIdentifier>{072981da-bab9-4dd1-9691-462206ce0cae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\sys">
+      <UniqueIdentifier>{c638eb92-a07e-4d21-b475-baa15bde295c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\sys\windows">
+      <UniqueIdentifier>{4131ffa2-990d-4a6b-80ad-8fe96b5aa202}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\sys\unix">
+      <UniqueIdentifier>{8632d274-7138-4480-a95c-294bc2ccd81f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\alloc">
+      <UniqueIdentifier>{718041b2-94a6-4a03-9320-6f2427871019}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\fs">
+      <UniqueIdentifier>{a21834d5-a86b-43a9-888e-014389a68cd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\sync">
+      <UniqueIdentifier>{9fdf514d-4538-4b5d-a039-b29d4a80bf28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\ffi">
+      <UniqueIdentifier>{0fe95e47-ea9a-483f-ad95-3e6dc20cb0de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\log">
+      <UniqueIdentifier>{c91f3f71-70cf-4b36-b3c4-1a0e086f7cbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\term">
+      <UniqueIdentifier>{e7082ed2-f9b0-4372-8a84-083f9aac6240}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\core\fmt">
+      <UniqueIdentifier>{3d646417-6c0e-4b42-a29f-0599de0e5f32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\test">
+      <UniqueIdentifier>{b9f2ba3f-f0f8-4739-9ad9-90bb6802811f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\core\num">
+      <UniqueIdentifier>{758577cb-1984-4016-9ef9-03637f3f645d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\gpu">
+      <UniqueIdentifier>{548a09f6-8f1f-4beb-8099-8b445bd2b8f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\gpu\imp">
+      <UniqueIdentifier>{7c32379e-b5f5-47ec-b223-c9685ec10759}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="src\rc.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\rc\sys\windows.inl">
+      <Filter>rc\sys</Filter>
+    </None>
+    <None Include="cpp.hint" />
+    <None Include="src\rc.inl" />
+    <None Include="src\rc\sys\unix.inl">
+      <Filter>rc\sys</Filter>
+    </None>
+  </ItemGroup>
+</Project>

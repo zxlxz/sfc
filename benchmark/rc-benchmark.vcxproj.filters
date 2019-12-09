@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="rc">
+      <UniqueIdentifier>{ceed4c89-206d-4374-8429-a2813173c21e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\math">
+      <UniqueIdentifier>{7b67ecb6-2561-406c-bd53-7f5cfe4a7eab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\core">
+      <UniqueIdentifier>{7f1a5fb6-8175-42f0-a1f8-5e344e7f0cca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\collections">
+      <UniqueIdentifier>{a93b92fd-0e46-44b2-9882-dc21aa86f27a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cxx" />
+    <ClCompile Include="rc-benchmark.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="rc\vec.cc">
+      <Filter>rc</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!--rc::option::Option-->
+  <Type Name="rc::option::Option&lt;*&gt;">
+    <DisplayString Condition="_tag==0">None()</DisplayString>
+    <DisplayString Condition="_tag==1">Some({_val})</DisplayString>
+  </Type>
+
+  <!-- rc::slice::Slice-->
+  <Type Name="rc::slice::Slice&lt;*&gt;">
+    <Expand>
+      <Item Name="[len]">_len</Item>
+      <ArrayItems>
+        <Size>_len</Size>
+        <ValuePointer>_ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- rc::slice::FixedBuf-->
+  <Type Name="rc::slice::FixedBuf&lt;*&gt;">
+    <Expand>
+      <Item Name="[len]">_len</Item>
+      <ArrayItems>
+        <Size>_len</Size>
+        <ValuePointer>_buf</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  
+  <!-- rc::str::Str>-->
+  <Type Name="rc::str::Str">
+    <DisplayString>{_inner._ptr, [_inner._len]s}</DisplayString>
+    <Expand>
+      <Item Name="[len]">_inner._len</Item>
+      <ArrayItems>
+        <Size>_inner._len</Size>
+        <ValuePointer>_inner._ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- string::String>-->
+  <Type Name="rc::string::String">
+    <DisplayString>{_vec._buf._ptr, [_vec._len]s}</DisplayString>
+    <Expand>
+      <Item Name="[len]">_vec._len</Item>
+      <Item Name="[cap]">_vec._buf._cap</Item>
+      <ArrayItems>
+        <Size>_vec._len</Size>
+        <ValuePointer>_vec._buf._ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  
+  <!-- rc::vec::Vec<T>-->
+  <Type Name="rc::vec::Vec&lt;*&gt;">
+    <Expand>
+      <Item Name="[len]">_len</Item>
+      <Item Name="[cap]">_buf._cap</Item>
+      <ArrayItems>
+        <Size>_len</Size>
+        <ValuePointer>_buf._ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!--rc::time::Time-->
+  <Type Name="rc::time::Instant">
+    <DisplayString>{_secs + _nanos*0.000000001}</DisplayString>
+  </Type>
+
+  <!--rc::math::NDSlice<*,*>-->
+  <Type Name="rc::math::NDSlice&lt;*,*&gt;">
+    <DisplayString>[dims] = {_dims}</DisplayString>
+    <Expand>
+      <Item Name='[data]'>_data</Item>
+      <Item Name='[dims]'>_dims</Item>
+      <Item Name='[step]'>_step</Item>
+      <ArrayItems>
+        <Direction>Backward</Direction>
+        <Rank>$T2</Rank>
+        <Size>_dims[$i]</Size>
+        <ValuePointer>_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="rc::serial::Node">
+    <Expand>
+      <!--key-->
+      <Item Name="none" Condition="_type==0">"null",[4]sb</Item>
+
+      <Item Name="bool" Condition="_type==1">_bool</Item>
+
+      <Item Name="num" Condition="_type==2 &amp;&amp; _len == 0">_num </Item>
+      <Item Name="num" Condition="_type==2 &amp;&amp; _len != 0">_str, [_len]sb </Item>
+
+      <Item Name="str" Condition="_type==3">_str, [_len]s  </Item>
+
+      <Item Name="arr" Condition="_type==4">_len</Item>
+      <Item Name="obj" Condition="_type==5">_len</Item>
+
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{72FAC65D-C779-4CFA-ADB3-1D261CDE226A}</ProjectGuid>
+    <RootNamespace>rc</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(SolutionDIr).vs\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(SolutionDIr).vs\$(ProjectName)\$(Platform).$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Label="LLVM" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClangClAdditionalOptions>-Xclang -std=c++2a</ClangClAdditionalOptions>
+  </PropertyGroup>
+  <PropertyGroup Label="LLVM" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClangClAdditionalOptions>-Xclang -std=c++2a</ClangClAdditionalOptions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <ObjectFileName>$(IntDir)%(RelativeDir)%(FileName).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(CUDA_PATH)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <EnablePREfast>false</EnablePREfast>
+      <PrecompiledHeaderFile>$(ProjectName).inl</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>%(PrecompiledHeaderFile);%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent />
+    <Lib />
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <ObjectFileName>$(IntDir)%(RelativeDir)%(FileName).obj</ObjectFileName>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(CUDA_PATH)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <EnablePREfast>false</EnablePREfast>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <PrecompiledHeaderFile>$(ProjectName).inl</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>%(PrecompiledHeaderFile);%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <WarningLevel>Level4</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies />
+      <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent />
+    <Lib />
+    <Lib />
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\rc\ffi\cstring.cc" />
+    <ClCompile Include="src\rc\fs\file.cc" />
+    <ClCompile Include="src\rc\fs\path.cc" />
+    <ClCompile Include="src\rc\gpu\imp\cuda.cc" />
+    <ClCompile Include="src\rc\sync\condvar.cc" />
+    <ClCompile Include="src\rc\sync\mutex.cc" />
+    <ClCompile Include="src\rc\term\mod.cc" />
+    <ClCompile Include="src\rc\time.cc" />
+    <ClInclude Include="src\rc\alloc.h" />
+    <ClInclude Include="src\rc\alloc\boxed.h" />
+    <ClInclude Include="src\rc\alloc\mod.h" />
+    <ClInclude Include="src\rc\alloc\string.h" />
+    <ClInclude Include="src\rc\alloc\vec.h" />
+    <ClInclude Include="src\rc\collections.h" />
+    <ClInclude Include="src\rc\collections\binary_heap.h" />
+    <ClInclude Include="src\rc\collections\btree.h" />
+    <ClInclude Include="src\rc\collections\hash_map.h" />
+    <ClInclude Include="src\rc\collections\hash_table.h" />
+    <ClInclude Include="src\rc\collections\linked_list.h" />
+    <ClInclude Include="src\rc\collections\vec_deque.h" />
+    <ClInclude Include="src\rc\core.h" />
+    <ClInclude Include="src\rc\core\cmp.h" />
+    <ClInclude Include="src\rc\core\fmt.h" />
+    <ClInclude Include="src\rc\core\fmt\buffer.h" />
+    <ClInclude Include="src\rc\core\fmt\mod.h" />
+    <ClInclude Include="src\rc\core\fmt\num.h" />
+    <ClCompile Include="src\rc\core\fmt\mod.cc" />
+    <ClInclude Include="src\rc\core\intrin.h" />
+    <ClInclude Include="src\rc\core\iter.h" />
+    <ClInclude Include="src\rc\core\macros.h" />
+    <ClInclude Include="src\rc\core\mem.h" />
+    <ClInclude Include="src\rc\core\mod.h" />
+    <ClInclude Include="src\rc\core\num.h" />
+    <ClInclude Include="src\rc\core\num\mod.h" />
+    <ClInclude Include="src\rc\core\num\parse.h" />
+    <ClInclude Include="src\rc\core\ops.h" />
+    <ClInclude Include="src\rc\core\option.h" />
+    <ClInclude Include="src\rc\core\panicking.h" />
+    <ClInclude Include="src\rc\core\ptr.h" />
+    <ClInclude Include="src\rc\core\slice.h" />
+    <ClInclude Include="src\rc\core\str.h" />
+    <ClInclude Include="src\rc\gpu.h" />
+    <ClInclude Include="src\rc\ffi.h" />
+    <ClInclude Include="src\rc\ffi\cstring.h" />
+    <ClInclude Include="src\rc\fs\file.h" />
+    <ClInclude Include="src\rc\fs\mod.h" />
+    <ClInclude Include="src\rc\fs\path.h" />
+    <ClInclude Include="src\rc\gpu\imp.h" />
+    <ClInclude Include="src\rc\gpu\imp\cuda.h" />
+    <ClInclude Include="src\rc\gpu\mod.h" />
+    <ClInclude Include="src\rc\io\mod.h" />
+    <ClInclude Include="src\rc\io\stdio.h" />
+    <ClInclude Include="src\rc\io\read.h" />
+    <ClInclude Include="src\rc\io\write.h" />
+    <ClInclude Include="src\rc\log\backends.h" />
+    <ClInclude Include="src\rc\log\logger.h" />
+    <ClInclude Include="src\rc\log\mod.h" />
+    <ClInclude Include="src\rc\math.h" />
+    <ClInclude Include="src\rc\env.h" />
+    <ClInclude Include="src\rc\fs.h" />
+    <ClInclude Include="src\rc\io.h" />
+    <ClInclude Include="src\rc\log.h" />
+    <ClInclude Include="src\rc\math\mod.h" />
+    <ClInclude Include="src\rc\math\ndslice.h" />
+    <ClInclude Include="src\rc\math\tensor.h" />
+    <ClInclude Include="src\rc\math\ndarray.h" />
+    <ClInclude Include="src\rc\os.h" />
+    <ClInclude Include="src\rc\serial.h" />
+    <ClInclude Include="src\rc\serial\encoder.h" />
+    <ClInclude Include="src\rc\serial\decoder.h" />
+    <ClInclude Include="src\rc\serial\mod.h" />
+    <ClInclude Include="src\rc\sync.h" />
+    <ClInclude Include="src\rc\sync\condvar.h" />
+    <ClInclude Include="src\rc\sync\mutex.h" />
+    <ClInclude Include="src\rc\sys.h" />
+    <ClInclude Include="src\rc\sys\unix.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="src\rc\sys\windows.h" />
+    <ClInclude Include="src\rc\term.h" />
+    <ClInclude Include="src\rc\term\color.h" />
+    <ClInclude Include="src\rc\term\mod.h" />
+    <ClInclude Include="src\rc\test.h" />
+    <ClInclude Include="src\rc\test\benchmark.h" />
+    <ClInclude Include="src\rc\test\test.h" />
+    <ClInclude Include="src\rc\thread.h" />
+    <ClInclude Include="src\rc\time.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\rc\alloc\mod.cc" />
+    <ClCompile Include="src\rc\core\fmt\num.cc" />
+    <ClCompile Include="src\rc\core\panicking.cc" />
+    <ClCompile Include="src\rc\env.cc" />
+    <ClCompile Include="src\rc\io\mod.cc" />
+    <ClCompile Include="src\rc\log\backends.cc" />
+    <ClCompile Include="src\rc\log\logger.cc" />
+    <ClCompile Include="src\rc\os.cc" />
+    <ClCompile Include="src\rc\serial\json.cc" />
+    <ClCompile Include="src\rc\serial\mod.cc" />
+    <ClCompile Include="src\rc\sys\unix\alloc.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\env.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\fs.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\io.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\mod.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\os.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\panicking.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\sync.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\term.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\thread.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\unix\time.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\rc\sys\windows\alloc.cc" />
+    <ClCompile Include="src\rc\sys\windows\env.cc" />
+    <ClCompile Include="src\rc\sys\windows\fs.cc" />
+    <ClCompile Include="src\rc\sys\windows\io.cc" />
+    <ClCompile Include="src\rc\sys\windows\mod.cc" />
+    <ClCompile Include="src\rc\sys\windows\os.cc" />
+    <ClCompile Include="src\rc\sys\windows\panicking.cc" />
+    <ClCompile Include="src\rc\sys\windows\sync.cc" />
+    <ClCompile Include="src\rc\sys\windows\term.cc" />
+    <ClCompile Include="src\rc\sys\windows\thread.cc" />
+    <ClCompile Include="src\rc\sys\windows\time.cc" />
+    <ClCompile Include="src\rc\test\test.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\rc.inl">
+      <FileType>Document</FileType>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(PrecompiledHeaderFile);%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PrecompiledHeaderFile);%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="src\rc.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+    <None Include="src\rc\sys\unix.inl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="src\rc\sys\windows.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
