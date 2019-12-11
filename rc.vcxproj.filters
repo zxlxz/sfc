@@ -348,9 +348,6 @@
     <ClInclude Include="src\rc\serial\decoder.h">
       <Filter>rc\serial</Filter>
     </ClInclude>
-    <ClInclude Include="src\rc\gpu.h">
-      <Filter>rc</Filter>
-    </ClInclude>
     <ClInclude Include="src\rc\cuda\imp.h">
       <Filter>rc\cuda</Filter>
     </ClInclude>
@@ -362,6 +359,9 @@
     </ClInclude>
     <ClInclude Include="src\rc\cuda\ndarray.h">
       <Filter>rc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\cuda.h">
+      <Filter>rc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

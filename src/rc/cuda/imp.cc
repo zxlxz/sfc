@@ -7,6 +7,8 @@
 #include <cuda.h>
 #pragma comment(lib, "cuda")
 
+#pragma warning(disable: 26812)
+
 namespace rc::cuda::imp {
 
 #pragma region utils
@@ -48,7 +50,7 @@ auto dev_cnt() -> usize {
   return res;
 }
 
-auto dev_set(usize idx) -> void {
+auto dev_raw(usize idx) -> dev_t {
   const auto cnt = imp::dev_cnt();
   if (idx >= cnt) {
     rc::panic("invalid device , idx=`{}`, cnt=`{}`", idx, cnt);
@@ -56,44 +58,80 @@ auto dev_set(usize idx) -> void {
 
   dev_t dev = 0;
   ::cuDeviceGet(&dev, i32(idx)) | fmt::Args{u8"get device failed"};
+  return dev;
+}
 
+auto dev_ctx(dev_t dev) -> ctx_t {
   ctx_t ctx;
   ::cuDevicePrimaryCtxRetain(&ctx, dev) | fmt::Args{u8"get context failed"};
+  return ctx;
+}
+
+auto set_ctx(ctx_t ctx) -> void {
   ::cuCtxSetCurrent(ctx) | fmt::Args{u8"set context failed"};
 }
 
-auto dev_syn() -> void {
+auto dev_name(dev_t dev) -> String {
+  char buf[256];
+  ::cuDeviceGetName(buf, sizeof(buf), dev) |
+      fmt::Args{u8"get device name failed"};
+  const auto res = Str::from_cstr(buf);
+  return String::from(res);
+}
+
+auto dev_arch(dev_t dev) -> Device::Arch {
+  const auto GET_MAJOR = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR;
+  const auto GET_MINOR = CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR;
+
+  auto res = Device::Arch{0, 0} ;
+  (void)::cuDeviceGetAttribute(&res._major, GET_MAJOR, dev);
+  (void)::cuDeviceGetAttribute(&res._minor, GET_MINOR, dev);
+  return res;
+}
+
+auto dev_sync() -> void {
   const auto eid = ::cuCtxSynchronize();
   eid | fmt::Args{u8"ctx sync failed"};
 }
+
 #pragma endregion
 
 #pragma region stream
 static thread_local auto _tls_stream = CU_STREAM_PER_THREAD;
 
-auto thr_new() -> thr_t {
+auto stream_new(u32 flags) -> thr_t {
   thr_t res;
-  ::cuStreamCreate(&res, 0) | fmt::Args{u8"stream create failed"};
+  ::cuStreamCreate(&res, flags) | fmt::Args{u8"stream create failed"};
   return res;
 }
 
-auto thr_del(thr_t thr) -> void {
+auto stream_del(thr_t thr) -> void {
   // 0: null
   // 1: CU_STREAM_LEGACY
   // 2: CU_STREAM_PER_THREAD
-  if (u64(thr) <= 2) return;
-  if (thr == _tls_stream) _tls_stream = CU_STREAM_PER_THREAD;
+  if (u64(thr) <= 0x2) {
+    return;
+  }
 
   const auto eid = ::cuStreamDestroy_v2(thr);
   eid | fmt::Args{u8"stream destroy failed"};
+
+  if (thr == _tls_stream) {
+    _tls_stream = imp::stream_default();
+  }
 }
 
-auto thr_set(thr_t thr) -> void {
+auto stream_default() -> thr_t {
+  const auto ret = CU_STREAM_PER_THREAD;
+  return ret;
+}
+
+auto set_stream(thr_t thr) -> void {
   if (u64(thr) <= 2) return;
   _tls_stream = thr;
 }
 
-auto thr_syn(thr_t thr) -> void {
+auto stream_sync(thr_t thr) -> void {
   const auto eid = ::cuStreamSynchronize_ptsz(thr);
   eid | fmt::Args{u8"stream sync failed"};
 }
@@ -103,9 +141,11 @@ auto thr_syn(thr_t thr) -> void {
 #pragma region impl
 
 auto mem_type(const void* p) -> MemType {
-  int res = 0;
+  auto res = CUmemorytype_enum::CU_MEMORYTYPE_UNIFIED;
+
   const auto eid = ::cuPointerGetAttribute(
-      &res, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, ::CUdeviceptr(p));
+      ptr::cast<int>(&res), CU_POINTER_ATTRIBUTE_MEMORY_TYPE, ::CUdeviceptr(p));
+
   eid | fmt::Args{u8"get memory type failed"};
 
   switch (res) {
@@ -403,4 +443,3 @@ auto fun_run(fun_t f, FnDims dims, const void* args[]) -> void {
 #pragma endregion
 
 }  // namespace rc::cuda::imp
-

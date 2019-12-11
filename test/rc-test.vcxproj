@@ -16,6 +16,8 @@
     <ClCompile Include="rc\collections\vec_deque.cxx" />
     <ClCompile Include="rc\core\fmt.cxx" />
     <ClCompile Include="rc\core\num.cxx" />
+    <ClCompile Include="rc\cuda\array.cxx" />
+    <ClCompile Include="rc\cuda\mod.cxx" />
     <ClCompile Include="rc\math\expr.cxx" />
     <ClCompile Include="rc\math\ndarray.cxx" />
     <ClCompile Include="rc\serial\json.cxx" />

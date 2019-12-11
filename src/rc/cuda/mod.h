@@ -3,7 +3,19 @@
 #include "rc/alloc.h"
 #include "rc/math/mod.h"
 
+struct CUstream_st;
+struct CUarray_st;
+struct CUmod_st;
+struct CUfunc_st;
+
 namespace rc::cuda {
+
+using mod_t = ::CUmod_st*;
+using thr_t = ::CUstream_st*;
+using fun_t = ::CUfunc_st*;
+using arr_t = ::CUarray_st*;
+using tex_t = u64;
+using dev_t = int;
 
 enum class MemType {
   Host = 0x1,
@@ -97,9 +109,42 @@ struct IntoArrXFmt<f32> {
 #pragma endregion
 
 struct Device {
-  pub auto cnt() -> usize;
-  pub void set(usize idx);
+  struct Arch {
+    int _major;
+    int _minor;
+
+    template <class Out>
+    void fmt(fmt::Formatter<Out>& formatter) const {
+      formatter.write(u8"{}.{}", _major, _minor);
+    }
+  };
+
+  dev_t _raw;
+
+  pub static auto count() -> usize;
+  pub static auto from_idx(usize idx) -> Device;
+  pub static void sync();
+
+  pub auto name() const -> String;
+  pub auto arch() const -> Arch;
+};
+pub void set_device(const Device& idx);
+
+struct Stream {
+  thr_t _raw;
+
+  pub explicit Stream(thr_t raw);
+  pub ~Stream();
+  pub Stream(Stream&& other) noexcept;
+
+  pub static auto Default() -> Stream&;
+  pub static auto with_flags(u32 flags) -> Stream;
   pub void sync();
+};
+pub void set_stream(const Stream&);
+
+struct Memory {
+  pub static void copy(const void* src, void* dst, usize size);
 };
 
 struct Alloc {
@@ -108,15 +153,14 @@ struct Alloc {
   pub static auto alloc(Layout layout, MemType type) -> void*;
   pub static auto alloc_zeroed(Layout layout, MemType type) -> void*;
   pub static void dealloc(void* p, Layout layout);
-  pub static void copy(const void* src, void* dst, usize size);
 };
 
 struct TexImpl {
   using Dims = math::NDDims<3>;
   using Desc = cuda::TexDesc;
-  u64 _raw;
+  tex_t _raw;
 
-  pub TexImpl(u64 raw);
+  pub TexImpl(tex_t raw);
   pub ~TexImpl();
   pub TexImpl(TexImpl&& other) noexcept;
   pub static auto with_dims(ArrXFmt xfmt, Dims dims, Desc desc) -> TexImpl;
@@ -126,8 +170,22 @@ struct TexImpl {
 };
 
 template <class T>
-void copy(const T* src, T* dst, usize cnt) {
-  Alloc::copy(src, dst, cnt * sizeof(T));
+inline auto alloc(usize cnt, MemType type) -> T* {
+  const auto layout = alloc::Layout::array<T>(cnt);
+  const auto res = Alloc::alloc(layout, type);
+  return ptr::cast<T>(res);
+}
+
+template <class T>
+inline auto dealloc(T* p, usize cnt) -> void {
+  const auto layout = alloc::Layout::array<T>(cnt);
+  Alloc::dealloc(p, layout);
+}
+
+template <class T>
+inline void copy(const T* src, T* dst, usize cnt) {
+  const auto size = cnt * sizeof(T);
+  Memory::copy(src, dst, size);
 }
 
 }  // namespace rc::cuda

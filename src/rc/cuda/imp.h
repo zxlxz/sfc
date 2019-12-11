@@ -3,34 +3,31 @@
 #include "rc/cuda/mod.h"
 #include "rc/math/mod.h"
 
-struct CUstream_st;
-struct CUarray_st;
-struct CUmod_st;
-struct CUfunc_st;
+struct CUctx_st;
 
 namespace rc::cuda::imp {
 
-using mod_t = ::CUmod_st*;
-using thr_t = ::CUstream_st*;
-using fun_t = ::CUfunc_st*;
-using arr_t = ::CUarray_st*;
-using tex_t = u64;
-
+using ctx_t = ::CUctx_st*;
 using Dims = math::NDDims<3>;
 
 auto dev_cnt() -> usize;
-auto dev_set(usize idx) -> void;
-auto dev_syn() -> void;
+auto dev_raw(usize idx) -> dev_t;
+void dev_sync();
+auto dev_name(dev_t dev) -> String;
+auto dev_arch(dev_t dev) -> Device::Arch;
+auto dev_ctx(dev_t dev) -> ctx_t;
+void set_ctx(ctx_t ctx);
 
-auto thr_new() -> thr_t;
-auto thr_del(thr_t thr) -> void;
-auto thr_set(thr_t thr) -> void;
-auto thr_syn(thr_t thr) -> void;
+auto stream_new(u32 flags) -> thr_t;
+void stream_del(thr_t thr);
+auto stream_default() -> thr_t;
+void stream_sync(thr_t thr);
+void set_stream(thr_t thr);
 
 auto mem_new(usize size, MemType type) -> void*;
-auto mem_del(void* p) -> void;
-auto mem_set(void* ptr, u8 val, usize size) -> void;
-auto mem_cpy(void* dst, const void* src, usize size) -> void;
+void mem_del(void* p);
+void mem_set(void* ptr, u8 val, usize size);
+void mem_cpy(void* dst, const void* src, usize size);
 
 auto arr_new(ArrXFmt xfmt, Dims dims, ArrFlag flag) -> arr_t;
 void arr_del(arr_t arr);
@@ -38,12 +35,12 @@ void arr_set(arr_t arr, const void* buf);
 void arr_get(arr_t arr, void* buf);
 
 auto tex_new(arr_t arr, TexDesc desc) -> tex_t;
-auto tex_del(tex_t tex) -> void;
+void tex_del(tex_t tex);
 auto tex_arr(tex_t arr) -> arr_t;
 
 auto mod_new(void* dat) -> mod_t;
-auto mod_del(mod_t mod) -> void;
+void mod_del(mod_t mod);
 auto mod_fun(mod_t mod, Str name) -> fun_t;
-auto fun_run(fun_t fun, FnDims dims, void* args[]) -> void;
+void fun_run(fun_t fun, FnDims dims, void* args[]);
 
 }  // namespace rc::cuda::imp

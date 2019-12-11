@@ -33,26 +33,32 @@ struct NDArray {
   operator NDSlice<T, RANK>() const noexcept { return _inner; }
 
   auto as_ptr() const noexcept -> T* { return _inner._data; }
-  auto as_ptr_mut() noexcept -> T* { return _inner._data; }
+  auto as_mut_ptr() noexcept -> T* { return _inner._data; }
 
   auto as_slice() const noexcept -> NDSlice<T, RANK> { return _inner; }
-
+  auto dims() const noexcept -> Dims { return _inner._dims; }
   auto count() const noexcept -> usize { return _inner.count(); }
 
-  __forceinline auto operator[](Idxs idx) const noexcept -> const T& {
-    // Slice::opIndex
-    return _inner[idx];
+  // op[call]: ref
+  __forceinline auto operator[](const Idxs& idxs) const noexcept -> const T& {
+    return _inner[idxs];
   }
 
-  __forceinline auto operator[](Idxs idx) noexcept -> T& {
-    // Slice::opIndex
-    return _inner[idx];
+  // op[call]: ref
+  __forceinline auto operator[](const Idxs& idxs) noexcept -> T& {
+    return _inner[idxs];
   }
 
   template <usize... S, usize M = (...+(S-1))>
   auto slice(const usize (&... idxs)[S]) const noexcept -> NDSlice<T, M> {
     return _inner.slice(idxs...);
   }
+
+  // Send
+  void operator<<(NDSlice<T, RANK> src) {}
+
+  // Recv
+  void operator>>(NDSlice<T, RANK> dst) {}
 };
 
 }  // namespace rc::math

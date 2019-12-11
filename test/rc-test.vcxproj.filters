@@ -43,6 +43,12 @@
     <ClCompile Include="rc\collections\linked_list.cxx">
       <Filter>rc\collections</Filter>
     </ClCompile>
+    <ClCompile Include="rc\cuda\mod.cxx">
+      <Filter>rc\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="rc\cuda\array.cxx">
+      <Filter>rc\cuda</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="rc-test.inl" />

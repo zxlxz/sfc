@@ -15,7 +15,7 @@ rc_test(ndarray_1d) {
   auto n = usize(10);
 
   auto a = math::NDArray<u32, 1>::with_dims({n});
-  array_init_seq(a.as_ptr_mut(), a.count());
+  array_init_seq(a.as_mut_ptr(), a.count());
 
   for (auto i = 0u; i < n; ++i) {
     assert_eq(a[{i}], i);
@@ -28,7 +28,7 @@ rc_test(ndarray_2d) {
   auto n = usize(10);
 
   auto a = math::NDArray<u32, 2>::with_dims({n, n});
-  array_init_seq(a.as_ptr_mut(), a.count());
+  array_init_seq(a.as_mut_ptr(), a.count());
 
   for (auto y = 0u; y < n; ++y) {
     for (auto x = 0u; x < n; ++x) {
@@ -43,7 +43,7 @@ rc_test(ndarray_3d) {
   auto n = usize(10);
 
   auto a = math::NDArray<u32, 3>::with_dims({n, n, n});
-  array_init_seq(a.as_ptr_mut(), a.count());
+  array_init_seq(a.as_mut_ptr(), a.count());
 
   for (auto z = 0u; z < n; z++) {
     for (auto y = 0u; y < n; ++y) {

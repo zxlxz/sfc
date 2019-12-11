@@ -18,6 +18,13 @@ struct NDDims {
 
   __forceinline auto count() const -> usize { return ops::prod(_0); }
 
+  auto operator==(const NDDims& other) -> bool {
+    return cmp::all_eq(_0, other._0, N);
+  }
+
+  auto operator!=(const NDDims& other) -> bool {
+    return cmp::any_ne(_0, other._0, N);
+  }
   template <class Out>
   void fmt(fmt::Formatter<Out>& formatter) const {
     formatter.write_val(_0);
@@ -31,10 +38,11 @@ struct NDStep {
   usize _0[RANK];
 
   static auto from_dims(const NDDims<RANK>& size) -> NDStep {
-    NDStep res = {};
-    res._0[0] = 1u;
-    for (usize i = 1; i < RANK; ++i) {
-      res._0[i] = res._0[i - 1] * size._0[i - 1];
+    NDStep res = {{1u}};
+    if constexpr (RANK > 1) {
+      for (usize i = 1; i < RANK; ++i) {
+        res._0[i] = res._0[i - 1] * size._0[i - 1];
+      }
     }
     return res;
   }
@@ -42,6 +50,14 @@ struct NDStep {
   __forceinline auto operator[](usize idx) const -> usize {
     if (idx >= RANK) return 0u;
     return _0[idx];
+  }
+
+  auto operator==(const NDStep& other) -> bool {
+    return cmp::all_eq(_0, other._0, N);
+  }
+
+  auto operator!=(const NDStep& other) -> bool {
+    return cmp::any_ne(_0, other._0, N);
   }
 
   template <class Out>

@@ -416,6 +416,10 @@ using remove_const_t = typename rc::_RemoveConst<T>::Type;
 
 template <class T>
 using remove_ref_t = typename rc::_RemoveRef<T>::Type;
+
+template <class T>
+using remove_cref_t = rc::remove_const_t<remove_ref_t<T>>;
+
 #pragma endregion
 
 }  // namespace rc

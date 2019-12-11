@@ -229,8 +229,6 @@ struct Tensor<Linspace<T, 1>> {
   auto operator[](usize idx) const -> T { return T(idx * _self._step[0]); }
 };
 
-
-
 template <class T, usize N>
 struct Tensor<Linspace<T, N>> {
   static constexpr auto RANK = N;
@@ -251,28 +249,12 @@ struct Tensor<Linspace<T, N>> {
 
 #pragma endregion
 
-#pragma region map : x?y
-template <class A, class B>
-constexpr auto _if_bop() -> usize {
-  using TA = Tensor<A>;
-  using TB = Tensor<B>;
-  if constexpr (TA::RANK == 0 && TB::RANK == 0) {
-    return false;
-  }
-  if constexpr (TA::RANK == 0 || TB::RANK == 0) {
-    return true;
-  }
-  return TA::RANK == TB::RANK;
-}
-
-template <class T0, class T1>
-using where_bop_t = rc::where_t<math::_if_bop<T0, T1>()>;
-
-#define impl_bop(F, op)                                             \
-  template <class A, class B, class = math::where_bop_t<A, B>>      \
-  auto operator op(const A& a, const B& b) noexcept->Map<F(A, B)> { \
-    return Map<F(A, B)>{{a}, {b}};                                  \
-  }                                                                 \
+#pragma region map : x ? y
+#define impl_bop(F, op)                                                  \
+  template <class A, class B, usize = Tensor<A>::RANK | Tensor<B>::RANK> \
+  auto operator op(const A& a, const B& b) noexcept->Map<F(A, B)> {      \
+    return Map<F(A, B)>{{a}, {b}};                                       \
+  }                                                                      \
   using rc::unit
 
 impl_bop(ops::Add, +);
@@ -310,14 +292,14 @@ void compute(LHS y, RHS x) {
   }
 }
 
-template<class T, usize N, class U>
+template<class T, usize N, class U, usize = Tensor<U>::RANK>
 void operator<<=(NDSlice<T, N> lhs, const U& rhs) {
   auto y = Tensor<NDSlice<T, N>>{lhs};
   auto x = Tensor<U>{rhs};
   math::compute<ops::Assign>(y, x);
 }
 
-template <class T, usize N, class U>
+template <class T, usize N, class U, usize = Tensor<U>::RANK>
 void operator<<=(NDArray<T, N>& lhs, const U& rhs) {
   auto y = Tensor<NDSlice<T, N>>{lhs.as_slice()};
   auto x = Tensor<U>{rhs};

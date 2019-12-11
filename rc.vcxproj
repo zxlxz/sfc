@@ -147,7 +147,7 @@
     <ClInclude Include="src\rc\cuda\imp.h" />
     <ClInclude Include="src\rc\cuda\mod.h" />
     <ClInclude Include="src\rc\cuda\texture.h" />
-    <ClInclude Include="src\rc\gpu.h" />
+    <ClInclude Include="src\rc\cuda.h" />
     <ClInclude Include="src\rc\ffi.h" />
     <ClInclude Include="src\rc\ffi\cstring.h" />
     <ClInclude Include="src\rc\fs\file.h" />

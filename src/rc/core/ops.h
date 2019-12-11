@@ -102,8 +102,10 @@ impl_ass(ModAssign, y %= x);
 template <usize N>
 constexpr auto any(const bool (&v)[N]) -> bool {
   auto res = v[0];
-  for (usize i = 1; i < N; ++i) {
-    res |= v[i];
+  if constexpr (N > 1) {
+    for (usize i = 1; i < N; ++i) {
+      res |= v[i];
+    }
   }
   return res;
 }
@@ -111,8 +113,10 @@ constexpr auto any(const bool (&v)[N]) -> bool {
 template <usize N>
 constexpr auto all(const bool(&v)[N]) -> bool {
   auto res = v[0];
-  for (usize i = 1; i < N; ++i) {
-    res &= v[i];
+  if constexpr (N > 1) {
+    for (usize i = 1; i < N; ++i) {
+      res &= v[i];
+    }
   }
   return res;
 }
@@ -120,8 +124,10 @@ constexpr auto all(const bool(&v)[N]) -> bool {
 template <class T, usize N>
 constexpr auto sum(const T (&v)[N]) -> T {
   auto res = v[0];
-  for (usize i = 1; i < N; ++i) {
-    res += v[i];
+  if constexpr (N > 1) {
+    for (usize i = 1; i < N; ++i) {
+      res += v[i];
+    }
   }
   return res;
 }
@@ -129,8 +135,10 @@ constexpr auto sum(const T (&v)[N]) -> T {
 template<class T, usize N>
 constexpr auto prod(const T(&v)[N]) -> T{
   auto res = v[0];
-  for(usize i = 1; i < N; ++i) {
-    res *= v[i];
+  if constexpr (N > 1) {
+    for (usize i = 1; i < N; ++i) {
+      res *= v[i];
+    }
   }
   return res;
 }
@@ -138,8 +146,10 @@ constexpr auto prod(const T(&v)[N]) -> T{
 template <usize N>
 constexpr auto count(const bool (&v)[N]) -> usize {
   auto res = usize(0);
-  for (usize i = 0; i < N; ++i) {
-    if (v[i]) res += 1;
+  if constexpr (N > 1) {
+    for (usize i = 0; i < N; ++i) {
+      if (v[i]) res += 1;
+    }
   }
   return res;
 }

@@ -35,12 +35,12 @@ struct NDSlice {
 
   __forceinline auto as_mut_ptr() noexcept -> T* { return _data; }
 
-  __forceinline auto dims(usize idx) const noexcept -> usize {
-    return _dims[idx];
+  __forceinline auto dims() const noexcept -> Dims {
+    return _dims;
   }
 
-  __forceinline auto step(usize idx) const noexcept -> usize {
-    return _step[idx];
+  __forceinline auto step() const noexcept -> Step {
+    return _step;
   }
 
   __forceinline auto count() const noexcept -> usize {
