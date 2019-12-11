@@ -27,7 +27,7 @@ void set_stream(thr_t thr);
 auto mem_new(usize size, MemType type) -> void*;
 void mem_del(void* p);
 void mem_set(void* ptr, u8 val, usize size);
-void mem_cpy(void* dst, const void* src, usize size);
+void mem_copy(void* dst, const void* src, usize size);
 
 auto arr_new(ArrXFmt xfmt, Dims dims, ArrFlag flag) -> arr_t;
 void arr_del(arr_t arr);
