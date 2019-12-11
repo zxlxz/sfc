@@ -1,11 +1,11 @@
 #include "rc-test.inl"
 
-#include "rc/collections/vec_deque.h"
+#include "rc/collections/linked_list.h"
 
-namespace rc::collections::vec_deque {
+namespace rc::collections::linked_list {
 
 rc_test(push) {
-  auto q = VecDeque<i32>{};
+  auto q = LinkedList<i32>{};
   q.push_front(2);
   q.push_front(1);
   q.push_front(0);

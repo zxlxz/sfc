@@ -60,8 +60,8 @@ auto operator==(const T& lhs, const U& rhs) -> bool {
 
 template <class T, class U>
 auto operator!=(const T& lhs, const U& rhs) -> bool {
-  return lhs.ne(rhs);
-};
+  return !lhs.eq(rhs);
+}
 
 template <class T>
 auto operator<(const T& lhs, const T& rhs) -> bool {

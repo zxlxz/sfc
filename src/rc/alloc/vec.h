@@ -6,8 +6,6 @@ namespace rc::vec {
 
 template <class T>
 struct RawVec {
-  static constexpr usize MASK = 16 - 1;
-
   T* _ptr;
   usize _cap;
 
@@ -26,8 +24,9 @@ struct RawVec {
   }
 
   static auto with_capacity(usize capacity) -> RawVec {
-    const auto pointer = alloc::alloc<T>(capacity);
-    return {pointer, capacity};
+    const auto n = (capacity | 0xF) + 1;
+    const auto p = alloc::alloc<T>(n);
+    return RawVec{p, n};
   }
 
   auto capacity() const noexcept -> usize { return _cap; }
@@ -45,7 +44,7 @@ struct RawVec {
   }
 
   auto reserve(usize used_capacity, usize needed_extra_capacity) -> void {
-    const auto new_ext = cmp::max(_cap, (needed_extra_capacity | MASK) + 1);
+    const auto new_ext = cmp::max(_cap, (needed_extra_capacity | 0xF) + 1);
     this->reserve_exact(used_capacity, new_ext);
   }
 

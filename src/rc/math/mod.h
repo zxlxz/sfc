@@ -6,7 +6,7 @@ namespace rc::math {
 
 constexpr static usize _[] = {0, num::max_value<usize>()};
 
-template<usize N>
+template <usize N>
 struct NDDims {
   constexpr static usize RANK = N;
   usize _0[RANK];
@@ -16,8 +16,11 @@ struct NDDims {
     return _0[idx];
   }
 
-  __forceinline auto count() const -> usize {
-    return ops::prod(_0);
+  __forceinline auto count() const -> usize { return ops::prod(_0); }
+
+  template <class Out>
+  void fmt(fmt::Formatter<Out>& formatter) const {
+    formatter.write_val(_0);
   }
 };
 
@@ -39,6 +42,11 @@ struct NDStep {
   __forceinline auto operator[](usize idx) const -> usize {
     if (idx >= RANK) return 0u;
     return _0[idx];
+  }
+
+  template <class Out>
+  void fmt(fmt::Formatter<Out>& formatter) const {
+    formatter.write_val(_0);
   }
 };
 
@@ -62,8 +70,12 @@ struct NDIdxs {
     if constexpr (RANK > 9) ret += _0[9] * step._0[9];
     return ret;
   }
-};
 
+  template <class Out>
+  void fmt(fmt::Formatter<Out>& formatter) const {
+    formatter.write_val(_0);
+  }
+};
 
 #pragma region Range
 struct Range {

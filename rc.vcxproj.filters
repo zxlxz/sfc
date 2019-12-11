@@ -118,14 +118,17 @@
     <ClCompile Include="src\rc\ffi\cstring.cc">
       <Filter>rc\ffi</Filter>
     </ClCompile>
-    <ClCompile Include="src\rc\gpu\imp\cuda.cc">
-      <Filter>rc\gpu\imp</Filter>
-    </ClCompile>
     <ClCompile Include="src\rc\sync\mutex.cc">
       <Filter>rc\sync</Filter>
     </ClCompile>
     <ClCompile Include="src\rc\sync\condvar.cc">
       <Filter>rc\sync</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\cuda\imp.cc">
+      <Filter>rc\cuda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rc\cuda\mod.cc">
+      <Filter>rc\cuda</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -339,15 +342,6 @@
     <ClInclude Include="src\rc\math\mod.h">
       <Filter>rc\math</Filter>
     </ClInclude>
-    <ClInclude Include="src\rc\gpu\mod.h">
-      <Filter>rc\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rc\gpu\imp.h">
-      <Filter>rc\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rc\gpu\imp\cuda.h">
-      <Filter>rc\gpu\imp</Filter>
-    </ClInclude>
     <ClInclude Include="src\rc\serial\encoder.h">
       <Filter>rc\serial</Filter>
     </ClInclude>
@@ -356,6 +350,18 @@
     </ClInclude>
     <ClInclude Include="src\rc\gpu.h">
       <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\cuda\imp.h">
+      <Filter>rc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\cuda\mod.h">
+      <Filter>rc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\cuda\texture.h">
+      <Filter>rc\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\cuda\ndarray.h">
+      <Filter>rc\cuda</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -416,11 +422,8 @@
     <Filter Include="rc\core\num">
       <UniqueIdentifier>{758577cb-1984-4016-9ef9-03637f3f645d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="rc\gpu">
+    <Filter Include="rc\cuda">
       <UniqueIdentifier>{548a09f6-8f1f-4beb-8099-8b445bd2b8f9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="rc\gpu\imp">
-      <UniqueIdentifier>{7c32379e-b5f5-47ec-b223-c9685ec10759}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

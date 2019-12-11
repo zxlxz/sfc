@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cxx" />
+    <ClCompile Include="rc\collections\linked_list.cxx" />
     <ClCompile Include="rc\collections\vec_deque.cxx" />
     <ClCompile Include="rc\core\fmt.cxx" />
     <ClCompile Include="rc\core\num.cxx" />

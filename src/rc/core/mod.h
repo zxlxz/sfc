@@ -71,6 +71,8 @@ using bool_t = bool;
 
 struct unit {};
 
+struct pack_t{};
+
 struct f16 {
   u16 _val;
 };

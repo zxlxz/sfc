@@ -6,35 +6,40 @@ namespace rc::boxed {
 
 template <class T>
 struct Box {
-  T* _p;
+  T* _0;
 
-  explicit Box(T* p) : _p{p} {}
+  explicit Box(T* p) noexcept : _0{p} {}
 
-  explicit Box(T val) : _p{nullptr} {
-    _p = alloc::alloc<T>(1);
-    ptr::write(_p, static_cast<T&&>(val));
+  explicit Box(T val) : _0{alloc::alloc<T>(1)} {
+    ptr::write(_0, static_cast<T&&>(val));
   }
 
   ~Box() {
-    if (_p == nullptr) {
-      return;
-    }
-    mem::drop(*_p);
-    alloc::dealloc(_p, 1);
+    if (_0 == nullptr) return;
+    mem::drop(*_0);
+    alloc::dealloc(_0, 1);
   }
 
-  Box(Box&& other) noexcept : _p{other._p} { other._p = nullptr; }
+  Box(Box&& other) noexcept : _0{other._0} { other._0 = nullptr; }
 
   static auto from_raw(T* p) -> Box { return Box{p}; }
 
-  auto operator*() -> T& { return *_p; }
+  auto operator*() const & noexcept -> T& { return *_0; }
+  auto operator*() & noexcept -> T& { return *_0; }
+  auto operator*() && noexcept -> T { return static_cast<T&&>(*_0); }
+
+  auto operator-> () const -> const T* { return _0; }
+  auto operator-> () -> T* { return _0; }
 
   auto into_raw() && noexcept -> T* {
-    const auto ret = _p;
-    _p = nullptr;
+    const auto ret = _0;
+    _0 = nullptr;
     return ret;
   }
 };
+
+template<class T>
+Box(T) -> Box<T>;
 
 template <class F>
 struct FnBox;
@@ -76,37 +81,42 @@ struct FnBox<R(T...)> {
     }
   };
 
-  Fn* _p;
+  Fn* _0;
 
-  explicit FnBox(Fn* p) noexcept : _p{p} {}
+  explicit FnBox(Fn* p) noexcept : _0{p} {}
 
   template <class F>
   FnBox(F f) {
     const auto p = alloc::alloc<Fx<F>>(1);
     ptr::write(p, Fx<F>{rc::move(f)});
-    _p = ptr::cast<Fn>(p);
+    _0 = ptr::cast<Fn>(p);
   }
 
   ~FnBox() {
-    if (_p == nullptr) {
+    if (_0 == nullptr) {
       return;
     }
-    (_p->_del)(*_p);
+    (_0->_del)(*_0);
   }
 
-  FnBox(FnBox&& other) noexcept : _p{other._p} { other._p = nullptr; }
+  FnBox(FnBox&& other) noexcept : _0{other._0} { other._0 = nullptr; }
 
   static auto from_raw(Fn* p) -> FnBox { return FnBox{p}; }
 
   auto into_raw() && noexcept -> Fn* {
-    const auto ret = _p;
-    _p = nullptr;
+    const auto ret = _0;
+    _0 = nullptr;
     return ret;
   }
 
   auto operator()(T... args) -> R {
-    return (_p->_xfn)(*_p, static_cast<T>(args)...);
+    return (_0->_xfn)(*_0, static_cast<T>(args)...);
   }
 };
 
 }  // namespace rc::boxed
+
+namespace rc {
+using rc::boxed::Box;
+using rc::boxed::FnBox;
+}  // namespace rc

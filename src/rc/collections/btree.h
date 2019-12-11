@@ -6,23 +6,27 @@ namespace rc::collections::btree {
 
 template <class T, usize D>
 struct Node {
-  using val_t = T;
-  using ptr_t = Node*;
-  constexpr static auto DEGREE = D;
+  constexpr static usize DEGREE = D;
 
-  u16 _val_cnt;
-  u16 _ptr_cnt;
-  val_t _val[DEGREE * 2 - 1];
-  ptr_t _ptr[DEGREE * 2 - 0];
+  u16   _val_cnt;
+  u16   _ptr_cnt;
+  T     _val[2*DEGREE - 1];
+  Node* _ptr[2*DEGREE - 0];
 
   auto is_full() const -> bool { return _val_cnt == DEGREE * 2 - 1; }
 
-  auto _get_val(usize idx) noexcept -> T& { return _val[idx]; }
+  auto _get_unchecked_mut(usize idx) noexcept -> T& { return _val[idx]; }
 
   auto _insert(usize idx, Node* key, const T& val) noexcept -> void {
     ptr::mshr(&_val[idx + 0], 1, _val_cnt - idx);
     ptr::mshr(&_ptr[idx + 1], 1, _ptr_cnt - idx);
   }
+};
+
+template<class T, usize D>
+struct Cursor {
+  using Node = rc::choose_t<rc::is_const<T>(), Node<const T, D>, Node<T, D>>;
+  Node* _p;
 };
 
 template <class T, usize D>
@@ -73,7 +77,7 @@ struct Iter {
     return false;
   }
 
-  auto _split() -> void {
+  void _split() {
     //  :   [ab.hi]    |       [abehi]
     //  :   [cdefg]    |  [cd...]   [...fg]
 
@@ -87,7 +91,7 @@ struct Iter {
     ptr::mshr(&root->_val[_prev_idx + 0], 1, _prev);
     ptr::mshr(&root->_ptr[_prev_idx + 1], 1)
 
-        left->_val_cnt = right->_val_cnt = left->_val_cnt / 2;
+    left->_val_cnt = right->_val_cnt = left->_val_cnt / 2;
     left->_ptr_cnt = right->_ptr_cnt = left->_ptr_cnt / 2;
 
     auto pv = &x->_val[_prev_idx + 0];
@@ -133,35 +137,28 @@ struct Iter {
 };
 
 template <class T, usize D = 8>
-class BTree {
- public:
-  using Item = T;
-  using Node = Node<T, D>;
-  using Iter = Iter<T, D>;
+struct BTree {
+  constexpr static usize DEGREE = D;
+  using Node = Node<T, DEGREE>;
 
   Node* _root;
+  usize _len;
 
-  BTree() noexcept : _root(nullptr) {
-    _root = alloc::alloc_one<Node>(1);
-    _root->_val_cnt = 0;
-    _root->_ptr_cnt = 0;
+  BTree() noexcept : _root{nullptr}, _len{0} {}
+
+  auto len() const noexcept -> usize {
+    return _len;
   }
 
-  auto find(const T& val) const -> const T& {
-    auto p = _search_get(val);
-    if (p == nullptr) {
-      throw Error::NotFound;
-    }
-    return *p;
+  template<class F>
+  auto _find_ref(const F& f) const -> const Node* {
+    
   }
 
-  auto insert(mov_t<T> val) -> void {
-    auto p = _search_ins(val);
-    ptr::write(p, val);
+  template<class F>
+  auto _find_mut(const F& f) -> Node* {
+    
   }
-
- private:
-  auto _iter() const noexcept -> Iter { return {nullptr, 0, _root, 0}; }
 
   auto _search_get(const T& val) const noexcept -> T* {
     return _iter()._search(val);

@@ -154,11 +154,11 @@ struct Formatter {
 
     switch (_style.align()) {
       case '<':
-      default:
         this->write_str(buf);
         this->write_chs(fill_cnt, fill_chr);
         break;
 
+      default:
       case '>':
         this->write_chs(fill_cnt, fill_chr);
         this->write_str(buf);

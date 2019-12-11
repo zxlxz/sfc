@@ -17,11 +17,8 @@ struct NDArray {
   explicit NDArray(NDSlice<T, RANK> s) noexcept : _inner{s} {}
 
   ~NDArray() {
-    if (_inner._data == nullptr) {
-      return;
-    }
-    const auto n = _inner.count();
-    alloc::dealloc(_inner._data, n);
+    if (_inner._data == nullptr) return;
+    alloc::dealloc(_inner._data, _inner.count());
   }
 
   NDArray(NDArray&& other) noexcept : _inner{other._inner} {

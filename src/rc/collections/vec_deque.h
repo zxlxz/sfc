@@ -8,13 +8,13 @@ using vec::RawVec;
 
 template <class T>
 struct Cursor {
-  T*    _ptr;
+  T* _ptr;
   usize _mask;
   usize _idx;
 
   auto operator++() noexcept -> void { _idx = (_idx + 1) & _mask; }
   auto operator--() noexcept -> void { _idx = (_idx - 1) & _mask; }
-  auto operator*() const noexcept -> T& { return *_ptr; }
+  auto operator*() const noexcept -> T& { return _ptr[_idx]; }
 
   auto operator!=(const Cursor& other) const noexcept -> bool {
     return _idx != other._idx;
@@ -22,7 +22,27 @@ struct Cursor {
 };
 
 template <class T>
-struct Iter {};
+struct Iter: iter::Iterator<Iter<T>> {
+  using Item = T&;
+
+  T* _ptr;
+  usize _mask;
+  usize _head;
+  usize _tail;
+
+  auto next() noexcept -> Option<T&> {
+    if (_head == _tail) return {};
+    auto& res = _ptr[_head];
+    _head = (_head + 1) & _mask;
+    return {res};
+  }
+
+  auto next_back() noexcept -> Option<T&> {
+    if (_head == _tail) return {};
+    _tail = (_tail - 1) & _mask;
+    return {_ptr[_tail]};
+  }
+};
 
 template <class T>
 struct VecDeque {
@@ -33,20 +53,18 @@ struct VecDeque {
   using CursorMut = vec_deque::Cursor<T>;
 
   RawVec<T> _buf;
+  usize _mask;
   usize _head;
   usize _tail;
-  usize _mask;
 
-  VecDeque() noexcept : _buf{}, _head(0), _tail(0) {}
+  VecDeque() noexcept : _buf{}, _head(0), _tail(0), _mask{0} {}
 
   VecDeque(vec::RawVec<T>&& buf, usize head, usize tail) noexcept
       : _buf{rc::move(buf)}, _head{head}, _tail{tail}, _mask{0} {}
 
   VecDeque(VecDeque&& other) noexcept
       : _buf{rc::move(other._buf)},
-        _head{other._head},
-        _tail{other._tail},
-        _mask{other._mask} {
+        _head{other._head}, _tail{other._tail} {
     ptr::write(&other, VecDeque{});
   }
 
@@ -57,34 +75,38 @@ struct VecDeque {
     return {RawVec<T>::with_capacity(cap), 0, 0};
   }
 
-  auto capacity() const noexcept -> usize { return _buf._cap; }
+  auto capacity() const noexcept -> usize {
+    return _buf._cap == 0 ? 0 : _buf._cap - 1;
+  }
 
   auto len() const noexcept -> usize { return (_tail - _head) & _mask; }
 
   auto is_empty() const noexcept -> usize { return _head == _tail; }
 
   auto begin() const noexcept -> Cursor {
-    return Cursor{_buf._ptr, _mask, _head};
+    return Cursor{_buf._ptr, _buf._cap-1, _head};
   }
 
   auto end() const noexcept -> Cursor {
-    return Cursor{_buf._ptr, _mask, _tail};
+    return Cursor{_buf._ptr, _buf._cap-1, _tail};
   }
 
   auto begin() noexcept -> CursorMut {
-    return CursorMut{_buf._ptr, _mask, _head};
+    return CursorMut{_buf._ptr, _buf._cap - 1, _head};
   }
 
   auto end() noexcept -> CursorMut {
-    return CursorMut{_buf._ptr, _mask, _tail};
+    return CursorMut{_buf._ptr, _buf._cap - 1, _tail};
   }
+
+  auto _wrap_idx(usize idx) const -> usize { return idx & (_buf._cap - 1); }
 
   constexpr auto get_unchecked(usize idx) const noexcept -> const T& {
-    return _buf._ptr[(_head + idx) & _mask];
+    return _buf._ptr[_wrap_idx(_head + idx)];
   }
 
-  constexpr auto get_unchecked_mut(usize idx) noexcept -> T& {
-    return _buf._ptr[(_head + idx) & _mask];
+  constexpr auto get_unchecked_mut(usize index) noexcept -> T& {
+    return _buf._ptr[_wrap_idx(_head + idx)];
   }
 
   auto operator[](usize idx) const noexcept -> const T& {
@@ -106,7 +128,7 @@ struct VecDeque {
 
   auto back() const -> const T& {
     rc::assert(_head != _tail, u8"rc::collections::VecDeque: empty");
-    return _buf._ptr[(_tail - 1) & _head];
+    return _buf._ptr[_wrap_idx(_tail - 1)];
   }
 
   auto clear() -> void {
@@ -121,27 +143,27 @@ struct VecDeque {
 
   auto push_front(T val) {
     this->reserve(1);
-    _head = (_head - 1) & _mask;
-    ptr::write<T>(&_buf._ptr[_head], static_cast<T&&>(val));
+    _head = _wrap_idx(_head - 1);
+    ptr::write(&_buf._ptr[_head], static_cast<T&&>(val));
   }
 
   auto pop_front() -> T {
     rc::assert(!this->is_empty(), u8"rc::collections::VecDeque: empty");
     const auto old_head = _head;
-    _head = (_head + 1) & _mask;
+    _head = _wrap_idx(_head + 1);
     return ptr::read(&_buf._ptr[old_head]);
   }
 
   auto push_back(T val) -> void {
     this->reserve(1);
     const auto old_tail = _tail;
-    _tail = (_tail + 1) & _mask;
+    _tail = _wrap_idx(_tail + 1);
     ptr::write(&_buf._ptr[old_tail], static_cast<T&&>(val));
   }
 
   auto pop_back() -> T {
     rc::assert(!this->is_empty(), u8"rc::collections::VecDeque: empty");
-    _tail = (_tail - 1) & _mask;
+    _tail = _wrap_idx(_tail - 1);
     return ptr::read(&_buf[_tail]);
   }
 

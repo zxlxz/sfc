@@ -41,15 +41,14 @@
     </Expand>
   </Type>
 
-  <!-- string::String>-->
-  <Type Name="rc::string::String">
-    <DisplayString>{_vec._buf._ptr, [_vec._len]s}</DisplayString>
+  <!-- rc::vec::RawVec<T>-->
+  <Type Name="rc::vec::RawVec&lt;*&gt;">
     <Expand>
-      <Item Name="[len]">_vec._len</Item>
-      <Item Name="[cap]">_vec._buf._cap</Item>
+      <Item Name="[ptr]">_ptr</Item>
+      <Item Name="[cap]">_cap</Item>
       <ArrayItems>
-        <Size>_vec._len</Size>
-        <ValuePointer>_vec._buf._ptr</ValuePointer>
+        <Size>_cap</Size>
+        <ValuePointer>_ptr</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
@@ -65,12 +64,37 @@
       </ArrayItems>
     </Expand>
   </Type>
-
+  
+  <!-- string::String>-->
+  <Type Name="rc::string::String">
+    <DisplayString>{_vec._buf._ptr, [_vec._len]s}</DisplayString>
+    <Expand>
+      <Item Name="[len]">_vec._len</Item>
+      <Item Name="[cap]">_vec._buf._cap</Item>
+      <ArrayItems>
+        <Size>_vec._len</Size>
+        <ValuePointer>_vec._buf._ptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+  
   <!--rc::time::Time-->
   <Type Name="rc::time::Instant">
     <DisplayString>{_secs + _nanos*0.000000001}</DisplayString>
   </Type>
 
+  <!--rc::collections::LinkedList-->
+  <Type Name="rc::collections::linked_list::LinkedList&lt;*&gt;">
+    <Expand>
+      <LinkedListItems>
+        <Size>_len</Size>
+        <HeadPointer>_head</HeadPointer>
+        <NextPointer>_next</NextPointer>
+        <ValueNode>_data</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+  
   <!--rc::math::NDSlice<*,*>-->
   <Type Name="rc::math::NDSlice&lt;*,*&gt;">
     <DisplayString>[dims] = {_dims}</DisplayString>
@@ -87,7 +111,7 @@
     </Expand>
   </Type>
 
-  <Type Name="rc::serial::Node">
+<Type Name="rc::serial::Node">
     <Expand>
       <!--key-->
       <Item Name="none" Condition="_type==0">"null",[4]sb</Item>
