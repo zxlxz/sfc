@@ -130,6 +130,9 @@
     <ClCompile Include="src\rc\cuda\mod.cc">
       <Filter>rc\cuda</Filter>
     </ClCompile>
+    <ClCompile Include="src\rc\thread.cc">
+      <Filter>rc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rc\sync.h">
@@ -362,6 +365,12 @@
     </ClInclude>
     <ClInclude Include="src\rc\cuda.h">
       <Filter>rc</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\sync\arc.h">
+      <Filter>rc\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rc\core\atomic.h">
+      <Filter>rc\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

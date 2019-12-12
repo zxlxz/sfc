@@ -196,7 +196,7 @@ auto mem_set(void* p, u8 val, usize size) -> void {
   eid | fmt::Args{u8"memset failed, size={}", size};
 }
 
-auto mem_cpy(void* dst, const void* src, usize size) -> void {
+auto mem_copy(void* dst, const void* src, usize size) -> void {
   const auto d = ::CUdeviceptr(dst);
   const auto s = ::CUdeviceptr(src);
   const auto eid = ::cuMemcpyAsync_ptsz(d, s, size, _tls_stream);

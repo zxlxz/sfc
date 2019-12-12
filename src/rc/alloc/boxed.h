@@ -8,11 +8,6 @@ template <class T>
 struct Box {
   T* _0;
 
-  explicit Box(T* p) noexcept : _0{p} {}
-
-  explicit Box(T val) : _0{alloc::alloc<T>(1)} {
-    ptr::write(_0, static_cast<T&&>(val));
-  }
 
   ~Box() {
     if (_0 == nullptr) return;
@@ -23,6 +18,12 @@ struct Box {
   Box(Box&& other) noexcept : _0{other._0} { other._0 = nullptr; }
 
   static auto from_raw(T* p) -> Box { return Box{p}; }
+
+  static auto New(T val) -> Box {
+    const auto p = alloc::alloc<T>(1);
+    ptr::write(_0, static_cast<T&&>(val));
+    return Box{p};
+  }
 
   auto operator*() const & noexcept -> T& { return *_0; }
   auto operator*() & noexcept -> T& { return *_0; }

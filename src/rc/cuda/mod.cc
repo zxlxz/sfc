@@ -72,7 +72,7 @@ pub void set_stream(const Stream& stream) {
 #pragma region Memory
 pub void Memory::copy(const void* src, void* dst, usize size) {
   if (size == 0) return;
-  imp::mem_cpy(dst, src, size);
+  imp::mem_copy(dst, src, size);
 }
 #pragma endregion
 
