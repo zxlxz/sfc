@@ -108,7 +108,6 @@
     <ClCompile Include="src\rc\sync\condvar.cc" />
     <ClCompile Include="src\rc\sync\mutex.cc" />
     <ClCompile Include="src\rc\term\mod.cc" />
-    <ClCompile Include="src\rc\thread.cc" />
     <ClCompile Include="src\rc\time.cc" />
     <ClInclude Include="src\rc\alloc.h" />
     <ClInclude Include="src\rc\alloc\boxed.h" />
@@ -192,6 +191,7 @@
     <ClInclude Include="src\rc\test\benchmark.h" />
     <ClInclude Include="src\rc\test\test.h" />
     <ClInclude Include="src\rc\thread.h" />
+    <ClInclude Include="src\rc\thread\mod.h" />
     <ClInclude Include="src\rc\time.h" />
   </ItemGroup>
   <ItemGroup>

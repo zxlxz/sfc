@@ -130,9 +130,6 @@
     <ClCompile Include="src\rc\cuda\mod.cc">
       <Filter>rc\cuda</Filter>
     </ClCompile>
-    <ClCompile Include="src\rc\thread.cc">
-      <Filter>rc</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rc\sync.h">
@@ -372,6 +369,9 @@
     <ClInclude Include="src\rc\core\atomic.h">
       <Filter>rc\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\rc\thread\mod.h">
+      <Filter>rc\thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="rc">
@@ -433,6 +433,9 @@
     </Filter>
     <Filter Include="rc\cuda">
       <UniqueIdentifier>{548a09f6-8f1f-4beb-8099-8b445bd2b8f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rc\thread">
+      <UniqueIdentifier>{01bf8821-7608-4c5b-9c3f-eaae9c5d6377}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

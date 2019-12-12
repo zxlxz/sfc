@@ -12,7 +12,7 @@ struct Mutex {
   pub Mutex(Mutex&&) noexcept;
 
   struct Guard;
-  pub [[nodiscard]] auto lock() -> Guard;
+  [[nodiscard]] pub auto lock() -> Guard;
 };
 
 struct Mutex::Guard {

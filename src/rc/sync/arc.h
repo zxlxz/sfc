@@ -27,9 +27,9 @@ struct Arc {
     }
   }
 
-  static auto from_ptr(Inner* p) -> Arc { return Arc{p}; }
+  static auto from_ptr(Inner* p) noexcept -> Arc { return Arc{p}; }
 
-  static auto from_raw(T* p) -> Arc {
+  static auto from_raw(T* p) noexcept -> Arc {
     const auto offset = __builtin_offsetof(Inner, _data);
     const auto fake_p = ptr::cast<Inner>(ptr::cast<u8>(p) - offset);
     return Arc{fake_p};
@@ -39,6 +39,8 @@ struct Arc {
     auto x = Box{Inner{1, rc::move(val)}};
     return Arc::from_ptr(rc::move(x).into_raw());
   }
+
+  auto into_raw() && -> T* { return _p->_data; }
 };
 
 }
