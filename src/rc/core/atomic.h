@@ -45,8 +45,9 @@ struct Atomic {
 };
 
 inline void fence(Ordering order) {
-  /* builtin */
+#ifndef __INTELLISENSE__
   return __atomic_thread_fence(order);
+#endif
 }
 
 }  // namespace rc::atomic

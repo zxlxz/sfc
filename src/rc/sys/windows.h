@@ -119,9 +119,10 @@ auto remove_dir(Str p) -> void;
 namespace thread {
 
 struct Thread {
+  using FnBox = boxed::FnBox<void()>;
   void* _handle;
 
-  static auto spawn(boxed::FnBox<void()> f) -> Thread;
+  static auto spawn(usize stack_size, FnBox call_back) -> Thread;
 
   static auto sleep(time::Duration ms) -> void;
   static auto yield_now() -> void;

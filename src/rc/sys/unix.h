@@ -127,7 +127,6 @@ struct Thread {
   pthread_t _raw;
 
   static auto spawn(boxed::FnBox<void()> f) -> Thread;
-
   static auto sleep(time::Duration ms) -> void;
   static auto yield_now() -> void;
 

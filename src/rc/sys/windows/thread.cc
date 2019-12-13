@@ -2,19 +2,17 @@
 
 namespace rc::sys::windows::thread {
 
-using boxed::FnBox;
-
-static auto thread_start(void* arg) -> DWORD {
-  auto raw = ptr::cast<FnBox<void()>::Fn>(arg);
-  auto box = FnBox<void()>::from_raw(raw);
-  box();
+static DWORD __stdcall thread_start(void* arg) {
+  const auto raw = ptr::cast<boxed::FnBox<void()>::Inner>(arg);
+  auto box = boxed::FnBox<void()>::from_raw(raw);
+  (*box)();
   return 0;
 }
 
-auto Thread::spawn(FnBox<void()> f) -> Thread {
-  const auto raw = rc::move(f).into_raw();
-  const auto thr = ::CreateThread(nullptr, 0, &thread_start, raw, 0, nullptr);
-
+auto Thread::spawn(usize stack_size, FnBox call_back) -> Thread {
+  auto tid = ::DWORD(0);
+  auto raw = rc::move(call_back).into_raw();
+  auto thr = ::CreateThread(nullptr, stack_size, &thread_start, raw, 0, &tid);
   if (thr == nullptr) {
     throw io::Error::last_os_error();
   }

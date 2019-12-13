@@ -17,7 +17,7 @@ struct Arc {
   Inner* _p;
 
   Arc(Arc&& other) noexcept : _p{other._p} {
-    other._p = nullptr;
+    other.forget();
   }
   
   ~Arc() {
@@ -27,6 +27,8 @@ struct Arc {
     }
   }
 
+  void forget() { _p = nullptr; }
+
   static auto from_ptr(Inner* p) noexcept -> Arc { return Arc{p}; }
 
   static auto from_raw(T* p) noexcept -> Arc {
@@ -35,7 +37,7 @@ struct Arc {
     return Arc{fake_p};
   }
   
-  static auto New(T val) -> Arc {
+  static auto create(T val) -> Arc {
     auto x = Box{Inner{1, rc::move(val)}};
     return Arc::from_ptr(rc::move(x).into_raw());
   }

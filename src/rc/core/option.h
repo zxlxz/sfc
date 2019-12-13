@@ -20,9 +20,10 @@ struct Option {
   };
   Tag _tag;
 
-  constexpr Option() noexcept : _nil{0}, _tag{Tag::None} {}
+  constexpr explicit Option() noexcept : _nil{0}, _tag{Tag::None} {}
 
-  constexpr Option(T val) noexcept : _val{rc::move(val)}, _tag{Tag::Some} {}
+  constexpr explicit Option(T val) noexcept
+      : _val{rc::move(val)}, _tag{Tag::Some} {}
 
   auto is_none() const noexcept -> bool { return _tag == Tag::None; }
 
@@ -31,7 +32,7 @@ struct Option {
   auto as_some() const noexcept -> const T& { return _val; }
 
   /* cmp: Eq<Option<T>>*/
-  template<class U>
+  template <class U>
   auto eq(const Option<U>& other) const noexcept -> bool {
     if (_tag == Tag::None) return other.is_none();
     if (other.is_some()) {
@@ -69,23 +70,35 @@ struct Option {
   }
 };
 
+template <>
+struct Option<void> {
+  union {
+    unit _val;
+    u8 _nil = 0;
+  };
+  Tag _tag;
+  constexpr explicit Option() noexcept : _tag{Tag::None} {}
+  constexpr explicit Option(unit) noexcept : _tag{Tag::Some} {}
+
+  auto is_none() const noexcept -> bool { return _tag == Tag::None; }
+  auto is_some() const noexcept -> bool { return _tag == Tag::Some; }
+  auto as_some() const noexcept -> unit { return {}; }
+};
+
 template <class T>
 struct Option<T&> {
   T* _ptr;
 
-  constexpr Option() noexcept : _ptr { nullptr }{}
-  constexpr Option(T* ptr) noexcept : _ptr{ptr} {}
-  constexpr Option(T& ref) noexcept : _ptr{&ref} {}
+  constexpr explicit Option() noexcept : _ptr{nullptr} {}
+  constexpr explicit Option(T& ref) noexcept : _ptr{&ref} {}
 
   auto is_none() const noexcept -> bool { return _ptr == nullptr; }
-
-  auto is_some() const noexcept -> bool { return _ptr!= nullptr; }
-
-  auto as_some() const noexcept -> const T& {  return *_ptr;}
+  auto is_some() const noexcept -> bool { return _ptr != nullptr; }
+  auto as_some() const noexcept -> const T& { return *_ptr; }
 };
 
-template<class T>
-Option(T&&) -> Option<T>;
+template <class T>
+Option(T&&)->Option<T>;
 
 template <class T>
 Option(T&)->Option<T&>;
