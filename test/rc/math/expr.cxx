@@ -1,6 +1,7 @@
-#include "rc-test.inl"
-#include "rc/math.h"
+#include "rc/test.h"
+
 #include "rc/log.h"
+#include "rc/math.h"
 
 namespace rc::math {
 

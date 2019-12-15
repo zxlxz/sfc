@@ -1,4 +1,4 @@
-#include "rc-benchmark.inl"
+#include "rc/test.h"
 
 #include <string>
 #include <typeinfo>
@@ -32,7 +32,8 @@ struct EmplaceBackTest {
     std::vector<String> stl_vec;
     stl_vec.reserve(_cnt);
     ::memset(stl_vec.data(), 0, stl_vec.size() * sizeof(String));
-    _manager("stl ", [&]() { stl_vec.emplace_back(String::from(Str::from_cstr(p))); });
+    _manager("stl ",
+             [&]() { stl_vec.emplace_back(String::from(Str::from_cstr(p))); });
   }
 };
 
@@ -64,13 +65,13 @@ rc_test(emplace_back) {
   }
 
   {
-    EmplaceBackTest test_str(u8"std::string: long long long long long long long", cnt);
+    EmplaceBackTest test_str(
+        u8"std::string: long long long long long long long", cnt);
     test_str.std<std::string>("long long long long long long long");
     test_str.rc<std::string>("long long long long long long long");
     test_str.std<std::string>("long long long long long long long");
     test_str.rc<std::string>("long long long long long long long");
   }
-
 }
 
 }  // namespace rc::vec

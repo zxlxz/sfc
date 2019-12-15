@@ -8,6 +8,8 @@ template <class T>
 struct Box {
   T* _p;
 
+  explicit Box(T* p) noexcept : _p{p} {}
+
   ~Box() {
     if (_p == nullptr) return;
     mem::drop(*_p);
@@ -22,7 +24,7 @@ struct Box {
 
   static auto create(T val) -> Box {
     const auto p = alloc::alloc<T>(1);
-    ptr::write(_p, static_cast<T&&>(val));
+    ptr::write(p, static_cast<T&&>(val));
     return Box{p};
   }
 
@@ -39,7 +41,7 @@ struct Box {
   }
 };
 
-template<class>
+template <class>
 struct FnBox;
 
 template <class R, class... T>
@@ -51,9 +53,11 @@ struct FnBox<R(T...)> {
     void (*_call)(void*, T...);
     unit _data;
 
-    auto operator()(T... args) -> R { return _call(&data, rc::move(T)); }
+    auto operator()(T... args) -> R { return _call(&_data, rc::move(args)...); }
   };
   Inner* _p;
+
+  explicit FnBox(Inner* p) noexcept : _p{p} {}
 
   ~FnBox() {
     if (_p == nullptr) return;
@@ -63,20 +67,18 @@ struct FnBox<R(T...)> {
 
   FnBox(FnBox&& other) noexcept : _p{other._p} { other.forget(); }
 
-  void forget() noexcept { _p = nullptr; }
+  static auto from_raw(Inner* p) -> FnBox { return FnBox{p}; }
 
   template <class F>
   static auto create(F f) -> FnBox {
     using U = Tuple<void (*)(F&), R (*)(F&, T...), F>;
-    const auto drop = [&](F& f) -> void { mem::drop(f); };
-    const auto call = [&](F& f, T... args) -> R {
-      return f(rc::move(args)...);
-    };
-    const auto praw = Box<U>(U{drop, call, rc::move(f)}).into_raw();
+    const auto drop = [](F& f) -> void { mem::drop(f); };
+    const auto call = [](F& f, T... args) -> R { return f(rc::move(args)...); };
+    const auto praw = Box<U>::create(U{drop, call, rc::move(f)}).into_raw();
     return FnBox{ptr::cast<Inner>(praw)};
   }
 
-  static auto from_raw(Inner* p) -> FnBox { return FnBox{p}; }
+  void forget() noexcept { _p = nullptr; }
 
   auto into_raw() && -> Inner* { return _p; }
 

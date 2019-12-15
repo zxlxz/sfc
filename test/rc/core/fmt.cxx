@@ -1,9 +1,8 @@
-#include "rc-test.inl"
+#include "rc/test.h"
 
 #include "rc/core/fmt.h"
 
-namespace rc::fmt
-{
+namespace rc::fmt {
 
 rc_test(fmt_int) {
   rc::assert_eq(string::format(u8"{}", 123), u8"123");
@@ -27,4 +26,4 @@ rc_test(fmt_flt) {
   rc::assert_eq(string::format(u8"{>5.1}", 1.2), u8"  1.2");
   rc::assert_eq(string::format(u8"{^5.1}", 1.2), u8" 1.2 ");
 }
-}
+}  // namespace rc::fmt

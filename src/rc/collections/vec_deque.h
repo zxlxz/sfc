@@ -22,7 +22,7 @@ struct Cursor {
 };
 
 template <class T>
-struct Iter: iter::Iterator<Iter<T>> {
+struct Iter : iter::Iterator<Iter<T>> {
   using Item = T&;
 
   T* _ptr;
@@ -46,7 +46,6 @@ struct Iter: iter::Iterator<Iter<T>> {
 
 template <class T>
 struct VecDeque {
-
   using Iter = vec_deque::Iter<const T>;
   using IterMut = vec_deque::Iter<T>;
   using Cursor = vec_deque::Cursor<const T>;
@@ -63,15 +62,14 @@ struct VecDeque {
       : _buf{rc::move(buf)}, _head{head}, _tail{tail}, _mask{0} {}
 
   VecDeque(VecDeque&& other) noexcept
-      : _buf{rc::move(other._buf)},
-        _head{other._head}, _tail{other._tail} {
+      : _buf{rc::move(other._buf)}, _head{other._head}, _tail{other._tail} {
     ptr::write(&other, VecDeque{});
   }
 
   ~VecDeque() { this->clear(); }
 
   static auto with_capacity(usize capacity) -> VecDeque {
-    const auto cap = num::next_power_of_tow(capacity);
+    const auto cap = num::next_power_of_two(capacity);
     return {RawVec<T>::with_capacity(cap), 0, 0};
   }
 
@@ -84,11 +82,11 @@ struct VecDeque {
   auto is_empty() const noexcept -> usize { return _head == _tail; }
 
   auto begin() const noexcept -> Cursor {
-    return Cursor{_buf._ptr, _buf._cap-1, _head};
+    return Cursor{_buf._ptr, _buf._cap - 1, _head};
   }
 
   auto end() const noexcept -> Cursor {
-    return Cursor{_buf._ptr, _buf._cap-1, _tail};
+    return Cursor{_buf._ptr, _buf._cap - 1, _tail};
   }
 
   auto begin() noexcept -> CursorMut {
@@ -105,7 +103,7 @@ struct VecDeque {
     return _buf._ptr[_wrap_idx(_head + idx)];
   }
 
-  constexpr auto get_unchecked_mut(usize index) noexcept -> T& {
+  constexpr auto get_unchecked_mut(usize idx) noexcept -> T& {
     return _buf._ptr[_wrap_idx(_head + idx)];
   }
 
@@ -133,7 +131,7 @@ struct VecDeque {
 
   auto clear() -> void {
     const auto cnt = this->len();
-    for (auto& val: *this) {
+    for (auto& val : *this) {
       mem::drop(val);
     }
     _head = 0;
@@ -194,10 +192,10 @@ struct VecDeque {
     _mask = new_cap - 1;
   }
 
-  template<class Out>
+  template <class Out>
   void fmt(fmt::Formatter<Out>& formatter) const {
     auto dbg = formatter.debug_list();
-    for(const auto& t: *this) {
+    for (const auto& t : *this) {
       dbg.entry(t);
     }
   }

@@ -4,41 +4,41 @@
 
 namespace rc::ops {
 
-#define impl_uop(Type, ...)                    \
-  struct Type {                                \
-    template <class T>                         \
-    __forceinline auto operator()(T t) const { \
-      return __VA_ARGS__;                      \
-    }                                          \
+#define impl_uop(Type, ...)      \
+  struct Type {                  \
+    template <class T>           \
+    auto operator()(T t) const { \
+      return __VA_ARGS__;        \
+    }                            \
   }
 
-#define impl_bop(Type, ...)                         \
-  struct Type {                                     \
-    template <class T>                              \
-    __forceinline auto operator()(T a, T b) const { \
-      return __VA_ARGS__;                           \
-    }                                               \
+#define impl_bop(Type, ...)           \
+  struct Type {                       \
+    template <class T>                \
+    auto operator()(T a, T b) const { \
+      return __VA_ARGS__;             \
+    }                                 \
   }
 
-#define impl_fn1(Type, op)                          \
-  struct Type {                                     \
-    template <class T>                              \
-    __forceinline auto operator()(T t) const -> T { \
-      if constexpr (rc::is_same<T, f32>()) {      \
-        return ::__builtin_##op##f(t);              \
-      }                                             \
-      if constexpr (rc::is_same<T, f64>()) {      \
-        return ::__builtin_##op(t);                 \
-      }                                             \
-    }                                               \
+#define impl_fn1(Type, op)                   \
+  struct Type {                              \
+    template <class T>                       \
+    auto operator()(T t) const -> T {        \
+      if constexpr (rc::is_same<T, f32>()) { \
+        return ::__builtin_##op##f(t);       \
+      }                                      \
+      if constexpr (rc::is_same<T, f64>()) { \
+        return ::__builtin_##op(t);          \
+      }                                      \
+    }                                        \
   }
 
-#define impl_ass(Type, ...)                          \
-  struct Type {                                      \
-    template <class T>                               \
-    __forceinline void operator()(T& y, T x) const { \
-      __VA_ARGS__;                                   \
-    }                                                \
+#define impl_ass(Type, ...)            \
+  struct Type {                        \
+    template <class T>                 \
+    void operator()(T& y, T x) const { \
+      __VA_ARGS__;                     \
+    }                                  \
   }
 
 impl_uop(Pos, +t);
@@ -111,7 +111,7 @@ constexpr auto any(const bool (&v)[N]) -> bool {
 }
 
 template <usize N>
-constexpr auto all(const bool(&v)[N]) -> bool {
+constexpr auto all(const bool (&v)[N]) -> bool {
   auto res = v[0];
   if constexpr (N > 1) {
     for (usize i = 1; i < N; ++i) {
@@ -132,8 +132,8 @@ constexpr auto sum(const T (&v)[N]) -> T {
   return res;
 }
 
-template<class T, usize N>
-constexpr auto prod(const T(&v)[N]) -> T{
+template <class T, usize N>
+constexpr auto prod(const T (&v)[N]) -> T {
   auto res = v[0];
   if constexpr (N > 1) {
     for (usize i = 1; i < N; ++i) {

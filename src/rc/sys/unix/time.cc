@@ -8,7 +8,7 @@ auto get_instant_now() -> Instant {
   if (res == -1) {
     throw io::Error::last_os_error();
   }
-  return {u64(ts.tv_sec), u64(ts.tv_nsec)};
+  return Instant{u64(ts.tv_sec), u32(ts.tv_nsec)};
 }
 
 auto get_system_now() -> SystemTime {
@@ -17,7 +17,7 @@ auto get_system_now() -> SystemTime {
   if (res == -1) {
     throw io::Error::last_os_error();
   }
-  return {u64(ts.tv_sec), u64(ts.tv_nsec)};
+  return SystemTime{u64(ts.tv_sec), u32(ts.tv_nsec)};
 }
 
 }  // namespace rc::sys::unix::time

@@ -1,20 +1,5 @@
 #pragma once
 
-#ifdef _MSC_VER
-#include <corecrt.h>
-#include <string.h>
-#pragma warning(disable : 4201)
-#pragma warning(disable : 4623 4626 5027)
-#pragma warning(disable : 4820)
-
-#ifndef __clang__
-#define __builtin_memcpy  ::memcpy
-#define __builtin_memmove ::memmove
-#define __builtin_memset  ::memset
-#endif
-
-#endif
-
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wmicrosoft-template"
 #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
@@ -71,7 +56,7 @@ using bool_t = bool;
 
 struct unit {};
 
-struct pack_t{};
+struct pack_t {};
 
 struct f16 {
   u16 _val;
@@ -168,7 +153,8 @@ struct Tuple<T0, T1, T2, T3, T4, T5, T6> {
   T6 _6;
 };
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+          class T7>
 struct Tuple<T0, T1, T2, T3, T4, T5, T6, T7> {
   T0 _0;
   T1 _1;
@@ -180,7 +166,8 @@ struct Tuple<T0, T1, T2, T3, T4, T5, T6, T7> {
   T7 _7;
 };
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8>
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+          class T7, class T8>
 struct Tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
   T0 _0;
   T1 _1;
@@ -193,8 +180,8 @@ struct Tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
   T8 _8;
 };
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7, class T8,
-          class T9>
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+          class T7, class T8, class T9>
 struct Tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> {
   T0 _0;
   T1 _1;
@@ -228,7 +215,8 @@ struct _ConstSeq {
 };
 
 template <auto N>
-using const_seq_t = typename __make_integer_seq<_ConstSeq, decltype(N), N>::Type;
+using const_seq_t =
+    typename __make_integer_seq<_ConstSeq, decltype(N), N>::Type;
 
 template <class I, usize N, bool... X>
 struct _ConstFind;
@@ -239,10 +227,12 @@ struct _ConstFind<Const<I...>, N> {
 };
 
 template <usize... I, usize N, bool... X>
-struct _ConstFind<Const<I...>, N, true, X...> : _ConstFind<Const<I..., N>, N + 1, X...> {};
+struct _ConstFind<Const<I...>, N, true, X...>
+    : _ConstFind<Const<I..., N>, N + 1, X...> {};
 
 template <usize... I, usize N, bool... X>
-struct _ConstFind<Const<I...>, N, false, X...> : _ConstFind<Const<I...>, N + 1, X...> {};
+struct _ConstFind<Const<I...>, N, false, X...>
+    : _ConstFind<Const<I...>, N + 1, X...> {};
 
 template <bool... X>
 using const_find_t = typename _ConstFind<Const<>, 0, X...>::Type;
@@ -325,15 +315,17 @@ constexpr bool is_const() {
 
 template <class T>
 constexpr bool is_signed() {
-  return rc::is_same<T, char>() || rc::is_same<T, short>() || rc::is_same<T, int>() ||
-         rc::is_same<T, long>() || rc::is_same<T, long long>();
+  return rc::is_same<T, char>() || rc::is_same<T, short>() ||
+         rc::is_same<T, int>() || rc::is_same<T, long>() ||
+         rc::is_same<T, long long>();
 }
 
 template <class T>
 constexpr bool is_unsigned() {
   return rc::is_same<T, u8>() || rc::is_same<T, unsigned char>() ||
          rc::is_same<T, unsigned short>() || rc::is_same<T, unsigned int>() ||
-         rc::is_same<T, unsigned long>() || rc::is_same<T, unsigned long long>();
+         rc::is_same<T, unsigned long>() ||
+         rc::is_same<T, unsigned long long>();
 }
 
 template <class T>
@@ -351,7 +343,7 @@ constexpr bool is_num() {
   return rc::is_integeral<T>() || rc::is_floating_point<T>();
 }
 
-template<class T>
+template <class T>
 constexpr bool is_char() {
   return rc::is_same<T, char>() || rc::is_same<T, char8_t>() ||
          rc::is_same<T, char16_t>() || rc::is_same<T, char32_t>();

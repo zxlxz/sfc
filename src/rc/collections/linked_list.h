@@ -4,6 +4,8 @@
 
 namespace rc::collections::linked_list {
 
+using boxed::Box;
+
 template <class T>
 struct Node {
   using Item = T;
@@ -121,7 +123,7 @@ struct LinkedList {
   auto begin() -> CursorMut { return CursorMut{_head}; }
   auto end() -> CursorMut { return CursorMut{nullptr}; }
 
-  auto iter() -> Iter{ return {_head, _tail}; }
+  auto iter() -> Iter { return {_head, _tail}; }
   auto iter_mut() -> IterMut { return {_head, _tail}; }
 
   auto clear() {
@@ -135,7 +137,7 @@ struct LinkedList {
   }
 
   auto push_front(T val) -> void {
-    _push_front(Box<Node>{{nullptr, _head, static_cast<T&&>(val)}});
+    _push_front(Box<Node>::create({nullptr, _head, static_cast<T&&>(val)}));
   }
 
   auto pop_front() -> T {
@@ -144,7 +146,7 @@ struct LinkedList {
   }
 
   auto push_back(T val) -> void {
-    _push_back(Box<Node>{{_tail, nullptr, static_cast<T&&>(val)}});
+    _push_back(Box<Node>::create({_tail, nullptr, static_cast<T&&>(val)}));
   }
 
   auto pop_back() -> T {

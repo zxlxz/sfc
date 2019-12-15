@@ -1,14 +1,14 @@
-#include "rc-test.inl"
+#include "rc/test.h"
 
-#include "rc/math.h"
 #include "rc/cuda.h"
 #include "rc/log.h"
+#include "rc/math.h"
 
 namespace rc::cuda {
 
 rc_test(linspace) {
   auto cpu_arr = math::NDArray<f32, 1>::with_dims({10});
-  cpu_arr <<= math::Linspace({0.1f});
+  cpu_arr <<= math::Linspace{{0.1f}};
   auto gpu_arr = cuda::NDArray<f32, 1>::from_slice(cpu_arr);
 
   auto tmp_arr = math::NDArray<f32, 1>::with_dims({10});
@@ -18,4 +18,3 @@ rc_test(linspace) {
 }
 
 }  // namespace rc::cuda
-

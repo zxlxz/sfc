@@ -133,7 +133,7 @@ struct Tensor<Map<F(X0)>> {
 
   Self _self;
 
-  auto len() const noexcept -> usize { return _0.len(); }
+  auto len() const noexcept -> usize { return _self.len(); }
 
   auto operator[](usize idx) const noexcept {
     using R0 = decltype(_self._0[idx]);
@@ -292,7 +292,7 @@ void compute(LHS y, RHS x) {
   }
 }
 
-template<class T, usize N, class U, usize = Tensor<U>::RANK>
+template <class T, usize N, class U, usize = Tensor<U>::RANK>
 void operator<<=(NDSlice<T, N> lhs, const U& rhs) {
   auto y = Tensor<NDSlice<T, N>>{lhs};
   auto x = Tensor<U>{rhs};

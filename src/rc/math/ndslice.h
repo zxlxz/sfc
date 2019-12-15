@@ -13,17 +13,16 @@ struct NDSlice {
   using Step = NDStep<RANK>;
   using Idxs = NDIdxs<RANK>;
 
-  T*   _data;
+  T* _data;
   Dims _dims;
   Step _step;
 
   constexpr NDSlice(T* data, const Dims& dims, const Step& step) noexcept
       : _data{data}, _dims{dims}, _step{step} {}
 
-
   static auto from_array(T* data, const Dims& dims) -> NDSlice {
     const auto step = Step::from_dims(dims);
-    return NDSlice { data, dims, step };
+    return NDSlice{data, dims, step};
   }
 
   template <class D, class S, usize... I>
@@ -31,37 +30,31 @@ struct NDSlice {
     return NDSlice{p, {d[I]...}, {s[I]...}};
   }
 
-  __forceinline auto as_ptr() const noexcept -> const T* { return _data; }
+  auto as_ptr() const noexcept -> const T* { return _data; }
 
-  __forceinline auto as_mut_ptr() noexcept -> T* { return _data; }
+  auto as_mut_ptr() noexcept -> T* { return _data; }
 
-  __forceinline auto dims() const noexcept -> Dims {
-    return _dims;
-  }
+  auto dims() const noexcept -> Dims { return _dims; }
 
-  __forceinline auto step() const noexcept -> Step {
-    return _step;
-  }
+  auto step() const noexcept -> Step { return _step; }
 
-  __forceinline auto count() const noexcept -> usize {
-    return _dims.count();
-  }
+  auto count() const noexcept -> usize { return _dims.count(); }
 
   auto is_array() const noexcept -> bool {
     return _step == Step::from_dims(_dims);
   }
 
   // op[call]: ref
-  __forceinline auto operator[](const Idxs& idxs) const noexcept -> const T& {
-    return _data[idxs^_step];
+  auto operator[](const Idxs& idxs) const noexcept -> const T& {
+    return _data[idxs ^ _step];
   }
 
   // op[call]: ref
-  __forceinline auto operator[](const Idxs& idxs) noexcept -> T& {
-    return _data[idxs^_step];
+  auto operator[](const Idxs& idxs) noexcept -> T& {
+    return _data[idxs ^ _step];
   }
 
-  template <usize... S, usize M = (...+(S-1))>
+  template <usize... S, usize M = (... + (S - 1))>
   auto slice(const usize (&... idxs)[S]) const noexcept -> NDSlice<T, M> {
     using I = const_find_t<(S != 1)...>;
     const Range ss[] = {Range::from(idxs)...};

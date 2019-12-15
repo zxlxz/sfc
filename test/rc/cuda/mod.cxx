@@ -1,4 +1,4 @@
-#include "rc-test.inl"
+#include "rc/test.h"
 
 #include "rc/cuda.h"
 
@@ -15,4 +15,4 @@ rc_test(device) {
   }
 }
 
-}
+}  // namespace rc::cuda

@@ -1,8 +1,5 @@
-#include "rc-test.inl"
+#include "rc/test.h"
 
 #include "rc/serial/mod.h"
 
-namespace rc::serial {
-
-
-}
+namespace rc::serial {}

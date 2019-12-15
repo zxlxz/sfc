@@ -94,6 +94,7 @@ struct File {
   auto read(Slice<u8> buf) -> usize;
   auto write(Slice<const u8> buf) -> usize;
   auto seek(SeekFrom pos) -> usize;
+  auto size() const -> usize;
 };
 
 struct OpenOptions {

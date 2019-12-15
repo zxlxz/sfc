@@ -11,12 +11,12 @@ struct NDDims {
   constexpr static usize RANK = N;
   usize _0[RANK];
 
-  __forceinline auto operator[](usize idx) const -> usize {
+  auto operator[](usize idx) const -> usize {
     if (idx >= RANK) return 1u;
     return _0[idx];
   }
 
-  __forceinline auto count() const -> usize { return ops::prod(_0); }
+  auto count() const -> usize { return ops::prod(_0); }
 
   auto operator==(const NDDims& other) -> bool {
     return cmp::all_eq(_0, other._0, N);
@@ -47,7 +47,7 @@ struct NDStep {
     return res;
   }
 
-  __forceinline auto operator[](usize idx) const -> usize {
+  auto operator[](usize idx) const -> usize {
     if (idx >= RANK) return 0u;
     return _0[idx];
   }
@@ -71,7 +71,7 @@ struct NDIdxs {
   constexpr static usize RANK = N;
   usize _0[RANK];
 
-  __forceinline auto operator^(const NDStep<RANK>& step) const -> usize {
+  auto operator^(const NDStep<RANK>& step) const -> usize {
     static_assert(RANK <= 10);
 
     auto ret = _0[0] * step._0[0];

@@ -40,16 +40,14 @@ struct NDArray {
   auto count() const noexcept -> usize { return _inner.count(); }
 
   // op[call]: ref
-  __forceinline auto operator[](const Idxs& idxs) const noexcept -> const T& {
+  auto operator[](const Idxs& idxs) const noexcept -> const T& {
     return _inner[idxs];
   }
 
   // op[call]: ref
-  __forceinline auto operator[](const Idxs& idxs) noexcept -> T& {
-    return _inner[idxs];
-  }
+  auto operator[](const Idxs& idxs) noexcept -> T& { return _inner[idxs]; }
 
-  template <usize... S, usize M = (...+(S-1))>
+  template <usize... S, usize M = (... + (S - 1))>
   auto slice(const usize (&... idxs)[S]) const noexcept -> NDSlice<T, M> {
     return _inner.slice(idxs...);
   }

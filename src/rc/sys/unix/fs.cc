@@ -92,6 +92,15 @@ auto File::seek(SeekFrom pos) -> usize {
   return usize(res);
 }
 
+auto File::size() const -> usize {
+  struct ::stat st {};
+  const auto res = ::fstat(_filedesc, &st);
+  if (res == -1) {
+    throw io::Error::last_os_error();
+  }
+  return usize(st.st_size);
+}
+
 #pragma endregion
 
 #pragma region path

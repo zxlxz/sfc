@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rc/core/ops.h"
 #include "rc/core/cmp.h"
+#include "rc/core/ops.h"
 
 namespace rc::option {
 
@@ -20,10 +20,9 @@ struct Option {
   };
   Tag _tag;
 
-  constexpr explicit Option() noexcept : _nil{0}, _tag{Tag::None} {}
+  constexpr Option() noexcept : _nil{0}, _tag{Tag::None} {}
 
-  constexpr explicit Option(T val) noexcept
-      : _val{rc::move(val)}, _tag{Tag::Some} {}
+  constexpr Option(T val) noexcept : _val{rc::move(val)}, _tag{Tag::Some} {}
 
   auto is_none() const noexcept -> bool { return _tag == Tag::None; }
 
@@ -77,8 +76,8 @@ struct Option<void> {
     u8 _nil = 0;
   };
   Tag _tag;
-  constexpr explicit Option() noexcept : _tag{Tag::None} {}
-  constexpr explicit Option(unit) noexcept : _tag{Tag::Some} {}
+  constexpr Option() noexcept : _tag{Tag::None} {}
+  constexpr Option(unit) noexcept : _tag{Tag::Some} {}
 
   auto is_none() const noexcept -> bool { return _tag == Tag::None; }
   auto is_some() const noexcept -> bool { return _tag == Tag::Some; }
@@ -89,8 +88,8 @@ template <class T>
 struct Option<T&> {
   T* _ptr;
 
-  constexpr explicit Option() noexcept : _ptr{nullptr} {}
-  constexpr explicit Option(T& ref) noexcept : _ptr{&ref} {}
+  constexpr Option() noexcept : _ptr{nullptr} {}
+  constexpr Option(T& ref) noexcept : _ptr{&ref} {}
 
   auto is_none() const noexcept -> bool { return _ptr == nullptr; }
   auto is_some() const noexcept -> bool { return _ptr != nullptr; }
@@ -98,7 +97,7 @@ struct Option<T&> {
 };
 
 template <class T>
-Option(T&&)->Option<T>;
+Option(T &&)->Option<T>;
 
 template <class T>
 Option(T&)->Option<T&>;

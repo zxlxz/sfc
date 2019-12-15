@@ -5,9 +5,9 @@ namespace rc::sys::unix::thread {
 using boxed::FnBox;
 
 static auto thread_start(void* p) -> void* {
-  auto raw = ptr::cast<FnBox<void()>::Fn>(p);
-  auto box = FnBox<void()>::from_raw(raw);
-  box();
+  auto raw = ptr::cast<FnBox<void()>::Inner>(p);
+  auto bfn = FnBox<void()>::from_raw(raw);
+  (*bfn)();
   return nullptr;
 }
 

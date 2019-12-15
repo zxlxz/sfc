@@ -1,5 +1,6 @@
+#include "rc/test.h"
+
 #include "rc/core/num.h"
-#include "rc-test.inl"
 #include "rc/core/str.h"
 
 namespace rc::num {

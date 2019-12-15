@@ -1,4 +1,4 @@
-#include "rc-benchmark.inl"
+#include "rc/test.h"
 
 #include "rc/env.h"
 

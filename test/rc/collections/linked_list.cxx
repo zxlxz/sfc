@@ -1,4 +1,4 @@
-#include "rc-test.inl"
+#include "rc/test.h"
 
 #include "rc/collections/linked_list.h"
 
@@ -17,4 +17,4 @@ rc_test(push) {
   log::info("q = {}", q);
 }
 
-}  // namespace rc::collections
+}  // namespace rc::collections::linked_list
