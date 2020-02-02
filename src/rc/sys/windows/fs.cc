@@ -75,10 +75,10 @@ auto File::write(Slice<const u8> buf) -> usize {
   const auto len = DWORD(cmp::min(buf._len, usize(num::max_value<DWORD>())));
   const auto res = ::WriteFile(_handle, buf._ptr, len, &amt, nullptr);
   if (res == FALSE) throw Error::last_os_error();
-  return u64(amt);
+  return usize(amt);
 }
 
-auto File::seek(SeekFrom from) -> u64 {
+auto File::seek(SeekFrom from) -> usize {
   const auto pos = DWORD(from._whence);
   const auto off = from._offset;
 
@@ -89,16 +89,16 @@ auto File::seek(SeekFrom from) -> u64 {
   if (eid == FALSE) {
     throw Error::last_os_error();
   }
-  return u64(new_idx.QuadPart);
+  return usize(new_idx.QuadPart);
 }
 
-auto File::size() const -> u64 {
+auto File::size() const -> usize {
   LARGE_INTEGER res;
   const auto eid = ::GetFileSizeEx(_handle, &res);
   if (eid == FALSE) {
     throw Error::last_os_error();
   }
-  return u64(res.QuadPart);
+  return usize(res.QuadPart);
 }
 #pragma endregion
 

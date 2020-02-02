@@ -9,7 +9,7 @@ struct Node {
   using Item = T;
   using Hash = typename Item::Hash;
 
-  constexpr static auto HASH_NULL = num::MAX<Hash>;
+  constexpr static auto HASH_NULL = num::max_value<Hash>;
 
   Node* _next = nullptr;
   Item _item = {};
@@ -28,7 +28,7 @@ template <class T>
 class Bucket {
  public:
   using Node = Node<T>;
-  constexpr static auto HASH_NULL = Node::HASH_NULL;
+  using Node::HASH_NULL;
 
   Node _head;
 
@@ -99,13 +99,14 @@ class HashTable {
   using Node = Node<T>;
   using Bucket = Bucket<T>;
   using Vec = vec::Vec<Bucket>;
+  using Node::HASH_NULL;
 
   Vec _vec;
   usize _len;
   usize _mask;
 
   HashTable(usize capacity = 8) : _len(0), _mask(0) {
-    auto cnt = num::next_power_of_tow(capacity);
+    auto cnt = num::next_power_of_two(capacity);
     _mask = cnt - 1;
     _vec._extend(cnt, {Bucket()});
   }
@@ -114,10 +115,11 @@ class HashTable {
 
   auto len() const -> usize { return _len; }
 
+  template <class K>
   auto index(const K& key) const -> const T& {
     auto res = _search_get(key);
     if (res == nullptr) {
-      throw Error::NotFound;
+      throw io::ErrorKind::NotFound;
     }
     return res->_data;
   }

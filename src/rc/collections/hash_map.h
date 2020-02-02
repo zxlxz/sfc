@@ -4,10 +4,10 @@
 
 namespace rc::collections::hash_map {
 
-template <class K, bool = is_int<K>()>
+template <class K, bool = is_integeral<K>()>
 struct Hash;
 
-template <class K, class V, bool = is_int<K>()>
+template <class K, class V, bool = is_integeral<K>()>
 class Pair;
 
 template <class K>
