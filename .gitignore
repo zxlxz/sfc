@@ -1,0 +1,11 @@
+# hiddern
+.*
+
+# build files
+*.a
+*.so
+*.lib
+*.pyc
+
+# build dir
+build

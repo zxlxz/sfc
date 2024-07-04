@@ -1,0 +1,14 @@
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - cmake -B build && cmake --build build
+
+test:
+  stage: test
+  script:
+    - cmake -B build && cmake --build build
+    - ./build/test/sfc_test
