@@ -153,7 +153,7 @@ struct NdView {
     return _data[idx * _step];
   }
 
-  auto transpose(Idxs idxs) -> NdView {
+  auto permute(Idxs idxs) -> NdView {
     usize size[N] = {};
     usize step[N] = {};
     for (auto i = 0U; i < N; ++i) {
@@ -164,7 +164,7 @@ struct NdView {
   }
 
   void fill(T val) {
-    const auto n = this->len();
+    const auto n = _size[N - 1];
     for (auto i = 0U; i < n; ++i) {
       auto line = (*this)[i];
       line.fill(val);
@@ -175,7 +175,7 @@ struct NdView {
     assert_fmt(_size == src._size, "NdView::copy_from: self.shape(={}) != src.shape(={})", _size,
                src._size);
 
-    const auto n = this->len();
+    const auto n = _size[N - 1];
     for (auto i = 0U; i < n; ++i) {
       auto dst_line = (*this)[i];
       auto src_line = src[i];
@@ -215,20 +215,8 @@ struct NdView<T, 1> {
     return _step;
   }
 
-  [[sfc_inline]] auto len() const -> usize {
-    return _size[0];
-  }
-
   [[sfc_inline]] auto numel() const -> usize {
     return _size.numel();
-  }
-
-  [[sfc_inline]] auto operator[](const Idxs& idxs) const -> T {
-    return _data[idxs._inn[0] * _step._inn[0]];
-  }
-
-  [[sfc_inline]] auto operator[](const Idxs& idxs) -> T& {
-    return _data[idxs._inn[0] * _step._inn[0]];
   }
 
   [[sfc_inline]] auto operator[](usize idx) const -> T {
@@ -239,33 +227,39 @@ struct NdView<T, 1> {
     return _data[idx * _step._inn[0]];
   }
 
-  auto slice(NdIdxs<1> idxs, NdSize<1> size) -> NdView {
-    const auto data = _data + idxs * _step;
-    const auto shape = cmp::max(idxs[0] + size[0], _size[0]) - idxs[0];
-    return NdView{data, {shape}, _step};
+  [[sfc_inline]] auto operator[](const Idxs& ids) const -> T {
+    return _data[ids._inn[0] * _step._inn[0]];
   }
 
-  auto permute([[maybe_unused]] NdIdxs<1> idxs) -> NdView {
-    return *this;
+  [[sfc_inline]] auto operator[](const Idxs& idxs) -> T& {
+    return _data[idxs._inn[0] * _step._inn[0]];
   }
 
-  void fill(const T& val) {
-    auto p = _data;
-    auto e = p + _size[0] * _step[0];
-    for (; p != e; p += _step[0]) {
+  auto operator[](Range<> ids) -> NdView {
+    ids = ids % _size[0];
+
+    const auto offset = ids._start * _step._inn[0];
+    const auto size = Size{{ids.len()}};
+    return NdView{_data + offset, size, _step};
+  }
+
+  void fill(T val) {
+    const auto e = _data + _size[0] * _step[0];
+    const auto k = _step[0];
+    for (auto p = _data; p != e; p += k) {
       *p = val;
     }
   }
 
   void copy_from(const NdView& src) {
-    assert_fmt(_size == src._size, "NdView::copy_from: self.shape(={}) != src.shape(={})", _size,
+    assert_fmt(_size == src._size, "math::NdView::copy_from: .shape(={}) != src.shape(={})", _size,
                src._size);
 
-    auto y = _data;
-    auto x = src._data;
-    auto e = x + _size[0] * _step[0];
-    for (; x != e; y += _step[0], x += _step[0]) {
-      *y = *x;
+    const auto pe = _data + _size[0] * _step[0];
+    const auto ks = src._step[0];
+    const auto kd = _step[0];
+    for (auto ps = src._data, pd = _data; pd != pe; ps += ks, pd += kd) {
+      *pd = *ps;
     }
   }
 };

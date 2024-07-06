@@ -9,6 +9,10 @@ class NdArray {
   using Inn = NdView<T, N>;
   using Buf = vec::Buf<T>;
 
+  using Size = typename Inn::Size;
+  using Step = typename Inn::Step;
+  using Idxs = typename Inn::Idxs;
+
   Inn _inn;
   Buf _buf;
 
@@ -23,26 +27,29 @@ class NdArray {
 
   NdArray& operator=(NdArray&& other) noexcept = default;
 
-  auto as_data() const -> T* {
+  [[sfc_inline]] auto as_view() -> Inn {
+    return _inn;
+  }
+
+  [[sfc_inline]] auto as_data() const -> T* {
     return _inn.data();
   }
 
-  auto as_mut_data() const -> T* {
+  [[sfc_inline]] auto as_mut_data() const -> T* {
     return _inn.data();
   }
 
-  auto shape() const -> NdSize<N> {
+  [[sfc_inline]] auto shape() const -> NdSize<N> {
     return _inn.shape();
   }
 
-  auto strides() const -> NdStep<N> {
+  [[sfc_inline]] auto strides() const -> NdStep<N> {
     return _inn.strides();
   }
 
-  auto numel() const -> usize {
+  [[sfc_inline]] auto numel() const -> usize {
     return _inn.numel();
   }
-
 };
 
 }  // namespace sfc::math
