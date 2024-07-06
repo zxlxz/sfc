@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/mem.h"
 
 namespace sfc::num {
 
@@ -82,6 +82,23 @@ namespace sfc::num {
 
 [[sfc_inline]] inline auto fmax(f64 x, f64 y) -> f64 {
   return __builtin_fmax(x, y);
+}
+
+inline auto flt_eq(f64 a, f64 b, u32 err = 4) -> bool {
+  if (__builtin_isnan(a) || __builtin_isnan(b)) {
+    return false;
+  }
+  if (a == b) {
+    return true;
+  }
+  if (a < 0) {
+    a = __builtin_fabs(a);
+    b = __builtin_fabs(b);
+  }
+  auto ua = mem::bit_cast<u64>(a);
+  auto ub = mem::bit_cast<u64>(b);
+  const auto uc = ua < ub ? ub - ua : ua - ub;
+  return uc < err;
 }
 
 }  // namespace sfc::num

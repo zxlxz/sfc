@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/io.h"
-#include "cmp.h"
 
 namespace sfc::test {
 
@@ -52,13 +51,13 @@ void assert_ne(const A& a, const B& b, Location loc = {}) {
 
 template <class A, class B>
 void assert_flt_eq(const A& a, const B& b, Location loc = {}) {
-  if (test::flt_eq(a, b)) return;
+  if (num::flt_eq(a, b)) return;
   assert_failed(loc, "(lhs == rhs)", Param<A>{"lhs", a}, Param<B>{"rhs", b});
 }
 
 template <class T>
 void assert_flt_ne(const T& a, const T& b, Location loc = {}) {
-  if (!test::flt_eq(a, b)) return;
+  if (!num::flt_eq(a, b)) return;
   assert_failed(loc, "(lhs != rhs)", Param<T>{"lhs", a}, Param<T>{"rhs", b});
 }
 
