@@ -1,37 +1,39 @@
 #include "error.h"
 
-#include <errno.h>
+#include "sfc/sys/io.inl"
 
 namespace sfc::io {
 
-Error::Error(int id) : _id{id} {}
+namespace sys_imp = sys::io;
+
+SFC_ENUM(ErrorKind,  //
+         NotFound, PermissionDenied, ConnectionRefused, ConnectionReset, HostUnreachable,
+         NetworkUnreachable, ConnectionAborted, NotConnected, AddrInUse, AddrNotAvailable,
+         NetworkDown, BrokenPipe, AlreadyExists, WouldBlock, NotADirectory, IsADirectory,
+         DirectoryNotEmpty, ReadOnlyFilesystem, FilesystemLoop, StaleNetworkFileHandle,
+         InvalidInput, InvalidData, TimedOut, WriteZero, StorageFull, NotSeekable,
+         FilesystemQuotaExceeded, FileTooLarge, ResourceBusy, ExecutableFileBusy, Deadlock,
+         CrossesDevices, TooManyLinks, InvalidFilename, ArgumentListTooLong, Interrupted,
+         Unsupported, UnexpectedEof, OutOfMemory, Other);
 
 auto Error::last_os_error() -> Error {
-  const auto eid = errno;
-  return Error{eid};
+  const auto code = sys_imp::errno();
+  return Error::from_os_error(code);
 }
 
-auto Error::to_str() const -> Str {
-  switch (_id) {
-      // clang-format off
-    case EPERM:         return "io::Error::PermissionDenied";
-    case ENOENT:        return "io::Error::NotFound";
-    case EINTR:         return "io::Error::Interrupted";
-    case EWOULDBLOCK:   return "io::Error::WouldBlock";
-    case EACCES:        return "io::Error::PermissionDenied";
-    case EEXIST:        return "io::Error::AlreadyExists";
-    case EINVAL:        return "io::Error::InvalidInput";
-    case EPIPE:         return "io::Error::BrokenPipe";
-    case EADDRNOTAVAIL: return "io::Error::AddrNotAvailable";
-    case ENOTCONN:      return "io::Error::NotConnected";
-    case ECONNABORTED:  return "io::Error::ConnectionAborted";
-    case ECONNRESET:    return "io::Error::ConnectionReset";
-    case EADDRINUSE:    return "io::Error::AddrInUse";
-    case ETIMEDOUT:     return "io::Error::TimedOut";
-    case ECONNREFUSED:  return "io::Error::ConnectionRefused";
-    default:            return "io::Error::Unknown";
-      // clang-format on
+auto Error::from_os_error(int code) -> Error {
+  return {ErrorKind::Other, code};
+}
+
+auto Error::kind() const -> ErrorKind {
+  return _kind;
+}
+
+auto Error::as_str() const -> Str {
+  if (_code != 0) {
+    return sys_imp::error_str(_code);
   }
+  return reflect::enum_name(_kind);
 }
 
 }  // namespace sfc::io

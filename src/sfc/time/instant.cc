@@ -1,21 +1,14 @@
 #include "instant.h"
 
-#include <sys/time.h>
-#include <time.h>
+#include "sfc/sys/time.inl"
 
 namespace sfc::time {
 
-using tm_t = struct tm;
-using timespec_t = struct timespec;
-using timeval_t = struct timeval;
+namespace sys_imp = sys::time;
 
 auto Instant::now() -> Instant {
-  auto ts = timespec_t{0, 0};
-  ::clock_gettime(CLOCK_MONOTONIC, &ts);
-
-  const auto secs = static_cast<u64>(ts.tv_sec);
-  const auto nanos = static_cast<u64>(ts.tv_nsec);
-  return Instant{secs, nanos};
+  const auto imp = sys_imp::Instant::now();
+  return Instant{static_cast<u64>(imp.secs), static_cast<u64>(imp.nanos)};
 }
 
 auto Instant::elpased() const -> Duration {

@@ -16,9 +16,6 @@ struct Path {
     return _inn;
   }
 
-  // to c-string
-  auto to_c_string() -> ffi::CString;
-
  public:
   // a/b.txt -> b.txt
   auto file_name() const -> Str;

@@ -1,41 +1,14 @@
 #include "condvar.h"
 
-#include <pthread.h>
-
-#include "sfc/time.h"
+#include "sfc/sys/sync.inl"
 
 namespace sfc::sync {
 
-struct Mutex::Inn {
-  pthread_mutex_t _raw;
-};
+namespace sys_imp = sys::sync;
 
-struct Condvar::Inn {
-  pthread_cond_t _raw = PTHREAD_COND_INITIALIZER;
+struct Mutex::Inn : sys_imp::Mutex {};
 
-  void notify_one() {
-    ::pthread_cond_signal(&_raw);
-  }
-
-  void notify_all() {
-    ::pthread_cond_broadcast(&_raw);
-  }
-
-  void wait(Mutex::Inn& mtx) {
-    ::pthread_cond_wait(&_raw, &mtx._raw);
-  }
-
-  auto wait_timeout(Mutex::Inn& mtx, time::Duration dur) -> bool {
-    struct timespec ts {};
-    ::clock_gettime(CLOCK_REALTIME, &ts);
-
-    ts.tv_sec += static_cast<i64>(dur.as_secs());
-    ts.tv_nsec += static_cast<i64>(dur.subsec_nanos());
-
-    const auto ret = ::pthread_cond_timedwait(&_raw, &mtx._raw, &ts);
-    return ret == 0;
-  }
-};
+struct Condvar::Inn : sys_imp::Condvar {};
 
 Condvar::Condvar() : _inn{Box<Inn>::xnew()} {}
 

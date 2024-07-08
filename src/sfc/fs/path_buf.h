@@ -7,10 +7,9 @@ namespace sfc::fs {
 class PathBuf {
   String _inn;
 
-  PathBuf(String inn);
-
  public:
   PathBuf();
+  explicit PathBuf(String inn);
   ~PathBuf();
   PathBuf(PathBuf&&) noexcept;
 

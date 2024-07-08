@@ -8,8 +8,8 @@
 #define _SFC_CAT_B(a, b)    a##b
 
 // count(...)
-#define SFC_PP_CNT(...)     _SFC_PP_CNT(x,##__VA_ARGS__,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
-#define _SFC_PP_CNT(x,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,d0,d1,N, ...) N
+#define SFC_PP_CNT(...)     _SFC_PP_CNT(x,##__VA_ARGS__,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+#define _SFC_PP_CNT(x,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,d0,d1,d2,d3,d5,d6,d7,d8,d9,e0,e1,e2,e3,e4,e5,e6,e7,e8,e9,N, ...) N
 
 #define SFC_PP_EMPTY()
 #define SFC_PP_COMMA()  ,
@@ -51,4 +51,21 @@
 #define _SFC_PP_FOR_30(D,F,x, ...) F(x) D() _SFC_PP_FOR_29(D, F,__VA_ARGS__)
 #define _SFC_PP_FOR_31(D,F,x, ...) F(x) D() _SFC_PP_FOR_30(D, F,__VA_ARGS__)
 #define _SFC_PP_FOR_32(D,F,x, ...) F(x) D() _SFC_PP_FOR_31(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_33(D,F,x, ...) F(x) D() _SFC_PP_FOR_32(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_34(D,F,x, ...) F(x) D() _SFC_PP_FOR_33(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_35(D,F,x, ...) F(x) D() _SFC_PP_FOR_34(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_36(D,F,x, ...) F(x) D() _SFC_PP_FOR_35(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_37(D,F,x, ...) F(x) D() _SFC_PP_FOR_36(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_38(D,F,x, ...) F(x) D() _SFC_PP_FOR_37(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_39(D,F,x, ...) F(x) D() _SFC_PP_FOR_38(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_40(D,F,x, ...) F(x) D() _SFC_PP_FOR_29(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_41(D,F,x, ...) F(x) D() _SFC_PP_FOR_40(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_42(D,F,x, ...) F(x) D() _SFC_PP_FOR_41(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_43(D,F,x, ...) F(x) D() _SFC_PP_FOR_42(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_44(D,F,x, ...) F(x) D() _SFC_PP_FOR_43(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_45(D,F,x, ...) F(x) D() _SFC_PP_FOR_44(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_46(D,F,x, ...) F(x) D() _SFC_PP_FOR_45(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_47(D,F,x, ...) F(x) D() _SFC_PP_FOR_46(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_48(D,F,x, ...) F(x) D() _SFC_PP_FOR_47(D, F,__VA_ARGS__)
+#define _SFC_PP_FOR_49(D,F,x, ...) F(x) D() _SFC_PP_FOR_48(D, F,__VA_ARGS__)
 // clang-format on

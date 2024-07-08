@@ -24,9 +24,10 @@ class Sched {
   void wait(u32 msec);
 
  private:
-  TaskQueue _task_queue;
-  thread::JoinHandle _thread{};
   sync::Atomic<bool> _running{false};
+  TaskQueue _task_queue;
+
+  thread::JoinHandle _thread{};
 };
 
 }  // namespace sfc::cyber

@@ -1,9 +1,11 @@
 
 #include "meta.h"
 
-#include <sys/stat.h>
+#include "sfc/sys/fs.inl"
 
 namespace sfc::fs {
+
+namespace sys_imp = sys::fs;
 
 auto Meta::exists() const -> bool {
   return _mod != 0;
@@ -14,32 +16,27 @@ auto Meta::file_len() const -> u64 {
 }
 
 auto Meta::is_dir() const -> bool {
-  const auto res = S_ISDIR(_mod);
-  return res;
+  const auto imp = sys_imp::FileType{_mod, 0};
+  return imp.is_dir();
 }
 
 auto Meta::is_file() const -> bool {
-  const auto res = S_ISREG(_mod);
-  return res;
+  const auto imp = sys_imp::FileType{_mod, 0};
+  return imp.is_file();
 }
 
 auto Meta::is_link() const -> bool {
-  const auto res = S_ISLNK(_mod);
-  return res;
+  const auto imp = sys_imp::FileType{_mod, 0};
+  return imp.is_link();
 }
 
 auto meta(Path path) -> Meta {
-  struct stat st;
-  const auto ret = ::lstat(path.to_c_string(), &st);
-  if (ret == -1) {
-    return {0, 0};
-  }
-
-  const auto res = Meta{
-      static_cast<u64>(st.st_size),
-      static_cast<u32>(st.st_mode),
+  const auto os_path = ffi::CString::from(path.as_str());
+  const auto imp = sys_imp::lstat(os_path);
+  return Meta{
+      static_cast<u32>(imp._mode),
+      static_cast<u64>(imp._size),
   };
-  return res;
 }
 
 }  // namespace sfc::fs

@@ -1,9 +1,10 @@
 #include "datetime.h"
 
-#include <sys/time.h>
-#include <time.h>
+#include "sfc/sys/time.inl"
 
 namespace sfc::time {
+
+namespace sys_imp = sys::time;
 
 auto NaiveTime::from_hms(u32 hour, u32 min, u32 sec) -> NaiveTime {
   const auto secs = (hour * 24 + min * 60) * 60 + sec;
@@ -66,20 +67,9 @@ auto DateTime::time() const -> NaiveTime {
 }
 
 auto DateTime::now_local() -> DateTime {
-  struct timeval tv;
-  ::gettimeofday(&tv, nullptr);
-
-  struct tm tm;
-  ::localtime_r(&tv.tv_sec, &tm);
-
-  const auto date = NaiveDate::from_ymd(static_cast<u32>(tm.tm_year + 1900),
-                                        static_cast<u32>(tm.tm_mon + 1),
-                                        static_cast<u32>(tm.tm_mday));
-
-  const auto time
-      = NaiveTime::from_hms_nano(static_cast<u32>(tm.tm_hour), static_cast<u32>(tm.tm_min),
-                                 static_cast<u32>(tm.tm_sec), static_cast<u32>(tv.tv_usec));
-
+  const auto imp = sys_imp::DateTime::now();
+  const auto date = NaiveDate::from_ymd(imp.year, imp.month, imp.mday);
+  const auto time = NaiveTime::from_hms_nano(imp.hour, imp.min, imp.sec, imp.usec);
   return {date, time};
 }
 

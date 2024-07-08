@@ -1,7 +1,5 @@
 #include "style.h"
 
-#include <ctype.h>
-
 namespace sfc::fmt {
 
 struct StyleParser {

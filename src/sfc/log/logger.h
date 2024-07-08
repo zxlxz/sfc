@@ -6,7 +6,7 @@ namespace sfc::log {
 
 class Logger {
   Level _level = Level::Info;
-  Vec<Box<IBackend>> _backends;
+  Vec<Box<IBackend&>> _backends;
 
  public:
   Logger();
@@ -37,7 +37,7 @@ class Logger {
 
   void add_file_backend(Str path);
 
-  void add_backend(Box<IBackend> backend);
+  void add_backend(Box<IBackend&> backend);
 
  private:
   static auto get_tls_sbuf() -> String&;

@@ -1,32 +1,34 @@
 #include "file.h"
 
-#include <unistd.h>
+#include "sfc/sys/io.inl"
 
 namespace sfc::io {
 
+namespace sys_imp = sys::io;
+
+struct File::Inn : sys_imp::File {
+  Inn(auto fd) noexcept : sys_imp::File{fd} {}
+};
+
 File::File() noexcept = default;
 
-File::File(int fd) noexcept : _fd{fd} {}
+template <>
+File::File(sys_imp::File inn) noexcept : _inn{Box<Inn>::xnew(inn)} {}
 
-File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = -1;
-}
+File::File(File&& other) noexcept = default;
 
 File::~File() {
-  if (!*this) {
+  if (!_inn) {
     return;
   }
-  ::close(_fd);
+
+  _inn->close();
 }
 
 File& File::operator=(File&& other) noexcept = default;
 
-auto File::from_raw(int fd) -> File {
-  return File{fd};
-}
-
 File::operator bool() const {
-  return _fd != -1;
+  return bool(_inn);
 }
 
 auto File::read(Slice<u8> buf) -> usize {
@@ -35,11 +37,11 @@ auto File::read(Slice<u8> buf) -> usize {
     return 0;
   }
 
-  const auto ret = ::read(_fd, buf.as_mut_ptr(), buf.len());
-  if (ret == -1) {
-    throw Error::last_os_error();
+  const auto res = _inn->read(buf);
+  if (res == -1) {
+    throw io::Error::last_os_error();
   }
-  return static_cast<usize>(ret);
+  return static_cast<u64>(res);
 }
 
 auto File::write(Slice<const u8> buf) -> usize {
@@ -49,11 +51,11 @@ auto File::write(Slice<const u8> buf) -> usize {
   }
 
   // do write
-  const auto ret = ::write(_fd, buf.as_ptr(), buf.len());
-  if (ret == -1) {
-    throw Error::last_os_error();
+  const auto res = _inn->write(buf);
+  if (res == -1) {
+    throw io::Error::last_os_error();
   }
-  return static_cast<usize>(ret);
+  return static_cast<u64>(res);
 }
 
 auto File::read_all(Vec<u8>& buf, usize buf_len) -> usize {

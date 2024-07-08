@@ -1,20 +1,12 @@
 #include "mutex.h"
 
-#include <pthread.h>
+#include "sfc/sys/sync.inl"
 
 namespace sfc::sync {
 
-struct Mutex::Inn {
-  pthread_mutex_t _raw = PTHREAD_MUTEX_INITIALIZER;
+namespace sys_imp = sys::sync;
 
-  void lock() {
-    ::pthread_mutex_lock(&_raw);
-  }
-
-  void unlock() {
-    ::pthread_mutex_unlock(&_raw);
-  }
-};
+struct Mutex::Inn : sys_imp::Mutex {};
 
 Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
 

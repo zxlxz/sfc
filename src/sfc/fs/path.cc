@@ -1,10 +1,6 @@
 #include "path.h"
 
-#include <sys/stat.h>
-
 namespace sfc::fs {
-
-using ffi::CString;
 
 struct Components {
   Str _inn;
@@ -47,11 +43,6 @@ struct Components {
     return s;
   }
 };
-
-auto Path::to_c_string() -> ffi::CString {
-  auto res = ffi::CString::from(_inn);
-  return res;
-}
 
 auto Path::file_name() const -> Str {
   const auto s = Components{_inn}.next_back();

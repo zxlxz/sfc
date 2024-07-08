@@ -4,14 +4,15 @@
 
 namespace sfc::env {
 
-auto get(Str key) -> Str;
-void set(Str key, Str val);
+auto var(Str key) -> Str;
+void set_var(Str key, Str val);
+void remove_var(Str key, Str val);
 
-auto current_dir() -> fs::Path;
-void set_current_dir(const fs::Path& path);
+auto current_dir() -> fs::PathBuf;
+void set_current_dir(fs::Path path);
 
-auto current_exe() -> fs::Path;
+auto current_exe() -> fs::PathBuf;
 
-auto home_dir() -> fs::Path;
+auto home_dir() -> fs::PathBuf;
 
 }  // namespace sfc::env

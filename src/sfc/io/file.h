@@ -6,17 +6,17 @@ namespace sfc::io {
 
 class File {
  protected:
-  int _fd = -1;
+  struct Inn;
+  Box<Inn> _inn;
 
-  File(int fd) noexcept;
+  explicit File(auto raw) noexcept;
 
  public:
   File() noexcept;
   ~File();
   File(File&&) noexcept;
-  File& operator=(File&&) noexcept;
 
-  static auto from_raw(int fd) -> File;
+  File& operator=(File&&) noexcept;
 
  public:
   explicit operator bool() const;

@@ -4,13 +4,14 @@
 
 namespace sfc::log {
 
-class ConsoleBackend : public IBackend {
+class ConsoleBackend {
  public:
   ConsoleBackend();
   ConsoleBackend(ConsoleBackend&&) noexcept;
   ~ConsoleBackend();
 
-  void write_msg(Level level, Str msg) override;
+ public:
+  void write_msg(Level level, Str msg);
 };
 
 }  // namespace sfc::log

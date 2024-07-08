@@ -5,16 +5,16 @@
 
 namespace sfc::log {
 
-class FileBackend : public IBackend {
+class FileBackend {
+  fs::File _file;
+
  public:
   explicit FileBackend(Str path);
   FileBackend(FileBackend&&) noexcept;
   ~FileBackend();
 
-  void write_msg(Level level, Str msg) override;
-
- private:
-  fs::File _file;
+ public:
+  void write_msg(Level level, Str msg);
 };
 
 }  // namespace sfc::log

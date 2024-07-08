@@ -7,8 +7,8 @@ namespace sfc::fs {
 struct Path;
 
 struct Meta {
-  u64 _len;
   u32 _mod;
+  u64 _len;
 
  public:
   auto exists() const -> bool;
