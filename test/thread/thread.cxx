@@ -15,7 +15,7 @@ SFC_TEST(builder) {
   auto builder = Builder{};
   builder._name = String::from("thread_builder");
   builder._stack_size = 102400;
-  builder.spawn(Box<void()>([]() {
+  builder.spawn(Box<void()>::xnew([]() {
     const auto thr = Thread::current();
     test::assert_eq(thr.name(), "thread_builder");
   }));

@@ -1,20 +1,18 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::ops {
 
-struct Any {
-  template <class X, class R, class... T>
-  static auto cast(R (X::*f)(T...)) -> R (Any::*)(T...) {
-    return reinterpret_cast<R (Any::*)(T...)>(f);
-  }
+template <class X, class R, class... T>
+static auto fn(R (X::*f)(T...)) -> R (trait::Any::*)(T...) {
+  return reinterpret_cast<R (trait::Any::*)(T...)>(f);
+}
 
-  template <class X, class R, class... T>
-  static auto cast(R (X::*f)(T...) const) -> R (Any::*)(T...) {
-    return reinterpret_cast<R (Any::*)(T...)>(f);
-  }
-};
+template <class X, class R, class... T>
+static auto fn(R (X::*f)(T...) const) -> R (trait::Any::*)(T...) {
+  return reinterpret_cast<R (trait::Any::*)(T...)>(f);
+}
 
 template <class F>
 struct Fn;
@@ -24,32 +22,34 @@ struct Fn<R(T...)> {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
-    R (Any::*_call)(T...);
+    R (trait::Any::*_call)(T...);
 
     template <class X>
-    static auto of(const X&) -> const Meta& {
-      static const auto res = Meta{
+    static auto of(const X&) -> Meta {
+      return Meta{
           ._size = sizeof(X),
           ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
-          ._call = Any::cast<X, R, T...>(&X::operator()),
+          ._call = ops::fn<X, R, T...>(&X::operator()),
       };
-      return res;
     }
   };
 
   Any* _self = nullptr;
   const Meta* _meta = nullptr;
 
+  Fn(Any* self, const Meta& meta) : _self{self}, _meta{&meta} {}
+
  public:
   Fn() noexcept = default;
 
-  template <class X>
-  explicit Fn(X& x) : _self{reinterpret_cast<Any*>(&x)}, _meta{&Meta::of(x)} {}
+  static auto from(auto& x) -> Fn {
+    static const auto meta = Meta::of(x);
+    return Fn{reinterpret_cast<Any*>(&x), meta};
+  }
 };
 
 }  // namespace sfc::ops
 
 namespace sfc {
-using ops::Any;
 using ops::Fn;
 }  // namespace sfc

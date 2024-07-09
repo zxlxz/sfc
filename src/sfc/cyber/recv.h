@@ -45,7 +45,7 @@ class Recv {
       return;
     }
 
-    _func = Box<void(const T&)>{mem::move(func)};
+    _func = Box<void(const T&)>::xnew(mem::move(func));
     _chan->add_listener(Listener<T>{this, &_static_on_message});
   }
 

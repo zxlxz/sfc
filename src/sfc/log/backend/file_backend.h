@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sfc/fs.h"
-#include "sfc/log/mod.h"
+#include "sfc/log/backend.h"
 
 namespace sfc::log {
 

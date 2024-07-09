@@ -4,7 +4,7 @@
 
 namespace sfc::alloc {
 
-auto Global::_alloc(Layout layout) -> void* {
+auto Global::alloc_imp(Layout layout) -> void* {
   if (layout.size == 0) {
     return nullptr;
   }
@@ -13,7 +13,7 @@ auto Global::_alloc(Layout layout) -> void* {
   return ptr;
 }
 
-void Global::_dealloc(void* ptr, Layout layout) {
+void Global::dealloc_imp(void* ptr, Layout layout) {
   (void)layout;
   if (ptr == 0) {
     return;
@@ -22,19 +22,19 @@ void Global::_dealloc(void* ptr, Layout layout) {
   ::free(ptr);
 }
 
-auto Global::_realloc(void* old_ptr, Layout layout, usize new_size) -> void* {
+auto Global::realloc_imp(void* old_ptr, Layout layout, usize new_size) -> void* {
   if (layout.size == new_size) {
     return old_ptr;
   }
 
   if (new_size == 0) {
-    this->_dealloc(old_ptr, layout);
+    this->dealloc_imp(old_ptr, layout);
     return nullptr;
   }
 
   if (old_ptr == nullptr) {
-    const auto new_layout = Layout{.align = layout.align, .size = new_size};
-    const auto new_ptr = this->_alloc(new_layout);
+    const auto new_layout = Layout{.size = new_size, .align = layout.align};
+    const auto new_ptr = this->alloc_imp(new_layout);
     return new_ptr;
   }
 
@@ -42,7 +42,7 @@ auto Global::_realloc(void* old_ptr, Layout layout, usize new_size) -> void* {
   return ptr;
 }
 
-auto Global::_usable_size(void* p) -> usize {
+auto Global::usable_size(void* p) -> usize {
   if (p == nullptr) {
     return 0;
   }

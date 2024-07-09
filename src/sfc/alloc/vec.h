@@ -25,7 +25,7 @@ class Buf {
       return;
     }
 
-    _a.dealloc(_ptr, _cap);
+    _a.dealloc_array(_ptr, _cap);
     _ptr = nullptr;
   }
 
@@ -42,7 +42,7 @@ class Buf {
 
   static auto with_capacity(usize capacity) -> Buf {
     auto a = A{};
-    const auto ptr = a.template alloc<T>(capacity);
+    const auto ptr = a.template alloc_array<T>(capacity);
     return Buf{static_cast<T*>(ptr), capacity};
   }
 
@@ -91,7 +91,7 @@ class Buf {
     }
 
     const auto new_cap = used + additional;
-    _ptr = _a.realloc(_ptr, _cap, new_cap);
+    _ptr = _a.realloc_array(_ptr, _cap, new_cap);
     _cap = new_cap;
   }
 };

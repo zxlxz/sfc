@@ -28,10 +28,10 @@ auto Builder::spawn(Box<void()> f) -> JoinHandle {
     f();
   };
 
-  auto imp = sys_imp::Thread::xnew(_stack_size, Box<void()>{mem::move(fun)})
+  auto imp = sys_imp::Thread::xnew(_stack_size, Box<void()>::xnew(mem::move(fun)))
                  .expect("sys::Thread::Builder: spawn thread failed.");
 
-    return JoinHandle{Thread{imp.id()}};
+  return JoinHandle{Thread{imp.id()}};
 }
 
 JoinHandle::JoinHandle() : _thr{} {}
@@ -39,34 +39,34 @@ JoinHandle::JoinHandle() : _thr{} {}
 JoinHandle::JoinHandle(Thread thr) : _thr{thr} {}
 
 JoinHandle::~JoinHandle() {
-    this->join();
+  this->join();
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thr{other._thr} {
-    other._thr = {};
+  other._thr = {};
 }
 
 auto JoinHandle::operator=(JoinHandle&& other) noexcept -> JoinHandle& {
-    auto tmp = mem::move(*this);
-    mem::swap(_thr, other._thr);
-    return *this;
+  auto tmp = mem::move(*this);
+  mem::swap(_thr, other._thr);
+  return *this;
 }
 
 auto JoinHandle::thread() const -> Thread {
-    return _thr;
+  return _thr;
 }
 
 void JoinHandle::join() {
-    if (_thr._id == Thread::INVALID_ID) {
-      return;
-    }
+  if (_thr._id == Thread::INVALID_ID) {
+    return;
+  }
 
-    auto imp = sys_imp::Thread{_thr._id};
-    imp.join();
+  auto imp = sys_imp::Thread{_thr._id};
+  imp.join();
 }
 
 void sleep(time::Duration dur) {
-    sys_imp::sleep(dur);
+  sys_imp::sleep(dur);
 }
 
 }  // namespace sfc::thread
