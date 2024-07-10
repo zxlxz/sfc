@@ -25,27 +25,23 @@ struct Fn<R(T...)> {
     R (trait::Any::*_call)(T...);
 
     template <class X>
-    static auto of(const X&) -> Meta {
-      return Meta{
+    static auto of(const X*) -> const Meta& {
+      static const auto res = Meta{
           ._size = sizeof(X),
           ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
           ._call = ops::fn<X, R, T...>(&X::operator()),
       };
+      return res;
     }
   };
 
-  Any* _self = nullptr;
+  void* _self = nullptr;
   const Meta* _meta = nullptr;
-
-  Fn(Any* self, const Meta& meta) : _self{self}, _meta{&meta} {}
 
  public:
   Fn() noexcept = default;
 
-  static auto from(auto& x) -> Fn {
-    static const auto meta = Meta::of(x);
-    return Fn{reinterpret_cast<Any*>(&x), meta};
-  }
+  Fn(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
 };
 
 }  // namespace sfc::ops

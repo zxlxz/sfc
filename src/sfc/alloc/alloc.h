@@ -25,13 +25,13 @@ struct Layout {
 };
 
 struct Global {
-  auto alloc_imp(Layout layout) -> void*;
+  static auto alloc_imp(Layout layout) -> void*;
 
-  void dealloc_imp(void* ptr, Layout layout);
+  static void dealloc_imp(void* ptr, Layout layout);
 
-  auto realloc_imp(void* ptr, Layout layout, usize new_size) -> void*;
+  static auto realloc_imp(void* ptr, Layout layout, usize new_size) -> void*;
 
-  auto usable_size(void* ptr) -> usize;
+  static auto usable_size(void* ptr) -> usize;
 
   template <class T>
   auto alloc_one() -> T* {

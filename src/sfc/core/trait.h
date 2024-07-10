@@ -57,7 +57,3 @@ auto as_mut(T& x) -> X<T>& {
 }
 
 }  // namespace sfc::trait
-
-namespace sfc {
-using trait::Any;
-}  // namespace sfc

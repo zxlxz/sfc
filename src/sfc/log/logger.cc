@@ -37,12 +37,12 @@ void Logger::clear_backends() {
 
 void Logger::add_console_backend() {
   auto backend = Box<ConsoleBackend>::xnew();
-  this->add_backend(mem::move(backend));
+  this->add_backend(Box<IBackend&>(mem::move(backend)));
 }
 
 void Logger::add_file_backend(Str path) {
   auto backend = Box<FileBackend>::xnew(path);
-  this->add_backend(mem::move(backend));
+  this->add_backend(Box<IBackend&>(mem::move(backend)));
 }
 
 void Logger::add_backend(Box<IBackend&> backend) {

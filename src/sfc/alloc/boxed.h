@@ -86,13 +86,13 @@ class Box {
 };
 
 template <>
-class Box<Any&> {
+class Box<void> {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
 
     template <class X>
-    static auto of(const X&) -> const Meta& {
+    static auto from(const X*) -> const Meta& {
       static const auto res = Meta{
           ._size = sizeof(X),
           ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
@@ -101,96 +101,117 @@ class Box<Any&> {
     }
   };
 
-  Any* _self = nullptr;
-  const Meta* _meta = nullptr;
+  struct FatPtr {
+    void* _self = nullptr;
+    const Meta* _meta = nullptr;
 
-  template <class X>
-  Box(mem::inplace_t, X& x) : _self{reinterpret_cast<Any*>(&x)}, _meta{&Meta::of(x)} {}
+    FatPtr() = default;
+
+    FatPtr(auto* x) noexcept : _self{x}, _meta{Meta::from(x)} {}
+
+    auto size() const {
+      return _meta ? _meta->_size : 0U;
+    }
+
+    void drop() {
+      _meta->_dtor(_self);
+    }
+  };
+
+  FatPtr _ptr;
 
  public:
   template <class X>
-  Box(Box<X> box) : Box{mem::inplace_t{}, *(box.into_raw())} {}
+  Box(Box<X> box) : _ptr{box.into_raw()} {}
 
-  ~Box() {}
+  ~Box() {
+    if (!_ptr._self) {
+      return;
+    }
+    _ptr.drop();
+    alloc::Global::dealloc_imp(_ptr._self, {_ptr.size(), 0U});
+  }
 
-  Box(Box&& other) noexcept : _self{other._self}, _meta{other._meta} {
-    _self = nullptr;
+  Box(Box&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = {};
+  }
+
+  operator bool() const noexcept {
+    return _ptr._self != nullptr;
   }
 };
 
 template <class T>
 class Box<T&> {
-  T _inn = {};
-
-  Box(mem::inplace_t, auto& x) : _inn{T::from(x)} {}
+  T _ptr;
 
  public:
   Box() noexcept = default;
 
   template <class X>
-  Box(Box<X> box) : Box{mem::inplace_t{}, *mem::move(box).into_raw()} {}
+  explicit Box(Box<X> box) : _ptr{mem::move(box).into_raw()} {}
 
-  Box(Box&& other) noexcept : _inn{other._inn} {
-    other._inn._self = nullptr;
+  Box(Box&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = {};
   }
 
   ~Box() {
-    if (!_inn._self) {
+    if (!_ptr._self) {
       return;
     }
-    (_inn._meta->_dtor)(_inn._self);
-    alloc::Global{}.dealloc_imp(_inn._self, {_inn._meta->_size, 1U});
+    (_ptr._meta->_dtor)(_ptr._self);
+    alloc::Global{}.dealloc_imp(_ptr._self, {_ptr._meta->_size, 1U});
   }
 
   auto operator->() -> T* {
-    return &_inn;
+    return &_ptr;
   }
 };
 
 template <class R, class... T>
 class Box<R(T...)> {
   using Inn = ops::Fn<R(T...)>;
-  Inn _inn = {};
-
-  explicit Box(mem::inplace_t, auto& x) noexcept : _inn{Inn::from(x)} {}
+  Inn _ptr = {};
 
  public:
-  Box() = default;
+  Box() noexcept = default;
+
+  template <class X>
+  Box(Box<X> box) noexcept : _ptr{static_cast<Box<X>&&>(box).into_raw()} {}
 
   ~Box() {
-    if (!_inn._self) {
+    if (!_ptr._self) {
       return;
     }
 
-    (_inn._meta->_dtor)(_inn._self);
-    alloc::Global{}.dealloc_imp(_inn._self, {_inn._meta->_size, 1U});
+    (_ptr._meta->_dtor)(_ptr._self);
+    alloc::Global{}.dealloc_imp(_ptr._self, {_ptr._meta->_size, 1U});
   }
 
-  Box(Box&& other) noexcept : _inn{static_cast<const Inn&>(other._inn)} {
-    other._inn._self = nullptr;
+  Box(Box&& other) noexcept : _ptr{static_cast<const Inn&>(other._ptr)} {
+    other._ptr._self = nullptr;
   }
 
-  template <class X>
-  static auto xnew(X x) -> Box {
-    auto ptr = Box<X>::xnew(static_cast<X&&>(x)).into_raw();
-    return Box{mem::inplace_t{}, *ptr};
+  static auto xnew(auto f) -> Box {
+    return Box{Box<decltype(f)>::xnew(mem::move(f))};
   }
 
-  auto operator=(Box&& other) noexcept -> Box& {
+  Box& operator=(Box&& other) noexcept {
     auto tmp = mem::move(*this);
-    mem::swap(_inn, other._inn);
+    mem::swap(_ptr, other._ptr);
     return *this;
   }
 
   explicit operator bool() const {
-    return _inn._self != nullptr;
+    return _ptr._self != nullptr;
   }
 
   auto operator()(T... args) -> R {
-    assert_fmt(_inn._self, "Box::(): deref null object.");
+    assert_fmt(_ptr._self, "Box::(): deref null object.");
 
-    const auto f = _inn._meta->_call;
-    (_inn._self->*f)(static_cast<T&&>(args)...);
+    const auto p = static_cast<trait::Any*>(_ptr._self);
+    const auto f = _ptr._meta->_call;
+    (p->*f)(static_cast<T&&>(args)...);
   }
 };
 
