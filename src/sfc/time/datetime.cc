@@ -16,24 +16,6 @@ auto NaiveTime::from_hms_nano(u32 hour, u32 min, u32 sec, u32 nanos) -> NaiveTim
   return {secs, nanos};
 }
 
-auto NaiveTime::hour() const -> u32 {
-  const auto mins = _secs / 60;
-  return mins / 60;
-}
-
-auto NaiveTime::minute() const -> u32 {
-  const auto mins = _secs / 60;
-  return mins % 60;
-}
-
-auto NaiveTime::second() const -> u32 {
-  return _secs % 60;
-}
-
-auto NaiveTime::nanosecond() const -> u32 {
-  return _nanos;
-}
-
 NaiveDate::NaiveDate(u32 year, u32 mon, u32 day) {
   mon = num::saturating_sub(mon, 1U);
   day = num::saturating_sub(day, 1U);
@@ -49,21 +31,13 @@ auto NaiveDate::year() const -> u32 {
 }
 
 auto NaiveDate::month() const -> u32 {
-  auto mon = (_yof >> 4) & 0xFF;
+  const auto mon = (_yof >> 4) & 0xF;
   return mon + 1;
 }
 
 auto NaiveDate::day() const -> u32 {
-  auto day = (_yof >> 4) & 0xFF;
+  const auto day = _yof & 0xF;
   return day + 1;
-}
-
-auto DateTime::date() const -> NaiveDate {
-  return _date;
-}
-
-auto DateTime::time() const -> NaiveTime {
-  return _time;
 }
 
 auto DateTime::now_local() -> DateTime {
