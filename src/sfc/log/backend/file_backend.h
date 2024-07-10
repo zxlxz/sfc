@@ -14,7 +14,8 @@ class FileBackend {
   ~FileBackend();
 
  public:
-  void write_msg(Level level, Str msg);
+  void write_entry(Entry entry);
+  auto make_log_str(Entry entry) const -> Str;
 };
 
 }  // namespace sfc::log

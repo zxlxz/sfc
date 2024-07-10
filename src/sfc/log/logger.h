@@ -41,6 +41,7 @@ class Logger {
 
  private:
   static auto get_tls_sbuf() -> String&;
+  static auto make_time_str() -> Str;
 };
 
 }  // namespace sfc::log

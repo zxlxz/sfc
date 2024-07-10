@@ -4,18 +4,24 @@
 
 namespace sfc::log {
 
+struct Entry {
+  Level level;
+  Str time;
+  Str msg;
+};
+
 struct IBackend {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
-    void (trait::Any::*_write_msg)(Level level, Str msg);
+    void (trait::Any::*_write_entry)(Entry entry);
 
     template <class X>
     static auto of(const X*) -> const Meta& {
       static const auto res = Meta{
           ._size = sizeof(X),
           ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
-          ._write_msg = ops::fn(&X::write_msg),
+          ._write_entry = ops::fn(&X::write_entry),
       };
       return res;
     }
@@ -29,10 +35,10 @@ struct IBackend {
 
   explicit IBackend(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
 
-  void write_msg(Level level, Str msg) {
+  void write_entry(Entry entry) {
     const auto p = static_cast<trait::Any*>(_self);
-    const auto f = _meta->_write_msg;
-    (p->*f)(level, msg);
+    const auto f = _meta->_write_entry;
+    (p->*f)(entry);
   }
 };
 

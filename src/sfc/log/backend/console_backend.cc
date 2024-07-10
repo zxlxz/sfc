@@ -5,76 +5,58 @@
 
 namespace sfc::log {
 
-namespace imp {
-static auto make_time_str() -> Str {
-  static thread_local char buf[32];
-
-  static const auto time_start = time::Instant::now();
-  const auto time_dur = time_start.elpased().as_secs_f64();
-  const auto buf_len = __builtin_snprintf(buf, sizeof(buf), "[%10.6f] ", time_dur);
-  if (buf_len <= 0) {
-    return {};
-  }
-  return Str{buf, static_cast<usize>(buf_len)};
+ConsoleBackend::ConsoleBackend() {
+  auto& stdout = io::Stdout::instance();
+  _enable_color = stdout.is_tty();
 }
-
-static auto make_level_color(Level level) -> Str {
-  switch (level) {
-    case Level::Trace:   return "\033[39m";
-    case Level::Debug:   return "\033[32m";
-    case Level::Info:    return "\033[34m";
-    case Level::Warning: return "\033[33m";
-    case Level::Error:   return "\033[31m";
-    case Level::Fatal:   return "\033[41m";
-  }
-  return "";
-}
-
-static auto make_level_str(Level level) -> Str {
-  switch (level) {
-    case Level::Trace:   return "[TT]";
-    case Level::Debug:   return "[DD]";
-    case Level::Info:    return "[II]";
-    case Level::Warning: return "[WW]";
-    case Level::Error:   return "[EE]";
-    case Level::Fatal:   return "[XX]";
-  }
-  return "[??]";
-}
-
-static auto make_log_str(Level level, Str msg) {
-  const auto time_str = imp::make_time_str();
-  const auto level_str = imp::make_level_str(level);
-  const auto color_str = imp::make_level_color(level);
-  const auto color_off = "\033[39;49m";
-
-  static thread_local String buf;
-  buf.clear();
-  buf.push_str(color_str);
-  buf.push_str(time_str);
-  buf.push_str(level_str);
-  buf.push_str(color_off);
-  buf.push_str(" ");
-  buf.push_str(msg);
-  buf.push_str("\n");
-
-  return buf.as_str();
-}
-
-}  // namespace imp
-
-ConsoleBackend::ConsoleBackend() {}
 
 ConsoleBackend::ConsoleBackend(ConsoleBackend&&) noexcept = default;
 
 ConsoleBackend::~ConsoleBackend() {}
 
-void ConsoleBackend::write_msg(Level level, Str msg) {
-  static constexpr auto MAX_MSG_LEN = 4096u;
-  msg = msg[{0, MAX_MSG_LEN}];
+void ConsoleBackend::set_color(bool value) {
+  _enable_color = value;
+}
 
-  const auto s = imp::make_log_str(level, msg);
+void ConsoleBackend::write_entry(Entry entry) {
+  const auto s = this->make_log_str(entry);
   io::Stdout::instance().write_str(s);
+}
+
+auto ConsoleBackend::make_log_str(Entry entry) const -> Str {
+  static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
+
+  static const Str LEVEL_STR[] = {
+      "[TT]", "[DD]", "[II]", "[WW]", "[EE]", "[XX]", "[??]",
+  };
+
+  static const Str COLOR_OFF = "\033[39;49m";
+  static const Str COLOR_STR[] = {
+      "\033[39m", "\033[32m", "\033[34m", "\033[33m", "\033[31m", "\033[41m", "",
+  };
+
+  const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
+  const auto level_ss = LEVEL_STR[level_id];
+  const auto color_ss = COLOR_STR[level_id];
+
+  static thread_local String buf;
+  buf.clear();
+
+  if (_enable_color) {
+    buf.push_str(color_ss);
+    buf.push_str(entry.time);
+    buf.push_str(COLOR_OFF);
+  } else {
+    buf.push_str(entry.time);
+    buf.push_str(" ");
+    buf.push_str(level_ss);
+  }
+
+  buf.push_str(" ");
+  buf.push_str(entry.msg);
+  buf.push_str("\n");
+
+  return buf.as_mut_ptr();
 }
 
 }  // namespace sfc::log
