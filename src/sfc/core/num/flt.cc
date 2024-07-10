@@ -1,32 +1,94 @@
-#include <stdlib.h>
-
 #include "sfc/core/num.h"
 #include "sfc/core/str.h"
 
 namespace sfc::str {
 
-template <class T>
-static auto parse_flt(Slice<const char> s) -> Option<T> {
-  auto end = const_cast<char*>(s._ptr + s._len);
-  auto val = ::strtod(s._ptr, &end);
+struct Str2Flt {
+  Slice<const char> _s;
 
-  if (end != s._ptr + s._len) {
+ public:
+  template <class T>
+  auto parse_flt() -> Option<T> {
+    const auto sign = T{this->extract_sign()};
+    const auto nan_inf = this->extract_nan_inf(sign);
+    if (nan_inf) {
+      return nan_inf;
+    }
+
+    const auto int_part = this->extract_int_part();
+    const auto flt_part = this->extract_flt_part();
+    if (_s._len != 0) {
+      return {};
+    }
+
+    const auto res = static_cast<T>(sign * (int_part + flt_part));
+    return res;
+  }
+
+ private:
+  [[sfc_inline]] void pop() {
+    _s._ptr += 1;
+    _s._len -= 1;
+  }
+
+  auto extract_sign() -> f32 {
+    const auto c = _s._len ? _s._ptr[0] : char(0);
+    if (c == '+' || c == '-') {
+      this->pop();
+    }
+    return c == '-' ? -1.0f : 1.0f;
+  }
+
+  template <class T>
+  auto extract_nan_inf(T sign) -> Option<T> {
+    if (_s._len != 3) {
+      return {};
+    };
+    const auto p = _s._ptr;
+    if ((p[0] | 32) == 'n' && (p[1] | 32) == 'a' && (p[2] | 32) == 'n') {
+      return T{__builtin_nanf("")};
+    }
+    if ((p[0] | 32) == 'i' && (p[1] | 32) == 'n' && (p[2] | 32) == 'f') {
+      return T{sign * __builtin_inff()};
+    }
     return {};
   }
-  return static_cast<T>(val);
-}
+
+  auto extract_int_part() -> f64 {
+    f64 res = 0.0;
+    for (; _s._len != 0; this->pop()) {
+      const auto c = _s._ptr[0];
+      const auto n = static_cast<u8>(c - '0');
+      if (n >= 10) break;
+      res = 10 * res + n;
+    }
+    return res;
+  }
+
+  auto extract_flt_part() -> f64 {
+    if (_s._len == 0 || _s._ptr[0] != '.') {
+      return 0;
+    }
+    this->pop();
+
+    f64 res = 0.0;
+    f64 exp = 1.0;
+    for (; _s._len != 0; this->pop()) {
+      const auto c = _s._ptr[0];
+      const auto n = static_cast<u8>(c - '0');
+      if (n >= 10) break;
+
+      exp /= 10.0;
+      res += n * exp;
+    }
+    return res;
+  }
+};
 
 template <class T>
 auto Str::parse() const -> Option<T> {
-  char buf[64];
-  if (_len == 0 || _len >= sizeof(buf)) {
-    return {};
-  }
-  ptr::copy(_ptr, buf, _len);
-  buf[_len] = 0;
-
-  const auto ret = parse_flt<T>({buf, _len});
-  return ret;
+  auto imp = Str2Flt{{_ptr, _len}};
+  return imp.parse_flt<T>();
 }
 
 template auto Str::parse<f32>() const -> Option<f32>;

@@ -1,49 +1,117 @@
-#include <stdlib.h>
-
 #include "sfc/core/num.h"
 #include "sfc/core/str.h"
 
 namespace sfc::str {
 
-template <trait::UInt T>
-static auto parse_int(Slice<const char> s) -> Option<T> {
-  auto end = const_cast<char*>(s._ptr + s._len);
-  auto val = ::strtoul(s._ptr, &end, 10);
+struct Str2Int {
+  Slice<const char> _s;
 
-  if (val > num::max_value<T>()) {
-    return {};
-  }
-  if (end != s._ptr + s._len) {
-    return {};
-  }
-  return static_cast<T>(val);
-}
+ public:
+  template <trait::UInt T>
+  auto parse_int() -> Option<T> {
+    const auto sign = this->extract_sign();
+    if (sign == '-') {
+      return {};
+    }
 
-template <trait::SInt T>
-static auto parse_int(Slice<const char> s) -> Option<T> {
-  auto end = const_cast<char*>(s._ptr + s._len);
-  auto val = ::strtol(s._ptr, &end, 10);
+    const auto radix = this->extract_radix();
+    if (_s._len == 0) {
+      return {};
+    }
 
-  if (val > num::max_value<T>() || val < num::min_value<T>()) {
-    return {};
+    const auto uval = this->extract_int<T>(radix);
+    if (_s._len != 0) {
+      return {};
+    }
+
+    return uval;
   }
-  if (end != s._ptr + s._len) {
-    return {};
+
+  template <trait::SInt T>
+  auto parse_int() -> Option<T> {
+    const auto sign = this->extract_sign();
+
+    const auto radix = this->extract_radix();
+    if (_s._len == 0) {
+      return {};
+    }
+
+    const auto uval = this->extract_int<T>(radix);
+    if (_s._len != 0) {
+      return {};
+    }
+
+    return sign == '-' ? static_cast<T>(-uval) : uval;
   }
-  return static_cast<T>(val);
-}
+
+ private:
+  void pop() {
+    _s._ptr += 1;
+    _s._len -= 1;
+  }
+
+  auto extract_sign() -> char {
+    const auto c = _s._len ? _s._ptr[0] : char(0);
+    if (c == '+' || c == '-') {
+      this->pop();
+    }
+    return c;
+  }
+
+  auto extract_radix() -> u32 {
+    if (_s._len <= 1) {
+      return 10;
+    }
+
+    const auto c = _s._ptr[0];
+    const auto d = _s._ptr[1];
+    if (c != '0') {
+      return 10;
+    }
+    this->pop();
+
+    switch (d) {
+      case 'b':
+      case 'B':
+        this->pop();
+        return 2;
+      case 'x':
+      case 'X':
+        this->pop();
+        return 16;
+      default:
+        return 8;
+    }
+    return 10;
+  }
+
+  template <class T>
+  auto extract_int(u32 radix) -> T {
+    static constexpr auto MAX_VALUE = num::max_value<T>();
+
+    auto res = T{0} + 0U;
+
+    for (; _s._len; this->pop()) {
+      const auto c = _s._ptr[0];
+      const auto n = c <= '9' ? u32(c - '0') : u32((c | 32) - 'a');
+      if (n >= radix) {
+        break;
+      }
+      const auto t = radix * res + n;
+      if (t < res || t > MAX_VALUE) {
+        break;
+      }
+      res = t;
+    }
+
+    return static_cast<T>(res);
+  }
+};
 
 template <class T>
 auto Str::parse() const -> Option<T> {
-  char buf[64];
-  if (_len == 0 || _len >= sizeof(buf)) {
-    return {};
-  }
-  ptr::copy(_ptr, buf, _len);
-  buf[_len] = 0;
-
-  const auto ret = parse_int<T>({buf, _len});
-  return ret;
+  auto imp = Str2Int{{_ptr, _len}};
+  return imp.parse_int<T>();
 }
 
 template auto Str::parse<signed char>() const -> Option<signed char>;
