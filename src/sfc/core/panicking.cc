@@ -1,6 +1,6 @@
 #include "panicking.h"
 
-#include "sfc/backtrace/backtrace.h"
+#include "sfc/backtrace/capture.h"
 
 namespace sfc::panicking {
 
