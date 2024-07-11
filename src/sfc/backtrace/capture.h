@@ -7,17 +7,21 @@ namespace sfc::backtrace {
 class Backtrace {
   Vec<Frame> _frames;
 
- public:
-  Backtrace() noexcept;
-  Backtrace(Vec<Frame> frames) noexcept;
-  Backtrace(Backtrace&&) noexcept;
-  ~Backtrace();
+  Backtrace(Vec<Frame> frames) noexcept : _frames{mem::move(frames)} {}
 
-  auto operator=(Backtrace&&) noexcept -> Backtrace&;
+ public:
+  Backtrace() noexcept = default;
+  ~Backtrace() = default;
+
+  Backtrace(Backtrace&&) noexcept = default;
+
+  Backtrace& operator=(Backtrace&&) noexcept = default;
 
   static auto capture() noexcept -> Backtrace;
 
-  auto frames() const -> Slice<const Frame>;
+  auto frames() const -> Slice<const Frame> {
+    return _frames.as_slice();
+  }
 
   void fmt(auto& f) const {
     auto fs = this->frames();
