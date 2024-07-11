@@ -16,21 +16,22 @@ class Box {
   Box(mem::inplace_t, auto&&... args) {
     auto a = alloc::Global{};
 
-    const auto p = a.template alloc_one<T>();
     try {
-      new (mem::inplace_t{}, p) T{static_cast<decltype(args)&&>(args)...};
-      _ptr = ptr::Unique<T>{p};
+      _ptr._ptr = a.template alloc_one<T>();
+      new (mem::inplace_t{}, _ptr._ptr) T{static_cast<decltype(args)&&>(args)...};
     } catch (...) {
-      a.dealloc_one(p);
-      throw;
+      if (_ptr._ptr) {
+        a.dealloc_one(_ptr._ptr);
+        _ptr = {};
+      }
     }
   }
 
   ~Box() {
-    if (!_ptr) {
+    if (!_ptr._ptr) {
       return;
     }
-    _ptr->~T();
+    _ptr._ptr->~T();
     alloc::Global{}.dealloc_one(_ptr._ptr);
   }
 
