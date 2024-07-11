@@ -21,12 +21,9 @@ auto Unit::invoke() const -> bool {
   try {
     (_func)();
     return true;
-  } catch (const panicking::Error& e) {
-    __builtin_printf("%s\n", e.what());
   } catch (...) {
     return false;
   }
-  return false;
 }
 
 auto Unit::match(Slice<const Str> pats) const -> bool {

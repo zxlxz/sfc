@@ -17,6 +17,11 @@ static inline void trace(auto& frames) {
 
   void* buf[BUF_LEN] = {nullptr};
   const auto cnt = ::backtrace(buf, BUF_LEN);
+  if (cnt <= 0) {
+    return;
+  }
+
+  frames.reserve(static_cast<u32>(cnt));
   for (auto i = 0; i < cnt; ++i) {
     frames.push({buf[i]});
   }
