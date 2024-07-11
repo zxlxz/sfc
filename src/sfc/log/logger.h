@@ -21,14 +21,21 @@ class Logger {
 
   void write_msg(Level level, Str msg);
 
+  void write_fmt(Level level, Str fmts) {
+    if (level < _level) {
+      return;
+    }
+    this->write_msg(level, fmts);
+  }
+
   void write_fmt(Level level, Str fmts, const auto&... args) {
     if (level < _level) {
       return;
     }
 
-    auto& sbuf = Logger::get_tls_sbuf();
-    fmt::write(sbuf, fmts, args...);
-    this->write_msg(level, sbuf);
+    auto buf = fmt::Buf<2048>{};
+    fmt::write(buf, fmts, args...);
+    this->write_msg(level, buf.as_str());
   }
 
   void clear_backends();
@@ -38,10 +45,6 @@ class Logger {
   void add_file_backend(Str path);
 
   void add_backend(Box<IBackend&> backend);
-
- private:
-  static auto get_tls_sbuf() -> String&;
-  static auto make_time_str() -> Str;
 };
 
 }  // namespace sfc::log

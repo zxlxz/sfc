@@ -6,6 +6,66 @@
 
 namespace sfc::log {
 
+struct LogTime {
+  time::DateTime _inn;
+
+ public:
+  static auto now() -> LogTime {
+    static auto cache_sys_time = time::System{};
+    static auto cache_datetime = time::DateTime{};
+
+    const auto sys_time = time::System::now();
+    if (sys_time._secs != cache_sys_time._secs) {
+      const auto date_time = time::DateTime::from(sys_time);
+      cache_datetime = date_time;
+      return LogTime{date_time};
+    }
+
+    return LogTime{cache_datetime};
+  }
+
+  auto to_str() const -> Str {
+    static constexpr u32 DATE_LEN = sizeof("YYYY-MM-DD");
+    static constexpr u32 TIME_LEN = sizeof("HH:MM:SS");
+    static constexpr u32 LEN = sizeof("[YYYY-MM-DD HH:MM:SS.000]") - 1;
+
+    static char buf[32] = "[YYYY-MM-DD HH:MM:SS.000]";
+    static auto cached = time::DateTime{};
+
+    if (!(_inn._date == cached._date)) {
+      cached._date = _inn._date;
+
+      const auto p = buf + 1;
+      const auto y = _inn._date.year();
+      const auto m = _inn._date.month();
+      const auto d = _inn._date.day();
+      __builtin_snprintf(p, DATE_LEN, "%04d-%02d-%02d", y, m, d);
+      p[DATE_LEN - 1] = ' ';
+    }
+
+    if (!(_inn._time._secs == cached._time._secs)) {
+      cached._time = _inn._time;
+
+      const auto p = buf + DATE_LEN + 1;
+      const auto h = _inn._time.hour();
+      const auto m = _inn._time.minute();
+      const auto s = _inn._time.second();
+      __builtin_snprintf(p, TIME_LEN, "%02d:%02d:%02d", h, m, s);
+      p[TIME_LEN - 1] = '.';
+    }
+
+    if (!(_inn._time._micros == cached._time._micros)) {
+      cached._time._micros = _inn._time._micros;
+
+      const auto p = buf + DATE_LEN + TIME_LEN + 1;
+      __builtin_snprintf(p, 4, "%03d", _inn._time._micros);
+      p[3] = ']';
+    }
+
+    return Str{buf, LEN};
+  }
+};
+
 Logger::Logger() = default;
 
 Logger::Logger(Logger&&) noexcept = default;
@@ -27,61 +87,17 @@ void Logger::write_msg(Level level, Str msg) {
     return;
   }
 
+  const auto stime = LogTime::now().to_str();
+
   const auto entry = Entry{
       .level = level,
-      .time = this->make_time_str(),
+      .time = stime,
       .msg = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {
     be->write_entry(entry);
   }
-}
-
-auto Logger::get_tls_sbuf() -> String& {
-  static thread_local auto res = String{};
-  res.clear();
-  return res;
-}
-
-auto Logger::make_time_str() -> Str {
-  static constexpr u32 LEN = sizeof("YYYYMMDDTHH:MM:SS.UUUUUU") - 1;
-
-  static thread_local char buf[32] = "YYYYMMDDTHH:MM:SS.UUUUUU";
-
-  static auto old_date = time::NaiveDate{};
-  static auto old_time = time::NaiveTime{};
-
-  const auto date_time = time::DateTime::now_local();
-  const auto date = date_time._date;
-  const auto time = date_time._time;
-
-  if (!(date == old_date)) {
-    const auto p = buf;
-    const auto y = date.year();
-    const auto m = date.month();
-    const auto d = date.day();
-
-    __builtin_snprintf(p, 12, "%04d%02d%02d", y, m, d);
-    p[sizeof("YYYYMMDD") - 1] = '-';
-  }
-  if (time._secs != old_time._secs) {
-    const auto p = buf + sizeof("YYYYMMDD");
-    const auto h = time.hour();
-    const auto m = time.minute();
-    const auto s = time.second();
-
-    __builtin_snprintf(p, 10, "%02d:%02d:%02d", h, m, s);
-    p[sizeof("HH:MM:SS") - 1] = '.';
-  }
-
-  if (true) {
-    const auto p = buf + sizeof("YYYYMMDDTHH:MM:SS");
-    const auto u = time.micros();
-    __builtin_snprintf(p, 8, "%06d", u);
-  }
-
-  return Str{buf, LEN};
 }
 
 void Logger::add_backend(Box<IBackend&> backend) {

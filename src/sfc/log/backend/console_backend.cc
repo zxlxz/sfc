@@ -19,16 +19,33 @@ void ConsoleBackend::set_color(bool value) {
 }
 
 void ConsoleBackend::write_entry(Entry entry) {
-  const auto s = this->make_log_str(entry);
+  const auto s = _enable_color ? this->make_color_log(entry) : this->make_plain_log(entry);
   io::Stdout::instance().write_str(s);
 }
 
-auto ConsoleBackend::make_log_str(Entry entry) const -> Str {
+auto ConsoleBackend::make_plain_log(Entry entry) const -> Str {
   static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
 
   static const Str LEVEL_STR[] = {
       "[TT]", "[DD]", "[II]", "[WW]", "[EE]", "[XX]", "[??]",
   };
+
+  const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
+  const auto level_ss = LEVEL_STR[level_id];
+
+  auto buf = fmt::Buf<2048>{};
+
+  buf.write_str(entry.time);
+  buf.write_str(" ");
+  buf.write_str(level_ss);
+  buf.write_str(" ");
+  buf.write_str(entry.msg);
+  buf.write_str("\n");
+  return buf.as_str();
+}
+
+auto ConsoleBackend::make_color_log(Entry entry) const -> Str {
+  static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
 
   static const Str COLOR_OFF = "\033[39;49m";
   static const Str COLOR_STR[] = {
@@ -36,27 +53,17 @@ auto ConsoleBackend::make_log_str(Entry entry) const -> Str {
   };
 
   const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
-  const auto level_ss = LEVEL_STR[level_id];
   const auto color_ss = COLOR_STR[level_id];
 
-  static thread_local String buf;
-  buf.clear();
+  auto buf = fmt::Buf<2048>{};
 
-  if (_enable_color) {
-    buf.push_str(color_ss);
-    buf.push_str(entry.time);
-    buf.push_str(COLOR_OFF);
-  } else {
-    buf.push_str(entry.time);
-    buf.push_str(" ");
-    buf.push_str(level_ss);
-  }
-
-  buf.push_str(" ");
-  buf.push_str(entry.msg);
-  buf.push_str("\n");
-
-  return buf.as_mut_ptr();
+  buf.write_str(color_ss);
+  buf.write_str(entry.time);
+  buf.write_str(COLOR_OFF);
+  buf.write_str(" ");
+  buf.write_str(entry.msg);
+  buf.write_str("\n");
+  return buf.as_str();
 }
 
 }  // namespace sfc::log

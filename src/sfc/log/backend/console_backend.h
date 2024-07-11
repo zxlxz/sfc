@@ -16,7 +16,8 @@ class ConsoleBackend {
 
  public:
   void write_entry(Entry entry);
-  auto make_log_str(Entry entry) const -> Str;
+  auto make_plain_log(Entry entry) const -> Str;
+  auto make_color_log(Entry entry) const -> Str;
 };
 
 }  // namespace sfc::log
