@@ -4,7 +4,7 @@
 
 namespace sfc::log {
 
-FileBackend::FileBackend(Str path) : _file{fs::File::create(path)} {}
+FileBackend::FileBackend(Str path) : _file{fs::File::create(path).unwrap()} {}
 
 FileBackend::FileBackend(FileBackend&&) noexcept = default;
 

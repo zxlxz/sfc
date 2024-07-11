@@ -181,7 +181,7 @@ void App::list_to_file(Str path) {
 
   auto text = this->list_tests(type);
   if (path) {
-    auto file = fs::File::create(path);
+    auto file = fs::File::create(path).unwrap();
     file.write_str(text.as_str());
   } else {
     io::Stdout::instance().write_str(text);

@@ -4,12 +4,15 @@
 
 namespace sfc::io {
 
+#ifdef __unix__
+using fd_t = int;
+#endif
+
 class File {
  protected:
-  struct Inn;
-  Box<Inn> _inn;
+  fd_t _fd;
 
-  explicit File(auto raw) noexcept;
+  explicit File(fd_t raw) noexcept;
 
  public:
   File() noexcept;
@@ -21,16 +24,16 @@ class File {
  public:
   explicit operator bool() const;
 
-  auto read(Slice<u8> buf) -> usize;
-  auto write(Slice<const u8> buf) -> usize;
+  auto read(Slice<u8> buf) -> Result<usize>;
+  auto write(Slice<const u8> buf) -> Result<usize>;
 
-  auto read_all(Vec<u8>& buf, usize buf_len = 256) -> usize;
-  auto read_to_string(String& buf) -> usize;
+  auto read_all(Vec<u8>& buf, usize buf_len = 256) -> Result<usize>;
+  auto read_to_string(String& buf) -> Result<usize>;
 
-  auto write_all(Slice<const u8> buf) -> usize;
-  auto write_str(Str str) -> usize;
+  auto write_all(Slice<const u8> buf) -> Result<usize>;
+  auto write_str(Str str) -> Result<usize>;
 
-  auto write_fmt(Str pattern, const auto&... args) -> usize {
+  auto write_fmt(Str pattern, const auto&... args) -> Result<usize> {
     const auto s = string::format(pattern, args...);
     const auto n = this->write_str(s);
     return n;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/io.h"
 #include "path.h"
+#include "sfc/io.h"
 
 namespace sfc::fs {
 
@@ -16,7 +16,7 @@ struct OpenOptions {
   bool _truncate = false;
 
  public:
-  auto open(Path path) const -> File;
+  auto open(Path path) const -> io::Result<File>;
 };
 
 class File : io::File {
@@ -31,8 +31,8 @@ class File : io::File {
   File(File&&) noexcept = default;
   File& operator=(File&&) noexcept = default;
 
-  static auto open(Path path) -> File;
-  static auto create(Path path) -> File;
+  static auto open(Path path) -> io::Result<File>;
+  static auto create(Path path) -> io::Result<File>;
 
  public:
   using Inn::operator bool;

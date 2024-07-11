@@ -6,102 +6,108 @@ namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-struct File::Inn : sys_imp::File {
-  Inn(auto fd) noexcept : sys_imp::File{fd} {}
-};
-
 File::File() noexcept = default;
 
-template <>
-File::File(sys_imp::File inn) noexcept : _inn{Box<Inn>::xnew(inn)} {}
-
-File::File(File&& other) noexcept = default;
+File::File(fd_t fd) noexcept : _fd{fd} {}
 
 File::~File() {
-  if (!_inn) {
+  if (_fd == sys_imp::INVALID_FD) {
     return;
   }
-
-  _inn->close();
+  sys_imp::File{_fd}.close();
 }
 
-File& File::operator=(File&& other) noexcept = default;
+File::File(File&& other) noexcept : _fd{other._fd} {
+  other._fd = sys_imp::INVALID_FD;
+}
+
+File& File::operator=(File&& other) noexcept {
+  auto tmp = static_cast<File&&>(*this);
+  mem::swap(_fd, other._fd);
+  return *this;
+}
 
 File::operator bool() const {
-  return bool(_inn);
+  return _fd != sys_imp::INVALID_FD;
 }
 
-auto File::read(Slice<u8> buf) -> usize {
-  assert_fmt(*this, "File::read: invalid file");
+auto File::read(Slice<u8> buf) -> Result<usize> {
   if (buf.is_empty()) {
-    return 0;
+    return 0UL;
   }
 
-  const auto res = _inn->read(buf);
+  if (_fd == sys_imp::INVALID_FD) {
+    return Error{ErrorKind::InvalidInput};
+  }
+
+  const auto res = sys_imp::File{_fd}.read(buf);
   if (res == -1) {
-    throw io::Error::last_os_error();
+    return io::Error::last_os_error();
   }
   return static_cast<u64>(res);
 }
 
-auto File::write(Slice<const u8> buf) -> usize {
-  assert_fmt(*this, "File::write: invalid file");
+auto File::write(Slice<const u8> buf) -> Result<usize> {
   if (buf.is_empty()) {
-    return 0;
+    return 0UL;
+  }
+
+  if (_fd == sys_imp::INVALID_FD) {
+    return Error{ErrorKind::InvalidInput};
   }
 
   // do write
-  const auto res = _inn->write(buf);
+  const auto res = sys_imp::File{_fd}.write(buf);
   if (res == -1) {
-    throw io::Error::last_os_error();
+    return io::Error::last_os_error();
   }
   return static_cast<u64>(res);
 }
 
-auto File::read_all(Vec<u8>& buf, usize buf_len) -> usize {
-  assert_fmt(*this, "File::read_all: invalid file");
-
+auto File::read_all(Vec<u8>& buf, usize buf_len) -> Result<usize> {
   const auto old_len = buf.len();
   while (true) {
     buf.reserve(buf_len);
-    const auto cnt = this->read({buf.as_mut_ptr() + buf.len(), buf_len});
+    const auto ret = this->read({buf.as_mut_ptr() + buf.len(), buf_len});
+    if (ret.is_err()) {
+      return ret.unwrap_err();
+    }
+    const auto cnt = ret.unwrap();
     buf.set_len(buf.len() + cnt);
     if (cnt == 0) {
       break;
     }
   }
-  const auto new_len = buf.len();
-  return new_len - old_len;
+
+  const auto nread = buf.len() - old_len;
+  return nread;
 }
 
-auto File::read_to_string(String& buf) -> usize {
-  assert_fmt(*this, "File::read_to_string: invalid file");
-
+auto File::read_to_string(String& buf) -> Result<usize> {
   auto& v = buf.as_mut_vec();
   return this->read_all(*ptr::cast<Vec<u8>>(&v));
 }
 
-auto File::write_all(Slice<const u8> buf) -> usize {
-  assert_fmt(*this, "File::write_all: invalid file");
-
+auto File::write_all(Slice<const u8> buf) -> Result<usize> {
   const auto old_len = buf.len();
 
   while (!buf.is_empty()) {
     const auto ret = this->write(buf);
-    if (ret == 0) {
+    if (ret.is_err()) {
+      return ret.unwrap_err();
+    }
+    const auto cnt = ret.unwrap();
+    if (cnt == 0) {
       break;
     }
-    buf = buf[{ret, _}];
+    buf = buf[{cnt, _}];
   }
   const auto nwrite = old_len - buf.len();
   return nwrite;
 }
 
-auto File::write_str(Str str) -> usize {
-  assert_fmt(*this, "File::write_str: invalid file");
-
-  const auto ret = this->write_all(str.as_bytes());
-  return ret;
+auto File::write_str(Str str) -> Result<usize> {
+  return this->write_all(str.as_bytes());
 }
 
 }  // namespace sfc::io

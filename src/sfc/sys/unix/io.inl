@@ -14,10 +14,18 @@
 
 namespace sfc::sys::io {
 
+using fd_t = int;
+
+static constexpr fd_t INVALID_FD = -1;
+
 struct File {
-  int _fd = -1;
+  fd_t _fd = -1;
 
  public:
+  operator bool() const {
+    return _fd != -1;
+  }
+
   void close() {
     ::close(_fd);
   }

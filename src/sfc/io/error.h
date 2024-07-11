@@ -66,4 +66,7 @@ struct Error {
   }
 };
 
+template <class T>
+using Result = result::Result<T, Error>;
+
 }  // namespace sfc::io
