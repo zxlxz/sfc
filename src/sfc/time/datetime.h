@@ -1,19 +1,20 @@
 #pragma once
 
-#include "instant.h"
+#include "system.h"
 
 namespace sfc::time {
 
 struct NaiveTime {
   u32 _secs = 0;
-  u32 _nanos = 0;
+  u32 _micros = 0;
 
  public:
   NaiveTime() = default;
-  NaiveTime(u32 secs, u32 nanos) : _secs{secs}, _nanos{nanos} {}
+  NaiveTime(u32 secs, u32 micros) : _secs{secs}, _micros{micros} {}
 
   static auto from_hms(u32 hour, u32 min, u32 sec) -> NaiveTime;
-  static auto from_hms_nano(u32 hour, u32 min, u32 sec, u32 nanos) -> NaiveTime;
+  static auto from_hms_milli(u32 hour, u32 min, u32 sec, u32 milli) -> NaiveTime;
+  static auto from_hms_micro(u32 hour, u32 min, u32 sec, u32 micro) -> NaiveTime;
 
   auto hour() const -> u32 {
     return _secs / 60 / 60;
@@ -28,15 +29,11 @@ struct NaiveTime {
   }
 
   auto millis() const -> u32 {
-    return _nanos / NANOS_PER_MILLI;
+    return static_cast<u32>(_micros / MICROS_PER_MILLI);
   }
 
   auto micros() const -> u32 {
-    return _nanos / NANOS_PER_MICRO;
-  }
-
-  auto nanos() const -> u32 {
-    return _nanos;
+    return static_cast<u32>(_micros);
   }
 
   void fmt(auto& f) const {
@@ -82,7 +79,8 @@ struct DateTime {
 
   DateTime(NaiveDate date, NaiveTime time) : _date{date}, _time{time} {}
 
-  static auto now_local() -> DateTime;
+  static auto from(System time) -> DateTime;
+  static auto now() -> DateTime;
 
   auto date() const -> NaiveDate {
     return _date;

@@ -6,7 +6,7 @@
 namespace sfc::time {
 
 SFC_TEST(date_time) {
-  auto t = DateTime::now_local();
+  auto t = DateTime::now();
   io::println("time.now = `{}`", t);
 }
 

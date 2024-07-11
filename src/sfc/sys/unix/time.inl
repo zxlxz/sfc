@@ -7,12 +7,23 @@ namespace sfc::sys::time {
 
 struct Instant {
   time_t secs;
-  time_t nanos;
+  long nanos;
 
   static auto now() -> Instant {
     struct timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    return {ts.tv_sec, ts.tv_nsec};
+    return Instant{ts.tv_sec, ts.tv_nsec};
+  }
+};
+
+struct System {
+  time_t secs;
+  suseconds_t nanos;
+
+  static auto now() -> System {
+    struct timeval tv;
+    ::gettimeofday(&tv, nullptr);
+    return System{tv.tv_sec, 1000 * tv.tv_usec};
   }
 };
 
@@ -23,20 +34,15 @@ struct DateTime {
   unsigned hour;
   unsigned min;
   unsigned sec;
-  unsigned usec;
 
-  static auto now() -> DateTime {
-    struct timeval tv;
-    ::gettimeofday(&tv, nullptr);
-
+  static auto from_secs(time_t sec) -> DateTime {
     struct tm tm;
-    ::localtime_r(&tv.tv_sec, &tm);
+    ::localtime_r(&sec, &tm);
 
     const auto res = DateTime{
         static_cast<unsigned>(tm.tm_year + 1900), static_cast<unsigned>(tm.tm_mon + 1),
         static_cast<unsigned>(tm.tm_mday),        static_cast<unsigned>(tm.tm_hour),
         static_cast<unsigned>(tm.tm_min),         static_cast<unsigned>(tm.tm_sec),
-        static_cast<unsigned>(tv.tv_usec),
     };
     return res;
   }
