@@ -119,9 +119,12 @@ struct Json2Node {
     const auto ch = this->peak_ctrl();
 
     switch (ch) {
-      case '[': return this->extract_list();
-      case '{': return this->extract_dict();
-      case '"': return this->extract_str();
+      case '[':
+        return this->extract_list();
+      case '{':
+        return this->extract_dict();
+      case '"':
+        return this->extract_str();
       case '+':
       case '-':
       case '0':
@@ -133,11 +136,14 @@ struct Json2Node {
       case '6':
       case '7':
       case '8':
-      case '9': return this->extract_num();
+      case '9':
+        return this->extract_num();
       case 't':
       case 'f':
-      case 'n': return this->extract_keyword();
-      default:  return {};
+      case 'n':
+        return this->extract_keyword();
+      default:
+        return {};
     }
   }
 
@@ -182,7 +188,7 @@ struct Json2Node {
   }
 
   auto read_num() -> Str {
-    const auto f = [](char c) {
+    const auto f = [](char c) {  //
       return !(c == '.' || c == '+' || c == '-' || ('0' <= c && c <= '9'));
     };
 
@@ -211,7 +217,7 @@ auto parse(Str s) -> Option<Node> {
 }
 
 auto load(fs::Path path) -> Option<Node> {
-  auto file = fs::File::open(path);
+  auto file = fs::File::open(path).unwrap();
 
   auto text = String{};
   file.read_to_string(text);
