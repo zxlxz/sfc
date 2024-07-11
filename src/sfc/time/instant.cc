@@ -17,7 +17,7 @@ auto Instant::elpased() const -> Duration {
   return res;
 }
 
-auto Instant::duration_since(Instant earlier) const -> Duration {
+auto Instant::duration_since(const Instant& earlier) const -> Duration {
   const auto res = *this - earlier;
   return res;
 }
@@ -34,7 +34,7 @@ auto Instant::operator<=(const Instant& other) const -> bool {
   return _secs < other._secs || (_secs == other._secs && _secs <= other._secs);
 }
 
-auto Instant::operator-(Instant rhs) const -> Duration {
+auto Instant::operator-(const Instant& rhs) const -> Duration {
   auto secs = num::saturating_sub(_secs, rhs._secs);
   auto nanos = _nanos - rhs._nanos;
   if (_nanos < rhs._nanos) {
@@ -48,7 +48,7 @@ auto Instant::operator-(Instant rhs) const -> Duration {
   return {secs, nanos};
 }
 
-auto Instant::operator+(Duration rhs) const -> Instant {
+auto Instant::operator+(const Duration& rhs) const -> Instant {
   auto secs = num::saturating_add(_secs, rhs._secs);
   auto nanos = _nanos + rhs._nanos;
   if (nanos > NANOS_PER_SEC) {
@@ -58,7 +58,7 @@ auto Instant::operator+(Duration rhs) const -> Instant {
   return {secs, nanos};
 }
 
-auto Instant::operator-(Duration rhs) const -> Instant {
+auto Instant::operator-(const Duration& rhs) const -> Instant {
   auto secs = num::saturating_sub(_secs, rhs._secs);
   auto nanos = _nanos - rhs._nanos;
   if (_nanos < rhs._nanos) {
@@ -72,11 +72,11 @@ auto Instant::operator-(Duration rhs) const -> Instant {
   return {secs, nanos};
 }
 
-void Instant::operator+=(Duration dur) {
+void Instant::operator+=(const Duration& dur) {
   *this = *this + dur;
 }
 
-void Instant::operator-=(Duration dur) {
+void Instant::operator-=(const Duration& dur) {
   *this = *this - dur;
 }
 

@@ -5,6 +5,8 @@
 namespace sfc::time {
 
 constexpr u64 MILLIS_PER_SEC = 1000U;
+
+constexpr u64 MICROS_PER_MILLI = 1000U;
 constexpr u64 MICROS_PER_SEC = 1000000U;
 
 constexpr u64 NANOS_PER_MICRO = 1000U;

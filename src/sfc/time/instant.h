@@ -17,19 +17,19 @@ struct Instant {
 
   auto elpased() const -> Duration;
 
-  auto duration_since(Instant earlier) const -> Duration;
+  auto duration_since(const Instant& earlier) const -> Duration;
 
   auto operator==(const Instant& other) const -> bool;
   auto operator<(const Instant& other) const -> bool;
   auto operator<=(const Instant& other) const -> bool;
 
-  auto operator-(Instant earlier) const -> Duration;
+  auto operator-(const Instant& earlier) const -> Duration;
 
-  auto operator+(Duration dur) const -> Instant;
-  auto operator-(Duration dur) const -> Instant;
+  auto operator+(const Duration& dur) const -> Instant;
+  auto operator-(const Duration& dur) const -> Instant;
 
-  void operator+=(Duration dur);
-  void operator-=(Duration dur);
+  void operator+=(const Duration& dur);
+  void operator-=(const Duration& dur);
 };
 
 }  // namespace sfc::time
