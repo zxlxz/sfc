@@ -4,9 +4,7 @@
 
 namespace sfc::panicking {
 
-struct Error {
-  auto what() const noexcept -> const char*;
-};
+struct Error {};
 
 struct Location {
   const char* file = __builtin_FILE();

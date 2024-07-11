@@ -32,8 +32,8 @@ void Sched::start() {
       try {
         auto task = task_opt.unwrap();
         (task._func)(task._self);
-      } catch (const panicking::Error& e) {
-        __builtin_printf("%s\n", e.what());
+      } catch (...) {
+        //
       }
     }
   });

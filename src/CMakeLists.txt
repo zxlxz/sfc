@@ -15,4 +15,5 @@ else()
     endif()
 endif()
 
+target_link_options(sfc PUBLIC -rdynamic)
 target_include_directories(sfc PUBLIC ${CMAKE_CURRENT_LIST_DIR})

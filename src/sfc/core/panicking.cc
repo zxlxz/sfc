@@ -5,60 +5,45 @@
 namespace sfc::panicking {
 
 using backtrace::Backtrace;
-using backtrace::Frame;
 
 struct PanicInfo {
-  Location location;
-  String message;
-  Backtrace backtrace;
+  Location _loc;
+  String _msg;
+  Backtrace _backtrace;
 
-  auto print_to_buf(Slice<char> buf) {
-    auto print = [buf](cstr_t fmts, auto... args) mutable {
-      auto ret = __builtin_snprintf(buf._ptr, buf._len, fmts, args...);
-      if (ret <= 0) {
-        return;
-      }
+ public:
+  PanicInfo(Location loc, Str msg) : _loc{loc}, _msg{msg}, _backtrace{Backtrace::capture()} {}
 
-      const auto cnt = cmp::min(buf._len, static_cast<usize>(ret));
-      buf._ptr += cnt;
-      buf._len -= cnt;
+  auto what() const -> const char* {
+    static thread_local char buf[2048];
+
+    auto len = 0U;
+    auto print = [&](cstr_t fmt, const auto&... args) {
+      const auto ret = __builtin_snprintf(buf + len, sizeof(buf) - len, fmt, args...);
+      len += ret >= 0 ? static_cast<u32>(ret) : 0U;
     };
 
-    print("%.*s\n", static_cast<u32>(message.len()), message.as_ptr());
-    print("  > %s:%d\n", location.file, location.line);
+    print("%.*s\n", static_cast<u32>(_msg.len()), _msg.as_ptr());
+    print("  > %s:%d\n", _loc.file, _loc.line);
 
+    const auto frames = _backtrace.frames();
     auto frame_id = 0U;
-    for (auto& frame : backtrace.frames()) {
-      const auto func = frame.func();
-      if (!func) {
+    for (auto& frame : frames) {
+      auto func = frame.func();
+      if (!func.as_ptr()) {
         continue;
       }
-      print("[%2d] %.*s\n", frame_id, static_cast<u32>(func.len()), func.as_ptr());
+      print("%2d: %.*s\n", frame_id, static_cast<u32>(func.len()), func.as_ptr());
       frame_id += 1;
     }
+
+    return buf;
   }
 };
 
-static auto get_panic_info() -> PanicInfo& {
-  thread_local PanicInfo res{};
-  return res;
-}
-
-auto Error::what() const noexcept -> cstr_t {
-  static thread_local char buf[4096];
-
-  auto& info = get_panic_info();
-  info.print_to_buf(buf);
-  return buf;
-}
-
 void panic_str(Location loc, str::Str msg) {
-  auto& panic_info = get_panic_info();
-
-  panic_info.location = loc;
-  panic_info.message = String{msg};
-  panic_info.backtrace = Backtrace::capture();
-
+  const auto err = PanicInfo{loc, msg};
+  __builtin_printf("%s\n", err.what());
   throw Error{};
 }
 
