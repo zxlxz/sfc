@@ -8,13 +8,13 @@ namespace sfc::option {
 
 struct None {};
 
-namespace detail {
-
 template <class T>
 concept XBool = requires(const T& x) { T::operator bool; };
 
 template <class T>
 concept XCopy = trait::Copy<T> && !XBool<T>;
+
+namespace detail {
 
 template <class T>
 class Option {
@@ -22,7 +22,7 @@ class Option {
     T _val;
 
     [[sfc_inline]] Imp() noexcept {}
-    [[sfc_inline]] Imp(T&& val) noexcept : _val{static_cast<T&&>(val)} {}
+    [[sfc_inline]] Imp(T&& x) noexcept : _val{static_cast<T&&>(x)} {}
     [[sfc_inline]] ~Imp() noexcept {}
   };
 
@@ -38,12 +38,12 @@ class Option {
 
   [[sfc_inline]] ~Option() {
     if (!_tag) return;
-    mem::drop(_imp._val);
+    _imp._val.~T();
   }
 
   [[sfc_inline]] Option(Option&& other) noexcept : _tag{other._tag} {
     if (!_tag) return;
-    ptr::write(&_imp._val, static_cast<T&&>(other._imp._val));
+    new (mem::inplace_t{}, &_imp._val) T{static_cast<T&&>(other._imp._val)};
   }
 
   [[sfc_inline]] auto operator=(Option&& other) noexcept -> Option& {
@@ -286,7 +286,7 @@ class Option<T> : detail::Option<T> {
     return Imp::get_unchecked_mut();
   }
 
-  auto unwrap() const& -> T {
+  auto unwrap() const -> T {
     assert_fmt(bool(*this), "Option::unwrap: None.");
     return Imp::get_unchecked();
   }

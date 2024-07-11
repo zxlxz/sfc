@@ -6,6 +6,7 @@
 #include "core/ops.h"
 #include "core/ptr.h"
 #include "core/reflect.h"
+#include "core/result.h"
 #include "core/slice.h"
 #include "core/str.h"
 #include "core/variant.h"
