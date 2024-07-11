@@ -25,7 +25,11 @@ auto Builder::spawn(Box<void()> f) -> JoinHandle {
   auto fun = [f = mem::move(f), name = ffi::CString::from(_name)]() mutable {
     auto thr = sys_imp::Thread::current();
     thr.set_name(name);
-    f();
+    try {
+      f();
+    } catch (...) {
+      return;
+    }
   };
 
   auto imp = sys_imp::Thread::xnew(_stack_size, Box<void()>::xnew(mem::move(fun)))
