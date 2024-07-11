@@ -3,8 +3,9 @@
 
 using namespace sfc;
 
-void benchmark_glog(u32 count);
 void benchmark_sfc(u32 count);
+void benchmark_spd(u32 count);
+void benchmark_glog(u32 count);
 
 void show_time(auto s, auto&& f) {
   const auto t = time::Instant::now();
@@ -20,8 +21,9 @@ int main(int argc, const char* argv[]) {
   }
   io::println("=== {} ===", cnt);
 
+  benchmark_sfc(cnt);
   show_time("sfc", [&]() { benchmark_sfc(cnt); });
-  show_time("google", [&]() { benchmark_glog(cnt); });
-  show_time("sfc", [&]() { benchmark_sfc(cnt); });
+  show_time("spd", [&]() { benchmark_spd(cnt); });
+  show_time("glog", [&]() { benchmark_glog(cnt); });
   return 0;
 }
