@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <sys/time.h>
 
 namespace sfc::sys::sync {
 
@@ -33,13 +34,14 @@ struct Condvar {
   }
 
   auto wait_timeout(Mutex& mtx, auto dur) -> bool {
-    struct timespec ts {};
-    ::clock_gettime(CLOCK_REALTIME, &ts);
+    struct timeval now {};
+    struct timespec timeout {};
+    ::gettimeofday(&now, nullptr);
 
-    ts.tv_sec += static_cast<time_t>(dur.as_secs());
-    ts.tv_nsec += static_cast<long>(dur.subsec_nanos());
+    timeout.tv_sec = now.tv_sec + static_cast<time_t>(dur.as_secs());
+    timeout.tv_nsec = now.tv_usec + static_cast<suseconds_t>(dur.subsec_nanos());
 
-    const auto ret = ::pthread_cond_timedwait(&_raw, &mtx._raw, &ts);
+    const auto ret = ::pthread_cond_timedwait(&_raw, &mtx._raw, &timeout);
     return ret == 0;
   }
 };

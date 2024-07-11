@@ -78,8 +78,8 @@ struct Thread {
 
 static inline auto sleep(auto dur) -> bool {
   struct timespec ts = {
-      static_cast<time_t>(dur.as_secs()),
-      static_cast<time_t>(dur.subsec_nanos()),
+      .tv_sec = static_cast<time_t>(dur.as_secs()),
+      .tv_nsec = static_cast<time_t>(dur.subsec_nanos()),
   };
 
   const auto ret = ::nanosleep(&ts, &ts);
