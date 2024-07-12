@@ -138,6 +138,12 @@ class Result : detail::Result<T, E> {
     return !this->_tag;
   }
 
+  using Imp::get_ok_unchecked;
+  using Imp::get_ok_unchecked_mut;
+
+  using Imp::get_err_unchecked;
+  using Imp::get_err_unchecked_mut;
+
   auto ok() && -> Option<T> {
     if (!_tag) return {};
     return static_cast<T&&>(Imp::get_ok_unchecked_mut());
@@ -167,6 +173,12 @@ class Result<T, E> : detail::Result<T, E> {
 
  public:
   using Imp::Imp;
+
+  using Imp::get_ok_unchecked;
+  using Imp::get_ok_unchecked_mut;
+
+  using Imp::get_err_unchecked;
+  using Imp::get_err_unchecked_mut;
 
   [[sfc_inline]] auto is_ok() const -> bool {
     return _tag;
