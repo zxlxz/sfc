@@ -104,6 +104,12 @@ class Fmter : fmt::Fmter<W> {
   }
 };
 
+template <class W>
+void write(W& out, const auto& val) {
+  auto imp = Fmter<W>{out};
+  imp.write(val);
+}
+
 auto format(const auto& val) -> String {
   auto res = String{};
   auto imp = Fmter<String>{res};
