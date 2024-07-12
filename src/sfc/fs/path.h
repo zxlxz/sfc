@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/ffi.h"
+#include "sfc/io.h"
 
 namespace sfc::fs {
 
@@ -41,10 +41,21 @@ struct Path {
   // 'a'/'b -> 'a/b'
   auto operator/(const auto& p) const -> class PathBuf;
 
+ public:
+  auto exists() const -> bool;
+
+  auto is_file() const -> bool;
+
+  auto is_dir() const -> bool;
+
+  auto is_symlink() const -> bool;
+
+ public:
   // fmt
   void fmt(auto& f) const {
     f.pad(_inn);
   }
 };
+
 
 }  // namespace sfc::fs

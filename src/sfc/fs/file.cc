@@ -1,5 +1,6 @@
 #include "file.h"
 
+#include "sfc/ffi.h"
 #include "sfc/sys/fs.inl"
 
 namespace sfc::fs {

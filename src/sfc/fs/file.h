@@ -1,7 +1,6 @@
 #pragma once
 
 #include "path.h"
-#include "sfc/io.h"
 
 namespace sfc::fs {
 

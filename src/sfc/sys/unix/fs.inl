@@ -61,18 +61,39 @@ struct FileType {
     return S_ISREG(_mode);
   }
 
-  auto is_link() const -> bool {
+  auto is_symlink() const -> bool {
     return S_ISLNK(_mode);
   }
 };
 
-auto lstat(cstr_t path) -> FileType {
+inline auto lstat(cstr_t path) -> Option<FileType> {
   struct stat st;
   const auto ret = ::lstat(path, &st);
   if (ret == -1) {
-    return {0, 0};
+    return {};
   }
-  return {st.st_mode, st.st_size};
+  return FileType{st.st_mode, st.st_size};
 };
+
+inline auto unlink(cstr_t path) -> bool {
+  return ::unlink(path) == 0;
+}
+
+inline auto rename(cstr_t old_path, cstr_t new_path) -> bool {
+  return ::rename(old_path, new_path) == 0;
+}
+
+inline auto mkdir(cstr_t path) -> bool {
+  const mode_t mode = 0777;
+  return ::mkdir(path, mode) == 0;
+}
+
+inline auto rmdir(cstr_t path) -> bool {
+  return ::rmdir(path) == 0;
+}
+
+inline auto symlink(cstr_t original, cstr_t link) -> bool {
+  return ::symlink(original, link) == 0;
+}
 
 }  // namespace sfc::sys::fs

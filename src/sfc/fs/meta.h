@@ -4,8 +4,6 @@
 
 namespace sfc::fs {
 
-struct Path;
-
 struct Meta {
   u32 _mod;
   u64 _len;
@@ -17,9 +15,9 @@ struct Meta {
 
   auto is_dir() const -> bool;
   auto is_file() const -> bool;
-  auto is_link() const -> bool;
+  auto is_symlink() const -> bool;
 };
 
-auto meta(Path path) -> Meta;
+auto meta(Path path) -> io::Result<Meta>;
 
 }  // namespace sfc::fs

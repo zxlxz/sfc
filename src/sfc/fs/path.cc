@@ -1,5 +1,7 @@
 #include "path.h"
 
+#include "meta.h"
+
 namespace sfc::fs {
 
 struct Components {
@@ -88,6 +90,25 @@ auto Path::is_absolute() const -> bool {
 
 auto Path::is_relative() const -> bool {
   return !_inn.starts_with('/');
+}
+
+auto Path::exists() const -> bool {
+  return fs::meta(*this).is_ok();
+}
+
+auto Path::is_file() const -> bool {
+  const auto t = fs::meta(*this).ok();
+  return t && (*t).is_file();
+}
+
+auto Path::is_dir() const -> bool {
+  const auto t = fs::meta(*this).ok();
+  return t && (*t).is_dir();
+}
+
+auto Path::is_symlink() const -> bool {
+  const auto t = fs::meta(*this).ok();
+  return t && (*t).is_symlink();
 }
 
 }  // namespace sfc::fs

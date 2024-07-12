@@ -9,8 +9,9 @@ class PathBuf {
 
  public:
   PathBuf();
-  explicit PathBuf(String inn);
   ~PathBuf();
+
+  explicit PathBuf(String inn);
   PathBuf(PathBuf&&) noexcept;
 
   PathBuf& operator=(PathBuf&&) noexcept;
