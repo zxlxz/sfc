@@ -38,13 +38,14 @@ class Logger {
     this->write_msg(level, buf.as_str());
   }
 
+  void add_backend(auto backend) {
+    this->add_backend_imp(Box<IBackend&>::xnew(mem::move(backend)));
+  }
+
   void clear_backends();
 
-  void add_console_backend();
-
-  void add_file_backend(Str path);
-
-  void add_backend(Box<IBackend&> backend);
+ private:
+  void add_backend_imp(Box<IBackend&> backend);
 };
 
 }  // namespace sfc::log

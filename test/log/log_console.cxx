@@ -6,7 +6,7 @@ namespace sfc::log {
 SFC_TEST(console) {
   auto logger = Logger{};
   logger.set_level(Level::Trace);
-  logger.add_console_backend();
+  logger.add_backend(log::ConsoleBackend{});
 
   logger.write_fmt(Level::Trace, "log {}", 1);
   logger.write_fmt(Level::Debug, "log {}", 2);

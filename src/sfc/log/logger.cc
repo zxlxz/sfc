@@ -100,22 +100,12 @@ void Logger::write_msg(Level level, Str msg) {
   }
 }
 
-void Logger::add_backend(Box<IBackend&> backend) {
+void Logger::add_backend_imp(Box<IBackend&> backend) {
   _backends.push(mem::move(backend));
 }
 
 void Logger::clear_backends() {
   _backends.clear();
-}
-
-void Logger::add_console_backend() {
-  auto backend = Box<ConsoleBackend>::xnew();
-  this->add_backend(Box<IBackend&>(mem::move(backend)));
-}
-
-void Logger::add_file_backend(Str path) {
-  auto backend = Box<FileBackend>::xnew(path);
-  this->add_backend(Box<IBackend&>(mem::move(backend)));
 }
 
 }  // namespace sfc::log

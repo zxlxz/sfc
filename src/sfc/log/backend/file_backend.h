@@ -9,9 +9,11 @@ class FileBackend {
   fs::File _file;
 
  public:
-  explicit FileBackend(Str path);
+  explicit FileBackend(fs::File inn);
   FileBackend(FileBackend&&) noexcept;
   ~FileBackend();
+
+  static auto create(fs::Path path) -> io::Result<FileBackend>;
 
  public:
   void write_entry(Entry entry);

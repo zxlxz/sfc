@@ -4,11 +4,19 @@
 
 namespace sfc::log {
 
-FileBackend::FileBackend(Str path) : _file{fs::File::create(path).unwrap()} {}
+FileBackend::FileBackend(fs::File file) : _file{mem::move(file)} {}
 
 FileBackend::FileBackend(FileBackend&&) noexcept = default;
 
 FileBackend::~FileBackend() {}
+
+auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
+  auto file = fs::File::create(path);
+  if (file.is_err()) {
+    return mem::move(file).get_err_unchecked();
+  }
+  return FileBackend{mem::move(file).unwrap()};
+}
 
 void FileBackend::write_entry(Entry entry) {
   const auto log_str = this->make_log_str(entry);
