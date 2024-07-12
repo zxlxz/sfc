@@ -150,7 +150,7 @@ class Box<T&> {
   Box() noexcept = default;
 
   template <class X>
-  explicit Box(Box<X> box) : _ptr{mem::move(box).into_raw()} {}
+  explicit Box(Box<X> box) noexcept : _ptr{mem::move(box).into_raw()} {}
 
   Box(Box&& other) noexcept : _ptr{other._ptr} {
     other._ptr = {};
@@ -162,6 +162,11 @@ class Box<T&> {
     }
     (_ptr._meta->_dtor)(_ptr._self);
     alloc::Global{}.dealloc_imp(_ptr._self, {_ptr._meta->_size, 1U});
+  }
+
+  template <class U>
+  static auto xnew(U val) -> Box {
+    return Box{Box<U>{mem::inplace_t{}, static_cast<U&&>(val)}};
   }
 
   auto operator->() -> T* {
