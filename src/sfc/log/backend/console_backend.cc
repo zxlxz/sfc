@@ -24,6 +24,8 @@ void ConsoleBackend::write_entry(Entry entry) {
 }
 
 auto ConsoleBackend::make_plain_log(Entry entry) const -> Str {
+  static thread_local auto gBuf = String{};
+
   static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
 
   static const Str LEVEL_STR[] = {
@@ -33,8 +35,8 @@ auto ConsoleBackend::make_plain_log(Entry entry) const -> Str {
   const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
   const auto level_ss = LEVEL_STR[level_id];
 
-  auto buf = fmt::Buf<2048>{};
-
+  auto& buf = gBuf;
+  buf.clear();
   buf.write_str(entry.time);
   buf.write_str(" ");
   buf.write_str(level_ss);
@@ -45,6 +47,8 @@ auto ConsoleBackend::make_plain_log(Entry entry) const -> Str {
 }
 
 auto ConsoleBackend::make_color_log(Entry entry) const -> Str {
+  static thread_local auto gBuf = String{};
+
   static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
 
   static const Str COLOR_OFF = "\033[39;49m";
@@ -55,8 +59,8 @@ auto ConsoleBackend::make_color_log(Entry entry) const -> Str {
   const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
   const auto color_ss = COLOR_STR[level_id];
 
-  auto buf = fmt::Buf<2048>{};
-
+  auto& buf = gBuf;
+  buf.clear();
   buf.write_str(color_ss);
   buf.write_str(entry.time);
   buf.write_str(COLOR_OFF);

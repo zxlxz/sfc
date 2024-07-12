@@ -33,7 +33,7 @@ class Logger {
       return;
     }
 
-    auto buf = fmt::Buf<2048>{};
+    auto buf = fmt::Buf<4096>{};
     fmt::write(buf, fmts, args...);
     this->write_msg(level, buf.as_str());
   }

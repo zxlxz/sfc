@@ -16,6 +16,8 @@ void FileBackend::write_entry(Entry entry) {
 }
 
 auto FileBackend::make_log_str(Entry entry) const -> Str {
+  static thread_local auto gBuf = String{};
+
   static const u64 LEVEL_CNT = static_cast<u64>(Level::Fatal) + 1;
   static const Str LEVEL_STR[] = {
       " [TT] ", " [DD] ", " [II] ", " [WW] ", " [EE] ", " [XX] ", " [??] ",
@@ -24,7 +26,8 @@ auto FileBackend::make_log_str(Entry entry) const -> Str {
   const auto level_id = cmp::min(static_cast<u64>(entry.level), LEVEL_CNT);
   const auto level_ss = LEVEL_STR[level_id];
 
-  auto buf = fmt::Buf<2048>{};
+  auto& buf = gBuf;
+  buf.clear();
   buf.write_str(entry.time);
   buf.write_str(level_ss);
   buf.write_str(entry.msg);
