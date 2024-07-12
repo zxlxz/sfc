@@ -21,6 +21,10 @@ File::File(File&& other) noexcept : _fd{other._fd} {
   other._fd = sys_imp::INVALID_FD;
 }
 
+auto File::from_raw_fd(fd_t fd) -> File {
+  return File{fd};
+}
+
 File& File::operator=(File&& other) noexcept {
   auto tmp = static_cast<File&&>(*this);
   mem::swap(_fd, other._fd);

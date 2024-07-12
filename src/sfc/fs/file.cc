@@ -14,7 +14,7 @@ auto OpenOptions::open(Path path) const -> io::Result<File> {
   if (!imp) {
     return io::Error::last_os_error();
   }
-  return File{imp};
+  return File{io::File::from_raw_fd(imp._fd)};
 }
 
 auto File::open(Path path) -> io::Result<File> {

@@ -9,7 +9,6 @@ using fd_t = int;
 #endif
 
 class File {
- protected:
   fd_t _fd;
 
   explicit File(fd_t raw) noexcept;
@@ -18,8 +17,9 @@ class File {
   File() noexcept;
   ~File();
   File(File&&) noexcept;
-
   File& operator=(File&&) noexcept;
+
+  static auto from_raw_fd(fd_t fd) -> File;
 
  public:
   explicit operator bool() const;
