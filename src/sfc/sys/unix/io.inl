@@ -30,13 +30,17 @@ struct File {
     ::close(_fd);
   }
 
-  auto read(auto buf) -> ssize_t {
-    const auto ret = ::read(_fd, buf.as_mut_ptr(), buf.len());
+  auto read(Slice<u8> buf) -> ssize_t {
+    const auto ptr = buf.as_mut_ptr();
+    const auto len = buf.len();
+    const auto ret = ::read(_fd, ptr, len);
     return ret;
   }
 
-  auto write(auto buf) -> ssize_t {
-    const auto ret = ::write(_fd, buf.as_ptr(), buf.len());
+  auto write(Slice<const u8> buf) -> ssize_t {
+    const auto ptr = buf.as_ptr();
+    const auto len = buf.len();
+    const auto ret = ::write(_fd, ptr, len);
     return ret;
   }
 };
