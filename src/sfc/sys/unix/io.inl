@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "sfc/core.h"
+#include "sfc/io/error.h"
 
 #undef stdin
 #undef stdout
@@ -15,6 +15,7 @@
 namespace sfc::sys::io {
 
 using fd_t = int;
+using sfc::io::ErrorKind;
 
 static constexpr fd_t INVALID_FD = -1;
 
@@ -70,6 +71,51 @@ static inline auto errno() -> int {
 
 static inline auto error_str(int code) {
   return ::strerrorname_np(code);
+}
+
+static inline auto err_kind(int code) -> ErrorKind {
+  // clang-format off
+  switch(code) {
+    case E2BIG:         return ErrorKind::ArgumentListTooLong;
+    case EADDRINUSE:    return ErrorKind::AddrInUse;
+    case EADDRNOTAVAIL: return ErrorKind::AddrNotAvailable;
+    case EBUSY:         return ErrorKind::ResourceBusy;
+    case ECONNABORTED:  return ErrorKind::ConnectionAborted;
+    case ECONNREFUSED:  return ErrorKind::ConnectionRefused;
+    case ECONNRESET:    return ErrorKind::ConnectionReset;
+    case EDEADLK:       return ErrorKind::Deadlock;
+    case EDQUOT:        return ErrorKind::FilesystemQuotaExceeded;
+    case EEXIST:        return ErrorKind::AlreadyExists;
+    case EFBIG:         return ErrorKind::FileTooLarge;
+    case EHOSTUNREACH:  return ErrorKind::HostUnreachable;
+    case EINTR:         return ErrorKind::Interrupted;
+    case EINVAL:        return ErrorKind::InvalidInput;
+    case EISDIR:        return ErrorKind::IsADirectory;
+    case ELOOP:         return ErrorKind::FilesystemLoop;
+    case ENOENT:        return ErrorKind::NotFound;
+    case ENOMEM:        return ErrorKind::OutOfMemory;
+    case ENOSPC:        return ErrorKind::StorageFull;
+    case ENOSYS:        return ErrorKind::Unsupported;
+    case EMLINK:        return ErrorKind::TooManyLinks;
+    case ENAMETOOLONG:  return ErrorKind::InvalidFilename;
+    case ENETDOWN:      return ErrorKind::NetworkDown;
+    case ENETUNREACH:   return ErrorKind::NetworkUnreachable;
+    case ENOTCONN:      return ErrorKind::NotConnected;
+    case ENOTDIR:       return ErrorKind::NotADirectory;
+    case ENOTEMPTY:     return ErrorKind::DirectoryNotEmpty;
+    case EPIPE:         return ErrorKind::BrokenPipe;
+    case EROFS:         return ErrorKind::ReadOnlyFilesystem;
+    case ESPIPE:        return ErrorKind::NotSeekable;
+    case ESTALE:        return ErrorKind::StaleNetworkFileHandle;
+    case ETIMEDOUT:     return ErrorKind::TimedOut;
+    case ETXTBSY:       return ErrorKind::ExecutableFileBusy;
+    case EXDEV:         return ErrorKind::CrossesDevices;
+    case EACCES:        return ErrorKind::PermissionDenied;
+    case EPERM:         return ErrorKind::PermissionDenied;
+    case EWOULDBLOCK:   return ErrorKind::WouldBlock;
+    default:            return ErrorKind::Other;
+  }
+  // clang-format on
 }
 
 }  // namespace sfc::sys::io

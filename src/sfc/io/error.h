@@ -4,7 +4,7 @@
 
 namespace sfc::io {
 
-enum class ErrorKind : i32 {
+enum class ErrorKind : u8 {
   NotFound,
   PermissionDenied,
   ConnectionRefused,
@@ -56,7 +56,9 @@ struct Error {
 
   static auto from_os_error(int code) -> Error;
 
-  auto kind() const -> ErrorKind;
+  auto kind() const -> ErrorKind {
+    return _kind;
+  }
 
   auto as_str() const -> Str;
 
@@ -66,7 +68,7 @@ struct Error {
   }
 };
 
-template <class T>
+template <class T = Dummy>
 using Result = result::Result<T, Error>;
 
 }  // namespace sfc::io

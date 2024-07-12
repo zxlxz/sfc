@@ -6,8 +6,7 @@ namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-SFC_ENUM(ErrorKind,  //
-         NotFound, PermissionDenied, ConnectionRefused, ConnectionReset, HostUnreachable,
+SFC_ENUM(ErrorKind, NotFound, PermissionDenied, ConnectionRefused, ConnectionReset, HostUnreachable,
          NetworkUnreachable, ConnectionAborted, NotConnected, AddrInUse, AddrNotAvailable,
          NetworkDown, BrokenPipe, AlreadyExists, WouldBlock, NotADirectory, IsADirectory,
          DirectoryNotEmpty, ReadOnlyFilesystem, FilesystemLoop, StaleNetworkFileHandle,
@@ -22,11 +21,8 @@ auto Error::last_os_error() -> Error {
 }
 
 auto Error::from_os_error(int code) -> Error {
-  return {ErrorKind::Other, code};
-}
-
-auto Error::kind() const -> ErrorKind {
-  return _kind;
+  const auto kind = sys_imp::err_kind(code);
+  return {kind, code};
 }
 
 auto Error::as_str() const -> Str {
