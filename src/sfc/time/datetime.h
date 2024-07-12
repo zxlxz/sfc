@@ -41,7 +41,7 @@ struct NaiveTime {
     const auto hour = this->hour();
     const auto min = this->minute();
     const auto sec = this->second();
-    f.write_fmt("{02}:{02}:{02}.{06}", hour, min, sec, millis);
+    f.write_fmt("{02}:{02}:{02}.{03}", hour, min, sec, millis);
   }
 };
 
