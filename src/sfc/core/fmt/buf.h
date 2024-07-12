@@ -10,6 +10,12 @@ struct Buf {
   usize _len = 0;
 
  public:
+  Buf() = default;
+
+  [[sfc_inline]] void clear() {
+    _len = 0;
+  }
+
   [[sfc_inline]] void write_str(str::Str s) {
     if (_len + s._len > N) {
       return;
