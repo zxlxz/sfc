@@ -138,6 +138,16 @@ class Result : detail::Result<T, E> {
     return !this->_tag;
   }
 
+  auto ok() && -> Option<T> {
+    if (!_tag) return {};
+    return static_cast<T&&>(Imp::get_ok_unchecked_mut());
+  }
+
+  auto err() && -> Option<E> {
+    if (_tag) return {};
+    return static_cast<E&&>(Imp::get_err_unchecked_mut());
+  }
+
   auto unwrap() && -> T {
     assert_fmt(_tag, "Result::unwrap: Err({})", _imp._err);
     return static_cast<T&&>(Imp::get_ok_unchecked_mut());
@@ -159,11 +169,21 @@ class Result<T, E> : detail::Result<T, E> {
   using Imp::Imp;
 
   [[sfc_inline]] auto is_ok() const -> bool {
-    return this->_tag;
+    return _tag;
   }
 
   [[sfc_inline]] auto is_err() const -> bool {
-    return !this->_tag;
+    return !_tag;
+  }
+
+  auto ok() const -> Option<T> {
+    if (!_tag) return {};
+    return Imp::get_ok_unchecked();
+  }
+
+  auto err() const -> Option<E> {
+    if (_tag) return {};
+    return Imp::get_err_unchecked();
   }
 
   auto unwrap() const -> T {
