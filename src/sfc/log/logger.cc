@@ -58,7 +58,8 @@ struct LogTime {
       cached._time._micros = _inn._time._micros;
 
       const auto p = buf + DATE_LEN + TIME_LEN + 1;
-      __builtin_snprintf(p, 4, "%03d", _inn._time._micros);
+      const auto m = _inn._time.millis();
+      __builtin_snprintf(p, 4, "%03d", m);
       p[3] = ']';
     }
 

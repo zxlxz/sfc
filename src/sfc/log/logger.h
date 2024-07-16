@@ -5,6 +5,8 @@
 namespace sfc::log {
 
 class Logger {
+  static constexpr usize BUFF_SIZE = 4096U;
+
   Level _level = Level::Info;
   Vec<Box<IBackend&>> _backends;
 
@@ -18,6 +20,8 @@ class Logger {
   auto get_level() const -> Level;
 
   void set_level(Level level);
+
+  void flush();
 
   void write_msg(Level level, Str msg);
 
@@ -33,10 +37,11 @@ class Logger {
       return;
     }
 
-    auto buf = fmt::Buf<4096>{};
+    auto buf = fmt::Buf<BUFF_SIZE>{};
     fmt::write(buf, fmts, args...);
     this->write_msg(level, buf.as_str());
   }
+
 
   void add_backend(auto backend) {
     this->add_backend_imp(Box<IBackend&>::xnew(mem::move(backend)));

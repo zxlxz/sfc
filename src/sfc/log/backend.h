@@ -14,6 +14,7 @@ struct IBackend {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
+    void (trait::Any::*_flush)();
     void (trait::Any::*_write_entry)(Entry entry);
 
     template <class X>
@@ -21,6 +22,7 @@ struct IBackend {
       static const auto res = Meta{
           ._size = sizeof(X),
           ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
+          ._flush = ops::fn(&X::flush),
           ._write_entry = ops::fn(&X::write_entry),
       };
       return res;
@@ -34,6 +36,12 @@ struct IBackend {
   IBackend() = default;
 
   explicit IBackend(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
+
+  void flush() {
+    const auto p = static_cast<trait::Any*>(_self);
+    const auto f = _meta->_flush;
+    (p->*f)();
+  }
 
   void write_entry(Entry entry) {
     const auto p = static_cast<trait::Any*>(_self);

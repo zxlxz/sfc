@@ -5,6 +5,7 @@
 namespace sfc::log {
 
 class ConsoleBackend {
+  static constexpr usize BUFF_SIZE = 2048U;
   bool _enable_color = false;
 
  public:
@@ -14,10 +15,9 @@ class ConsoleBackend {
 
   void set_color(bool value);
 
- public:
+  void flush();
+
   void write_entry(Entry entry);
-  auto make_plain_log(Entry entry) const -> Str;
-  auto make_color_log(Entry entry) const -> Str;
 };
 
 }  // namespace sfc::log

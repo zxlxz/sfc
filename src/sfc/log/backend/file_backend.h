@@ -6,6 +6,8 @@
 namespace sfc::log {
 
 class FileBackend {
+  static constexpr usize BUFF_SIZE = 4096U;
+
   fs::File _file;
 
  public:
@@ -15,9 +17,9 @@ class FileBackend {
 
   static auto create(fs::Path path) -> io::Result<FileBackend>;
 
- public:
+  void flush();
+
   void write_entry(Entry entry);
-  auto make_log_str(Entry entry) const -> Str;
 };
 
 }  // namespace sfc::log
