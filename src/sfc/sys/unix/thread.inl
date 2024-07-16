@@ -23,6 +23,9 @@ struct Thread {
     auto tid = pthread_t{0};
     const auto ptr = Box<Box<void()>>::xnew(mem::move(fun)).into_raw();
     const auto err = ::pthread_create(&tid, &attr, &Thread::start_routine, ptr);
+
+    ::pthread_attr_destroy(&attr);
+
     if (err != 0) {  // err check
       (void)Box<Box<void()>>::from_raw(ptr);
       return {};
