@@ -44,7 +44,7 @@ struct LogTime {
     }
 
     if (!(_inn._time._secs == cached._time._secs)) {
-      cached._time = _inn._time;
+      cached._time._secs = _inn._time._secs;
 
       const auto p = buf + DATE_LEN + 1;
       const auto h = _inn._time.hour();
@@ -54,7 +54,7 @@ struct LogTime {
       p[TIME_LEN - 1] = '.';
     }
 
-    if (!(_inn._time._micros == cached._time._micros)) {
+    if (!(_inn._time.millis() == cached._time.millis())) {
       cached._time._micros = _inn._time._micros;
 
       const auto p = buf + DATE_LEN + TIME_LEN + 1;
@@ -81,6 +81,12 @@ auto Logger::get_level() const -> Level {
 
 void Logger::set_level(Level level) {
   _level = level;
+}
+
+void Logger::flush() {
+  for (auto& be : _backends.as_mut_slice()) {
+    be->flush();
+  }
 }
 
 void Logger::write_msg(Level level, Str msg) {

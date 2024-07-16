@@ -37,10 +37,10 @@ struct NaiveTime {
   }
 
   void fmt(auto& f) const {
-    const auto millis = this->millis();
     const auto hour = this->hour();
     const auto min = this->minute();
     const auto sec = this->second();
+    const auto millis = this->millis();
     f.write_fmt("{02}:{02}:{02}.{03}", hour, min, sec, millis);
   }
 };
