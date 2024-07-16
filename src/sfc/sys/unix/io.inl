@@ -47,20 +47,16 @@ struct File {
 };
 
 struct Stdout {
-  int _fd = STDOUT_FILENO;
-
- public:
-  static auto instance() -> Stdout& {
-    static auto res = Stdout{};
-    return res;
-  }
-
-  auto is_tty() const -> bool {
-    const auto res = ::isatty(_fd);
+  static auto is_tty() -> bool {
+    const auto res = ::isatty(STDOUT_FILENO);
     return res == 1;
   }
 
-  void write_str(auto buf) {
+  static void flush() {
+    ::fflush(::stdout);
+  }
+
+  static void write_str(auto buf) {
     ::fwrite(buf.as_ptr(), 1, buf.len(), ::stdout);
   }
 };

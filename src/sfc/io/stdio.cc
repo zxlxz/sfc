@@ -7,18 +7,20 @@ namespace sfc::io {
 namespace sys_imp = sys::io;
 
 auto Stdout::instance() -> Stdout& {
-  static Stdout ret{};
-  return ret;
+  static Stdout res{};
+  return res;
 }
 
 auto Stdout::is_tty() const -> bool {
-  const auto& imp = sys_imp::Stdout::instance();
-  return imp.is_tty();
+  return sys_imp::Stdout::is_tty();
+}
+
+void Stdout::flush() {
+  return sys_imp::Stdout::flush();
 }
 
 void Stdout::write_str(Str s) {
-  auto& imp = sys_imp::Stdout::instance();
-  imp.write_str(s);
+  sys_imp::Stdout::write_str(s);
 }
 
 }  // namespace sfc::io

@@ -10,6 +10,8 @@ class Stdout {
 
   auto is_tty() const -> bool;
 
+  void flush();
+
   void write_str(Str s);
 
   void write_fmt(Str fmts, const auto&... args) {
