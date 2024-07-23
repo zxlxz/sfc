@@ -46,7 +46,8 @@ struct NaiveTime {
 };
 
 struct NaiveDate {
-  u32 _yof = 0;  // YYYY YYYY YYYY FFDD
+  // YYYY YYYY YYYY FFDD
+  u32 _yof = 0;
 
  public:
   NaiveDate() = default;
