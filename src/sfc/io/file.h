@@ -1,6 +1,6 @@
 #pragma once
 
-#include "error.h"
+#include "mod.h"
 
 namespace sfc::io {
 
@@ -32,12 +32,6 @@ class File {
 
   auto write_all(Slice<const u8> buf) -> Result<usize>;
   auto write_str(Str str) -> Result<usize>;
-
-  auto write_fmt(Str pattern, const auto&... args) -> Result<usize> {
-    const auto s = string::format(pattern, args...);
-    const auto n = this->write_str(s);
-    return n;
-  }
 };
 
 }  // namespace sfc::io

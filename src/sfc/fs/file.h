@@ -41,7 +41,6 @@ class File : io::File {
   using Inn::read_to_string;
 
   using Inn::write;
-  using Inn::write_fmt;
   using Inn::write_str;
 };
 

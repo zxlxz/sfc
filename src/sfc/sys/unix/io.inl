@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "sfc/io/error.h"
+#include "sfc/io/mod.h"
 
 #undef stdin
 #undef stdout
