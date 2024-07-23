@@ -7,6 +7,8 @@ namespace sfc::string {
 class [[nodiscard]] String {
   Vec<char> _vec = {};
 
+  explicit String(Vec<char> buf) noexcept : _vec{static_cast<Vec<char>&&>(buf)} {}
+
  public:
   String() noexcept = default;
 
@@ -28,6 +30,14 @@ class [[nodiscard]] String {
 
   static auto from(const auto& s) -> String {
     return String{Str{s}};
+  }
+
+  static auto from_vec(Vec<char> buf) -> String {
+    return String{static_cast<Vec<char>&&>(buf)};
+  }
+
+  static auto from_u8(Vec<u8> buf) -> String {
+    return String{reinterpret_cast<Vec<char>&&>(buf)};
   }
 
   auto as_ptr() const -> const char* {
