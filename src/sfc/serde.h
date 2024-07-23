@@ -4,5 +4,6 @@
 #include "serde/des.h"
 #include "serde/ser.h"
 
-// json
+// impl
 #include "serde/json.h"
+#include "serde/base64.h"
