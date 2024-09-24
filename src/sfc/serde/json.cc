@@ -1,6 +1,5 @@
-#include "parse.h"
-
-#include "sfc/fs.h"
+#include "json.h"
+#include "sfc/fs/file.h"
 
 namespace sfc::serde::json {
 
@@ -226,11 +225,3 @@ auto load(fs::Path path) -> Option<Node> {
 }
 
 }  // namespace sfc::serde::json
-
-namespace sfc::serde {
-
-auto Node::from_json(Str text) -> Option<Node> {
-  return json::parse(text);
-}
-
-}  // namespace sfc::serde

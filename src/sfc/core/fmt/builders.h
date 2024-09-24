@@ -6,120 +6,119 @@ namespace sfc::fmt {
 
 template <class W>
 class DebugTuple {
-  ptr::Unique<W> _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
-  explicit DebugTuple(W& fmt) : _fmt{&fmt} {
-    _fmt->write_str("(");
+  explicit DebugTuple(W& fmt) : _fmt{fmt} {
+    _fmt.write_str("(");
   }
 
   ~DebugTuple() {
-    if (!_fmt) return;
-    _fmt->write_str(")");
+    _fmt.write_str(")");
   }
 
-  DebugTuple(DebugTuple&&) noexcept = default;
+  DebugTuple(const DebugTuple&) = delete;
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt->write_str(", ");
+      _fmt.write_str(", ");
     }
-    _fmt->write(val);
+    _fmt.write(val);
     _cnt += 1;
   }
 
-  void entries(auto iter) {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entrie(val); });
   }
 };
 
 template <class W>
 class DebugList {
-  ptr::Unique<W> _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
-  explicit DebugList(W& fmt) : _fmt{&fmt}, _cnt{0} {
-    _fmt->write_str("[");
+  explicit DebugList(W& fmt) : _fmt{fmt} {
+    _fmt.write_str("[");
   }
 
   ~DebugList() {
-    if (!_fmt) return;
-    _fmt->write_str("]");
+    _fmt.write_str("]");
   }
 
-  DebugList(DebugList&&) noexcept = default;
+  DebugList(const DebugList&) noexcept = delete;
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt->write_str(", ");
+      _fmt.write_str(", ");
     }
-    _fmt->write(val);
+    _fmt.write(val);
     _cnt += 1;
   }
 
-  void entries(auto iter) {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
 
 template <class W>
 class DebugSet {
-  ptr::Unique<W> _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
-  explicit DebugSet(W& fmt) : _fmt{&fmt}, _cnt{0} {
-    _fmt->write_str("{");
+  explicit DebugSet(W& fmt) : _fmt{fmt} {
+    _fmt.write_str("{");
   }
 
   ~DebugSet() {
-    if (!_fmt) return;
-    _fmt->write_str("}");
+    if (!_fmt) {
+      return;
+    }
+    _fmt.write_str("}");
   }
 
-  DebugSet(DebugSet&&) noexcept = default;
+  DebugSet(const DebugSet&) noexcept = delete;
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt->write_str(", ");
+      _fmt.write_str(", ");
     }
-    _fmt->write(val);
+    _fmt.write(val);
     _cnt += 1;
   }
 
-  void entries(auto iter) {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entrie(val); });
   }
 };
 
 template <class W>
 class DebugMap {
-  ptr::Unique<W> _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
-  explicit DebugMap(W& fmt) : _fmt{&fmt} {
-    _fmt->write_str("{");
+  explicit DebugMap(W& fmt) : _fmt{fmt} {
+    _fmt.write_str("{");
   }
 
   ~DebugMap() {
-    if (!_fmt) return;
-    _fmt->write_str("}");
+    _fmt.write_str("}");
   }
 
-  DebugMap(DebugMap&&) noexcept = default;
+  DebugMap(const DebugMap&) noexcept = delete;
 
-  void entry(Str name, const auto& value) {
+  void entry(const auto& name, const auto& value) {
     if (_cnt != 0) {
-      _fmt->write_str(", ");
+      _fmt.write_str(", ");
     }
 
-    _fmt->write_str("\"");
-    _fmt->write_str(name);
-    _fmt->write_str("\": ");
-    _fmt->write(value);
+    _fmt.write_str("\"");
+    _fmt.write_str(name);
+    _fmt.write_str("\": ");
+    _fmt.write(value);
 
     _cnt += 1;
   }
@@ -133,29 +132,28 @@ class DebugMap {
 
 template <class W>
 class DebugStruct {
-  ptr::Unique<W> _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
-  explicit DebugStruct(W& fmt) : _fmt{&fmt} {
-    _fmt->write_str("{");
+  explicit DebugStruct(W& fmt) : _fmt{fmt} {
+    _fmt.write_str("{");
   }
 
   ~DebugStruct() {
-    if (!_fmt) return;
-    _fmt->write_str("}");
+    _fmt.write_str("}");
   }
 
-  DebugStruct(DebugStruct&&) noexcept = default;
+  DebugStruct(DebugStruct&&) noexcept = delete;
 
-  void field(Str name, const auto& value) {
+  void field(const auto& name, const auto& value) {
     if (_cnt != 0) {
-      _fmt->write_str(", ");
+      _fmt.write_str(", ");
     }
 
-    _fmt->write_str(name);
-    _fmt->write_str(": ");
-    _fmt->write(value);
+    _fmt.write_str(name);
+    _fmt.write_str(": ");
+    _fmt.write(value);
 
     _cnt += 1;
   }
@@ -174,22 +172,22 @@ inline auto Fmter<W>::debug_tuple() {
 
 template <class W>
 inline auto Fmter<W>::debug_list() {
-  return DebugList<Fmter<W>>{*this};
+  return DebugList<Fmter>{*this};
 }
 
 template <class W>
 inline auto Fmter<W>::debug_set() {
-  return DebugSet<Fmter<W>>{*this};
+  return DebugSet<Fmter>{*this};
 }
 
 template <class W>
 inline auto Fmter<W>::debug_map() {
-  return DebugMap<Fmter<W>>{*this};
+  return DebugMap<Fmter>{*this};
 }
 
 template <class W>
 inline auto Fmter<W>::debug_struct() {
-  return DebugStruct<Fmter<W>>{*this};
+  return DebugStruct<Fmter>{*this};
 }
 
 }  // namespace sfc::fmt

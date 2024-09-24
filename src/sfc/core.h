@@ -10,3 +10,11 @@
 #include "core/slice.h"
 #include "core/str.h"
 #include "core/variant.h"
+
+namespace sfc {
+using str::Str;
+using tuple::Tuple;
+using slice::Slice;
+using option::Option;
+using variant::Variant;
+}  // namespace sfc

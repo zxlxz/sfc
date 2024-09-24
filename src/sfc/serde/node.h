@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/collections.h"
-#include "sfc/fs.h"
 
 namespace sfc::serde {
 
@@ -17,7 +16,7 @@ struct Null {
 using List = Vec<Node>;
 using Dict = VecMap<String, Node>;
 
-class Node {
+class [[nodiscard]] Node {
   using Inn = Variant<Null, bool, i64, f64, String, List, Dict>;
   Inn _inn;
 

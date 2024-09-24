@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include "sfc/alloc.h"
 
 namespace sfc::math {
 
@@ -9,30 +9,30 @@ struct NdSize {
   usize _inn[N] = {0};
 
   template <usize... I, class V>
-  [[sfc_inline]] NdSize(idx_t<I...>, const V& v) : _inn{v[I]...} {}
+  [[sfc_inline]] NdSize(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
 
  public:
   [[sfc_inline]] NdSize() = default;
 
-  [[sfc_inline]] NdSize(const usize (&s)[N]) : NdSize{idx_seq_t<N>{}, s} {}
+  [[sfc_inline]] NdSize(const usize (&s)[N]) : NdSize{tuple::idx_seq_t<N>{}, s} {}
 
   [[sfc_inline]] auto operator[](usize idx) const -> usize {
     return _inn[idx];
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](idx_t<I...>) const -> NdSize<sizeof...(I)> {
+  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdSize<sizeof...(I)> {
     return NdSize<sizeof...(I)>{_inn[I]...};
   }
 
   [[sfc_inline]] auto numel() const -> usize {
-    const auto f = [&]<usize... I>(idx_t<I...>) { return (_inn[I] * ...); };
-    return f(idx_seq_t<N>{});
+    const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return (_inn[I] * ...); };
+    return f(tuple::idx_seq_t<N>{});
   }
 
   [[sfc_inline]] auto operator==(const NdSize& other) const -> bool {
-    const auto f = [&]<usize... I>(idx_t<I...>) { return ((_inn[I] == other._inn[I]) && ...); };
-    return f(idx_seq_t<N>{});
+    const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] == other._inn[I]) && ...); };
+    return f(tuple::idx_seq_t<N>{});
   }
 
   void fmt(auto& f) const {
@@ -50,15 +50,15 @@ struct NdStep {
  public:
   [[sfc_inline]] NdStep() = default;
 
-  [[sfc_inline]] NdStep(const usize (&s)[N]) : NdStep{idx_seq_t<N>{}, s} {}
+  [[sfc_inline]] NdStep(const usize (&s)[N]) : NdStep{tuple::idx_seq_t<N>{}, s} {}
 
   [[sfc_inline]] auto operator[](usize idx) const -> usize {
     return _inn[idx];
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](idx_t<I...>) const -> NdStep<sizeof...(I)> {
-    return NdStep<sizeof...(I)>{idx_t<I...>{}, _inn};
+  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdStep<sizeof...(I)> {
+    return NdStep<sizeof...(I)>{tuple::idx_t<I...>{}, _inn};
   }
 
   [[sfc_inline]] static auto from_shape(const NdSize<N>& shape) -> NdStep {
@@ -77,7 +77,7 @@ struct NdIdxs {
   usize _inn[N] = {0};
 
   template <usize... I, class V>
-  [[sfc_inline]] NdIdxs(idx_t<I...>, const V& v) : _inn{v[I]...} {}
+  [[sfc_inline]] NdIdxs(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
 
  public:
   [[sfc_inline]] NdIdxs() = default;
@@ -89,35 +89,35 @@ struct NdIdxs {
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](idx_t<I...>) const -> NdIdxs<sizeof...(I)> {
+  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdIdxs<sizeof...(I)> {
     return NdIdxs<sizeof...(I)>{_inn[I]...};
   }
 
   [[sfc_inline]] auto operator<(const NdSize<N>& shape) const -> bool {
-    const auto f = [&]<usize... I>(idx_t<I...>) { return ((_inn[I] < shape._inn[I]) && ...); };
-    return f(idx_seq_t<N>{});
+    const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] < shape._inn[I]) && ...); };
+    return f(tuple::idx_seq_t<N>{});
   }
 
   [[sfc_inline]] auto operator*(const NdStep<N>& strides) const -> usize {
-    const auto f = [&]<usize... I>(idx_t<I...>) { return ((_inn[I] * strides._inn[I]) + ...); };
-    return f(idx_seq_t<N>{});
+    const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] * strides._inn[I]) + ...); };
+    return f(tuple::idx_seq_t<N>{});
   }
 };
 
 template <class T, usize N>
 struct NdView {
-  using Size = NdSize<N>;
-  using Step = NdStep<N>;
+  using shape_t = NdSize<N>;
+  using strides_t = NdStep<N>;
   using Idxs = NdIdxs<N>;
 
   T* _data = nullptr;
-  Size _size = {};
-  Step _step = {};
+  shape_t _size = {};
+  strides_t _step = {};
 
  public:
   [[sfc_inline]] NdView() = default;
 
-  [[sfc_inline]] NdView(T* data, Size shape, Step strides)
+  [[sfc_inline]] NdView(T* data, shape_t shape, strides_t strides)
       : _data{data}, _size{shape}, _step{strides} {}
 
   [[sfc_inline]] static constexpr auto ndim() -> usize {
@@ -128,11 +128,11 @@ struct NdView {
     return _data;
   }
 
-  [[sfc_inline]] auto shape() const -> Size {
+  [[sfc_inline]] auto shape() const -> shape_t {
     return _size;
   }
 
-  [[sfc_inline]] auto strides() const -> Step {
+  [[sfc_inline]] auto strides() const -> strides_t {
     return _step;
   }
 
@@ -142,7 +142,7 @@ struct NdView {
 
   [[sfc_inline]] auto operator[](usize idx) -> NdView<T, N - 1> {
     const auto data = _data + idx * _step[N - 1];
-    return NdView<T, N - 1>{data, _size[idx_seq_t<N - 1>{}], _step[idx_seq_t<N - 1>{}]};
+    return NdView<T, N - 1>{data, _size[tuple::idx_seq_t<N - 1>{}], _step[tuple::idx_seq_t<N - 1>{}]};
   }
 
   [[sfc_inline]] auto operator[](const Idxs& idx) const -> T {
@@ -186,18 +186,18 @@ struct NdView {
 
 template <class T>
 struct NdView<T, 1> {
-  using Size = NdSize<1>;
-  using Step = NdStep<1>;
+  using shape_t = NdSize<1>;
+  using strides_t = NdStep<1>;
   using Idxs = NdIdxs<1>;
 
   T* _data = nullptr;
-  Size _size = {};
-  Step _step = {};
+  shape_t _size = {};
+  strides_t _step = {};
 
  public:
   [[sfc_inline]] NdView() = default;
 
-  [[sfc_inline]] NdView(T* data, Size size, Step step) : _data{data}, _size{size}, _step{step} {}
+  [[sfc_inline]] NdView(T* data, shape_t size, strides_t step) : _data{data}, _size{size}, _step{step} {}
 
   [[sfc_inline]] static constexpr auto ndim() -> usize {
     return 1;
@@ -207,11 +207,11 @@ struct NdView<T, 1> {
     return _data;
   }
 
-  [[sfc_inline]] auto shape() const -> Size {
+  [[sfc_inline]] auto shape() const -> shape_t {
     return _size;
   }
 
-  [[sfc_inline]] auto strides() const -> Step {
+  [[sfc_inline]] auto strides() const -> strides_t {
     return _step;
   }
 
@@ -239,7 +239,7 @@ struct NdView<T, 1> {
     ids = ids % _size[0];
 
     const auto offset = ids._start * _step._inn[0];
-    const auto size = Size{{ids.len()}};
+    const auto size = shape_t{{ids.len()}};
     return NdView{_data + offset, size, _step};
   }
 

@@ -20,12 +20,11 @@ static auto cxx_demangle(Str raw) -> String {
     return String{raw};
   }
 
-  auto ret = 0;
   char buf[MAX_LEN];
   auto len = sizeof(buf);
-  auto fun = __cxa_demangle(raw.as_ptr(), buf, &len, &ret);
-  auto res = String{fun ? fun : raw};
-  return res;
+  auto ret = 0;
+  auto res = __cxa_demangle(raw.as_ptr(), buf, &len, &ret);
+  return String{res ?: raw};
 }
 
 Frame::Frame(void* addr) : _addr{addr} {}

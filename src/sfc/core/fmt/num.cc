@@ -5,16 +5,16 @@ namespace sfc::fmt {
 struct Int2Str {
   Style _style;
 
-  Slice<char> _buf;
+  slice::Slice<char> _buf;
   char* _ptr = _buf._ptr + _buf._len;
 
  public:
-  [[sfc_inline]] auto as_str() const -> Str {
+  [[sfc_inline]] auto as_str() const -> str::Str {
     const auto len = static_cast<usize>(_buf._ptr + _buf._len - _ptr);
     return {_ptr, len};
   }
 
-  [[sfc_inline]] auto operator()(auto val) -> Str {
+  [[sfc_inline]] auto operator()(auto val) -> str::Str {
     const auto uval = val > 0 ? val : 0 - val;
     const auto radix = this->radix();
     if (radix == 10) {
@@ -35,7 +35,7 @@ struct Int2Str {
     *--_ptr = c;
   }
 
-  [[sfc_inline]] void push_str(Str s) {
+  [[sfc_inline]] void push_str(str::Str s) {
     for (auto i = s._len; i != 0; --i) {
       this->push(s._ptr[i - 1]);
     }
@@ -53,7 +53,7 @@ struct Int2Str {
     }
   }
 
-  [[sfc_inline]] auto prefix() const -> Str {
+  [[sfc_inline]] auto prefix() const -> str::Str {
     if (!_style._prefix) {
       return {};
     }
@@ -126,15 +126,15 @@ struct Int2Str {
 struct Flt2Str {
   Style _style;
 
-  Slice<char> _buf;
+  slice::Slice<char> _buf;
   usize _len = 0U;
 
  public:
-  [[sfc_inline]] auto as_str() const -> Str {
+  [[sfc_inline]] auto as_str() const -> str::Str {
     return {_buf._ptr, _len};
   }
 
-  [[sfc_inline]] auto operator()(auto val) -> Str {
+  [[sfc_inline]] auto operator()(auto val) -> str::Str {
     static const auto DEFAULT_PREC = sizeof(val) == sizeof(f32) ? 4 : 6;
 
     const auto uval = num::fabs(val);
@@ -159,16 +159,16 @@ struct Flt2Str {
 };
 
 template <class T>
-auto Int<T>::to_str(const Style& style, Slice<char> sbuf) const -> Str {
+auto Int<T>::to_str(const Style& style, slice::Slice<char> sbuf) const -> str::Str {
   return Int2Str{style, sbuf}(_val);
 }
 
 template <class T>
-auto Flt<T>::to_str(const Style& style, Slice<char> sbuf) const -> Str {
+auto Flt<T>::to_str(const Style& style, slice::Slice<char> sbuf) const -> str::Str {
   return Flt2Str{style, sbuf}(_val);
 }
 
-auto Ptr::to_str(const Style& style, Slice<char> sbuf) const -> Str {
+auto Ptr::to_str(const Style& style, slice::Slice<char> sbuf) const -> str::Str {
   const auto uval = mem::bit_cast<u64>(_val);
 
   auto imp = Int2Str{style, sbuf};

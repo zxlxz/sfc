@@ -63,7 +63,9 @@ class Rc {
   Rc() noexcept = default;
 
   ~Rc() {
-    if (!_ptr) return;
+    if (!_ptr) {
+      return;
+    }
 
     if (_ptr->dec_strong() == 0) {
       mem::drop(*_ptr);

@@ -170,11 +170,11 @@ class [[nodiscard]] Vec {
     return _len != 0;
   }
 
-  [[sfc_inline]] auto as_slice() const -> Slice<const T> {
+  [[sfc_inline]] auto as_slice() const -> slice::Slice<const T> {
     return {_buf._ptr, _len};
   }
 
-  [[sfc_inline]] auto as_mut_slice() -> Slice<T> {
+  [[sfc_inline]] auto as_mut_slice() -> slice::Slice<T> {
     return {_buf._ptr, _len};
   }
 
@@ -212,11 +212,11 @@ class [[nodiscard]] Vec {
     return _buf[idx];
   }
 
-  [[sfc_inline]] auto operator[](Range<> ids) const -> Slice<const T> {
+  [[sfc_inline]] auto operator[](Range<> ids) const -> slice::Slice<const T> {
     return this->as_slice()[ids];
   }
 
-  [[sfc_inline]] auto operator[](Range<> ids) -> Slice<T> {
+  [[sfc_inline]] auto operator[](Range<> ids) -> slice::Slice<T> {
     return this->as_mut_slice()[ids];
   }
 
@@ -261,7 +261,7 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    ptr::drop_in_place(_buf._ptr + len, _len - len);
+    ptr::drop(_buf._ptr + len, _len - len);
     _len = len;
   }
 
@@ -398,12 +398,12 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  using Iter = typename Slice<T>::Iter;
+  using Iter = typename slice::Iter<const T>;
   auto iter() const -> Iter {
     return this->as_slice().iter();
   }
 
-  using IterMut = typename Slice<T>::IterMut;
+  using IterMut = typename slice::Iter<T>;
   auto iter_mut() -> IterMut {
     return this->as_mut_slice().iter_mut();
   }

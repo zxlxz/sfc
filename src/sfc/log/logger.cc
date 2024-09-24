@@ -29,8 +29,8 @@ struct LogTime {
     static constexpr u32 TIME_LEN = sizeof("HH:MM:SS");
     static constexpr u32 LEN = sizeof("[YYYY-MM-DD HH:MM:SS.000]") - 1;
 
-    static char buf[32] = "[YYYY-MM-DD HH:MM:SS.000]";
-    static auto cached = time::DateTime{};
+    static thread_local char buf[32] = "[YYYY-MM-DD HH:MM:SS.000]";
+    static thread_local auto cached = time::DateTime{};
 
     if (!(_inn._date == cached._date)) {
       cached._date = _inn._date;

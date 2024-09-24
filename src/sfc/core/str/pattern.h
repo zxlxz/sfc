@@ -178,14 +178,12 @@ struct Pattern<Str> {
   }
 };
 
-#if __cplusplus >= 202002L
 template <class P>
 Pattern(P) -> Pattern<P>;
 
 Pattern(char) -> Pattern<char>;
-Pattern(Str) -> Pattern<Str>;
 Pattern(const char*) -> Pattern<Str>;
-#endif
+Pattern(Str) -> Pattern<Str>;
 
 template <class P>
 auto make_pattern(P p) -> Pattern<P> {

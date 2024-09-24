@@ -4,14 +4,6 @@
 
 namespace sfc::trait {
 
-struct Any {};
-
-template <class T, class U>
-concept Same = __is_same(T, U);
-
-template <class T, class U>
-concept NotSame = !__is_same(T, U);
-
 template <class T>
 concept Enum = __is_enum(T);
 
@@ -19,7 +11,16 @@ template <class T>
 concept Class = __is_class(T);
 
 template <class T>
-concept Copy = __is_trivially_copyable(T);
+concept Reference = __is_same(T, T&);
+
+template <class T>
+concept Const = __is_same(T, const T);
+
+template <class... T>
+concept TvCopy = (__is_trivially_copyable(T) && ...);
+
+template <class ...T>
+concept TvDtor = (__is_trivially_destructible(T) && ...);
 
 template <class T>
 concept UInt = __is_same(T, unsigned char)      //
@@ -42,9 +43,6 @@ template <class T>
 concept Float = __is_same(T, float)      //
                 || __is_same(T, double)  //
                 || __is_same(T, long double);
-
-template <class T>
-concept Reference = __is_same(T, T&);
 
 template <template <class> class X, class T>
 auto as(const T& x) -> const X<T>& {

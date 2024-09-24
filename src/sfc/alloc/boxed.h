@@ -215,7 +215,7 @@ class Box<R(T...)> {
   auto operator()(T... args) -> R {
     assert_fmt(_ptr._self, "Box::(): deref null object.");
 
-    const auto p = static_cast<trait::Any*>(_ptr._self);
+    const auto p = static_cast<ops::Any*>(_ptr._self);
     const auto f = _ptr._meta->_call;
     (p->*f)(static_cast<T&&>(args)...);
   }

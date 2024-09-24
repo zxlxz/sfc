@@ -12,83 +12,76 @@ struct idx_t<I> {
   static constexpr const auto VALUE = I;
 };
 
-template <usize I, class... Ts>
-struct Element;
-
-#ifdef __clang__
-template <usize I, class... T>
-struct Element {
-  using Type = __type_pack_element<I, T...>;
+#if __has_builtin(__make_integer_seq)
+template <class T, T... I>
+struct _idxs_helper {
+  using Type = idx_t<I...>;
 };
+
+template <usize N>
+using idx_seq_t = typename __make_integer_seq<_idxs_helper, usize, N>::Type;
 #else
-template <usize I, class U, class... T>
-struct Element<I, U, T...> : Element<I - 1, T...> {};
+template <usize N>
+using idx_seq_t = idx_t<__integer_pack(N)...>;
+#endif
 
-template <class U, class... T>
-struct Element<0, U, T...> {
-  using Type = U;
+#if __has_builtin(__type_pack_element)
+template <usize I, typename... T>
+using element_t = __type_pack_element<I, T...>;
+#else
+namespace sfc {
+template <usize I, typename... T>
+struct _NthType;
+
+template <class T0, class... Ts>
+struct _NthType<0, T0, Ts...> {
+  using Type = T0;
 };
+
+template <class T0, class T1, class... U>
+struct _NthType<1, T0, T1, U...> {
+  using Type = T1;
+};
+
+template <class T0, class T1, class T2, class... U>
+struct _NthType<2, T0, T1, T2, U...> {
+  using Type = T2;
+};
+
+template <usize I, class T0, class T1, class T2, class... U>
+struct _NthType<I, T0, T1, T2, U...> : _NthType<I - 3, U...> {};
+
+}  // namespace sfc
+
+template <usize I, typename... T>
+using element_t = typename sfc::_NthType<I, T...>::Type;
 #endif
 
 namespace detail {
 
-template <class T, usize... I>
-struct Idxs {
-  using Type = idx_t<I...>;
-};
-
-// clang-format off
-#if __cplusplus < 202002L
-template<usize N>struct MakeSeq;
-template<>struct MakeSeq<0> : Idxs<usize> {};
-template<>struct MakeSeq<1> : Idxs<usize,0> {};
-template<>struct MakeSeq<2> : Idxs<usize,0,1> {};
-template<>struct MakeSeq<3> : Idxs<usize,0,1,2> {};
-template<>struct MakeSeq<4> : Idxs<usize,0,1,2,3> {};
-template<>struct MakeSeq<5> : Idxs<usize,0,1,2,3,4> {};
-template<>struct MakeSeq<6> : Idxs<usize,0,1,2,3,4,5> {};
-template<>struct MakeSeq<7> : Idxs<usize,0,1,2,3,4,5,6> {};
-template<>struct MakeSeq<8> : Idxs<usize,0,1,2,3,4,5,6,7> {};
-template<>struct MakeSeq<9> : Idxs<usize,0,1,2,3,4,5,6,7,8> {};
-template<>struct MakeSeq<10>: Idxs<usize,0,1,2,3,4,5,6,7,8,9> {};
-template<>struct MakeSeq<11>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10> {};
-template<>struct MakeSeq<12>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11> {};
-template<>struct MakeSeq<13>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12> {};
-template<>struct MakeSeq<14>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13> {};
-template<>struct MakeSeq<15>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14> {};
-template<>struct MakeSeq<16>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15> {};
-template<>struct MakeSeq<17>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16> {};
-template<>struct MakeSeq<18>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17> {};
-template<>struct MakeSeq<19>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18> {};
-template<>struct MakeSeq<20>: Idxs<usize,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19> {};
-#endif
-// clang-format on
+template <class I, class... T>
+struct Tuple;
 
 template <usize I, class T>
 struct Entry {
   T _0;
 };
 
-template <class I, class... T>
-struct Tuple;
-
 template <usize... I, class... T>
 struct Tuple<idx_t<I...>, T...> : Entry<I, T>... {
-  static constexpr usize COUNT = sizeof...(T);
-
  public:
   Tuple(T... vals) : Entry<I, T>{static_cast<T&&>(vals)}... {}
 
-  template <usize K>
+  template <usize J>
   [[sfc_inline]] auto get() const -> auto& {
-    using U = typename Element<K, T...>::Type;
-    return static_cast<const Entry<K, U>&>(*this)._0;
+    using U = __type_pack_element<J, T...>;
+    return static_cast<const Entry<J, U>&>(*this)._0;
   }
 
-  template <usize K>
+  template <usize J>
   [[sfc_inline]] auto get() -> auto& {
-    using U = typename Element<K, T...>::Type;
-    return static_cast<Entry<K, U>&>(*this)._0;
+    using U = __type_pack_element<J, T...>;
+    return static_cast<Entry<J, U>&>(*this)._0;
   }
 
   void map(auto&& f) const {
@@ -100,41 +93,25 @@ struct Tuple<idx_t<I...>, T...> : Entry<I, T>... {
   }
 
   void imap(auto&& f) const {
-    (f(idx_t<I>{}, this->get<I>()), ...);
+    (f(I, this->get<I>()), ...);
   }
 
   void imap_mut(auto&& f) {
-    (f(idx_t<I>{}, this->get<I>()), ...);
+    (f(I, this->get<I>()), ...);
   }
 };
 
 }  // namespace detail
-
-template <usize I, class... T>
-using element_t = typename Element<I, T...>::Type;
-
-#ifdef __clang__
-template <usize N>
-using idx_seq_t = __make_integer_seq<detail::Idxs, usize, N>::Type;
-#elif defined(__GNUC__)
-#if __GNUC__ >= 9
-template <usize N>
-using idx_seq_t = idx_t<__integer_pack(N)...>;
-#else
-template <usize N>
-using idx_seq_t = typename detail::MakeSeq<N>::Type;
-#endif
-#endif
 
 template <class... T>
 class Tuple : detail::Tuple<idx_seq_t<sizeof...(T)>, T...> {
   using Inn = detail::Tuple<idx_seq_t<sizeof...(T)>, T...>;
 
  public:
-  using Inn::COUNT;
   using Inn::Inn;
 
   using Inn::get;
+
   using Inn::map;
   using Inn::map_mut;
 
@@ -142,10 +119,8 @@ class Tuple : detail::Tuple<idx_seq_t<sizeof...(T)>, T...> {
   using Inn::imap_mut;
 };
 
-#if __cplusplus >= 202002L
 template <class... T>
 Tuple(T...) -> Tuple<T...>;
-#endif
 
 }  // namespace sfc::tuple
 
@@ -185,9 +160,3 @@ struct tuple_element<I, const sfc::tuple::Tuple<T...>> {
 }  // namespace _LIBCPP_ABI_NAMESPACE
 #endif
 }  // namespace std
-
-namespace sfc {
-using tuple::idx_seq_t;
-using tuple::idx_t;
-using tuple::Tuple;
-}  // namespace sfc

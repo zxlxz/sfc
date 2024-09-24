@@ -11,7 +11,7 @@ auto type_id() -> usize {
 }
 
 template <class T>
-auto type_name() -> Str {
+auto type_name() -> str::Str {
 #if defined(__clang__)
   const auto PREFIX = sizeof("Str sfc::reflect::type_name() [T = ") - 1;
   const auto SUFFIX = sizeof("]") - 1;
@@ -24,7 +24,7 @@ auto type_name() -> Str {
 #endif
   const auto fun = __PRETTY_FUNCTION__;
   const auto len = sizeof(__PRETTY_FUNCTION__) - 1 - PREFIX - SUFFIX;
-  return Str{fun + PREFIX, len};
+  return str::Str{fun + PREFIX, len};
 }
 
 }  // namespace sfc::reflect

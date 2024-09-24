@@ -4,7 +4,7 @@
 namespace sfc::str {
 
 struct Str2Int {
-  Slice<const char> _s;
+  slice::Slice<const char> _s;
 
  public:
   template <trait::UInt T>

@@ -14,8 +14,8 @@ struct IBackend {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
-    void (trait::Any::*_flush)();
-    void (trait::Any::*_write_entry)(Entry entry);
+    void (ops::Any::*_flush)();
+    void (ops::Any::*_write_entry)(Entry);
 
     template <class X>
     static auto of(const X*) -> const Meta& {
@@ -38,13 +38,13 @@ struct IBackend {
   explicit IBackend(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
 
   void flush() {
-    const auto p = static_cast<trait::Any*>(_self);
+    const auto p = static_cast<ops::Any*>(_self);
     const auto f = _meta->_flush;
     (p->*f)();
   }
 
   void write_entry(Entry entry) {
-    const auto p = static_cast<trait::Any*>(_self);
+    const auto p = static_cast<ops::Any*>(_self);
     const auto f = _meta->_write_entry;
     (p->*f)(entry);
   }

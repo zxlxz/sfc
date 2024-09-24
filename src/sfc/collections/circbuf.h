@@ -6,7 +6,7 @@ namespace sfc::collections {
 
 template <class T>
 class CircBuf {
-  vec::Buf<T> _buf;
+  vec::Buf<T> _buf = {};
   usize _len = 0;
   usize _first = 0;  // begin of the buffer
   usize _last = 0;   // end of the buffer(behind the last element)

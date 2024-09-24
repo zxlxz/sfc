@@ -5,11 +5,8 @@
 
 namespace sfc::str {
 
-template <class T>
-concept XFromStr = requires() { T::from_str; };
-
-struct Str : private Slice<const char> {
-  using Inn = Slice<const char>;
+struct Str : private slice::Slice<const char> {
+  using Inn = slice::Slice<const char>;
   using Inn::_len;
   using Inn::_ptr;
 
@@ -34,11 +31,11 @@ struct Str : private Slice<const char> {
   using Inn::len;
   using Inn::operator bool;
 
-  [[sfc_inline]] auto as_chars() const -> Slice<const char> {
+  [[sfc_inline]] auto as_chars() const -> slice::Slice<const char> {
     return {_ptr, _len};
   }
 
-  [[sfc_inline]] auto as_bytes() const -> Slice<const u8> {
+  [[sfc_inline]] auto as_bytes() const -> slice::Slice<const u8> {
     return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
   }
 
@@ -48,7 +45,7 @@ struct Str : private Slice<const char> {
   }
 
   [[sfc_inline]] auto get_unchecked(Range<> ids) const -> Str {
-    return {_ptr+ids._start, ids.len()};
+    return {_ptr + ids._start, ids.len()};
   }
 
   [[sfc_inline]] auto operator[](usize idx) const -> char {
@@ -60,7 +57,7 @@ struct Str : private Slice<const char> {
     return Str{_ptr + ids._start, ids.len()};
   }
 
-  [[sfc_inline]] auto split_at(usize mid) const -> Tuple<Str, Str> {
+  [[sfc_inline]] auto split_at(usize mid) const -> tuple::Tuple<Str, Str> {
     const auto pos = cmp::min(mid, _len);
     const auto a = Str{_ptr, pos};
     const auto b = Str{_ptr + mid, _len - mid};
@@ -80,8 +77,8 @@ struct Str : private Slice<const char> {
   }
 
  public:
-  auto find(auto&& p) const -> Option<usize>;
-  auto rfind(auto&& p) const -> Option<usize>;
+  auto find(auto&& p) const -> option::Option<usize>;
+  auto rfind(auto&& p) const -> option::Option<usize>;
 
   auto contains(auto&& p) const -> bool;
   auto starts_with(auto&& p) const -> bool;
@@ -105,10 +102,13 @@ struct Str : private Slice<const char> {
 
  public:
   template <class T>
-  auto parse() const -> Option<T>;
+  auto parse() const -> option::Option<T>;
 
-  template <XFromStr T>
-  auto parse() const -> option::Option<T> {
+  template <class T>
+
+  auto parse() const -> option::Option<T>
+    requires(requires() { T::from_str(*this); })
+  {
     return T::from_str(*this);
   }
 
@@ -118,7 +118,3 @@ struct Str : private Slice<const char> {
 };
 
 }  // namespace sfc::str
-
-namespace sfc {
-using str::Str;
-}  // namespace sfc

@@ -1,5 +1,4 @@
 #include "error.h"
-
 #include "sfc/sys/io.inl"
 
 namespace sfc::io {

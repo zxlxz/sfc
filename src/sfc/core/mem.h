@@ -6,16 +6,35 @@ namespace sfc::mem {
 
 struct inplace_t {};
 
+template <class T>
+union Uninit {
+  T _0;
+
+  [[sfc_inline]] Uninit() = default;
+  [[sfc_inline]] ~Uninit() = default;
+  [[sfc_inline]] Uninit(const Uninit&) = delete;
+
+  [[sfc_inline]] auto operator&() -> T* {
+    return &_0;
+  }
+
+  [[sfc_inline]] auto operator&() const -> const T* {
+    return &_0;
+  }
+
+  [[sfc_inline]] auto operator->() -> T* {
+    return &_0;
+  }
+
+  [[sfc_inline]] auto operator->() const -> const T* {
+    return &_0;
+  }
+};
+
 template <class T, class F>
 [[sfc_inline]] inline auto bit_cast(F f) -> T {
   static_assert(sizeof(T) == sizeof(F));
-#if __cplusplus >= 202002L
   return __builtin_bit_cast(T, f);
-#else
-  T res;
-  __builtin_memcpy(&res, &f, sizeof(T));
-  return res;
-#endif
 }
 
 template <class T>

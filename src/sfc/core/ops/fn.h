@@ -4,14 +4,18 @@
 
 namespace sfc::ops {
 
+struct Any{
+  Any() = delete;
+};
+
 template <class X, class R, class... T>
-static auto fn(R (X::*f)(T...)) -> R (trait::Any::*)(T...) {
-  return reinterpret_cast<R (trait::Any::*)(T...)>(f);
+static auto fn(R (X::*f)(T...)) -> R (Any::*)(T...) {
+  return reinterpret_cast<R (Any::*)(T...)>(f);
 }
 
 template <class X, class R, class... T>
-static auto fn(R (X::*f)(T...) const) -> R (trait::Any::*)(T...) {
-  return reinterpret_cast<R (trait::Any::*)(T...)>(f);
+static auto fn(R (X::*f)(T...) const) -> R (Any::*)(T...) {
+  return reinterpret_cast<R (Any::*)(T...)>(f);
 }
 
 template <class F>
@@ -22,7 +26,7 @@ struct Fn<R(T...)> {
   struct Meta {
     usize _size;
     void (*_dtor)(void*);
-    R (trait::Any::*_call)(T...);
+    R (Any::*_call)(T...);
 
     template <class X>
     static auto of(const X*) -> const Meta& {

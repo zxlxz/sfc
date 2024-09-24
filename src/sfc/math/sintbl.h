@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include "sfc/math/funcs.h"
 
 namespace sfc::math {
 

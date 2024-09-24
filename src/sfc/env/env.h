@@ -6,7 +6,7 @@ namespace sfc::env {
 
 auto var(Str key) -> Str;
 void set_var(Str key, Str val);
-void remove_var(Str key, Str val);
+void remove_var(Str key);
 
 auto current_dir() -> fs::PathBuf;
 void set_current_dir(fs::Path path);

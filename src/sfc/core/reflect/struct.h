@@ -7,23 +7,21 @@ namespace sfc::reflect {
 
 template <class T>
 struct Field {
-  Str name;
+  str::Str name;
   T& value;
 };
 
-#if __cplusplus >= 202002L
 template <class T>
-Field(Str, T&) -> Field<T>;
-#endif
+Field(str::Str, T&) -> Field<T>;
 
 template <class T>
-auto make_field(Str name, T& val) -> Field<T> {
+auto make_field(str::Str name, T& val) -> Field<T> {
   return {name, val};
 }
 
 template <class... U>
 class StructInfo {
-  using Fields = Tuple<Field<const U>...>;
+  using Fields = tuple::Tuple<Field<const U>...>;
   Fields _fields;
 
  public:
@@ -38,10 +36,8 @@ class StructInfo {
   }
 };
 
-#if __cplusplus >= 202002L
 template <class... U>
 StructInfo(Field<const U>...) -> StructInfo<U...>;
-#endif
 
 template <class T>
 concept iReflect = requires(const T& x) { reflect_struct(x); };

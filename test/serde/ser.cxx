@@ -4,17 +4,17 @@
 #include "sfc/serde.h"
 #include "sfc/test.h"
 
-namespace sfc::serde::ser {
+namespace sfc::serde {
 
 SFC_TEST(ser_bool) {
   {
-    auto node = ser::serialize(true);
+    auto node = serde::serialize(true);
     test::assert_true(node.is_bool());
     test::assert_true(node.as_bool());
   }
 
   {
-    auto node = ser::serialize(false);
+    auto node = serde::serialize(false);
     test::assert_true(node.is_bool());
     test::assert_false(node.as_bool());
   }
@@ -22,13 +22,13 @@ SFC_TEST(ser_bool) {
 
 SFC_TEST(ser_int) {
   {
-    auto node = ser::serialize(-123);
+    auto node = serde::serialize(-123);
     test::assert_true(node.is_int());
     test::assert_eq(node.as_int(), -123);
   }
 
   {
-    auto node = ser::serialize(12345678910U);
+    auto node = serde::serialize(12345678910U);
     test::assert_true(node.is_int());
     test::assert_eq(node.as_int(), static_cast<i64>(12345678910U));
   }
@@ -36,13 +36,13 @@ SFC_TEST(ser_int) {
 
 SFC_TEST(ser_flt) {
   {
-    auto node = ser::serialize(-1.23);
+    auto node = serde::serialize(-1.23);
     test::assert_true(node.is_flt());
     test::assert_flt_eq(node.as_flt(), -1.23);
   }
 
   {
-    auto node = ser::serialize(+1.23f);
+    auto node = serde::serialize(+1.23f);
     test::assert_true(node.is_flt());
     test::assert_flt_eq(node.as_flt(), +1.23f);
   }
@@ -50,13 +50,13 @@ SFC_TEST(ser_flt) {
 
 SFC_TEST(ser_str) {
   {
-    auto node = ser::serialize(Str{""});
+    auto node = serde::serialize(Str{""});
     test::assert_true(node.is_str());
     test::assert_eq(node.as_str(), Str{""});
   }
 
   {
-    auto node = ser::serialize(Str{"abc"});
+    auto node = serde::serialize(Str{"abc"});
     test::assert_true(node.is_str());
     test::assert_eq(node.as_str(), Str{"abc"});
   }
@@ -65,7 +65,7 @@ SFC_TEST(ser_str) {
 SFC_TEST(ser_array) {
   {
     const int v[] = {1, 2, 3};
-    auto node = ser::serialize(v);
+    auto node = serde::serialize(v);
     test::assert_true(node.is_list());
 
     const auto& list = node.as_list();
@@ -86,7 +86,7 @@ SFC_TEST(ser_vector) {
     v.push(2);
     v.push(3);
 
-    auto node = ser::serialize(v);
+    auto node = serde::serialize(v);
     test::assert_true(node.is_list());
 
     const auto& list = node.as_list();
@@ -106,7 +106,7 @@ SFC_TEST(ser_dict) {
     v.insert(String::from("a"), 1);
     v.insert(String::from("b"), 2);
 
-    auto node = ser::serialize(v);
+    auto node = serde::serialize(v);
     test::assert_true(node.is_dict());
 
     auto& dict = node.as_dict();

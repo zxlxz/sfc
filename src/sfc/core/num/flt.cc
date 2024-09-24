@@ -4,11 +4,11 @@
 namespace sfc::str {
 
 struct Str2Flt {
-  Slice<const char> _s;
+  slice::Slice<const char> _s;
 
  public:
   template <class T>
-  auto parse_flt() -> Option<T> {
+  auto parse_flt() -> option::Option<T> {
     const auto sign = T{this->extract_sign()};
     const auto nan_inf = this->extract_nan_inf(sign);
     if (nan_inf) {
@@ -40,7 +40,7 @@ struct Str2Flt {
   }
 
   template <class T>
-  auto extract_nan_inf(T sign) -> Option<T> {
+  auto extract_nan_inf(T sign) -> option::Option<T> {
     if (_s._len != 3) {
       return {};
     };
@@ -86,12 +86,12 @@ struct Str2Flt {
 };
 
 template <class T>
-auto Str::parse() const -> Option<T> {
+auto Str::parse() const -> option::Option<T> {
   auto imp = Str2Flt{{_ptr, _len}};
   return imp.parse_flt<T>();
 }
 
-template auto Str::parse<f32>() const -> Option<f32>;
-template auto Str::parse<f64>() const -> Option<f64>;
+template auto Str::parse<f32>() const -> option::Option<f32>;
+template auto Str::parse<f64>() const -> option::Option<f64>;
 
 }  // namespace sfc::str

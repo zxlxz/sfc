@@ -25,7 +25,7 @@ struct EnumInfo {
     return nullptr;
   }
 
-  auto get_value_by_name(str::Str name) const -> Option<T> {
+  auto get_value_by_name(str::Str name) const -> option::Option<T> {
     for (const auto& item : _items) {
       if (name == str::Str{item.name}) {
         return item.value;
@@ -42,7 +42,7 @@ auto enum_name(T val) -> cstr_t {
 }
 
 template <class T>
-auto enum_from_name(Str name) -> Option<T> {
+auto enum_from_name(str::Str name) -> Option<T> {
   const auto info = reflect_enum(static_cast<T>(0));
   return info.get_value_by_name(name);
 }

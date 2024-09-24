@@ -6,7 +6,6 @@ namespace sfc::collections {
 
 template <class T>
 class [[nodiscard]] Queue {
- protected:
   Vec<T> _vec;
   usize _pos = 0;
 

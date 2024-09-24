@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ndview.h"
+#include "sfc/math/ndview.h"
 
 namespace sfc::math {
 

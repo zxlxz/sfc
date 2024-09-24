@@ -3,7 +3,7 @@
 namespace sfc::fmt {
 
 struct StyleParser {
-  Str _buf;
+  str::Str _buf;
 
  public:
   auto parse() -> Style {
@@ -71,7 +71,7 @@ struct StyleParser {
   }
 };
 
-auto Style::from_str(Str s) -> Option<Style> {
+auto Style::from_str(str::Str s) -> Option<Style> {
   if (s.is_empty()) {
     return Style{};
   }

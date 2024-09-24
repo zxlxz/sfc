@@ -62,7 +62,7 @@ struct Global {
   template <class T>
   auto realloc_array(T* old_ptr, usize old_len, usize new_len) -> T* {
     const auto max_len = this->usable_size(old_ptr) / sizeof(T);
-    if (new_len <= max_len) {
+    if (new_len <= max_len || __is_trivially_copyable(T)) {
       const auto layout = Layout::array<T>(old_len);
       const auto new_ptr = this->realloc_imp(old_ptr, layout, new_len * sizeof(T));
       return static_cast<T*>(new_ptr);
@@ -70,15 +70,8 @@ struct Global {
 
     const auto new_ptr = this->alloc_array<T>(new_len);
     ptr::uninit_move(old_ptr, new_ptr, old_len);
-    ptr::drop_in_place(old_ptr, old_len);
+    ptr::drop(old_ptr, old_len);
     return new_ptr;
-  }
-
-  template <trait::Copy T>
-  auto realloc_array(T* old_ptr, usize old_len, usize new_len) -> T* {
-    const auto m = Layout::array<T>(old_len);
-    const auto p = this->realloc_imp(old_ptr, m, new_len * sizeof(T));
-    return static_cast<T*>(p);
   }
 };
 

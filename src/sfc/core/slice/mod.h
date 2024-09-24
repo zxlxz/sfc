@@ -84,12 +84,12 @@ struct Slice {
     return {_ptr + ids._start, ids.len()};
   }
 
-  [[sfc_inline]] auto split_at(usize idx) const -> Tuple<Slice<const T>, Slice<const T>> {
+  [[sfc_inline]] auto split_at(usize idx) const -> tuple::Tuple<Slice<const T>, Slice<const T>> {
     idx = cmp::min(idx, _len);
     return {this->get_unchecked({0, idx}), this->get_unchecked({idx, _len})};
   }
 
-  [[sfc_inline]] auto split_at_mut(usize idx) -> Tuple<Slice, Slice> {
+  [[sfc_inline]] auto split_at_mut(usize idx) -> tuple::Tuple<Slice, Slice> {
     idx = cmp::min(idx, _len);
     return {this->get_unchecked_mut({0, idx}), this->get_unchecked_mut({idx, _len})};
   }
@@ -205,7 +205,3 @@ struct Slice {
 };
 
 }  // namespace sfc::slice
-
-namespace sfc {
-using slice::Slice;
-}  // namespace sfc

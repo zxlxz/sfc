@@ -11,32 +11,29 @@ enum Ordering {
 };
 
 struct Lt {
-  template <class T>
-  [[sfc_inline]] auto operator()(const T& a, const T& b) const -> bool {
+  [[sfc_inline]] auto operator()(const auto& a, const auto& b) const -> bool {
     return a < b;
   }
 };
 
 struct Gt {
-  template <class T>
-  [[sfc_inline]] auto operator()(const T& a, const T& b) const -> bool {
-    return !(a < b);
+  [[sfc_inline]] auto operator()(const auto& a, const auto& b) const -> bool {
+    return a > b;
   }
 };
 
-template <class T>
-[[sfc_inline]] auto cmp(const T& a, const T& b) -> Ordering {
-  if (a == b) return Ordering::Equal;
+[[sfc_inline]] auto cmp(const auto& a, const auto& b) -> Ordering {
+  if (a == b) {
+    return Ordering::Equal;
+  }
   return a < b ? Ordering::Less : Ordering::Greater;
 }
 
-template <class T>
-[[sfc_inline]] constexpr auto min(const T& a, const T& b) -> const T& {
+[[sfc_inline]] constexpr auto min(const auto& a, const auto& b) -> auto {
   return a < b ? a : b;
 }
 
-template <class T>
-[[sfc_inline]] constexpr auto max(const T& a, const T& b) -> const T& {
+[[sfc_inline]] constexpr auto max(const auto& a, const auto& b) -> auto {
   return a < b ? b : a;
 }
 

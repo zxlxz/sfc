@@ -28,13 +28,11 @@ struct Range {
   }
 };
 
-#if __cplusplus >= 202002L
 template <class T>
 Range(T) -> Range<T>;
 
 template <class T>
 Range(T, T) -> Range<T>;
-#endif
 
 }  // namespace sfc::ops
 

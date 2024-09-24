@@ -6,8 +6,6 @@ namespace sfc::variant {
 
 using tuple::idx_t;
 
-namespace detail {
-
 template <class... T>
 union Union;
 
@@ -24,7 +22,7 @@ union Union<> {
   template <usize>
   [[sfc_inline]] void get_unchecked_mut() {}
 
-  [[sfc_inline]] void drop(usize) {}
+  [[sfc_inline]] void dtor(usize) {}
 
   [[sfc_inline]] void move_ctor(usize, Union&) {}
   [[sfc_inline]] void copy_ctor(usize, const Union&) {}
@@ -43,9 +41,7 @@ union Union<T0, Ts...> {
   Union<Ts...> _1;
 
  public:
-  [[sfc_inline]] Union() {}
-
-  [[sfc_inline]] ~Union() {}
+  [[sfc_inline]] Union() noexcept {}
 
   template <class... U>
   [[sfc_inline]] Union(idx_t<0>, U&&... args) noexcept : _0{static_cast<U&&>(args)...} {}
@@ -54,43 +50,44 @@ union Union<T0, Ts...> {
   [[sfc_inline]] Union(idx_t<I>, U&&... args) noexcept
       : _1{idx_t<I - 1>{}, static_cast<U&&>(args)...} {}
 
-  template <trait::Same<T0> U>
-  static constexpr auto tag() -> u32 {
-    return 0;
-  }
+  [[sfc_inline]] ~Union() {}
+
+  [[sfc_inline]] ~Union()
+    requires(trait::TvCopy<T0, Ts...>)
+  = default;
 
   template <class U>
   static constexpr auto tag() -> u32 {
-    return Union<Ts...>::template tag<U>() + 1;
-  }
-
-  template <usize I>
-    requires(I == 0)
-  auto get_unchecked() const -> const auto& {
-    return _0;
+    if constexpr (__is_same(T0, U)) {
+      return 0;
+    } else {
+      return Union<Ts...>::template tag<U>() + 1;
+    }
   }
 
   template <usize I>
   [[sfc_inline]] auto get_unchecked() const -> const auto& {
-    return _1.template get_unchecked<I - 1>();
-  }
-
-  template <usize I>
-    requires(I == 0)
-  auto get_unchecked_mut() -> auto& {
-    return _0;
+    if constexpr (I == 0) {
+      return _0;
+    } else {
+      return _1.template get_unchecked<I - 1>();
+    }
   }
 
   template <usize I>
   [[sfc_inline]] auto get_unchecked_mut() -> auto& {
-    return _1.template get_unchecked_mut<I - 1>();
+    if constexpr (I == 0) {
+      return _0;
+    } else {
+      return _1.template get_unchecked_mut<I - 1>();
+    }
   }
 
-  [[sfc_inline]] void drop(usize idx) {
+  [[sfc_inline]] void dtor(usize idx) {
     if (idx == 0) {
-      mem::drop(_0);
+      _0.~T0();
     } else {
-      _1.drop(idx - 1);
+      _1.dtor(idx - 1);
     }
   }
 
@@ -143,26 +140,21 @@ union Union<T0, Ts...> {
   }
 };
 
-}  // namespace detail
-
 template <class... T>
 class Variant {
-  using Tag = u8;
-  using Imp = detail::Union<T...>;
-
   template <class U>
-  using tag_t = idx_t<Imp::template tag<U>()>;
+  using tag_t = idx_t<Union<T...>::template tag<U>()>;
 
-  Tag _tag;
-  Imp _imp;
+  u8 _tag;
+  Union<T...> _imp;
 
  public:
   template <class U>
   explicit Variant(U val) noexcept
-      : _tag{static_cast<Tag>(tag_t<U>::VALUE)}, _imp{tag_t<U>{}, static_cast<U&&>(val)} {}
+      : _tag{static_cast<u8>(tag_t<U>::VALUE)}, _imp{tag_t<U>{}, static_cast<U&&>(val)} {}
 
   ~Variant() {
-    _imp.drop(_tag);
+    _imp.dtor(_tag);
   }
 
   Variant(const Variant& other) noexcept : _tag{other._tag} {
@@ -177,7 +169,7 @@ class Variant {
     if (_tag == other._tag) {
       _imp.move_assign(_tag, other._imp);
     } else {
-      _imp.drop(_tag);
+      _imp.dtor(_tag);
       _imp.move_ctor(other._tag, other._imp);
       _tag = other._tag;
     }
@@ -186,13 +178,13 @@ class Variant {
 
   template <class U>
   auto is() const -> bool {
-    const auto tag = Imp::template tag<U>();
-    return _tag == tag;
+    return _tag == tag_t<U>::VALUE;
   }
 
   template <class U>
   auto as() const -> const U& {
-    assert_fmt(this->is<U>(), "Variant::as<{}>: type not match.", reflect::type_name<U>());
+    panicking::assert_fmt(this->is<U>(), "Variant::as<{}>: type not match.",
+                          reflect::type_name<U>());
     return _imp.template get_unchecked<tag_t<U>::VALUE>();
   }
 
@@ -212,7 +204,3 @@ class Variant {
 };
 
 }  // namespace sfc::variant
-
-namespace sfc {
-using variant::Variant;
-}  // namespace sfc

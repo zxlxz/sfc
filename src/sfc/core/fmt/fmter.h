@@ -5,9 +5,6 @@
 namespace sfc::fmt {
 
 template <class T>
-concept XFmt = requires { &T::template fmt<int>; };
-
-template <class T>
 class IFmt {
   T _val;
 
@@ -22,11 +19,11 @@ class IFmt {
 
 template <class... T>
 struct Args {
-  Str _pats = {};
-  Tuple<const T*...> _args = {};
+  str::Str _pats = {};
+  tuple::Tuple<const T*...> _args = {};
 
  public:
-  Args(Str pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
+  Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
 
   void fmt(auto& f) const {
     auto pats = _pats;
@@ -47,14 +44,11 @@ struct Args {
   }
 };
 
-#if __cplusplus >= 202002L
 template <class... T>
 Args(const auto&, const T&...) -> Args<T...>;
-#endif
 
 template <class W>
 class Fmter {
- protected:
   W& _out;
   Style _style = {};
 
@@ -69,12 +63,12 @@ class Fmter {
     _style = s;
   }
 
-  [[sfc_inline]] void write_str(Str s) {
+  [[sfc_inline]] void write_str(str::Str s) {
     _out.write_str(s);
   }
 
   [[sfc_inline]] void write_chr(char c) {
-    _out.write_str(Str{&c, 1});
+    _out.write_str(str::Str{&c, 1});
   }
 
   [[sfc_inline]] void write_chs(char c, usize n) {
@@ -86,7 +80,7 @@ class Fmter {
     }
   }
 
-  void pad(Str s) {
+  void pad(str::Str s) {
     const auto width = _style.width();
 
     // check first
@@ -117,7 +111,7 @@ class Fmter {
     }
   }
 
-  void pad_num(bool is_neg, Str body) {
+  void pad_num(bool is_neg, str::Str body) {
     const auto width = _style.width();
     const auto sign = _style.sign(is_neg);
     const auto fill = _style.fill();
@@ -151,17 +145,15 @@ class Fmter {
   }
 
   void write(const auto& val) {
-    trait::as<IFmt>(val).fmt(*this);
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
+    } else {
+      trait::as<IFmt>(val).fmt(*this);
+    }
   }
 
-  template <XFmt T>
-  void write(const T& val) {
-    val.fmt(*this);
-  }
-
-  template <class... T>
-  void write_fmt(Str fmts, const T&... args) {
-    Args<T...>{fmts, args...}.fmt(*this);
+  void write_fmt(str::Str fmts, const auto&... args) {
+    Args{fmts, args...}.fmt(*this);
   }
 
   auto debug_tuple();
@@ -172,8 +164,8 @@ class Fmter {
 };
 
 template <class W>
-void write(W& out, Str fmts, const auto&... args) {
-  Fmter<W>{out}.write_fmt(fmts, args...);
+void write(W& out, str::Str fmts, const auto&... args) {
+  Fmter{out}.write_fmt(fmts, args...);
 }
 
 }  // namespace sfc::fmt

@@ -21,7 +21,7 @@ struct Style {
   Style() = default;
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  static auto from_str(Str s) -> Option<Style>;
+  static auto from_str(str::Str s) -> Option<Style>;
 
   [[sfc_inline]] auto fill() const -> char {
     return _fill ?: ' ';
@@ -31,7 +31,7 @@ struct Style {
     return _align;
   }
 
-  [[sfc_inline]] auto sign(bool is_neg) const -> Str {
+  [[sfc_inline]] auto sign(bool is_neg) const -> str::Str {
     if (is_neg) return "-";
     if (_sign == '+') return "+";
     if (_sign == '-') return " ";

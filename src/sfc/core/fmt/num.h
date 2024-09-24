@@ -9,7 +9,7 @@ struct Int {
   T _val;
 
  public:
-  auto to_str(const Style& style, Slice<char> buf) const -> Str;
+  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
 
   void fmt(auto& f) const {
     char buf[64 + 16];
@@ -24,7 +24,7 @@ struct Flt {
   T _val;
 
  public:
-  auto to_str(const Style& style, Slice<char> buf) const -> Str;
+  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
 
   void fmt(auto& f) const {
     char buf[64 + 16];
@@ -38,7 +38,7 @@ struct Ptr {
   const void* _val;
 
  public:
-  auto to_str(const Style& style, Slice<char> buf) const -> Str;
+  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
 
   void fmt(auto& f) const {
     char buf[64 + 16];
@@ -54,7 +54,7 @@ class IFmt<char> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(Str{&_val, 1});
+    f.pad(str::Str{&_val, 1});
   }
 };
 
@@ -92,7 +92,7 @@ class IFmt<T[N]> {
 
  public:
   void fmt(auto& f) const {
-    const auto v = Slice<const T>{_val};
+    const auto v = slice::Slice<const T>{_val};
     f.debug_list().entries(v.iter());
   }
 };
