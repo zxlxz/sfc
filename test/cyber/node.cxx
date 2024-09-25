@@ -6,50 +6,54 @@
 
 namespace sfc::cyber {
 
-class TestNode0 {
-  cyber::Send<int> _send;
+class TestCmptA : CmptBase {
+  cyber::Send<int> _send_a{"test.a"};
 
   int _idx = 0;
 
  public:
-  explicit TestNode0(Rc<Chan<int>> chan) : _send{mem::move(chan)} {}
+  bool on_init() override {
+    return true;
+  }
 
   void run() {
     io::println("node0.send: {+}", _idx);
-    _send.send(_idx);
+    _send_a.send(_idx);
     _idx += 1;
   }
 };
 
-class TestNode1 {
-  cyber::Recv<int> _recv;
-  cyber::Send<int> _send;
+class TestCmptB : CmptBase {
+  cyber::Recv<int> _recv_a{"test.a"};
+  cyber::Send<int> _send_b{"test.b"};
 
  public:
-  TestNode1(Rc<Chan<int>> c1, Rc<Chan<int>> c2) : _recv{mem::move(c1)}, _send{mem::move(c2)} {
-    _recv.bind([&](const auto& val) { this->proc(val); });
+  bool on_init() override {
+    _recv_a.bind([&](const auto& val) { this->proc(val); });
+    return true;
   }
 
-  ~TestNode1() {
-    io::println("node1.dtor");
+  void on_shutdown() override {
+    _recv_a.unbind();
   }
 
   void proc(int val) {
     io::println("node1.recv: {+}", val);
-    _send.send(-val);
+    _send_b.send(-val);
   }
 };
 
-class TestNode2 {
-  cyber::Recv<int> _recv;
+class TestCmptC : CmptBase {
+  cyber::Recv<int> _recv_b{"test.b"};
 
  public:
-  explicit TestNode2(Rc<Chan<int>> chan) : _recv{mem::move(chan)} {
-    _recv.bind([&](auto val) { this->proc(val); });
+  bool on_init() override {
+    _recv_b.bind([&](const auto& val) { this->proc(val); });
+    return true;
   }
 
-  ~TestNode2() {
-    io::println("node2.dtor");
+  void on_shutdown() override {
+    _recv_b.unbind();
   }
 
   void proc(int val) {
@@ -58,20 +62,15 @@ class TestNode2 {
 };
 
 SFC_TEST(msg) {
-#if 0
-  auto chan1 = Rc<Chan<int>>::xnew("chan1");
-  auto chan2 = Rc<Chan<int>>::xnew("chan2");
-
-  TestNode0 node0{chan1.clone()};
-  TestNode1 node1{chan1.clone(), chan2.clone()};
-  TestNode2 node2{chan2.clone()};
+  TestCmptA a;
+  TestCmptB b;
+  TestCmptC c;
 
   for (auto j = 0U; j < 4U; ++j) {
-    node0.run();
+    a.run();
   }
 
-  cyber::Sched::global().wait();
-#endif
+  cyber::Sched::global().wait(50);
 }
 
 }  // namespace sfc::cyber

@@ -23,18 +23,11 @@ class Recv {
 
   explicit Recv(Str topic) : Recv{ChanManager<T>::instance().get(topic)} {}
 
-  ~Recv() {
-    if (!_chan) {
-      return;
-    }
-
-    _chan->remove_listener({this, &Recv::_static_on_message});
-
-    auto& sched = Sched::global();
-    sched.remove_task({this, _static_run});
-  }
-
   Recv(const Recv&) = delete;
+
+  ~Recv() {
+    this->unbind();
+  }
 
   void set_priority(Priority val) {
     _priority = val;
@@ -47,6 +40,17 @@ class Recv {
 
     _func = Box<void(const T&)>::xnew(mem::move(func));
     _chan->add_listener(Listener<T>{this, &_static_on_message});
+  }
+
+  void unbind() {
+    if (!_chan) {
+      return;
+    }
+
+    _chan->remove_listener({this, &Recv::_static_on_message});
+
+    auto& sched = Sched::global();
+    sched.remove_task({this, _static_run});
   }
 
  private:
