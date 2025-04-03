@@ -133,7 +133,7 @@ class [[nodiscard]] Queue {
     _vec.remove(_pos + idx);
   }
 
-  void drain(Range<> range) {
+  void drain(Range range) {
     range = range % this->len();
     _vec.drain({range._start + _pos, range._end + _pos});
   }

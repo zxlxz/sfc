@@ -4,19 +4,23 @@
 
 namespace sfc::fs {
 
-struct Path {
-  Str _inn;
+class Path {
+  String _inn = {};
 
  public:
-  Path() = default;
+  explicit Path();
+  ~Path();
+  Path(Path&&) noexcept;
+  Path& operator=(Path&&) noexcept;
 
-  Path(const auto& s) : _inn{s} {}
+  static auto from(Str s) -> Path;
 
-  auto as_str() const -> Str {
-    return _inn;
-  }
+  auto clone() const -> Path;
 
- public:
+  auto as_str() const -> Str;
+
+  auto c_str() const -> cstr_t;
+
   // a/b.txt -> b.txt
   auto file_name() const -> Str;
 
@@ -35,11 +39,22 @@ struct Path {
   // not absolute
   auto is_relative() const -> bool;
 
-  // 'a'.join('b) -> 'a/b'
-  auto join(const auto& p) const -> class PathBuf;
+  // 'a'.push('b') -> 'a/b'
+  void push(Str path);
 
-  // 'a'/'b -> 'a/b'
-  auto operator/(const auto& p) const -> class PathBuf;
+  // 'a/b'.pop() -> 'a'
+  auto pop() -> bool;
+
+  // 'a'.join('b) -> 'a/b'
+  auto join(Str path) const -> Path;
+
+  void set_file_name(Str file_name);
+
+  void set_extension(Str extension);
+
+  void fmt(auto& f) const {
+    f.pad(_inn);
+  }
 
  public:
   auto exists() const -> bool;
@@ -47,15 +62,6 @@ struct Path {
   auto is_file() const -> bool;
 
   auto is_dir() const -> bool;
-
-  auto is_symlink() const -> bool;
-
- public:
-  // fmt
-  void fmt(auto& f) const {
-    f.pad(_inn);
-  }
 };
-
 
 }  // namespace sfc::fs

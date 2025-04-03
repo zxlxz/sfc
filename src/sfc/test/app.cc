@@ -8,19 +8,19 @@ namespace sfc::test {
 
 namespace {
 
-class GTest {
+class GTestCase {
   bool _color = false;
 
  public:
-  GTest(bool use_color) : _color{use_color} {}
+  GTestCase(bool use_color) : _color{use_color} {}
 
-  ~GTest() {}
+  ~GTestCase() {}
 
   auto parse_pats(Str s) const -> Vec<Str> {
     auto res = Vec<Str>{};
     for (; s;) {
       const auto n = s.len();
-      auto i = 0U;
+      auto       i = 0U;
       for (; i < n; ++i) {
         if (s[i] == ':') {
           if (s[i + 1] == ':') {
@@ -85,6 +85,7 @@ class CmdLine {
           opts.insert(prev_key, "");
           prev_key = {};
         }
+
         if (arg.starts_with("--")) {
           arg = arg[{2, _}];
           if (auto p = arg.find('=')) {
@@ -138,9 +139,12 @@ auto App::run(Slice<const Str> args) -> int {
   auto filter = opts.get(Str{"gtest_filter"}).unwrap_or("");
   auto color = [&]() {
     const auto opt = opts.get(Str{"gtest_color"}).unwrap_or("auto");
-    if (opt == "yes") return true;
-    if (opt == "no") return false;
-    if (opt == "auto") return io::Stdout::instance().is_tty();
+    if (opt == "yes")
+      return true;
+    if (opt == "no")
+      return false;
+    if (opt == "auto")
+      return io::Stdout::is_tty();
     return false;
   }();
 
@@ -150,20 +154,20 @@ auto App::run(Slice<const Str> args) -> int {
 }
 
 void App::help() {
-  const char* s
-      = "This program contains tests written using SFC Test. You can use the\n"
-        "following command line flags to control its behavior: \n"
-        "\n"
-        "Test Selection:\n"
-        "  --gtest_list_tests\n"
-        "      List the names of all tests instead of running them.\n"
-        "  --gtest_filter=POSITIVE_PATTERNS\n"
-        "      Run only the tests whose name starts with the pattern.";
-  io::println(s);
+  static const char msg[] =
+      "This program contains tests written using SFC Test. You can use the\n"
+      "following command line flags to control its behavior: \n"
+      "\n"
+      "Test Selection:\n"
+      "  --gtest_list_tests\n"
+      "      List the names of all tests instead of running them.\n"
+      "  --gtest_filter=POSITIVE_PATTERNS\n"
+      "      Run only the tests whose name starts with the pattern.";
+  io::println(msg);
 }
 
 void App::run_tests(Str filter, bool color) {
-  auto gtest = GTest{color};
+  auto gtest = GTestCase{color};
   auto pats = gtest.parse_pats(filter);
 
   auto tests = TestManager::instance().units(pats.as_slice());
@@ -172,30 +176,24 @@ void App::run_tests(Str filter, bool color) {
   }
 }
 
-void App::list_to_file(Str path) {
-  auto type = Str{};
-  if (path.starts_with("xml:")) {
-    type = "xml";
-    path = path[{sizeof("xml"), _}];
-  }
+void App::list_to_file(Str output) const {
+  const auto type_indx = output.find(':');
+  const auto file_type = output[{0, type_indx.unwrap_or(0)}];
+  const auto file_path = output[{type_indx.unwrap_or(output.len() - 1) + 1, _}];
 
-  auto text = this->list_tests(type);
-  if (path) {
-    auto file = fs::File::create(path).unwrap();
-    file.write_str(text.as_str());
+  const auto file_text = file_type == Str{"xml"} ? this->list_tests_xml() : this->list_tests();
+  if (file_path) {
+    auto file = fs::File::create(fs::Path::from(file_path)).unwrap();
+    file.write_str(file_text.as_str());
   } else {
-    io::Stdout::instance().write_str(text);
+    io::Stdout::write_str(file_text.as_str());
   }
 }
 
-auto App::list_tests(Str type) -> String {
-  if (type == "xml") {
-    return this->list_tests_xml();
-  }
-
+auto App::list_tests() const -> String {
   auto suites = TestManager::instance().suites();
 
-  auto sbuf = String{};
+  auto               sbuf = String{};
   fmt::Fmter<String> f{sbuf};
   for (const auto& suite : suites) {
     f.write_fmt("{}.\n", suite.name());
@@ -206,11 +204,13 @@ auto App::list_tests(Str type) -> String {
   return sbuf;
 }
 
-auto App::list_tests_xml() -> String {
+auto App::list_tests_xml() const -> String {
   auto suites = TestManager::instance().suites();
-  auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) { return n += x.tests().len(); });
+  auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) {
+    return n += x.tests().len();
+  });
 
-  auto sbuf = String{};
+  auto               sbuf = String{};
   fmt::Fmter<String> f{sbuf};
   f.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   f.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", test_cnt);
@@ -220,7 +220,9 @@ auto App::list_tests_xml() -> String {
     for (auto& test : tests) {
       const auto name = test.name();
       const auto loc = test.location();
-      f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n", name, loc.file,
+      f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n",
+                  name,
+                  loc.file,
                   loc.line);
     }
     f.write_str("  </testsuite>\n");

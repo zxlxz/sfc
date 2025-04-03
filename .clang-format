@@ -1,20 +1,25 @@
 ---
 BasedOnStyle: Google
 ---
+Language: Cpp
+Standard: Latest
+ColumnLimit: 100
 
-Language:                           Cpp
-Standard:                           Latest
-ColumnLimit:                        100
+AllowAllArgumentsOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
 
-AllowAllArgumentsOnNextLine:        false
-AllowShortBlocksOnASingleLine:      Empty
-AllowShortFunctionsOnASingleLine:   Empty
-AllowShortLambdasOnASingleLine:     true
+AlignConsecutiveDeclarations: true
+AlignOperands: true
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align
 
-AlignAfterOpenBracket:              Align
+BinPackArguments: false
+BinPackParameters: false
 
-BreakConstructorInitializers:       BeforeComma
-BreakBeforeBinaryOperators:         All
-
-PenaltyBreakAssignment:             10
-SortUsingDeclarations:              false
+SortIncludes: Never
+SortUsingDeclarations: Never

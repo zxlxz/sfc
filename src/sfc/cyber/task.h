@@ -36,13 +36,13 @@ class TaskQueue {
 
   auto try_pop() -> Option<Task>;
 
-  auto pop_timeout_ms(u32 ms) -> Option<Task>;
+  auto pop_timeout(const time::Duration& dur) -> Option<Task>;
 
   void remove(Task task);
 
   void notify();
 
-  void wait(u32 ms);
+  void wait(const time::Duration& dur);
 
  private:
   Vec<Queue<Task>> _queues;

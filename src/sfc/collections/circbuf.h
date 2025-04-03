@@ -48,26 +48,26 @@ class CircBuf {
     }
   }
 
-  [[sfc_inline]] auto operator[](usize idx) const -> const T& {
+  auto operator[](usize idx) const -> const T& {
     assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
 
     const auto offset = this->warp_idx(idx);
     return _buf[offset];
   }
 
-  [[sfc_inline]] auto operator[](usize idx) -> T& {
+  auto operator[](usize idx) -> T& {
     assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
 
     const auto offset = this->warp_idx(idx);
     return _buf[offset];
   }
 
-  [[sfc_inline]] auto front() const -> const T& {
+  auto front() const -> const T& {
     assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
     return _buf[_first];
   }
 
-  [[sfc_inline]] auto back() const -> const T& {
+  auto back() const -> const T& {
     assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
     const auto idx = (_last == 0 ? _buf.capacity() : _last) - 1;
     return _buf[idx];
@@ -122,7 +122,7 @@ class CircBuf {
   }
 
  private:
-  [[sfc_inline]] auto warp_idx(usize idx) const -> usize {
+  auto warp_idx(usize idx) const -> usize {
     const auto cap = _buf.capacity();
 
     auto pos = _first + idx;
@@ -132,14 +132,14 @@ class CircBuf {
     return pos;
   }
 
-  [[sfc_inline]] void wrap_inc(usize& pos) {
+  void wrap_inc(usize& pos) {
     pos += 1;
     if (pos == _buf.capacity()) {
       pos = 0;
     }
   }
 
-  [[sfc_inline]] void wrap_dec(usize& pos) {
+  void wrap_dec(usize& pos) {
     if (pos == 0) {
       pos = _buf.capacity();
     }

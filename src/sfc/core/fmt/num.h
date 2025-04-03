@@ -64,17 +64,17 @@ class IFmt<bool> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(_val ? "true" : "false");
+    f.pad(_val ? str::Str{"true"} : str::Str{"false"});
   }
 };
 
-template <trait::Int T>
+template <trait::isInt T>
 class IFmt<T> : Int<T> {
  public:
   using Int<T>::fmt;
 };
 
-template <trait::Float T>
+template <trait::isFlt T>
 class IFmt<T> : Flt<T> {
  public:
   using Flt<T>::fmt;
@@ -113,7 +113,7 @@ class IFmt<const char*> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(_val);
+    f.pad(str::Str::from_cstr(_val));
   }
 };
 
@@ -123,18 +123,18 @@ class IFmt<char*> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(_val);
+    f.pad(str::Str::from_cstr(_val));
   }
 };
 
-template <trait::Enum T>
+template <trait::isEnum T>
 class IFmt<T> {
   T _val;
 
  public:
   void fmt(auto& f) const {
     const auto name = reflect::enum_name(_val);
-    if (name != nullptr) {
+    if (!name) {
       f.pad(name);
     } else {
       const auto int_val = static_cast<__underlying_type(T)>(_val);

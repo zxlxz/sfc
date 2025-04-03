@@ -15,7 +15,7 @@ struct OpenOptions {
   bool _truncate = false;
 
  public:
-  auto open(Path path) const -> io::Result<File>;
+  auto open(const Path& path) const -> io::Result<File>;
 };
 
 class File : io::File {
@@ -30,8 +30,8 @@ class File : io::File {
   File(File&&) noexcept = default;
   File& operator=(File&&) noexcept = default;
 
-  static auto open(Path path) -> io::Result<File>;
-  static auto create(Path path) -> io::Result<File>;
+  static auto open(const Path& path) -> io::Result<File>;
+  static auto create(const Path& path) -> io::Result<File>;
 
  public:
   using Inn::operator bool;

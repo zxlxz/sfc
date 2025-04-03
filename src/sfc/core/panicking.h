@@ -7,8 +7,8 @@ namespace sfc::panicking {
 struct Error {};
 
 struct Location {
-  const char* file = __builtin_FILE();
-  int line = __builtin_LINE();
+  cstr_t file = __builtin_FILE();
+  i64 line    = __builtin_LINE();
 };
 
 struct RawStr {
@@ -31,7 +31,8 @@ struct LocationFmt {
 [[noreturn]] void panic_fmt(LocationFmt fmt, const auto&... args);
 
 void assert_fmt(const auto& cond, LocationFmt fmt, const auto&... args) {
-  if (cond) return;
+  if (cond)
+    return;
   panic_fmt(fmt, args...);
 }
 

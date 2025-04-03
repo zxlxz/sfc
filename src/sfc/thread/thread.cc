@@ -1,7 +1,6 @@
-#include "mod.h"
-
-#include "sfc/ffi.h"
 #include "sfc/sys/thread.inl"
+
+#include "thread.h"
 
 namespace sfc::thread {
 
@@ -9,22 +8,18 @@ namespace sys_imp = sys::thread;
 
 auto Thread::current() -> Thread {
   const auto imp = sys_imp::Thread::current();
-  return Thread{imp.id()};
-}
-
-auto Thread::id() const -> u64 {
-  return _id;
+  return Thread{imp.raw()};
 }
 
 auto Thread::name() const -> String {
-  const auto imp = sys_imp::Thread{_id};
+  const auto imp = sys_imp::Thread{_raw};
   return imp.name();
 }
 
 auto Builder::spawn(Box<void()> f) -> JoinHandle {
-  auto fun = [f = mem::move(f), name = ffi::CString::from(_name)]() mutable {
+  auto fun = [f = mem::move(f), name = mem::move(name)]() mutable {
     auto thr = sys_imp::Thread::current();
-    thr.set_name(name);
+    thr.set_name(name.c_str());
     try {
       f();
     } catch (...) {
@@ -32,15 +27,15 @@ auto Builder::spawn(Box<void()> f) -> JoinHandle {
     }
   };
 
-  auto imp = sys_imp::Thread::xnew(_stack_size, Box<void()>::xnew(mem::move(fun)))
+  auto imp = sys_imp::Thread::xnew(stack_size, Box<void()>::xnew(mem::move(fun)))
                  .expect("sys::Thread::Builder: spawn thread failed.");
 
-  return JoinHandle{Thread{imp.id()}};
+  auto res = JoinHandle{};
+  res._thr = Thread{imp.raw()};
+  return res;
 }
 
-JoinHandle::JoinHandle() : _thr{} {}
-
-JoinHandle::JoinHandle(Thread thr) : _thr{thr} {}
+JoinHandle::JoinHandle() noexcept = default;
 
 JoinHandle::~JoinHandle() {
   this->join();
@@ -56,21 +51,17 @@ auto JoinHandle::operator=(JoinHandle&& other) noexcept -> JoinHandle& {
   return *this;
 }
 
-auto JoinHandle::thread() const -> Thread {
-  return _thr;
-}
-
 void JoinHandle::join() {
-  if (_thr._id == Thread::INVALID_ID) {
+  if (_thr._raw != thrd_t(0)) {
     return;
   }
 
-  auto imp = sys_imp::Thread{_thr._id};
+  auto imp = sys_imp::Thread{_thr._raw};
   imp.join();
 }
 
-void sleep(time::Duration dur) {
-  sys_imp::sleep(dur);
+void sleep(const time::Duration& dur) {
+  sys_imp::sleep_ms(dur.as_millis());
 }
 
 }  // namespace sfc::thread

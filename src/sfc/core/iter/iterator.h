@@ -9,10 +9,6 @@ template <class I, class T>
 struct Iterator {
   using Item = T;
 
- protected:
-  Iterator() = default;
-  ~Iterator() = default;
-
  public:
   auto nth(usize n) -> Option<Item> {
     auto& self = static_cast<I&>(*this);
@@ -47,7 +43,7 @@ struct Iterator {
     return accum;
   }
 
-  template <trait::Reference B>
+  template <trait::isRef B>
   auto fold(B init, auto&& f) -> B {
     auto& self = static_cast<I&>(*this);
 
@@ -60,7 +56,7 @@ struct Iterator {
 
   auto reduce(auto&& f) -> Item {
     auto& self = static_cast<I&>(*this);
-    auto first = self.next();
+    auto  first = self.next();
     assert_fmt(first, "iter::Iterator::reduce: empty iter");
 
     return this->fold<Item>(mem::move(first).unwrap(), f);
@@ -109,7 +105,9 @@ struct Iterator {
   auto all(auto&& f) -> bool {
     auto& self = static_cast<I&>(*this);
 
-    auto res = this->find([&](auto& x) { return !f(x); });
+    auto res = this->find([&](auto& x) {
+      return !f(x);
+    });
     return !bool(res);
   }
 
@@ -122,36 +120,50 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     auto accum = 0UL;
-    this->for_each([&](auto& x) mutable { f(x) ? accum += 1 : void(); });
+    this->for_each([&](auto& x) mutable {
+      f(x) ? accum += 1 : void();
+    });
     return accum;
   }
 
   auto min() -> Item {
-    return this->reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
+    return this->reduce([](auto&& a, auto&& b) -> auto& {
+      return a < b ? a : b;
+    });
   }
 
   auto max() -> Item {
-    return this->reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
+    return this->reduce([](auto&& a, auto&& b) -> auto& {
+      return a > b ? a : b;
+    });
   }
 
   auto min_by_key(auto&& f) {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) < f(b) ? a : b; });
+    return this->reduce([&](auto&& a, auto&& b) -> auto& {
+      return f(a) < f(b) ? a : b;
+    });
   }
 
   auto max_by_key(auto&& f) {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
+    return this->reduce([&](auto&& a, auto&& b) -> auto& {
+      return f(a) > f(b) ? a : b;
+    });
   }
 
   auto sum() {
     auto& self = static_cast<I&>(*this);
-    auto init = decltype(*self.next() + *self.next()){0};
-    return this->fold(init, [](auto&& a, auto&& b) { return a + b; });
+    auto  init = decltype(*self.next() + *self.next()){0};
+    return this->fold(init, [](auto&& a, auto&& b) {
+      return a + b;
+    });
   }
 
   auto product() {
     auto& self = static_cast<I&>(*this);
-    auto init = decltype(*self.next() + *self.next()){1};
-    return this->fold(init, [](auto&& a, auto&& b) { return a * b; });
+    auto  init = decltype(*self.next() + *self.next()){1};
+    return this->fold(init, [](auto&& a, auto&& b) {
+      return a * b;
+    });
   }
 
   auto rev();

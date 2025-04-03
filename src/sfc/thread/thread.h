@@ -5,45 +5,43 @@
 
 namespace sfc::thread {
 
+#ifdef _WIN32
+using thrd_t = void*;
+#else
+using thrd_t = uint64_t;
+#endif
+
 struct Thread {
-  static constexpr u64 INVALID_ID = static_cast<u64>(-1);
-  u64 _id = INVALID_ID;
+  thrd_t _raw = thrd_t{0};
 
  public:
   static auto current() -> Thread;
-
-  auto id() const -> u64;
 
   auto name() const -> String;
 };
 
 struct Builder {
-  usize _stack_size = 0;
-  String _name = {};
+  usize stack_size = 0;
+  String name      = {};
 
  public:
-  Builder() = default;
-
   auto spawn(Box<void()> f) -> class JoinHandle;
 };
 
 class JoinHandle {
-  Thread _thr;
+  friend struct Builder;
+  Thread _thr{};
 
  public:
-  JoinHandle();
-  explicit JoinHandle(Thread thr);
+  explicit JoinHandle() noexcept;
   JoinHandle(JoinHandle&&) noexcept;
   ~JoinHandle();
 
   auto operator=(JoinHandle&&) noexcept -> JoinHandle&;
-
-  auto thread() const -> Thread;
-
   void join();
 };
 
-void sleep(time::Duration dur);
+void sleep(const time::Duration& dur);
 
 auto spawn(auto f) -> JoinHandle {
   return Builder{}.spawn(Box<void()>::xnew(mem::move(f)));

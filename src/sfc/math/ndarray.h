@@ -27,27 +27,27 @@ class NdArray {
 
   NdArray& operator=(NdArray&& other) noexcept = default;
 
-  [[sfc_inline]] auto as_view() -> Inn {
+  auto as_view() -> Inn {
     return _inn;
   }
 
-  [[sfc_inline]] auto as_data() const -> T* {
+  auto as_data() const -> T* {
     return _inn.data();
   }
 
-  [[sfc_inline]] auto as_mut_data() const -> T* {
+  auto as_mut_data() const -> T* {
     return _inn.data();
   }
 
-  [[sfc_inline]] auto shape() const -> NdSize<N> {
+  auto shape() const -> NdSize<N> {
     return _inn.shape();
   }
 
-  [[sfc_inline]] auto strides() const -> NdStep<N> {
+  auto strides() const -> NdStep<N> {
     return _inn.strides();
   }
 
-  [[sfc_inline]] auto numel() const -> usize {
+  auto numel() const -> usize {
     return _inn.numel();
   }
 };

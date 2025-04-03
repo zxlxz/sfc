@@ -5,14 +5,9 @@
 namespace sfc::time {
 
 struct Instant {
-  u64 _secs = 0;
   u64 _nanos = 0;
 
  public:
-  Instant() = default;
-
-  Instant(u64 secs, u64 nanos) : _secs{secs}, _nanos{nanos} {}
-
   static auto now() -> Instant;
 
   auto elpased() const -> Duration;

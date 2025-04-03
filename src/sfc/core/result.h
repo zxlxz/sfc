@@ -13,19 +13,19 @@ class Result {
     T _ok;
     E _err;
 
-    [[sfc_inline]] Imp(T&& ok) : _ok{static_cast<T&&>(ok)} {}
-    [[sfc_inline]] Imp(E&& err) : _err{static_cast<E&&>(err)} {}
-    [[sfc_inline]] ~Imp() {}
+    Imp(T&& ok) : _ok{static_cast<T&&>(ok)} {}
+    Imp(E&& err) : _err{static_cast<E&&>(err)} {}
+    ~Imp() {}
   };
   bool _tag;
   Imp _imp;
 
  public:
-  [[sfc_inline]] Result(T ok) : _tag{true}, _imp{static_cast<T&&>(ok)} {}
+  Result(T ok) : _tag{true}, _imp{static_cast<T&&>(ok)} {}
 
-  [[sfc_inline]] Result(E err) : _tag{false}, _imp{static_cast<E&&>(err)} {}
+  Result(E err) : _tag{false}, _imp{static_cast<E&&>(err)} {}
 
-  [[sfc_inline]] ~Result() {
+  ~Result() {
     if (_tag) {
       _imp._ok.~T();
     } else {
@@ -33,11 +33,7 @@ class Result {
     }
   }
 
-  [[sfc_inline]] Result(const Result&)
-    requires(trait::TvCopy<T, E>)
-  = default;
-
-  [[sfc_inline]] Result(Result&& other) noexcept : _tag{other._tag} {
+  Result(Result&& other) noexcept : _tag{other._tag} {
     if (_tag) {
       new (mem::inplace_t{}, &_imp._ok) T{static_cast<T&&>(other._imp._ok)};
     } else {
@@ -45,9 +41,9 @@ class Result {
     }
   }
 
-  [[sfc_inline]] Result& operator=(const Result& other) {
+  Result& operator=(const Result& other) {
     if (_tag == other._tag) {
-      _tag ? _imp._ok = other._imp._ok : _imp._err = other._err;
+      _tag ? _imp._ok = other._imp._ok : _imp._err = other._imp._err;
     } else {
       _tag ? _imp._ok.~T() : _imp._err.~E();
       _tag = other._tag;
@@ -57,9 +53,9 @@ class Result {
     return *this;
   }
 
-  [[sfc_inline]] Result& operator=(Result&& other) noexcept {
+  Result& operator=(Result&& other) noexcept {
     if (_tag == other._tag) {
-      _tag ? _imp._ok = static_cast<T&&>(other._imp._ok) : _imp._err = static_cast<E&&>(other._er);
+      _tag ? _imp._ok = static_cast<T&&>(other._imp._ok) : _imp._err = static_cast<E&&>(other._imp._err);
     } else {
       _tag ? _imp._ok.~T() : _imp._err.~E();
       _tag = other._tag;
@@ -69,23 +65,23 @@ class Result {
     return *this;
   }
 
-  [[sfc_inline]] operator bool() const {
+  operator bool() const {
     return _tag;
   }
 
-  [[sfc_inline]] auto get_ok_unchecked() const -> const T& {
+  auto get_ok_unchecked() const -> const T& {
     return _imp._ok;
   }
 
-  [[sfc_inline]] auto get_ok_unchecked_mut() -> T& {
+  auto get_ok_unchecked_mut() -> T& {
     return _imp._ok;
   }
 
-  [[sfc_inline]] auto get_err_unchecked() const -> const E& {
+  auto get_err_unchecked() const -> const E& {
     return _imp._err;
   }
 
-  [[sfc_inline]] auto get_err_unchecked_mut() -> E& {
+  auto get_err_unchecked_mut() -> E& {
     return _imp._err;
   }
 };
@@ -101,19 +97,19 @@ class Result : detail::Result<T, E> {
  public:
   using Imp::Imp;
 
-  [[sfc_inline]] ~Result() = default;
+  ~Result() = default;
 
-  [[sfc_inline]] Result(const Result&) = default;
+  Result(const Result&) = default;
 
-  [[sfc_inline]] Result(Result&&) noexcept = default;
+  Result(Result&&) noexcept = default;
 
-  [[sfc_inline]] Result& operator=(Result&&) noexcept = default;
+  Result& operator=(Result&&) noexcept = default;
 
-  [[sfc_inline]] auto is_ok() const -> bool {
+  auto is_ok() const -> bool {
     return this->_tag;
   }
 
-  [[sfc_inline]] auto is_err() const -> bool {
+  auto is_err() const -> bool {
     return !this->_tag;
   }
 

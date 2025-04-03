@@ -1,21 +1,33 @@
-#include "error.h"
+#include "mod.h"
+
 #include "sfc/sys/io.inl"
 
 namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-SFC_ENUM(ErrorKind, NotFound, PermissionDenied, ConnectionRefused, ConnectionReset, HostUnreachable,
-         NetworkUnreachable, ConnectionAborted, NotConnected, AddrInUse, AddrNotAvailable,
-         NetworkDown, BrokenPipe, AlreadyExists, WouldBlock, NotADirectory, IsADirectory,
-         DirectoryNotEmpty, ReadOnlyFilesystem, FilesystemLoop, StaleNetworkFileHandle,
-         InvalidInput, InvalidData, TimedOut, WriteZero, StorageFull, NotSeekable,
-         FilesystemQuotaExceeded, FileTooLarge, ResourceBusy, ExecutableFileBusy, Deadlock,
-         CrossesDevices, TooManyLinks, InvalidFilename, ArgumentListTooLong, Interrupted,
-         Unsupported, UnexpectedEof, OutOfMemory, Other);
+SFC_ENUM(ErrorKind,
+         NotFound,
+         PermissionDenied,
+         ConnectionRefused,
+         ConnectionReset,
+         ConnectionAborted,
+         NotConnected,
+         AddrInUse,
+         AddrNotAvailable,
+         BrokenPipe,
+         AlreadyExists,
+         WouldBlock,
+         InvalidInput,
+         InvalidData,
+         TimedOut,
+         WriteZero,
+         UnexpectedEof,
+         Interrupted,
+         Other);
 
 auto Error::last_os_error() -> Error {
-  const auto code = sys_imp::errno();
+  const auto code = sys_imp::last_err();
   return Error::from_os_error(code);
 }
 

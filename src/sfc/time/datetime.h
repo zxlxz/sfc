@@ -80,7 +80,7 @@ struct DateTime {
 
   DateTime(NaiveDate date, NaiveTime time) : _date{date}, _time{time} {}
 
-  static auto from(System time) -> DateTime;
+  static auto from(const System& time) -> DateTime;
   static auto now() -> DateTime;
 
   auto date() const -> NaiveDate {

@@ -19,26 +19,19 @@ class Mutex {
   Mutex& operator=(Mutex&&) noexcept;
 
   [[nodiscard]] auto lock() -> class LockGuard;
-
- private:
-  void unlock();
 };
 
-class LockGuard {
-  friend class Mutex;
+class [[nodiscard]] LockGuard {
   friend class Condvar;
   ptr::Unique<Mutex> _mtx = {};
 
  public:
-  ~LockGuard() {
-    if (!_mtx) return;
-    _mtx._ptr->unlock();
-  }
+  explicit LockGuard(Mutex& mtx);
+  ~LockGuard();
+  LockGuard(LockGuard&&) noexcept;
+  LockGuard& operator=(LockGuard&&) noexcept;
 
-  LockGuard(LockGuard&&) noexcept = default;
-
- private:
-  explicit LockGuard(Mutex& mtx) noexcept : _mtx{&mtx} {}
+  void unlock();
 };
 
 }  // namespace sfc::sync

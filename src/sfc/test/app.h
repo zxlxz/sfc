@@ -15,10 +15,10 @@ class App {
 
  private:
   void run_tests(Str filter, bool color);
-  void list_to_file(Str path);
+  void list_to_file(Str output) const;
 
-  auto list_tests(Str fmt) -> String;
-  auto list_tests_xml() -> String;
+  auto list_tests() const -> String;
+  auto list_tests_xml() const -> String;
 };
 
 }  // namespace sfc::test

@@ -5,14 +5,9 @@
 namespace sfc::time {
 
 struct System {
-  u64 _secs = 0;
-  u64 _nanos = 0;
+  u64 _micros;
 
  public:
-  System() = default;
-
-  System(u64 secs, u64 nanos) : _secs{secs}, _nanos{nanos} {}
-
   static auto now() -> System;
 
   auto elpased() const -> Duration;

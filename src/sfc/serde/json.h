@@ -38,10 +38,9 @@ class Fmter : fmt::Fmter<W> {
     }
 
     void fields(auto iter) {
-      iter.for_each([&](auto&& item) {
-        const auto& k = item.template get<0>();
-        const auto& v = item.template get<1>();
-        this->entry(k, v);
+      iter.for_each([&](const auto& item) {
+        const auto& [k, v] = item;
+        this->field(k, v);
       });
     }
   };

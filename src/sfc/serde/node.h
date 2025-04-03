@@ -32,10 +32,7 @@ class [[nodiscard]] Node {
   explicit Node(i64 val);
   explicit Node(u64 val);
   explicit Node(f64 val);
-
   explicit Node(Str val);
-  explicit Node(cstr_t val);
-
   explicit Node(List val);
   explicit Node(Dict val);
 
@@ -68,6 +65,7 @@ class [[nodiscard]] Node {
 
  public:
   static auto from_json(Str text) -> Option<Node>;
+  
   auto to_json() const -> String;
 };
 

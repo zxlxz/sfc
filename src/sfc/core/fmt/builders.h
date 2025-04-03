@@ -29,7 +29,7 @@ class DebugTuple {
   }
 
   void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entrie(val); });
+    iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
 
@@ -90,7 +90,7 @@ class DebugSet {
   }
 
   void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entrie(val); });
+    iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
 
@@ -159,8 +159,9 @@ class DebugStruct {
   }
 
   void fields(auto iter) {
-    iter.for_each([&](auto&& item) {  //
-      this->entry(item.template get<0>(), item.template get<1>());
+    iter.for_each([&](auto&& item) {
+      const auto& [k, v] = item;
+      this->field(k, v);
     });
   }
 };

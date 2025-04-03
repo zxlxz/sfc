@@ -46,7 +46,7 @@ static auto make_color_log(auto& buf, Entry entry) -> Str {
 }
 
 ConsoleBackend::ConsoleBackend() {
-  auto& stdout = io::Stdout::instance();
+  auto stdout = io::Stdout{};
   _enable_color = stdout.is_tty();
 }
 
@@ -59,12 +59,12 @@ void ConsoleBackend::set_color(bool value) {
 }
 
 void ConsoleBackend::flush() {
-  static auto& imp = io::Stdout::instance();
+  auto imp = io::Stdout{};
   imp.flush();
 }
 
 void ConsoleBackend::write_entry(Entry entry) {
-  static auto& imp = io::Stdout::instance();
+  auto imp = io::Stdout{};
 
   fmt::Buf<BUFF_SIZE> buf;
   const auto log_str = _enable_color ? make_color_log(buf, entry) : make_plain_log(buf, entry);

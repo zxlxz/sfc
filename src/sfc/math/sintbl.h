@@ -33,17 +33,17 @@ struct SinTbl {
     return res;
   }
 
-  [[sfc_inline]] auto sin(f32 x) const -> f32 {
+  auto sin(f32 x) const -> f32 {
     const auto k = static_cast<u32>((10.00 + x / k2PI) * N);
     return _sin_tbl[k & (N - 1)];
   }
 
-  [[sfc_inline]] auto cos(f32 x) const -> f32 {
+  auto cos(f32 x) const -> f32 {
     const auto k = static_cast<u32>((10.25 + x / k2PI) * N);
     return _sin_tbl[k & (N - 1)];
   }
 
-  [[sfc_inline]] auto asin(f32 x) const -> f32 {
+  auto asin(f32 x) const -> f32 {
     static constexpr auto n2 = static_cast<f32>(N) / 2;
 
     if (x <= -1) return -kPI2;
@@ -52,7 +52,7 @@ struct SinTbl {
     return _asin_tbl[k];
   }
 
-  [[sfc_inline]] auto acos(f32 x) const -> f32 {
+  auto acos(f32 x) const -> f32 {
     static constexpr auto n2 = static_cast<f32>(N) / 2;
 
     if (x <= -1) return kPI;

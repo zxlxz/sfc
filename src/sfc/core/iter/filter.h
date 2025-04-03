@@ -13,11 +13,11 @@ struct Filter : Iterator<Filter<I, P>, typename I::Item> {
  public:
   explicit Filter(I iter, P pred) : _iter{static_cast<I&&>(iter)}, _pred{static_cast<P&&>(pred)} {}
 
-  [[sfc_inline]] auto next() -> Option<Item> {
+  auto next() -> Option<Item> {
     return _iter.find(_pred);
   }
 
-  [[sfc_inline]] auto next_back() -> Option<Item> {
+  auto next_back() -> Option<Item> {
     return _iter.rfind(_pred);
   }
 };

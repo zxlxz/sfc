@@ -16,9 +16,6 @@ struct OpenOptions {
   bool _write;
   bool _truncate;
 
-  // sys
-  int _mode = 0666;
-
  public:
   OpenOptions(const auto& x)
       : _append{x._append}
@@ -43,14 +40,15 @@ struct OpenOptions {
 
   auto open(const char* path) const -> io::File {
     const auto flags = this->access_mode() | this->create_mode();
-    const auto fd = ::open(path, O_CLOEXEC | flags, _mode);
+    const auto mode = 0666;
+    const auto fd = ::open(path, O_CLOEXEC | flags, mode);
     return io::File{fd};
   }
 };
 
-struct FileType {
-  mode_t _mode;
-  off_t _size;
+struct FileAttr {
+  uint32_t _mode;
+  uint64_t _size;
 
  public:
   auto is_dir() const -> bool {
@@ -66,13 +64,13 @@ struct FileType {
   }
 };
 
-inline auto lstat(cstr_t path) -> Option<FileType> {
+inline auto lstat(cstr_t path) -> Option<FileAttr> {
   struct stat st;
   const auto ret = ::lstat(path, &st);
   if (ret == -1) {
     return {};
   }
-  return FileType{st.st_mode, st.st_size};
+  return FileAttr{st.st_mode, st.st_size};
 };
 
 inline auto unlink(cstr_t path) -> bool {

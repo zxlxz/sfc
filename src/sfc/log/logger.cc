@@ -11,26 +11,16 @@ struct LogTime {
 
  public:
   static auto now() -> LogTime {
-    static auto cache_sys_time = time::System{};
-    static auto cache_datetime = time::DateTime{};
-
-    const auto sys_time = time::System::now();
-    if (sys_time._secs != cache_sys_time._secs) {
-      const auto date_time = time::DateTime::from(sys_time);
-      cache_datetime = date_time;
-      return LogTime{date_time};
-    }
-
-    return LogTime{cache_datetime};
+    return LogTime{time::DateTime::now()};
   }
 
   auto to_str() const -> Str {
     static constexpr u32 DATE_LEN = sizeof("YYYY-MM-DD");
     static constexpr u32 TIME_LEN = sizeof("HH:MM:SS");
-    static constexpr u32 LEN = sizeof("[YYYY-MM-DD HH:MM:SS.000]") - 1;
+    static constexpr u32 LEN      = sizeof("[YYYY-MM-DD HH:MM:SS.000]") - 1;
 
     static thread_local char buf[32] = "[YYYY-MM-DD HH:MM:SS.000]";
-    static thread_local auto cached = time::DateTime{};
+    static thread_local auto cached  = time::DateTime{};
 
     if (!(_inn._date == cached._date)) {
       cached._date = _inn._date;
@@ -98,8 +88,8 @@ void Logger::write_msg(Level level, Str msg) {
 
   const auto entry = Entry{
       .level = level,
-      .time = stime,
-      .msg = msg,
+      .time  = stime,
+      .msg   = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {

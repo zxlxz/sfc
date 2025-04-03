@@ -5,72 +5,86 @@
 
 namespace sfc::str {
 
-struct Str : private slice::Slice<const char> {
-  using Inn = slice::Slice<const char>;
-  using Inn::_len;
-  using Inn::_ptr;
-
-  [[sfc_inline]] Str(const char* p, usize n) noexcept : Inn{p, n} {}
+struct Str {
+  const char* _ptr = nullptr;
+  usize       _len = 0;
 
  public:
-  [[sfc_inline]] Str() = default;
+  constexpr Str() = default;
 
-  [[sfc_inline]] Str(const char* s) noexcept : Inn{s, s == nullptr ? 0 : __builtin_strlen(s)} {}
+  constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
-  [[sfc_inline]] static auto from_u8(Slice<const char> v) -> Str {
-    const auto len = v ? __builtin_strlen(v._ptr) : 0U;
-    return Str{v._ptr, len};
+  template <usize N>
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+
+  static constexpr auto from_cstr(const char* p) -> Str {
+    return Str{p, p ? __builtin_strlen(p) : 0};
   }
 
-  [[sfc_inline]] static auto from_u8_unchecked(Slice<const char> v) -> Str {
-    return Str{v._ptr, v._len};
+  static constexpr auto from_chars(slice::Slice<const char> s) -> Str {
+    return Str{s._ptr, s._len};
   }
 
-  using Inn::as_ptr;
-  using Inn::is_empty;
-  using Inn::len;
-  using Inn::operator bool;
+  static constexpr auto from_bytes(slice::Slice<const u8> s) -> Str {
+    return Str{reinterpret_cast<const char*>(s._ptr), s._len};
+  }
 
-  [[sfc_inline]] auto as_chars() const -> slice::Slice<const char> {
+  auto as_ptr() const -> const char* {
+    return _ptr;
+  }
+
+  auto is_empty() const -> bool {
+    return _len == 0;
+  }
+
+  auto len() const -> usize {
+    return _len;
+  }
+
+  operator bool() const {
+    return _len != 0;
+  }
+
+  auto as_chars() const -> slice::Slice<const char> {
     return {_ptr, _len};
   }
 
-  [[sfc_inline]] auto as_bytes() const -> slice::Slice<const u8> {
-    return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
+  auto as_bytes() const -> slice::Slice<const u8> {
+    return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
  public:
-  [[sfc_inline]] auto get_unchecked(usize idx) const -> char {
+  auto get_unchecked(usize idx) const -> char {
     return _ptr[idx];
   }
 
-  [[sfc_inline]] auto get_unchecked(Range<> ids) const -> Str {
+  auto get_unchecked(Range ids) const -> Str {
     return {_ptr + ids._start, ids.len()};
   }
 
-  [[sfc_inline]] auto operator[](usize idx) const -> char {
+  auto operator[](usize idx) const -> char {
     return idx < _len ? _ptr[idx] : char(0);
   }
 
-  [[sfc_inline]] auto operator[](Range<> ids) const -> Str {
+  auto operator[](Range ids) const -> Str {
     ids = ids % _len;
     return Str{_ptr + ids._start, ids.len()};
   }
 
-  [[sfc_inline]] auto split_at(usize mid) const -> tuple::Tuple<Str, Str> {
+  auto split_at(usize mid) const -> tuple::Tuple<Str, Str> {
     const auto pos = cmp::min(mid, _len);
     const auto a = Str{_ptr, pos};
     const auto b = Str{_ptr + mid, _len - mid};
-    return {a, b};
+    return tuple::Tuple{a, b};
   }
 
-  [[sfc_inline]] auto iter() const -> slice::Iter<const char> {
-    return {_ptr, _len};
+  auto iter() const -> slice::Iter<const char> {
+    return this->as_chars().iter();
   }
 
- public:
   auto operator==(Str other) const -> bool {
-    if (_len != other._len) return false;
+    if (_len != other._len)
+      return false;
 
     const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
     return ret == 0;
@@ -88,6 +102,8 @@ struct Str : private slice::Slice<const char> {
   auto trim_end_matches(auto&& p) const -> Str;
   auto trim_matches(auto&& p) const -> Str;
 
+  auto split(auto&& p) const;
+
   auto trim_start() const -> Str {
     return this->trim_start_matches(chr::is_whitespace);
   }
@@ -100,21 +116,27 @@ struct Str : private slice::Slice<const char> {
     return this->trim_matches(chr::is_whitespace);
   }
 
- public:
   template <class T>
   auto parse() const -> option::Option<T>;
-
-  template <class T>
-
-  auto parse() const -> option::Option<T>
-    requires(requires() { T::from_str(*this); })
-  {
-    return T::from_str(*this);
-  }
 
   void fmt(auto& f) const {
     f.pad(*this);
   }
 };
+
+
+template <class T>
+struct FromStr {
+  static auto from_str(Str) -> option::Option<T>;
+};
+
+template <class T>
+auto Str::parse() const -> option::Option<T> {
+  if constexpr (requires { T::from_str(*this); }) {
+    return T::from_str(*this);
+  } else {
+    return FromStr<T>::from_str(*this);
+  }
+}
 
 }  // namespace sfc::str

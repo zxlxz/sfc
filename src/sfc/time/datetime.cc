@@ -22,8 +22,8 @@ auto NaiveTime::from_hms_milli(u32 hour, u32 min, u32 sec, u32 millis) -> NaiveT
 }
 
 NaiveDate::NaiveDate(u32 year, u32 mon, u32 day) {
-  mon = num::saturating_sub(mon, 1U);
-  day = num::saturating_sub(day, 1U);
+  mon  = num::saturating_sub(mon, 1U);
+  day  = num::saturating_sub(day, 1U);
   _yof = (year << 8U) | (mon << 4U) | day;
 }
 
@@ -45,13 +45,21 @@ auto NaiveDate::day() const -> u32 {
   return day + 1;
 }
 
-auto DateTime::from(System sys_time) -> DateTime {
-  const auto secs = sys_time._secs;
-  const auto micros = static_cast<u32>(sys_time._nanos / NANOS_PER_MICRO);
+auto DateTime::from(const System& sys_time) -> DateTime {
+  static auto last_secs = sys_time._micros / MICROS_PER_SEC;
+  static auto date_time = sys_imp::DateTime::from_secs(last_secs);
 
-  const auto imp = sys_imp::DateTime::from_secs(static_cast<time_t>(secs));
-  const auto date = NaiveDate::from_ymd(imp.year, imp.month, imp.mday);
-  const auto time = NaiveTime::from_hms_micro(imp.hour, imp.min, imp.sec, micros);
+  static auto curr_secs = sys_time._micros / MICROS_PER_SEC;
+  if (last_secs != curr_secs) {
+    last_secs = curr_secs;
+    date_time = sys_imp::DateTime::from_secs(last_secs);
+  }
+
+  const auto date = NaiveDate::from_ymd(date_time.year, date_time.month, date_time.mday);
+  const auto time = NaiveTime::from_hms_micro(date_time.hour,
+                                              date_time.min,
+                                              date_time.sec,
+                                              sys_time._micros % MICROS_PER_SEC);
   return {date, time};
 }
 

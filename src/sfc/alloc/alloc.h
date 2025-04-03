@@ -9,17 +9,17 @@ struct Layout {
   usize align;
 
   template <class T>
-  [[sfc_inline]] static auto of() -> Layout {
+  static auto of() -> Layout {
     return {sizeof(T), alignof(T)};
   }
 
   template <class T>
-  [[sfc_inline]] static auto array(usize len) -> Layout {
+  static auto array(usize len) -> Layout {
     return {len * sizeof(T), alignof(T)};
   }
 
   template <class T>
-  [[sfc_inline]] static auto for_value(const T&) -> Layout {
+  static auto for_value(const T&) -> Layout {
     return {sizeof(T), alignof(T)};
   }
 };

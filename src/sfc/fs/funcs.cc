@@ -1,54 +1,38 @@
 
 #include "funcs.h"
 
-#include "sfc/ffi.h"
 #include "sfc/sys/fs.inl"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
 
-auto create_dir(Path path) -> io::Result<> {
-  const auto os_path = ffi::CString::from(path.as_str());
-  const auto ret = sys_imp::mkdir(os_path);
+auto create_dir(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::mkdir(path.c_str());
   if (!ret) {
     return io::Error::last_os_error();
   }
   return _;
 }
 
-auto remove_dir(Path path) -> io::Result<> {
-  const auto os_path = ffi::CString::from(path.as_str());
-  const auto ret = sys_imp::rmdir(os_path);
+auto remove_dir(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::rmdir(path.c_str());
   if (!ret) {
     return io::Error::last_os_error();
   }
   return _;
 }
 
-auto remove_file(Path path) -> io::Result<> {
-  const auto os_path = ffi::CString::from(path.as_str());
-  const auto ret = sys_imp::unlink(os_path);
+auto remove_file(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::unlink(path.c_str());
   if (!ret) {
     return io::Error::last_os_error();
   }
   return _;
 }
 
-auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto os_old = ffi::CString::from(old_path.as_str());
-  const auto os_new = ffi::CString::from(new_path.as_str());
-  const auto ret = sys_imp::rename(os_old, os_new);
-  if (!ret) {
-    return io::Error::last_os_error();
-  }
-  return _;
-}
-
-auto symlink(Path original, Path link) -> io::Result<> {
-  const auto os_orig = ffi::CString::from(original.as_str());
-  const auto os_link = ffi::CString::from(link.as_str());
-  const auto ret = sys_imp::symlink(os_orig, os_link);
+auto rename(const Path& old_path, const Path& new_path) -> io::Result<> {
+  const auto ret = sys_imp::rename(old_path.c_str(), new_path.c_str());
   if (!ret) {
     return io::Error::last_os_error();
   }

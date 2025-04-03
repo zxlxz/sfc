@@ -15,47 +15,43 @@ class Option {
   union Imp {
     T _val;
 
-    [[sfc_inline]] Imp() noexcept {}
-    [[sfc_inline]] Imp(T&& x) noexcept : _val{static_cast<T&&>(x)} {}
-    [[sfc_inline]] ~Imp() noexcept {}
+    Imp() noexcept {}
+    Imp(T&& x) noexcept : _val{static_cast<T&&>(x)} {}
+    ~Imp() noexcept {}
   };
 
   bool _tag;
   Imp _imp;
 
  public:
-  [[sfc_inline]] Option() noexcept : _tag{false}, _imp{} {}
+  Option() noexcept : _tag{false}, _imp{} {}
 
-  [[sfc_inline]] Option(None) noexcept : _tag{false}, _imp{} {}
+  Option(None) noexcept : _tag{false}, _imp{} {}
 
-  [[sfc_inline]] Option(T val) noexcept : _tag{true}, _imp{static_cast<T&&>(val)} {}
+  Option(T val) noexcept : _tag{true}, _imp{static_cast<T&&>(val)} {}
 
-  [[sfc_inline]] ~Option() {
+  ~Option() {
     if (_tag) {
       _imp._val.~T();
-      _tag = false;
     }
   }
 
-  [[sfc_inline]] ~Option()
-    requires(trait::TvDtor<T>)
-  = default;
-
-  [[sfc_inline]] Option(const Option& other) : _tag{other._tag} {
+  Option(const Option& other) : _tag{other._tag} {
     if (_tag) {
       new (mem::inplace_t{}, &_imp._val) T{other._imp._val};
     }
   }
 
-  [[sfc_inline]] Option(Option&& other) noexcept : _tag{other._tag} {
+  Option(Option&& other) noexcept : _tag{other._tag} {
     if (_tag) {
       new (mem::inplace_t{}, &_imp._val) T{static_cast<T&&>(other._imp._val)};
     }
   }
 
-  [[sfc_inline]] auto operator=(const Option& other) noexcept -> Option& {
+  auto operator=(const Option& other) noexcept -> Option& {
     if (_tag == other._tag) {
-      if (_tag) _imp._val = other._imp._val;
+      if (_tag)
+        _imp._val = other._imp._val;
     } else {
       _tag ? mem::drop(_imp._val) : ptr::write(&_imp._val, other._imp._val);
       _tag = other._tag;
@@ -63,9 +59,10 @@ class Option {
     return *this;
   }
 
-  [[sfc_inline]] auto operator=(Option&& other) noexcept -> Option& {
+  auto operator=(Option&& other) noexcept -> Option& {
     if (_tag == other._tag) {
-      if (_tag) _imp._val = static_cast<T&&>(other._imp._val);
+      if (_tag)
+        _imp._val = static_cast<T&&>(other._imp._val);
     } else {
       _tag ? mem::drop(_imp._val) : ptr::write(&_imp._val, static_cast<T&&>(other._imp._val));
       _tag = other._tag;
@@ -73,19 +70,19 @@ class Option {
     return *this;
   }
 
-  [[sfc_inline]] operator bool() const {
+  operator bool() const {
     return _tag;
   }
 
-  [[sfc_inline]] auto get_unchecked() const -> const T& {
+  auto get_unchecked() const -> const T& {
     return _imp._val;
   }
 
-  [[sfc_inline]] auto get_unchecked_mut() -> T& {
+  auto get_unchecked_mut() -> T& {
     return _imp._val;
   }
 
-  [[sfc_inline]] auto unwrap_unchecked() -> T {
+  auto unwrap_unchecked() -> T {
     return static_cast<T&&>(_imp._val);
   }
 };
@@ -95,25 +92,25 @@ class Option<T&> {
   T* _ptr = nullptr;
 
  public:
-  [[sfc_inline]] Option() = default;
+  Option() = default;
 
-  [[sfc_inline]] ~Option() {}
+  ~Option() {}
 
-  [[sfc_inline]] Option(T& val) : _ptr{&val} {}
+  Option(T& val) : _ptr{&val} {}
 
-  [[sfc_inline]] operator bool() const {
+  operator bool() const {
     return _ptr != nullptr;
   }
 
-  [[sfc_inline]] auto get_unchecked() const -> const T& {
+  auto get_unchecked() const -> const T& {
     return *_ptr;
   }
 
-  [[sfc_inline]] auto get_unchecked_mut() -> T& {
+  auto get_unchecked_mut() -> T& {
     return *_ptr;
   }
 
-  [[sfc_inline]] auto unwrap_unchecked() -> T& {
+  auto unwrap_unchecked() -> T& {
     return *_ptr;
   }
 };
@@ -126,25 +123,25 @@ class Option<T> {
   T _val{};
 
  public:
-  [[sfc_inline]] Option() = default;
+  Option() = default;
 
-  [[sfc_inline]] Option(None) : _val{} {}
+  Option(None) : _val{} {}
 
-  [[sfc_inline]] Option(T val) : _val{static_cast<T&&>(val)} {}
+  Option(T val) : _val{static_cast<T&&>(val)} {}
 
-  [[sfc_inline]] operator bool() const {
+  operator bool() const {
     return static_cast<bool>(_val);
   }
 
-  [[sfc_inline]] auto get_unchecked() const -> const T& {
+  auto get_unchecked() const -> const T& {
     return _val;
   }
 
-  [[sfc_inline]] auto get_unchecked_mut() -> T& {
+  auto get_unchecked_mut() -> T& {
     return _val;
   }
 
-  [[sfc_inline]] auto unwrap_unchecked() -> T {
+  auto unwrap_unchecked() -> T {
     return static_cast<T&&>(_val);
   }
 };
@@ -158,15 +155,15 @@ class Option : detail::Option<T> {
  public:
   using Imp::Imp;
 
-  [[sfc_inline]] Option() = default;
+  Option() = default;
 
-  [[sfc_inline]] ~Option() = default;
+  ~Option() = default;
 
-  [[sfc_inline]] Option(const Option&) noexcept = default;
+  Option(const Option&) noexcept = default;
 
-  [[sfc_inline]] Option(Option&&) noexcept = default;
+  Option(Option&&) noexcept = default;
 
-  [[sfc_inline]] Option& operator=(Option&&) noexcept = default;
+  Option& operator=(Option&&) noexcept = default;
 
   using Imp::operator bool;
 
@@ -213,19 +210,21 @@ class Option : detail::Option<T> {
 
   auto expect(const auto&... msg) && -> T {
     if (!*this) {
-      panic_fmt(msg...);
+      panicking::panic_fmt(msg...);
     }
     return static_cast<T&&>(Imp::get_unchecked_mut());
   }
 
   auto operator==(const Option& other) const -> bool {
-    if (!*this) return !other;
-    if (!other) return false;
+    if (!*this)
+      return !other;
+    if (!other)
+      return false;
 
     return Imp::get_unchecked() == other.get_unchecked();
   }
 
-  auto operator==(const T& rhs) const -> bool {
+  auto operator==(const auto& rhs) const -> bool {
     if (!*this) {
       return false;
     }

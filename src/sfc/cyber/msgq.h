@@ -29,10 +29,10 @@ class MsgQueue {
     return res;
   }
 
-  auto push(T msg, u32 try_ms) -> bool {
+  auto push(T msg, const time::Duration& try_dur) -> bool {
     auto lock = _mutex.lock();
     if (_buff.is_full()) {
-      _condvar.wait_timeout_ms(lock, try_ms);
+      _condvar.wait_timeout(lock, try_dur);
     }
 
     const auto res = !_buff.is_full();

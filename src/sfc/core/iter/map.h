@@ -16,17 +16,17 @@ struct Map : Iterator<Map<I, F>, invoke_result_t<F, typename I::Item>> {
  public:
   explicit Map(I iter, F func) : _iter{static_cast<I&&>(iter)}, _func{static_cast<F&&>(func)} {}
 
-  [[sfc_inline]] auto len() const -> usize {
+  auto len() const -> usize {
     return _iter.len();
   }
 
-  [[sfc_inline]] auto next() -> Option<Item> {
+  auto next() -> Option<Item> {
     auto val = _iter.next();
     if (!val) return {};
     return _func(mem::move(val).unwrap());
   }
 
-  [[sfc_inline]] auto next_back() -> Option<Item> {
+  auto next_back() -> Option<Item> {
     auto val = _iter.next_back();
     if (!val) return {};
     return _func(mem::move(val).unwrap());

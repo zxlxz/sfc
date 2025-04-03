@@ -73,13 +73,13 @@ struct Tuple<idx_t<I...>, T...> : Entry<I, T>... {
   Tuple(T... vals) : Entry<I, T>{static_cast<T&&>(vals)}... {}
 
   template <usize J>
-  [[sfc_inline]] auto get() const -> auto& {
+  auto get() const -> auto& {
     using U = __type_pack_element<J, T...>;
     return static_cast<const Entry<J, U>&>(*this)._0;
   }
 
   template <usize J>
-  [[sfc_inline]] auto get() -> auto& {
+  auto get() -> auto& {
     using U = __type_pack_element<J, T...>;
     return static_cast<Entry<J, U>&>(*this)._0;
   }

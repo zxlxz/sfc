@@ -9,12 +9,12 @@ struct Int2Str {
   char* _ptr = _buf._ptr + _buf._len;
 
  public:
-  [[sfc_inline]] auto as_str() const -> str::Str {
+  auto as_str() const -> str::Str {
     const auto len = static_cast<usize>(_buf._ptr + _buf._len - _ptr);
     return {_ptr, len};
   }
 
-  [[sfc_inline]] auto operator()(auto val) -> str::Str {
+  auto operator()(auto val) -> str::Str {
     const auto uval = val > 0 ? val : 0 - val;
     const auto radix = this->radix();
     if (radix == 10) {
@@ -28,20 +28,20 @@ struct Int2Str {
   }
 
  private:
-  [[sfc_inline]] void push(char c) {
+  void push(char c) {
     if (_buf._ptr == _ptr) {
       return;
     }
     *--_ptr = c;
   }
 
-  [[sfc_inline]] void push_str(str::Str s) {
+  void push_str(str::Str s) {
     for (auto i = s._len; i != 0; --i) {
       this->push(s._ptr[i - 1]);
     }
   }
 
-  [[sfc_inline]] auto radix() const -> u16 {
+  auto radix() const -> u16 {
     switch (_style._type) {
       case 'b':
       case 'B': return 2;
@@ -53,7 +53,7 @@ struct Int2Str {
     }
   }
 
-  [[sfc_inline]] auto prefix() const -> str::Str {
+  auto prefix() const -> str::Str {
     if (!_style._prefix) {
       return {};
     }
@@ -130,11 +130,11 @@ struct Flt2Str {
   usize _len = 0U;
 
  public:
-  [[sfc_inline]] auto as_str() const -> str::Str {
+  auto as_str() const -> str::Str {
     return {_buf._ptr, _len};
   }
 
-  [[sfc_inline]] auto operator()(auto val) -> str::Str {
+  auto operator()(auto val) -> str::Str {
     static const auto DEFAULT_PREC = sizeof(val) == sizeof(f32) ? 4 : 6;
 
     const auto uval = num::fabs(val);

@@ -7,7 +7,7 @@ namespace sfc::reflect {
 
 template <class T>
 struct Enum {
-  cstr_t name;
+  str::Str name;
   T value;
 };
 
@@ -16,13 +16,13 @@ struct EnumInfo {
   Enum<T> _items[N];
 
  public:
-  auto get_name_by_value(T val) const -> cstr_t {
+  auto get_name_by_value(T val) const -> str::Str {
     for (const auto& item : _items) {
       if (item.value == val) {
         return item.name;
       }
     }
-    return nullptr;
+    return {};
   }
 
   auto get_value_by_name(str::Str name) const -> option::Option<T> {
@@ -36,7 +36,7 @@ struct EnumInfo {
 };
 
 template <class T>
-auto enum_name(T val) -> cstr_t {
+auto enum_name(T val) -> str::Str {
   const auto info = reflect_enum(static_cast<T>(0));
   return info.get_name_by_value(val);
 }

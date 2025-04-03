@@ -41,7 +41,7 @@ class Serialize<const char*> {
   }
 };
 
-template <trait::Int T>
+template <trait::isInt T>
 class Serialize<T> {
   T _val;
 
@@ -51,7 +51,7 @@ class Serialize<T> {
   }
 };
 
-template <trait::Float T>
+template <trait::isFlt T>
 class Serialize<T> {
   T _val;
 
@@ -62,7 +62,7 @@ class Serialize<T> {
   }
 };
 
-template <trait::Enum T>
+template <trait::isEnum T>
 class Serialize<T> {
   T _val;
 

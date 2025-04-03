@@ -9,28 +9,28 @@ struct NdSize {
   usize _inn[N] = {0};
 
   template <usize... I, class V>
-  [[sfc_inline]] NdSize(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
+  NdSize(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
 
  public:
-  [[sfc_inline]] NdSize() = default;
+  NdSize() = default;
 
-  [[sfc_inline]] NdSize(const usize (&s)[N]) : NdSize{tuple::idx_seq_t<N>{}, s} {}
+  NdSize(const usize (&s)[N]) : NdSize{tuple::idx_seq_t<N>{}, s} {}
 
-  [[sfc_inline]] auto operator[](usize idx) const -> usize {
+  auto operator[](usize idx) const -> usize {
     return _inn[idx];
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdSize<sizeof...(I)> {
+  auto operator[](tuple::idx_t<I...>) const -> NdSize<sizeof...(I)> {
     return NdSize<sizeof...(I)>{_inn[I]...};
   }
 
-  [[sfc_inline]] auto numel() const -> usize {
+  auto numel() const -> usize {
     const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return (_inn[I] * ...); };
     return f(tuple::idx_seq_t<N>{});
   }
 
-  [[sfc_inline]] auto operator==(const NdSize& other) const -> bool {
+  auto operator==(const NdSize& other) const -> bool {
     const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] == other._inn[I]) && ...); };
     return f(tuple::idx_seq_t<N>{});
   }
@@ -45,23 +45,23 @@ struct NdStep {
   usize _inn[N] = {0};
 
   template <usize... I, class V>
-  [[sfc_inline]] NdStep(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
+  NdStep(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
 
  public:
-  [[sfc_inline]] NdStep() = default;
+  NdStep() = default;
 
-  [[sfc_inline]] NdStep(const usize (&s)[N]) : NdStep{tuple::idx_seq_t<N>{}, s} {}
+  NdStep(const usize (&s)[N]) : NdStep{tuple::idx_seq_t<N>{}, s} {}
 
-  [[sfc_inline]] auto operator[](usize idx) const -> usize {
+  auto operator[](usize idx) const -> usize {
     return _inn[idx];
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdStep<sizeof...(I)> {
+  auto operator[](tuple::idx_t<I...>) const -> NdStep<sizeof...(I)> {
     return NdStep<sizeof...(I)>{tuple::idx_t<I...>{}, _inn};
   }
 
-  [[sfc_inline]] static auto from_shape(const NdSize<N>& shape) -> NdStep {
+  static auto from_shape(const NdSize<N>& shape) -> NdStep {
     auto res = NdStep{};
 
     res._inn[0] = 1;
@@ -77,28 +77,28 @@ struct NdIdxs {
   usize _inn[N] = {0};
 
   template <usize... I, class V>
-  [[sfc_inline]] NdIdxs(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
+  NdIdxs(tuple::idx_t<I...>, const V& v) : _inn{v[I]...} {}
 
  public:
-  [[sfc_inline]] NdIdxs() = default;
+  NdIdxs() = default;
 
-  [[sfc_inline]] NdIdxs(const usize (&s)[N]) : NdIdxs{tuple::idx_seq_t<N>{}, s} {}
+  NdIdxs(const usize (&s)[N]) : NdIdxs{tuple::idx_seq_t<N>{}, s} {}
 
-  [[sfc_inline]] auto operator[](usize idx) const -> usize {
+  auto operator[](usize idx) const -> usize {
     return _inn[idx];
   }
 
   template <usize... I>
-  [[sfc_inline]] auto operator[](tuple::idx_t<I...>) const -> NdIdxs<sizeof...(I)> {
+  auto operator[](tuple::idx_t<I...>) const -> NdIdxs<sizeof...(I)> {
     return NdIdxs<sizeof...(I)>{_inn[I]...};
   }
 
-  [[sfc_inline]] auto operator<(const NdSize<N>& shape) const -> bool {
+  auto operator<(const NdSize<N>& shape) const -> bool {
     const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] < shape._inn[I]) && ...); };
     return f(tuple::idx_seq_t<N>{});
   }
 
-  [[sfc_inline]] auto operator*(const NdStep<N>& strides) const -> usize {
+  auto operator*(const NdStep<N>& strides) const -> usize {
     const auto f = [&]<usize... I>(tuple::idx_t<I...>) { return ((_inn[I] * strides._inn[I]) + ...); };
     return f(tuple::idx_seq_t<N>{});
   }
@@ -115,41 +115,41 @@ struct NdView {
   strides_t _step = {};
 
  public:
-  [[sfc_inline]] NdView() = default;
+  NdView() = default;
 
-  [[sfc_inline]] NdView(T* data, shape_t shape, strides_t strides)
+  NdView(T* data, shape_t shape, strides_t strides)
       : _data{data}, _size{shape}, _step{strides} {}
 
-  [[sfc_inline]] static constexpr auto ndim() -> usize {
+  static constexpr auto ndim() -> usize {
     return N;
   }
 
-  [[sfc_inline]] auto data() const -> T* {
+  auto data() const -> T* {
     return _data;
   }
 
-  [[sfc_inline]] auto shape() const -> shape_t {
+  auto shape() const -> shape_t {
     return _size;
   }
 
-  [[sfc_inline]] auto strides() const -> strides_t {
+  auto strides() const -> strides_t {
     return _step;
   }
 
-  [[sfc_inline]] auto numel() const -> usize {
+  auto numel() const -> usize {
     return _size.numel();
   }
 
-  [[sfc_inline]] auto operator[](usize idx) -> NdView<T, N - 1> {
+  auto operator[](usize idx) -> NdView<T, N - 1> {
     const auto data = _data + idx * _step[N - 1];
     return NdView<T, N - 1>{data, _size[tuple::idx_seq_t<N - 1>{}], _step[tuple::idx_seq_t<N - 1>{}]};
   }
 
-  [[sfc_inline]] auto operator[](const Idxs& idx) const -> T {
+  auto operator[](const Idxs& idx) const -> T {
     return _data[idx * _step];
   }
 
-  [[sfc_inline]] auto operator[](const Idxs& idx) -> T& {
+  auto operator[](const Idxs& idx) -> T& {
     return _data[idx * _step];
   }
 
@@ -195,47 +195,47 @@ struct NdView<T, 1> {
   strides_t _step = {};
 
  public:
-  [[sfc_inline]] NdView() = default;
+  NdView() = default;
 
-  [[sfc_inline]] NdView(T* data, shape_t size, strides_t step) : _data{data}, _size{size}, _step{step} {}
+  NdView(T* data, shape_t size, strides_t step) : _data{data}, _size{size}, _step{step} {}
 
-  [[sfc_inline]] static constexpr auto ndim() -> usize {
+  static constexpr auto ndim() -> usize {
     return 1;
   }
 
-  [[sfc_inline]] auto data() const -> T* {
+  auto data() const -> T* {
     return _data;
   }
 
-  [[sfc_inline]] auto shape() const -> shape_t {
+  auto shape() const -> shape_t {
     return _size;
   }
 
-  [[sfc_inline]] auto strides() const -> strides_t {
+  auto strides() const -> strides_t {
     return _step;
   }
 
-  [[sfc_inline]] auto numel() const -> usize {
+  auto numel() const -> usize {
     return _size.numel();
   }
 
-  [[sfc_inline]] auto operator[](usize idx) const -> T {
+  auto operator[](usize idx) const -> T {
     return _data[idx * _step._inn[0]];
   }
 
-  [[sfc_inline]] auto operator[](usize idx) -> T& {
+  auto operator[](usize idx) -> T& {
     return _data[idx * _step._inn[0]];
   }
 
-  [[sfc_inline]] auto operator[](const Idxs& ids) const -> T {
+  auto operator[](const Idxs& ids) const -> T {
     return _data[ids._inn[0] * _step._inn[0]];
   }
 
-  [[sfc_inline]] auto operator[](const Idxs& idxs) -> T& {
+  auto operator[](const Idxs& idxs) -> T& {
     return _data[idxs._inn[0] * _step._inn[0]];
   }
 
-  auto operator[](Range<> ids) -> NdView {
+  auto operator[](Range ids) -> NdView {
     ids = ids % _size[0];
 
     const auto offset = ids._start * _step._inn[0];

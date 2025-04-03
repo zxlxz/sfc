@@ -8,14 +8,12 @@ template <class T>
 class Vec;
 
 template <class T, class A = alloc::Global>
-class Buf {
+class [[nodiscard]] Buf {
   friend class Vec<T>;
 
-  T* _ptr = nullptr;
+  T* _ptr    = nullptr;
   usize _cap = 0;
   [[no_unique_address]] A _a{};
-
-  Buf(T* ptr, usize cap) noexcept : _ptr{ptr}, _cap{cap} {}
 
  public:
   Buf() noexcept = default;
@@ -41,29 +39,30 @@ class Buf {
   }
 
   static auto with_capacity(usize capacity) -> Buf {
-    auto a = A{};
-    const auto ptr = a.template alloc_array<T>(capacity);
-    return Buf{static_cast<T*>(ptr), capacity};
+    auto res = Buf{};
+    res._ptr = res._a.template alloc_array<T>(capacity);
+    res._cap = capacity;
+    return res;
   }
 
-  [[sfc_inline]] void swap(Buf& dst) {
+  void swap(Buf& dst) {
     mem::swap(_ptr, dst._ptr);
     mem::swap(_cap, dst._cap);
   }
 
-  [[sfc_inline]] auto ptr() const -> T* {
+  auto ptr() const -> T* {
     return _ptr;
   }
 
-  [[sfc_inline]] auto capacity() const -> usize {
+  auto capacity() const -> usize {
     return _cap;
   }
 
-  [[sfc_inline]] auto operator[](usize idx) const -> const T& {
+  auto operator[](usize idx) const -> const T& {
     return _ptr[idx];
   }
 
-  [[sfc_inline]] auto operator[](usize idx) -> T& {
+  auto operator[](usize idx) -> T& {
     return _ptr[idx];
   }
 
@@ -91,6 +90,7 @@ class Buf {
     }
 
     const auto new_cap = used + additional;
+
     _ptr = _a.realloc_array(_ptr, _cap, new_cap);
     _cap = new_cap;
   }
@@ -99,23 +99,19 @@ class Buf {
 template <class T>
 class [[nodiscard]] Vec {
   Buf<T> _buf = {};
-  usize _len = 0;
-
-  [[sfc_inline]] Vec(Buf<T> buf, usize len) noexcept
-      : _buf{static_cast<Buf<T>&&>(buf)}, _len{len} {}
+  usize _len  = 0;
 
  public:
-  Vec() = default;
+  Vec() noexcept = default;
 
   ~Vec() {
     this->clear();
   }
 
-  Vec(Vec&& other) noexcept
-      : _buf{static_cast<Buf<T>&&>(other._buf)}, _len{mem::take(other._len)} {}
+  Vec(Vec&& other) noexcept : _buf{mem::move(other._buf)}, _len{mem::take(other._len)} {}
 
   Vec& operator=(Vec&& other) noexcept {
-    auto tmp = static_cast<Vec&&>(other);
+    auto tmp = mem::move(other);
     this->swap(tmp);
     return *this;
   }
@@ -126,13 +122,14 @@ class [[nodiscard]] Vec {
   }
 
   static auto with_capacity(usize capacity) -> Vec {
-    auto res = Vec{Buf<T>::with_capacity(capacity), 0};
+    auto res = Vec{};
+    res._buf = Buf<T>::with_capacity(capacity);
     return res;
   }
 
-  static auto from(auto&& v) -> Vec {
+  static auto from(Slice<const T> v) -> Vec {
     auto res = Vec{};
-    res.extend_from_slice(Slice<const T>{v});
+    res.extend_from_slice(v);
     return res;
   }
 
@@ -142,50 +139,51 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  [[sfc_inline]] auto as_ptr() const -> const T* {
+
+  auto as_ptr() const -> const T* {
     return _buf._ptr;
   }
 
-  [[sfc_inline]] auto as_mut_ptr() -> T* {
+  auto as_mut_ptr() -> T* {
     return _buf._ptr;
   }
 
-  [[sfc_inline]] auto len() const -> usize {
+  auto len() const -> usize {
     return _len;
   }
 
-  [[sfc_inline]] auto capacity() const -> usize {
+  auto capacity() const -> usize {
     return _buf._cap;
   }
 
-  [[sfc_inline]] auto is_empty() const -> bool {
+  auto is_empty() const -> bool {
     return _len == 0;
   }
 
-  [[sfc_inline]] auto is_full() const -> bool {
+  auto is_full() const -> bool {
     return _len == _buf._cap;
   }
 
-  [[sfc_inline]] operator bool() const {
+  operator bool() const {
     return _len != 0;
   }
 
-  [[sfc_inline]] auto as_slice() const -> slice::Slice<const T> {
+  auto as_slice() const -> slice::Slice<const T> {
     return {_buf._ptr, _len};
   }
 
-  [[sfc_inline]] auto as_mut_slice() -> slice::Slice<T> {
+  auto as_mut_slice() -> slice::Slice<T> {
     return {_buf._ptr, _len};
   }
 
   void set_len(usize new_len) {
     new_len = cmp::min(new_len, _buf._cap);
-    _len = new_len;
+    _len    = new_len;
   }
 
   auto clone() const -> Vec {
     auto res = Vec::with_capacity(_len);
-    res.extend_from_slice(this->as_slice());
+    res.extend(this->as_slice());
     return res;
   }
 
@@ -194,39 +192,39 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  [[sfc_inline]] auto get_unchecked(usize idx) const -> const T& {
+  auto get_unchecked(usize idx) const -> const T& {
     return _buf._ptr[idx];
   }
 
-  [[sfc_inline]] auto get_unchecked_mut(usize idx) -> T& {
+  auto get_unchecked_mut(usize idx) -> T& {
     return _buf._ptr[idx];
   }
 
-  [[sfc_inline]] auto operator[](usize idx) const -> const T& {
-    assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
+  auto operator[](usize idx) const -> const T& {
+    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
     return _buf[idx];
   }
 
-  [[sfc_inline]] auto operator[](usize idx) -> T& {
-    assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
+  auto operator[](usize idx) -> T& {
+    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
     return _buf[idx];
   }
 
-  [[sfc_inline]] auto operator[](Range<> ids) const -> slice::Slice<const T> {
+  auto operator[](Range ids) const -> slice::Slice<const T> {
     return this->as_slice()[ids];
   }
 
-  [[sfc_inline]] auto operator[](Range<> ids) -> slice::Slice<T> {
+  auto operator[](Range ids) -> slice::Slice<T> {
     return this->as_mut_slice()[ids];
   }
 
-  [[sfc_inline]] auto first() const -> const T& {
-    assert_fmt(_len != 0, "Vec::first: vec is empty");
+  auto first() const -> const T& {
+    panicking::assert_fmt(_len != 0, "Vec::first: vec is empty");
     return _buf[0];
   }
 
-  [[sfc_inline]] auto last() const -> const T& {
-    assert_fmt(_len != 0, "Vec::last: vec is empty");
+  auto last() const -> const T& {
+    panicking::assert_fmt(_len != 0, "Vec::last: vec is empty");
     return _buf[_len - 1];
   }
 
@@ -241,7 +239,6 @@ class [[nodiscard]] Vec {
  public:
   void push(T val) {
     this->reserve(1);
-
     ptr::write(_buf._ptr + _len, static_cast<T&&>(val));
     _len += 1;
   }
@@ -274,16 +271,10 @@ class [[nodiscard]] Vec {
   }
 
   void shrink_to(usize min_capacity) {
-    if (_buf._cap <= _len) {
-      return;
-    }
     _buf.shrink_to(_len, min_capacity);
   }
 
   void shrink_to_fit() {
-    if (_buf._cap <= _len) {
-      return;
-    }
     _buf.shrink_to(_len, _len);
   }
 
@@ -298,32 +289,31 @@ class [[nodiscard]] Vec {
     }
 
     if (idx != _len - 1) {
-      _buf[idx] = static_cast<T&&>(_buf[_len - 1]);
+      _buf[idx] = mem::move(_buf[_len - 1]);
     }
 
     this->truncate(_len - 1);
   }
 
   void insert(usize idx, T element) {
-    idx = cmp::min(idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
 
     this->reserve(1);
-    const auto p = _buf._ptr + idx;
-    ptr::move(p, p + 1, _len - idx);
+    ptr::move(_buf._ptr + idx, _buf._ptr + idx + 1, _len - idx);
     _len += 1;
 
-    _buf[idx] = static_cast<T&&>(element);
+    _buf[idx] = mem::move(element);
   }
 
   auto remove(usize idx) -> T {
-    assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
 
-    auto res = static_cast<T&&>(_buf[idx]);
+    auto res = mem::move(_buf[idx]);
     this->drain({idx, idx + 1});
     return res;
   }
 
-  void drain(Range<> range) {
+  void drain(Range range) {
     auto tmp = (*this)[range];
     if (!tmp) {
       return;
@@ -347,53 +337,42 @@ class [[nodiscard]] Vec {
 
   void append(Vec& other) {
     this->reserve(other.len());
-
-    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, other._len);
-    this->set_len(_len + other._len);
+    ptr::uninit_move(other.as_mut_ptr(), this->as_mut_ptr() + _len, other.len());
+    this->set_len(_len + other.len());
   }
 
   void extend(auto&& iter) {
     this->reserve(iter.len());
-    iter.for_each([&](auto&& x) { this->push(T{static_cast<decltype(x)&&>(x)}); });
-  }
 
-  template <class U, usize N>
-  void extend(U (&v)[N]) {
-    this->reserve(N);
-    for (const auto& e : v) {
-      this->push(e);
+    for (T t : iter) {
+      ptr::write(&_buf._ptr[_len++], mem::move(t));
     }
   }
 
-  void extend_with(usize n, T value) {
-    this->reserve(n);
-    for (auto i = 0U; i < n; ++i) {
+  void extend_with(usize cnt, T value) {
+    this->reserve(cnt);
+    for (auto idx = 0U; idx < cnt; ++idx) {
       this->push(value);
     }
   }
 
   void extend_from_slice(Slice<const T> other) {
-    if (other._len == 0) {
-      return;
-    }
-
     this->reserve(other._len);
     ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
     this->set_len(_len + other._len);
   }
 
   void retain(auto&& f) {
-    auto new_len = 0UL;
-    for (auto& x : this->as_mut_slice()) {
-      if (!f(x)) {
-        continue;
+    auto idx = 0UL;
+    for (; idx != _len && f(_buf._ptr[idx]); ++idx) {}
+
+    auto new_len = idx;
+    for (; idx != _len; ++idx) {
+      if (f(_buf._ptr[idx])) {
+        _buf._ptr[new_len++] = static_cast<T&&>(_buf._ptr[idx]);
       }
-      auto& y = _buf[new_len];
-      if (&x != &y) {
-        y = static_cast<T&&>(x);
-      }
-      new_len += 1;
     }
+
     this->truncate(new_len);
   }
 
@@ -423,19 +402,27 @@ class [[nodiscard]] Vec {
   auto truncks_mut(usize n) {
     return this->as_mut_slice().truncks_mut(n);
   }
-
-  auto contains(const auto& val) const -> bool {
-    return this->as_slice().contains(val);
-  }
-
-  auto find_if(auto&& pred) const -> Option<usize> {
-    return this->as_slice().find_if(pred);
-  }
-
-  auto rfind_if(auto&& pred) const -> Option<usize> {
-    return this->as_slice().rfind_if(pred);
-  }
 };
+
+template <class T>
+auto begin(const Vec<T>& v) -> const T* {
+  return v.as_ptr();
+}
+
+template <class T>
+auto end(const Vec<T>& v) -> const T* {
+  return v.as_ptr() + v.len();
+}
+
+template <class T>
+auto begin(Vec<T>& v) -> T* {
+  return v.as_mut_ptr();
+}
+
+template <class T>
+auto end(Vec<T>& v) -> T* {
+  return v.as_mut_ptr() + v.len();
+}
 
 }  // namespace sfc::vec
 

@@ -3,8 +3,8 @@
 namespace sfc::string {
 
 SFC_TEST(property) {
-  const auto test_str = String{"abc"};
-  const auto null_str = String{""};
+  const auto test_str = String::from("abc");
+  const auto null_str = String::from("");
 
   test::assert_eq(test_str.len(), 3U);
   test::assert_false(test_str.is_empty());
@@ -14,7 +14,7 @@ SFC_TEST(property) {
 }
 
 SFC_TEST(index) {
-  auto s = String{"abc"};
+  const auto s = String::from("abc");
 
   test::assert_eq(s[0], 'a');
   test::assert_eq(s[1], 'b');
@@ -23,7 +23,7 @@ SFC_TEST(index) {
 }
 
 SFC_TEST(index_range) {
-  auto s = String{"abc"};
+  const auto s = String::from("abc");
 
   test::assert_eq((s[{0, _}]), "abc");
   test::assert_eq((s[{0, 2}]), "ab");
@@ -36,14 +36,14 @@ SFC_TEST(index_range) {
 }
 
 SFC_TEST(cmp) {
-  const auto s = String{"abcd"};
+  const auto s = String::from("abcd");
 
   test::assert_true(s == "abcd");
   test::assert_false(s == "abc");
 }
 
 SFC_TEST(find) {
-  const auto s = String{"abc"};
+  const auto s = String::from("abc");
 
   test::assert_eq(s.find('a'), 0UL);
   test::assert_eq(s.find('b'), 1UL);
@@ -52,7 +52,7 @@ SFC_TEST(find) {
 }
 
 SFC_TEST(rfind) {
-  const auto s = String{"abc"};
+  const auto s = String::from("abc");
 
   test::assert_eq(s.rfind('a'), 0UL);
   test::assert_eq(s.rfind('b'), 1UL);

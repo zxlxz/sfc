@@ -30,7 +30,7 @@ struct StyleParser {
   }
 
  private:
-  [[sfc_inline]] auto pop() -> char {
+  auto pop() -> char {
     const auto c = _buf[0];
     _buf._ptr += 1;
     _buf._len -= 1;

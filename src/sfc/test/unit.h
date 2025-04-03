@@ -29,7 +29,7 @@ class Suite {
   Vec<Unit> _tests;
 
  public:
-  Suite(Str name);
+  explicit Suite(Str name);
   ~Suite();
   Suite(Suite&&) noexcept;
   Suite& operator=(Suite&&) noexcept;

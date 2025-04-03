@@ -4,14 +4,14 @@
 
 namespace sfc::io {
 
-#ifdef __unix__
+#ifdef _WIN32
+using fd_t = void*;
+#else
 using fd_t = int;
 #endif
 
 class File {
   fd_t _fd;
-
-  explicit File(fd_t raw) noexcept;
 
  public:
   File() noexcept;

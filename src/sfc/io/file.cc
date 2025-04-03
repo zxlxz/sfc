@@ -8,21 +8,21 @@ namespace sys_imp = sys::io;
 
 File::File() noexcept = default;
 
-File::File(fd_t fd) noexcept : _fd{fd} {}
-
 File::~File() {
-  if (_fd == sys_imp::INVALID_FD) {
+  if (_fd == fd_t(-1)) {
     return;
   }
   sys_imp::File{_fd}.close();
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = sys_imp::INVALID_FD;
+  other._fd = fd_t(-1);
 }
 
 auto File::from_raw_fd(fd_t fd) -> File {
-  return File{fd};
+  auto res = File{};
+  res._fd = fd;
+  return res;
 }
 
 File& File::operator=(File&& other) noexcept {
@@ -32,7 +32,7 @@ File& File::operator=(File&& other) noexcept {
 }
 
 File::operator bool() const {
-  return _fd != sys_imp::INVALID_FD;
+  return _fd != fd_t(-1);
 }
 
 auto File::read(Slice<u8> buf) -> Result<usize> {
@@ -40,7 +40,7 @@ auto File::read(Slice<u8> buf) -> Result<usize> {
     return 0UL;
   }
 
-  if (_fd == sys_imp::INVALID_FD) {
+  if (_fd == fd_t(-1)) {
     return Error{ErrorKind::InvalidInput};
   }
 
@@ -56,7 +56,7 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
     return 0UL;
   }
 
-  if (_fd == sys_imp::INVALID_FD) {
+  if (_fd == fd_t(-1)) {
     return Error{ErrorKind::InvalidInput};
   }
 

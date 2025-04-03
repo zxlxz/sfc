@@ -31,7 +31,7 @@ void Condvar::notify_all() {
 }
 
 void Condvar::wait(LockGuard& lock) {
-  if (!_inn && !lock._mtx) {
+  if (!_inn || !lock._mtx) {
     return;
   }
 
@@ -39,18 +39,13 @@ void Condvar::wait(LockGuard& lock) {
   _inn->wait(mtx);
 }
 
-auto Condvar::wait_timeout(LockGuard& lock, time::Duration dur) -> bool {
-  if (!_inn && !lock._mtx) {
+auto Condvar::wait_timeout(LockGuard& lock, const time::Duration& dur) -> bool {
+  if (!_inn || !lock._mtx) {
     return false;
   }
 
   auto& mtx = *lock._mtx->_inn;
-  return _inn->wait_timeout(mtx, dur);
-}
-
-auto Condvar::wait_timeout_ms(LockGuard& lock, u32 ms) -> bool {
-  const auto dur = time::Duration::from_millis(ms);
-  return this->wait_timeout(lock, dur);
+  return _inn->wait_timeout_ms(mtx, dur.as_millis());
 }
 
 }  // namespace sfc::sync

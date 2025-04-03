@@ -12,11 +12,11 @@ struct Buf {
  public:
   Buf() = default;
 
-  [[sfc_inline]] void clear() {
+  void clear() {
     _len = 0;
   }
 
-  [[sfc_inline]] void write_str(str::Str s) {
+  void write_str(str::Str s) {
     if (_len + s._len > N) {
       return;
     }
@@ -24,7 +24,7 @@ struct Buf {
     _len += s._len;
   }
 
-  [[sfc_inline]] auto as_str() const -> str::Str {
+  auto as_str() const -> str::Str {
     return str::Str{_buf, _len};
   }
 };

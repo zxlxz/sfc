@@ -17,17 +17,28 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
 auto Mutex::lock() -> LockGuard {
-  if (_inn) {
-    _inn.ptr()->lock();
-  }
   return LockGuard{*this};
 }
 
-void Mutex::unlock() {
-  if (!_inn) {
+LockGuard::LockGuard(Mutex& mtx) : _mtx{&mtx} {
+  if (mtx._inn) {
+    mtx._inn->lock();
+  }
+}
+
+LockGuard::~LockGuard() {
+  this->unlock();
+}
+
+LockGuard::LockGuard(LockGuard&&) noexcept = default;
+
+LockGuard& LockGuard::operator=(LockGuard&&) noexcept = default;
+
+void LockGuard::unlock() {
+  if (!_mtx || !_mtx->_inn) {
     return;
   }
-  _inn.ptr()->unlock();
+  _mtx->_inn->unlock();
 }
 
 }  // namespace sfc::sync

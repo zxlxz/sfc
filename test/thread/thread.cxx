@@ -5,16 +5,10 @@
 
 namespace sfc::thread {
 
-SFC_TEST(current) {
-  const auto thr = Thread::current();
-  test::assert_ne(thr.id(), 0U);
-  test::assert_eq(thr.name(), "sfc_test");
-}
-
 SFC_TEST(builder) {
-  auto builder = Builder{};
-  builder._name = String::from("thread_builder");
-  builder._stack_size = 102400;
+  auto builder = Builder{
+    .name = String::from("thread_builder")
+  };
   builder.spawn(Box<void()>::xnew([]() {
     const auto thr = Thread::current();
     test::assert_eq(thr.name(), "thread_builder");

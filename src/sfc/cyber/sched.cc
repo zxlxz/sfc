@@ -24,7 +24,7 @@ void Sched::start() {
   }
   _thread = thread::spawn([&]() {
     while (__builtin_expect(_running.load(), true)) {
-      auto task_opt = _task_queue.pop_timeout_ms(100U);
+      auto task_opt = _task_queue.pop_timeout(time::Duration::from_millis(100U));
       if (!task_opt) {
         continue;
       }
@@ -32,9 +32,7 @@ void Sched::start() {
       try {
         auto task = task_opt.unwrap();
         (task._func)(task._self);
-      } catch (...) {
-        //
-      }
+      } catch (...) {}
     }
   });
 }
@@ -58,11 +56,11 @@ void Sched::remove_task(Task task) {
   _task_queue.remove(task);
 }
 
-void Sched::wait(u32 msec) {
+void Sched::wait(const time::Duration& dur) {
   if (!_running.load()) {
     return;
   }
-  _task_queue.wait(msec);
+  _task_queue.wait(dur);
 }
 
 }  // namespace sfc::cyber

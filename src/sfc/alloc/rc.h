@@ -16,27 +16,27 @@ struct RcBox {
   RcBox(U&&... args) : _val{static_cast<U&&>(args)...} {}
 
  public:
-  [[sfc_inline]] auto strong() const -> i32 {
+  auto strong() const -> i32 {
     return _strong;
   }
 
-  [[sfc_inline]] auto weak() const -> i32 {
+  auto weak() const -> i32 {
     return _weak;
   }
 
-  [[sfc_inline]] auto inc_strong() -> i32 {
+  auto inc_strong() -> i32 {
     return __atomic_add_fetch(&_strong, 1, __ATOMIC_RELAXED);
   }
 
-  [[sfc_inline]] auto dec_strong() -> i32 {
+  auto dec_strong() -> i32 {
     return __atomic_add_fetch(&_strong, -1, __ATOMIC_RELAXED);
   }
 
-  [[sfc_inline]] auto inc_weak() -> i32 {
+  auto inc_weak() -> i32 {
     return __atomic_add_fetch(&_weak, 1, __ATOMIC_RELAXED);
   }
 
-  [[sfc_inline]] auto dec_weak() -> i32 {
+  auto dec_weak() -> i32 {
     return __atomic_add_fetch(&_weak, -1, __ATOMIC_RELAXED);
   }
 };

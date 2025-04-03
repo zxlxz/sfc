@@ -8,7 +8,7 @@ namespace sys_imp = sys::time;
 
 auto Instant::now() -> Instant {
   const auto imp = sys_imp::Instant::now();
-  return Instant{static_cast<u64>(imp.secs), static_cast<u64>(imp.nanos)};
+  return Instant{imp.nanos()};
 }
 
 auto Instant::elpased() const -> Duration {
@@ -23,53 +23,30 @@ auto Instant::duration_since(const Instant& earlier) const -> Duration {
 }
 
 auto Instant::operator==(const Instant& other) const -> bool {
-  return _secs == other._secs && _nanos == other._nanos;
+  return _nanos == other._nanos;
 }
 
 auto Instant::operator<(const Instant& other) const -> bool {
-  return _secs < other._secs || (_secs == other._secs && _secs < other._secs);
+  return _nanos < other._nanos;
 }
 
 auto Instant::operator<=(const Instant& other) const -> bool {
-  return _secs < other._secs || (_secs == other._secs && _secs <= other._secs);
+  return _nanos <= other._nanos;
 }
 
 auto Instant::operator-(const Instant& rhs) const -> Duration {
-  auto secs = num::saturating_sub(_secs, rhs._secs);
-  auto nanos = _nanos - rhs._nanos;
-  if (_nanos < rhs._nanos) {
-    if (secs == 0) {
-      nanos = 0;
-    } else {
-      secs = secs - 1;
-      nanos = _nanos + NANOS_PER_SEC - rhs._nanos;
-    }
-  }
-  return {secs, nanos};
+  const auto nanos = num::saturating_sub(_nanos , rhs._nanos);
+  return Duration::from_nanos(nanos);
 }
 
-auto Instant::operator+(const Duration& rhs) const -> Instant {
-  auto secs = num::saturating_add(_secs, rhs._secs);
-  auto nanos = _nanos + rhs._nanos;
-  if (nanos > NANOS_PER_SEC) {
-    nanos -= NANOS_PER_SEC;
-    secs = num::saturating_add<u64>(secs, 1U);
-  }
-  return {secs, nanos};
+auto Instant::operator+(const Duration& dur) const -> Instant {
+  const auto nanos = num::saturating_add(_nanos , dur.as_nanos());
+  return Instant{nanos};
 }
 
-auto Instant::operator-(const Duration& rhs) const -> Instant {
-  auto secs = num::saturating_sub(_secs, rhs._secs);
-  auto nanos = _nanos - rhs._nanos;
-  if (_nanos < rhs._nanos) {
-    if (secs == 0) {
-      nanos = 0;
-    } else {
-      secs = secs - 1;
-      nanos = _nanos + NANOS_PER_SEC - rhs._nanos;
-    }
-  }
-  return {secs, nanos};
+auto Instant::operator-(const Duration& dur) const -> Instant {
+  const auto nanos = num::saturating_sub(_nanos , dur.as_nanos());
+  return Instant{nanos};
 }
 
 void Instant::operator+=(const Duration& dur) {

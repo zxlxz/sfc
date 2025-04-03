@@ -43,7 +43,7 @@ class [[nodiscard]] VecMap {
   }
 
   auto get(const auto& key) const -> Option<const V&> {
-    const auto idx = _keys.find_if([&](const K& t) { return t == key; });
+    const auto idx = _keys.iter().position([&](const K& t) { return t == key; });
     if (!idx) {
       return {};
     }
@@ -51,7 +51,7 @@ class [[nodiscard]] VecMap {
   }
 
   auto get_mut(const auto& key) -> Option<V&> {
-    const auto idx = _keys.find_if([&](const K& t) { return t == key; });
+    const auto idx = _keys.iter().position([&](const K& t) { return t == key; });
     if (!idx) {
       return {};
     }
@@ -59,14 +59,14 @@ class [[nodiscard]] VecMap {
   }
 
   auto operator[](const auto& key) const -> const V& {
-    auto opt = this->get(key);
-    assert_fmt(opt, "VecMap::[]: key(=`{}`) not exists", key);
-    return *opt;
+    const auto idx = this->get(key);
+    panicking::assert_fmt(idx, "VecMap::[]: key(=`{}`) not exists", key);
+    return *idx;
   }
 
   auto operator[](const auto& key) -> V& {
-    auto opt = this->get_mut(key);
-    assert_fmt(opt, "VecMap::[]: key(=`{}`) not exists", key);
+    const auto opt = this->get_mut(key);
+    panicking::assert_fmt(opt, "VecMap::[]: key(=`{}`) not exists", key);
     return *opt;
   }
 

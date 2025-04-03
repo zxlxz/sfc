@@ -17,8 +17,7 @@ class Condvar {
   void notify_all();
 
   void wait(LockGuard& lock);
-  auto wait_timeout(LockGuard& lock, time::Duration dur) -> bool;
-  auto wait_timeout_ms(LockGuard& lock, u32 ms) -> bool;
+  auto wait_timeout(LockGuard& lock, const time::Duration& dur) -> bool;
 };
 
 }  // namespace sfc::sync

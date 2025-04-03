@@ -12,15 +12,15 @@ struct Rev : Iterator<Rev<I>, typename I::Item> {
  public:
   explicit Rev(I iter) : _iter{static_cast<I&&>(iter)} {}
 
-  [[sfc_inline]] auto len() const -> usize {
+  auto len() const -> usize {
     return _iter.len();
   }
 
-  [[sfc_inline]] auto next() -> Option<Item> {
+  auto next() -> Option<Item> {
     return _iter.next_back();
   }
 
-  [[sfc_inline]] auto next_back() -> Option<Item> {
+  auto next_back() -> Option<Item> {
     return _iter.next();
   }
 };

@@ -74,7 +74,7 @@ class Recv {
     static constexpr u32 TRY_TIME_MS = 20U;
     static auto& sched = Sched::global();
 
-    _msgq.push(mem::move(msg), TRY_TIME_MS);
+    _msgq.push(mem::move(msg), time::Duration::from_millis(TRY_TIME_MS));
     sched.submit(Task{this, &_static_run}, _priority);
   }
 };

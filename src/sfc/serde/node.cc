@@ -22,9 +22,7 @@ Node::Node(u64 val) : _inn{static_cast<i64>(val)} {}
 
 Node::Node(f64 val) : _inn{val} {}
 
-Node::Node(Str val) : _inn{String{val}} {}
-
-Node::Node(cstr_t val) : _inn{String{val}} {}
+Node::Node(Str val) : _inn{String::from(val)} {}
 
 Node::Node(List val) : _inn{static_cast<List&&>(val)} {}
 
@@ -113,7 +111,7 @@ void Node::insert(Str key, Node val) {
   }
 
   auto& dict = _inn.as_mut<Dict>();
-  dict.insert(String{key}, static_cast<Node&&>(val));
+  dict.insert(String::from(key), static_cast<Node&&>(val));
 }
 
 }  // namespace sfc::serde

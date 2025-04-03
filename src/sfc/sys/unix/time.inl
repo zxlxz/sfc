@@ -6,43 +6,54 @@
 namespace sfc::sys::time {
 
 struct Instant {
-  time_t secs;
-  long nanos;
+  int64_t _nanos;
 
   static auto now() -> Instant {
     struct timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    return Instant{ts.tv_sec, ts.tv_nsec};
+
+    const auto nanos = ts.tv_sec * 1000000000 + ts.tv_nsec;
+    return Instant{nanso};
   }
 };
 
 struct System {
-  time_t secs;
-  suseconds_t nanos;
+  int64_t _nanos;
 
   static auto now() -> System {
-    struct timeval tv;
-    ::gettimeofday(&tv, nullptr);
-    return System{tv.tv_sec, 1000 * tv.tv_usec};
+    struct timespec ts;
+    ::clock_gettime(CLOCK_REALTIME, &ts);
+
+    const auto nanos = ts.tv_sec * 1000000000 + ts.tv_nsec;
+    return System{nanos};
+  }
+
+  auto micros() const -> int64_t {
+    return _nanos / 1000;
   }
 };
 
 struct DateTime {
-  unsigned year;
-  unsigned month;
-  unsigned mday;
-  unsigned hour;
-  unsigned min;
-  unsigned sec;
+  uint16_t year;
+  uint16_t month;
+  uint16_t mday;
+  uint16_t hour;
+  uint16_t min;
+  uint16_t sec;
 
-  static auto from_secs(time_t sec) -> DateTime {
-    struct tm tm;
+  static auto from_micros(int64_t micros) -> DateTime {
+    const auto secs = micros / 1000000;
+
+    struct tm tm{};
     ::localtime_r(&sec, &tm);
 
     const auto res = DateTime{
-        static_cast<unsigned>(tm.tm_year + 1900), static_cast<unsigned>(tm.tm_mon + 1),
-        static_cast<unsigned>(tm.tm_mday),        static_cast<unsigned>(tm.tm_hour),
-        static_cast<unsigned>(tm.tm_min),         static_cast<unsigned>(tm.tm_sec),
+        static_cast<uint16_t>(tm.tm_year + 1900),
+        static_cast<uint16_t>(tm.tm_mon + 1),
+        static_cast<uint16_t>(tm.tm_mday),
+        static_cast<uint16_t>(tm.tm_hour),
+        static_cast<uint16_t>(tm.tm_min),
+        static_cast<uint16_t>(tm.tm_sec),
     };
     return res;
   }

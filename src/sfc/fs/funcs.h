@@ -5,14 +5,12 @@
 
 namespace sfc::fs {
 
-auto create_dir(Path path) -> io::Result<>;
+auto create_dir(const Path& path) -> io::Result<>;
 
-auto remove_dir(Path path) -> io::Result<>;
+auto remove_dir(const Path& path) -> io::Result<>;
 
-auto remove_file(Path path) -> io::Result<>;
+auto remove_file(const Path& path) -> io::Result<>;
 
-auto rename(Path from, Path to) -> io::Result<>;
-
-auto symlink(Path original, Path link) -> io::Result<>;
+auto rename(const Path& from, const Path& to) -> io::Result<>;
 
 }  // namespace sfc::fs

@@ -36,14 +36,14 @@ auto TaskQueue::try_pop() -> Option<Task> {
   return this->pop_imp();
 }
 
-auto TaskQueue::pop_timeout_ms(u32 ms) -> Option<Task> {
+auto TaskQueue::pop_timeout(const time::Duration& dur) -> Option<Task> {
   auto lock = _mutex.lock();
 
   if (auto task = this->pop_imp()) {
     return task;
   }
 
-  if (_cv_push.wait_timeout_ms(lock, ms)) {
+  if (_cv_push.wait_timeout(lock, dur)) {
     return this->pop_imp();
   }
 
@@ -65,12 +65,12 @@ void TaskQueue::notify() {
   _cv_push.notify_all();
 }
 
-void TaskQueue::wait(u32 ms) {
+void TaskQueue::wait(const time::Duration& dur) {
   if (_count < _queues.len()) {
     return;
   }
   auto lock = _mutex.lock();
-  _cv_pop.wait_timeout_ms(lock, ms);
+  _cv_pop.wait_timeout(lock, dur);
 }
 
 void TaskQueue::push_imp(Task task, Priority priority) {

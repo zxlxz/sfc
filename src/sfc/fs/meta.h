@@ -15,9 +15,8 @@ struct Meta {
 
   auto is_dir() const -> bool;
   auto is_file() const -> bool;
-  auto is_symlink() const -> bool;
 };
 
-auto meta(Path path) -> io::Result<Meta>;
+auto meta(const Path& path) -> io::Result<Meta>;
 
 }  // namespace sfc::fs

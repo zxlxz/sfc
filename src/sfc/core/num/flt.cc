@@ -3,8 +3,10 @@
 
 namespace sfc::str {
 
-struct Str2Flt {
-  slice::Slice<const char> _s;
+namespace {
+
+struct FltStr {
+  Str _s;
 
  public:
   template <class T>
@@ -26,7 +28,7 @@ struct Str2Flt {
   }
 
  private:
-  [[sfc_inline]] void pop() {
+  void pop() {
     _s._ptr += 1;
     _s._len -= 1;
   }
@@ -59,7 +61,8 @@ struct Str2Flt {
     for (; _s._len != 0; this->pop()) {
       const auto c = _s._ptr[0];
       const auto n = static_cast<u8>(c - '0');
-      if (n >= 10) break;
+      if (n >= 10)
+        break;
       res = 10 * res + n;
     }
     return res;
@@ -76,7 +79,8 @@ struct Str2Flt {
     for (; _s._len != 0; this->pop()) {
       const auto c = _s._ptr[0];
       const auto n = static_cast<u8>(c - '0');
-      if (n >= 10) break;
+      if (n >= 10)
+        break;
 
       exp /= 10.0;
       res += n * exp;
@@ -85,13 +89,17 @@ struct Str2Flt {
   }
 };
 
-template <class T>
-auto Str::parse() const -> option::Option<T> {
-  auto imp = Str2Flt{{_ptr, _len}};
-  return imp.parse_flt<T>();
-}
+}  // namespace
 
-template auto Str::parse<f32>() const -> option::Option<f32>;
-template auto Str::parse<f64>() const -> option::Option<f64>;
+template <trait::isFlt T>
+struct FromStr<T> {
+  static auto from_str(Str s) -> Option<T> {
+    auto imp = FltStr{s};
+    return imp.parse_flt<T>();
+  }
+};
+
+template struct FromStr<f32>;
+template struct FromStr<f64>;
 
 }  // namespace sfc::str

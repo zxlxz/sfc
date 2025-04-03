@@ -70,7 +70,7 @@ SFC_TEST(msg) {
     a.run();
   }
 
-  cyber::Sched::global().wait(50);
+  cyber::Sched::global().wait(time::Duration::from_millis(50));
 }
 
 }  // namespace sfc::cyber

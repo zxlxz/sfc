@@ -11,28 +11,28 @@ union Union;
 
 template <>
 union Union<> {
-  [[sfc_inline]] Union() {}
-  [[sfc_inline]] ~Union() {}
+  Union() {}
+  ~Union() {}
 
-  [[sfc_inline]] Union(idx_t<0>, auto&&...) noexcept {}
-
-  template <usize>
-  [[sfc_inline]] void get_unchecked() const {}
+  Union(idx_t<0>, auto&&...) noexcept {}
 
   template <usize>
-  [[sfc_inline]] void get_unchecked_mut() {}
+  void get_unchecked() const {}
 
-  [[sfc_inline]] void dtor(usize) {}
+  template <usize>
+  void get_unchecked_mut() {}
 
-  [[sfc_inline]] void move_ctor(usize, Union&) {}
-  [[sfc_inline]] void copy_ctor(usize, const Union&) {}
+  void dtor(usize) {}
 
-  [[sfc_inline]] void move_assign(usize, Union&) {}
-  [[sfc_inline]] void copy_assign(usize, const Union&) {}
+  void move_ctor(usize, Union&) {}
+  void copy_ctor(usize, const Union&) {}
 
-  [[sfc_inline]] void map(usize, auto&&) const {}
+  void move_assign(usize, Union&) {}
+  void copy_assign(usize, const Union&) {}
 
-  [[sfc_inline]] void map_mut(usize, auto&&) {}
+  void map(usize, auto&&) const {}
+
+  void map_mut(usize, auto&&) {}
 };
 
 template <class T0, class... Ts>
@@ -41,20 +41,16 @@ union Union<T0, Ts...> {
   Union<Ts...> _1;
 
  public:
-  [[sfc_inline]] Union() noexcept {}
+  Union() noexcept {}
 
   template <class... U>
-  [[sfc_inline]] Union(idx_t<0>, U&&... args) noexcept : _0{static_cast<U&&>(args)...} {}
+  Union(idx_t<0>, U&&... args) noexcept : _0{static_cast<U&&>(args)...} {}
 
   template <usize I, class... U>
-  [[sfc_inline]] Union(idx_t<I>, U&&... args) noexcept
+  Union(idx_t<I>, U&&... args) noexcept
       : _1{idx_t<I - 1>{}, static_cast<U&&>(args)...} {}
 
-  [[sfc_inline]] ~Union() {}
-
-  [[sfc_inline]] ~Union()
-    requires(trait::TvCopy<T0, Ts...>)
-  = default;
+  ~Union() {}
 
   template <class U>
   static constexpr auto tag() -> u32 {
@@ -66,7 +62,7 @@ union Union<T0, Ts...> {
   }
 
   template <usize I>
-  [[sfc_inline]] auto get_unchecked() const -> const auto& {
+  auto get_unchecked() const -> const auto& {
     if constexpr (I == 0) {
       return _0;
     } else {
@@ -75,7 +71,7 @@ union Union<T0, Ts...> {
   }
 
   template <usize I>
-  [[sfc_inline]] auto get_unchecked_mut() -> auto& {
+  auto get_unchecked_mut() -> auto& {
     if constexpr (I == 0) {
       return _0;
     } else {
@@ -83,7 +79,7 @@ union Union<T0, Ts...> {
     }
   }
 
-  [[sfc_inline]] void dtor(usize idx) {
+  void dtor(usize idx) {
     if (idx == 0) {
       _0.~T0();
     } else {
@@ -91,7 +87,7 @@ union Union<T0, Ts...> {
     }
   }
 
-  [[sfc_inline]] void move_ctor(usize idx, Union& src) {
+  void move_ctor(usize idx, Union& src) {
     if (idx == 0) {
       ptr::write(&_0, static_cast<T0&&>(src._0));
     } else {
@@ -99,7 +95,7 @@ union Union<T0, Ts...> {
     }
   }
 
-  [[sfc_inline]] void copy_ctor(usize idx, Union& src) {
+  void copy_ctor(usize idx, Union& src) {
     if (idx == 0) {
       ptr::write(&_0, src._0);
     } else {
@@ -107,7 +103,7 @@ union Union<T0, Ts...> {
     }
   }
 
-  [[sfc_inline]] void move_assign(usize idx, Union& src) {
+  void move_assign(usize idx, Union& src) {
     if (idx == 0) {
       _0 = static_cast<T0&&>(src._0);
     } else {
@@ -115,7 +111,7 @@ union Union<T0, Ts...> {
     }
   }
 
-  [[sfc_inline]] void copy_assign(usize idx, const Union& src) {
+  void copy_assign(usize idx, const Union& src) {
     if (idx == 0) {
       _0 = src._0;
     } else {

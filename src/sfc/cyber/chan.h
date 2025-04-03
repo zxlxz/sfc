@@ -21,7 +21,7 @@ class Chan {
   Vec<Listener<T>> _listeners = {};
 
  public:
-  explicit Chan(Str topic) : _topic{topic} {}
+  explicit Chan(Str topic) : _topic{String::from(topic)} {}
 
   ~Chan() {}
 
@@ -78,7 +78,7 @@ class ChanManager {
   auto get(Str topic) -> Rc<Chan<T>> {
     auto res = _chans.get_mut(topic);
     if (!res) {
-      _chans.insert(String{topic}, Rc<Chan<T>>::xnew(topic));
+      _chans.insert(String::from(topic), Rc<Chan<T>>::xnew(topic));
       res = _chans.get_mut(topic);
     }
     return (*res).clone();

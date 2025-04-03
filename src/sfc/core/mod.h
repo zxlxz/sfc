@@ -1,21 +1,21 @@
 #pragma once
 
-#define sfc_inline gnu::always_inline
+#define no_unique_address
 
 namespace sfc {
 
-using i8 = __INT8_TYPE__;
-using i16 = __INT16_TYPE__;
-using i32 = __INT32_TYPE__;
-using i64 = __INT64_TYPE__;
+using i8  = signed char;
+using i16 = short;
+using i32 = int;
+using i64 = decltype(10000000000);
 
-using u8 = __UINT8_TYPE__;
-using u16 = __UINT16_TYPE__;
-using u32 = __UINT32_TYPE__;
-using u64 = __UINT64_TYPE__;
+using u8  = unsigned char;
+using u16 = unsigned short;
+using u32 = unsigned int;
+using u64 = decltype(10000000000U);
 
-using isize = __INTPTR_TYPE__;
-using usize = __SIZE_TYPE__;
+using isize = decltype((char*)0 - (char*)0);
+using usize = decltype(sizeof(0));
 
 using f32 = float;
 using f64 = double;

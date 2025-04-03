@@ -4,13 +4,10 @@
 
 namespace sfc::backtrace {
 
-class Frame {
+struct Frame {
   void* _addr;
 
  public:
-  Frame(void* addr);
-  ~Frame();
-
   auto func() const -> String;
 
   void fmt(auto& f) const {
@@ -18,5 +15,7 @@ class Frame {
     f.write_str(s);
   }
 };
+
+auto capture() -> Vec<Frame>;
 
 }  // namespace sfc::backtrace

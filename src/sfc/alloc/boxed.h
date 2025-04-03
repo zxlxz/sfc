@@ -51,30 +51,30 @@ class Box {
     return Box{ptr};
   }
 
-  [[sfc_inline]] operator bool() const noexcept {
+  operator bool() const noexcept {
     return _ptr._ptr != nullptr;
   }
 
-  [[sfc_inline]] auto ptr() const -> T* {
+  auto ptr() const -> T* {
     return _ptr._ptr;
   }
 
-  [[sfc_inline]] auto operator->() const -> const T* {
+  auto operator->() const -> const T* {
     assert_fmt(_ptr._ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr._ptr;
   }
 
-  [[sfc_inline]] auto operator->() -> T* {
+  auto operator->() -> T* {
     assert_fmt(_ptr._ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr._ptr;
   }
 
-  [[sfc_inline]] auto operator*() const -> const T& {
+  auto operator*() const -> const T& {
     assert_fmt(_ptr._ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr._ptr;
   }
 
-  [[sfc_inline]] auto operator*() -> T& {
+  auto operator*() -> T& {
     assert_fmt(_ptr._ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr._ptr;
   }

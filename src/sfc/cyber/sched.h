@@ -6,6 +6,10 @@
 namespace sfc::cyber {
 
 class Sched {
+  sync::Atomic<bool> _running{false};
+  TaskQueue _task_queue;
+  thread::JoinHandle _thread{};
+
  public:
   Sched();
   ~Sched();
@@ -21,13 +25,7 @@ class Sched {
 
   void remove_task(Task task);
 
-  void wait(u32 msec);
-
- private:
-  sync::Atomic<bool> _running{false};
-  TaskQueue _task_queue;
-
-  thread::JoinHandle _thread{};
+  void wait(const time::Duration& dur);
 };
 
 }  // namespace sfc::cyber

@@ -53,25 +53,25 @@ class Fmter {
   Style _style = {};
 
  public:
-  [[sfc_inline]] Fmter(W& out) : _out{out} {}
+  Fmter(W& out) : _out{out} {}
 
-  [[sfc_inline]] auto style() const -> const Style& {
+  auto style() const -> const Style& {
     return _style;
   }
 
-  [[sfc_inline]] void set_style(const Style& s) {
+  void set_style(const Style& s) {
     _style = s;
   }
 
-  [[sfc_inline]] void write_str(str::Str s) {
+  void write_str(str::Str s) {
     _out.write_str(s);
   }
 
-  [[sfc_inline]] void write_chr(char c) {
+  void write_chr(char c) {
     _out.write_str(str::Str{&c, 1});
   }
 
-  [[sfc_inline]] void write_chs(char c, usize n) {
+  void write_chs(char c, usize n) {
     char buf[8] = {c, c, c, c, c, c, c, c};
     for (; n != 0;) {
       const auto len = cmp::min(n, 8UL);

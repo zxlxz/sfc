@@ -9,50 +9,50 @@ struct Unique {
   T* _ptr = nullptr;
 
  public:
-  [[sfc_inline]] Unique() noexcept = default;
+  Unique() noexcept = default;
 
-  [[sfc_inline]] Unique(decltype(nullptr)) noexcept {}
+  Unique(decltype(nullptr)) noexcept {}
 
-  [[sfc_inline]] explicit Unique(T* ptr) noexcept : _ptr{ptr} {}
+  explicit Unique(T* ptr) noexcept : _ptr{ptr} {}
 
-  [[sfc_inline]] ~Unique() noexcept {
+  ~Unique() noexcept {
     _ptr = nullptr;
   }
 
-  [[sfc_inline]] Unique(Unique&& other) noexcept : _ptr{other._ptr} {
+  Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
   }
 
-  [[sfc_inline]] Unique& operator=(Unique&& other) noexcept {
+  Unique& operator=(Unique&& other) noexcept {
     _ptr = other._ptr;
     other._ptr = nullptr;
     return *this;
   }
 
-  [[sfc_inline]] explicit operator bool() const {
+  explicit operator bool() const {
     return _ptr != nullptr;
   }
 
-  [[sfc_inline]] auto ptr() -> T* {
+  auto ptr() -> T* {
     return _ptr;
   }
 
-  [[sfc_inline]] auto operator->() const -> const T* {
+  auto operator->() const -> const T* {
     assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
-  [[sfc_inline]] auto operator->() -> T* {
+  auto operator->() -> T* {
     assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
-  [[sfc_inline]] auto operator*() const -> const T& {
+  auto operator*() const -> const T& {
     assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 
-  [[sfc_inline]] auto operator*() -> T& {
+  auto operator*() -> T& {
     assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
@@ -80,12 +80,12 @@ auto cast_mut(const T* p) -> T* {
 }
 
 template <class T>
-[[sfc_inline]] inline void write(T* dst, T val) {
+inline void write(T* dst, T val) {
   new (mem::inplace_t{}, dst) T{static_cast<T&&>(val)};
 }
 
 template <class T>
-[[sfc_inline]] inline void write_bytes(T* dst, u8 val, usize cnt) {
+inline void write_bytes(T* dst, u8 val, usize cnt) {
   if (cnt == 0) {
     return;
   }
@@ -93,7 +93,7 @@ template <class T>
 }
 
 template <class T>
-[[sfc_inline]] inline void drop([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
+inline void drop([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
   if constexpr (__is_trivially_copyable(T)) {
     (void)ptr;
     (void)cnt;
@@ -105,7 +105,7 @@ template <class T>
 }
 
 template <class T>
-[[sfc_inline]] inline void copy(const T* src, T* dst, usize cnt) {
+inline void copy(const T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }
@@ -129,7 +129,7 @@ template <class T>
 
 
 template <class T>
-[[sfc_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
+inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }
@@ -143,7 +143,7 @@ template <class T>
 }
 
 template <class T>
-[[sfc_inline]] inline void move(T* src, T* dst, usize cnt) {
+inline void move(T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }
@@ -166,7 +166,7 @@ template <class T>
 }
 
 template <class T>
-[[sfc_inline]] inline void uninit_move(T* src, T* dst, usize cnt) {
+inline void uninit_move(T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }
@@ -180,7 +180,7 @@ template <class T>
 }
 
 template <class T>
-[[sfc_inline]] inline void uninit_copy(const T* src, T* dst, usize cnt) {
+inline void uninit_copy(const T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }

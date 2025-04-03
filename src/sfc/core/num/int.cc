@@ -3,11 +3,13 @@
 
 namespace sfc::str {
 
-struct Str2Int {
-  slice::Slice<const char> _s;
+namespace {
+
+struct IntStr {
+  Str _s;
 
  public:
-  template <trait::UInt T>
+  template <trait::isUInt T>
   auto parse_int() -> Option<T> {
     const auto sign = this->extract_sign();
     if (sign == '-') {
@@ -27,7 +29,7 @@ struct Str2Int {
     return uval;
   }
 
-  template <trait::SInt T>
+  template <trait::isSInt T>
   auto parse_int() -> Option<T> {
     const auto sign = this->extract_sign();
 
@@ -108,22 +110,26 @@ struct Str2Int {
   }
 };
 
-template <class T>
-auto Str::parse() const -> Option<T> {
-  auto imp = Str2Int{{_ptr, _len}};
-  return imp.parse_int<T>();
-}
+}  // namespace
 
-template auto Str::parse<signed char>() const -> Option<signed char>;
-template auto Str::parse<signed short>() const -> Option<signed short>;
-template auto Str::parse<signed int>() const -> Option<signed int>;
-template auto Str::parse<signed long>() const -> Option<signed long>;
-template auto Str::parse<signed long long>() const -> Option<signed long long>;
+template <trait::isInt T>
+struct FromStr<T> {
+  static auto from_str(Str s) -> Option<T> {
+    auto imp = IntStr{s};
+    return imp.parse_int<T>();
+  }
+};
 
-template auto Str::parse<unsigned char>() const -> Option<unsigned char>;
-template auto Str::parse<unsigned short>() const -> Option<unsigned short>;
-template auto Str::parse<unsigned int>() const -> Option<unsigned int>;
-template auto Str::parse<unsigned long>() const -> Option<unsigned long>;
-template auto Str::parse<unsigned long long>() const -> Option<unsigned long long>;
+template struct FromStr<signed char>;
+template struct FromStr<signed short>;
+template struct FromStr<signed int>;
+template struct FromStr<signed long>;
+template struct FromStr<signed long long>;
+
+template struct FromStr<unsigned char>;
+template struct FromStr<unsigned short>;
+template struct FromStr<unsigned int>;
+template struct FromStr<unsigned long>;
+template struct FromStr<unsigned long long>;
 
 }  // namespace sfc::str

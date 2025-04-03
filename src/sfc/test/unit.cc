@@ -55,7 +55,7 @@ auto Unit::match(Slice<const Str> pats) const -> bool {
   return false;
 }
 
-Suite::Suite(Str name) : _name{name} {}
+Suite::Suite(Str name) : _name{String::from(name)} {}
 
 Suite::~Suite() {}
 

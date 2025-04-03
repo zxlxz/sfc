@@ -10,6 +10,12 @@ namespace sfc::sys::thread {
 struct Thread {
   pthread_t _id;
 
+  static auto start_routine(void* raw) -> void* {
+    auto fun = Box<Box<void()>>::from_raw(static_cast<Box<void()>*>(raw));
+    (*fun)();
+    return nullptr;
+  }
+
  public:
   static auto xnew(usize stack_size, Box<void()> fun) -> Option<Thread> {
     // attr
@@ -20,7 +26,7 @@ struct Thread {
     }
 
     // create
-    auto tid = pthread_t{0};
+    auto tid       = pthread_t{0};
     const auto ptr = Box<Box<void()>>::xnew(mem::move(fun)).into_raw();
     const auto err = ::pthread_create(&tid, &attr, &Thread::start_routine, ptr);
 
@@ -39,12 +45,12 @@ struct Thread {
     return Thread{tid};
   }
 
-  auto id() const -> pthread_t {
+  auto raw() const -> pthread_t {
     return _id;
   }
 
   auto name() const -> String {
-    char buf[64] = "";
+    char buf[64]   = "";
     const auto err = ::pthread_getname_np(_id, buf, sizeof(buf));
     if (err != 0) {  // err check
       return {};
@@ -70,26 +76,16 @@ struct Thread {
     const auto err = ::pthread_detach(_id);
     return err == 0;
   }
-
- private:
-  static auto start_routine(void* raw) -> void* {
-    auto fun = Box<Box<void()>>::from_raw(static_cast<Box<void()>*>(raw));
-    (*fun)();
-    return nullptr;
-  }
 };
 
-static inline auto sleep(auto dur) -> bool {
+static inline auto sleep_ms(uint32_t millis) -> bool {
   struct timespec ts = {
-      .tv_sec = static_cast<time_t>(dur.as_secs()),
-      .tv_nsec = static_cast<time_t>(dur.subsec_nanos()),
+      .tv_sec  = millis / 1000,
+      .tv_nsec = millis % 1000 * 1000000,
   };
 
   const auto ret = ::nanosleep(&ts, &ts);
-  if (ret == -1) {
-    return false;
-  }
-  return true;
+  return ret != -1;
 }
 
 }  // namespace sfc::sys::thread

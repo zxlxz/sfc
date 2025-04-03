@@ -7,7 +7,7 @@ namespace sfc::serde {
 template <class T>
 struct Deserialize;
 
-template <trait::Int T>
+template <trait::isInt T>
 struct Deserialize<T> {
   static auto deserialize(const auto& de) -> T {
     const auto res = de.des_int();
@@ -15,7 +15,7 @@ struct Deserialize<T> {
   }
 };
 
-template <trait::Float T>
+template <trait::isFlt T>
 struct Deserialize<T> {
   static auto deserialize(const auto& de) -> T {
     const auto res = de.des_flt();
@@ -23,7 +23,7 @@ struct Deserialize<T> {
   }
 };
 
-template <trait::Enum T>
+template <trait::isEnum T>
 struct Deserialize<T> {
   static auto deserialize(const auto& de) -> T {
     const auto str = de.des_str();
@@ -64,7 +64,7 @@ struct Deserialize<Vec<T>> {
   }
 };
 
-template <trait::Class T>
+template <trait::isClass T>
 struct Deserialize<T> {
   template <class D>
   static auto deserialize(const D& de) -> T {
