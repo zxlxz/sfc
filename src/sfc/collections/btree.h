@@ -75,8 +75,8 @@ struct BTree<K, V, B>::Node {
     ptr::move(_edge, rhs._edge);
     _parent->insert_fit(_idx + 1, mem::move(*&_keys[B - 1]), mem::move(*&_vals[B - 1]), rhs);
 
-    ptr::drop(_keys + B - 1, B);
-    ptr::drop(_vals + B - 1, B);
+    ptr::drop_in_place(_keys + B - 1, B);
+    ptr::drop_in_place(_vals + B - 1, B);
   }
 
   void insert_fit(usize idx, K key, V val, Node* node = nullptr) {

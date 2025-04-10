@@ -23,7 +23,7 @@ void Sched::start() {
     return;
   }
   _thread = thread::spawn([&]() {
-    while (__builtin_expect(_running.load(), true)) {
+    while (_running.load()) {
       auto task_opt = _task_queue.pop_timeout(time::Duration::from_millis(100U));
       if (!task_opt) {
         continue;

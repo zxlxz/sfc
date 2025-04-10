@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef __unix__
-#include "unix/fs.inl"
+#include "unix/thread.inl"
 #endif
 
 #ifdef _WIN32
-#include "windows/fs.inl"
+#include "windows/thread.inl"
 #endif

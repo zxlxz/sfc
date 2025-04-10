@@ -1,10 +1,10 @@
 #include "mutex.h"
 
-#include "sfc/sys/sync.inl"
+#include "sfc/sys/thread.h"
 
 namespace sfc::sync {
 
-namespace sys_imp = sys::sync;
+namespace sys_imp = sys::thread;
 
 struct Mutex::Inn : sys_imp::Mutex {};
 
@@ -17,6 +17,7 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
 auto Mutex::lock() -> LockGuard {
+  _inn->lock();
   return LockGuard{*this};
 }
 
@@ -27,18 +28,14 @@ LockGuard::LockGuard(Mutex& mtx) : _mtx{&mtx} {
 }
 
 LockGuard::~LockGuard() {
-  this->unlock();
-}
-
-LockGuard::LockGuard(LockGuard&&) noexcept = default;
-
-LockGuard& LockGuard::operator=(LockGuard&&) noexcept = default;
-
-void LockGuard::unlock() {
   if (!_mtx || !_mtx->_inn) {
     return;
   }
   _mtx->_inn->unlock();
 }
+
+LockGuard::LockGuard(LockGuard&&) noexcept = default;
+
+LockGuard& LockGuard::operator=(LockGuard&&) noexcept = default;
 
 }  // namespace sfc::sync

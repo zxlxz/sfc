@@ -4,52 +4,54 @@
 
 namespace sfc::ops {
 
-struct Any{
-  Any() = delete;
-};
-
-template <class X, class R, class... T>
-static auto fn(R (X::*f)(T...)) -> R (Any::*)(T...) {
-  return reinterpret_cast<R (Any::*)(T...)>(f);
-}
-
-template <class X, class R, class... T>
-static auto fn(R (X::*f)(T...) const) -> R (Any::*)(T...) {
-  return reinterpret_cast<R (Any::*)(T...)>(f);
-}
-
-template <class F>
-struct Fn;
+template <class>
+struct IFn;
 
 template <class R, class... T>
-struct Fn<R(T...)> {
+struct IFn<R(T...)> {
   struct Meta {
-    usize _size;
-    void (*_dtor)(void*);
-    R (Any::*_call)(T...);
-
-    template <class X>
-    static auto of(const X*) -> const Meta& {
-      static const auto res = Meta{
-          ._size = sizeof(X),
-          ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
-          ._call = ops::fn<X, R, T...>(&X::operator()),
-      };
-      return res;
-    }
+    void (*_drop)(void*) = nullptr;
+    R (*_call)(void*, T&&...) = nullptr;
   };
 
-  void* _self = nullptr;
+  template <class X>
+  static inline const Meta META = {
+      ._drop = [](void* p) { return (*static_cast<X*>(p)).~X(); },
+      ._call = [](void* p, T&&... args) { return (*(X*)(p))((T&&)(args)...); },
+  };
+
+  void*       _self = nullptr;
   const Meta* _meta = nullptr;
 
  public:
-  Fn() noexcept = default;
+  IFn() = default;
 
-  Fn(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
+  template <class X>
+  explicit IFn(X& x) noexcept : _self{&x}, _meta{&META<X>} {}
+
+  auto operator()(T&&... args) -> R {
+    return (_meta->_call)(_self, static_cast<T&&>(args)...);
+  }
 };
+
+template <class I, class X, class R, class... T>
+auto dyn_fn(R (X::*f)(T...)) {
+  return reinterpret_cast<R (I::*)(T...)>(f);
+};
+
+template <class I, class X, class R, class... T>
+auto dyn_fn(R (X::*f)(T...) const) {
+  return reinterpret_cast<R (I::*)(T...) const>(f);
+};
+
+template <class I, class M, class X, class R, class... T, class... F>
+auto dyn_meta(R (X::*f0)(T...), F... fs) -> M {
+  auto drop = [](void* p) { return static_cast<X*>(p)->~X(); };
+  return {drop, dyn_fn<I>(f0), dyn_fn<I>(fs)...};
+}
 
 }  // namespace sfc::ops
 
 namespace sfc {
-using ops::Fn;
+using ops::IFn;
 }  // namespace sfc

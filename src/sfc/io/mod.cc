@@ -1,6 +1,6 @@
 #include "mod.h"
 
-#include "sfc/sys/io.inl"
+#include "sfc/sys/io.h"
 
 namespace sfc::io {
 
@@ -27,19 +27,16 @@ SFC_ENUM(ErrorKind,
          Other);
 
 auto Error::last_os_error() -> Error {
-  const auto code = sys_imp::last_err();
-  return Error::from_os_error(code);
+  const auto imp = sys_imp::Error::last();
+  return Error{imp.kind(), imp.code()};
 }
 
 auto Error::from_os_error(int code) -> Error {
-  const auto kind = sys_imp::err_kind(code);
-  return {kind, code};
+  const auto imp = sys_imp::Error{sys_imp::error_t(code)};
+  return Error{imp.kind(), code};
 }
 
 auto Error::as_str() const -> Str {
-  if (_code != 0) {
-    return sys_imp::error_str(_code);
-  }
   return reflect::enum_name(_kind);
 }
 

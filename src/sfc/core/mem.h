@@ -33,6 +33,22 @@ union Uninit {
   }
 };
 
+template <class T>
+struct Ref {
+  T* _ptr;
+
+ public:
+  Ref(T& val) noexcept : _ptr{&val} {}
+
+  void operator=(T& val) {
+    _ptr = &val;
+  }
+
+  operator T&() {
+    return *_ptr;
+  }
+};
+
 template <class T, class F>
 inline auto bit_cast(F f) -> T {
   static_assert(sizeof(T) == sizeof(F));

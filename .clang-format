@@ -7,11 +7,12 @@ ColumnLimit: 100
 
 AllowAllArgumentsOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseLabelsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortLambdasOnASingleLine: Empty
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
 
 AlignConsecutiveDeclarations: true
 AlignOperands: true
@@ -20,6 +21,8 @@ AlignAfterOpenBracket: Align
 
 BinPackArguments: false
 BinPackParameters: false
+
+IndentCaseBlocks: true
 
 SortIncludes: Never
 SortUsingDeclarations: Never

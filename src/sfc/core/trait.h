@@ -37,6 +37,22 @@ concept isFlt = __is_same(T, float) || __is_same(T, double);
 template <class T>
 concept isNum = isInt<T> || isFlt<T>;
 
+#ifndef __clang__
+template <usize Idx, class T, class... Ts>
+struct __type_pack_element_imp : __type_pack_element_imp<Idx - 1, Ts...> {};
+
+template <class T, class... Ts>
+struct __type_pack_element_imp<0, T, Ts...> {
+  using Type = T;
+};
+
+template <usize Idx, class... T>
+using __type_pack_element = typename __type_pack_element_imp<Idx, T...>::Type;
+#endif
+
+template <usize Idx, class... T>
+using pack_element_t = __type_pack_element<Idx, T...>;
+
 template <template <class> class X, class T>
 auto as(const T& x) -> const X<T>& {
   return reinterpret_cast<const X<T>&>(x);

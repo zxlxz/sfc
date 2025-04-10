@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/sync.h"
 
 namespace sfc::io {
 

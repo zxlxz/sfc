@@ -209,7 +209,8 @@ template <usize N>
 Pattern(char (&)[N]) -> Pattern<Str>;
 
 template <class S>
-struct Split : iter::Iterator<Split<S>, Str> {
+struct Split {
+  using Item = Str;
   using Searcher = S;
   Searcher _searcher;
 
@@ -220,6 +221,10 @@ struct Split : iter::Iterator<Split<S>, Str> {
   }
 
   auto next_back() -> Option<Str> {}
+
+  auto operator->() -> iter::Iterator<Split>* {
+    return static_cast<iter::Iterator<Split>*>(this);
+  }
 };
 
 template <class P>

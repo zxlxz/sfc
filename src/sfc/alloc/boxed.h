@@ -6,36 +6,20 @@ namespace sfc::boxed {
 
 template <class T>
 class Box {
-  ptr::Unique<T> _ptr{};
-
-  explicit Box(T* ptr) noexcept : _ptr{ptr} {}
+  T* _ptr = nullptr;
 
  public:
   Box() noexcept = default;
 
-  Box(mem::inplace_t, auto&&... args) {
-    auto a = alloc::Global{};
-
-    try {
-      _ptr._ptr = a.template alloc_one<T>();
-      new (mem::inplace_t{}, _ptr._ptr) T{static_cast<decltype(args)&&>(args)...};
-    } catch (...) {
-      if (_ptr._ptr) {
-        a.dealloc_one(_ptr._ptr);
-        _ptr = {};
-      }
-    }
-  }
-
   ~Box() {
-    if (!_ptr._ptr) {
-      return;
+    if (_ptr != nullptr) {
+      delete _ptr;
     }
-    _ptr._ptr->~T();
-    alloc::Global{}.dealloc_one(_ptr._ptr);
   }
 
-  Box(Box&& other) noexcept = default;
+  Box(Box&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = nullptr;
+  }
 
   Box& operator=(Box&& other) noexcept {
     auto tmp = static_cast<Box&&>(other);
@@ -44,186 +28,128 @@ class Box {
   }
 
   static auto xnew(auto&&... args) -> Box {
-    return Box{mem::inplace_t{}, static_cast<decltype(args)&&>(args)...};
+    auto res = Box{};
+    res._ptr = new T{static_cast<decltype(args)&&>(args)...};
+    return res;
   }
 
   static auto from_raw(T* ptr) -> Box {
-    return Box{ptr};
+    auto res = Box{};
+    res._ptr = ptr;
+    return res;
   }
 
   operator bool() const noexcept {
-    return _ptr._ptr != nullptr;
+    return _ptr != nullptr;
   }
 
   auto ptr() const -> T* {
-    return _ptr._ptr;
+    return _ptr;
   }
 
   auto operator->() const -> const T* {
-    assert_fmt(_ptr._ptr != nullptr, "boxed::Box::->: deref null");
-    return _ptr._ptr;
+    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::->: deref null");
+    return _ptr;
   }
 
   auto operator->() -> T* {
-    assert_fmt(_ptr._ptr != nullptr, "boxed::Box::->: deref null");
-    return _ptr._ptr;
+    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::->: deref null");
+    return _ptr;
   }
 
   auto operator*() const -> const T& {
-    assert_fmt(_ptr._ptr != nullptr, "boxed::Box::*: deref null");
-    return *_ptr._ptr;
+    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::*: deref null");
+    return *_ptr;
   }
 
   auto operator*() -> T& {
-    assert_fmt(_ptr._ptr != nullptr, "boxed::Box::*: deref null");
-    return *_ptr._ptr;
+    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::*: deref null");
+    return *_ptr;
   }
 
   auto into_raw() && -> T* {
-    const auto p = _ptr._ptr;
-    _ptr._ptr = nullptr;
-    return p;
-  }
-};
-
-template <>
-class Box<void> {
-  struct Meta {
-    usize _size;
-    void (*_dtor)(void*);
-
-    template <class X>
-    static auto from(const X*) -> const Meta& {
-      static const auto res = Meta{
-          ._size = sizeof(X),
-          ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
-      };
-      return res;
-    }
-  };
-
-  struct FatPtr {
-    void* _self = nullptr;
-    const Meta* _meta = nullptr;
-
-    FatPtr() = default;
-
-    FatPtr(auto* x) noexcept : _self{x}, _meta{Meta::from(x)} {}
-
-    auto size() const {
-      return _meta ? _meta->_size : 0U;
-    }
-
-    void drop() {
-      _meta->_dtor(_self);
-    }
-  };
-
-  FatPtr _ptr;
-
- public:
-  template <class X>
-  Box(Box<X> box) : _ptr{box.into_raw()} {}
-
-  ~Box() {
-    if (!_ptr._self) {
-      return;
-    }
-    _ptr.drop();
-    alloc::Global::dealloc_imp(_ptr._self, {_ptr.size(), 0U});
-  }
-
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = {};
-  }
-
-  operator bool() const noexcept {
-    return _ptr._self != nullptr;
+    return mem::take(_ptr);
   }
 };
 
 template <class T>
 class Box<T&> {
-  T _ptr;
+  T _dyn = {};
 
  public:
   Box() noexcept = default;
 
   template <class X>
-  explicit Box(Box<X> box) noexcept : _ptr{mem::move(box).into_raw()} {}
+  Box(Box<X> box) noexcept : _dyn{*mem::move(box).into_raw()} {}
 
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = {};
+  Box(Box&& other) noexcept : _dyn{other._dyn} {
+    other._dyn = {};
   }
 
   ~Box() {
-    if (!_ptr._self) {
+    if (!_dyn._self) {
       return;
     }
-    (_ptr._meta->_dtor)(_ptr._self);
-    alloc::Global{}.dealloc_imp(_ptr._self, {_ptr._meta->_size, 1U});
+    (_dyn._meta->_drop)(_dyn._self);
+    delete reinterpret_cast<char*>(_dyn._self);
   }
 
-  template <class U>
-  static auto xnew(U val) -> Box {
-    return Box{Box<U>{mem::inplace_t{}, static_cast<U&&>(val)}};
+  void operator=(Box&& other) noexcept {
+    auto tmp = static_cast<Box&&>(other);
+    mem::swap(_dyn, other._dyn);
   }
 
   auto operator->() -> T* {
-    return &_ptr;
+    return &_dyn;
   }
 };
 
 template <class R, class... T>
 class Box<R(T...)> {
-  using Inn = ops::Fn<R(T...)>;
-  Inn _ptr = {};
+  using Dyn = ops::IFn<R(T...)>;
+  Dyn _dyn;
 
  public:
   Box() noexcept = default;
 
   template <class X>
-  Box(Box<X> box) noexcept : _ptr{static_cast<Box<X>&&>(box).into_raw()} {}
+  Box(Box<X> box) noexcept : _dyn{*mem::move(box).into_raw()} {}
 
   ~Box() {
-    if (!_ptr._self) {
+    if (!_dyn._self) {
       return;
     }
 
-    (_ptr._meta->_dtor)(_ptr._self);
-    alloc::Global{}.dealloc_imp(_ptr._self, {_ptr._meta->_size, 1U});
+    (_dyn._meta->_drop)(_dyn._self);
+    delete static_cast<char*>(_dyn._self);
   }
 
-  Box(Box&& other) noexcept : _ptr{static_cast<const Inn&>(other._ptr)} {
-    other._ptr._self = nullptr;
+  Box(Box&& other) noexcept : _dyn{other._dyn} {
+    other._dyn = {};
+  }
+
+  Box& operator=(Box&& other) noexcept {
+    auto tmp = mem::move(*this);
+    mem::swap(_dyn, other._dyn);
+    return *this;
   }
 
   static auto xnew(auto f) -> Box {
     return Box{Box<decltype(f)>::xnew(mem::move(f))};
   }
 
-  Box& operator=(Box&& other) noexcept {
-    auto tmp = mem::move(*this);
-    mem::swap(_ptr, other._ptr);
-    return *this;
-  }
-
   explicit operator bool() const {
-    return _ptr._self != nullptr;
+    return _dyn._self != nullptr;
   }
 
-  auto operator()(T... args) -> R {
-    assert_fmt(_ptr._self, "Box::(): deref null object.");
-
-    const auto p = static_cast<ops::Any*>(_ptr._self);
-    const auto f = _ptr._meta->_call;
-    (p->*f)(static_cast<T&&>(args)...);
+  auto operator*() -> Dyn& {
+    return _dyn;
   }
 };
 
 template <class X>
 auto box(X x) -> Box<X> {
-  return Box<X>{mem::inplace_t{}, static_cast<X&&>(x)};
+  return Box<X>::xnew(static_cast<X&&>(x));
 }
 
 }  // namespace sfc::boxed

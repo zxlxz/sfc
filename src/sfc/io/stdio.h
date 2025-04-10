@@ -4,7 +4,10 @@
 
 namespace sfc::io {
 
-struct Stdout {
+class Stdout {
+ public:
+  static auto lock() -> sync::LockGuard;
+
   static auto is_tty() -> bool;
 
   static void flush();
@@ -22,6 +25,7 @@ void print(Str pattern, const auto&... args) {
 }
 
 void println(Str pattern, const auto&... args) {
+  auto lock = Stdout::lock();
   Stdout::write_fmt(pattern, args...);
   Stdout::write_str("\n");
 }

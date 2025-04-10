@@ -5,66 +5,59 @@
 
 namespace sfc::iter {
 
-template <class I, class T>
-struct Iterator {
-  using Item = T;
+template <class I>
+struct Rev;
+
+template <class I, class P>
+struct Filter;
+
+template <class I, class F>
+struct Map;
+
+template <class I>
+struct Iterator : I {
+  using Item = typename I::Item;
 
  public:
   auto nth(usize n) -> Option<Item> {
-    auto& self = static_cast<I&>(*this);
-    for (auto i = 0U; i < n; ++i) {
-      self.next();
+    for (auto i = 0UL; i < n; ++i) {
+      this->next();
     }
-    return self.next();
+    return this->next();
   }
 
   void for_each(auto&& f) {
-    auto& self = static_cast<I&>(*this);
-    for (; auto x = self.next();) {
+    for (; auto x = this->next();) {
       f(x.get_unchecked_mut());
     }
   }
 
   void for_each_idx(auto&& f) {
-    auto& self = static_cast<I&>(*this);
-    for (auto i = 0U; auto x = self.next(); ++i) {
+    for (auto i = 0UL; auto x = this->next(); ++i) {
       f(i, x.get_unchecked_mut());
     }
   }
 
   template <class B>
   auto fold(B init, auto&& f) -> B {
-    auto& self = static_cast<I&>(*this);
+    using U = trait::pack_element_t<trait::isRef<B>, B, mem::Ref<B>>;
 
-    auto accum = init;
-    for (; auto x = self.next();) {
+    auto accum = U{static_cast<B&&>(init)};
+    for (; auto x = this->next();) {
       accum = f(accum, x.get_unchecked_mut());
     }
     return accum;
   }
 
-  template <trait::isRef B>
-  auto fold(B init, auto&& f) -> B {
-    auto& self = static_cast<I&>(*this);
-
-    auto accum_ptr = &init;
-    for (; auto x = self.next();) {
-      accum_ptr = &f(*accum_ptr, x.get_unchecked_mut());
-    }
-    return *accum_ptr;
-  }
-
   auto reduce(auto&& f) -> Item {
-    auto& self = static_cast<I&>(*this);
-    auto  first = self.next();
-    assert_fmt(first, "iter::Iterator::reduce: empty iter");
+    auto first = this->next();
+    panicking::assert_fmt(first, "iter::Iterator::reduce: empty iter");
 
     return this->fold<Item>(mem::move(first).unwrap(), f);
   }
 
   auto find(auto&& pred) -> Option<Item> {
-    auto& self = static_cast<I&>(*this);
-    for (; auto x = self.next();) {
+    for (; auto x = this->next();) {
       if (pred(x.get_unchecked_mut())) {
         return x;
       }
@@ -73,8 +66,7 @@ struct Iterator {
   }
 
   auto rfind(auto&& pred) -> Option<Item> {
-    auto& self = static_cast<I&>(*this);
-    for (; auto x = self.next_back();) {
+    for (; auto x = this->next_back();) {
       if (pred(x.get_unchecked_mut())) {
         return x;
       }
@@ -83,8 +75,7 @@ struct Iterator {
   }
 
   auto position(auto&& pred) -> Option<usize> {
-    auto& self = static_cast<I&>(*this);
-    for (auto idx = 0UL; auto x = self.next(); ++idx) {
+    for (auto idx = 0UL; auto x = this->next(); ++idx) {
       if (pred(x.get_unchecked_mut())) {
         return idx;
       }
@@ -93,8 +84,7 @@ struct Iterator {
   }
 
   auto rposition(auto&& pred) -> Option<usize> {
-    auto& self = static_cast<I&>(*this);
-    for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
+    for (auto idx = this->len() - 1; auto x = this->next_back(); --idx) {
       if (pred(x.get_unchecked_mut())) {
         return idx;
       }
@@ -103,8 +93,6 @@ struct Iterator {
   }
 
   auto all(auto&& f) -> bool {
-    auto& self = static_cast<I&>(*this);
-
     auto res = this->find([&](auto& x) {
       return !f(x);
     });
@@ -117,8 +105,6 @@ struct Iterator {
   }
 
   auto count(auto&& f) -> usize {
-    auto& self = static_cast<I&>(*this);
-
     auto accum = 0UL;
     this->for_each([&](auto& x) mutable {
       f(x) ? accum += 1 : void();
@@ -151,30 +137,26 @@ struct Iterator {
   }
 
   auto sum() {
-    auto& self = static_cast<I&>(*this);
-    auto  init = decltype(*self.next() + *self.next()){0};
+    auto init = decltype(declval<Item>() + declval<Item>()){0};
     return this->fold(init, [](auto&& a, auto&& b) {
       return a + b;
     });
   }
 
   auto product() {
-    auto& self = static_cast<I&>(*this);
-    auto  init = decltype(*self.next() + *self.next()){1};
+    auto init = decltype(declval<Item>() * declval<Item>()){1};
     return this->fold(init, [](auto&& a, auto&& b) {
       return a * b;
     });
   }
 
-  auto rev();
-
-  auto enumerate();
+  auto rev() -> Rev<I>;
 
   template <class F>
-  auto map(F func);
+  auto map(F func) -> Map<I, F>;
 
   template <class P>
-  auto filter(P pred);
+  auto filter(P pred) -> Filter<I, P>;
 };
 
 }  // namespace sfc::iter

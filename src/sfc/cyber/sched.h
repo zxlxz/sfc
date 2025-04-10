@@ -6,8 +6,8 @@
 namespace sfc::cyber {
 
 class Sched {
+  TaskQueue          _task_queue{};
   sync::Atomic<bool> _running{false};
-  TaskQueue _task_queue;
   thread::JoinHandle _thread{};
 
  public:

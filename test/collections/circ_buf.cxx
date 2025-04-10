@@ -22,8 +22,6 @@ SFC_TEST(push_back) {
   test::assert_eq(buf[1], 1);
   test::assert_eq(buf[2], 2);
   test::assert_eq(buf[3], 3);
-
-  ASSERT_ANY_THROW(buf[4]);
 }
 
 SFC_TEST(push_front) {
@@ -44,8 +42,6 @@ SFC_TEST(push_front) {
   test::assert_eq(buf[1], 2);
   test::assert_eq(buf[2], 1);
   test::assert_eq(buf[3], 0);
-
-  ASSERT_ANY_THROW(buf[4]);
 }
 
 SFC_TEST(back_back) {

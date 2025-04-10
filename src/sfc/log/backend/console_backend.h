@@ -5,12 +5,10 @@
 namespace sfc::log {
 
 class ConsoleBackend {
-  static constexpr usize BUFF_SIZE = 2048U;
   bool _enable_color = false;
 
  public:
-  ConsoleBackend();
-  ConsoleBackend(ConsoleBackend&&) noexcept;
+  explicit ConsoleBackend();
   ~ConsoleBackend();
 
   void set_color(bool value);

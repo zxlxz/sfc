@@ -58,7 +58,7 @@ class DebugList {
   }
 
   void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
+    iter->for_each([&](auto&& val) { this->entry(val); });
   }
 };
 
@@ -124,7 +124,7 @@ class DebugMap {
   }
 
   void entries(auto iter) {
-    iter.for_each([&](auto&& item) {  //
+    iter->for_each([&](auto&& item) {  //
       this->entry(item.template get<0>(), item.template get<1>());
     });
   }

@@ -11,7 +11,8 @@ using fd_t = int;
 #endif
 
 class File {
-  fd_t _fd;
+ protected:
+  fd_t _fd = fd_t(-1);
 
  public:
   File() noexcept;

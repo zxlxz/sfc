@@ -206,7 +206,7 @@ auto App::list_tests() const -> String {
 
 auto App::list_tests_xml() const -> String {
   auto suites = TestManager::instance().suites();
-  auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) {
+  auto test_cnt = suites.iter()->fold(0UL, [](auto n, auto& x) {
     return n += x.tests().len();
   });
 

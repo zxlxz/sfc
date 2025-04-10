@@ -11,8 +11,8 @@ template <class T, class A = alloc::Global>
 class [[nodiscard]] Buf {
   friend class Vec<T>;
 
-  T* _ptr    = nullptr;
-  usize _cap = 0;
+  T*                      _ptr = nullptr;
+  usize                   _cap = 0;
   [[no_unique_address]] A _a{};
 
  public:
@@ -99,7 +99,7 @@ class [[nodiscard]] Buf {
 template <class T>
 class [[nodiscard]] Vec {
   Buf<T> _buf = {};
-  usize _len  = 0;
+  usize  _len = 0;
 
  public:
   Vec() noexcept = default;
@@ -139,7 +139,6 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-
   auto as_ptr() const -> const T* {
     return _buf._ptr;
   }
@@ -178,7 +177,7 @@ class [[nodiscard]] Vec {
 
   void set_len(usize new_len) {
     new_len = cmp::min(new_len, _buf._cap);
-    _len    = new_len;
+    _len = new_len;
   }
 
   auto clone() const -> Vec {
@@ -239,7 +238,7 @@ class [[nodiscard]] Vec {
  public:
   void push(T val) {
     this->reserve(1);
-    ptr::write(_buf._ptr + _len, static_cast<T&&>(val));
+    ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
     _len += 1;
   }
 
@@ -248,9 +247,9 @@ class [[nodiscard]] Vec {
       return {};
     }
 
-    auto ret = static_cast<T&&>(_buf[_len - 1]);
-    this->truncate(_len - 1);
-    return ret;
+    auto res = ptr::read(&_buf._ptr[_len - 1]);
+    _len -= 1;
+    return res;
   }
 
   void truncate(usize len) {
@@ -258,7 +257,7 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    ptr::drop(_buf._ptr + len, _len - len);
+    ptr::drop_in_place(_buf._ptr + len, _len - len);
     _len = len;
   }
 
@@ -283,46 +282,44 @@ class [[nodiscard]] Vec {
   }
 
   // swap with last, then remove
-  void swap_remove(usize idx) {
-    if (idx >= _len) {
-      return;
-    }
+  auto swap_remove(usize idx) -> T {
+    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx(={}) out of range(={})", idx, _len);
 
-    if (idx != _len - 1) {
-      _buf[idx] = mem::move(_buf[_len - 1]);
-    }
-
-    this->truncate(_len - 1);
+    auto res = mem::replace(_buf._ptr[idx], ptr::read(_buf._ptr[_len - 1]));
+    _len -= 1;
+    return res;
   }
 
   void insert(usize idx, T element) {
-    panicking::assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx <= _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
 
     this->reserve(1);
-    ptr::move(_buf._ptr + idx, _buf._ptr + idx + 1, _len - idx);
+    if (idx == _len) {
+      ptr::write(&_buf._ptr[_len], static_cast<T&&>(element));
+    } else if (_len != 0) {
+      ptr::write(&_buf._ptr[_len], static_cast<T&&>(_buf._ptr[_len - 1]));
+      ptr::move(&_buf._ptr[idx], &_buf._ptr[idx + 1], _len - idx - 1);
+      _buf._ptr[idx] = static_cast<T&&>(element);
+    }
     _len += 1;
-
-    _buf[idx] = mem::move(element);
   }
 
   auto remove(usize idx) -> T {
     panicking::assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
 
-    auto res = mem::move(_buf[idx]);
+    const auto res = mem::move(_buf[idx]);
     this->drain({idx, idx + 1});
     return res;
   }
 
   void drain(Range range) {
-    auto tmp = (*this)[range];
-    if (!tmp) {
+    const auto rng = range % _len;
+    if (rng.len() == 0) {
       return;
     }
 
-    // mov: [dst,src<<<end]
-    const auto rem = _len - static_cast<usize>(tmp._ptr + tmp.len() - _buf._ptr);
-    ptr::move(tmp._ptr + tmp._len, tmp._ptr, rem);
-    this->truncate(_len - tmp.len());
+    ptr::move(_buf._ptr + rng._end, _buf._ptr + rng._start, _len - rng._end);
+    this->truncate(_len - rng.len());
   }
 
   void resize(usize new_len, T value) {
@@ -337,22 +334,24 @@ class [[nodiscard]] Vec {
 
   void append(Vec& other) {
     this->reserve(other.len());
+
     ptr::uninit_move(other.as_mut_ptr(), this->as_mut_ptr() + _len, other.len());
     this->set_len(_len + other.len());
   }
 
-  void extend(auto&& iter) {
+  void extend(auto iter) {
     this->reserve(iter.len());
 
-    for (T t : iter) {
-      ptr::write(&_buf._ptr[_len++], mem::move(t));
+    for (T val : iter) {
+      ptr::write(&_buf._ptr[_len++], static_cast<T&&>(val));
     }
   }
 
   void extend_with(usize cnt, T value) {
     this->reserve(cnt);
+
     for (auto idx = 0U; idx < cnt; ++idx) {
-      this->push(value);
+      ptr::write(&_buf._ptr[_len++], value);
     }
   }
 
@@ -363,43 +362,42 @@ class [[nodiscard]] Vec {
   }
 
   void retain(auto&& f) {
-    auto idx = 0UL;
-    for (; idx != _len && f(_buf._ptr[idx]); ++idx) {}
-
-    auto new_len = idx;
-    for (; idx != _len; ++idx) {
-      if (f(_buf._ptr[idx])) {
-        _buf._ptr[new_len++] = static_cast<T&&>(_buf._ptr[idx]);
+    auto pdst = _buf._ptr;
+    for (auto psrc = _buf._ptr; psrc != _buf._ptr + _len; ++psrc) {
+      if (!f(*psrc)) {
+        continue;
       }
+      if (psrc != pdst) {
+        *pdst = static_cast<T&&>(*psrc);
+      }
+      ++pdst;
     }
 
-    this->truncate(new_len);
+    this->truncate(pdst - _buf._ptr);
   }
 
  public:
-  using Iter = typename slice::Iter<const T>;
-  auto iter() const -> Iter {
+  auto iter() const -> slice::Iter<const T> {
     return this->as_slice().iter();
   }
 
-  using IterMut = typename slice::Iter<T>;
-  auto iter_mut() -> IterMut {
+  auto iter_mut() -> slice::Iter<T> {
     return this->as_mut_slice().iter_mut();
   }
 
-  auto windows(usize n) const {
+  auto windows(usize n) const -> slice::Windows<const T> {
     return this->as_slice().windows(n);
   }
 
-  auto windows_mut(usize n) {
+  auto windows_mut(usize n) -> slice::Windows<T> {
     return this->as_mut_slice().windows_mut(n);
   }
 
-  auto truncks(usize n) const {
+  auto truncks(usize n) const -> slice::Truncks<const T> {
     return this->as_slice().truncks(n);
   }
 
-  auto truncks_mut(usize n) {
+  auto truncks_mut(usize n) -> slice::Truncks<T> {
     return this->as_mut_slice().truncks_mut(n);
   }
 };

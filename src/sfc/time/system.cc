@@ -1,6 +1,6 @@
 #include "system.h"
 
-#include "sfc/sys/time.inl"
+#include "sfc/sys/time.h"
 
 namespace sfc::time {
 

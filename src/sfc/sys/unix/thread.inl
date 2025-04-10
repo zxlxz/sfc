@@ -8,16 +8,13 @@
 namespace sfc::sys::thread {
 
 struct Thread {
-  pthread_t _id;
+  pthread_t _raw;
 
-  static auto start_routine(void* raw) -> void* {
-    auto fun = Box<Box<void()>>::from_raw(static_cast<Box<void()>*>(raw));
-    (*fun)();
-    return nullptr;
+  static auto current() -> Thread {
+    return Thread{::pthread_self()};
   }
 
- public:
-  static auto xnew(usize stack_size, Box<void()> fun) -> Option<Thread> {
+  static auto start(usize stack_size, void* (*func)(void*)func, void* data) -> Thread {
     // attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -26,65 +23,57 @@ struct Thread {
     }
 
     // create
-    auto tid       = pthread_t{0};
-    const auto ptr = Box<Box<void()>>::xnew(mem::move(fun)).into_raw();
-    const auto err = ::pthread_create(&tid, &attr, &Thread::start_routine, ptr);
-
+    auto thrd = pthread_t{0};
+    (void)::pthread_create(&tid, &attr, &func, data);
     ::pthread_attr_destroy(&attr);
 
-    if (err != 0) {  // err check
-      (void)Box<Box<void()>>::from_raw(ptr);
-      return {};
-    }
-
-    return Thread{tid};
+    return Thread{thrd};
   }
 
-  static auto current() -> Thread {
-    const auto tid = ::pthread_self();
-    return Thread{tid};
-  }
-
-  auto raw() const -> pthread_t {
-    return _id;
-  }
-
-  auto name() const -> String {
-    char buf[64]   = "";
-    const auto err = ::pthread_getname_np(_id, buf, sizeof(buf));
-    if (err != 0) {  // err check
-      return {};
-    }
-    auto res = String::from(buf);
-    return res;
-  }
-
-  auto set_name(cstr_t name) -> bool {
-    if (name == nullptr) {
-      return false;
-    }
-    const auto err = ::pthread_setname_np(_id, name);
-    return err == 0;
+  auto id() const-> int32_t {
+    return ::gettid();
   }
 
   auto join() -> bool {
-    const auto err = ::pthread_join(_id, nullptr);
+    const auto err = ::pthread_join(_raw, nullptr);
     return err == 0;
   }
 
   auto detach() -> bool {
-    const auto err = ::pthread_detach(_id);
+    const auto err = ::pthread_detach(thrd);
+    return err == 0;
+  }
+
+  auto get_name() const -> const char* {
+    static thread_local char buf[256] = "";
+
+    const auto err = ::pthread_getname_np(thrd, buf, sizeof(buf));
+    if (err != 0) {
+      return nullptr;
+    }
+
+    return buf;
+  }
+
+  auto set_name(const char* name) -> bool {
+    if (name == nullptr) {
+      return false;
+    }
+
+    const auto err = ::pthread_setname_np(thrd, name);
     return err == 0;
   }
 };
 
 static inline auto sleep_ms(uint32_t millis) -> bool {
-  struct timespec ts = {
-      .tv_sec  = millis / 1000,
+  using timespec_t = struct ::timespec;
+
+  const auto req = timespec_t{
+      .tv_sec = millis / 1000,
       .tv_nsec = millis % 1000 * 1000000,
   };
 
-  const auto ret = ::nanosleep(&ts, &ts);
+  const auto ret = ::nanosleep(&req, nullptr);
   return ret != -1;
 }
 

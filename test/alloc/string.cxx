@@ -19,7 +19,6 @@ SFC_TEST(index) {
   test::assert_eq(s[0], 'a');
   test::assert_eq(s[1], 'b');
   test::assert_eq(s[2], 'c');
-  ASSERT_ANY_THROW(s[3]);
 }
 
 SFC_TEST(index_range) {

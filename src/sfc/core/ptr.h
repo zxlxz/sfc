@@ -80,24 +80,36 @@ auto cast_mut(const T* p) -> T* {
 }
 
 template <class T>
+inline auto read(T* ptr) -> T {
+  auto res = static_cast<T&&>(*ptr);
+  if constexpr (!__is_trivially_copyable(T)) {
+    ptr->~T();
+  }
+  return res;
+}
+
+template <class T>
 inline void write(T* dst, T val) {
   new (mem::inplace_t{}, dst) T{static_cast<T&&>(val)};
 }
 
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) {
-  if (cnt == 0) {
-    return;
+  if (cnt != 0) {
+    __builtin_memset(dst, val, cnt * sizeof(T));
   }
-  __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
 template <class T>
-inline void drop([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
-  if constexpr (__is_trivially_copyable(T)) {
-    (void)ptr;
-    (void)cnt;
-  } else {
+inline void drop(T* ptr) {
+  if (ptr != nullptr) {
+    ptr->~T();
+  }
+}
+
+template <class T>
+inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
+  if constexpr (!__is_trivially_copyable(T)) {
     for (const auto end = ptr + cnt; ptr != end; ++ptr) {
       ptr->~T();
     }
@@ -106,12 +118,10 @@ inline void drop([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
 
 template <class T>
 inline void copy(const T* src, T* dst, usize cnt) {
-  if (cnt == 0) {
-    return;
-  }
-
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, cnt * sizeof(T));
+    if (cnt != 0) {
+      __builtin_memmove(dst, src, cnt * sizeof(T));
+    }
   } else {
     if (dst < src) {
       for (const auto end = src + cnt; src != end; ++src, ++dst) {
@@ -127,14 +137,12 @@ inline void copy(const T* src, T* dst, usize cnt) {
   }
 }
 
-
 template <class T>
 inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
-  if (cnt == 0) {
-    return;
-  }
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, cnt * sizeof(T));
+    if (cnt != 0) {
+      __builtin_memcpy(dst, src, cnt * sizeof(T));
+    }
   } else {
     for (const auto end = src + cnt; src != end; ++src, ++dst) {
       *dst = *src;
@@ -167,11 +175,10 @@ inline void move(T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_move(T* src, T* dst, usize cnt) {
-  if (cnt == 0) {
-    return;
-  }
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, sizeof(T) * cnt);
+    if (cnt != 0) {
+      __builtin_memcpy(dst, src, sizeof(T) * cnt);
+    }
   } else {
     for (const auto end = src + cnt; src != end; ++src, ++dst) {
       new (mem::inplace_t{}, dst) T{static_cast<T&&>(*src)};
@@ -181,12 +188,10 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) {
-  if (cnt == 0) {
-    return;
-  }
-
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, sizeof(T) * cnt);
+    if (cnt != 0) {
+      __builtin_memcpy(dst, src, sizeof(T) * cnt);
+    }
   } else {
     for (const auto end = src + cnt; src != end; ++src, ++dst) {
       new (mem::inplace_t{}, dst) T{src->clone()};

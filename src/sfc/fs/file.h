@@ -22,8 +22,6 @@ class File : io::File {
   friend struct OpenOptions;
   using Inn = io::File;
 
-  explicit File(Inn&& inn) : Inn{static_cast<Inn&&>(inn)} {}
-
  public:
   File() = default;
   ~File() = default;

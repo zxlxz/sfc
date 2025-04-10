@@ -1,19 +1,30 @@
 #include "file.h"
 
-#include "sfc/sys/fs.inl"
+#include "sfc/sys/io.h"
 
 namespace sfc::fs {
 
-namespace sys_imp = sys::fs;
+namespace sys_imp = sys::io;
 
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
-  const auto sys_imp = sys_imp::OpenOptions{*this};
+  const auto sys_opt = sys_imp::OpenOptions{
+      .append = this->_append,
+      .create = this->_create,
+      .create_new = this->_create_new,
+      .read = this->_read,
+      .write = this->_write,
+      .truncate = this->_truncate,
+  };
 
-  auto imp = sys_imp.open(path.c_str());
-  if (!imp) {
+  auto sys_fd = sys_opt.open(path.c_str());
+  if (!sys_fd) {
     return io::Error::last_os_error();
   }
-  return File{io::File::from_raw_fd(imp._fd)};
+
+  auto res = File{};
+  res._fd = sys_fd;
+
+  return res;
 }
 
 auto File::open(const Path& path) -> io::Result<File> {

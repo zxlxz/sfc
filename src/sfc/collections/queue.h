@@ -182,13 +182,11 @@ class [[nodiscard]] Queue {
   }
 
  public:
-  using Iter = slice::Iter<const T>;
-  auto iter() const -> Iter {
+  auto iter() const -> slice::Iter<const T> {
     return {_vec.as_ptr() + _pos, this->len()};
   }
 
-  using IterMut = slice::Iter<T>;
-  auto iter_mut() -> IterMut {
+  auto iter_mut() -> slice::Iter<T> {
     return {_vec.as_mut_ptr() + _pos, this->len()};
   }
 

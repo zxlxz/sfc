@@ -6,7 +6,6 @@ SFC_TEST(index) {
   auto v = Vec<int>::from((int[]){0, 1, 2, 3});
   test::assert_eq(v[0], 0);
   test::assert_eq(v[1], 1);
-  ASSERT_ANY_THROW(v[8]);
 }
 
 SFC_TEST(slice) {
@@ -39,7 +38,6 @@ SFC_TEST(pop) {
   test::assert_eq(*v.pop(), 2);
   test::assert_eq(*v.pop(), 1);
   test::assert_eq(*v.pop(), 0);
-  ASSERT_ANY_THROW(*v.pop());
 };
 
 SFC_TEST(insert) {

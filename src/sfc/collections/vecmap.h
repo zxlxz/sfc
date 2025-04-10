@@ -43,7 +43,9 @@ class [[nodiscard]] VecMap {
   }
 
   auto get(const auto& key) const -> Option<const V&> {
-    const auto idx = _keys.iter().position([&](const K& t) { return t == key; });
+    const auto idx = _keys.iter()->position([&](const K& t) {
+      return t == key;
+    });
     if (!idx) {
       return {};
     }
@@ -51,7 +53,9 @@ class [[nodiscard]] VecMap {
   }
 
   auto get_mut(const auto& key) -> Option<V&> {
-    const auto idx = _keys.iter().position([&](const K& t) { return t == key; });
+    const auto idx = _keys.iter()->position([&](const K& t) {
+      return t == key;
+    });
     if (!idx) {
       return {};
     }
@@ -102,14 +106,12 @@ class [[nodiscard]] VecMap {
   }
 
  public:
-  using Iter = iter::Zip<typename Vec<K>::Iter, typename Vec<V>::Iter>;
-  auto iter() const -> Iter {
-    return {_keys.iter(), _vals.iter()};
+  auto iter() const {
+    return iter::Zip{_keys.iter(), _vals.iter()};
   }
 
-  using IterMut = iter::Zip<typename Vec<K>::IterMut, typename Vec<V>::IterMut>;
-  auto iter_mut() -> IterMut {
-    return {_keys.iter_mut(), _vals.iter_mut()};
+  auto iter_mut() {
+    return iter::Zip{_keys.iter_mut(), _vals.iter_mut()};
   }
 
   auto contains_key(const auto& key) const -> bool {

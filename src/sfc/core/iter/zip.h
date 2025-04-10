@@ -5,25 +5,41 @@
 namespace sfc::iter {
 
 template <class A, class B>
-struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item>> {
+struct Zip {
   using Item = tuple::Tuple<typename A::Item, typename B::Item>;
 
   A _a;
   B _b;
 
  public:
-  Zip(A a, B b) : _a{static_cast<A&&>(a)}, _b{static_cast<B&&>(b)} {}
-
   auto next() -> option::Option<Item> {
     auto a = _a.next();
-    if (!a) return {};
+    if (!a) {
+      return {};
+    }
     auto b = _b.next();
-    if (!b) return {};
+    if (!b) {
+      return {};
+    }
     return Item{a.unwrap_unchecked(), b.unwrap_unchecked()};
+  }
+
+  auto next_back() -> option::Option<Item> {
+    auto a = _a.next_back();
+    if (!a) {
+      return {};
+    }
+    auto b = _b.next_back();
+    if (!b) {
+      return {};
+    }
+    return Item{a.unwrap_unchecked(), b.unwrap_unchecked()};
+  }
+
+  auto operator->() -> iter::Iterator<Zip>* {
+    return static_cast<iter::Iterator<Zip>*>(this);
   }
 };
 
-template <class A, class B>
-Zip(A, B) -> Zip<A, B>;
 
 }  // namespace sfc::iter

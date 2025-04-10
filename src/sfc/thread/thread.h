@@ -8,7 +8,7 @@ namespace sfc::thread {
 #ifdef _WIN32
 using thrd_t = void*;
 #else
-using thrd_t = uint64_t;
+using thrd_t = u64;
 #endif
 
 struct Thread {
@@ -17,28 +17,31 @@ struct Thread {
  public:
   static auto current() -> Thread;
 
+  auto id() const -> i64;
+
   auto name() const -> String;
-};
-
-struct Builder {
-  usize stack_size = 0;
-  String name      = {};
-
- public:
-  auto spawn(Box<void()> f) -> class JoinHandle;
 };
 
 class JoinHandle {
   friend struct Builder;
-  Thread _thr{};
+  Thread _thrd{};
 
  public:
   explicit JoinHandle() noexcept;
-  JoinHandle(JoinHandle&&) noexcept;
   ~JoinHandle();
 
-  auto operator=(JoinHandle&&) noexcept -> JoinHandle&;
+  JoinHandle(JoinHandle&&) noexcept;
+  JoinHandle& operator=(JoinHandle&&) noexcept;
+
   void join();
+};
+
+struct Builder {
+  usize stack_size = 0;
+  Str   name = {};
+
+ public:
+  auto spawn(Box<void()> f) -> JoinHandle;
 };
 
 void sleep(const time::Duration& dur);

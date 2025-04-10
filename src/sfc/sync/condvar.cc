@@ -1,10 +1,10 @@
 #include "condvar.h"
 
-#include "sfc/sys/sync.inl"
+#include "sfc/sys/thread.h"
 
 namespace sfc::sync {
 
-namespace sys_imp = sys::sync;
+namespace sys_imp = sys::thread;
 
 struct Mutex::Inn : sys_imp::Mutex {};
 
@@ -35,8 +35,7 @@ void Condvar::wait(LockGuard& lock) {
     return;
   }
 
-  auto& mtx = *lock._mtx->_inn;
-  _inn->wait(mtx);
+  _inn->wait(*lock._mtx->_inn);
 }
 
 auto Condvar::wait_timeout(LockGuard& lock, const time::Duration& dur) -> bool {
@@ -44,8 +43,7 @@ auto Condvar::wait_timeout(LockGuard& lock, const time::Duration& dur) -> bool {
     return false;
   }
 
-  auto& mtx = *lock._mtx->_inn;
-  return _inn->wait_timeout_ms(mtx, dur.as_millis());
+  return _inn->wait_timeout_ms(*lock._mtx->_inn, dur.as_millis());
 }
 
 }  // namespace sfc::sync

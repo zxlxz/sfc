@@ -11,6 +11,10 @@ struct IntStr {
  public:
   template <trait::isUInt T>
   auto parse_int() -> Option<T> {
+    if (_s._len == 0) {
+      return {};
+    }
+
     const auto sign = this->extract_sign();
     if (sign == '-') {
       return {};

@@ -1,63 +1,82 @@
-#include "sfc/sys/thread.inl"
-
 #include "thread.h"
+
+#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
 
+#ifdef _WIN32
+using thread_ret_t = unsigned long;
+#else
+using thread_ret_t = void*;
+#endif
+
+static auto start_routine(void* raw) -> thread_ret_t {
+  const auto ptr = static_cast<Box<void()>*>(raw);
+  auto       fun = Box<Box<void()>>::from_raw(ptr);
+
+  try {
+    (**fun)();
+  } catch (...) {}
+
+  return 0;
+};
+
 auto Thread::current() -> Thread {
-  const auto imp = sys_imp::Thread::current();
-  return Thread{imp.raw()};
+  const auto thrd_imp = sys_imp::Thread::current();
+  return Thread{thrd_imp._raw};
+}
+
+auto Thread::id() const -> i64 {
+  const auto thrd_imp = sys_imp::Thread{_raw};
+  return thrd_imp.id();
 }
 
 auto Thread::name() const -> String {
-  const auto imp = sys_imp::Thread{_raw};
-  return imp.name();
+  const auto thrd_imp = sys_imp::Thread{_raw};
+  const auto thrd_name = Str::from_cstr(thrd_imp.name());
+  return String::from(thrd_name);
 }
 
-auto Builder::spawn(Box<void()> f) -> JoinHandle {
-  auto fun = [f = mem::move(f), name = mem::move(name)]() mutable {
-    auto thr = sys_imp::Thread::current();
-    thr.set_name(name.c_str());
-    try {
-      f();
-    } catch (...) {
-      return;
-    }
-  };
+auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+  auto fun_imp = Box<void()>::xnew([fun = mem::move(fun), name = String::from(name)]() mutable {
+    auto thrd_imp = sys_imp::Thread::current();
+    thrd_imp.set_name(name.c_str());
+    (*fun)();
+  });
 
-  auto imp = sys_imp::Thread::xnew(stack_size, Box<void()>::xnew(mem::move(fun)))
-                 .expect("sys::Thread::Builder: spawn thread failed.");
+  auto fun_box = boxed::box(mem::move(fun_imp));
+  auto sys_thr = sys_imp::Thread::start(stack_size, start_routine, fun_box.ptr());
+  if (!sys_thr) {
+    mem::move(fun_box).into_raw();
+  }
 
   auto res = JoinHandle{};
-  res._thr = Thread{imp.raw()};
+  res._thrd = Thread{sys_thr._raw};
   return res;
 }
 
 JoinHandle::JoinHandle() noexcept = default;
 
 JoinHandle::~JoinHandle() {
-  this->join();
+  auto thr = sys_imp::Thread{_thrd._raw};
+  thr.detach();
 }
 
-JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thr{other._thr} {
-  other._thr = {};
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{other._thrd} {
+  other._thrd._raw = thrd_t(0);
 }
 
-auto JoinHandle::operator=(JoinHandle&& other) noexcept -> JoinHandle& {
-  auto tmp = mem::move(*this);
-  mem::swap(_thr, other._thr);
+JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
+  auto tmp = mem::move(other);
+  mem::swap(_thrd, tmp._thrd);
   return *this;
 }
 
 void JoinHandle::join() {
-  if (_thr._raw != thrd_t(0)) {
-    return;
-  }
-
-  auto imp = sys_imp::Thread{_thr._raw};
-  imp.join();
+  const auto tid = mem::take(_thrd._raw);
+  sys_imp::Thread{tid}.join();
 }
 
 void sleep(const time::Duration& dur) {

@@ -29,8 +29,9 @@ void String::reserve(usize additional) {
   if (additional == 0) {
     return;
   }
+
   _vec.reserve(additional + 1);
-  _vec.as_mut_ptr()[_vec.len()] = 0;
+  _vec.as_mut_ptr()[_vec.len() + additional] = 0;
 }
 
 void String::truncate(usize len) {
@@ -38,25 +39,29 @@ void String::truncate(usize len) {
     return;
   }
   _vec.truncate(len);
-  _vec.as_mut_ptr()[_vec.len()] = 0;
+
+  if (_vec.capacity() != 0) {
+    _vec.as_mut_ptr()[_vec.len()] = 0;
+  }
 }
 
 auto String::remove(usize idx) -> char {
-  auto res = _vec.remove(idx);
-
-  _vec.as_mut_slice()[_vec.len()] = 0;
+  const auto res = _vec[idx];
+  this->drain({idx, idx + 1});
   return res;
 }
 
 void String::drain(Range range) {
   _vec.drain(range);
-  if (!_vec.is_empty()) {
+
+  if (_vec.capacity() != 0) {
     _vec.as_mut_slice()[_vec.len()] = 0;
   }
 }
 
 void String::insert(usize idx, char ch) {
   this->reserve(1);
+
   _vec.insert(idx, ch);
 }
 

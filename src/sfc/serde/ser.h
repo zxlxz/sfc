@@ -12,7 +12,7 @@ class Serialize<T> : T {
  public:
   auto serialize(const auto& se) const {
     const auto info = reflect_struct(static_cast<const T&>(*this));
-    auto res = se.ser_dict();
+    auto       res = se.ser_dict();
     info.fields().map([&](const auto& item) {
       auto node = se.ser(item.value);
       res.insert(item.name, mem::move(node));
@@ -107,15 +107,16 @@ class Serialize<String> : String {
 template <class S>
 class FmtAdapter {
   const S& _ser;
-  Node& _node;
+  Node&    _node;
 
  public:
   FmtAdapter(const S& ser, Node& node) : _ser{ser}, _node{node} {}
 
   struct DebugList {
     const S& _ser;
-    Node& _root;
+    Node&    _root;
 
+   public:
     void entry(const auto& element) {
       auto node = _ser.ser(element);
       _root.push(mem::move(node));
@@ -130,15 +131,16 @@ class FmtAdapter {
 
   struct DebugMap {
     const S& _ser;
-    Node& _root;
+    Node&    _root;
 
+   public:
     void entry(Str name, const auto& element) {
       auto node = _ser.ser(element);
       _root.insert(name, mem::move(node));
     }
 
     void entries(auto iter) {
-      iter.for_each([&](auto&& item) {  //
+      iter->for_each([&](auto&& item) {  //
         this->entry(item.template get<0>(), item.template get<1>());
       });
     }
@@ -146,8 +148,9 @@ class FmtAdapter {
 
   struct DebugStruct {
     const S& _ser;
-    Node& _root;
+    Node&    _root;
 
+   public:
     void field(Str name, const auto& element) {
       auto node = _ser.ser(element);
       _root.insert(name, mem::move(node));
@@ -247,4 +250,4 @@ auto serialize(const auto& val) -> Node {
   return res;
 }
 
-}  // namespace sfc::serde::ser
+}  // namespace sfc::serde

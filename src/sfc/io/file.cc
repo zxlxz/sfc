@@ -1,6 +1,6 @@
 #include "file.h"
 
-#include "sfc/sys/io.inl"
+#include "sfc/sys/io.h"
 
 namespace sfc::io {
 
@@ -40,11 +40,12 @@ auto File::read(Slice<u8> buf) -> Result<usize> {
     return 0UL;
   }
 
-  if (_fd == fd_t(-1)) {
+  auto imp = sys_imp::File{_fd};
+  if (!imp) {
     return Error{ErrorKind::InvalidInput};
   }
 
-  const auto res = sys_imp::File{_fd}.read(buf);
+  const auto res = imp.read(buf.as_mut_ptr(), buf.len());
   if (res == -1) {
     return io::Error::last_os_error();
   }
@@ -56,12 +57,13 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
     return 0UL;
   }
 
-  if (_fd == fd_t(-1)) {
+  auto imp = sys_imp::File{_fd};
+  if (!imp) {
     return Error{ErrorKind::InvalidInput};
   }
 
   // do write
-  const auto res = sys_imp::File{_fd}.write(buf);
+  const auto res = imp.write(buf.as_ptr(), buf.len());
   if (res == -1) {
     return io::Error::last_os_error();
   }
@@ -76,6 +78,7 @@ auto File::read_all(Vec<u8>& buf, usize buf_len) -> Result<usize> {
     if (ret.is_err()) {
       return ret.unwrap_err();
     }
+    
     const usize cnt = ret.unwrap();
     buf.set_len(buf.len() + cnt);
     if (cnt == 0) {

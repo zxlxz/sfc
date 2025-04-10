@@ -30,8 +30,6 @@ class [[nodiscard]] LockGuard {
   ~LockGuard();
   LockGuard(LockGuard&&) noexcept;
   LockGuard& operator=(LockGuard&&) noexcept;
-
-  void unlock();
 };
 
 }  // namespace sfc::sync

@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "sfc/core.h"
-
-namespace sfc::sys::env {
+namespace sfc::sys::os {
 
 auto getenv(cstr_t key) -> Str {
   const auto res = ::getenv(key);

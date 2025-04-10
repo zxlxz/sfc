@@ -70,7 +70,7 @@ struct Global {
 
     const auto new_ptr = this->alloc_array<T>(new_len);
     ptr::uninit_move(old_ptr, new_ptr, old_len);
-    ptr::drop(old_ptr, old_len);
+    ptr::drop_in_place(old_ptr, old_len);
     return new_ptr;
   }
 };

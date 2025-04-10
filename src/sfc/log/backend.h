@@ -6,47 +6,37 @@ namespace sfc::log {
 
 struct Entry {
   Level level;
-  Str time;
-  Str msg;
+  Str   time;
+  Str   msg;
 };
 
-struct IBackend {
-  struct Meta {
-    usize _size;
-    void (*_dtor)(void*);
-    void (ops::Any::*_flush)();
-    void (ops::Any::*_write_entry)(Entry);
+class IBackend {
+  friend class Box<IBackend&>;
 
-    template <class X>
-    static auto of(const X*) -> const Meta& {
-      static const auto res = Meta{
-          ._size = sizeof(X),
-          ._dtor = [](void* p) { static_cast<X*>(p)->~X(); },
-          ._flush = ops::fn(&X::flush),
-          ._write_entry = ops::fn(&X::write_entry),
-      };
-      return res;
-    }
+  struct Meta {
+    void (*_drop)(void*) = nullptr;
+    void (IBackend::*_flush)() = nullptr;
+    void (IBackend::*_write_entry)(Entry) = nullptr;
   };
 
-  void* _self = nullptr;
+  template <class X>
+  static const inline Meta META = ops::dyn_meta<IBackend, Meta>(&X::flush, &X::write_entry);
+
+  IBackend*   _self = nullptr;
   const Meta* _meta = nullptr;
 
  public:
   IBackend() = default;
 
-  explicit IBackend(auto* x) : _self{x}, _meta{&Meta::of(x)} {}
+  template <class X>
+  explicit IBackend(X& x) noexcept : _self{reinterpret_cast<IBackend*>(&x)}, _meta{&META<X>} {}
 
   void flush() {
-    const auto p = static_cast<ops::Any*>(_self);
-    const auto f = _meta->_flush;
-    (p->*f)();
+    return (_self->*_meta->_flush)();
   }
 
   void write_entry(Entry entry) {
-    const auto p = static_cast<ops::Any*>(_self);
-    const auto f = _meta->_write_entry;
-    (p->*f)(entry);
+    return (_self->*_meta->_write_entry)(entry);
   }
 };
 

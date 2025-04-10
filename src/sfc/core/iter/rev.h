@@ -5,13 +5,11 @@
 namespace sfc::iter {
 
 template <class I>
-struct Rev : Iterator<Rev<I>, typename I::Item> {
+struct Rev {
   using Item = typename I::Item;
   I _iter;
 
  public:
-  explicit Rev(I iter) : _iter{static_cast<I&&>(iter)} {}
-
   auto len() const -> usize {
     return _iter.len();
   }
@@ -23,11 +21,15 @@ struct Rev : Iterator<Rev<I>, typename I::Item> {
   auto next_back() -> Option<Item> {
     return _iter.next();
   }
+
+  auto operator->() -> iter::Iterator<Rev> {
+    return static_cast<iter::Iterator<Rev>*>(this);
+  }
 };
 
-template <class I, class T>
-auto Iterator<I, T>::rev() {
-  return Rev<I>{static_cast<I&&>(*this)};
+template <class Impl>
+auto Iterator<Impl>::rev() -> Rev<Impl> {
+  return {static_cast<Impl&&>(*this)};
 }
 
 }  // namespace sfc::iter

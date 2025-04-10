@@ -5,14 +5,12 @@
 namespace sfc::iter {
 
 template <class I, class P>
-struct Filter : Iterator<Filter<I, P>, typename I::Item> {
+struct Filter {
   using Item = typename I::Item;
   I _iter;
   P _pred;
 
  public:
-  explicit Filter(I iter, P pred) : _iter{static_cast<I&&>(iter)}, _pred{static_cast<P&&>(pred)} {}
-
   auto next() -> Option<Item> {
     return _iter.find(_pred);
   }
@@ -20,12 +18,10 @@ struct Filter : Iterator<Filter<I, P>, typename I::Item> {
   auto next_back() -> Option<Item> {
     return _iter.rfind(_pred);
   }
-};
 
-template <class I, class T>
-template <class P>
-auto Iterator<I, T>::filter(P pred) {
-  return Filter<I, P>{static_cast<I&&>(*this), static_cast<P&&>(pred)};
-}
+  auto operator->() -> iter::Iterator<Filter>* {
+    return static_cast<iter::Iterator<Filter>*>(this);
+  }
+};
 
 }  // namespace sfc::iter

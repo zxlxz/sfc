@@ -1,6 +1,6 @@
 #include "frame.h"
 
-#include "sfc/sys/backtrace.inl"
+#include "sfc/sys/backtrace.h"
 
 namespace sfc::backtrace {
 
@@ -11,14 +11,12 @@ auto Frame::func() const -> String {
   return String::from(Str::from_cstr(info.func));
 }
 
-auto capture() -> Vec<Frame> {
-  auto frames = sys_imp::trace();
+auto Backtrace::capture() -> Backtrace {
+  auto res = Backtrace{};
+  res._frames.reserve(64);
 
-  auto res = Vec<Frame>{};
-  res.reserve(frames.len());
-  for (auto frame_ptr : frames.as_slice()) {
-    res.push({frame_ptr});
-  }
+  const auto frame_cnt = sys_imp::trace(res._frames.as_mut_ptr(), res._frames.capacity());
+  res._frames.set_len(frame_cnt);
 
   return res;
 }

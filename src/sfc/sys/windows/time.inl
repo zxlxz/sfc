@@ -7,74 +7,88 @@
 namespace sfc::sys::time {
 
 struct Instant {
-  LONG64 _cnt;
+  // Windows performance counter is in counts since system boot
+  LONG64 _cnt = 0;
 
-  static auto formance_freq() -> LONG64 {
+ public:
+  static auto performance_freq() -> LONG64 {
     auto val = ::LARGE_INTEGER{};
-    if (::QueryPerformanceFrequency(&val) == 0) {
+    if (!::QueryPerformanceFrequency(&val)) {
       return 1;
     }
     return val.QuadPart;
   }
 
   static auto now() -> Instant {
-    auto cnt = ::LARGE_INTEGER{};
-    if (::QueryPerformanceCounter(&cnt) == 0) {
-      return {0};
+    auto val = ::LARGE_INTEGER{};
+    if (!::QueryPerformanceCounter(&val)) {
+      return Instant{};
     };
-    return {cnt.QuadPart};
+    return Instant{val.QuadPart};
   }
 
   auto nanos() const -> ULONG64 {
-    static const auto freq = formance_freq();
-    return static_cast<ULONG64>(_cnt * 1000000000 / freq);
+    static const auto freq = performance_freq();
+    return static_cast<ULONG64>(_cnt * 1000000000U / freq);
   }
 };
 
 struct System {
-  ::FILETIME _ft;
+  // Windows FILETIME is in 100-nanosecond intervals since January 1, 1601
+  ::FILETIME _ft = {};
 
+ public:
   static auto now() -> System {
     auto file_time = FILETIME{0};
     ::GetSystemTimeAsFileTime(&file_time);
     return {file_time};
   }
 
+  static auto from_secs(ULONG64 secs) -> System {
+    // Convert seconds to 100-nanosecond intervals
+    const auto counts = secs * 10000000;
+
+    const auto file_time = ::FILETIME{
+        .dwLowDateTime = static_cast<DWORD>(counts & 0xFFFFFFFFU),
+        .dwHighDateTime = static_cast<DWORD>(counts >> 32),
+    };
+
+    return System{file_time};
+  }
+
   auto micros() const -> ULONG64 {
-    const auto cnt = ULONG64(_ft.dwHighDateTime) + (ULONG64(_ft.dwLowDateTime) << 32);
-    return cnt / 10;
+    // Convert FILETIME to 100-nanosecond intervals
+    const auto counts = ULONG64(_ft.dwHighDateTime) + (ULONG64(_ft.dwLowDateTime) << 32);
+    const auto micros = counts / 10;
+    return micros;
   }
 };
 
 struct DateTime {
-  USHORT year;
-  USHORT month;
-  USHORT mday;
-  USHORT hour;
-  USHORT min;
-  USHORT sec;
+  USHORT year = 0;
+  USHORT month = 0;
+  USHORT mday = 0;
+  USHORT hour = 0;
+  USHORT min = 0;
+  USHORT sec = 0;
 
-  static auto from_secs(ULONG64 secs) -> DateTime {
-    const auto ft_cnt = secs * 10000000;
-
-    auto file_time           = ::FILETIME{};
-    file_time.dwLowDateTime  = static_cast<DWORD>(ft_cnt & 0xFFFFFFFFU);
-    file_time.dwHighDateTime = static_cast<DWORD>(ft_cnt >> 32);
-
-    auto sys_time = ::SYSTEMTIME{};
-    if (::FileTimeToSystemTime(&file_time, &sys_time) == 0) {
+ public:
+  static auto from_systime(const System& sys_time) -> DateTime {
+    // Convert FILETIME to SYSTEMTIME
+    auto date_time = ::SYSTEMTIME{};
+    if (!::FileTimeToSystemTime(&sys_time._ft, &date_time)) {
       return {};
     }
 
+    // Convert SYSTEMTIME to DateTime
     const auto res = DateTime{
-        sys_time.wYear,
-        sys_time.wMonth,
-        sys_time.wDay,
-        sys_time.wHour,
-        sys_time.wMinute,
-        sys_time.wSecond,
+        date_time.wYear,
+        date_time.wMonth,
+        date_time.wDay,
+        date_time.wHour,
+        date_time.wMinute,
+        date_time.wSecond,
     };
-
     return res;
   }
 };

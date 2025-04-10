@@ -124,7 +124,6 @@ struct Str {
   }
 };
 
-
 template <class T>
 struct FromStr {
   static auto from_str(Str) -> option::Option<T>;

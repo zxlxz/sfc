@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef __unix__
-#include "unix/sync.inl"
+#include "unix/os.inl"
 #endif
 
 #ifdef _WIN32
-#include "windows/sync.inl"
+#include "windows/os.inl"
 #endif

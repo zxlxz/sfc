@@ -5,16 +5,16 @@
 namespace sfc::log {
 
 class Logger {
-  static constexpr usize BUFF_SIZE = 4096U;
+  static inline thread_local String _fmt_buf{};
 
-  Level _level = Level::Info;
-  Vec<Box<IBackend&>> _backends;
+  Level               _level{Level::Info};
+  Vec<Box<IBackend&>> _backends{};
 
  public:
   Logger();
-  Logger(Logger&&) noexcept;
   ~Logger();
 
+  Logger(Logger&&) noexcept;
   Logger& operator=(Logger&&) noexcept;
 
   auto get_level() const -> Level;
@@ -37,20 +37,18 @@ class Logger {
       return;
     }
 
-    auto buf = fmt::Buf<BUFF_SIZE>{};
-    fmt::write(buf, fmts, args...);
-    this->write_msg(level, buf.as_str());
+    _fmt_buf.clear();
+    fmt::write(_fmt_buf, fmts, args...);
+    this->write_msg(level, _fmt_buf.as_str());
   }
-
 
   void add_backend(auto backend) {
-    this->add_backend_imp(Box<IBackend&>::xnew(mem::move(backend)));
+    _backends.push(boxed::box(mem::move(backend)));
   }
 
-  void clear_backends();
-
- private:
-  void add_backend_imp(Box<IBackend&> backend);
+  void clear_backends() {
+    _backends.clear();
+  }
 };
 
 }  // namespace sfc::log

@@ -33,7 +33,7 @@ struct Condvar {
     ::pthread_cond_wait(&_raw, &mtx._raw);
   }
 
-  auto wait_timeout(Mutex& mtx, auto dur) -> bool {
+  auto wait_timeout_ms(Mutex& mtx, uint32_t millis) -> bool {
     struct timeval now {};
     struct timespec timeout {};
     ::gettimeofday(&now, nullptr);

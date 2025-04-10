@@ -1,6 +1,6 @@
 #include "alloc.h"
 
-#include "sfc/sys/alloc.inl"
+#include "sfc/sys/alloc.h"
 
 namespace sfc::alloc {
 

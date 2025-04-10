@@ -4,39 +4,34 @@
 
 namespace sfc::iter {
 
-template <class F, class... Args>
-using invoke_result_t = decltype(declval<F>()(declval<Args>()...));
-
 template <class I, class F>
-struct Map : Iterator<Map<I, F>, invoke_result_t<F, typename I::Item>> {
-  using Item = invoke_result_t<F, typename I::Item>;
+struct Map {
+  using Item = decltype(declval<F>()(declval<I::Item>()));
   I _iter;
   F _func;
 
  public:
-  explicit Map(I iter, F func) : _iter{static_cast<I&&>(iter)}, _func{static_cast<F&&>(func)} {}
-
   auto len() const -> usize {
     return _iter.len();
   }
 
   auto next() -> Option<Item> {
-    auto val = _iter.next();
-    if (!val) return {};
-    return _func(mem::move(val).unwrap());
+    return _iter.next().map(_func);
   }
 
   auto next_back() -> Option<Item> {
-    auto val = _iter.next_back();
-    if (!val) return {};
-    return _func(mem::move(val).unwrap());
+    return _iter.next_back().map(_func);
+  }
+
+  auto operator->() -> iter::Iterator<Map>* {
+    return static_cast<iter::Iterator<Map>*>(this);
   }
 };
 
-template <class I, class T>
+template <class I>
 template <class F>
-auto Iterator<I, T>::map(F func) {
-  return Map<I, F>{static_cast<I&&>(*this), static_cast<F&&>(func)};
+auto Iterator<I>::map(F f) -> Map<I, F> {
+  return {static_cast<I&&>(*this), static_cast<F&&>(f)};
 }
 
 }  // namespace sfc::iter

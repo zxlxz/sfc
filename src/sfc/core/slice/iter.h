@@ -5,7 +5,9 @@
 namespace sfc::slice {
 
 template <class T>
-struct Iter : iter::Iterator<Iter<T>, T&> {
+struct Iter {
+  using Item = T&;
+  
   T* _ptr;
   T* _end;
 
@@ -16,20 +18,28 @@ struct Iter : iter::Iterator<Iter<T>, T&> {
   }
 
   auto next() -> Option<T&> {
-    if (_ptr >= _end)
+    if (_ptr >= _end) {
       return {};
+    }
     return *(_ptr++);
   }
 
   auto next_back() -> Option<T&> {
-    if (_ptr >= _end)
+    if (_ptr >= _end) {
       return {};
+    }
     return *(--_end);
+  }
+
+  auto operator->() -> iter::Iterator<Iter>* {
+    return static_cast<iter::Iterator<Iter>*>(this);
   }
 };
 
 template <class T>
-struct Windows : iter::Iterator<Windows<T>, T> {
+struct Windows {
+  using Item = Slice<T>;
+
   Slice<T> _buf;
   usize    _len;
 
@@ -56,10 +66,16 @@ struct Windows : iter::Iterator<Windows<T>, T> {
     _buf._len -= 1;
     return res;
   }
+
+  auto operator->() -> iter::Iterator<Windows>* {
+    return static_cast<iter::Iterator<Windows>*>(this);
+  }
 };
 
 template <class T>
-struct Truncks : iter::Iterator<Truncks<T>, T> {
+struct Truncks {
+  using Item = Slice<T>;
+
   Slice<T> _buf;
   usize    _len;
 
@@ -77,36 +93,40 @@ struct Truncks : iter::Iterator<Truncks<T>, T> {
     _buf._len -= _len;
     return res;
   }
+
+  auto operator->() -> iter::Iterator<Truncks>* {
+    return static_cast<iter::Iterator<Truncks>*>(this);
+  }
 };
 
 template <class T>
 auto Slice<T>::iter() const -> Iter<const T> {
-  return Iter<const T>{{}, _ptr, _ptr + _len};
+  return Iter<const T>{_ptr, _ptr + _len};
 }
 
 template <class T>
 auto Slice<T>::iter_mut() -> Iter<T> {
-  return Iter<T>{{}, _ptr, _ptr + _len};
+  return Iter<T>{_ptr, _ptr + _len};
 }
 
 template <class T>
 auto Slice<T>::windows(usize wlen) const -> Windows<const T> {
-  return Windows<const T>{{}, *this, wlen};
+  return Windows<const T>{*this, wlen};
 }
 
 template <class T>
 auto Slice<T>::windows_mut(usize wlen) -> Windows<T> {
-  return Windows<T>{{}, *this, wlen};
+  return Windows<T>{*this, wlen};
 }
 
 template <class T>
 auto Slice<T>::truncks(usize wlen) const -> Truncks<const T> {
-  return Truncks<const T>{{}, *this, wlen};
+  return Truncks<const T>{*this, wlen};
 }
 
 template <class T>
 auto Slice<T>::truncks_mut(usize wlen) -> Truncks<T> {
-  return Truncks<T>{{}, *this, wlen};
+  return Truncks<T>{*this, wlen};
 }
 
 }  // namespace sfc::slice

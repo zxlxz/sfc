@@ -4,16 +4,11 @@
 
 namespace sfc::rc {
 
-namespace detail {
-
 template <class T>
 struct RcBox {
+  T   _val;
   i32 _strong = 1;
   i32 _weak = 1;
-  T _val;
-
-  template <class... U>
-  RcBox(U&&... args) : _val{static_cast<U&&>(args)...} {}
 
  public:
   auto strong() const -> i32 {
@@ -41,23 +36,12 @@ struct RcBox {
   }
 };
 
-}  // namespace detail
-
 template <class T>
 class Weak;
 
 template <class T>
 class Rc {
-  friend class Weak<T>;
-
-  using Inn = detail::RcBox<T>;
-  Inn* _ptr = nullptr;
-
-  explicit Rc(Inn* inn) noexcept : _ptr{inn} {}
-
-  template <class... U>
-  explicit Rc(mem::inplace_t, U&&... args)
-      : _ptr{Box<Inn>::xnew(static_cast<U&&>(args)...).into_raw()} {}
+  RcBox<T>* _ptr = nullptr;
 
  public:
   Rc() noexcept = default;
@@ -70,7 +54,7 @@ class Rc {
     if (_ptr->dec_strong() == 0) {
       mem::drop(*_ptr);
       if (_ptr->dec_weak() == 0) {
-        alloc::Global{}.dealloc_one(_ptr);
+        ::delete reinterpret_cast<char*>(_ptr);
       }
     }
   }
@@ -85,16 +69,22 @@ class Rc {
     return *this;
   }
 
+  static auto from_raw(RcBox<T>* ptr) -> Rc {
+    auto res = Rc{};
+    res._ptr = ptr;
+    return res;
+  }
+
   template <class... U>
   static auto xnew(U&&... args) -> Rc {
-    return Rc{mem::inplace_t{}, static_cast<U&&>(args)...};
+    return Rc::from_raw(new RcBox{T{static_cast<U&&>(args)...}});
   }
 
   auto clone() const -> Rc {
     if (_ptr) {
       _ptr->inc_strong();
     }
-    return Rc{_ptr};
+    return Rc::from_raw(_ptr);
   }
 
   operator bool() const {
@@ -102,22 +92,22 @@ class Rc {
   }
 
   auto operator->() const -> const T* {
-    assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator->() -> T* {
-    assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator*() const -> const T& {
-    assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
   auto operator*() -> T& {
-    assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
@@ -126,13 +116,7 @@ class Rc {
 
 template <class T>
 class Weak {
-  detail::RcBox<T>* _ptr = nullptr;
-
-  explicit Weak(detail::RcBox<T>* ptr) : _ptr{ptr} {}
-
-  explicit Weak(const Rc<T>& rc) : _ptr{rc._ptr} {
-    _ptr->add_weak();
-  }
+  RcBox<T>* _ptr = nullptr;
 
  public:
   Weak() noexcept = default;
