@@ -111,8 +111,6 @@ auto format(const auto& val) -> String {
 
 auto parse(Str json_str) -> Option<Node>;
 
-auto load(fs::Path path) -> Option<Node>;
-
 }  // namespace sfc::serde::json
 
 namespace sfc::serde {

@@ -22,6 +22,12 @@ class [[nodiscard]] String {
     return res;
   }
 
+  static auto from_cstr(const char* s) -> String {
+    auto res = String{};
+    res.push_str(Str::from_cstr(s));
+    return res;
+  }
+
   auto as_ptr() const -> const char* {
     return _vec.as_ptr();
   }
@@ -55,14 +61,6 @@ class [[nodiscard]] String {
     return _vec;
   }
 
-  explicit operator bool() const {
-    return bool(_vec);
-  }
-
-  operator Str() const noexcept {
-    return this->as_str();
-  }
-
  public:
   auto operator[](usize idx) const -> char {
     return _vec[idx];
@@ -86,7 +84,13 @@ class [[nodiscard]] String {
 
  public:
   auto operator==(const auto& other) const -> bool {
-    return this->as_str().operator==(other);
+    if constexpr (__is_convertible_to(decltype(other), const String&)) {
+      return this->as_str() == other.as_str();
+    }
+    if constexpr (__is_convertible_to(decltype(other), Str)) {
+      return this->as_str() == other;
+    }
+    return this->as_str() == other;
   }
 
  public:
@@ -147,7 +151,7 @@ namespace sfc::panicking {
 [[noreturn]] void panic_fmt(LocationFmt info, const auto&... args) {
   const auto fmt = Str{info.fmt._ptr, info.fmt._len};
   const auto msg = string::format(fmt, args...);
-  panic_str(info.loc, msg.as_str());
+  panicking::panic_str(info.loc, msg.as_str());
 }
 
 }  // namespace sfc::panicking

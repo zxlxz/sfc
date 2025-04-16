@@ -6,9 +6,10 @@
 namespace sfc::thread {
 
 SFC_TEST(builder) {
-  auto builder = Builder{
-    .name = String::from("thread_builder")
+  const auto builder = Builder{
+    .name = "thread_builder",
   };
+  
   builder.spawn(Box<void()>::xnew([]() {
     const auto thr = Thread::current();
     test::assert_eq(thr.name(), "thread_builder");

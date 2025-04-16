@@ -6,7 +6,8 @@ namespace sfc::iter {
 
 template <class I, class F>
 struct Map {
-  using Item = decltype(declval<F>()(declval<I::Item>()));
+  using Item = decltype(declval<F>()(declval<typename I::Item>()));
+
   I _iter;
   F _func;
 

@@ -39,7 +39,7 @@ auto Thread::name() const -> String {
   return String::from(thrd_name);
 }
 
-auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
   auto fun_imp = Box<void()>::xnew([fun = mem::move(fun), name = String::from(name)]() mutable {
     auto thrd_imp = sys_imp::Thread::current();
     thrd_imp.set_name(name.c_str());
@@ -48,7 +48,7 @@ auto Builder::spawn(Box<void()> fun) -> JoinHandle {
 
   auto fun_box = boxed::box(mem::move(fun_imp));
   auto sys_thr = sys_imp::Thread::start(stack_size, start_routine, fun_box.ptr());
-  if (!sys_thr) {
+  if (sys_thr) {
     mem::move(fun_box).into_raw();
   }
 

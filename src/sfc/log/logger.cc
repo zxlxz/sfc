@@ -8,9 +8,9 @@ namespace sfc::log {
 
 Logger::Logger() = default;
 
-Logger::Logger(Logger&&) noexcept = default;
-
 Logger::~Logger() {}
+
+Logger::Logger(Logger&&) noexcept = default;
 
 Logger& Logger::operator=(Logger&&) noexcept = default;
 
@@ -37,8 +37,8 @@ void Logger::write_msg(Level level, Str msg) {
 
   const auto entry = Entry{
       .level = level,
-      .time  = datetime.to_str(),
-      .msg   = msg,
+      .time = datetime.to_str(),
+      .msg = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {

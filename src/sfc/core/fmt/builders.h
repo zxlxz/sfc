@@ -6,7 +6,7 @@ namespace sfc::fmt {
 
 template <class W>
 class DebugTuple {
-  W& _fmt;
+  W&    _fmt;
   usize _cnt = 0;
 
  public:
@@ -35,7 +35,7 @@ class DebugTuple {
 
 template <class W>
 class DebugList {
-  W& _fmt;
+  W&    _fmt;
   usize _cnt = 0;
 
  public:
@@ -64,7 +64,7 @@ class DebugList {
 
 template <class W>
 class DebugSet {
-  W& _fmt;
+  W&    _fmt;
   usize _cnt = 0;
 
  public:
@@ -96,7 +96,7 @@ class DebugSet {
 
 template <class W>
 class DebugMap {
-  W& _fmt;
+  W&    _fmt;
   usize _cnt = 0;
 
  public:
@@ -124,15 +124,16 @@ class DebugMap {
   }
 
   void entries(auto iter) {
-    iter->for_each([&](auto&& item) {  //
-      this->entry(item.template get<0>(), item.template get<1>());
+    iter->for_each([&](auto&& item) {
+      const auto& [k, v] = item;
+      this->entry(k, v);
     });
   }
 };
 
 template <class W>
 class DebugStruct {
-  W& _fmt;
+  W&    _fmt;
   usize _cnt = 0;
 
  public:
@@ -146,7 +147,7 @@ class DebugStruct {
 
   DebugStruct(DebugStruct&&) noexcept = delete;
 
-  void field(const auto& name, const auto& value) {
+  void field(str::Str name, const auto& value) {
     if (_cnt != 0) {
       _fmt.write_str(", ");
     }

@@ -11,18 +11,17 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
-AlignConsecutiveShortCaseStatements:
-  Enabled: true
 
 AlignConsecutiveDeclarations: true
 AlignOperands: true
 AlignTrailingComments: true
 AlignAfterOpenBracket: Align
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
 
 BinPackArguments: false
 BinPackParameters: false
 
 IndentCaseBlocks: true
 
-SortIncludes: Never
-SortUsingDeclarations: Never
+PenaltyBreakOpenParenthesis: 21

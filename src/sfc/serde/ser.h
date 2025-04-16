@@ -134,14 +134,15 @@ class FmtAdapter {
     Node&    _root;
 
    public:
-    void entry(Str name, const auto& element) {
+    void entry(const auto& name, const auto& element) {
       auto node = _ser.ser(element);
-      _root.insert(name, mem::move(node));
+      _root.insert(name.as_str(), mem::move(node));
     }
 
     void entries(auto iter) {
-      iter->for_each([&](auto&& item) {  //
-        this->entry(item.template get<0>(), item.template get<1>());
+      iter->for_each([&](auto item) {
+        const auto& [k, v] = item;
+        this->entry(k, v);
       });
     }
   };

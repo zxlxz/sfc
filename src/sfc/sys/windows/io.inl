@@ -20,23 +20,6 @@ struct Error {
     return static_cast<int>(_code);
   }
 
-  auto desc() const -> const char* {
-    static thread_local char name[256];
-
-    if (_code == 0) {
-      return "Success";
-    }
-
-    ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                     nullptr,
-                     _code,
-                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                     name,
-                     sizeof(name),
-                     nullptr);
-    return name;
-  }
-
   auto kind() const -> sfc::io::ErrorKind {
     switch (_code) {
         // clang-format off

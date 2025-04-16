@@ -73,7 +73,7 @@ auto Node::as_flt() const -> f64 {
 }
 
 auto Node::as_str() const -> Str {
-  return _inn.as<String>();
+  return _inn.as<String>().as_str();
 }
 
 auto Node::as_list() const -> const List& {

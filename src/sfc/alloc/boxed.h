@@ -17,8 +17,7 @@ class Box {
     }
   }
 
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = nullptr;
+  Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {
   }
 
   Box& operator=(Box&& other) noexcept {

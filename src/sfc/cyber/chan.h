@@ -28,7 +28,7 @@ class Chan {
   Chan(const Chan&) = delete;
 
   auto topic() const -> Str {
-    return _topic;
+    return _topic.as_str();
   }
 
   void push(T msg) {

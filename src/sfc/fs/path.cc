@@ -6,16 +6,18 @@ namespace sfc::fs {
 
 namespace {
 struct Components {
-  Str _inn;
+  Str _0;
 
  public:
+  Components(const String& s) noexcept : _0{s.as_str()} {}
+
   auto as_str() const -> Str {
-    return _inn;
+    return _0;
   }
 
   auto next_back() -> Str {
     auto s = Str{};
-    while (_inn) {
+    while (_0) {
       s = this->_next_back();
       if (s && !(s == Str{"."})) {
         break;
@@ -26,24 +28,24 @@ struct Components {
 
  private:
   auto _next_back() -> Str {
-    if (!_inn)
+    if (!_0)
       return {};
 
-    const auto p = _inn.rfind('/');
+    const auto p = _0.rfind('/');
     if (!p) {
-      const auto s = _inn;
-      _inn         = {};
+      const auto s = _0;
+      _0 = {};
       return s;
     }
 
     const auto i = *p;
-    if (i == 0 && _inn.len() == 1) {
-      _inn = {};
+    if (i == 0 && _0.len() == 1) {
+      _0 = {};
       return "/";
     }
 
-    const auto s = _inn[{i + 1, _}];
-    _inn         = _inn[{0, cmp::max(i, 1UL)}];
+    const auto s = _0[{i + 1, _}];
+    _0 = _0[{0, cmp::max(i, 1UL)}];
     return s;
   }
 };
@@ -150,7 +152,6 @@ void Path::set_file_name(Str file_name) {
   this->pop();
   this->push(file_name);
 }
-
 
 auto Path::exists() const -> bool {
   return fs::meta(*this).is_ok();

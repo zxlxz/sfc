@@ -41,7 +41,7 @@ struct Builder {
   Str   name = {};
 
  public:
-  auto spawn(Box<void()> f) -> JoinHandle;
+  auto spawn(Box<void()> f) const -> JoinHandle;
 };
 
 void sleep(const time::Duration& dur);

@@ -53,7 +53,7 @@ class Path {
   void set_extension(Str extension);
 
   void fmt(auto& f) const {
-    f.pad(_inn);
+    f.pad(_inn.as_str());
   }
 
  public:

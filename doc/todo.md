@@ -6,13 +6,6 @@
 - [x] string
 - [x] slice
 - [x] fmt
-  - [x] 内部类型
-  - [x] 用户定义类型
-  - [x] container
-  - [x] Vec 序列
-  - [x] Queue 队列
-  - [x] FixedQueue 有限队列
-  - [x] CircBuf 环形缓冲
 
 ## 2. cyber
 
@@ -27,20 +20,9 @@
 - [x] File 文件
 - [x] Path 路径
 
-## 4. geo
-
-- [x] Point 点
-- [x] Vector 向量
-- [x] Ray 射线
-- [x] Rect 矩阵
-- [x] Line 直线
-- [x] LineSegment 线段
-- [x] Polyline 折线
-- [x] Polygon 多边形
-
 ## 5. io
 
-- [x] File `UNIX`文件
+- [x] File 文件
 - [x] stdio 标准 IO
 
 ## 6. log

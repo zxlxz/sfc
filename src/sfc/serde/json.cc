@@ -215,13 +215,4 @@ auto parse(Str s) -> Option<Node> {
   return imp.parse();
 }
 
-auto load(fs::Path path) -> Option<Node> {
-  auto file = fs::File::open(path).unwrap();
-
-  auto text = String{};
-  file.read_to_string(text);
-
-  return serde::json::parse(text).unwrap();
-}
-
 }  // namespace sfc::serde::json

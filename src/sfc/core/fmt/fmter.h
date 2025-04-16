@@ -19,7 +19,7 @@ class IFmt {
 
 template <class... T>
 struct Args {
-  str::Str _pats = {};
+  str::Str                  _pats = {};
   tuple::Tuple<const T*...> _args = {};
 
  public:
@@ -49,7 +49,7 @@ Args(const auto&, const T&...) -> Args<T...>;
 
 template <class W>
 class Fmter {
-  W& _out;
+  W&    _out;
   Style _style = {};
 
  public:
@@ -63,8 +63,12 @@ class Fmter {
     _style = s;
   }
 
-  void write_str(str::Str s) {
-    _out.write_str(s);
+  void write_str(const auto& s) {
+    if constexpr (__is_convertible_to(decltype(s), str::Str)) {
+      _out.write_str(s);
+    } else {
+      _out.write_str(s.as_str());
+    }
   }
 
   void write_chr(char c) {

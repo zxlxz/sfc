@@ -64,7 +64,7 @@ Suite::Suite(Suite&&) noexcept = default;
 Suite& Suite::operator=(Suite&&) noexcept = default;
 
 auto Suite::name() const -> Str {
-  return _name;
+  return _name.as_str();
 }
 
 void Suite::push(Unit val) {

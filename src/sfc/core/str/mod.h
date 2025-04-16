@@ -53,6 +53,9 @@ struct Str {
     return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
+  auto as_str() const -> Str {
+    return *this;
+  }
  public:
   auto get_unchecked(usize idx) const -> char {
     return _ptr[idx];

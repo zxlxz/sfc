@@ -16,19 +16,6 @@ struct Frame {
   }
 };
 
-struct Backtrace {
-  Vec<void*> _frames;
-
- public:
-  static auto capture() -> Backtrace;
-
-  auto len() const -> usize {
-    return _frames.len();
-  }
-
-  auto operator[](usize idx) const -> Frame {
-    return Frame{_frames[idx]};
-  }
-};
+auto capture() -> Vec<Frame>;
 
 }  // namespace sfc::backtrace

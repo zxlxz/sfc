@@ -5,8 +5,6 @@
 namespace sfc::log {
 
 class Logger {
-  static inline thread_local String _fmt_buf{};
-
   Level               _level{Level::Info};
   Vec<Box<IBackend&>> _backends{};
 
@@ -37,9 +35,12 @@ class Logger {
       return;
     }
 
-    _fmt_buf.clear();
-    fmt::write(_fmt_buf, fmts, args...);
-    this->write_msg(level, _fmt_buf.as_str());
+    if constexpr (sizeof...(args) == 0) {
+      this->write_msg(level, fmts);
+    } else {
+      const auto msg = string::format(fmts, args...);
+      this->write_msg(level, msg.as_str());
+    }
   }
 
   void add_backend(auto backend) {

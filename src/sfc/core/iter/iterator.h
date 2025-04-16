@@ -93,9 +93,7 @@ struct Iterator : I {
   }
 
   auto all(auto&& f) -> bool {
-    auto res = this->find([&](auto& x) {
-      return !f(x);
-    });
+    auto res = this->find([&](auto& x) { return !f(x); });
     return !bool(res);
   }
 
@@ -106,48 +104,39 @@ struct Iterator : I {
 
   auto count(auto&& f) -> usize {
     auto accum = 0UL;
-    this->for_each([&](auto& x) mutable {
-      f(x) ? accum += 1 : void();
-    });
+    this->for_each([&](auto& x) mutable { f(x) ? accum += 1 : void(); });
     return accum;
   }
 
   auto min() -> Item {
-    return this->reduce([](auto&& a, auto&& b) -> auto& {
-      return a < b ? a : b;
-    });
+    return this->reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
   }
 
   auto max() -> Item {
-    return this->reduce([](auto&& a, auto&& b) -> auto& {
-      return a > b ? a : b;
-    });
+    return this->reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
   }
 
   auto min_by_key(auto&& f) {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& {
-      return f(a) < f(b) ? a : b;
-    });
+    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) < f(b) ? a : b; });
   }
 
   auto max_by_key(auto&& f) {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& {
-      return f(a) > f(b) ? a : b;
-    });
+    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
   }
 
   auto sum() {
     auto init = decltype(declval<Item>() + declval<Item>()){0};
-    return this->fold(init, [](auto&& a, auto&& b) {
-      return a + b;
-    });
+    return this->fold(init, [](auto&& a, auto&& b) { return a + b; });
   }
 
   auto product() {
     auto init = decltype(declval<Item>() * declval<Item>()){1};
-    return this->fold(init, [](auto&& a, auto&& b) {
-      return a * b;
-    });
+    return this->fold(init, [](auto&& a, auto&& b) { return a * b; });
+  }
+
+  template <class B>
+  auto collect() -> B {
+    return B::from_iter(*this);
   }
 
   auto rev() -> Rev<I>;
@@ -158,5 +147,37 @@ struct Iterator : I {
   template <class P>
   auto filter(P pred) -> Filter<I, P>;
 };
+
+template <class I>
+struct Cursor {
+  using Item = typename I::Item;
+  struct End {};
+
+  Iterator<I>&         _iter;
+  option::Option<Item> _item;
+
+ public:
+  auto operator!=(End) const -> bool {
+    return bool(_item);
+  }
+
+  void operator++() {
+    _item = _iter.next();
+  }
+
+  auto operator*() -> Item& {
+    return _item.get_unchecked_mut();
+  }
+};
+
+template <class I>
+auto begin(Iterator<I>& iter) -> Cursor<I> {
+  return {iter, iter.next()};
+}
+
+template <class I>
+auto end(Iterator<I>&) -> Cursor<I>::End {
+  return {};
+}
 
 }  // namespace sfc::iter

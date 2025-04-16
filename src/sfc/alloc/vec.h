@@ -283,7 +283,7 @@ class [[nodiscard]] Vec {
 
   // swap with last, then remove
   auto swap_remove(usize idx) -> T {
-    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx({}) out of range([0,{}))", idx, _len);
 
     auto res = mem::replace(_buf._ptr[idx], ptr::read(_buf._ptr[_len - 1]));
     _len -= 1;
@@ -291,7 +291,7 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T element) {
-    panicking::assert_fmt(idx <= _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx <= _len, "Vec::remove: idx({}) out of range([0,{}))", idx, _len);
 
     this->reserve(1);
     if (idx == _len) {
@@ -305,7 +305,7 @@ class [[nodiscard]] Vec {
   }
 
   auto remove(usize idx) -> T {
-    panicking::assert_fmt(idx < _len, "Vec::remove: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::remove: idx({}) out of range([0,{}))", idx, _len);
 
     const auto res = mem::move(_buf[idx]);
     this->drain({idx, idx + 1});
