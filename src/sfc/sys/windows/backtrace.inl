@@ -13,9 +13,9 @@ namespace sfc::sys::backtrace {
 struct FrameInfo {
   static constexpr auto kMaxFuncLen = 256U;
 
-  char        func[kMaxFuncLen];
   const char* file;
   unsigned    line;
+  char        func[kMaxFuncLen];
 };
 
 static inline auto sym_init() -> bool {
@@ -66,15 +66,15 @@ static inline auto resolve(void* addr) -> FrameInfo {
   auto res = FrameInfo{
       .file = line_info.FileName,
       .line = line_info.LineNumber,
+      .func = {},
   };
   __builtin_memcpy(res.func, sym_info._NameBuf, sizeof(sym_info._NameBuf));
   return res;
 }
 
-template <DWORD BUF_LEN>
-static inline auto cxx_demangle(const char* in_buf, char (&out_buf)[BUF_LEN]) -> bool {
-  const auto ret = ::UnDecorateSymbolName(in_buf, out_buf, BUF_LEN, UNDNAME_COMPLETE);
-  return ret != 0;
+static inline auto cxx_demangle(const char in_buf[], char out_buf[], SIZE_T buf_len) -> SIZE_T {
+  const auto nbytes = ::UnDecorateSymbolName(in_buf, out_buf, static_cast<DwORD>(BUF_LEN), UNDNAME_COMPLETE);
+  return nbytes;
 }
 
 }  // namespace sfc::sys::backtrace

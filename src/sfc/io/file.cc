@@ -78,7 +78,7 @@ auto File::read_all(Vec<u8>& buf, usize buf_len) -> Result<usize> {
     if (ret.is_err()) {
       return ret.unwrap_err();
     }
-    
+
     const usize cnt = ret.unwrap();
     buf.set_len(buf.len() + cnt);
     if (cnt == 0) {

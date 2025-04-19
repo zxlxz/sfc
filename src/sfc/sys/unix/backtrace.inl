@@ -1,34 +1,26 @@
 #pragma once
 
+#include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
-#include <cxxabi.h>
 
 #include "sfc/alloc.h"
 
 namespace sfc::sys::backtrace {
 
 struct FrameInfo {
+  static constexpr auto kMaxFuncLen = 256U;
+
+  const char* file;
+  unsigned    line;
   const char* func;
 };
 
-static auto cxx_demangle(const char* in, char* out_buf, size_t out_len) -> bool {
-  auto status = 0;
-  ::__cxa_demangle(in, out_buf, &out_len, &status);
-  return status == 0;
-}
 
-static inline auto trace() -> Vec<void*> {
-  static const auto kMaxFrames = 128U;
 
-  auto frames = Vec<void*>{};
-  frames.reserve(kMaxFrames);
-  const auto cnt = ::backtrace(frames.as_mut_ptr(), kMaxFrames);
-  if (cnt > 0) {
-    frames.set_len(uint16_t(cnt));
-  }
-
-  return frames;
+static inline auto trace(void* buf[], size_t buf_len) -> size_t {
+  const auto cnt = ::backtrace(buf, buf_len);
+  return cnt > 0 ? static_cast<size_t>(cnt) : 0;
 }
 
 static inline auto resolve(void* addr) -> FrameInfo {
@@ -37,15 +29,19 @@ static inline auto resolve(void* addr) -> FrameInfo {
     return {};
   }
 
-  static thread_local char func_name[2048];
-  if (!cxx_demangle(dl_info.dli_sname, func_name, sizeof(func_name))) {
-    ::strncpy(func_name, dl_info.dli_sname, sizeof(func_name));
-  }
-
-  const auto res = FrameInfo {
-      .func = func_name
+  auto res = FrameInfo{
+      .file = dl_info.dli_fname,
+      .line = 0,
+      .func = dl_info.dli_sname,
   };
+
   return res;
+}
+
+static auto cxx_demangle(const char in[], char out_buf[], size_t buf_len) -> size_t {
+  auto status = 0;
+  __cxxabiv1::__cxa_demangle(in, out_buf, &buf_len, &status);
+  return status == 0 ? buf_len : 0UL;
 }
 
 }  // namespace sfc::sys::backtrace

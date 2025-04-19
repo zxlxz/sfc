@@ -36,9 +36,8 @@ class [[nodiscard]] String {
     return _vec.as_mut_ptr();
   }
 
-  auto c_str() const -> const char* {
-    const auto p = _vec.as_ptr();
-    return reinterpret_cast<const char*>(p);
+  auto capacity() const -> usize {
+    return _vec.capacity();
   }
 
   auto len() const -> usize {
@@ -105,6 +104,8 @@ class [[nodiscard]] String {
   void reserve(usize additional);
   void truncate(usize len);
   auto remove(usize idx) -> char;
+  void set_len(usize new_len);
+
   void drain(Range range);
 
   void clear();

@@ -32,7 +32,7 @@ auto Error::last_os_error() -> Error {
 }
 
 auto Error::from_os_error(int code) -> Error {
-  const auto imp = sys_imp::Error{sys_imp::error_t(code)};
+  const auto imp = sys_imp::Error{code};
   return Error{imp.kind(), code};
 }
 

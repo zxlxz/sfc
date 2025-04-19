@@ -13,9 +13,10 @@ static auto u8_to_wchar(const char src[], wchar_t dst[], int dst_len) {
 }
 
 struct Thread {
+  using tid_t = void*;
   static constexpr unsigned kMaxNameLen = 256U;
 
-  void* _raw = nullptr;
+  tid_t _raw = nullptr;
 
  public:
   static auto current() -> Thread {
@@ -66,27 +67,25 @@ struct Thread {
     return true;
   }
 
-  auto name() const -> const char* {
-    static char buff[kMaxNameLen] = {};
-
+  auto get_name(char* buf, SIZE_T buf_len) const -> SIZE_T {
     if (_raw == nullptr) {
-      return nullptr;
+      return 0;
     }
 
-    wchar_t*   wbuff = nullptr;
-    const auto hres = ::GetThreadDescription(_raw, &wbuff);
+    wchar_t*   wbuf = nullptr;
+    const auto hres = ::GetThreadDescription(_raw, &wbuf);
     if (FAILED(hres)) {
-      return nullptr;
+      return 0;
     }
 
-    const auto cnt = wchar_to_u8(wbuff, buff, kMaxNameLen);
-    ::LocalFree(wbuff);
+    const auto nbytes = wchar_to_u8(wbuf, buf, kMaxNameLen);
+    ::LocalFree(wbuf);
 
-    if (cnt <= 0 || cnt >= kMaxNameLen) {
-      return nullptr;
+    if (nbytes <= 0 || nbytes >= kMaxNameLen) {
+      return 0;
     }
 
-    return buff;
+    return nbytes;
   }
 
   auto set_name(const char* name) -> bool {

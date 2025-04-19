@@ -58,13 +58,11 @@ struct File {
     return _fd != INVALID_HANDLE_VALUE;
   }
 
-  auto is_tty() const -> bool {
+  void close() {
     if (_fd == INVALID_HANDLE_VALUE) {
-      return false;
+      return;
     }
-
-    auto mode = 0UL;
-    return ::GetConsoleMode(_fd, &mode) == TRUE;
+    ::CloseHandle(_fd);
   }
 
   void flush() {
@@ -72,13 +70,6 @@ struct File {
       return;
     }
     ::FlushFileBuffers(_fd);
-  }
-
-  void close() {
-    if (_fd == INVALID_HANDLE_VALUE) {
-      return;
-    }
-    ::CloseHandle(_fd);
   }
 
   auto read(void* buf, SIZE_T buf_size) -> LONG64 {
@@ -94,6 +85,7 @@ struct File {
     if (::ReadFile(_fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr) == 0) {
       return -1;
     }
+
     return static_cast<LONG64>(bytes_read);
   }
 
@@ -111,6 +103,15 @@ struct File {
       return -1;
     }
     return static_cast<LONG64>(bytes_write);
+  }
+
+  auto is_tty() const -> bool {
+    if (_fd == INVALID_HANDLE_VALUE) {
+      return false;
+    }
+
+    auto mode = 0UL;
+    return ::GetConsoleMode(_fd, &mode) == TRUE;
   }
 };
 

@@ -77,8 +77,7 @@ auto NaiveDate::to_str() const -> Str {
 auto DateTime::from(const System& sys_time) -> DateTime {
   static auto seconds = sys_time._micros / MICROS_PER_SEC;
 
-  const auto  imp_time = sys_imp::System::from_secs(seconds);
-  static auto imp_date = sys_imp::DateTime::from_systime(imp_time);
+  static auto imp_date = sys_imp::DateTime::from_secs(seconds);
 
   const auto naive_date = NaiveDate::from_ymd(imp_date.year, imp_date.month, imp_date.mday);
   const auto naive_time = NaiveTime::from_hms_micro(imp_date.hour,

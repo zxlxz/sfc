@@ -3,21 +3,19 @@
 namespace sfc::string {
 
 auto String::pop() -> Option<char> {
-  return _vec.pop();
+  auto ret = _vec.pop();
+  return ret;
 }
 
 void String::push(char c) {
-  this->reserve(1);
   _vec.push(c);
 }
 
 void String::push_str(Str s) {
-  this->reserve(s.len() + 1);
   _vec.extend_from_slice(s.as_chars());
 }
 
 void String::write_str(Str s) {
-  this->reserve(s.len() + 1);
   _vec.extend_from_slice(s.as_chars());
 }
 
@@ -26,12 +24,7 @@ void String::clear() {
 }
 
 void String::reserve(usize additional) {
-  if (additional == 0) {
-    return;
-  }
-
-  _vec.reserve(additional + 1);
-  _vec.as_mut_ptr()[_vec.len() + additional] = 0;
+  _vec.reserve(additional);
 }
 
 void String::truncate(usize len) {
@@ -39,10 +32,6 @@ void String::truncate(usize len) {
     return;
   }
   _vec.truncate(len);
-
-  if (_vec.capacity() != 0) {
-    _vec.as_mut_ptr()[_vec.len()] = 0;
-  }
 }
 
 auto String::remove(usize idx) -> char {
@@ -51,17 +40,18 @@ auto String::remove(usize idx) -> char {
   return res;
 }
 
+void String::set_len(usize new_len) {
+  if (new_len > _vec.capacity()) {
+    return;
+  }
+  _vec.set_len(new_len);
+}
+
 void String::drain(Range range) {
   _vec.drain(range);
-
-  if (_vec.capacity() != 0) {
-    _vec.as_mut_slice()[_vec.len()] = 0;
-  }
 }
 
 void String::insert(usize idx, char ch) {
-  this->reserve(1);
-
   _vec.insert(idx, ch);
 }
 

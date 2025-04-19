@@ -31,9 +31,11 @@ struct LocationFmt {
 [[noreturn]] void panic_fmt(LocationFmt fmt, const auto&... args);
 
 void assert_fmt(const auto& cond, LocationFmt fmt, const auto&... args) {
-  if (cond)
+  if (cond) {
     return;
-  panic_fmt(fmt, args...);
+  }
+
+  panicking::panic_fmt(fmt, args...);
 }
 
 }  // namespace sfc::panicking

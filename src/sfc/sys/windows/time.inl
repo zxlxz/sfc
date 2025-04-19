@@ -38,12 +38,6 @@ struct System {
   ::FILETIME _ft = {};
 
  public:
-  static auto now() -> System {
-    auto file_time = FILETIME{0};
-    ::GetSystemTimeAsFileTime(&file_time);
-    return {file_time};
-  }
-
   static auto from_secs(ULONG64 secs) -> System {
     // Convert seconds to 100-nanosecond intervals
     const auto counts = secs * 10000000;
@@ -54,6 +48,12 @@ struct System {
     };
 
     return System{file_time};
+  }
+
+  static auto now() -> System {
+    auto file_time = FILETIME{0};
+    ::GetSystemTimeAsFileTime(&file_time);
+    return {file_time};
   }
 
   auto micros() const -> ULONG64 {
@@ -73,23 +73,26 @@ struct DateTime {
   USHORT sec = 0;
 
  public:
-  static auto from_systime(const System& sys_time) -> DateTime {
-    // Convert FILETIME to SYSTEMTIME
-    auto date_time = ::SYSTEMTIME{};
-    if (!::FileTimeToSystemTime(&sys_time._ft, &date_time)) {
-      return {};
-    }
+  static auto from_secs(uint64_t filetime_sec) -> DateTime {
+      // Convert from filetime_sec to FILETIME struct
+      ::FILETIME filetime = {};
+      filetime.dwLowDateTime = static_cast<DWORD>(filetime_sec & 0xFFFFFFFFU);
+      filetime.dwHighDateTime = static_cast<DWORD>(filetime_sec >> 32);
 
-    // Convert SYSTEMTIME to DateTime
-    const auto res = DateTime{
-        date_time.wYear,
-        date_time.wMonth,
-        date_time.wDay,
-        date_time.wHour,
-        date_time.wMinute,
-        date_time.wSecond,
-    };
-    return res;
+      // Convert FILETIME to SYSTEMTIME
+      ::SYSTEMTIME system_time = {};
+      ::FileTimeToSystemTime(&filetime, &system_time);
+
+      // Convert SYSTEMTIME to DateTime
+      const auto res = DateTime{
+          system_time.wYear,
+          system_time.wMonth,
+          system_time.wDay,
+          system_time.wHour,
+          system_time.wMinute,
+          system_time.wSecond,
+      };
+      return res;
   }
 };
 

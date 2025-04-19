@@ -7,14 +7,15 @@ namespace sfc::backtrace {
 namespace sys_imp = sys::backtrace;
 
 auto Frame::func() const -> String {
-  static constexpr auto kMaxFuncLen = 256U;
-
-  char func[kMaxFuncLen] = {};
-
   const auto info = sys_imp::resolve(_addr);
-  sys_imp::cxx_demangle(info.func, func);
+  const auto raw_func = Str::from_cstr(info.func);
 
-  return String::from_cstr(func);
+  auto res = String{};
+  res.reserve(raw_func.len() * 2 + 32);
+  const auto nbytes = sys_imp::cxx_demangle(info.func, res.as_mut_ptr(), res.capacity());
+  res.set_len(nbytes);
+
+  return res;
 }
 
 auto capture() -> Vec<Frame> {

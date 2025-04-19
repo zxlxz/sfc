@@ -73,10 +73,6 @@ auto Path::as_str() const -> Str {
   return _inn.as_str();
 }
 
-auto Path::c_str() const -> cstr_t {
-  return _inn.c_str();
-}
-
 auto Path::file_name() const -> Str {
   const auto s = Components{_inn}.next_back();
   if (s == "." || s == ".." || s == "/") {

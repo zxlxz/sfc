@@ -2,19 +2,25 @@
 
 #include <errno.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <string.h>
 
 #include "sfc/alloc.h"
 
 namespace sfc::sys::thread {
 
 struct Thread {
-  pthread_t _raw;
+  using tid_t = pthread_t;
+
+  tid_t _raw;
+
+public:
 
   static auto current() -> Thread {
     return Thread{::pthread_self()};
   }
 
-  static auto start(usize stack_size, void* (*func)(void*)func, void* data) -> Thread {
+  static auto start(usize stack_size, void* (*func)(void*), void* data) -> Thread {
     // attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -24,13 +30,17 @@ struct Thread {
 
     // create
     auto thrd = pthread_t{0};
-    (void)::pthread_create(&tid, &attr, &func, data);
+    (void)::pthread_create(&thrd, &attr, func, data);
     ::pthread_attr_destroy(&attr);
 
     return Thread{thrd};
   }
 
-  auto id() const-> int32_t {
+  operator bool() const {
+    return _raw != 0;
+  }
+
+  auto id() const-> int {
     return ::gettid();
   }
 
@@ -40,19 +50,18 @@ struct Thread {
   }
 
   auto detach() -> bool {
-    const auto err = ::pthread_detach(thrd);
+    const auto err = ::pthread_detach(_raw);
     return err == 0;
   }
 
-  auto get_name() const -> const char* {
-    static thread_local char buf[256] = "";
-
-    const auto err = ::pthread_getname_np(thrd, buf, sizeof(buf));
+  auto get_name(char* buf, size_t buf_len) const -> size_t {
+    const auto err = ::pthread_getname_np(_raw, buf, sizeof(buf));
     if (err != 0) {
-      return nullptr;
+      return 0;
     }
 
-    return buf;
+    const auto len = ::strnlen(buf, buf_len);
+    return len;
   }
 
   auto set_name(const char* name) -> bool {
@@ -60,12 +69,12 @@ struct Thread {
       return false;
     }
 
-    const auto err = ::pthread_setname_np(thrd, name);
+    const auto err = ::pthread_setname_np(_raw, name);
     return err == 0;
   }
 };
 
-static inline auto sleep_ms(uint32_t millis) -> bool {
+static inline auto sleep_ms(time_t millis) -> bool {
   using timespec_t = struct ::timespec;
 
   const auto req = timespec_t{

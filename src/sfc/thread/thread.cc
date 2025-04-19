@@ -1,6 +1,7 @@
 #include "thread.h"
 
 #include "sfc/sys/thread.h"
+#include "sfc/ffi/cstring.h"
 
 namespace sfc::thread {
 
@@ -34,13 +35,18 @@ auto Thread::id() const -> i64 {
 }
 
 auto Thread::name() const -> String {
+  auto res = String{};
+  res.reserve(64);
+
   const auto thrd_imp = sys_imp::Thread{_raw};
-  const auto thrd_name = Str::from_cstr(thrd_imp.name());
-  return String::from(thrd_name);
+  const auto name_len = thrd_imp.get_name(res.as_mut_ptr(), res.capacity());
+  res.set_len(name_len);
+
+  return res;
 }
 
 auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
-  auto fun_imp = Box<void()>::xnew([fun = mem::move(fun), name = String::from(name)]() mutable {
+  auto fun_imp = Box<void()>::xnew([fun = mem::move(fun), name = ffi::CString::from(name.as_str())]() mutable {
     auto thrd_imp = sys_imp::Thread::current();
     thrd_imp.set_name(name.c_str());
     (*fun)();

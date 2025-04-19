@@ -19,8 +19,6 @@ class Path {
 
   auto as_str() const -> Str;
 
-  auto c_str() const -> cstr_t;
-
   // a/b.txt -> b.txt
   auto file_name() const -> Str;
 
