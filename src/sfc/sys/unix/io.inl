@@ -1,8 +1,10 @@
 #pragma once
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "sfc/io/mod.h"
@@ -15,6 +17,7 @@
 namespace sfc::sys::io {
 
 using sfc::io::ErrorKind;
+using stat_t = struct stat;
 
 struct Error {
   int _code = 0;
@@ -24,7 +27,7 @@ struct Error {
     return {*__errno_location()};
   }
 
-  auto code() const-> int {
+  auto code() const -> int {
     return _code;
   }
 
@@ -50,7 +53,6 @@ struct Error {
     }
     // clang-format on
   }
-
 };
 
 struct File {
@@ -98,6 +100,128 @@ struct File {
     return ret;
   }
 
+  auto is_tty() const -> bool {
+    if (_fd == -1) {
+      return false;
+    }
+    return ::isatty(_fd) != 0;
+  }
 };
+
+struct OpenOptions {
+  static const auto kFileMode = 0666;
+
+  bool append = false;
+  bool create = false;
+  bool create_new = false;
+  bool read = false;
+  bool write = false;
+  bool truncate = false;
+
+ public:
+  static auto from(const auto& t) -> OpenOptions {
+    return OpenOptions{t._append, t._create, t._create_new, t._read, t._write, t._truncate};
+  }
+
+  auto open(const char* path) const -> int {
+    // access mode
+    int access_mode = 0;
+    if (read && write) {
+      access_mode |= O_RDWR;
+    } else if (read) {
+      access_mode |= O_RDONLY;
+    } else if (write) {
+      access_mode |= O_WRONLY;
+    }
+
+    // creation mode
+    int create_mode = 0;
+    if (create || create_new) {
+      create_mode |= O_CREAT;
+    }
+
+    if (create_new) {
+      create_mode |= O_EXCL;
+    }
+
+    if (truncate) {
+      create_mode |= O_TRUNC;
+    }
+
+    if (append) {
+      create_mode |= O_APPEND;
+    }
+
+    const auto fd = ::open(path, access_mode | create_mode, kFileMode);
+    return fd;
+  }
+};
+
+struct FileAttr {
+  __mode_t _attr;
+  __off_t  _size;
+
+ public:
+  operator bool() const {
+    return _attr != 0;
+  }
+
+  auto is_dir() const -> bool {
+    return S_ISDIR(_attr);
+  }
+
+  auto is_file() const -> bool {
+    return S_ISREG(_attr);
+  }
+
+  auto is_symlink() const -> bool {
+    return S_ISLNK(_attr);
+  }
+};
+
+inline auto stdin() -> File& {
+  static auto res = File{0};
+  return res;
+}
+
+inline auto stdout() -> File& {
+  static auto res = File{1};
+  return res;
+}
+
+inline auto stderr() -> File& {
+  static auto res = File{2};
+  return res;
+}
+
+inline auto lstat(const char* path) -> FileAttr {
+  auto       st = stat_t{};
+  const auto ret = ::lstat(path, &st);
+  if (ret == -1) {
+    return FileAttr{0, 0};
+  }
+  return FileAttr{st.st_mode, st.st_size};
+};
+
+inline auto unlink(const char* path) -> bool {
+  return ::unlink(path) == 0;
+}
+
+inline auto rename(const char* old_path, const char* new_path) -> bool {
+  const auto ret = ::rename(old_path, new_path);
+  return ret == 0;
+}
+
+inline auto mkdir(const char* path) -> bool {
+  static constexpr auto kMode = 0777;
+
+  const auto ret = ::mkdir(path, kMode);
+  return ret == 0;
+}
+
+inline auto rmdir(const char* path) -> bool {
+  const auto ret = ::rmdir(path);
+  return ret == 0;
+}
 
 }  // namespace sfc::sys::io

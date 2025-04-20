@@ -2,20 +2,23 @@
 
 #include <errno.h>
 #include <pthread.h>
-#include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "sfc/alloc.h"
 
 namespace sfc::sys::thread {
+
+using timespec_t = struct ::timespec;
+using timeval_t = struct ::timeval;
 
 struct Thread {
   using tid_t = pthread_t;
 
   tid_t _raw;
 
-public:
-
+ public:
   static auto current() -> Thread {
     return Thread{::pthread_self()};
   }
@@ -40,7 +43,7 @@ public:
     return _raw != 0;
   }
 
-  auto id() const-> int {
+  auto id() const -> int {
     return ::gettid();
   }
 
@@ -74,9 +77,53 @@ public:
   }
 };
 
-static inline auto sleep_ms(time_t millis) -> bool {
-  using timespec_t = struct ::timespec;
+struct Mutex {
+  pthread_mutex_t _raw = PTHREAD_MUTEX_INITIALIZER;
 
+ public:
+  void lock() {
+    ::pthread_mutex_lock(&_raw);
+  }
+
+  void unlock() {
+    ::pthread_mutex_unlock(&_raw);
+  }
+};
+
+struct Condvar {
+  pthread_cond_t _raw = PTHREAD_COND_INITIALIZER;
+
+  void notify_one() {
+    ::pthread_cond_signal(&_raw);
+  }
+
+  void notify_all() {
+    ::pthread_cond_broadcast(&_raw);
+  }
+
+  void wait(Mutex& mtx) {
+    ::pthread_cond_wait(&_raw, &mtx._raw);
+  }
+
+  auto wait_timeout_ms(Mutex& mtx, unsigned millis) -> bool {
+    auto time_now = timeval_t{};
+    ::gettimeofday(&time_now, nullptr);
+
+    auto time_out = timespec_t{};
+    time_out.tv_sec = time_now.tv_sec + millis / 1000;
+    time_out.tv_nsec = time_now.tv_usec * 1000 + (millis % 1000) * 1000;
+
+    if (time_out.tv_nsec >= 1000000000) {
+      time_out.tv_sec += 1;
+      time_out.tv_nsec -= 1000000000;
+    }
+
+    const auto err = ::pthread_cond_timedwait(&_raw, &mtx._raw, &time_out);
+    return err == 0;
+  }
+};
+
+static inline auto sleep_ms(unsigned millis) -> bool {
   const auto req = timespec_t{
       .tv_sec = millis / 1000,
       .tv_nsec = millis % 1000 * 1000000,

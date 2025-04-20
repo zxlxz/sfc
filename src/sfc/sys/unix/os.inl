@@ -6,30 +6,33 @@
 
 namespace sfc::sys::os {
 
-auto getenv(cstr_t key) -> Str {
+static auto getenv(const char* key, char buf[], size_t buf_len) -> const char* {
   const auto res = ::getenv(key);
-  return Str{res};
+  return res;
 }
+static auto setenv(const char* key, const char* val) -> bool {
+  if (val == nullptr) {
+    const auto ret = ::unsetenv(key);
+    return ret == 0;
+  }
 
-auto setenv(cstr_t key, cstr_t val) -> bool {
   const auto ret = ::setenv(key, val, 1);
   return ret == 0;
 }
 
-auto unsetenv(cstr_t key) -> bool {
+auto unsetenv(const char* key) -> bool {
   const auto ret = ::unsetenv(key);
   return ret == 0;
 }
 
-auto getcwd() -> Str {
-  static thread_local char buf[256];
-  const auto res = ::getcwd(buf, sizeof(buf));
+auto getcwd(char* buf, size_t buf_len) -> size_t {
+  const auto res = ::getcwd(buf, buf_len);
   if (res == nullptr) {
-    return {};
+    return 0;
   }
 
-  const auto path = Str{buf};
-  return path;
+  const auto len = __builtin_strlen(buf);
+  return len;
 }
 
 auto chdir(cstr_t path) -> bool {
@@ -37,22 +40,15 @@ auto chdir(cstr_t path) -> bool {
   return ret == 0;
 }
 
-auto current_exe() -> Str {
-  static thread_local char buf[256];
-
-  const auto ret = ::readlink("/proc/self/exe", buf, sizeof(buf));
-  assert_fmt(ret != -1, "env::current_exe: err=`{}`", io::Error::last_os_error());
-
-  const auto path = Str{buf};
-  return path;
+auto current_exe(char buf[], size_t buf_len) -> size_t {
+  const auto ret = ::readlink("/proc/self/exe", buf, buf_len);
+  return ret > 0 ? static_cast<usize>(ret) : 0;
 }
 
-auto home_dir() -> Str {
+auto home_dir() -> const char* {
   const auto uid = getuid();
   const auto usr = getpwuid(uid);
-
-  const auto path = Str{usr->pw_dir};
-  return path;
+  return usr->pw_dir;
 }
 
-}  // namespace sfc::sys::env
+}  // namespace sfc::sys::os

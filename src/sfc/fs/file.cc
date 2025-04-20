@@ -1,22 +1,17 @@
 #include "file.h"
 
 #include "sfc/sys/io.h"
+#include "sfc/ffi/cstring.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::io;
 
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
-  const auto sys_opt = sys_imp::OpenOptions{
-      .append = this->_append,
-      .create = this->_create,
-      .create_new = this->_create_new,
-      .read = this->_read,
-      .write = this->_write,
-      .truncate = this->_truncate,
-  };
+  const auto sys_opt = sys_imp::OpenOptions::from(*this);
+  const auto sys_path = ffi::CString::from(path.as_str());
 
-  auto sys_fd = sys_opt.open(path.c_str());
+  auto sys_fd = sys_opt.open(sys_path.c_str());
   if (!sys_fd) {
     return io::Error::last_os_error();
   }

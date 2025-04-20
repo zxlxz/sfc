@@ -5,8 +5,8 @@
 namespace sfc::fs {
 
 struct Meta {
-  u32 _mod;
-  u64 _len;
+  u32 _attr;
+  u64 _size;
 
  public:
   auto exists() const -> bool;

@@ -116,41 +116,24 @@ struct File {
 };
 
 struct OpenOptions {
-  bool append;
-  bool create;
-  bool create_new;
-  bool read;
-  bool write;
-  bool truncate;
+  bool append = false;
+  bool create = false;
+  bool create_new = false;
+  bool read = false;
+  bool write = false;
+  bool truncate = false;
 
  public:
-  auto access_mode() const -> DWORD {
-    return append ? FILE_APPEND_DATA : write ? GENERIC_WRITE : GENERIC_READ;
-  }
-
-  auto share_mode() const -> DWORD {
-    return FILE_SHARE_READ;
-  }
-
-  auto create_mode() const -> DWORD {
-    return create_new ? CREATE_NEW : write ? CREATE_ALWAYS : OPEN_EXISTING;
-  }
-
-  auto file_attrs() const -> DWORD {
-    return FILE_ATTRIBUTE_NORMAL;
-  }
-
-  auto file_flags() const -> DWORD {
-    return FILE_FLAG_OVERLAPPED;
-  }
-
   auto open(const char* path) const -> HANDLE {
+    const auto access_mode = append ? FILE_APPEND_DATA : write ? GENERIC_WRITE : GENERIC_READ;
+    const auto create_mode = create_new ? CREATE_NEW : write ? CREATE_ALWAYS : OPEN_EXISTING;
+
     const auto handle = ::CreateFileA(path,
-                                      access_mode(),
-                                      share_mode(),
+                                      access_mode,
+                                      FILE_SHARE_READ,
                                       nullptr,
-                                      create_mode(),
-                                      file_attrs(),
+                                      create_mode,
+                                      FILE_ATTRIBUTE_NORMAL,
                                       nullptr);
     return handle;
   }

@@ -4,7 +4,7 @@
 
 namespace sfc::env {
 
-auto var(Str key) -> Str;
+auto var(Str key) -> String;
 
 void set_var(Str key, Str val);
 

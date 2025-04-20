@@ -10,7 +10,6 @@ class CString {
  public:
   CString() = default;
   ~CString() = default;
-
   CString(CString&&) noexcept = default;
   CString& operator=(CString&&) noexcept = default;
 

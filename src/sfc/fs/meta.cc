@@ -2,31 +2,33 @@
 #include "meta.h"
 
 #include "sfc/sys/io.h"
+#include "sfc/ffi/cstring.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::io;
 
 auto Meta::exists() const -> bool {
-  return _mod != 0;
+  return _attr != 0;
 }
 
 auto Meta::file_len() const -> u64 {
-  return _len;
+  return _size;
 }
 
 auto Meta::is_dir() const -> bool {
-  const auto imp = sys_imp::FileAttr{_mod, 0};
+  const auto imp = sys_imp::FileAttr{_attr, 0};
   return imp.is_dir();
 }
 
 auto Meta::is_file() const -> bool {
-  const auto imp = sys_imp::FileAttr{_mod, 0};
+  const auto imp = sys_imp::FileAttr{_attr, 0};
   return imp.is_file();
 }
 
 auto meta(const Path& path) -> io::Result<Meta> {
-  const auto imp = sys_imp::lstat(path.c_str());
+  const auto os_path = ffi::CString::from(path.as_str());
+  const auto imp = sys_imp::lstat(os_path.c_str());
   if (!imp) {
     return io::Error::last_os_error();
   }
