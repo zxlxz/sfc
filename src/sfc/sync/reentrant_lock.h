@@ -25,9 +25,6 @@ class [[nodiscard]] ReentrantLockGuard {
  public:
   explicit ReentrantLockGuard(ReentrantLock& mtx);
   ~ReentrantLockGuard() noexcept;
-
-  ReentrantLockGuard(const ReentrantLockGuard&) = delete;
-  void operator=(const ReentrantLockGuard&) = delete;
 };
 
 }  // namespace sfc::sync

@@ -179,22 +179,22 @@ struct FileAttr {
   }
 };
 
-inline auto stdin() -> File& {
+static inline auto stdin() -> File& {
   static auto res = File{0};
   return res;
 }
 
-inline auto stdout() -> File& {
+static inline auto stdout() -> File& {
   static auto res = File{1};
   return res;
 }
 
-inline auto stderr() -> File& {
+static inline auto stderr() -> File& {
   static auto res = File{2};
   return res;
 }
 
-inline auto lstat(const char* path) -> FileAttr {
+static inline auto lstat(const char* path) -> FileAttr {
   auto       st = stat_t{};
   const auto ret = ::lstat(path, &st);
   if (ret == -1) {
@@ -203,23 +203,23 @@ inline auto lstat(const char* path) -> FileAttr {
   return FileAttr{st.st_mode, st.st_size};
 };
 
-inline auto unlink(const char* path) -> bool {
+static inline auto unlink(const char* path) -> bool {
   return ::unlink(path) == 0;
 }
 
-inline auto rename(const char* old_path, const char* new_path) -> bool {
+static inline auto rename(const char* old_path, const char* new_path) -> bool {
   const auto ret = ::rename(old_path, new_path);
   return ret == 0;
 }
 
-inline auto mkdir(const char* path) -> bool {
+static inline auto mkdir(const char* path) -> bool {
   static constexpr auto kMode = 0777;
 
   const auto ret = ::mkdir(path, kMode);
   return ret == 0;
 }
 
-inline auto rmdir(const char* path) -> bool {
+static inline auto rmdir(const char* path) -> bool {
   const auto ret = ::rmdir(path);
   return ret == 0;
 }

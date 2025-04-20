@@ -6,8 +6,40 @@ namespace sfc::sync {
 
 namespace sys_imp = sys::thread;
 
-struct ReentrantLock::Inn : sys_imp::Mutex {
-  Inn() : sys_imp::Mutex{true} {}
+struct ReentrantLock::Inn {
+  sys_imp::Mutex  _mutex{};
+  sys_imp::Thread _owner{};
+  u32             _count{0};
+
+ public:
+  Inn() = default;
+  ~Inn() = default;
+
+  void lock() {
+    const auto thrd = sys_imp::Thread::current();
+
+    if (thrd == _owner) {
+      __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
+    } else {
+      _mutex.lock();
+      _owner = thrd;
+      __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
+    }
+  }
+
+  void unlock() {
+    const auto thrd = sys_imp::Thread::current();
+
+    // not owner
+    if (thrd != _owner) {
+      return;
+    }
+
+    if (__atomic_fetch_sub(&_count, 1, __ATOMIC_SEQ_CST) == 1) {
+      _owner = sys_imp::Thread{};
+      _mutex.unlock();
+    }
+  }
 };
 
 ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}

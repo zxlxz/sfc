@@ -25,7 +25,6 @@ void print(Str pattern, const auto&... args) {
 }
 
 void println(Str pattern, const auto&... args) {
-  auto lock = Stdout::lock();
   Stdout::write_fmt(pattern, args...);
   Stdout::write_str("\n");
 }

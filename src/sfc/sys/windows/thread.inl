@@ -29,6 +29,10 @@ struct Thread {
     return Thread{thrd};
   }
 
+  auto operator ==(const Thread& rhs) const -> bool {
+    return _raw == rhs._raw;
+  }
+
   explicit operator bool() const {
     return _raw != nullptr;
   }

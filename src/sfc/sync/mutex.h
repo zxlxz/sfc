@@ -28,8 +28,6 @@ class [[nodiscard]] LockGuard {
  public:
   explicit LockGuard(Mutex& mtx);
   ~LockGuard();
-  LockGuard(LockGuard&&) noexcept;
-  LockGuard& operator=(LockGuard&&) noexcept;
 };
 
 }  // namespace sfc::sync

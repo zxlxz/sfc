@@ -1,7 +1,7 @@
 #include "thread.h"
 
-#include "sfc/sys/thread.h"
 #include "sfc/ffi/cstring.h"
+#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 
@@ -46,11 +46,12 @@ auto Thread::name() const -> String {
 }
 
 auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
-  auto fun_imp = Box<void()>::xnew([fun = mem::move(fun), name = ffi::CString::from(name.as_str())]() mutable {
-    auto thrd_imp = sys_imp::Thread::current();
-    thrd_imp.set_name(name.c_str());
-    (*fun)();
-  });
+  auto fun_imp =
+      Box<void()>::xnew([fun = mem::move(fun), name = ffi::CString::from(name.as_str())]() mutable {
+        auto thrd_imp = sys_imp::Thread::current();
+        thrd_imp.set_name(name.c_str());
+        (*fun)();
+      });
 
   auto fun_box = boxed::box(mem::move(fun_imp));
   auto sys_thr = sys_imp::Thread::start(stack_size, start_routine, fun_box.ptr());
@@ -66,6 +67,9 @@ auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
 JoinHandle::JoinHandle() noexcept = default;
 
 JoinHandle::~JoinHandle() {
+  if (_thrd._raw == thrd_t(0)) {
+    return;
+  }
   auto thr = sys_imp::Thread{_thrd._raw};
   thr.detach();
 }

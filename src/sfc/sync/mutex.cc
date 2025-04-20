@@ -34,8 +34,4 @@ LockGuard::~LockGuard() {
   _mtx->_inn->unlock();
 }
 
-LockGuard::LockGuard(LockGuard&&) noexcept = default;
-
-LockGuard& LockGuard::operator=(LockGuard&&) noexcept = default;
-
 }  // namespace sfc::sync
