@@ -1,4 +1,4 @@
 #pragma once
 
-#include "slice/iter.h"
-#include "slice/mod.h"
+#include "sfc/core/slice/iter.h"
+#include "sfc/core/slice/mod.h"

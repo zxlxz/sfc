@@ -1,8 +1,8 @@
 #pragma once
 
-#include "panicking.h"
-#include "ptr.h"
-#include "trait.h"
+#include "sfc/core/panicking.h"
+#include "sfc/core/ptr.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::option {
 

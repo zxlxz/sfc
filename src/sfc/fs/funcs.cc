@@ -1,5 +1,5 @@
 
-#include "funcs.h"
+#include "sfc/fs/funcs.h"
 
 #include "sfc/ffi/cstring.h"
 #include "sfc/sys/io.h"
@@ -25,7 +25,7 @@ auto remove_dir(const Path& path) -> io::Result<> {
   if (!ret) {
     return io::Error::last_os_error();
   }
-
+  
   return _;
 }
 

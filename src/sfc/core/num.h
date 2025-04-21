@@ -1,4 +1,4 @@
 #pragma once
 
-#include "num/flt.h"
-#include "num/int.h"
+#include "sfc/core/num/flt.h"
+#include "sfc/core/num/int.h"

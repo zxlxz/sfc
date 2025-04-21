@@ -31,10 +31,10 @@ void remove_var(Str key) {
 }
 
 auto current_dir() -> fs::Path {
-  char buf[kMaxPath];
+  char buf[kMaxPath] = {};
 
   const auto len = sys_imp::getcwd(buf, sizeof(buf));
-  return fs::Path::from({buf, len});
+  return fs::Path::from(Str{buf, len});
 }
 
 void set_current_dir(const fs::Path& path) {

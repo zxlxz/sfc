@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include "sfc/core/slice/mod.h"
 
 namespace sfc::slice {
 

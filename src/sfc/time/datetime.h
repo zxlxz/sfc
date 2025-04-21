@@ -33,11 +33,12 @@ struct NaiveTime {
     return static_cast<u32>(_micros);
   }
 
-  auto to_str() const -> Str;
-
   void fmt(auto& f) const {
-    const auto s = this->to_str();
-    f.write_str(s);
+    const auto hour = this->hour();
+    const auto minute = this->minute();
+    const auto second = this->second();
+    const auto millis = this->millis();
+    f.write_fmt("{02}:{02}:{02}.{03}", hour, minute, second, millis);
   }
 };
 
@@ -52,11 +53,11 @@ struct NaiveDate {
   auto month() const -> u32;
   auto day() const -> u32;
 
-  auto to_str() const -> Str;
-
   void fmt(auto& f) const {
-    const auto s = this->to_str();
-    f.write_str(s);
+    const auto year = this->year();
+    const auto month = this->month();
+    const auto day = this->day();
+    f.write_fmt("{04}-{02}-{02}", year, month, day);
   }
 };
 
@@ -70,7 +71,7 @@ struct DateTime {
   DateTime(NaiveDate date, NaiveTime time) : _date{date}, _time{time} {}
 
   static auto from(const System& time) -> DateTime;
-  
+
   static auto now() -> DateTime;
 
   auto date() const -> NaiveDate {
@@ -81,11 +82,8 @@ struct DateTime {
     return _time;
   }
 
-  auto to_str() const -> Str;
-
   void fmt(auto& f) const {
-    const auto s = this->to_str();
-    f.write_str(s);
+    f.write_fmt("{} {}", _date, _time);
   }
 };
 

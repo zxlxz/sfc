@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mem.h"
+#include "sfc/core/mem.h"
 
 namespace sfc::ptr {
 

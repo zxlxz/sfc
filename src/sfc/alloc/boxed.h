@@ -1,6 +1,6 @@
 #pragma once
 
-#include "alloc.h"
+#include "sfc/alloc/alloc.h"
 
 namespace sfc::boxed {
 
@@ -12,12 +12,14 @@ class Box {
   Box() noexcept = default;
 
   ~Box() {
-    if (_ptr != nullptr) {
-      delete _ptr;
+    if (_ptr == nullptr) {
+      return;
     }
+    delete _ptr;
   }
 
-  Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {
+  Box(Box&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = nullptr;
   }
 
   Box& operator=(Box&& other) noexcept {
@@ -38,12 +40,8 @@ class Box {
     return res;
   }
 
-  operator bool() const noexcept {
+  explicit operator bool() const noexcept {
     return _ptr != nullptr;
-  }
-
-  auto ptr() const -> T* {
-    return _ptr;
   }
 
   auto operator->() const -> const T* {
@@ -69,80 +67,111 @@ class Box {
   auto into_raw() && -> T* {
     return mem::take(_ptr);
   }
-};
 
-template <class T>
-class Box<T&> {
-  T _dyn = {};
-
- public:
-  Box() noexcept = default;
-
-  template <class X>
-  Box(Box<X> box) noexcept : _dyn{*mem::move(box).into_raw()} {}
-
-  Box(Box&& other) noexcept : _dyn{other._dyn} {
-    other._dyn = {};
-  }
-
-  ~Box() {
-    if (!_dyn._self) {
-      return;
+  void fmt(auto& f) const {
+    if (_ptr == nullptr) {
+      f.write_str("Box()");
+    } else {
+      f.write_fmt("Box({})", *_ptr);
     }
-    (_dyn._meta->_drop)(_dyn._self);
-    delete reinterpret_cast<char*>(_dyn._self);
-  }
-
-  void operator=(Box&& other) noexcept {
-    auto tmp = static_cast<Box&&>(other);
-    mem::swap(_dyn, other._dyn);
-  }
-
-  auto operator->() -> T* {
-    return &_dyn;
   }
 };
 
 template <class R, class... T>
 class Box<R(T...)> {
-  using Dyn = ops::IFn<R(T...)>;
-  Dyn _dyn;
+  struct Meta {
+    void (*_dtor)(void*) = nullptr;
+    R (*_call)(void*, T&&...) = nullptr;
+  };
+
+  void*       _self = nullptr;
+  const Meta* _meta = nullptr;
 
  public:
   Box() noexcept = default;
 
-  template <class X>
-  Box(Box<X> box) noexcept : _dyn{*mem::move(box).into_raw()} {}
-
   ~Box() {
-    if (!_dyn._self) {
+    if (!_self) {
       return;
     }
 
-    (_dyn._meta->_drop)(_dyn._self);
-    delete static_cast<char*>(_dyn._self);
+    (_meta->_dtor)(_self);
   }
 
-  Box(Box&& other) noexcept : _dyn{other._dyn} {
-    other._dyn = {};
+  Box(Box&& other) noexcept : _self{other._self}, _meta{other._meta} {
+    other._self = nullptr;
+    other._meta = nullptr;
   }
 
   Box& operator=(Box&& other) noexcept {
-    auto tmp = mem::move(*this);
-    mem::swap(_dyn, other._dyn);
+    auto tmp = mem::move(other);
+    _self = tmp._self;
+    _meta = tmp._meta;
     return *this;
   }
 
-  static auto xnew(auto f) -> Box {
-    return Box{Box<decltype(f)>::xnew(mem::move(f))};
+  template <class X>
+  static auto xnew(X fun) -> Box {
+    static const auto META = Meta{
+        ._dtor = [](void* p) { delete (X*)(p); },
+        ._call = [](void* p, T&&... args) { return (*(X*)p)((T&&)args...); },
+    };
+
+    auto res = Box{};
+    res._self = new X{mem::move(fun)};
+    res._meta = &META;
+    return res;
   }
 
   explicit operator bool() const {
-    return _dyn._self != nullptr;
+    return _self != nullptr;
   }
 
-  auto operator*() -> Dyn& {
-    return _dyn;
+  auto operator()(T... args) -> auto {
+    panicking::assert_fmt(_self != nullptr, "boxed::Box::*: deref null");
+    return (_meta->_call)(_self, (T&&)args...);
+  }
+};
+
+template <class T>
+class Box<T&> {
+  T _impl;
+
+ public:
+  Box() noexcept = default;
+
+  ~Box() {
+    if (!_impl._self) {
+      return;
+    }
+    (_impl._meta->_dtor)(_impl._self);
+  }
+
+  Box(Box&& other) noexcept : _impl{other._impl} {
+    other._impl = {};
+  }
+
+  auto operator=(Box&& other) noexcept -> Box& {
+    auto tmp = static_cast<Box&&>(other);
+    mem::swap(_impl, tmp._impl);
+    return *this;
+  }
+
+  template <class X>
+  static auto xnew(X obj) -> Box {
+    auto res = Box{};
+    res._impl._self = new X{static_cast<X&&>(obj)};
+    res._impl._meta = &T::template META<X>;
+    return res;
+  }
+
+  explicit operator bool() const {
+    return _impl._self != nullptr;
+  }
+
+  auto operator->() -> T* {
+    panicking::assert_fmt(_impl._self != nullptr, "boxed::Box::->: deref null");
+    return &_impl;
   }
 };
 

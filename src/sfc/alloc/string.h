@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec.h"
+#include "sfc/alloc/vec.h"
 
 namespace sfc::string {
 

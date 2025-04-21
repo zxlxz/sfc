@@ -16,24 +16,6 @@ auto NaiveTime::from_hms_micro(u32 hour, u32 min, u32 sec, u32 micros) -> NaiveT
   return {secs, micros};
 }
 
-auto NaiveTime::to_str() const -> Str {
-  static thread_local char buf[] = "00:00:00.000";
-  static thread_local auto cached_secs = 0;
-
-  if (cached_secs != _secs) {
-    cached_secs = _secs;
-    const auto hour = this->hour();
-    const auto min = this->minute();
-    const auto sec = this->second();
-    __builtin_snprintf(buf, sizeof(buf), "%02d:%02d:%02d.000", hour, min, sec);
-  }
-
-  const auto millis = this->millis();
-  __builtin_snprintf(buf + sizeof("00:00:00"), sizeof("000"), "%03d", millis);
-
-  return buf;
-}
-
 auto NaiveTime::from_hms_milli(u32 hour, u32 min, u32 sec, u32 millis) -> NaiveTime {
   const auto total_secs = (hour * 60 + min) * 60 + sec;
   return {total_secs, static_cast<u32>(MICROS_PER_MILLI * millis)};
@@ -59,21 +41,6 @@ auto NaiveDate::day() const -> u32 {
   return day + 1;
 }
 
-auto NaiveDate::to_str() const -> Str {
-  static thread_local char buf[] = "0000-00-00";
-  static thread_local auto cached_yof = 0;
-
-  if (cached_yof != _yof) {
-    cached_yof = _yof;
-    const auto year = this->year();
-    const auto mon = this->month();
-    const auto day = this->day();
-    __builtin_snprintf(buf, sizeof(buf), "%04d-%02d-%02d", year, mon, day);
-  }
-
-  return buf;
-}
-
 auto DateTime::from(const System& sys_time) -> DateTime {
   static auto seconds = sys_time._micros / MICROS_PER_SEC;
 
@@ -90,16 +57,6 @@ auto DateTime::from(const System& sys_time) -> DateTime {
 auto DateTime::now() -> DateTime {
   const auto sys_time = System::now();
   return DateTime::from(sys_time);
-}
-
-auto DateTime::to_str() const -> Str {
-  static thread_local char buf[] = "0000-00-00 00:00:00.000";
-
-  const auto date_str = this->_date.to_str();
-  const auto time_str = this->_time.to_str();
-  __builtin_snprintf(buf, sizeof(buf), "%10s %12s", date_str.as_ptr(), time_str.as_ptr());
-
-  return buf;
 }
 
 }  // namespace sfc::time

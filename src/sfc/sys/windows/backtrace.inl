@@ -72,8 +72,8 @@ static inline auto resolve(void* addr) -> FrameInfo {
   return res;
 }
 
-static inline auto cxx_demangle(const char in_buf[], char out_buf[], SIZE_T buf_len) -> SIZE_T {
-  const auto nbytes = ::UnDecorateSymbolName(in_buf, out_buf, static_cast<DwORD>(BUF_LEN), UNDNAME_COMPLETE);
+static inline auto cxx_demangle(const char in_buf[], char out_buf[], DWORD buf_len) -> DWORD {
+  const auto nbytes = ::UnDecorateSymbolName(in_buf, out_buf, buf_len, UNDNAME_COMPLETE);
   return nbytes;
 }
 

@@ -10,21 +10,35 @@ struct System {
  public:
   static auto now() -> System;
 
-  auto elpased() const -> Duration;
+  auto elapsed() const -> Duration;
 
-  auto duration_since(const System& earlier) const -> Duration;
+  inline auto secs() const -> u64 {
+    return _micros % MICROS_PER_SEC;
+  }
 
-  auto operator==(const System& other) const -> bool;
-  auto operator<(const System& other) const -> bool;
-  auto operator<=(const System& other) const -> bool;
+  inline auto duration_since(const System& earlier) const -> Duration {
+    return *this - earlier;
+  }
+
+  inline auto operator==(const System& other) const -> bool {
+    return _micros == other._micros;
+  }
+
+  inline auto operator<(const System& other) const -> bool {
+    return _micros < other._micros;
+  }
+
+  inline auto operator<=(const System& other) const -> bool {
+    return _micros <= other._micros;
+  }
 
   auto operator-(const System& earlier) const -> Duration;
-
   auto operator+(const Duration& dur) const -> System;
+
   auto operator-(const Duration& dur) const -> System;
 
-  void operator+=(const Duration& dur);
-  void operator-=(const Duration& dur);
+  auto operator+=(const Duration& dur) -> System&;
+  auto operator-=(const Duration& dur) -> System&;
 };
 
 }  // namespace sfc::time

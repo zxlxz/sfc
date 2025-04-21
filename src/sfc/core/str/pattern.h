@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mod.h"
+#include "sfc/core/str/mod.h"
 
 namespace sfc::str {
 

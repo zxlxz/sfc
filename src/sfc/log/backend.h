@@ -14,29 +14,28 @@ class IBackend {
   friend class Box<IBackend&>;
 
   struct Meta {
-    void (*_drop)(void*) = nullptr;
-    void (IBackend::*_flush)() = nullptr;
-    void (IBackend::*_write_entry)(Entry) = nullptr;
+    void (*_dtor)(void*) = nullptr;
+    void (*_flush)(void*) = nullptr;
+    void (*_write_entry)(void*, Entry) = nullptr;
   };
 
   template <class X>
-  static const inline Meta META = ops::dyn_meta<IBackend, Meta>(&X::flush, &X::write_entry);
+  static constexpr inline Meta META = {
+      ._dtor = [](void* p) { delete (X*)p; },
+      ._flush = [](void* p) { return ((X*)p)->flush(); },
+      ._write_entry = [](void* p, Entry entry) { return ((X*)p)->write_entry(entry); },
+  };
 
-  IBackend*   _self = nullptr;
+  void*       _self = nullptr;
   const Meta* _meta = nullptr;
 
  public:
-  IBackend() = default;
-
-  template <class X>
-  explicit IBackend(X& x) noexcept : _self{reinterpret_cast<IBackend*>(&x)}, _meta{&META<X>} {}
-
   void flush() {
-    return (_self->*_meta->_flush)();
+    return (_meta->_flush)(_self);
   }
 
   void write_entry(Entry entry) {
-    return (_self->*_meta->_write_entry)(entry);
+    return (_meta->_write_entry)(_self, entry);
   }
 };
 

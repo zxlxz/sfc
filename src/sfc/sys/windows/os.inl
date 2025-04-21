@@ -20,11 +20,9 @@ static inline auto unsetenv(const char* key) -> bool {
   return ::SetEnvironmentVariableA(key, nullptr);
 }
 
-static inline auto getcwd() -> const char* {
-  static thread_local char buf[kMaxPathSize];
-
-  const auto num_chars = ::GetCurrentDirectoryA(sizeof(buf), buf);
-  return num_chars > 0 ? buf : nullptr;
+static inline auto getcwd(char buf[], DWORD buf_len) -> DWORD {
+  const auto num_chars = ::GetCurrentDirectoryA(buf_len, buf);
+  return num_chars;
 }
 
 static inline auto chdir(const char* path) -> bool {

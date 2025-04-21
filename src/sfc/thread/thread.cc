@@ -13,14 +13,26 @@ using thread_ret_t = unsigned long;
 using thread_ret_t = void*;
 #endif
 
-static auto start_routine(void* raw) -> thread_ret_t {
-  const auto ptr = static_cast<Box<void()>*>(raw);
-  auto       fun = Box<Box<void()>>::from_raw(ptr);
+struct ThreadData {
+  Box<void()>  _fbox;
+  ffi::CString _name;
 
-  try {
-    (**fun)();
-  } catch (...) {}
+ public:
+  void run() {
+    if (_name.c_str()) {
+      auto thr = sys_imp::Thread::current();
+      thr.set_name(_name.c_str());
+    }
 
+    try {
+      _fbox();
+    } catch (...) {}
+  }
+};
+
+static auto start_routine(void* data) -> thread_ret_t {
+  auto obj = Box<ThreadData>::from_raw(static_cast<ThreadData*>(data));
+  obj->run();
   return 0;
 };
 
@@ -46,17 +58,10 @@ auto Thread::name() const -> String {
 }
 
 auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
-  auto fun_imp =
-      Box<void()>::xnew([fun = mem::move(fun), name = ffi::CString::from(name.as_str())]() mutable {
-        auto thrd_imp = sys_imp::Thread::current();
-        thrd_imp.set_name(name.c_str());
-        (*fun)();
-      });
-
-  auto fun_box = boxed::box(mem::move(fun_imp));
-  auto sys_thr = sys_imp::Thread::start(stack_size, start_routine, fun_box.ptr());
+  auto thr_box = Box<ThreadData>::xnew(mem::move(fun), ffi::CString::from(name));
+  auto sys_thr = sys_imp::Thread::start(stack_size, start_routine, &*thr_box);
   if (sys_thr) {
-    mem::move(fun_box).into_raw();
+    mem::move(thr_box).into_raw();
   }
 
   auto res = JoinHandle{};

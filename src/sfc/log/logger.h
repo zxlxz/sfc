@@ -44,7 +44,7 @@ class Logger {
   }
 
   void add_backend(auto backend) {
-    _backends.push(boxed::box(mem::move(backend)));
+    _backends.push(Box<IBackend&>::xnew(mem::move(backend)));
   }
 
   void clear_backends() {

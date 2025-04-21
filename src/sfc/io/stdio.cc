@@ -1,6 +1,6 @@
-#include "stdio.h"
-#include "sfc/sync/mutex.h"
+#include "sfc/io/stdio.h"
 
+#include "sfc/sync/mutex.h"
 #include "sfc/sys/io.h"
 
 namespace sfc::io {

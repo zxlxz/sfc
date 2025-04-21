@@ -1,7 +1,7 @@
 #pragma once
 
-#include "macro.h"
-#include "type.h"
+#include "sfc/core/reflect/macro.h"
+#include "sfc/core/reflect/type.h"
 
 namespace sfc::reflect {
 

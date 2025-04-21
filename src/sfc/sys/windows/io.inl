@@ -6,18 +6,16 @@
 
 namespace sfc::sys::io {
 
-using error_t = DWORD;
-
 struct Error {
-  DWORD _code = 0;
+  int _code = 0;
 
  public:
   static auto last() -> Error {
-    return {::GetLastError()};
+    return {static_cast<int>(::GetLastError())};
   }
 
   auto code() const -> int {
-    return static_cast<int>(_code);
+    return _code;
   }
 
   auto kind() const -> sfc::io::ErrorKind {
@@ -124,6 +122,10 @@ struct OpenOptions {
   bool truncate = false;
 
  public:
+  static auto from(const auto& t) -> OpenOptions {
+    return OpenOptions{t._append, t._create, t._create_new, t._read, t._write, t._truncate};
+  }
+
   auto open(const char* path) const -> HANDLE {
     const auto access_mode = append ? FILE_APPEND_DATA : write ? GENERIC_WRITE : GENERIC_READ;
     const auto create_mode = create_new ? CREATE_NEW : write ? CREATE_ALWAYS : OPEN_EXISTING;

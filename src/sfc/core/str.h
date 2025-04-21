@@ -1,4 +1,4 @@
 #pragma once
 
-#include "str/mod.h"
-#include "str/pattern.h"
+#include "sfc/core/str/mod.h"
+#include "sfc/core/str/pattern.h"

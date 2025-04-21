@@ -1,5 +1,5 @@
 
-#include "meta.h"
+#include "sfc/fs/meta.h"
 
 #include "sfc/sys/io.h"
 #include "sfc/ffi/cstring.h"

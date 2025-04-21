@@ -1,4 +1,4 @@
-#include "style.h"
+#include "sfc/core/fmt/style.h"
 
 namespace sfc::fmt {
 

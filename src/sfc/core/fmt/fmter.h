@@ -1,6 +1,6 @@
 #pragma once
 
-#include "style.h"
+#include "sfc/core/fmt/style.h"
 
 namespace sfc::fmt {
 
@@ -53,7 +53,7 @@ class Fmter {
   Style _style = {};
 
  public:
-  Fmter(W& out) : _out{out} {}
+  explicit Fmter(W& out) : _out{out} {}
 
   auto style() const -> const Style& {
     return _style;
@@ -167,8 +167,7 @@ class Fmter {
   auto debug_struct();
 };
 
-template <class W>
-void write(W& out, str::Str fmts, const auto&... args) {
+void write(auto& out, str::Str fmts, const auto&... args) {
   Fmter{out}.write_fmt(fmts, args...);
 }
 

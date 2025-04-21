@@ -67,7 +67,7 @@ class Recv {
     if (!_func || !msg_rc) {
       return;
     }
-    (*_func)(**msg_rc);
+    _func(**msg_rc);
   }
 
   void on_message(Rc<T> msg) {

@@ -1,4 +1,4 @@
-#include "panicking.h"
+#include "sfc/core/panicking.h"
 
 #include "sfc/backtrace/frame.h"
 #include "sfc/io/stdio.h"

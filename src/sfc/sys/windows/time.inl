@@ -73,7 +73,7 @@ struct DateTime {
   USHORT sec = 0;
 
  public:
-  static auto from_secs(uint64_t filetime_sec) -> DateTime {
+  static auto from_secs(SIZE_T filetime_sec) -> DateTime {
       // Convert from filetime_sec to FILETIME struct
       ::FILETIME filetime = {};
       filetime.dwLowDateTime = static_cast<DWORD>(filetime_sec & 0xFFFFFFFFU);

@@ -1,4 +1,4 @@
 #pragma once
 
-#include "reflect/enum.h"
-#include "reflect/struct.h"
+#include "sfc/core/reflect/enum.h"
+#include "sfc/core/reflect/struct.h"

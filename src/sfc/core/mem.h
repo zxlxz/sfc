@@ -1,6 +1,6 @@
 #pragma once
 
-#include "trait.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::mem {
 
