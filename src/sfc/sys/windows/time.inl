@@ -85,12 +85,12 @@ struct DateTime {
 
       // Convert SYSTEMTIME to DateTime
       const auto res = DateTime{
-          system_time.wYear,
-          system_time.wMonth,
-          system_time.wDay,
-          system_time.wHour,
-          system_time.wMinute,
-          system_time.wSecond,
+          .year = system_time.wYear,
+          .month = system_time.wMonth,
+          .mday = system_time.wDay,
+          .hour = system_time.wHour,
+          .min = system_time.wMinute,
+          .sec = system_time.wSecond,
       };
       return res;
   }

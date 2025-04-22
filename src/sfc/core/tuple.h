@@ -70,7 +70,7 @@ struct Entry {
 template <usize... I, class... T>
 struct Tuple<idx_t<I...>, T...> : Entry<I, T>... {
  public:
-  Tuple(T... vals) : Entry<I, T>{static_cast<T&&>(vals)}... {}
+  explicit Tuple(T... vals) : Entry<I, T>{static_cast<T&&>(vals)}... {}
 
   template <usize J>
   auto get() const -> auto& {

@@ -23,9 +23,9 @@ SFC_TEST(pop) {
   q.push(2);
   q.push(3);
 
-  test::assert_eq(q.pop(), 1);
-  test::assert_eq(q.pop(), 2);
-  test::assert_eq(q.pop(), 3);
+  test::assert_eq(q.pop(), Option{1});
+  test::assert_eq(q.pop(), Option{2});
+  test::assert_eq(q.pop(), Option{3});
   test::assert_false(q.pop());
 }
 

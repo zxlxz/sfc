@@ -55,19 +55,19 @@ SFC_TEST(iter) {
 SFC_TEST(find) {
   const auto s = Str{"abc"};
 
-  test::assert_eq(s.find('a'), 0UL);
-  test::assert_eq(s.find('b'), 1UL);
-  test::assert_eq(s.rfind('c'), 2UL);
-  test::assert_eq(s.find('d'), Option<usize>{});
+  test::assert_eq(s.find('a'), Option<usize>{0UL});
+  test::assert_eq(s.find('b'), Option<usize>{1UL});
+  test::assert_eq(s.find('c'), Option<usize>{2UL});
+  test::assert_false(s.find('d'));
 }
 
 SFC_TEST(rfind) {
   const auto s = Str{"abc"};
 
-  test::assert_eq(s.rfind('a'), 0UL);
-  test::assert_eq(s.rfind('b'), 1UL);
-  test::assert_eq(s.rfind('c'), 2UL);
-  test::assert_eq(s.rfind('d'), Option<usize>{});
+  test::assert_eq(s.rfind('a'), Option<usize>{0UL});
+  test::assert_eq(s.rfind('b'), Option<usize>{1UL});
+  test::assert_eq(s.rfind('c'), Option<usize>{2UL});
+  test::assert_false(s.rfind('d'));
 }
 
 }  // namespace sfc::str

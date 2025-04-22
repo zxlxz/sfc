@@ -29,7 +29,7 @@ class CmptBase {
     this->on_shutdown();
   }
 
-  virtual bool on_init() {
+  virtual auto on_init() -> bool {
     return true;
   }
 

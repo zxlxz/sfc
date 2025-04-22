@@ -8,19 +8,20 @@ struct Layout {
   usize size;
   usize align;
 
+ public:
   template <class T>
   static auto of() -> Layout {
-    return {sizeof(T), alignof(T)};
+    return Layout{.size = sizeof(T), .align = alignof(T)};
   }
 
   template <class T>
   static auto array(usize len) -> Layout {
-    return {len * sizeof(T), alignof(T)};
+    return Layout{.size = len * sizeof(T), .align = alignof(T)};
   }
 
   template <class T>
   static auto for_value(const T&) -> Layout {
-    return {sizeof(T), alignof(T)};
+    return Layout{.size = sizeof(T), .align = alignof(T)};
   }
 };
 

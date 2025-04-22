@@ -9,8 +9,6 @@ struct Components {
   Str _0;
 
  public:
-  Components(const String& s) noexcept : _0{s.as_str()} {}
-
   auto as_str() const -> Str {
     return _0;
   }
@@ -57,7 +55,7 @@ Path::~Path() = default;
 
 Path::Path(Path&&) noexcept = default;
 
-Path& Path::operator=(Path&&) noexcept = default;
+auto Path::operator=(Path&&) noexcept -> Path& = default;
 
 auto Path::from(Str s) -> Path {
   auto res = Path{};
@@ -74,7 +72,7 @@ auto Path::as_str() const -> Str {
 }
 
 auto Path::file_name() const -> Str {
-  const auto s = Components{_inn}.next_back();
+  const auto s = Components{_inn.as_str()}.next_back();
   if (s == "." || s == ".." || s == "/") {
     return {};
   }
@@ -104,7 +102,7 @@ auto Path::file_stem() const -> Str {
 }
 
 auto Path::parent() const -> Path {
-  auto cmpts = Components{_inn};
+  auto cmpts = Components{_inn.as_str()};
   cmpts.next_back();
 
   return Path::from(cmpts.as_str());
@@ -129,7 +127,7 @@ void Path::push(Str path) {
 }
 
 auto Path::pop() -> bool {
-  auto cmpts = Components{_inn};
+  auto cmpts = Components{_inn.as_str()};
 
   const auto tail = cmpts.next_back();
   if (tail.is_empty()) {

@@ -6,10 +6,8 @@ namespace sfc::collections {
 
 template <class T>
 class [[nodiscard]] Queue {
-  Vec<T> _vec;
-  usize _pos = 0;
-
-  Queue(Vec<T>&& vec, usize pos) noexcept : _vec{static_cast<Vec<T>&&>(vec)}, _pos{pos} {}
+  Vec<T> _vec{};
+  usize  _pos{0};
 
  public:
   Queue() = default;
@@ -18,14 +16,16 @@ class [[nodiscard]] Queue {
 
   Queue(Queue&& other) noexcept : _vec{mem::move(other._vec)}, _pos{mem::take(other._pos)} {}
 
-  Queue& operator=(Queue&& other) noexcept {
+  auto operator=(Queue&& other) noexcept -> Queue& {
     _vec = mem::move(other._vec);
     _pos = mem::take(other._pos);
     return *this;
   }
 
   static auto with_capacity(usize capacity) -> Queue {
-    return Queue{Vec<T>::with_capacity(capacity), 0};
+    auto res = Queue{};
+    res._vec = Vec<T>::with_capacity(capacity);
+    return res;
   }
 
   auto capacity() const -> usize {

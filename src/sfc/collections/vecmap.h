@@ -5,7 +5,7 @@
 namespace sfc::collections {
 
 template <class K, class V>
-class [[nodiscard]] VecMap {
+class VecMap {
   Vec<K> _keys = {};
   Vec<V> _vals = {};
 
@@ -16,7 +16,7 @@ class [[nodiscard]] VecMap {
 
   VecMap(VecMap&&) noexcept = default;
 
-  VecMap& operator=(VecMap&&) noexcept = default;
+  auto operator=(VecMap&&) noexcept -> VecMap& = default;
 
   auto len() const -> usize {
     return _keys.len();
@@ -43,9 +43,7 @@ class [[nodiscard]] VecMap {
   }
 
   auto get(const auto& key) const -> Option<const V&> {
-    const auto idx = _keys.iter()->position([&](const K& t) {
-      return t == key;
-    });
+    const auto idx = _keys.iter()->position([&](const K& t) { return t == key; });
     if (!idx) {
       return {};
     }
@@ -53,9 +51,7 @@ class [[nodiscard]] VecMap {
   }
 
   auto get_mut(const auto& key) -> Option<V&> {
-    const auto idx = _keys.iter()->position([&](const K& t) {
-      return t == key;
-    });
+    const auto idx = _keys.iter()->position([&](const K& t) { return t == key; });
     if (!idx) {
       return {};
     }
@@ -78,7 +74,7 @@ class [[nodiscard]] VecMap {
     auto pos = this->get_mut(key);
     if (pos) {
       auto res = mem::replace(*pos, static_cast<V&&>(val));
-      return res;
+      return Option{res};
     }
     _keys.push(static_cast<K&&>(key));
     _vals.push(static_cast<V&&>(val));

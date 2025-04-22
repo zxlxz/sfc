@@ -12,7 +12,7 @@ class TestCmptA : CmptBase {
   int _idx = 0;
 
  public:
-  bool on_init() override {
+  auto on_init() -> bool override {
     return true;
   }
 
@@ -28,7 +28,7 @@ class TestCmptB : CmptBase {
   cyber::Send<int> _send_b{"test.b"};
 
  public:
-  bool on_init() override {
+  auto on_init() -> bool override {
     _recv_a.bind([&](const auto& val) { this->proc(val); });
     return true;
   }
@@ -47,7 +47,7 @@ class TestCmptC : CmptBase {
   cyber::Recv<int> _recv_b{"test.b"};
 
  public:
-  bool on_init() override {
+  auto on_init() -> bool override {
     _recv_b.bind([&](const auto& val) { this->proc(val); });
     return true;
   }

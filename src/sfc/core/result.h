@@ -18,7 +18,7 @@ class Result {
     ~Imp() {}
   };
   bool _tag;
-  Imp _imp;
+  Imp  _imp;
 
  public:
   Result(T ok) : _tag{true}, _imp{static_cast<T&&>(ok)} {}
@@ -55,7 +55,8 @@ class Result {
 
   Result& operator=(Result&& other) noexcept {
     if (_tag == other._tag) {
-      _tag ? _imp._ok = static_cast<T&&>(other._imp._ok) : _imp._err = static_cast<E&&>(other._imp._err);
+      _tag ? _imp._ok = static_cast<T&&>(other._imp._ok)
+           : _imp._err = static_cast<E&&>(other._imp._err);
     } else {
       _tag ? _imp._ok.~T() : _imp._err.~E();
       _tag = other._tag;
@@ -65,7 +66,7 @@ class Result {
     return *this;
   }
 
-  operator bool() const {
+  explicit operator bool() const {
     return _tag;
   }
 
@@ -91,8 +92,8 @@ class Result {
 template <class T, class E>
 class Result : detail::Result<T, E> {
   using Imp = detail::Result<T, E>;
-  using Imp::_tag;
   using Imp::_imp;
+  using Imp::_tag;
 
  public:
   using Imp::Imp;
@@ -120,22 +121,27 @@ class Result : detail::Result<T, E> {
   using Imp::get_err_unchecked_mut;
 
   auto ok() && -> Option<T> {
-    if (!_tag) return {};
+    if (!_tag) {
+      return {};
+    }
     return static_cast<T&&>(Imp::get_ok_unchecked_mut());
   }
 
   auto ok() const& -> Option<T> {
-    if (!_tag) return {};
+    if (!_tag)
+      return {};
     return Imp::get_ok_unchecked();
   }
 
   auto err() && -> Option<E> {
-    if (_tag) return {};
+    if (_tag)
+      return {};
     return static_cast<E&&>(Imp::get_err_unchecked_mut());
   }
 
   auto err() const& -> Option<E> {
-    if (_tag) return {};
+    if (_tag)
+      return {};
     return Imp::get_err_unchecked();
   }
 

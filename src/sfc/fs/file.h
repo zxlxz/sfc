@@ -26,7 +26,7 @@ class File : io::File {
   File() = default;
   ~File() = default;
   File(File&&) noexcept = default;
-  File& operator=(File&&) noexcept = default;
+  auto operator=(File&&) noexcept -> File& = default;
 
   static auto open(const Path& path) -> io::Result<File>;
   static auto create(const Path& path) -> io::Result<File>;

@@ -70,11 +70,11 @@ struct Duration {
   }
 
   auto as_secs_f32() const -> f32 {
-    return f32(_nanos) * 1e-9f;
+    return static_cast<f32>(_nanos) * 1e-9f;
   }
 
   auto as_secs_f64() const -> f64 {
-    return f64(_nanos) * 1e-9;
+    return static_cast<f64>(_nanos) * 1e-9;
   }
 
   auto operator+(Duration rhs) const -> Duration {

@@ -51,10 +51,10 @@ SFC_TEST(back_back) {
   buf.push_back(2);
   buf.push_back(3);
 
-  test::assert_eq(buf.pop_back(), 3);
-  test::assert_eq(buf.pop_back(), 2);
-  test::assert_eq(buf.pop_back(), 1);
-  test::assert_eq(buf.pop_back(), 0);
+  test::assert_eq(buf.pop_back(), Option{3});
+  test::assert_eq(buf.pop_back(), Option{2});
+  test::assert_eq(buf.pop_back(), Option{1});
+  test::assert_eq(buf.pop_back(), Option{0});
 
   test::assert_true(buf.is_empty());
   test::assert_false(buf.is_full());
@@ -67,10 +67,10 @@ SFC_TEST(back_front) {
   buf.push_back(2);
   buf.push_back(3);
 
-  test::assert_eq(buf.pop_front(), 0);
-  test::assert_eq(buf.pop_front(), 1);
-  test::assert_eq(buf.pop_front(), 2);
-  test::assert_eq(buf.pop_front(), 3);
+  test::assert_eq(buf.pop_front(), Option{0});
+  test::assert_eq(buf.pop_front(), Option{1});
+  test::assert_eq(buf.pop_front(), Option{2});
+  test::assert_eq(buf.pop_front(), Option{3});
 
   test::assert_true(buf.is_empty());
   test::assert_false(buf.is_full());
@@ -83,10 +83,10 @@ SFC_TEST(front_front) {
   buf.push_front(2);
   buf.push_front(3);
 
-  test::assert_eq(buf.pop_front(), 3);
-  test::assert_eq(buf.pop_front(), 2);
-  test::assert_eq(buf.pop_front(), 1);
-  test::assert_eq(buf.pop_front(), 0);
+  test::assert_eq(buf.pop_front(), Option{3});
+  test::assert_eq(buf.pop_front(), Option{2});
+  test::assert_eq(buf.pop_front(), Option{1});
+  test::assert_eq(buf.pop_front(), Option{0});
 
   test::assert_true(buf.is_empty());
   test::assert_false(buf.is_full());
@@ -99,10 +99,10 @@ SFC_TEST(front_back) {
   buf.push_front(2);
   buf.push_front(3);
 
-  test::assert_eq(buf.pop_back(), 0);
-  test::assert_eq(buf.pop_back(), 1);
-  test::assert_eq(buf.pop_back(), 2);
-  test::assert_eq(buf.pop_back(), 3);
+  test::assert_eq(buf.pop_back(), Option{0});
+  test::assert_eq(buf.pop_back(), Option{1});
+  test::assert_eq(buf.pop_back(), Option{2});
+  test::assert_eq(buf.pop_back(), Option{3});
 
   test::assert_true(buf.is_empty());
   test::assert_false(buf.is_full());

@@ -11,9 +11,9 @@ template <class T, class A = alloc::Global>
 class [[nodiscard]] Buf {
   friend class Vec<T>;
 
-  T*                      _ptr = nullptr;
-  usize                   _cap = 0;
-  [[no_unique_address]] A _a{};
+  T*    _ptr = nullptr;
+  usize _cap = 0;
+  A     _a{};
 
  public:
   Buf() noexcept = default;
@@ -249,7 +249,7 @@ class [[nodiscard]] Vec {
 
     auto res = ptr::read(&_buf._ptr[_len - 1]);
     _len -= 1;
-    return res;
+    return Option{res};
   }
 
   void truncate(usize len) {

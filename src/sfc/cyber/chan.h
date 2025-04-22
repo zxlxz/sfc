@@ -23,7 +23,7 @@ class Chan {
  public:
   explicit Chan(Str topic) : _topic{String::from(topic)} {}
 
-  ~Chan() {}
+  ~Chan() = default;
 
   Chan(const Chan&) = delete;
 

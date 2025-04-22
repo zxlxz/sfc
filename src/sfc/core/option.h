@@ -6,142 +6,129 @@
 
 namespace sfc::option {
 
-struct None {};
-
 namespace detail {
 
 template <class T>
 class Option {
-  union Imp {
-    T _val;
-
-    Imp() noexcept {}
-    Imp(T&& x) noexcept : _val{static_cast<T&&>(x)} {}
-    ~Imp() noexcept {}
-  };
-
-  bool _tag;
-  Imp _imp;
+  bool _tag{false};
+  alignas(T) u8 _buf[sizeof(T)];
 
  public:
-  Option() noexcept : _tag{false}, _imp{} {}
+  inline Option() noexcept = default;
 
-  Option(None) noexcept : _tag{false}, _imp{} {}
+  inline explicit Option(T&& val) noexcept : _tag{true} {
+    ptr::write(reinterpret_cast<T*>(_buf), static_cast<T&&>(val));
+  }
 
-  Option(T val) noexcept : _tag{true}, _imp{static_cast<T&&>(val)} {}
-
-  ~Option() {
+  inline ~Option() {
     if (_tag) {
-      _imp._val.~T();
+      mem::drop(this->get_unchecked_mut());
     }
   }
 
-  Option(const Option& other) : _tag{other._tag} {
+  inline Option(const Option& other) : _tag{other._tag} {
     if (_tag) {
-      new (mem::inplace_t{}, &_imp._val) T{other._imp._val};
+      ptr::write(reinterpret_cast<T*>(_buf), other.get_unchecked());
     }
   }
 
-  Option(Option&& other) noexcept : _tag{other._tag} {
+  inline Option(Option&& other) noexcept : _tag{other._tag} {
     if (_tag) {
-      new (mem::inplace_t{}, &_imp._val) T{static_cast<T&&>(other._imp._val)};
+      ptr::write(reinterpret_cast<T*>(_buf), other.unwrap_unchecked());
     }
   }
 
-  auto operator=(const Option& other) noexcept -> Option& {
+  inline auto operator=(const Option& other) noexcept -> Option& {
     if (_tag == other._tag) {
-      if (_tag)
-        _imp._val = other._imp._val;
+      _tag ? this->get_unchecked_mut() = other.get_unchecked() : void();
     } else {
-      _tag ? mem::drop(_imp._val) : ptr::write(&_imp._val, other._imp._val);
+      _tag ? mem::drop(this->get_unchecked_mut())
+           : ptr::write(reinterpret_cast<T*>(_buf), other.get_unchecked());
+      _tag = other._tag;
+    }
+
+    return *this;
+  }
+
+  inline auto operator=(Option&& other) noexcept -> Option& {
+    if (_tag == other._tag) {
+      _tag ? void(this->get_unchecked_mut() = other.unwrap_unchecked()) : void();
+    } else {
+      _tag ? mem::drop(this->get_unchecked_mut())
+           : ptr::write(reinterpret_cast<T*>(_buf), other.unwrap_unchecked());
       _tag = other._tag;
     }
     return *this;
   }
 
-  auto operator=(Option&& other) noexcept -> Option& {
-    if (_tag == other._tag) {
-      if (_tag)
-        _imp._val = static_cast<T&&>(other._imp._val);
-    } else {
-      _tag ? mem::drop(_imp._val) : ptr::write(&_imp._val, static_cast<T&&>(other._imp._val));
-      _tag = other._tag;
-    }
-    return *this;
-  }
-
-  operator bool() const {
+  inline explicit operator bool() const {
     return _tag;
   }
 
-  auto get_unchecked() const -> const T& {
-    return _imp._val;
+  inline auto get_unchecked() const -> const T& {
+    return *reinterpret_cast<const T*>(_buf);
   }
 
-  auto get_unchecked_mut() -> T& {
-    return _imp._val;
+  inline auto get_unchecked_mut() -> T& {
+    return *reinterpret_cast<T*>(_buf);
   }
 
-  auto unwrap_unchecked() -> T {
-    return static_cast<T&&>(_imp._val);
+  inline auto unwrap_unchecked() -> T&& {
+    return static_cast<T&&>(*reinterpret_cast<T*>(_buf));
   }
 };
 
 template <class T>
 class Option<T&> {
-  T* _ptr = nullptr;
+  T* _ptr{nullptr};
 
  public:
-  Option() = default;
+  inline Option() = default;
 
-  ~Option() {}
+  inline explicit Option(T& val) noexcept : _ptr{&val} {}
 
-  Option(T& val) : _ptr{&val} {}
+  inline ~Option() = default;
 
-  operator bool() const {
+  inline explicit operator bool() const {
     return _ptr != nullptr;
   }
 
-  auto get_unchecked() const -> const T& {
+  inline auto get_unchecked() const -> const T& {
     return *_ptr;
   }
 
-  auto get_unchecked_mut() -> T& {
+  inline auto get_unchecked_mut() -> T& {
     return *_ptr;
   }
 
-  auto unwrap_unchecked() -> T& {
+  inline auto unwrap_unchecked() -> T& {
     return *_ptr;
   }
 };
 
 template <class T>
-concept iBool = requires(const T& val) { val.operator bool(); };
-
-template <iBool T>
+  requires(requires { &T::operator bool; })
 class Option<T> {
   T _val{};
 
  public:
-  Option() = default;
+  inline Option() = default;
 
-  Option(None) : _val{} {}
+  inline explicit Option(T&& val) noexcept : _val{static_cast<T&&>(val)} {}
 
-  Option(T val) : _val{static_cast<T&&>(val)} {}
-
-  operator bool() const {
+  inline explicit operator bool() const {
     return static_cast<bool>(_val);
   }
 
-  auto get_unchecked() const -> const T& {
+  inline auto get_unchecked() const -> const T& {
     return _val;
   }
 
-  auto get_unchecked_mut() -> T& {
+  inline auto get_unchecked_mut() -> T& {
     return _val;
   }
 
-  auto unwrap_unchecked() -> T {
+  inline auto unwrap_unchecked() -> T&& {
     return static_cast<T&&>(_val);
   }
 };
@@ -149,13 +136,13 @@ class Option<T> {
 }  // namespace detail
 
 template <class T>
-class Option : detail::Option<T> {
-  using Imp = detail::Option<T>;
+class Option {
+  detail::Option<T> _inn{};
 
  public:
-  using Imp::Imp;
-
   Option() = default;
+
+  Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
 
   ~Option() = default;
 
@@ -163,93 +150,77 @@ class Option : detail::Option<T> {
 
   Option(Option&&) noexcept = default;
 
-  Option& operator=(Option&&) noexcept = default;
+  auto operator=(Option&&) noexcept -> Option& = default;
 
-  using Imp::operator bool;
+  operator bool() const {
+    return static_cast<bool>(_inn);
+  }
 
-  using Imp::get_unchecked;
-  using Imp::get_unchecked_mut;
+  auto get_unchecked() const -> const T& {
+    return _inn.get_unchecked();
+  }
 
-  using Imp::unwrap_unchecked;
+  auto get_unchecked_mut() -> T& {
+    return _inn.get_unchecked_mut();
+  }
 
   auto operator*() const -> const T& {
-    assert_fmt(*this, "Option::operator*: None.");
-    return Imp::get_unchecked();
+    panicking::assert_fmt(_inn, "Option::operator*: None.");
+    return _inn.get_unchecked();
   }
 
   auto operator*() -> T& {
-    assert_fmt(*this, "Option::operator*: None.");
-    return Imp::get_unchecked_mut();
+    panicking::assert_fmt(_inn, "Option::operator*: None.");
+    return _inn.get_unchecked_mut();
   }
 
   auto unwrap() && -> T {
-    assert_fmt(*this, "Option::unwrap: None.");
-    return static_cast<T&&>(Imp::get_unchecked_mut());
+    panicking::assert_fmt(_inn, "Option::unwrap: None.");
+    return static_cast<T&&>(_inn.get_unchecked_mut());
   }
 
   auto unwrap() const& -> T {
-    assert_fmt(bool(*this), "Option::unwrap: None.");
-    return Imp::get_unchecked();
+    panicking::assert_fmt(_inn, "Option::unwrap: None.");
+    return _inn.get_unchecked();
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (!*this) {
-      return default_val;
-    }
-
-    return static_cast<T&&>(Imp::get_unchecked_mut());
+    return _inn ? _inn.unwrap_unchecked() : default_val;
   }
 
   auto unwrap_or(T default_val) const& -> T {
-    if (!*this) {
-      return default_val;
-    }
-
-    return Imp::get_unchecked();
+    return _inn ? _inn.get_unchecked() : default_val;
   }
 
   auto expect(const auto&... msg) && -> T {
-    if (!*this) {
+    if (!_inn) {
       panicking::panic_fmt(msg...);
     }
-    return static_cast<T&&>(Imp::get_unchecked_mut());
+    return _inn.unwrap_unchecked();
   }
 
   auto operator==(const Option& other) const -> bool {
-    if (!*this)
-      return !other;
-    if (!other)
-      return false;
-
-    return Imp::get_unchecked() == other.get_unchecked();
-  }
-
-  auto operator==(const auto& rhs) const -> bool {
-    if (!*this) {
+    if (bool(_inn) != bool(other)) {
       return false;
     }
-    return Imp::get_unchecked() == rhs;
+    return _inn ? _inn.get_unchecked() == other.get_unchecked() : true;
   }
 
-  auto map(auto&& pred) && -> Option<decltype(pred(declval<T>()))> {
-    if (!*this) {
-      return {};
-    }
-    return pred(static_cast<T&&>(Imp::get_unchecked_mut()));
+  auto map(auto&& pred) && {
+    using U = decltype(pred(declval<T>()));
+    return _inn ? Option<U>{pred(_inn.unwrap_unchecked())} : Option<U>{};
   }
 
-  auto map(auto pred) const -> Option<decltype(pred(declval<const T&>()))> {
-    if (!*this) {
-      return {};
-    }
-    return pred(Imp::get_unchecked());
+  auto map(auto&& pred) const {
+    using U = decltype(pred(declval<const T&>()));
+    return _inn ? Option<U>{pred(_inn.get_unchecked())} : Option<U>{};
   }
 
   void fmt(auto& f) const {
-    if (!*this) {
+    if (!_inn) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", Imp::get_unchecked());
+      f.write_fmt("Some({})", _inn.get_unchecked());
     }
   }
 };

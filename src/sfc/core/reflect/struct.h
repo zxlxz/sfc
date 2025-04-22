@@ -25,7 +25,7 @@ class StructInfo {
   Fields _fields;
 
  public:
-  StructInfo(Field<const U>... fields) : _fields{fields...} {}
+  explicit StructInfo(Field<const U>... fields) : _fields{fields...} {}
 
   auto fields() const -> const Fields& {
     return _fields;

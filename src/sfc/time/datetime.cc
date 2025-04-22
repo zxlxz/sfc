@@ -8,17 +8,17 @@ namespace sys_imp = sys::time;
 
 auto NaiveTime::from_hms(u32 hour, u32 min, u32 sec) -> NaiveTime {
   const auto secs = (hour * 60 + min) * 60 + sec;
-  return {secs, 0};
+  return {._secs = secs, ._micros = 0};
 }
 
 auto NaiveTime::from_hms_micro(u32 hour, u32 min, u32 sec, u32 micros) -> NaiveTime {
   const auto secs = (hour * 60 + min) * 60 + sec;
-  return {secs, micros};
+  return {._secs = secs, ._micros = micros};
 }
 
 auto NaiveTime::from_hms_milli(u32 hour, u32 min, u32 sec, u32 millis) -> NaiveTime {
   const auto total_secs = (hour * 60 + min) * 60 + sec;
-  return {total_secs, static_cast<u32>(MICROS_PER_MILLI * millis)};
+  return {._secs = total_secs, ._micros = static_cast<u32>(MICROS_PER_MILLI * millis)};
 }
 
 auto NaiveDate::from_ymd(u32 year, u32 mon, u32 day) -> NaiveDate {

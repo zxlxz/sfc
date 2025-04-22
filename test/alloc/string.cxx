@@ -44,18 +44,18 @@ SFC_TEST(cmp) {
 SFC_TEST(find) {
   const auto s = String::from("abc");
 
-  test::assert_eq(s.find('a'), 0UL);
-  test::assert_eq(s.find('b'), 1UL);
-  test::assert_eq(s.rfind('c'), 2UL);
+  test::assert_eq(s.find('a'), Option<usize>{0UL});
+  test::assert_eq(s.find('b'), Option<usize>{1UL});
+  test::assert_eq(s.rfind('c'), Option<usize>{2UL});
   test::assert_eq(s.find('d'), Option<usize>{});
 }
 
 SFC_TEST(rfind) {
   const auto s = String::from("abc");
 
-  test::assert_eq(s.rfind('a'), 0UL);
-  test::assert_eq(s.rfind('b'), 1UL);
-  test::assert_eq(s.rfind('c'), 2UL);
+  test::assert_eq(s.rfind('a'), Option<usize>{0UL});
+  test::assert_eq(s.rfind('b'), Option<usize>{1UL});
+  test::assert_eq(s.rfind('c'), Option<usize>{2UL});
   test::assert_eq(s.rfind('d'), Option<usize>{});
 }
 

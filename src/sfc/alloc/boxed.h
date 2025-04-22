@@ -22,7 +22,7 @@ class Box {
     other._ptr = nullptr;
   }
 
-  Box& operator=(Box&& other) noexcept {
+  auto operator=(Box&& other) noexcept -> Box& {
     auto tmp = static_cast<Box&&>(other);
     mem::swap(_ptr, tmp._ptr);
     return *this;
@@ -103,7 +103,7 @@ class Box<R(T...)> {
     other._meta = nullptr;
   }
 
-  Box& operator=(Box&& other) noexcept {
+  auto operator=(Box&& other) noexcept -> Box& {
     auto tmp = mem::move(other);
     _self = tmp._self;
     _meta = tmp._meta;

@@ -23,7 +23,7 @@ struct Unique {
     other._ptr = nullptr;
   }
 
-  Unique& operator=(Unique&& other) noexcept {
+  auto operator=(Unique&& other) noexcept -> Unique& {
     _ptr = other._ptr;
     other._ptr = nullptr;
     return *this;
@@ -82,28 +82,19 @@ auto cast_mut(const T* p) -> T* {
 template <class T>
 inline auto read(T* ptr) -> T {
   auto res = static_cast<T&&>(*ptr);
-  if constexpr (!__is_trivially_copyable(T)) {
-    ptr->~T();
-  }
+  ptr->~T();
   return res;
 }
 
 template <class T>
-inline void write(T* dst, T val) {
-  new (mem::inplace_t{}, dst) T{static_cast<T&&>(val)};
+inline void write(T* dst, auto&&... args) {
+  new (dst) T{static_cast<decltype(args)>(args)...};
 }
 
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) {
   if (cnt != 0) {
     __builtin_memset(dst, val, cnt * sizeof(T));
-  }
-}
-
-template <class T>
-inline void drop(T* ptr) {
-  if (ptr != nullptr) {
-    ptr->~T();
   }
 }
 
@@ -181,7 +172,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
     }
   } else {
     for (const auto end = src + cnt; src != end; ++src, ++dst) {
-      new (mem::inplace_t{}, dst) T{static_cast<T&&>(*src)};
+      new (dst) T{static_cast<T&&>(*src)};
     }
   }
 }
@@ -194,7 +185,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
     }
   } else {
     for (const auto end = src + cnt; src != end; ++src, ++dst) {
-      new (mem::inplace_t{}, dst) T{src->clone()};
+      new (dst) T{src->clone()};
     }
   }
 }

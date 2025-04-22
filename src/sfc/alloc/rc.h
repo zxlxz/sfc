@@ -11,11 +11,11 @@ struct RcBox {
   i32 _weak = 1;
 
  public:
-  auto strong() const -> i32 {
+  [[nodiscard]] auto strong() const -> i32 {
     return _strong;
   }
 
-  auto weak() const -> i32 {
+  [[nodiscard]] auto weak() const -> i32 {
     return _weak;
   }
 
@@ -87,7 +87,7 @@ class Rc {
     return Rc::from_raw(_ptr);
   }
 
-  operator bool() const {
+  explicit operator bool() const {
     return _ptr != nullptr;
   }
 

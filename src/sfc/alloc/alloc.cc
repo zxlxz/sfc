@@ -17,7 +17,7 @@ auto Global::alloc_imp(Layout layout) -> void* {
 
 void Global::dealloc_imp(void* ptr, Layout layout) {
   (void)layout;
-  if (ptr == 0) {
+  if (ptr == nullptr) {
     return;
   }
 

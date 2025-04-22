@@ -15,7 +15,7 @@ class MsgQueue {
  public:
   explicit MsgQueue(usize capacity) : _buff{capacity} {}
 
-  ~MsgQueue() {}
+  ~MsgQueue() = default;
 
   MsgQueue(const MsgQueue&) = delete;
 

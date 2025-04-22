@@ -75,9 +75,9 @@ struct Iterator : I {
   }
 
   auto position(auto&& pred) -> Option<usize> {
-    for (auto idx = 0UL; auto x = this->next(); ++idx) {
+    for (usize idx = 0UL; auto x = this->next(); ++idx) {
       if (pred(x.get_unchecked_mut())) {
-        return idx;
+        return Option{idx};
       }
     }
     return {};

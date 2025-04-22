@@ -7,33 +7,6 @@ namespace sfc::mem {
 struct inplace_t {};
 
 template <class T>
-union Uninit {
-  T _0;
-
-  Uninit() = default;
-
-  ~Uninit() = default;
-
-  Uninit(const Uninit&) = delete;
-
-  auto operator&() -> T* {
-    return &_0;
-  }
-
-  auto operator&() const -> const T* {
-    return &_0;
-  }
-
-  auto operator->() -> T* {
-    return &_0;
-  }
-
-  auto operator->() const -> const T* {
-    return &_0;
-  }
-};
-
-template <class T>
 struct Ref {
   T* _ptr;
 
@@ -66,7 +39,7 @@ inline auto move(T& x) -> T&& {
 }
 
 template <class T>
-inline void swap(T& x, T& y) {
+inline void swap(T& x, T& y) noexcept {
   auto z = static_cast<T&&>(x);
   x = static_cast<T&&>(y);
   y = static_cast<T&&>(z);
@@ -87,7 +60,3 @@ inline auto take(T& dst) -> T {
 }
 
 }  // namespace sfc::mem
-
-inline void* operator new(sfc::usize, sfc::mem::inplace_t, void* p) {
-  return p;
-}

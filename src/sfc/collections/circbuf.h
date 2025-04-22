@@ -109,7 +109,7 @@ class CircBuf {
     this->wrap_inc(_first);
 
     _len -= 1;
-    return ret;
+    return Option{ret};
   }
 
   auto pop_back() -> Option<T> {
@@ -118,7 +118,7 @@ class CircBuf {
     mem::drop(_buf[_last]);
 
     _len -= 1;
-    return ret;
+    return Option{ret};
   }
 
  private:

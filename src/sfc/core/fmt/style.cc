@@ -40,7 +40,8 @@ struct StyleParser {
   template <usize N>
   auto match(char c, const char (&v)[N]) const -> bool {
     for (auto i = 0U; i < N - 1; ++i) {
-      if (c == v[i]) return true;
+      if (c == v[i])
+        return true;
     }
     return false;
   }
@@ -73,11 +74,11 @@ struct StyleParser {
 
 auto Style::from_str(str::Str s) -> Option<Style> {
   if (s.is_empty()) {
-    return Style{};
+    return Option{Style{}};
   }
 
-  auto res = StyleParser{s}.parse();
-  return res;
+  const auto res = StyleParser{s}.parse();
+  return Option{res};
 }
 
 }  // namespace sfc::fmt

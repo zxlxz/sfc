@@ -7,12 +7,12 @@ namespace sfc::slice {
 template <class T>
 struct Iter {
   using Item = T&;
-  
+
   T* _ptr;
   T* _end;
 
  public:
-  auto len() const -> usize {
+  [[nodiscard]] auto len() const -> usize {
     const auto res = _end - _ptr;
     return res >= 0 ? static_cast<usize>(res) : 0U;
   }
@@ -21,14 +21,16 @@ struct Iter {
     if (_ptr >= _end) {
       return {};
     }
-    return *(_ptr++);
+    _ptr += 1;
+    return Option<T&>{*(_ptr - 1)};
   }
 
   auto next_back() -> Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
-    return *(--_end);
+    _end -= 1;
+    return Option<T&>{*_end};
   }
 
   auto operator->() -> iter::Iterator<Iter>* {

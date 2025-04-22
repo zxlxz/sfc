@@ -161,7 +161,7 @@ class Variant {
     _imp.move_ctor(_tag, other._imp);
   }
 
-  Variant& operator=(Variant&& other) noexcept {
+  auto operator=(Variant&& other) noexcept -> Variant& {
     if (_tag == other._tag) {
       _imp.move_assign(_tag, other._imp);
     } else {
@@ -173,7 +173,7 @@ class Variant {
   }
 
   template <class U>
-  auto is() const -> bool {
+  [[nodiscard]] auto is() const -> bool {
     return _tag == tag_t<U>::VALUE;
   }
 

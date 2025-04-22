@@ -21,9 +21,9 @@ class IBackend {
 
   template <class X>
   static constexpr inline Meta META = {
-      ._dtor = [](void* p) { delete (X*)p; },
-      ._flush = [](void* p) { return ((X*)p)->flush(); },
-      ._write_entry = [](void* p, Entry entry) { return ((X*)p)->write_entry(entry); },
+      ._dtor = [](void* p) { delete static_cast<X*>(p); },
+      ._flush = [](void* p) { return static_cast<X*>(p)->flush(); },
+      ._write_entry = [](void* p, Entry entry) { return static_cast<X*>(p)->write_entry(entry); },
   };
 
   void*       _self = nullptr;

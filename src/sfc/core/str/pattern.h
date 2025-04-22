@@ -24,7 +24,7 @@ struct CharPredSercher {
  public:
   auto next() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ch = _haystack.get_unchecked(_finger);
@@ -36,7 +36,7 @@ struct CharPredSercher {
 
   auto next_back() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ch = _haystack.get_unchecked(_finger_back);
@@ -49,7 +49,7 @@ struct CharPredSercher {
   auto next_match() -> Option<Range> {
     while (const auto ss = this->next()) {
       if (ss.kind == SearchStep::Match) {
-        return ss.range;
+        return Option{ss.range};
       }
     }
     return {};
@@ -58,7 +58,7 @@ struct CharPredSercher {
   auto next_match_back() -> Option<Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Match) {
-        return ss.range;
+        return Option{ss.range};
       }
     }
     return {};
@@ -67,7 +67,7 @@ struct CharPredSercher {
   auto next_reject() -> Option<Range> {
     while (const auto ss = this->next()) {
       if (ss.kind == SearchStep::Reject) {
-        return ss.range;
+        return Option{ss.range};
       }
     }
     return {};
@@ -76,7 +76,7 @@ struct CharPredSercher {
   auto next_reject_back() -> Option<Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Reject) {
-        return ss.range;
+        return Option{ss.range};
       }
     }
     return {};
@@ -92,24 +92,24 @@ struct CharSearcher {
  public:
   auto next() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ch = _haystack.get_unchecked(_finger);
     const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{mm, {_finger, _finger + 1}};
+    const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + 1}};
     _finger += 1;
     return res;
   }
 
   auto next_back() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ch = _haystack.get_unchecked(_finger_back - 1);
     const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{mm, {_finger_back - 1, _finger_back}};
+    const auto res = SearchStep{.kind = mm, .range = {_finger_back - 1, _finger_back}};
     _finger_back -= 1;
     return res;
   }
@@ -120,7 +120,7 @@ struct CharSearcher {
 
     if (auto p = __builtin_memchr(_haystack._ptr, _needle, _finger_back - _finger)) {
       const auto n = static_cast<usize>(static_cast<const char*>(p) - _haystack._ptr);
-      return Range{n, n + 1};
+      return Option{Range{n, n + 1}};
     }
 
     return {};
@@ -129,7 +129,7 @@ struct CharSearcher {
   auto next_match_back() -> Option<Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Match) {
-        return ss.range;
+        return Option{ss.range};
       }
     }
     return {};
@@ -145,24 +145,24 @@ struct StrSearcher {
  public:
   auto next() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ss = _haystack.get_unchecked({_finger, _finger + _needle._len});
     const auto mm = ss == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{mm, {_finger, _finger + _needle._len}};
+    const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + _needle._len}};
     _finger += mm == SearchStep::Match ? _needle._len : 1U;
     return res;
   }
 
   auto next_back() -> SearchStep {
     if (_finger >= _finger_back) {
-      return {SearchStep::Done};
+      return {.kind = SearchStep::Done};
     }
 
     const auto ch = _haystack.get_unchecked({_finger_back - _needle._len, _finger_back});
     const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{mm, {_finger_back, _finger_back + 1}};
+    const auto res = SearchStep{.kind = mm, .range = {_finger_back, _finger_back + 1}};
     _finger_back -= mm == SearchStep::Match ? _needle._len : 1U;
     return res;
   }
@@ -173,7 +173,7 @@ struct Pattern {
   P _pred;
 
   auto into_searcher(Str s) && -> CharPredSercher<P> {
-    return {s, static_cast<P&&>(_pred)};
+    return CharPredSercher<P>{s, static_cast<P&&>(_pred)};
   }
 };
 
@@ -182,7 +182,7 @@ struct Pattern<char> {
   char _needle;
 
   auto into_searcher(Str s) const -> CharSearcher {
-    return {s, _needle};
+    return CharSearcher{._haystack = s, ._needle = _needle};
   }
 };
 
@@ -191,7 +191,7 @@ struct Pattern<Str> {
   Str _needle;
 
   auto into_searcher(Str s) const -> StrSearcher {
-    return {s, _needle};
+    return StrSearcher{._haystack = s, ._needle = _needle};
   }
 };
 
