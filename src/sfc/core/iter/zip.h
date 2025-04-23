@@ -21,7 +21,7 @@ struct Zip {
     if (!b) {
       return {};
     }
-    return Item{a.unwrap_unchecked(), b.unwrap_unchecked()};
+    return Item{a.unwrap(), b.unwrap()};
   }
 
   auto next_back() -> option::Option<Item> {

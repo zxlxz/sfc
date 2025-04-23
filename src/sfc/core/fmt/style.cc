@@ -2,6 +2,19 @@
 
 namespace sfc::fmt {
 
+namespace {
+
+template <usize N>
+static auto is_contains(char c, const char (&s)[N]) {
+  for (auto u : s) {
+    if (c == u) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 struct StyleParser {
   str::Str _buf;
 
@@ -9,7 +22,7 @@ struct StyleParser {
   auto parse() -> Style {
     auto ret = Style{};
 
-    if (this->match(_buf[1], "=<^>")) {
+    if (is_contains(_buf[1], "=<^>")) {
       ret._fill = this->pop();
       ret._align = this->pop();
     } else {
@@ -38,18 +51,9 @@ struct StyleParser {
   }
 
   template <usize N>
-  auto match(char c, const char (&v)[N]) const -> bool {
-    for (auto i = 0U; i < N - 1; ++i) {
-      if (c == v[i])
-        return true;
-    }
-    return false;
-  }
-
-  template <usize N>
   auto pop_match(const char (&v)[N]) -> char {
     const auto c = _buf[0];
-    if (this->match(c, v)) {
+    if (is_contains(c, v)) {
       this->pop();
       return c;
     }
@@ -71,6 +75,8 @@ struct StyleParser {
     return static_cast<u8>(n);
   }
 };
+
+}  // namespace
 
 auto Style::from_str(str::Str s) -> Option<Style> {
   if (s.is_empty()) {

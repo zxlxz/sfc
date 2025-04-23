@@ -22,12 +22,12 @@ struct Slice {
   usize _len = 0;
 
  public:
-  constexpr Slice() : _ptr{nullptr}, _len{0} {}
+  constexpr Slice() = default;
 
   constexpr Slice(T* ptr, usize len) : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  constexpr Slice(T (&v)[N]) : _ptr{v}, _len{N} {}
+  constexpr explicit Slice(T (&v)[N]) : _ptr{v}, _len{N} {}
 
   auto as_ptr() const -> const T* {
     return _ptr;
@@ -47,10 +47,6 @@ struct Slice {
 
   explicit operator bool() const {
     return _len != 0;
-  }
-
-  operator Slice<const T>() const {
-    return {_ptr, _len};
   }
 
  public:
@@ -145,6 +141,9 @@ struct Slice {
     f.debug_list().entries(this->iter());
   }
 };
+
+template <class T, usize N>
+Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
 auto begin(const Slice<T>& self) -> const T* {

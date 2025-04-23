@@ -56,22 +56,24 @@ struct Error {
 };
 
 struct File {
-  int _fd = -1;
+  static constexpr int INVALID_FD = -1;
+
+  int _fd = INVALID_FD;
 
  public:
   explicit operator bool() const {
-    return _fd != -1;
+    return _fd != INVALID_FD;
   }
 
   void close() {
-    if (_fd == -1) {
+    if (_fd == INVALID_FD) {
       return;
     }
     ::close(_fd);
   }
 
   void flush() {
-    if (_fd != -1) {
+    if (_fd == INVALID_FD) {
       return;
     }
     ::fsync(_fd);
@@ -81,7 +83,7 @@ struct File {
     if (buf == nullptr || buf_size == 0) {
       return 0;
     }
-    if (_fd == -1) {
+    if (_fd == INVALID_FD) {
       return -1;
     }
 
@@ -90,18 +92,19 @@ struct File {
   }
 
   auto write(const void* buf, size_t buf_size) -> ssize_t {
+    if (_fd == INVALID_FD) {
+      return -1;
+    }
     if (buf == nullptr || buf_size == 0) {
       return 0;
     }
-    if (_fd == -1) {
-      return -1;
-    }
+
     const auto ret = ::write(_fd, buf, buf_size);
     return ret;
   }
 
   auto is_tty() const -> bool {
-    if (_fd == -1) {
+    if (_fd == INVALID_FD) {
       return false;
     }
     return ::isatty(_fd) != 0;

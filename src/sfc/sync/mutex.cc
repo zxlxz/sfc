@@ -10,7 +10,7 @@ struct Mutex::Inn : sys_imp::Mutex {};
 
 Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
 
-Mutex::~Mutex() {}
+Mutex::~Mutex() = default;
 
 Mutex::Mutex(Mutex&&) noexcept = default;
 

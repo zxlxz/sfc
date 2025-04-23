@@ -9,7 +9,7 @@ struct SearchStep {
   Kind  kind;
   Range range = {0UL, 0UL};
 
-  operator bool() const {
+  explicit operator bool() const {
     return kind != Kind::Done;
   }
 };
@@ -115,8 +115,9 @@ struct CharSearcher {
   }
 
   auto next_match() -> Option<Range> {
-    if (_finger >= _finger_back)
+    if (_finger >= _finger_back) {
       return {};
+    }
 
     if (auto p = __builtin_memchr(_haystack._ptr, _needle, _finger_back - _finger)) {
       const auto n = static_cast<usize>(static_cast<const char*>(p) - _haystack._ptr);

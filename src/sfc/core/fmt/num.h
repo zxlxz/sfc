@@ -14,7 +14,7 @@ struct Int {
   void fmt(auto& f) const {
     char buf[64 + 16];
 
-    const auto s = this->to_str(f.style(), buf);
+    const auto s = this->to_str(f.style(), slice::Slice{buf});
     f.pad_num(_val < 0, s);
   }
 };
@@ -29,7 +29,7 @@ struct Flt {
   void fmt(auto& f) const {
     char buf[64 + 16];
 
-    const auto s = this->to_str(f.style(), buf);
+    const auto s = this->to_str(f.style(), slice::Slice{buf});
     f.pad_num(_val < 0, s);
   }
 };
@@ -43,7 +43,7 @@ struct Ptr {
   void fmt(auto& f) const {
     char buf[64 + 16];
 
-    const auto s = this->to_str(f.style(), buf);
+    const auto s = this->to_str(f.style(), slice::Slice{buf});
     f.pad_num(false, s);
   }
 };

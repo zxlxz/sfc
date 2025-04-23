@@ -12,13 +12,13 @@ using fd_t = int;
 
 class File {
  protected:
-  fd_t _fd = fd_t(-1);
+  fd_t _fd;
 
  public:
   File() noexcept;
   ~File();
   File(File&&) noexcept;
-  File& operator=(File&&) noexcept;
+  auto operator=(File&&) noexcept -> File&;
 
   static auto from_raw_fd(fd_t fd) -> File;
 

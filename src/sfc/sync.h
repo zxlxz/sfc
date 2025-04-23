@@ -1,5 +1,6 @@
 #pragma once
 
-#include "sync/atomic.h"
-#include "sync/condvar.h"
-#include "sync/mutex.h"
+#include "sfc/sync/atomic.h"
+#include "sfc/sync/condvar.h"
+#include "sfc/sync/mutex.h"
+#include "sfc/sync/reentrant_lock.h"

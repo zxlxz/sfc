@@ -47,7 +47,7 @@ class Rc {
   Rc() noexcept = default;
 
   ~Rc() {
-    if (!_ptr) {
+    if (_ptr == nullptr) {
       return;
     }
 

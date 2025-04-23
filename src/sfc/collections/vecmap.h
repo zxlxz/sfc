@@ -73,8 +73,7 @@ class VecMap {
   auto insert(K key, V val) -> Option<V> {
     auto pos = this->get_mut(key);
     if (pos) {
-      auto res = mem::replace(*pos, static_cast<V&&>(val));
-      return Option{res};
+      return Option{mem::replace(*pos, static_cast<V&&>(val))};
     }
     _keys.push(static_cast<K&&>(key));
     _vals.push(static_cast<V&&>(val));

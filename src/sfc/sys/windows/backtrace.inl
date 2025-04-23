@@ -19,7 +19,7 @@ struct FrameInfo {
 };
 
 static inline auto sym_init() -> bool {
-  static auto process = ::GetCurrentProcess();
+  static auto process  = ::GetCurrentProcess();
   static auto sym_init = ::SymInitialize(process, nullptr, TRUE);
   return sym_init != FALSE;
 }
@@ -49,17 +49,20 @@ static inline auto resolve(void* addr) -> FrameInfo {
     char _NameBuf[sizeof(FrameInfo::func)] = {};
   } sym_info;
   sym_info.SizeOfStruct = sizeof(::SYMBOL_INFO);
-  sym_info.MaxNameLen = sizeof(sym_info._NameBuf);
+  sym_info.MaxNameLen   = sizeof(sym_info._NameBuf);
 
   auto sym_displacement = 0ULL;
-  if (!::SymFromAddr(process, DWORD64(addr), &sym_displacement, &sym_info)) {
+  if (!::SymFromAddr(process, reinterpret_cast<DWORD64>(addr), &sym_displacement, &sym_info)) {
     return {};
   }
 
-  auto line_displayment = 0UL;
-  auto line_info = ::IMAGEHLP_LINE64{};
+  auto line_displayment  = 0UL;
+  auto line_info         = ::IMAGEHLP_LINE64{};
   line_info.SizeOfStruct = sizeof(::IMAGEHLP_LINE64);
-  if (::SymGetLineFromAddr64(process, DWORD64(addr), &line_displayment, &line_info) == 0) {
+  if (::SymGetLineFromAddr64(process,
+                             reinterpret_cast<DWORD64>(addr),
+                             &line_displayment,
+                             &line_info) == 0) {
     return {};
   }
 

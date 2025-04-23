@@ -113,8 +113,8 @@ class Box<R(T...)> {
   template <class X>
   static auto xnew(X fun) -> Box {
     static const auto META = Meta{
-        ._dtor = [](void* p) { delete (X*)(p); },
-        ._call = [](void* p, T&&... args) { return (*(X*)p)((T&&)args...); },
+        ._dtor = [](void* p) { delete static_cast<X*>(p); },
+        ._call = [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
     };
 
     auto res = Box{};
@@ -129,7 +129,7 @@ class Box<R(T...)> {
 
   auto operator()(T... args) -> auto {
     panicking::assert_fmt(_self != nullptr, "boxed::Box::*: deref null");
-    return (_meta->_call)(_self, (T&&)args...);
+    return (_meta->_call)(_self, static_cast<T&&>(args)...);
   }
 };
 

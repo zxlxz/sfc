@@ -15,7 +15,8 @@ using timeval_t = struct ::timeval;
 
 struct Thread {
   using tid_t = pthread_t;
-
+  using ret_t = void*;
+  
   tid_t _raw;
 
  public:

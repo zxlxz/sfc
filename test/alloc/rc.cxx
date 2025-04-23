@@ -11,7 +11,7 @@ struct T {
     return res;
   }
 
-  T(int value) : _val{value} {
+  explicit T(int value) : _val{value} {
     obj_cnt() += 1;
   }
 

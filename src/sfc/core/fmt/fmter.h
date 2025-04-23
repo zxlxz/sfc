@@ -23,7 +23,7 @@ struct Args {
   tuple::Tuple<const T*...> _args = {};
 
  public:
-  Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
+  explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
 
   void fmt(auto& f) const {
     auto pats = _pats;

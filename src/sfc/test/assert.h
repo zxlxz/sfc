@@ -13,8 +13,9 @@ struct Param {
   Str      name;
   const T& value;
 
-  void fmt(auto&& f) const {
-    f.write_fmt("{} = {}", name, value);
+ public:
+  void fmt(auto& f) const {
+    f.write_fmt("{} = `{}`", name, value);
   }
 };
 

@@ -10,7 +10,7 @@ struct Task {
   void (*_func)(void*) = nullptr;
 
  public:
-  operator bool() const {
+  explicit operator bool() const {
     return _func != nullptr;
   }
 };

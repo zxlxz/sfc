@@ -45,7 +45,7 @@ class [[nodiscard]] Buf {
     return res;
   }
 
-  void swap(Buf& dst) {
+  void swap(Buf& dst) noexcept {
     mem::swap(_ptr, dst._ptr);
     mem::swap(_cap, dst._cap);
   }
@@ -127,9 +127,9 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  static auto from(Slice<const T> v) -> Vec {
+  static auto from(const auto& v) -> Vec {
     auto res = Vec{};
-    res.extend_from_slice(v);
+    res.extend_from_slice(Slice<const T>{v});
     return res;
   }
 
@@ -163,7 +163,7 @@ class [[nodiscard]] Vec {
     return _len == _buf._cap;
   }
 
-  operator bool() const {
+  explicit operator bool() const {
     return _len != 0;
   }
 
@@ -177,7 +177,7 @@ class [[nodiscard]] Vec {
 
   void set_len(usize new_len) {
     new_len = cmp::min(new_len, _buf._cap);
-    _len = new_len;
+    _len    = new_len;
   }
 
   auto clone() const -> Vec {

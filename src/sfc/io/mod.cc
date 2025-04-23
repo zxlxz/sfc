@@ -28,12 +28,12 @@ SFC_ENUM(ErrorKind,
 
 auto Error::last_os_error() -> Error {
   const auto imp = sys_imp::Error::last();
-  return Error{imp.kind(), imp.code()};
+  return Error{._kind = imp.kind(), ._code = imp.code()};
 }
 
 auto Error::from_os_error(int code) -> Error {
   const auto imp = sys_imp::Error{code};
-  return Error{imp.kind(), code};
+  return Error{._kind = imp.kind(), ._code = code};
 }
 
 auto Error::as_str() const -> Str {

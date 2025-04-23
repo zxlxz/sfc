@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Windows.h>
+#undef min
+#undef max
 
 #include "sfc/io/mod.h"
 
@@ -49,22 +51,24 @@ struct Error {
 };
 
 struct File {
-  void* _fd = INVALID_HANDLE_VALUE;
+  static const inline auto INVALID_FD = INVALID_HANDLE_VALUE;
+
+  void* _fd = INVALID_FD;
 
  public:
   explicit operator bool() const {
-    return _fd != INVALID_HANDLE_VALUE;
+    return _fd != INVALID_FD;
   }
 
   void close() {
-    if (_fd == INVALID_HANDLE_VALUE) {
+    if (_fd == INVALID_FD) {
       return;
     }
     ::CloseHandle(_fd);
   }
 
   void flush() {
-    if (_fd == INVALID_HANDLE_VALUE) {
+    if (_fd == INVALID_FD) {
       return;
     }
     ::FlushFileBuffers(_fd);
@@ -114,12 +118,12 @@ struct File {
 };
 
 struct OpenOptions {
-  bool append = false;
-  bool create = false;
+  bool append     = false;
+  bool create     = false;
   bool create_new = false;
-  bool read = false;
-  bool write = false;
-  bool truncate = false;
+  bool read       = false;
+  bool write      = false;
+  bool truncate   = false;
 
  public:
   static auto from(const auto& t) -> OpenOptions {
@@ -146,7 +150,7 @@ struct FileAttr {
   SIZE_T _size = 0;
 
  public:
-  operator bool() const {
+  explicit operator bool() const {
     return _attr != 0;
   }
 
@@ -184,8 +188,9 @@ static inline auto lstat(const char* path) -> FileAttr {
     return {};
   }
 
-  const auto file_size = SIZE_T(attr.nFileSizeHigh) + (SIZE_T(attr.nFileSizeLow) << 32);
-  return FileAttr{attr.dwFileAttributes, file_size};
+  const auto file_size = static_cast<SIZE_T>(attr.nFileSizeHigh) +
+                         (static_cast<SIZE_T>(attr.nFileSizeLow) << 32);
+  return FileAttr{._attr = attr.dwFileAttributes, ._size = file_size};
 }
 
 static inline auto unlink(const char* path) -> bool {

@@ -15,7 +15,7 @@ class CmptBase {
 
  public:
   void init() {
-    if (_init) {
+    if (_init.load()) {
       return;
     }
     const auto ret = this->on_init();
@@ -23,7 +23,7 @@ class CmptBase {
   }
 
   void shutdown() {
-    if (!_init) {
+    if (!_init.load()) {
       return;
     }
     this->on_shutdown();

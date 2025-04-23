@@ -14,7 +14,7 @@ class [[nodiscard]] String {
 
   String(String&&) noexcept = default;
 
-  String& operator=(String&&) noexcept = default;
+  auto operator=(String&&) noexcept -> String& = default;
 
   static auto from(Str s) -> String {
     auto res = String{};

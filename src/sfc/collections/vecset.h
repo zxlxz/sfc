@@ -15,7 +15,7 @@ class [[nodiscard]] VecSet {
 
   VecSet(VecSet&&) noexcept = default;
 
-  VecSet& operator=(VecSet&&) noexcept = default;
+  auto operator=(VecSet&&) noexcept -> VecSet& = default;
 
   auto len() const -> usize {
     return _items.len();

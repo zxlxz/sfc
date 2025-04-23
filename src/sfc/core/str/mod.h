@@ -41,7 +41,7 @@ struct Str {
     return _len;
   }
 
-  operator bool() const {
+  explicit operator bool() const {
     return _len != 0;
   }
 
@@ -56,6 +56,7 @@ struct Str {
   auto as_str() const -> Str {
     return *this;
   }
+
  public:
   auto get_unchecked(usize idx) const -> char {
     return _ptr[idx];
@@ -66,7 +67,7 @@ struct Str {
   }
 
   auto operator[](usize idx) const -> char {
-    return idx < _len ? _ptr[idx] : char(0);
+    return idx < _len ? _ptr[idx] : '\0';
   }
 
   auto operator[](Range ids) const -> Str {
@@ -86,8 +87,9 @@ struct Str {
   }
 
   auto operator==(Str other) const -> bool {
-    if (_len != other._len)
+    if (_len != other._len) {
       return false;
+    }
 
     const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
     return ret == 0;

@@ -97,7 +97,7 @@ struct Json2Node {
       }
 
       if (auto node = this->extract_node()) {
-        dict.insert(String::from(key), mem::move(node).unwrap_unchecked());
+        dict.insert(String::from(key), mem::move(node).unwrap());
       } else {
         return {};
       }

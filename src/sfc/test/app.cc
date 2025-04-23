@@ -137,14 +137,17 @@ auto App::run(Slice<const Str> args) -> int {
   }
 
   auto filter = opts.get(Str{"gtest_filter"}).unwrap_or("");
-  auto color = [&]() {
+  auto color  = [&]() {
     const auto opt = opts.get(Str{"gtest_color"}).unwrap_or("auto");
-    if (opt == "yes")
+    if (opt == "yes") {
       return true;
-    if (opt == "no")
+    }
+    if (opt == "no") {
       return false;
-    if (opt == "auto")
+    }
+    if (opt == "auto") {
       return io::Stdout::is_tty();
+    }
     return false;
   }();
 
@@ -168,7 +171,7 @@ void App::help() {
 
 void App::run_tests(Str filter, bool color) {
   auto gtest = GTestCase{color};
-  auto pats = gtest.parse_pats(filter);
+  auto pats  = gtest.parse_pats(filter);
 
   auto tests = TestManager::instance().units(pats.as_slice());
   for (auto& x : tests.as_slice()) {
@@ -205,10 +208,8 @@ auto App::list_tests() const -> String {
 }
 
 auto App::list_tests_xml() const -> String {
-  auto suites = TestManager::instance().suites();
-  auto test_cnt = suites.iter()->fold(0UL, [](auto n, auto& x) {
-    return n += x.tests().len();
-  });
+  auto suites   = TestManager::instance().suites();
+  auto test_cnt = suites.iter()->fold(0UL, [](auto n, auto& x) { return n += x.tests().len(); });
 
   auto               sbuf = String{};
   fmt::Fmter<String> f{sbuf};
@@ -219,7 +220,7 @@ auto App::list_tests_xml() const -> String {
     f.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
       const auto name = test.name();
-      const auto loc = test.location();
+      const auto loc  = test.location();
       f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n",
                   name,
                   loc.file,

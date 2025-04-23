@@ -13,7 +13,7 @@ class Logger {
   ~Logger();
 
   Logger(Logger&&) noexcept;
-  Logger& operator=(Logger&&) noexcept;
+  auto operator=(Logger&&) noexcept -> Logger&;
 
   auto get_level() const -> Level;
 

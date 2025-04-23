@@ -14,7 +14,7 @@ struct Range {
 
   Range(usize start, usize end) : _start{start}, _end{end < start ? start : end} {}
 
-  Range(usize start, Dummy) : _start{start}, _end{usize(-1)} {}
+  Range(usize start, Dummy) : _start{start}, _end{static_cast<usize>(-1)} {}
 
   auto len() const -> usize {
     return _start < _end ? _end - _start : 0U;

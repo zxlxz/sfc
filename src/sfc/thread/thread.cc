@@ -7,12 +7,6 @@ namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
 
-#ifdef _WIN32
-using thread_ret_t = unsigned long;
-#else
-using thread_ret_t = void*;
-#endif
-
 struct ThreadData {
   Box<void()>  _fbox;
   ffi::CString _name;
@@ -30,10 +24,11 @@ struct ThreadData {
   }
 };
 
-static auto start_routine(void* data) -> thread_ret_t {
+static auto start_routine(void* data) -> sys_imp::Thread::ret_t {
   auto obj = Box<ThreadData>::from_raw(static_cast<ThreadData*>(data));
   obj->run();
-  return 0;
+
+  return {};
 };
 
 auto Thread::current() -> Thread {
@@ -72,7 +67,7 @@ auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
 JoinHandle::JoinHandle() noexcept = default;
 
 JoinHandle::~JoinHandle() {
-  if (_thrd._raw == thrd_t(0)) {
+  if (_thrd._raw == sys_imp::Thread::INVALID_TID) {
     return;
   }
   auto thr = sys_imp::Thread{_thrd._raw};
@@ -80,7 +75,7 @@ JoinHandle::~JoinHandle() {
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{other._thrd} {
-  other._thrd._raw = thrd_t(0);
+  other._thrd._raw = sys_imp::Thread::INVALID_TID;
 }
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {

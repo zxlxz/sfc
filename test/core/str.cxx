@@ -19,7 +19,7 @@ SFC_TEST(index) {
   test::assert_eq(s[0], 'a');
   test::assert_eq(s[1], 'b');
   test::assert_eq(s[2], 'c');
-  test::assert_eq(s[3], char(0));
+  test::assert_eq(s[3], '\0');
 }
 
 SFC_TEST(index_range) {

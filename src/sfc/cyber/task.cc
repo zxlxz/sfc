@@ -14,12 +14,12 @@ TaskQueue::TaskQueue() {
   }
 }
 
-TaskQueue::~TaskQueue() {}
+TaskQueue::~TaskQueue() = default;
 
 TaskQueue::TaskQueue(TaskQueue&&) noexcept = default;
 
 auto TaskQueue::len() const -> usize {
-  return _count;
+  return _count.load();
 }
 
 void TaskQueue::push(Task task, Priority priority) {
@@ -28,7 +28,7 @@ void TaskQueue::push(Task task, Priority priority) {
 }
 
 auto TaskQueue::try_pop() -> Option<Task> {
-  if (_count == 0) {
+  if (_count.load() == 0) {
     return {};
   }
 
@@ -58,7 +58,7 @@ void TaskQueue::remove(Task task) {
     tasks.retain([&](auto& x) { return x._self != task._self; });
     count += tasks.len();
   }
-  _count = count;
+  _count.store(count);
 }
 
 void TaskQueue::notify() {
@@ -66,7 +66,7 @@ void TaskQueue::notify() {
 }
 
 void TaskQueue::wait(const time::Duration& dur) {
-  if (_count < _queues.len()) {
+  if (_count.load() < _queues.len()) {
     return;
   }
   auto lock = _mutex.lock();
@@ -79,7 +79,7 @@ void TaskQueue::push_imp(Task task, Priority priority) {
   // check valid
   auto& tasks = _queues[pid];
   tasks.push(task);
-  _count += 1;
+  _count.fetch_add(1);
 
   // notify one
   if (tasks.len() == 1) {
@@ -89,7 +89,7 @@ void TaskQueue::push_imp(Task task, Priority priority) {
 }
 
 auto TaskQueue::pop_imp() -> Option<Task> {
-  if (_count == 0) {
+  if (_count.load() == 0) {
     return {};
   }
 

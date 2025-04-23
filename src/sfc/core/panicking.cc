@@ -8,14 +8,16 @@ namespace sfc::panicking {
 void panic_str(Location loc, Str msg) {
   const auto frames = backtrace::capture();
 
-  io::Stdout::write_str(msg);
-  io::Stdout::write_fmt("\n  > {}:{}\n", loc.file, loc.line);
+  auto out = io::Stdout::lock();
+
+  out.write_str(msg);
+  out.write_fmt("\n  > {}:{}\n", loc.file, loc.line);
 
   frames.iter()->for_each_idx([&](usize i, const auto& frame) {
-    io::Stdout::write_fmt("{2}: {}\n", i, frame.func());
+    out.write_fmt("{:2}: {}\n", i, frame.func());
   });
 
-  throw Error{};
+  __builtin_trap();
 }
 
 }  // namespace sfc::panicking

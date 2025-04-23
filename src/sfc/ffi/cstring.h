@@ -11,7 +11,7 @@ class CString {
   CString() = default;
   ~CString() = default;
   CString(CString&&) noexcept = default;
-  CString& operator=(CString&&) noexcept = default;
+  auto operator=(CString&&) noexcept -> CString& = default;
 
   static auto from(Str s) -> CString {
     auto res = CString{};

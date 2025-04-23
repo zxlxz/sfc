@@ -17,15 +17,7 @@ class Atomic {
   T _val;
 
  public:
-  Atomic() : _val{} {}
-
-  Atomic(T val) : _val{val} {}
-
-  Atomic(const Atomic&) = default;
-
-  operator T() const noexcept {
-    return this->load(Ordering::SeqCst);
-  }
+  explicit Atomic(T val) : _val{val} {}
 
   void operator=(T val) noexcept {
     this->store(val, Ordering::SeqCst);

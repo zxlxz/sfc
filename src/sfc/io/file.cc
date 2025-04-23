@@ -6,17 +6,17 @@ namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-File::File() noexcept = default;
+File::File() noexcept : _fd{sys_imp::File::INVALID_FD} {}
 
 File::~File() {
-  if (_fd == fd_t(-1)) {
+  if (_fd == sys_imp::File::INVALID_FD) {
     return;
   }
   sys_imp::File{_fd}.close();
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = fd_t(-1);
+  other._fd = sys_imp::File::INVALID_FD;
 }
 
 auto File::from_raw_fd(fd_t fd) -> File {
@@ -32,7 +32,7 @@ File& File::operator=(File&& other) noexcept {
 }
 
 File::operator bool() const {
-  return _fd != fd_t(-1);
+  return _fd != sys_imp::File::INVALID_FD;
 }
 
 auto File::read(Slice<u8> buf) -> Result<usize> {

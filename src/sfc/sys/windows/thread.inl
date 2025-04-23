@@ -4,19 +4,23 @@
 
 namespace sfc::sys::thread {
 
-static auto wchar_to_u8(const wchar_t src[], char dst[], int dst_len) {
-  return ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, dst_len, nullptr, nullptr);
+static auto wchar_to_u8(const wchar_t src[], char dst[], int dst_len) -> DWORD {
+  const auto cnt = ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, dst_len, nullptr, nullptr);
+  return cnt > 0 ? static_cast<DWORD>(cnt) : 0;
 }
 
-static auto u8_to_wchar(const char src[], wchar_t dst[], int dst_len) {
-  return ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, dst_len);
+static auto u8_to_wchar(const char src[], wchar_t dst[], int dst_len) -> DWORD {
+  const auto cnt = ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, dst_len);
+  return cnt > 0 ? static_cast<DWORD>(cnt) : 0;
 }
 
 struct Thread {
   using tid_t = void*;
-  static constexpr unsigned kMaxNameLen = 256U;
+  using ret_t = DWORD;
 
-  tid_t _raw = nullptr;
+  static constexpr auto INVALID_TID = tid_t{nullptr};
+
+  tid_t _raw{INVALID_TID};
 
  public:
   static auto current() -> Thread {
@@ -29,7 +33,7 @@ struct Thread {
     return Thread{thrd};
   }
 
-  auto operator ==(const Thread& rhs) const -> bool {
+  auto operator==(const Thread& rhs) const -> bool {
     return _raw == rhs._raw;
   }
 
@@ -82,10 +86,10 @@ struct Thread {
       return 0;
     }
 
-    const auto nbytes = wchar_to_u8(wbuf, buf, kMaxNameLen);
+    const auto nbytes = wchar_to_u8(wbuf, buf, buf_len);
     ::LocalFree(wbuf);
 
-    if (nbytes <= 0 || nbytes >= kMaxNameLen) {
+    if (nbytes <= 0 || nbytes >= buf_len) {
       return 0;
     }
 
@@ -93,13 +97,15 @@ struct Thread {
   }
 
   auto set_name(const char* name) -> bool {
+    static constexpr auto kMaxNameLen = 256U;
+
     if (_raw == nullptr) {
       return false;
     }
 
     wchar_t    wbuff[kMaxNameLen];
     const auto cnt = u8_to_wchar(name, wbuff, kMaxNameLen);
-    if (cnt <= 0 && cnt >= kMaxNameLen) {
+    if (cnt <= 0 || cnt >= kMaxNameLen) {
       return false;
     }
 
@@ -112,8 +118,7 @@ struct Mutex {
   ::CRITICAL_SECTION _cs{};
 
  public:
-  Mutex(bool recursive = false) {
-    (void)recursive;
+  Mutex() {
     ::InitializeCriticalSection(&_cs);
   }
 
@@ -138,9 +143,7 @@ struct Condvar {
     ::InitializeConditionVariable(&_cv);
   }
 
-  ~Condvar() noexcept {
-    // No destructor for CONDITION_VARIABLE
-  }
+  ~Condvar() noexcept = default;
 
   void notify_one() {
     ::WakeConditionVariable(&_cv);

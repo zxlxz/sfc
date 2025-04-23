@@ -32,7 +32,7 @@ class Suite {
   explicit Suite(Str name);
   ~Suite();
   Suite(Suite&&) noexcept;
-  Suite& operator=(Suite&&) noexcept;
+  auto operator=(Suite&&) noexcept -> Suite&;
 
   auto name() const -> Str;
   auto tests() const -> Slice<const Unit>;

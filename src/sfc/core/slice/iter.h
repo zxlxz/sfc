@@ -46,13 +46,14 @@ struct Windows {
   usize    _len;
 
  public:
-  operator bool() const {
+  explicit operator bool() const {
     return _buf._len >= _len;
   }
 
   auto next() -> Option<Slice<T>> {
-    if (_buf._len < _len)
+    if (_buf._len < _len) {
       return {};
+    }
 
     auto res = Slice<T>{_buf._ptr, _len};
     _buf._ptr += 1;
@@ -61,8 +62,9 @@ struct Windows {
   }
 
   auto next_back() -> Option<Slice<T>> {
-    if (_buf._len < _len)
+    if (_buf._len < _len) {
       return {};
+    }
 
     auto res = Slice<T>{_buf._ptr + _buf._len - _len, _len};
     _buf._len -= 1;
@@ -82,13 +84,14 @@ struct Truncks {
   usize    _len;
 
  public:
-  operator bool() const {
+  explicit operator bool() const {
     return _buf._len >= _len;
   }
 
   auto next() -> Option<Slice<T>> {
-    if (_buf._len < _len)
+    if (_buf._len < _len) {
       return {};
+    }
 
     auto res = Slice<T>{_buf._ptr, _len};
     _buf._ptr += _len;

@@ -57,7 +57,7 @@ auto Unit::match(Slice<const Str> pats) const -> bool {
 
 Suite::Suite(Str name) : _name{String::from(name)} {}
 
-Suite::~Suite() {}
+Suite::~Suite()  = default;
 
 Suite::Suite(Suite&&) noexcept = default;
 
@@ -94,9 +94,9 @@ auto Suite::match(Slice<const Str> pats) const -> bool {
   return false;
 }
 
-TestManager::TestManager() {}
+TestManager::TestManager() = default;
 
-TestManager::~TestManager() {}
+TestManager::~TestManager() = default;
 
 auto TestManager::instance() -> TestManager& {
   static TestManager res{};

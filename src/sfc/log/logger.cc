@@ -37,11 +37,11 @@ static void fast_format_time(char (&buf)[sizeof("0000-00-00 00:00:00.000000")]) 
 
 Logger::Logger() = default;
 
-Logger::~Logger() {}
+Logger::~Logger() = default;
 
 Logger::Logger(Logger&&) noexcept = default;
 
-Logger& Logger::operator=(Logger&&) noexcept = default;
+auto Logger::operator=(Logger&&) noexcept -> Logger& = default;
 
 auto Logger::get_level() const -> Level {
   return _level;

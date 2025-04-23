@@ -9,9 +9,12 @@ class Path {
 
  public:
   explicit Path();
+
   ~Path();
+
   Path(Path&&) noexcept;
-  Path& operator=(Path&&) noexcept;
+
+  auto operator=(Path&&) noexcept -> Path&;
 
   static auto from(Str s) -> Path;
 

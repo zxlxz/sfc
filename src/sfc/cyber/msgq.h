@@ -7,7 +7,7 @@ namespace sfc::cyber {
 
 template <class T>
 class MsgQueue {
-  sync::Mutex _mutex{};
+  sync::Mutex   _mutex{};
   sync::Condvar _condvar{};
 
   CircBuf<T> _buff;
@@ -25,8 +25,7 @@ class MsgQueue {
       return {};
     }
 
-    auto res = _buff.pop_front();
-    return res;
+    return _buff.pop_front();
   }
 
   auto push(T msg, const time::Duration& try_dur) -> bool {

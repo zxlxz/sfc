@@ -12,7 +12,7 @@ using thrd_t = u64;
 #endif
 
 struct Thread {
-  thrd_t _raw = thrd_t{0};
+  thrd_t _raw{};
 
  public:
   static auto current() -> Thread;
@@ -31,7 +31,7 @@ class JoinHandle {
   ~JoinHandle();
 
   JoinHandle(JoinHandle&&) noexcept;
-  JoinHandle& operator=(JoinHandle&&) noexcept;
+  auto operator=(JoinHandle&&) noexcept -> JoinHandle&;
 
   void join();
 };

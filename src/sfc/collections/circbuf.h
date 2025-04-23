@@ -7,9 +7,9 @@ namespace sfc::collections {
 template <class T>
 class CircBuf {
   vec::Buf<T> _buf = {};
-  usize _len = 0;
-  usize _first = 0;  // begin of the buffer
-  usize _last = 0;   // end of the buffer(behind the last element)
+  usize       _len = 0;
+  usize       _first = 0;  // begin of the buffer
+  usize       _last = 0;   // end of the buffer(behind the last element)
 
  public:
   CircBuf() = default;
@@ -104,18 +104,20 @@ class CircBuf {
   }
 
   auto pop_front() -> Option<T> {
-    auto ret = static_cast<T&&>(_buf[_first]);
-    mem::drop(_buf[_first]);
+    if (this->is_empty()) {
+      return {};
+    }
+
+    auto res = Option{ptr::read(&_buf[_first])};
     this->wrap_inc(_first);
 
     _len -= 1;
-    return Option{ret};
+    return res;
   }
 
   auto pop_back() -> Option<T> {
     this->wrap_dec(_last);
-    auto ret = static_cast<T&&>(_buf[_last]);
-    mem::drop(_buf[_last]);
+    auto ret = Option{ptr::read(&_buf[_last])};
 
     _len -= 1;
     return Option{ret};

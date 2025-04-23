@@ -1,27 +1,37 @@
 ---
+# Start with Google style as base
 BasedOnStyle: Google
 ---
 Language: Cpp
 Standard: Latest
 ColumnLimit: 100
 
-AllowAllArgumentsOnNextLine: false
-AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseLabelsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+# Bracing style
+BreakBeforeBraces: Attach
+InsertBraces: true
 
+# Alignment (these differ from Google style)
 AlignConsecutiveDeclarations: true
-AlignOperands: true
-AlignTrailingComments: true
-AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true  
 AlignConsecutiveShortCaseStatements:
   Enabled: true
+PointerAlignment: Left  # Rust-style references
 
+# Line breaking (overrides from Google style)
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
 BinPackArguments: false
 BinPackParameters: false
 
-IndentCaseBlocks: true
+# Break before binary operators like Rust does
+BreakBeforeBinaryOperators: None
 
+# Penalties
 PenaltyBreakOpenParenthesis: 21
+PenaltyBreakBeforeFirstCallParameter: 19
+PenaltyBreakAssignment: 19

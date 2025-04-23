@@ -44,7 +44,7 @@ concept iReflect = requires(const T& x) { reflect_struct(x); };
 
 template <class... U>
 auto make_struct_info(Field<const U>... fields) -> StructInfo<U...> {
-  return {fields...};
+  return StructInfo<U...>{fields...};
 }
 
 }  // namespace sfc::reflect

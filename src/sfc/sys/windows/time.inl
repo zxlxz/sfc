@@ -58,7 +58,8 @@ struct System {
 
   auto micros() const -> ULONG64 {
     // Convert FILETIME to 100-nanosecond intervals
-    const auto counts = ULONG64(_ft.dwHighDateTime) + (ULONG64(_ft.dwLowDateTime) << 32);
+    const auto counts =
+        static_cast<ULONG64>(_ft.dwHighDateTime) + (static_cast<ULONG64>(_ft.dwLowDateTime) << 32);
     const auto micros = counts / 10;
     return micros;
   }
@@ -74,25 +75,25 @@ struct DateTime {
 
  public:
   static auto from_secs(SIZE_T filetime_sec) -> DateTime {
-      // Convert from filetime_sec to FILETIME struct
-      ::FILETIME filetime = {};
-      filetime.dwLowDateTime = static_cast<DWORD>(filetime_sec & 0xFFFFFFFFU);
-      filetime.dwHighDateTime = static_cast<DWORD>(filetime_sec >> 32);
+    // Convert from filetime_sec to FILETIME struct
+    ::FILETIME filetime = {};
+    filetime.dwLowDateTime = static_cast<DWORD>(filetime_sec & 0xFFFFFFFFU);
+    filetime.dwHighDateTime = static_cast<DWORD>(filetime_sec >> 32);
 
-      // Convert FILETIME to SYSTEMTIME
-      ::SYSTEMTIME system_time = {};
-      ::FileTimeToSystemTime(&filetime, &system_time);
+    // Convert FILETIME to SYSTEMTIME
+    ::SYSTEMTIME system_time = {};
+    ::FileTimeToSystemTime(&filetime, &system_time);
 
-      // Convert SYSTEMTIME to DateTime
-      const auto res = DateTime{
-          .year = system_time.wYear,
-          .month = system_time.wMonth,
-          .mday = system_time.wDay,
-          .hour = system_time.wHour,
-          .min = system_time.wMinute,
-          .sec = system_time.wSecond,
-      };
-      return res;
+    // Convert SYSTEMTIME to DateTime
+    const auto res = DateTime{
+        .year = system_time.wYear,
+        .month = system_time.wMonth,
+        .mday = system_time.wDay,
+        .hour = system_time.wHour,
+        .min = system_time.wMinute,
+        .sec = system_time.wSecond,
+    };
+    return res;
   }
 };
 

@@ -104,7 +104,7 @@ class Result : detail::Result<T, E> {
 
   Result(Result&&) noexcept = default;
 
-  Result& operator=(Result&&) noexcept = default;
+  auto operator=(Result&&) noexcept -> Result& = default;
 
   auto is_ok() const -> bool {
     return this->_tag;
@@ -128,20 +128,23 @@ class Result : detail::Result<T, E> {
   }
 
   auto ok() const& -> Option<T> {
-    if (!_tag)
+    if (!_tag) {
       return {};
+    }
     return Imp::get_ok_unchecked();
   }
 
   auto err() && -> Option<E> {
-    if (_tag)
+    if (_tag) {
       return {};
+    }
     return static_cast<E&&>(Imp::get_err_unchecked_mut());
   }
 
   auto err() const& -> Option<E> {
-    if (_tag)
+    if (_tag) {
       return {};
+    }
     return Imp::get_err_unchecked();
   }
 
