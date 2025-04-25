@@ -1,4 +1,4 @@
-#include "env.h"
+#include "sfc/env/env.h"
 
 #include "sfc/ffi/cstring.h"
 #include "sfc/sys/os.h"
@@ -22,7 +22,7 @@ void set_var(Str key, Str val) {
   const auto os_val = ffi::CString::from(val);
 
   const auto ret = sys_imp::setenv(os_key.c_str(), os_val.c_str());
-  assert_fmt(ret, "env::set: key=`{}`, val=`{}`, err={}", key, val, io::Error::last_os_error());
+  panicking::assert_fmt(ret, "env::set: key=`{}`, val=`{}`, err={}", key, val, io::Error::last_os_error());
 }
 
 void remove_var(Str key) {

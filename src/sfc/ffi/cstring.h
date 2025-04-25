@@ -23,6 +23,10 @@ class CString {
     return res;
   }
 
+  explicit operator bool() const {
+    return bool(_vec);
+  }
+
   auto c_str() const -> const char* {
     return _vec.as_ptr();
   }

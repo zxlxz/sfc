@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chan.h"
+#include "sfc/cyber/chan.h"
 
 namespace sfc::cyber {
 

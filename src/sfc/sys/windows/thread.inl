@@ -4,7 +4,6 @@
 
 namespace sfc::sys::thread {
 
-using thrd_t       = void*;
 using thread_ret_t = DWORD;
 
 static auto wchar_to_u8(const wchar_t src[], char dst[], int dst_len) -> DWORD {
@@ -18,8 +17,7 @@ static auto u8_to_wchar(const char src[], wchar_t dst[], int dst_len) -> DWORD {
 }
 
 struct Thread {
-  static constexpr auto INVALID_TID = thrd_t{nullptr};
-  thrd_t                _raw{INVALID_TID};
+  void* _handle{nullptr};
 
  public:
   static auto current() -> Thread {
@@ -32,27 +30,31 @@ struct Thread {
     return Thread{thrd};
   }
 
-  auto operator==(const Thread& rhs) const -> bool {
-    return _raw == rhs._raw;
+  static auto from_raw(SIZE_T raw) -> Thread {
+    return Thread{reinterpret_cast<void*>(raw)};
+  }
+
+  auto raw() const -> SIZE_T {
+    return reinterpret_cast<SIZE_T>(_handle);
   }
 
   explicit operator bool() const {
-    return _raw != nullptr;
+    return _handle != nullptr;
   }
 
   auto id() const -> DWORD {
-    if (_raw == nullptr) {
+    if (_handle == nullptr) {
       return 0;
     }
-    return ::GetThreadId(_raw);
+    return ::GetThreadId(_handle);
   }
 
   auto join() -> bool {
-    if (_raw == nullptr) {
+    if (_handle == nullptr) {
       return true;
     }
 
-    const auto ret = ::WaitForSingleObject(_raw, INFINITE);
+    const auto ret = ::WaitForSingleObject(_handle, INFINITE);
     if (ret != WAIT_OBJECT_0) {
       return false;
     }
@@ -61,26 +63,26 @@ struct Thread {
   }
 
   auto detach() -> bool {
-    if (_raw == nullptr) {
+    if (_handle == nullptr) {
       return true;
     }
 
-    if (!::CloseHandle(_raw)) {
+    if (!::CloseHandle(_handle)) {
       return false;
     }
 
-    _raw = nullptr;
+    _handle = nullptr;
 
     return true;
   }
 
   auto get_name(char* buf, SIZE_T buf_len) const -> SIZE_T {
-    if (_raw == nullptr) {
+    if (_handle == nullptr) {
       return 0;
     }
 
     wchar_t*   wbuf = nullptr;
-    const auto hres = ::GetThreadDescription(_raw, &wbuf);
+    const auto hres = ::GetThreadDescription(_handle, &wbuf);
     if (FAILED(hres)) {
       return 0;
     }
@@ -98,7 +100,7 @@ struct Thread {
   auto set_name(const char* name) -> bool {
     static constexpr auto kMaxNameLen = 256U;
 
-    if (_raw == nullptr) {
+    if (_handle == nullptr) {
       return false;
     }
 
@@ -108,7 +110,7 @@ struct Thread {
       return false;
     }
 
-    const auto hres = ::SetThreadDescription(_raw, wbuff);
+    const auto hres = ::SetThreadDescription(_handle, wbuff);
     return SUCCEEDED(hres);
   }
 };

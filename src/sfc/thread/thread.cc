@@ -1,4 +1,4 @@
-#include "thread.h"
+#include "sfc/thread/thread.h"
 
 #include "sfc/ffi/cstring.h"
 #include "sfc/sys/thread.h"
@@ -13,9 +13,9 @@ struct ThreadData {
 
  public:
   void run() {
-    if (_name.c_str()) {
-      auto thr = sys_imp::Thread::current();
-      thr.set_name(_name.c_str());
+    if (_name) {
+      auto imp = sys_imp::Thread::current();
+      imp.set_name(_name.c_str());
     }
 
     try {
@@ -32,21 +32,21 @@ static auto start_routine(void* data) -> sys_imp::thread_ret_t {
 };
 
 auto Thread::current() -> Thread {
-  const auto thrd_imp = sys_imp::Thread::current();
-  return Thread{thrd_imp._raw};
+  const auto imp = sys_imp::Thread::current();
+  return Thread{imp.raw()};
 }
 
 auto Thread::id() const -> i64 {
-  const auto thrd_imp = sys_imp::Thread{_raw};
-  return thrd_imp.id();
+  const auto imp = sys_imp::Thread::from_raw(_raw);
+  return imp.id();
 }
 
 auto Thread::name() const -> String {
   auto res = String{};
   res.reserve(64);
 
-  const auto thrd_imp = sys_imp::Thread{_raw};
-  const auto name_len = thrd_imp.get_name(res.as_mut_ptr(), res.capacity());
+  const auto imp = sys_imp::Thread::from_raw(_raw);
+  const auto name_len = imp.get_name(res.as_mut_ptr(), res.capacity());
   res.set_len(name_len);
 
   return res;
@@ -59,23 +59,23 @@ auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
     mem::move(thr_box).into_raw();
   }
 
-  auto res = JoinHandle{};
-  res._thrd = Thread{sys_thr._raw};
+  auto res  = JoinHandle{};
+  res._thrd = Thread{sys_thr.raw()};
   return res;
 }
 
 JoinHandle::JoinHandle() noexcept = default;
 
 JoinHandle::~JoinHandle() {
-  if (_thrd._raw == sys_imp::Thread::INVALID_TID) {
+  auto thr = sys_imp::Thread::from_raw(_thrd._raw);
+  if (!thr) {
     return;
   }
-  auto thr = sys_imp::Thread{_thrd._raw};
   thr.detach();
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{other._thrd} {
-  other._thrd._raw = sys_imp::Thread::INVALID_TID;
+  other._thrd = Thread{};
 }
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
@@ -85,8 +85,9 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 }
 
 void JoinHandle::join() {
-  const auto tid = mem::take(_thrd._raw);
-  sys_imp::Thread{tid}.join();
+  auto imp = sys_imp::Thread::from_raw(_thrd._raw);
+  _thrd = Thread{};
+  imp.join();
 }
 
 void sleep(const time::Duration& dur) {

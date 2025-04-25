@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/panicking.h"
 #include "sfc/core/mem.h"
 
 namespace sfc::ptr {
@@ -38,22 +39,22 @@ struct Unique {
   }
 
   auto operator->() const -> const T* {
-    assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 };

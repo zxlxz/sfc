@@ -38,8 +38,3 @@ void assert_fmt(const auto& cond, LocationFmt fmt, const auto&... args) {
 }
 
 }  // namespace sfc::panicking
-
-namespace sfc {
-using panicking::assert_fmt;
-using panicking::panic_fmt;
-}  // namespace sfc

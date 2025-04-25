@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math/funcs.h"
-#include "math/ndarray.h"
-#include "math/ndview.h"
-#include "math/sintbl.h"
+#include "sfc/math/funcs.h"
+#include "sfc/math/ndarray.h"
+#include "sfc/math/ndview.h"
+#include "sfc/math/sintbl.h"

@@ -64,3 +64,9 @@ inline auto take(T& dst) -> T {
 }
 
 }  // namespace sfc::mem
+
+template <class T>
+constexpr auto operator new(sfc::usize size, T* ptr) noexcept -> void* {
+  static_assert(sizeof(T) != 0);
+  return ptr;
+}

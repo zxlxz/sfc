@@ -5,14 +5,8 @@
 
 namespace sfc::thread {
 
-#ifdef _WIN32
-using thrd_t = void*;
-#else
-using thrd_t = u64;
-#endif
-
 struct Thread {
-  thrd_t _raw{};
+  u64 _raw{0};
 
  public:
   static auto current() -> Thread;

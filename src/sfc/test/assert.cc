@@ -1,4 +1,4 @@
-#include "assert.h"
+#include "sfc/test/assert.h"
 
 namespace sfc::test {
 

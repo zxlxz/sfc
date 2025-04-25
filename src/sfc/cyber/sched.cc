@@ -1,4 +1,4 @@
-#include "sched.h"
+#include "sfc/cyber/sched.h"
 
 #include "sfc/sync.h"
 #include "sfc/thread.h"

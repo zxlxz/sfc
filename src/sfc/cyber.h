@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cyber/chan.h"
-#include "cyber/cmpt.h"
-#include "cyber/recv.h"
-#include "cyber/send.h"
+#include "sfc/cyber/chan.h"
+#include "sfc/cyber/cmpt.h"
+#include "sfc/cyber/recv.h"
+#include "sfc/cyber/send.h"

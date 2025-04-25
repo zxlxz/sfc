@@ -3,6 +3,7 @@
 #include "sfc/core/cmp.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/ops.h"
+#include "sfc/core/panicking.h"
 #include "sfc/core/tuple.h"
 
 namespace sfc::slice {
@@ -67,12 +68,12 @@ struct Slice {
   }
 
   auto operator[](usize idx) const -> const T& {
-    assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
@@ -98,8 +99,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) {
-    assert_fmt(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    assert_fmt(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+    panicking::assert_fmt(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
+    panicking::assert_fmt(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
     if (i == j) {
       return;
@@ -166,3 +167,7 @@ auto end(Slice<T>& self) -> T* {
 }
 
 }  // namespace sfc::slice
+
+namespace sfc {
+using slice::Slice;
+}  // namespace sfc

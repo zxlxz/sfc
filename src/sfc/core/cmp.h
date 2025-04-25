@@ -38,7 +38,3 @@ constexpr auto max(const auto& a, const auto& b) -> auto {
 }
 
 }  // namespace sfc::cmp
-
-namespace sfc {
-using cmp::Ordering;
-}

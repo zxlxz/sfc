@@ -77,8 +77,8 @@ struct Str {
 
   auto split_at(usize mid) const -> tuple::Tuple<Str, Str> {
     const auto pos = cmp::min(mid, _len);
-    const auto a = Str{_ptr, pos};
-    const auto b = Str{_ptr + mid, _len - mid};
+    const auto a   = Str{_ptr, pos};
+    const auto b   = Str{_ptr + mid, _len - mid};
     return tuple::Tuple{a, b};
   }
 
@@ -144,3 +144,7 @@ auto Str::parse() const -> option::Option<T> {
 }
 
 }  // namespace sfc::str
+
+namespace sfc {
+using str::Str;
+}

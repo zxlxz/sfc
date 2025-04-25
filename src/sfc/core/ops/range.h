@@ -22,7 +22,7 @@ struct Range {
 
   auto operator%(usize len) const -> Range {
     const auto start = _start < len ? _start : len;
-    const auto end = _end < len ? _end : len;
+    const auto end   = _end < len ? _end : len;
     return Range{start, end};
   }
 };
@@ -31,4 +31,4 @@ struct Range {
 
 namespace sfc {
 using ops::Range;
-}
+}  // namespace sfc

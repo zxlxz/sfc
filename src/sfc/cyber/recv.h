@@ -1,8 +1,8 @@
 #pragma once
 
-#include "chan.h"
-#include "msgq.h"
-#include "sched.h"
+#include "sfc/cyber/chan.h"
+#include "sfc/cyber/msgq.h"
+#include "sfc/cyber/sched.h"
 
 namespace sfc::cyber {
 

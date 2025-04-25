@@ -1,20 +1,12 @@
 #pragma once
 
-#include "core/fmt.h"
-#include "core/mod.h"
-#include "core/num.h"
-#include "core/ops.h"
-#include "core/ptr.h"
-#include "core/reflect.h"
-#include "core/result.h"
-#include "core/slice.h"
-#include "core/str.h"
-#include "core/variant.h"
-
-namespace sfc {
-using str::Str;
-using tuple::Tuple;
-using slice::Slice;
-using option::Option;
-using variant::Variant;
-}  // namespace sfc
+#include "sfc/core/fmt.h"
+#include "sfc/core/mod.h"
+#include "sfc/core/num.h"
+#include "sfc/core/ops.h"
+#include "sfc/core/ptr.h"
+#include "sfc/core/reflect.h"
+#include "sfc/core/result.h"
+#include "sfc/core/slice.h"
+#include "sfc/core/str.h"
+#include "sfc/core/variant.h"

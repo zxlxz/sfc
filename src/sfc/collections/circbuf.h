@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/alloc.h"
+#include "sfc/core/panicking.h"
 
 namespace sfc::collections {
 
@@ -49,26 +50,26 @@ class CircBuf {
   }
 
   auto operator[](usize idx) const -> const T& {
-    assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
 
     const auto offset = this->warp_idx(idx);
     return _buf[offset];
   }
 
   auto operator[](usize idx) -> T& {
-    assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "CircBuf::[]: idx(={}) out of range(={})", idx, _len);
 
     const auto offset = this->warp_idx(idx);
     return _buf[offset];
   }
 
   auto front() const -> const T& {
-    assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
+    panicking::assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
     return _buf[_first];
   }
 
   auto back() const -> const T& {
-    assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
+    panicking::assert_fmt(!this->is_empty(), "CircBuf::front: buf is empty");
     const auto idx = (_last == 0 ? _buf.capacity() : _last) - 1;
     return _buf[idx];
   }

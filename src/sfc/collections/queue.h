@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/alloc.h"
+#include "sfc/core/panicking.h"
 
 namespace sfc::collections {
 
@@ -61,35 +62,35 @@ class [[nodiscard]] Queue {
  public:
   auto operator[](usize idx) const -> const T& {
     const auto len = this->len();
-    assert_fmt(idx < len, "Queue::[]: idx(={}) out of range(={})", idx, len);
+    panicking::assert_fmt(idx < len, "Queue::[]: idx(={}) out of range(={})", idx, len);
 
     return _vec[_pos + idx];
   }
 
   auto operator[](usize idx) -> T& {
     const auto len = this->len();
-    assert_fmt(idx < len, "Queue::[]: idx(={}) out of range(={})", idx, len);
+    panicking::assert_fmt(idx < len, "Queue::[]: idx(={}) out of range(={})", idx, len);
 
     return _vec[_pos + idx];
   }
 
   auto first() const -> const T& {
-    assert_fmt(!this->is_empty(), "Queue::first: queue is empty");
+    panicking::assert_fmt(!this->is_empty(), "Queue::first: queue is empty");
     return _vec[_pos];
   }
 
   auto first_mut() -> T& {
-    assert_fmt(!this->is_empty(), "Queue::first_mut: queue is empty");
+    panicking::assert_fmt(!this->is_empty(), "Queue::first_mut: queue is empty");
     return _vec[_pos];
   }
 
   auto last() const -> const T& {
-    assert_fmt(!this->is_empty(), "Queue::last: queue is empty");
+    panicking::assert_fmt(!this->is_empty(), "Queue::last: queue is empty");
     return _vec[_vec.len() - 1];
   }
 
   auto last_mut() -> T& {
-    assert_fmt(!this->is_empty(), "Queue::last_mut: queue is empty");
+    panicking::assert_fmt(!this->is_empty(), "Queue::last_mut: queue is empty");
     return _vec[_vec.len() - 1];
   }
 

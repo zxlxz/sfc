@@ -1,4 +1,4 @@
-#include "instant.h"
+#include "sfc/time/instant.h"
 
 #include "sfc/sys/time.h"
 
@@ -35,17 +35,17 @@ auto Instant::operator<=(const Instant& other) const -> bool {
 }
 
 auto Instant::operator-(const Instant& rhs) const -> Duration {
-  const auto nanos = num::saturating_sub(_nanos , rhs._nanos);
+  const auto nanos = num::saturating_sub(_nanos, rhs._nanos);
   return Duration::from_nanos(nanos);
 }
 
 auto Instant::operator+(const Duration& dur) const -> Instant {
-  const auto nanos = num::saturating_add(_nanos , dur.as_nanos());
+  const auto nanos = num::saturating_add(_nanos, dur.as_nanos());
   return Instant{nanos};
 }
 
 auto Instant::operator-(const Duration& dur) const -> Instant {
-  const auto nanos = num::saturating_sub(_nanos , dur.as_nanos());
+  const auto nanos = num::saturating_sub(_nanos, dur.as_nanos());
   return Instant{nanos};
 }
 

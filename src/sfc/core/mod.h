@@ -28,8 +28,7 @@ auto declval() -> T&&;
 
 }  // namespace sfc
 
-#ifndef __PLACEMENT_NEW_INLINE
-#define __PLACEMENT_NEW_INLINE
+#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_NEW)
 inline auto operator new(__SIZE_TYPE__ size, void* ptr) noexcept -> void* {
   (void)size;
   return ptr;

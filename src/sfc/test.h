@@ -1,5 +1,5 @@
 #pragma once
 
-#include "test/assert.h"
-#include "test/unit.h"
-#include "test/app.h"
+#include "sfc/test/assert.h"
+#include "sfc/test/unit.h"
+#include "sfc/test/app.h"

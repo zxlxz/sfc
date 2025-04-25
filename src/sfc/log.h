@@ -1,8 +1,8 @@
 #pragma once
 
-#include "log/backend.h"
-#include "log/logger.h"
+#include "sfc/log/backend.h"
+#include "sfc/log/logger.h"
 
 // backends
-#include "log/backend/console_backend.h"
-#include "log/backend/file_backend.h"
+#include "sfc/log/backend/console_backend.h"
+#include "sfc/log/backend/file_backend.h"

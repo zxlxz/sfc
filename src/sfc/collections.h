@@ -1,6 +1,6 @@
 #pragma once
 
-#include "collections/circbuf.h"
-#include "collections/queue.h"
-#include "collections/vecmap.h"
-#include "collections/vecset.h"
+#include "sfc/collections/circbuf.h"
+#include "sfc/collections/queue.h"
+#include "sfc/collections/vecmap.h"
+#include "sfc/collections/vecset.h"

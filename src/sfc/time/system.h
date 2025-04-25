@@ -1,6 +1,6 @@
 #pragma once
 
-#include "duration.h"
+#include "sfc/time/duration.h"
 
 namespace sfc::time {
 

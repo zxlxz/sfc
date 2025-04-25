@@ -10,20 +10,19 @@
 
 namespace sfc::sys::thread {
 
-using timespec_t = struct ::timespec;
-using timeval_t  = struct ::timeval;
-using thrd_t      = pthread_t;
-using thread_ret_t      = void*;
+using timespec_t   = struct ::timespec;
+using timeval_t    = struct ::timeval;
+using thread_ret_t = void*;
 
 struct Thread {
-  thrd_t _raw;
+  pthread_t _raw{0};
 
  public:
   static auto current() -> Thread {
     return Thread{::pthread_self()};
   }
 
-  static auto start(usize stack_size, void* (*func)(void*), void* data) -> Thread {
+  static auto start(pthread_t stack_size, void* (*func)(void*), void* data) -> Thread {
     // attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -39,8 +38,12 @@ struct Thread {
     return Thread{thrd};
   }
 
-  auto operator==(const Thread& rhs) const -> bool {
-    return _raw == rhs._raw;
+  static auto from_raw(pthread_t raw) -> Thread {
+    return Thread{raw};
+  }
+
+  auto raw() const -> pthread_t {
+    return _raw;
   }
 
   operator bool() const {

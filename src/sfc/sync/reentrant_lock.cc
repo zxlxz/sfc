@@ -1,4 +1,4 @@
-#include "reentrant_lock.h"
+#include "sfc/sync/reentrant_lock.h"
 
 #include "sfc/sys/thread.h"
 
@@ -7,16 +7,16 @@ namespace sfc::sync {
 namespace sys_imp = sys::thread;
 
 struct ReentrantLock::Inn {
-  sys_imp::Mutex  _mutex{};
-  sys_imp::thrd_t _owner{};
-  u32             _count{0};
+  sys_imp::Mutex _mutex{};
+  u64            _owner{0};
+  u32            _count{0};
 
  public:
   Inn()  = default;
   ~Inn() = default;
 
   void lock() {
-    const auto thrd = sys_imp::Thread::current()._raw;
+    const auto thrd = sys_imp::Thread::current().raw();
 
     if (thrd != _owner) {
       _mutex.lock();
@@ -28,7 +28,7 @@ struct ReentrantLock::Inn {
   }
 
   void unlock() {
-    const auto thrd = sys_imp::Thread::current()._raw;
+    const auto thrd = sys_imp::Thread::current().raw();
 
     // not owner
     if (thrd != _owner) {
@@ -36,7 +36,7 @@ struct ReentrantLock::Inn {
     }
 
     if (__atomic_fetch_sub(&_count, 1, __ATOMIC_SEQ_CST) == 1) {
-      __atomic_store_n(&_owner, sys_imp::thrd_t{}, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&_owner, 0, __ATOMIC_SEQ_CST);
       _mutex.unlock();
     }
   }
