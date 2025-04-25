@@ -42,8 +42,8 @@ SFC_TEST(pop) {
 
 SFC_TEST(insert) {
   auto v = Vec<int>::from((int[]){0, 2, 3});
-  v.insert(1, 1);
-  v.insert(8, 4);
+  v.insert(1U, 1);
+  v.insert(4U, 4);
   test::assert_eq(v.len(), 5U);
   test::assert_eq(v[1], 1);
   test::assert_eq(v[4], 4);

@@ -200,12 +200,12 @@ class [[nodiscard]] Vec {
   }
 
   auto operator[](usize idx) const -> const T& {
-    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf[idx];
   }
 
@@ -283,29 +283,35 @@ class [[nodiscard]] Vec {
 
   // swap with last, then remove
   auto swap_remove(usize idx) -> T {
-    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx({}) out of range([0,{}))", idx, _len);
+    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = mem::replace(_buf._ptr[idx], ptr::read(_buf._ptr[_len - 1]));
-    _len -= 1;
+    auto res = this->pop().unwrap();
+    if (idx != _len - 1) {
+      mem::swap(res, _buf._ptr[idx]);
+    }
     return res;
   }
 
   void insert(usize idx, T element) {
-    panicking::assert_fmt(idx <= _len, "Vec::remove: idx({}) out of range([0,{}))", idx, _len);
+    panicking::assert_fmt(idx <= _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
+
+    const auto hole = _buf._ptr + idx;
+
     if (idx == _len) {
-      ptr::write(&_buf._ptr[_len], static_cast<T&&>(element));
+      ptr::write(hole, static_cast<T&&>(element));
     } else if (_len != 0) {
-      ptr::write(&_buf._ptr[_len], static_cast<T&&>(_buf._ptr[_len - 1]));
-      ptr::move(&_buf._ptr[idx], &_buf._ptr[idx + 1], _len - idx - 1);
-      _buf._ptr[idx] = static_cast<T&&>(element);
+      const auto tail = _buf._ptr + _len;
+      ptr::uninit_move(tail - 1, tail, 1);
+      ptr::move(hole, hole + 1, _len - idx - 1);
+      *hole = static_cast<T&&>(element);
     }
     _len += 1;
   }
 
   auto remove(usize idx) -> T {
-    panicking::assert_fmt(idx < _len, "Vec::remove: idx({}) out of range([0,{}))", idx, _len);
+    panicking::assert_fmt(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
     const auto res = mem::move(_buf[idx]);
     this->drain({idx, idx + 1});
@@ -313,23 +319,21 @@ class [[nodiscard]] Vec {
   }
 
   void drain(Range range) {
-    const auto rng = range % _len;
-    if (rng.len() == 0) {
+    const auto ids = range % _len;
+    if (ids.len() == 0) {
       return;
     }
 
-    ptr::move(_buf._ptr + rng._end, _buf._ptr + rng._start, _len - rng._end);
-    this->truncate(_len - rng.len());
+    const auto ptr = _buf._ptr;
+    ptr::move(ptr + ids._end, ptr + ids._start, _len - ids._end);
+    this->truncate(_len - ids.len());
   }
 
   void resize(usize new_len, T value) {
-    if (new_len <= _len) {
-      this->truncate(new_len);
+    if (new_len == _len) {
       return;
     }
-
-    const auto additional = new_len - _len;
-    this->extend_with(additional, value);
+    new_len < _len ? this->truncate(new_len) : this->extend_with(new_len - _len, value);
   }
 
   void append(Vec& other) {
@@ -343,7 +347,7 @@ class [[nodiscard]] Vec {
     this->reserve(iter.len());
 
     for (T val : iter) {
-      ptr::write(&_buf._ptr[_len++], static_cast<T&&>(val));
+      this->push(static_cast<T&&>(val));
     }
   }
 
@@ -351,7 +355,7 @@ class [[nodiscard]] Vec {
     this->reserve(cnt);
 
     for (auto idx = 0U; idx < cnt; ++idx) {
-      ptr::write(&_buf._ptr[_len++], value);
+      this->push(value);
     }
   }
 

@@ -39,7 +39,7 @@ SFC_TEST(insert) {
   q.insert(0, 0);
   test::assert_eq(q[0], 0);
 
-  q.insert(8, 4);
+  q.insert(4, 4);
   test::assert_eq(q.len(), 5U);
   test::assert_eq(q.last(), 4);
 }
