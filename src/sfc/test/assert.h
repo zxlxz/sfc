@@ -22,9 +22,10 @@ struct Param {
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) -> bool;
 
 void assert_failed(Location loc, const auto& msg, const auto&... pars) {
-  (void)(io::println("assert failed `{}`:", msg));
-  (void)(io::println("> at {}[{}]", loc.file, loc.line));
-  (void)(io::println("  {}", pars), ...);
+  auto os = io::Stdout::lock();
+  os.write_fmt("assert failed `{}`:\n", msg);
+  os.write_fmt("> at {}[{}]\n", loc.file, loc.line);
+  (os.write_fmt("  {}\n", pars), ...);
   throw AssertFailed{};
 }
 

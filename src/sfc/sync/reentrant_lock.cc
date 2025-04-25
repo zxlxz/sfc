@@ -8,27 +8,27 @@ namespace sys_imp = sys::thread;
 
 struct ReentrantLock::Inn {
   sys_imp::Mutex  _mutex{};
-  sys_imp::Thread _owner{};
+  sys_imp::thrd_t _owner{};
   u32             _count{0};
 
  public:
-  Inn() = default;
+  Inn()  = default;
   ~Inn() = default;
 
   void lock() {
-    const auto thrd = sys_imp::Thread::current();
+    const auto thrd = sys_imp::Thread::current()._raw;
 
-    if (thrd == _owner) {
-      __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
-    } else {
+    if (thrd != _owner) {
       _mutex.lock();
-      _owner = thrd;
+      __atomic_store_n(&_owner, thrd, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&_count, 1, __ATOMIC_SEQ_CST);
+    } else {
       __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
     }
   }
 
   void unlock() {
-    const auto thrd = sys_imp::Thread::current();
+    const auto thrd = sys_imp::Thread::current()._raw;
 
     // not owner
     if (thrd != _owner) {
@@ -36,7 +36,7 @@ struct ReentrantLock::Inn {
     }
 
     if (__atomic_fetch_sub(&_count, 1, __ATOMIC_SEQ_CST) == 1) {
-      _owner = sys_imp::Thread{};
+      __atomic_store_n(&_owner, sys_imp::thrd_t{}, __ATOMIC_SEQ_CST);
       _mutex.unlock();
     }
   }
@@ -44,7 +44,7 @@ struct ReentrantLock::Inn {
 
 ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}
 
-ReentrantLock::~ReentrantLock() {}
+ReentrantLock::~ReentrantLock() = default;
 
 ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 
@@ -58,10 +58,9 @@ auto ReentrantLock::lock() -> ReentrantLockGuard {
 ReentrantLockGuard::ReentrantLockGuard(ReentrantLock& mtx) : _mtx{&mtx} {}
 
 ReentrantLockGuard::~ReentrantLockGuard() noexcept {
-  if (!_mtx || !_mtx->_inn) {
-    return;
+  if (_mtx && _mtx->_inn) {
+    _mtx->_inn->unlock();
   }
-  _mtx->_inn->unlock();
 }
 
 }  // namespace sfc::sync

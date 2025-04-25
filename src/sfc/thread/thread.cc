@@ -24,7 +24,7 @@ struct ThreadData {
   }
 };
 
-static auto start_routine(void* data) -> sys_imp::Thread::ret_t {
+static auto start_routine(void* data) -> sys_imp::thread_ret_t {
   auto obj = Box<ThreadData>::from_raw(static_cast<ThreadData*>(data));
   obj->run();
 

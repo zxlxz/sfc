@@ -7,11 +7,11 @@ namespace sfc::time {
 constexpr u64 MILLIS_PER_SEC = 1000U;
 
 constexpr u64 MICROS_PER_MILLI = 1000U;
-constexpr u64 MICROS_PER_SEC = 1000000U;
+constexpr u64 MICROS_PER_SEC   = 1000000U;
 
 constexpr u64 NANOS_PER_MICRO = 1000U;
 constexpr u64 NANOS_PER_MILLI = 1000000U;
-constexpr u64 NANOS_PER_SEC = 1000000000U;
+constexpr u64 NANOS_PER_SEC   = 1000000000U;
 
 struct Duration {
   u64 _nanos = 0U;
@@ -42,7 +42,7 @@ struct Duration {
   }
 
   auto as_secs() const -> u64 {
-    return _nanos * NANOS_PER_SEC;
+    return _nanos / NANOS_PER_SEC;
   }
 
   auto as_nanos() const -> u64 {
@@ -50,11 +50,11 @@ struct Duration {
   }
 
   auto as_millis() const -> u64 {
-    return _nanos * NANOS_PER_MILLI;
+    return _nanos / NANOS_PER_MILLI;
   }
 
   auto as_micros() const -> u64 {
-    return _nanos * NANOS_PER_MICRO;
+    return _nanos / NANOS_PER_MICRO;
   }
 
   auto subsec_nanos() const -> u64 {

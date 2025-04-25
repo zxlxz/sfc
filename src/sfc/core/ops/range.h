@@ -10,7 +10,7 @@ struct Range {
   usize _end;
 
  public:
-  Range(usize end) : _start{0}, _end{end} {}
+  explicit Range(usize end) : _start{0}, _end{end} {}
 
   Range(usize start, usize end) : _start{start}, _end{end < start ? start : end} {}
 

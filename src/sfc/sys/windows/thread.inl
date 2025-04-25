@@ -4,6 +4,9 @@
 
 namespace sfc::sys::thread {
 
+using thrd_t       = void*;
+using thread_ret_t = DWORD;
+
 static auto wchar_to_u8(const wchar_t src[], char dst[], int dst_len) -> DWORD {
   const auto cnt = ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, dst_len, nullptr, nullptr);
   return cnt > 0 ? static_cast<DWORD>(cnt) : 0;
@@ -15,12 +18,8 @@ static auto u8_to_wchar(const char src[], wchar_t dst[], int dst_len) -> DWORD {
 }
 
 struct Thread {
-  using tid_t = void*;
-  using ret_t = DWORD;
-
-  static constexpr auto INVALID_TID = tid_t{nullptr};
-
-  tid_t _raw{INVALID_TID};
+  static constexpr auto INVALID_TID = thrd_t{nullptr};
+  thrd_t                _raw{INVALID_TID};
 
  public:
   static auto current() -> Thread {

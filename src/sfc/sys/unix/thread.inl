@@ -11,13 +11,12 @@
 namespace sfc::sys::thread {
 
 using timespec_t = struct ::timespec;
-using timeval_t = struct ::timeval;
+using timeval_t  = struct ::timeval;
+using thrd_t      = pthread_t;
+using thread_ret_t      = void*;
 
 struct Thread {
-  using tid_t = pthread_t;
-  using ret_t = void*;
-  
-  tid_t _raw;
+  thrd_t _raw;
 
  public:
   static auto current() -> Thread {
@@ -40,7 +39,7 @@ struct Thread {
     return Thread{thrd};
   }
 
-  auto operator ==(const Thread& rhs) const -> bool {
+  auto operator==(const Thread& rhs) const -> bool {
     return _raw == rhs._raw;
   }
 
@@ -114,8 +113,8 @@ struct Condvar {
     auto time_now = timeval_t{};
     ::gettimeofday(&time_now, nullptr);
 
-    auto time_out = timespec_t{};
-    time_out.tv_sec = time_now.tv_sec + millis / 1000;
+    auto time_out    = timespec_t{};
+    time_out.tv_sec  = time_now.tv_sec + millis / 1000;
     time_out.tv_nsec = time_now.tv_usec * 1000 + (millis % 1000) * 1000;
 
     if (time_out.tv_nsec >= 1000000000) {
@@ -130,7 +129,7 @@ struct Condvar {
 
 static inline auto sleep_ms(unsigned millis) -> bool {
   const auto req = timespec_t{
-      .tv_sec = millis / 1000,
+      .tv_sec  = millis / 1000,
       .tv_nsec = millis % 1000 * 1000000,
   };
 

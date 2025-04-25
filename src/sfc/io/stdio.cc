@@ -28,6 +28,8 @@ class Stdout::Inn {
   }
 
   void flush() {
+    _imp.write(_buf.as_ptr(), _buf.len());
+    _buf.clear();
     _imp.flush();
   }
 
@@ -57,11 +59,15 @@ auto Stdout::is_tty() -> bool {
 
 void Stdout::flush() {
   static auto& inn = Inn::instance();
+
+  auto lock = inn.lock();
   return inn.flush();
 }
 
 void Stdout::write_str(Str s) {
   static auto& inn = Inn::instance();
+
+  auto lock = inn.lock();
   inn.write_str(s);
 }
 
