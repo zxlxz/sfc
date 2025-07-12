@@ -1,15 +1,23 @@
 #pragma once
 
-#include <malloc.h>
+#include <stdlib.h>
+
+#if defined(__APPLE__)
+#include <malloc/malloc.h>
+#endif
 
 namespace sfc::sys::alloc {
 
-using ::malloc;
 using ::free;
+using ::malloc;
 using ::realloc;
 
 static inline auto msize(void* p) -> size_t {
+#if defined(__APPLE__)
+  return ::malloc_size(p);
+#else
   return ::malloc_usable_size(p);
+#endif
 }
 
 }  // namespace sfc::sys::alloc

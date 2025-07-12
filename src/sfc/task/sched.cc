@@ -1,9 +1,9 @@
-#include "sfc/cyber/sched.h"
+#include "sfc/task/sched.h"
 
 #include "sfc/sync.h"
 #include "sfc/thread.h"
 
-namespace sfc::cyber {
+namespace sfc::task {
 
 Sched::Sched() {
   this->start();
@@ -22,6 +22,7 @@ void Sched::start() {
   if (_running.exchange(true)) {
     return;
   }
+
   _thread = thread::spawn([&]() {
     while (_running.load()) {
       auto task_opt = _task_queue.pop_timeout(time::Duration::from_millis(100U));
@@ -63,4 +64,4 @@ void Sched::wait(const time::Duration& dur) {
   _task_queue.wait(dur);
 }
 
-}  // namespace sfc::cyber
+}  // namespace sfc::task

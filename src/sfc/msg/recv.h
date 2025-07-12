@@ -1,10 +1,10 @@
 #pragma once
 
-#include "sfc/cyber/chan.h"
-#include "sfc/cyber/msgq.h"
-#include "sfc/cyber/sched.h"
+#include "sfc/msg/chan.h"
+#include "sfc/msg/msgq.h"
+#include "sfc/msg/sched.h"
 
-namespace sfc::cyber {
+namespace sfc::msg {
 
 template <class T>
 class Recv {

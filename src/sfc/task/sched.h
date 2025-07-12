@@ -1,9 +1,9 @@
 #pragma once
 
 #include "sfc/thread.h"
-#include "sfc/cyber/task.h"
+#include "sfc/task/task.h"
 
-namespace sfc::cyber {
+namespace sfc::task {
 
 class Sched {
   TaskQueue          _task_queue{};

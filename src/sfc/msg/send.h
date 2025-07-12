@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/cyber/chan.h"
+#include "sfc/msg/chan.h"
 
-namespace sfc::cyber {
+namespace sfc::msg {
 
 template <class T>
 class Send {

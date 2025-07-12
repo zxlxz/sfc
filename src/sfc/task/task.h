@@ -3,10 +3,10 @@
 #include "sfc/collections/queue.h"
 #include "sfc/sync.h"
 
-namespace sfc::cyber {
+namespace sfc::task {
 
 struct Task {
-  void* _self = nullptr;
+  void* _self          = nullptr;
   void (*_func)(void*) = nullptr;
 
  public:
@@ -17,9 +17,9 @@ struct Task {
 
 enum class Priority : u8 {
   RealTime = 0,
-  High = 1,
-  Normal = 2,
-  Low = 3,
+  High     = 1,
+  Normal   = 2,
+  Low      = 3,
 };
 
 class TaskQueue {
@@ -29,6 +29,8 @@ class TaskQueue {
   ~TaskQueue();
 
   TaskQueue(TaskQueue&&) noexcept;
+
+  auto operator=(TaskQueue&&) noexcept -> TaskQueue&;
 
   auto len() const -> usize;
 
@@ -45,10 +47,10 @@ class TaskQueue {
   void wait(const time::Duration& dur);
 
  private:
-  Vec<Queue<Task>> _queues;
+  Vec<Queue<Task>>    _queues;
   sync::Atomic<usize> _count{0};
 
-  sync::Mutex _mutex{};
+  sync::Mutex   _mutex{};
   sync::Condvar _cv_push{};
   sync::Condvar _cv_pop{};
 
@@ -56,4 +58,4 @@ class TaskQueue {
   auto pop_imp() -> Option<Task>;
 };
 
-}  // namespace sfc::cyber
+}  // namespace sfc::task

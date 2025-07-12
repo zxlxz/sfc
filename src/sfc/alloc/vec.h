@@ -318,22 +318,25 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  void drain(Range range) {
-    const auto ids = range % _len;
-    if (ids.len() == 0) {
+  void drain(Range ids) {
+    auto tmp = (*this)[ids];
+    if (tmp.is_empty()) {
       return;
     }
 
-    const auto ptr = _buf._ptr;
-    ptr::move(ptr + ids._end, ptr + ids._start, _len - ids._end);
-    this->truncate(_len - ids.len());
+    const auto src = tmp._ptr;
+    const auto dst = src + tmp._len;
+    const auto end = _buf._ptr + _len;
+    ptr::move(src, dst, static_cast<usize>(end - dst));
+    this->truncate(_len - tmp._len);
   }
 
   void resize(usize new_len, T value) {
-    if (new_len == _len) {
-      return;
+    if (new_len <= _len) {
+      return this->truncate(new_len);
     }
-    new_len < _len ? this->truncate(new_len) : this->extend_with(new_len - _len, value);
+
+    this->extend_with(new_len - _len, value);
   }
 
   void append(Vec& other) {

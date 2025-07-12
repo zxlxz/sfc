@@ -2,18 +2,18 @@
 
 namespace sfc {
 
-using i8 = __INT8_TYPE__;
-using i16 = __INT16_TYPE__;
-using i32 = __INT32_TYPE__;
-using i64 = __INT64_TYPE__;
+using i8  = signed char;
+using i16 = short;
+using i32 = int;
+using i64 = decltype(static_cast<char*>(0) - static_cast<char*>(0));
 
-using u8 = __UINT8_TYPE__;
-using u16 = __UINT16_TYPE__;
-using u32 = __UINT32_TYPE__;
-using u64 = __UINT64_TYPE__;
+using u8  = unsigned char;
+using u16 = unsigned short;
+using u32 = unsigned int;
+using u64 = decltype(sizeof(0));
 
-using isize = __INTPTR_TYPE__;
-using usize = __SIZE_TYPE__;
+using isize = decltype(static_cast<char*>(0) - static_cast<char*>(0));
+using usize = decltype(sizeof(0));
 
 using f32 = float;
 using f64 = double;
@@ -29,7 +29,7 @@ auto declval() -> T&&;
 }  // namespace sfc
 
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_NEW)
-inline auto operator new(__SIZE_TYPE__ size, void* ptr) noexcept -> void* {
+inline auto operator new(sfc::usize size, void* ptr) noexcept -> void* {
   (void)size;
   return ptr;
 }

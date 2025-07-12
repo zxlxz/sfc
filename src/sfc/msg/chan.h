@@ -2,7 +2,7 @@
 
 #include "sfc/collections.h"
 
-namespace sfc::cyber {
+namespace sfc::msg {
 
 template <class T>
 struct Listener {

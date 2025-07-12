@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 #include "unix/thread.inl"
 #endif
 

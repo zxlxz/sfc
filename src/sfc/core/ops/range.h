@@ -19,12 +19,6 @@ struct Range {
   auto len() const -> usize {
     return _start < _end ? _end - _start : 0U;
   }
-
-  auto operator%(usize len) const -> Range {
-    const auto start = _start < len ? _start : len;
-    const auto end   = _end < len ? _end : len;
-    return Range{start, end};
-  }
 };
 
 }  // namespace sfc::ops

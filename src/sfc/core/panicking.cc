@@ -13,7 +13,7 @@ void panic_str(Location loc, Str msg) {
   out.write_str(msg);
   out.write_fmt("\n  > {}:{}\n", loc.file, loc.line);
 
-  frames.iter()->for_each_idx([&](usize i, const auto& frame) {
+  frames.iter().for_each_idx([&](usize i, const auto& frame) {
     out.write_fmt("{:2}: {}\n", i, frame.func());
   });
 

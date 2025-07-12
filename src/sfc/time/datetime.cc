@@ -21,26 +21,6 @@ auto NaiveTime::from_hms_milli(u32 hour, u32 min, u32 sec, u32 millis) -> NaiveT
   return {._secs = total_secs, ._micros = static_cast<u32>(MICROS_PER_MILLI * millis)};
 }
 
-auto NaiveDate::from_ymd(u32 year, u32 mon, u32 day) -> NaiveDate {
-  mon = num::saturating_sub(mon, 1U);
-  day = num::saturating_sub(day, 1U);
-  return NaiveDate{(year << 8U) | (mon << 4U) | day};
-}
-
-auto NaiveDate::year() const -> u32 {
-  return _yof >> 8;
-}
-
-auto NaiveDate::month() const -> u32 {
-  const auto mon = (_yof >> 4) & 0xF;
-  return mon + 1;
-}
-
-auto NaiveDate::day() const -> u32 {
-  const auto day = _yof & 0xF;
-  return day + 1;
-}
-
 auto DateTime::from(const System& sys_time) -> DateTime {
   static auto seconds = sys_time._micros / MICROS_PER_SEC;
 

@@ -5,7 +5,7 @@
 namespace sfc::time {
 
 struct NaiveTime {
-  u32 _secs = 0;
+  u32 _secs   = 0;
   u32 _micros = 0;
 
  public:
@@ -34,7 +34,7 @@ struct NaiveTime {
   }
 
   void fmt(auto& f) const {
-    const auto hour = this->hour();
+    const auto hour   = this->hour();
     const auto minute = this->minute();
     const auto second = this->second();
     const auto millis = this->millis();
@@ -43,21 +43,32 @@ struct NaiveTime {
 };
 
 struct NaiveDate {
-  // YYYY YYYY YYYY FFDD
-  u32 _yof = 0;
+  u16 _year;
+  u8  _month;
+  u8  _day;
 
  public:
-  static auto from_ymd(u32 year, u32 month, u32 date) -> NaiveDate;
+  static auto from_ymd(u32 year, u32 month, u32 date) -> NaiveDate {
+    const auto y = static_cast<u16>(year);
+    const auto m = static_cast<u8>(month);
+    const auto d = static_cast<u8>(date);
+    return {y, m, d};
+  }
 
-  auto year() const -> u32;
-  auto month() const -> u32;
-  auto day() const -> u32;
+  auto year() const -> u32 {
+    return _year;
+  }
+
+  auto month() const -> u32 {
+    return _month;
+  }
+
+  auto day() const -> u32 {
+    return _day;
+  }
 
   void fmt(auto& f) const {
-    const auto year = this->year();
-    const auto month = this->month();
-    const auto day = this->day();
-    f.write_fmt("{04}-{02}-{02}", year, month, day);
+    f.write_fmt("{04}-{02}-{02}", _year, _month, _day);
   }
 };
 

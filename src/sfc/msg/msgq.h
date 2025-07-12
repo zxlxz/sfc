@@ -3,7 +3,7 @@
 #include "sfc/collections.h"
 #include "sfc/sync.h"
 
-namespace sfc::cyber {
+namespace sfc::msg {
 
 template <class T>
 class MsgQueue {

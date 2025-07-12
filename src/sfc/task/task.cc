@@ -1,9 +1,9 @@
 
-#include "sfc/cyber/task.h"
+#include "sfc/task/task.h"
 
 #include "sfc/collections.h"
 
-namespace sfc::cyber {
+namespace sfc::task {
 
 TaskQueue::TaskQueue() {
   static constexpr const auto QUEUE_CAPACITY = 64U;
@@ -105,4 +105,4 @@ auto TaskQueue::pop_imp() -> Option<Task> {
   return {};
 }
 
-}  // namespace sfc::cyber
+}  // namespace sfc::task
