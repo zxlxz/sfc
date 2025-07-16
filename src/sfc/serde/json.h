@@ -16,7 +16,7 @@ class DebugStruct {
   usize _cnt = 0;
 
  public:
-  explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugStruct(W& fmt) : _fmt{fmt} {
     _fmt.write_str("{");
   }
 
@@ -53,6 +53,10 @@ class Fmter : fmt::Fmter<W> {
 
  public:
   using Imp::Imp;
+  using Imp::pad;
+  using Imp::pad_num;
+  using Imp::style;
+  using Imp::write_str;
 
   void write(const auto& val) {
     return this->write_imp(val);
@@ -67,19 +71,19 @@ class Fmter : fmt::Fmter<W> {
   }
 
   auto debug_list() -> DebugList<Fmter> {
-    return {*this};
+    return DebugList{*this};
   }
 
   auto debug_set() -> DebugSet<Fmter> {
-    return {*this};
+    return DebugSet{*this};
   }
 
   auto debug_map() -> DebugMap<Fmter> {
-    return {*this};
+    return DebugMap{*this};
   }
 
   auto debug_struct() -> DebugStruct<Fmter> {
-    return {*this};
+    return DebugStruct{*this};
   }
 
  private:

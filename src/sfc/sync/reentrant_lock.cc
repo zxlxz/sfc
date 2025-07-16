@@ -16,7 +16,7 @@ struct ReentrantLock::Inn {
   ~Inn() = default;
 
   void lock() {
-    const auto thrd = sys_imp::Thread::current().raw();
+    const auto thrd = sys_imp::Thread::get_tid();
 
     if (thrd != _owner) {
       _mutex.lock();
@@ -28,7 +28,7 @@ struct ReentrantLock::Inn {
   }
 
   void unlock() {
-    const auto thrd = sys_imp::Thread::current().raw();
+    const auto thrd = sys_imp::Thread::get_tid();
 
     // not owner
     if (thrd != _owner) {

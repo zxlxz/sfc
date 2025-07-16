@@ -24,7 +24,11 @@ struct Error {
 
  public:
   static auto last() -> Error {
+#ifdef __APPLE__
+    return {*__error()};
+#else
     return {*__errno_location()};
+#endif
   }
 
   auto code() const -> int {
@@ -114,12 +118,12 @@ struct File {
 struct OpenOptions {
   static const auto kFileMode = 0666;
 
-  bool append = false;
-  bool create = false;
+  bool append     = false;
+  bool create     = false;
   bool create_new = false;
-  bool read = false;
-  bool write = false;
-  bool truncate = false;
+  bool read       = false;
+  bool write      = false;
+  bool truncate   = false;
 
  public:
   static auto from(const auto& t) -> OpenOptions {
@@ -161,8 +165,8 @@ struct OpenOptions {
 };
 
 struct FileAttr {
-  __mode_t _attr;
-  __off_t  _size;
+  usize _attr;
+  usize _size;
 
  public:
   operator bool() const {
@@ -198,12 +202,12 @@ static inline auto stderr() -> File& {
 }
 
 static inline auto lstat(const char* path) -> FileAttr {
-  auto       st = stat_t{};
+  auto       st  = stat_t{};
   const auto ret = ::lstat(path, &st);
   if (ret == -1) {
     return FileAttr{0, 0};
   }
-  return FileAttr{st.st_mode, st.st_size};
+  return FileAttr{st.st_mode, static_cast<usize>(st.st_size)};
 };
 
 static inline auto unlink(const char* path) -> bool {

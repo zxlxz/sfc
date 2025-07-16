@@ -13,7 +13,7 @@ SFC_TEST(iter) {
   }
 
   {
-    auto iter = v.iter()->rev();
+    auto iter = v.iter().rev();
     test::assert_eq(iter.next(), Option{3});
     test::assert_eq(iter.next(), Option{2});
   }

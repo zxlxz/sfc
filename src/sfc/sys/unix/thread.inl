@@ -6,6 +6,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifdef __GNU_SOURCE__
+#include <sys/syscall.h>
+#endif
+
 #include "sfc/alloc.h"
 
 namespace sfc::sys::thread {
@@ -22,7 +26,7 @@ struct Thread {
     return Thread{::pthread_self()};
   }
 
-  static auto start(pthread_t stack_size, void* (*func)(void*), void* data) -> Thread {
+  static auto start(usize stack_size, void* (*func)(void*), void* data) -> Thread {
     // attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -38,30 +42,26 @@ struct Thread {
     return Thread{thrd};
   }
 
-  static auto from_raw(pthread_t raw) -> Thread {
-    return Thread{raw};
+  static auto from_raw(uint64_t raw) -> Thread {
+    return Thread{reinterpret_cast<pthread_t>(raw)};
   }
 
-  auto raw() const -> pthread_t {
-    return _raw;
+  auto raw() const -> uint64_t {
+    return reinterpret_cast<uint64_t>(_raw);
   }
 
-  operator bool() const {
+  explicit operator bool() const {
     return _raw != 0;
   }
 
-  auto id() const -> int {
-    return ::gettid();
-  }
-
-  auto join() -> bool {
-    const auto err = ::pthread_join(_raw, nullptr);
-    return err == 0;
-  }
-
-  auto detach() -> bool {
-    const auto err = ::pthread_detach(_raw);
-    return err == 0;
+  static auto get_tid() -> uint64_t {
+#ifdef __unix__
+    auto tid = ::syscall(SYS_gettid);
+#elif defined(__APPLE__)
+    uint64_t tid = 0;
+    return ::pthread_threadid_np(nullptr, &tid);
+#endif
+    return tid;
   }
 
   auto get_name(char* buf, size_t buf_len) const -> size_t {
@@ -74,12 +74,27 @@ struct Thread {
     return len;
   }
 
-  auto set_name(const char* name) -> bool {
+  static auto set_name(const char* name) -> bool {
     if (name == nullptr) {
       return false;
     }
 
-    const auto err = ::pthread_setname_np(_raw, name);
+#ifdef __APPLE__
+    const auto err = ::pthread_setname_np(name);
+#else
+    const auto thr = ::pthread_self();
+    const auto err = ::pthread_setname_np(thr, name);
+#endif
+    return err == 0;
+  }
+
+  auto join() -> bool {
+    const auto err = ::pthread_join(_raw, nullptr);
+    return err == 0;
+  }
+
+  auto detach() -> bool {
+    const auto err = ::pthread_detach(_raw);
     return err == 0;
   }
 };

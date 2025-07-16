@@ -182,7 +182,7 @@ class [[nodiscard]] Vec {
 
   auto clone() const -> Vec {
     auto res = Vec::with_capacity(_len);
-    res.extend(this->as_slice());
+    res.extend(this->as_slice().iter());
     return res;
   }
 
@@ -348,10 +348,7 @@ class [[nodiscard]] Vec {
 
   void extend(auto iter) {
     this->reserve(iter.len());
-
-    for (T val : iter) {
-      this->push(static_cast<T&&>(val));
-    }
+    iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
   }
 
   void extend_with(usize cnt, T value) {

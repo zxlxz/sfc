@@ -109,7 +109,7 @@ class DebugList {
   }
 
   void entries(auto&& iter) {
-    iter->for_each([&](auto&& val) { this->entry(val); });
+    iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
 
@@ -175,7 +175,7 @@ class DebugMap {
   }
 
   void entries(auto iter) {
-    iter->for_each([&](auto&& item) {
+    iter.for_each([&](auto&& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
     });
@@ -350,7 +350,7 @@ class Fmter {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      IFmt<T>{val}.fmt(*this);
+      reinterpret_cast<const IFmt<T>&>(val).fmt(*this);
     }
   }
 
@@ -359,23 +359,23 @@ class Fmter {
   }
 
   auto debug_tuple() -> DebugTuple<Fmter> {
-    return {*this};
+    return DebugTuple{*this};
   }
 
   auto debug_list() -> DebugList<Fmter> {
-    return {*this};
+    return DebugList{*this};
   }
 
   auto debug_set() -> DebugSet<Fmter> {
-    return {*this};
+    return DebugSet{*this};
   }
 
   auto debug_map() -> DebugMap<Fmter> {
-    return {*this};
+    return DebugMap{*this};
   }
 
   auto debug_struct() -> DebugStruct<Fmter> {
-    return {*this};
+    return DebugStruct{*this};
   }
 };
 

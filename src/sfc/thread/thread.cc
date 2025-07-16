@@ -14,8 +14,7 @@ struct ThreadData {
  public:
   void run() {
     if (_name) {
-      auto imp = sys_imp::Thread::current();
-      imp.set_name(_name.c_str());
+      sys_imp::Thread::set_name(_name.c_str());
     }
 
     try {
@@ -36,16 +35,11 @@ auto Thread::current() -> Thread {
   return Thread{imp.raw()};
 }
 
-auto Thread::id() const -> i64 {
-  const auto imp = sys_imp::Thread::from_raw(_raw);
-  return imp.id();
-}
-
 auto Thread::name() const -> String {
   auto res = String{};
   res.reserve(64);
 
-  const auto imp = sys_imp::Thread::from_raw(_raw);
+  const auto imp      = sys_imp::Thread::from_raw(_raw);
   const auto name_len = imp.get_name(res.as_mut_ptr(), res.capacity());
   res.set_len(name_len);
 
@@ -86,7 +80,7 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 
 void JoinHandle::join() {
   auto imp = sys_imp::Thread::from_raw(_thrd._raw);
-  _thrd = Thread{};
+  _thrd    = Thread{};
   imp.join();
 }
 

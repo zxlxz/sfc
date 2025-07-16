@@ -36,6 +36,8 @@ struct IntBuf {
         this->write_bin<16>(uval, style);
         break;
     }
+
+    return *this;
   }
 
   auto write_ptr(auto uval, Style style) -> IntBuf& {

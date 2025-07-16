@@ -16,12 +16,11 @@ struct Map;
 
 template <class I, class T>
 struct Iterator {
-  using Impl = I;
   using Item = T;
 
  public:
   auto nth(usize n) -> Option<Item> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (auto i = 0UL; i < n; ++i) {
       self.next();
@@ -30,7 +29,7 @@ struct Iterator {
   }
 
   void for_each(auto&& f) {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
       f(x.get_unchecked_mut());
@@ -38,7 +37,7 @@ struct Iterator {
   }
 
   void for_each_idx(auto&& f) {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (auto i = 0UL; auto x = self.next(); ++i) {
       f(i, x.get_unchecked_mut());
@@ -47,7 +46,7 @@ struct Iterator {
 
   template <class B>
   auto fold(B init, auto&& f) -> B {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     if constexpr (!__is_same(B, B&)) {
       auto accum = static_cast<B&&>(init);
@@ -65,7 +64,7 @@ struct Iterator {
   }
 
   auto reduce(auto&& f) -> Option<Item> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     auto first = self.next();
     if (!first) {
@@ -76,7 +75,7 @@ struct Iterator {
   }
 
   auto find(auto&& pred) -> Option<Item> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
       if (pred(x.get_unchecked_mut())) {
@@ -87,7 +86,7 @@ struct Iterator {
   }
 
   auto rfind(auto&& pred) -> Option<Item> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next_back();) {
       if (pred(x.get_unchecked_mut())) {
@@ -98,7 +97,7 @@ struct Iterator {
   }
 
   auto position(auto&& pred) -> Option<usize> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (usize idx = 0UL; auto x = self.next(); ++idx) {
       if (pred(x.get_unchecked_mut())) {
@@ -110,7 +109,7 @@ struct Iterator {
   }
 
   auto rposition(auto&& pred) -> Option<usize> {
-    auto& self = static_cast<Impl&>(*this);
+    auto& self = static_cast<I&>(*this);
 
     for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
       if (pred(x.get_unchecked_mut())) {
@@ -165,17 +164,17 @@ struct Iterator {
   }
 
   template <class B>
-  auto collect() -> B {
-    return B::from_iter(*this);
+  auto collect() && -> B {
+    return B::from_iter(static_cast<I&&>(*this));
   }
 
-  auto rev() && -> Rev<Impl> {
-    return {static_cast<Impl&&>(*this)};
+  auto rev() && -> Rev<I> {
+    return Rev{{}, static_cast<I&&>(*this)};
   }
 
   template <class F>
-  auto map(F f) && -> Map<Impl, F> {
-    return {{}, static_cast<Impl&&>(*this), static_cast<F&&>(f)};
+  auto map(F f) && -> Map<I, F> {
+    return Map{{}, static_cast<I&&>(*this), static_cast<F&&>(f)};
   }
 
   template <class P>

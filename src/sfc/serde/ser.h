@@ -140,7 +140,7 @@ class FmtAdapter {
     }
 
     void entries(auto iter) {
-      iter->for_each([&](auto item) {
+      iter.for_each([&](auto item) {
         const auto& [k, v] = item;
         this->entry(k, v);
       });

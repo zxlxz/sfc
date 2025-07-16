@@ -42,11 +42,8 @@ struct Thread {
     return _handle != nullptr;
   }
 
-  auto id() const -> DWORD {
-    if (_handle == nullptr) {
-      return 0;
-    }
-    return ::GetThreadId(_handle);
+  static auto get_tid() const -> DWORD {
+    return ::GetCurrentThreadId();
   }
 
   auto join() -> bool {
@@ -97,12 +94,8 @@ struct Thread {
     return nbytes;
   }
 
-  auto set_name(const char* name) -> bool {
+  static auto set_name(const char* name) -> bool {
     static constexpr auto kMaxNameLen = 256U;
-
-    if (_handle == nullptr) {
-      return false;
-    }
 
     wchar_t    wbuff[kMaxNameLen];
     const auto cnt = u8_to_wchar(name, wbuff, kMaxNameLen);
@@ -110,7 +103,8 @@ struct Thread {
       return false;
     }
 
-    const auto hres = ::SetThreadDescription(_handle, wbuff);
+    const auto thrd = ::GetCurrentThread();
+    const auto hres = ::SetThreadDescription(thrd, wbuff);
     return SUCCEEDED(hres);
   }
 };
