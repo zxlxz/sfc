@@ -12,8 +12,8 @@ InsertBraces: true
 
 # Alignment (these differ from Google style)
 AlignConsecutiveDeclarations: true
-AlignConsecutiveAssignments: true
-AlignConsecutiveMacros: true  
+AlignConsecutiveAssignments: false
+AlignConsecutiveMacros: true
 AlignConsecutiveShortCaseStatements:
   Enabled: true
 PointerAlignment: Left  # Rust-style references
@@ -23,6 +23,7 @@ AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 BinPackArguments: false

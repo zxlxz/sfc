@@ -42,7 +42,7 @@ struct Thread {
     return _handle != nullptr;
   }
 
-  static auto get_tid() const -> DWORD {
+  static auto get_tid() -> DWORD {
     return ::GetCurrentThreadId();
   }
 

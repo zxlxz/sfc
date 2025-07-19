@@ -8,7 +8,7 @@ namespace sfc::reflect {
 template <class T>
 struct Enum {
   str::Str name;
-  T value;
+  T        value;
 };
 
 template <class T, usize N>

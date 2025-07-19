@@ -62,8 +62,7 @@ struct Global {
 
   template <class T>
   auto realloc_array(T* old_ptr, usize old_len, usize new_len) -> T* {
-    const auto max_len = this->usable_size(old_ptr) / sizeof(T);
-    if (new_len <= max_len || __is_trivially_copyable(T)) {
+    if constexpr (__is_trivially_copyable(T)) {
       const auto layout = Layout::array<T>(old_len);
       const auto new_ptr = this->realloc_imp(old_ptr, layout, new_len * sizeof(T));
       return static_cast<T*>(new_ptr);

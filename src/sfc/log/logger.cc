@@ -6,33 +6,41 @@
 
 namespace sfc::log {
 
-static void fast_format_time(char (&buf)[sizeof("0000-00-00 00:00:00.000000")]) {
-  static thread_local auto cached_time = time::System{};
+static auto make_time_str() -> str::Str {
+  static thread_local char tls_buf[] = "0000-00-00 00:00:00.000";
+  static thread_local auto tls_time  = time::System{};
+
+  auto fmt_uint = [](auto t, char* p, usize n) {
+    for (; n != 0; n -= 1, t /= 10) {
+      p[n - 1] = static_cast<char>('0' + t % 10);
+    }
+  };
+
+  const auto p = tls_buf;
+  auto&      t = tls_time;
 
   const auto current_time = time::System::now();
-
-  if (current_time._micros != cached_time._micros) {
+  if (current_time._micros != tls_time._micros) {
     const auto sub_micros = static_cast<u32>(current_time._micros % time::MICROS_PER_SEC);
-    __builtin_snprintf(buf + sizeof("0000-00-00 00:00:00"), 7, "%06u", sub_micros);
+    fmt_uint(sub_micros, p + sizeof("0000-00-00 00:00:00"), 3);
   }
 
-  if (current_time.secs() != cached_time.secs()) {
-    const auto dt = time::DateTime::from(current_time);
+  if (current_time.secs() != t.secs()) {
+    const auto dt   = time::DateTime::from(current_time);
     const auto date = dt.date();
     const auto time = dt.time();
-    __builtin_snprintf(buf,
-                       sizeof(buf),
-                       "%04u-%02u-%02u %02u:%02u:%02u.%06u",
-                       date.year(),
-                       date.month(),
-                       date.day(),
-                       time.hour(),
-                       time.minute(),
-                       time.second(),
-                       time.micros());
+
+    fmt_uint(date.year(), p, 4);
+    fmt_uint(date.month(), p + sizeof("0000"), 2);
+    fmt_uint(date.day(), p + sizeof("0000-00"), 2);
+
+    fmt_uint(time.hour(), p + sizeof("0000-00-00"), 2);
+    fmt_uint(time.minute(), p + sizeof("0000-00-00 00"), 2);
+    fmt_uint(time.second(), p + sizeof("0000-00-00 00:00"), 2);
   }
 
-  cached_time = current_time;
+  tls_time = current_time;
+  return str::Str{tls_buf};
 }
 
 Logger::Logger() = default;
@@ -62,13 +70,12 @@ void Logger::write_msg(Level level, Str msg) {
     return;
   }
 
-  static thread_local char time_buf[] = "0000-00-00 00:00:00.000000";
-  fast_format_time(time_buf);
+  const auto time_str = make_time_str();
 
   const auto entry = Entry{
       .level = level,
-      .time = time_buf,
-      .msg = msg,
+      .time  = time_str,
+      .msg   = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {

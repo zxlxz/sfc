@@ -11,8 +11,7 @@ auto Global::alloc_imp(Layout layout) -> void* {
     return nullptr;
   }
 
-  const auto ptr = sys_imp::malloc(layout.size);
-  return ptr;
+  return sys_imp::malloc(layout.size);
 }
 
 void Global::dealloc_imp(void* ptr, Layout layout) {
@@ -25,16 +24,23 @@ void Global::dealloc_imp(void* ptr, Layout layout) {
 }
 
 auto Global::realloc_imp(void* old_ptr, Layout layout, usize new_size) -> void* {
-  (void)layout;
+  if (old_ptr == nullptr) {
+    return sys_imp::malloc(new_size);
+  }
+
+  if (layout.size == new_size) {
+    return old_ptr;
+  }
+
   return sys_imp::realloc(old_ptr, new_size);
 }
 
-auto Global::usable_size(void* p) -> usize {
-  if (p == nullptr) {
+auto Global::usable_size(void* ptr) -> usize {
+  if (ptr == nullptr) {
     return 0;
   }
-  const auto size = sys_imp::msize(p);
-  return size;
+
+  return sys_imp::msize(ptr);
 }
 
 }  // namespace sfc::alloc

@@ -19,19 +19,12 @@ struct Style {
   // [[fill]align][sign]['#'][0][width][.][precision][type]
   static auto from_str(str::Str s) -> Option<Style>;
 
-  auto fill() const -> char {
-    return _fill ? _fill : ' ';
+  auto fill(char default_val = ' ') const -> char {
+    return _fill ? _fill : default_val;
   }
 
   auto align() const -> char {
     return _align;
-  }
-
-  auto sign(bool is_neg) const -> str::Str {
-    if (is_neg) {
-      return "-";
-    }
-    return _sign == '+' ? str::Str{"+"} : _sign == ' ' ? str::Str{" "} : str::Str{};
   }
 
   auto type() const -> char {
@@ -42,13 +35,39 @@ struct Style {
     return _width;
   }
 
+  auto radix() const -> u32 {
+    const auto t = _type | 32;
+    return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
+  }
+
+  auto sign(bool is_neg) const -> str::Str {
+    if (is_neg) {
+      return "-";
+    }
+    switch (_sign) {
+      case '+': return "+";
+      case ' ': return " ";
+      default:  return "";
+    }
+  }
+
   auto precision(u32 default_val) const -> u32 {
     return _point ? _precision : default_val;
   }
 
-  auto radix() const -> u32 {
-    const auto t = _type | 32;
-    return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
+  auto prefix() const -> str::Str {
+    if (_prefix != '#') {
+      return "";
+    }
+    switch (_type) {
+      case 'X': return "0X";
+      case 'x': return "0x";
+      case 'O': return "0";
+      case 'o': return "0";
+      case 'B': return "0B";
+      case 'b': return "0b";
+      default:  return "";
+    }
   }
 };
 
@@ -198,7 +217,7 @@ class DebugStruct {
 
   DebugStruct(DebugStruct&&) noexcept = delete;
 
-  void field(str::Str name, const auto& value) {
+  auto field(str::Str name, const auto& value) -> DebugStruct& {
     if (_cnt != 0) {
       _fmt.write_str(", ");
     }
@@ -208,9 +227,11 @@ class DebugStruct {
     _fmt.write(value);
 
     _cnt += 1;
+
+    return *this;
   }
 
-  void fields(auto iter) {
+  void fields(auto&& iter) {
     iter.for_each([&](auto&& item) {
       const auto& [k, v] = item;
       this->field(k, v);
@@ -307,7 +328,12 @@ class Fmter {
   }
 
   void pad_num(bool is_neg, str::Str body) {
-    const auto fill = _style.fill();
+    const auto width  = _style.width();
+    const auto sign   = _style.sign(is_neg);
+    const auto prefix = _style.prefix();
+    const auto fill   = _style.fill(_style._prefix ? '0' : ' ');
+    const auto align  = fill == '0' ? '=' : _style.align();
+    const auto npad   = num::saturating_sub<usize>(width, sign.len() + body.len());
 
     auto pad_fill = [&](usize n) {
       for (auto i = 0U; i < n; ++i) {
@@ -315,21 +341,18 @@ class Fmter {
       }
     };
 
-    const auto width = _style.width();
-    const auto sign  = _style.sign(is_neg);
-    const auto align = fill == '0' ? '=' : _style.align();
-    const auto npad  = num::saturating_sub<usize>(width, sign.len() + body.len());
-
     switch (align) {
       default:
       case '<':
         this->write_str(sign);
+        this->write_str(prefix);
         this->write_str(body);
         pad_fill(npad);
         break;
       case '>':
         pad_fill(npad);
         this->write_str(sign);
+        this->write_str(prefix);
         this->write_str(body);
         break;
       case '=':
@@ -350,7 +373,7 @@ class Fmter {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      reinterpret_cast<const IFmt<T>&>(val).fmt(*this);
+      IFmt<T>{val}.fmt(*this);
     }
   }
 

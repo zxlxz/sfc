@@ -7,17 +7,10 @@ namespace sfc::fmt {
 struct Style;
 
 template <class T>
-struct IFmt {
-  T _val;
+struct IFmt;
 
- public:
-  void fmt(auto& f) const {
-    const auto info = reflect_struct(_val);
-
-    auto imp = f.debug_struct();
-    info.fields().map([&](const auto& item) { imp.field(item.name, item.value); });
-  }
-};
+template <class T>
+IFmt(const T&) -> IFmt<T>;
 
 template <>
 struct IFmt<bool> {
@@ -44,13 +37,14 @@ struct IFmt<signed char> {
   signed char _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -59,13 +53,14 @@ struct IFmt<short> {
   short _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -74,13 +69,14 @@ struct IFmt<int> {
   int _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -89,13 +85,14 @@ struct IFmt<long> {
   long _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -104,13 +101,14 @@ struct IFmt<long long> {
   long long _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -119,13 +117,14 @@ struct IFmt<unsigned char> {
   unsigned char _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(false, digits);
   }
 };
 
@@ -134,13 +133,14 @@ struct IFmt<unsigned short> {
   unsigned short _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(false, digits);
   }
 };
 
@@ -149,13 +149,14 @@ struct IFmt<unsigned int> {
   unsigned int _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(false, digits);
   }
 };
 
@@ -164,13 +165,14 @@ struct IFmt<unsigned long> {
   unsigned long _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(false, digits);
   }
 };
 
@@ -179,13 +181,14 @@ struct IFmt<unsigned long long> {
   unsigned long long _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(unsigned long long) + 8];
+    char buf[8 * sizeof(_val)];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
+    const auto& style  = f.style();
+    const auto  digits = this->to_str(buf, style._type);
+    f.pad_num(false, digits);
   }
 };
 
@@ -194,13 +197,15 @@ struct IFmt<float> {
   float _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, u32 precision = 4, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[64];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style     = f.style();
+    const auto  precision = style._precision ? style._precision : 4;
+    const auto  digits    = this->to_str(buf, precision, style._type);
+    f.pad_num(_val < 0, digits);
   }
 };
 
@@ -209,44 +214,21 @@ struct IFmt<double> {
   double _val;
 
  public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
+  auto to_str(slice::Slice<char> buf, u32 precision = 6, char type = 0) const -> str::Str;
 
   void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
+    char buf[64];
 
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(_val < 0, s);
+    const auto& style     = f.style();
+    const auto  precision = style._precision ? style._precision : 4;
+    const auto  digits    = this->to_str(buf, precision, style._type);
+    f.pad_num(_val < 0, digits);
   }
-};
-
-template <>
-struct IFmt<const void*> {
-  const void* _val;
-
- public:
-  auto to_str(const Style& style, slice::Slice<char> buf) const -> str::Str;
-
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(_val) + 8];
-
-    const auto s = this->to_str(f.style(), buf);
-    f.pad_num(false, s);
-  }
-};
-
-template <class T>
-struct IFmt<T*> : IFmt<const void*> {
-  using IFmt<const void*>::IFmt;
-};
-
-template <class T>
-struct IFmt<const T*> : IFmt<T*> {
-  using IFmt<T*>::IFmt;
 };
 
 template <class T, usize N>
 struct IFmt<T[N]> {
-  T _val[N];
+  const T (&_val)[N];
 
  public:
   void fmt(auto& f) const {
@@ -257,7 +239,7 @@ struct IFmt<T[N]> {
 
 template <usize N>
 struct IFmt<char[N]> {
-  char _val[N];
+  const char (&_val)[N];
 
  public:
   void fmt(auto& f) const {
@@ -282,25 +264,6 @@ struct IFmt<char*> {
  public:
   void fmt(auto& f) const {
     f.pad(str::Str::from_cstr(_val));
-  }
-};
-
-template <class T>
-  requires(__is_enum(T))
-struct IFmt<T> {
-  T _val;
-
- public:
-  void fmt(auto& f) const {
-    using U = __underlying_type(T);
-
-    const auto name = reflect::enum_name(_val);
-    if (!name) {
-      IFmt<U>{static_cast<U>(_val)}.fmt(f);
-      return;
-    }
-
-    f.pad(name);
   }
 };
 
