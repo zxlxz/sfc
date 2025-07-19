@@ -13,7 +13,15 @@ struct System {
   auto elapsed() const -> Duration;
 
   inline auto secs() const -> u64 {
-    return _micros % MICROS_PER_SEC;
+    return _micros / MICROS_PER_SEC;
+  }
+
+  inline auto sub_micros() const -> u32 {
+    return static_cast<u32>(_micros % MICROS_PER_SEC);
+  }
+
+  inline auto sub_millis() const -> u32 {
+    return static_cast<u32>(_micros % MICROS_PER_SEC / MICROS_PER_MILLI);
   }
 
   inline auto duration_since(const System& earlier) const -> Duration {

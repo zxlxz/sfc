@@ -5,7 +5,7 @@
 namespace sfc::time {
 
 struct NaiveTime {
-  u32 _secs   = 0;
+  u32 _secs = 0;
   u32 _micros = 0;
 
  public:
@@ -34,7 +34,7 @@ struct NaiveTime {
   }
 
   void fmt(auto& f) const {
-    const auto hour   = this->hour();
+    const auto hour = this->hour();
     const auto minute = this->minute();
     const auto second = this->second();
     const auto millis = this->millis();
@@ -91,6 +91,30 @@ struct DateTime {
 
   auto time() const -> NaiveTime {
     return _time;
+  }
+
+  auto year() const -> u32 {
+    return _date._year;
+  }
+
+  auto month() const -> u32 {
+    return _date._month;
+  }
+
+  auto day() const -> u32 {
+    return _date._day;
+  }
+
+  auto hour() const -> u32 {
+    return _time.hour();
+  }
+
+  auto minute() const -> u32 {
+    return _time.minute();
+  }
+
+  auto second() const -> u32 {
+    return _time.second();
   }
 
   void fmt(auto& f) const {

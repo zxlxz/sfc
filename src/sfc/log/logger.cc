@@ -8,7 +8,9 @@ namespace sfc::log {
 
 static auto make_time_str() -> str::Str {
   static thread_local char tls_buf[] = "0000-00-00 00:00:00.000";
-  static thread_local auto tls_time  = time::System{};
+  static thread_local auto tls_time = time::System{};
+
+  auto& buf = tls_buf;
 
   auto fmt_uint = [](auto t, char* p, usize n) {
     for (; n != 0; n -= 1, t /= 10) {
@@ -16,30 +18,26 @@ static auto make_time_str() -> str::Str {
     }
   };
 
-  const auto p = tls_buf;
-  auto&      t = tls_time;
-
-  const auto current_time = time::System::now();
-  if (current_time._micros != tls_time._micros) {
-    const auto sub_micros = static_cast<u32>(current_time._micros % time::MICROS_PER_SEC);
-    fmt_uint(sub_micros, p + sizeof("0000-00-00 00:00:00"), 3);
+  const auto now_time = time::System::now();
+  if (now_time._micros != tls_time._micros) {
+    fmt_uint(now_time.sub_millis(), buf + sizeof("0000-00-00 00:00:00"), 3);
   }
 
-  if (current_time.secs() != t.secs()) {
-    const auto dt   = time::DateTime::from(current_time);
-    const auto date = dt.date();
-    const auto time = dt.time();
-
-    fmt_uint(date.year(), p, 4);
-    fmt_uint(date.month(), p + sizeof("0000"), 2);
-    fmt_uint(date.day(), p + sizeof("0000-00"), 2);
-
-    fmt_uint(time.hour(), p + sizeof("0000-00-00"), 2);
-    fmt_uint(time.minute(), p + sizeof("0000-00-00 00"), 2);
-    fmt_uint(time.second(), p + sizeof("0000-00-00 00:00"), 2);
+  const auto now_secs = now_time.secs();
+  const auto tls_secs = tls_time.secs();
+  if (now_secs / 60 != tls_secs / 60) {
+    const auto date_time = time::DateTime::from(now_time);
+    fmt_uint(date_time.year(), buf, 4);
+    fmt_uint(date_time.month(), buf + sizeof("0000"), 2);
+    fmt_uint(date_time.day(), buf + sizeof("0000-00"), 2);
+    fmt_uint(date_time.hour(), buf + sizeof("0000-00-00"), 2);
+    fmt_uint(date_time.minute(), buf + sizeof("0000-00-00 00"), 2);
+  }
+  if (now_secs != tls_secs) {
+    fmt_uint(now_secs % 60, buf + sizeof("0000-00-00 00:00"), 2);
   }
 
-  tls_time = current_time;
+  tls_time = now_time;
   return str::Str{tls_buf};
 }
 
@@ -74,8 +72,8 @@ void Logger::write_msg(Level level, Str msg) {
 
   const auto entry = Entry{
       .level = level,
-      .time  = time_str,
-      .msg   = msg,
+      .time = time_str,
+      .msg = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {
