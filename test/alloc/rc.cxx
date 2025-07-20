@@ -24,22 +24,22 @@ struct T {
 }  // namespace
 
 SFC_TEST(rc) {
-  test::assert_eq(T::obj_cnt(), 0);
+  panicking::assert_eq(T::obj_cnt(), 0);
   {
     auto a = Rc<T>::xnew(1);
-    test::assert_eq(a->_val, 1);
-    test::assert_eq(T::obj_cnt(), 1);
+    panicking::assert_eq(a->_val, 1);
+    panicking::assert_eq(T::obj_cnt(), 1);
 
     {
       auto b = a.clone();
-      test::assert_eq(b->_val, 1);
-      test::assert_eq(T::obj_cnt(), 1);
+      panicking::assert_eq(b->_val, 1);
+      panicking::assert_eq(T::obj_cnt(), 1);
     }
 
-    test::assert_eq(T::obj_cnt(), 1);
+    panicking::assert_eq(T::obj_cnt(), 1);
   }
 
-  test::assert_eq(T::obj_cnt(), 0);
+  panicking::assert_eq(T::obj_cnt(), 0);
 }
 
 }  // namespace sfc::rc

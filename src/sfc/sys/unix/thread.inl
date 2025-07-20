@@ -14,12 +14,13 @@
 
 namespace sfc::sys::thread {
 
-using timespec_t   = struct ::timespec;
-using timeval_t    = struct ::timeval;
+using thread_t = pthread_t;
+using timespec_t = struct ::timespec;
+using timeval_t = struct ::timeval;
 using thread_ret_t = void*;
 
 struct Thread {
-  pthread_t _raw{0};
+  pthread_t _raw{};
 
  public:
   static auto current() -> Thread {
@@ -42,16 +43,8 @@ struct Thread {
     return Thread{thrd};
   }
 
-  static auto from_raw(uint64_t raw) -> Thread {
-    return Thread{reinterpret_cast<pthread_t>(raw)};
-  }
-
-  auto raw() const -> uint64_t {
-    return reinterpret_cast<uint64_t>(_raw);
-  }
-
   explicit operator bool() const {
-    return _raw != 0;
+    return _raw;
   }
 
   static auto get_tid() -> uint64_t {
@@ -64,14 +57,13 @@ struct Thread {
     return tid;
   }
 
-  auto get_name(char* buf, size_t buf_len) const -> size_t {
+  template <size_t N>
+  auto get_name(char (&buf)[N]) const -> const char* {
     const auto err = ::pthread_getname_np(_raw, buf, sizeof(buf));
     if (err != 0) {
-      return 0;
+      return "";
     }
-
-    const auto len = ::strnlen(buf, buf_len);
-    return len;
+    return buf;
   }
 
   static auto set_name(const char* name) -> bool {
@@ -131,8 +123,8 @@ struct Condvar {
     auto time_now = timeval_t{};
     ::gettimeofday(&time_now, nullptr);
 
-    auto time_out    = timespec_t{};
-    time_out.tv_sec  = time_now.tv_sec + millis / 1000;
+    auto time_out = timespec_t{};
+    time_out.tv_sec = time_now.tv_sec + millis / 1000;
     time_out.tv_nsec = time_now.tv_usec * 1000 + (millis % 1000) * 1000;
 
     if (time_out.tv_nsec >= 1000000000) {
@@ -147,7 +139,7 @@ struct Condvar {
 
 static inline auto sleep_ms(unsigned millis) -> bool {
   const auto req = timespec_t{
-      .tv_sec  = millis / 1000,
+      .tv_sec = millis / 1000,
       .tv_nsec = millis % 1000 * 1000000,
   };
 

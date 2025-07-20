@@ -12,7 +12,7 @@ SFC_TEST(builder) {
   
   builder.spawn(Box<void()>::xnew([]() {
     const auto thr = Thread::current();
-    test::assert_eq(thr.name(), "thread_builder");
+    panicking::assert_eq(thr.name(), "thread_builder");
   }));
 }
 
@@ -25,8 +25,8 @@ SFC_TEST(spawn) {
     auto t2 = thread::spawn([&]() { n2 += 1; });
   }
 
-  test::assert_eq(n1, 1);
-  test::assert_eq(n2, 1);
+  panicking::assert_eq(n1, 1);
+  panicking::assert_eq(n2, 1);
 }
 
 }  // namespace sfc::thread

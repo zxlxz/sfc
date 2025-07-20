@@ -47,8 +47,8 @@ void String::set_len(usize new_len) {
   _vec.set_len(new_len);
 }
 
-void String::drain(Range range) {
-  _vec.drain(range);
+void String::drain(Range ids) {
+  _vec.drain(ids);
 }
 
 void String::insert(usize idx, char ch) {

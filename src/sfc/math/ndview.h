@@ -172,7 +172,7 @@ struct NdView {
   }
 
   void copy_from(NdView src) {
-    assert_fmt(_size == src._size, "NdView::copy_from: self.shape(={}) != src.shape(={})", _size,
+    assert(_size == src._size, "NdView::copy_from: self.shape(={}) != src.shape(={})", _size,
                src._size);
 
     const auto n = _size[N - 1];
@@ -252,7 +252,7 @@ struct NdView<T, 1> {
   }
 
   void copy_from(const NdView& src) {
-    panicking::assert_fmt(_size == src._size, "math::NdView::copy_from: .shape(={}) != src.shape(={})", _size,
+    panicking::assert(_size == src._size, "math::NdView::copy_from: .shape(={}) != src.shape(={})", _size,
                src._size);
 
     const auto pe = _data + _size[0] * _step[0];

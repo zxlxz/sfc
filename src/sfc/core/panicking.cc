@@ -5,19 +5,20 @@
 
 namespace sfc::panicking {
 
-void panic_str(Location loc, Str msg) {
+void panic_str(Str msg) {
   const auto frames = backtrace::capture();
 
-  auto out = io::Stdout::lock();
-
+  auto buf = string::String{};
+  auto out = fmt::Fmter{buf};
   out.write_str(msg);
-  out.write_fmt("\n  > {}:{}\n", loc.file, loc.line);
-
   frames.iter().for_each_idx([&](usize i, const auto& frame) {
-    out.write_fmt("{:2}: {}\n", i, frame.func());
+    out.write_fmt("\n{2}: {}", i, frame.func());
   });
+  out.write_str("\n");
+  
+  io::Stdout{}.write_str(buf.as_str());
 
-  __builtin_trap();
+  throw PanicErr{};
 }
 
 }  // namespace sfc::panicking

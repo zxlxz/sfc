@@ -51,13 +51,13 @@ class [[nodiscard]] VecSet {
 
   auto operator[](const auto& key) const -> const T& {
     auto opt = this->get(key);
-    panicking::assert_fmt(opt, "VecSet::[]: key(=`{}`) not exists", key);
+    panicking::assert(opt, "VecSet::[]: key(=`{}`) not exists", key);
     return *opt;
   }
 
   auto operator[](const auto& key) -> T& {
     auto opt = this->get_mut(key);
-    panicking::assert_fmt(opt, "VecSet::[]: key(=`{}`) not exists", key);
+    panicking::assert(opt, "VecSet::[]: key(=`{}`) not exists", key);
     return *opt;
   }
 

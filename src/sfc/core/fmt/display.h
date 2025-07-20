@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/num.h"
 #include "sfc/core/reflect.h"
 
 namespace sfc::fmt {
@@ -37,13 +38,10 @@ struct IFmt<signed char> {
   signed char _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
 };
@@ -53,13 +51,10 @@ struct IFmt<short> {
   short _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
 };
@@ -69,13 +64,10 @@ struct IFmt<int> {
   int _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
 };
@@ -85,13 +77,10 @@ struct IFmt<long> {
   long _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
 };
@@ -101,13 +90,10 @@ struct IFmt<long long> {
   long long _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
 };
@@ -117,13 +103,10 @@ struct IFmt<unsigned char> {
   unsigned char _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, digits);
   }
 };
@@ -133,13 +116,10 @@ struct IFmt<unsigned short> {
   unsigned short _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
+    const auto digits = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, digits);
   }
 };
@@ -149,14 +129,11 @@ struct IFmt<unsigned int> {
   unsigned int _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
-    f.pad_num(false, digits);
+    const auto s = num::int2str(buf, _val, f.style()._type);
+    f.pad_num(false, s);
   }
 };
 
@@ -165,14 +142,11 @@ struct IFmt<unsigned long> {
   unsigned long _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
-    f.pad_num(false, digits);
+    const auto s = num::int2str(buf, _val, f.style()._type);
+    f.pad_num(false, s);
   }
 };
 
@@ -181,14 +155,11 @@ struct IFmt<unsigned long long> {
   unsigned long long _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
 
-    const auto& style  = f.style();
-    const auto  digits = this->to_str(buf, style._type);
-    f.pad_num(false, digits);
+    const auto s = num::int2str(buf, _val, f.style()._type);
+    f.pad_num(false, s);
   }
 };
 
@@ -197,15 +168,11 @@ struct IFmt<float> {
   float _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, u32 precision = 4, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[64];
 
-    const auto& style     = f.style();
-    const auto  precision = style._precision ? style._precision : 4;
-    const auto  digits    = this->to_str(buf, precision, style._type);
-    f.pad_num(_val < 0, digits);
+    const auto s = num::flt2str(buf, num::fabs(_val), f.style().precision(4), f.style()._type);
+    f.pad_num(_val < 0, s);
   }
 };
 
@@ -214,15 +181,11 @@ struct IFmt<double> {
   double _val;
 
  public:
-  auto to_str(slice::Slice<char> buf, u32 precision = 6, char type = 0) const -> str::Str;
-
   void fmt(auto& f) const {
     char buf[64];
 
-    const auto& style     = f.style();
-    const auto  precision = style._precision ? style._precision : 4;
-    const auto  digits    = this->to_str(buf, precision, style._type);
-    f.pad_num(_val < 0, digits);
+    const auto s = num::flt2str(buf, num::fabs(_val), f.style().precision(6), f.style()._type);
+    f.pad_num(_val < 0, s);
   }
 };
 

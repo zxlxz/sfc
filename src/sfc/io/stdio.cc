@@ -5,70 +5,92 @@
 
 namespace sfc::io {
 
-namespace sys_imp = sys::io;
-
 class Stdout::Inn {
-  friend struct Stdout;
+  friend class Stdout;
+  friend class Stdout::Lock;
+  static constexpr auto BUF_CAP = 4096U;
 
-  sys_imp::File&      _imp = sys_imp::stdout();
   sync::ReentrantLock _mtx{};
-  String              _buf{};
+  sys::io::File _imp{sys::io::stdout()};
+  String _buf{String::with_capacity(BUF_CAP * 2)};
 
+ public:
   static inline auto instance() -> Inn& {
     static auto res = Inn{};
     return res;
   }
 
-  auto lock() -> sync::ReentrantLockGuard {
-    return _mtx.lock();
-  }
-
-  auto is_tty() const -> bool {
-    return _imp.is_tty();
-  }
-
   void flush() {
+    if (_buf.is_empty()) {
+      return;
+    }
+
     _imp.write(_buf.as_ptr(), _buf.len());
     _buf.clear();
-    _imp.flush();
   }
 
   void write_str(Str s) {
-    _buf.write_str(s);
+    this->write_buf(s);
 
-    if (auto pos = _buf.rfind('\n')) {
-      const auto n = pos.unwrap();
-      const auto s = _buf[{0, n}];
+    const auto pos = _buf.rfind('\n');
+    if (!pos) {
+      return;
+    }
+
+    const auto n = pos.unwrap();
+    _imp.write(_buf.as_ptr(), n + 1);
+    _buf.drain({0, n + 1});
+  }
+
+ private:
+  void write_buf(Str s) {
+    if (s.len() > BUF_CAP) {
+      this->flush();
       _imp.write(s.as_ptr(), s.len());
-      _buf.drain({0, n});
+      return;
+    }
+
+    _buf.write_str(s);
+    if (_buf.len() > BUF_CAP) {
+      this->flush();
     }
   }
 };
 
-auto Stdout::lock() -> StdoutLock {
-  static auto  out = Stdout{};
-  static auto& inn = Inn::instance();
+Stdout::Stdout() : _inn{Inn::instance()} {}
 
-  return StdoutLock{._impl{out}, ._lock{inn.lock()}};
+Stdout::~Stdout() {}
+
+auto Stdout::lock() -> Lock {
+  return Lock{_inn};
 }
 
 auto Stdout::is_tty() -> bool {
-  static auto& inn = Inn::instance();
-  return inn.is_tty();
+  return _inn._imp.is_tty();
 }
 
 void Stdout::flush() {
-  static auto& inn = Inn::instance();
-
-  auto lock = inn.lock();
-  return inn.flush();
+  auto lock = _inn._mtx.lock();
+  return _inn.flush();
 }
 
 void Stdout::write_str(Str s) {
-  static auto& inn = Inn::instance();
+  auto lock = _inn._mtx.lock();
+  _inn.write_str(s);
+}
 
-  auto lock = inn.lock();
-  inn.write_str(s);
+Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
+
+Stdout::Lock::~Lock() {
+  _inn.flush();
+}
+
+void Stdout::Lock::flush() {
+  return _inn.flush();
+}
+
+void Stdout::Lock::write_str(Str s) {
+  return _inn.write_str(s);
 }
 
 }  // namespace sfc::io

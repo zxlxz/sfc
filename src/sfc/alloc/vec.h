@@ -11,9 +11,9 @@ template <class T, class A = alloc::Global>
 class [[nodiscard]] Buf {
   friend class Vec<T>;
 
-  T*    _ptr = nullptr;
+  T* _ptr = nullptr;
   usize _cap = 0;
-  A     _a{};
+  A _a{};
 
  public:
   Buf() noexcept = default;
@@ -27,14 +27,14 @@ class [[nodiscard]] Buf {
     _ptr = nullptr;
   }
 
-  Buf(Buf&& other) noexcept : _ptr{other._ptr}, _cap{other._cap} {
-    other._ptr = nullptr;
-    other._cap = 0;
-  }
+  Buf(Buf&& other) noexcept
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
   auto operator=(Buf&& other) noexcept -> Buf& {
-    auto tmp = static_cast<Buf&&>(other);
-    this->swap(tmp);
+    auto tmp = static_cast<Buf&&>(*this);
+    _ptr = mem::take(other._ptr);
+    _cap = mem::take(other._cap);
+    _a = mem::move(other._a);
     return *this;
   }
 
@@ -43,11 +43,6 @@ class [[nodiscard]] Buf {
     res._ptr = res._a.template alloc_array<T>(capacity);
     res._cap = capacity;
     return res;
-  }
-
-  void swap(Buf& dst) noexcept {
-    mem::swap(_ptr, dst._ptr);
-    mem::swap(_cap, dst._cap);
   }
 
   auto ptr() const -> T* {
@@ -98,7 +93,7 @@ class [[nodiscard]] Buf {
 template <class T>
 class [[nodiscard]] Vec {
   Buf<T> _buf = {};
-  usize  _len = 0;
+  usize _len = 0;
 
  public:
   Vec() noexcept = default;
@@ -110,14 +105,10 @@ class [[nodiscard]] Vec {
   Vec(Vec&& other) noexcept : _buf{mem::move(other._buf)}, _len{mem::take(other._len)} {}
 
   Vec& operator=(Vec&& other) noexcept {
-    auto tmp = mem::move(other);
-    this->swap(tmp);
+    auto tmp = static_cast<Vec&&>(*this);
+    _buf = mem::move(other._buf);
+    _len = mem::take(other._len);
     return *this;
-  }
-
-  void swap(Vec& other) noexcept {
-    mem::swap(_buf, other._buf);
-    mem::swap(_len, other._len);
   }
 
   static auto with_capacity(usize capacity) -> Vec {
@@ -199,12 +190,12 @@ class [[nodiscard]] Vec {
   }
 
   auto operator[](usize idx) const -> const T& {
-    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    panicking::assert_fmt(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf[idx];
   }
 
@@ -217,12 +208,12 @@ class [[nodiscard]] Vec {
   }
 
   auto first() const -> const T& {
-    panicking::assert_fmt(_len != 0, "Vec::first: vec is empty");
+    panicking::assert(_len != 0, "Vec::first: vec is empty");
     return _buf[0];
   }
 
   auto last() const -> const T& {
-    panicking::assert_fmt(_len != 0, "Vec::last: vec is empty");
+    panicking::assert(_len != 0, "Vec::last: vec is empty");
     return _buf[_len - 1];
   }
 
@@ -282,7 +273,7 @@ class [[nodiscard]] Vec {
 
   // swap with last, then remove
   auto swap_remove(usize idx) -> T {
-    panicking::assert_fmt(idx <= _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::assert(idx <= _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     auto res = this->pop().unwrap();
     if (idx != _len - 1) {
@@ -292,7 +283,7 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T element) {
-    panicking::assert_fmt(idx <= _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::assert(idx <= _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
 
@@ -310,7 +301,7 @@ class [[nodiscard]] Vec {
   }
 
   auto remove(usize idx) -> T {
-    panicking::assert_fmt(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
     const auto res = mem::move(_buf[idx]);
     this->drain({idx, idx + 1});
@@ -323,8 +314,8 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    const auto src = tmp._ptr;
-    const auto dst = src + tmp._len;
+    const auto dst = tmp._ptr;
+    const auto src = dst + tmp._len;
     const auto end = _buf._ptr + _len;
     ptr::move(src, dst, static_cast<usize>(end - dst));
     this->truncate(_len - tmp._len);
@@ -426,7 +417,3 @@ auto end(Vec<T>& v) -> T* {
 }
 
 }  // namespace sfc::vec
-
-namespace sfc {
-using vec::Vec;
-}  // namespace sfc

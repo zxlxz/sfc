@@ -7,27 +7,26 @@ namespace sfc::backtrace {
 namespace sys_imp = sys::backtrace;
 
 auto Frame::func() const -> String {
-  const auto info     = sys_imp::resolve(_addr);
-  const auto raw_func = Str::from_cstr(info.func);
+  const auto info = sys_imp::resolve(_addr);
 
-  auto res = String{};
-  res.reserve(raw_func.len() * 2 + 32);
-  const auto nbytes = sys_imp::cxx_demangle(info.func, res.as_mut_ptr(), res.capacity());
-  res.set_len(nbytes);
+  char       buf[1024];
+  const auto cnt = sys_imp::cxx_demangle(info.func, buf, sizeof(buf));
+  if (cnt > 0 && cnt < sizeof(buf)) {
+    return String::from(Str{buf, cnt});
+  }
 
-  return res;
+  return String::from_cstr(info.func);
 }
 
 auto capture() -> Vec<Frame> {
-  static constexpr auto kMaxFrameCnt = 64U;
+  void*      buf[64] = {};
+  const auto cnt = sys_imp::trace(buf);
 
-  void*      frame_buf[kMaxFrameCnt] = {};
-  const auto frame_cnt               = sys_imp::trace(frame_buf, kMaxFrameCnt);
-
-  return Slice{frame_buf, frame_cnt}
-      .iter()
-      .map([](auto frame_addr) { return Frame{frame_addr}; })
-      .template collect<Vec<Frame>>();
+  auto res = Slice{buf, cnt}
+                 .iter()
+                 .map([](auto x) { return Frame{x}; })
+                 .template collect<Vec<Frame>>();
+  return res;
 }
 
 }  // namespace sfc::backtrace

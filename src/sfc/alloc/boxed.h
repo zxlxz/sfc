@@ -44,23 +44,27 @@ class Box {
     return _ptr != nullptr;
   }
 
+  auto ptr() const -> T* {
+    return _ptr;
+  }
+  
   auto operator->() const -> const T* {
-    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::->: deref null");
+    panicking::assert(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::->: deref null");
+    panicking::assert(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::*: deref null");
+    panicking::assert(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    panicking::assert_fmt(_ptr != nullptr, "boxed::Box::*: deref null");
+    panicking::assert(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
@@ -128,7 +132,7 @@ class Box<R(T...)> {
   }
 
   auto operator()(T... args) -> auto {
-    panicking::assert_fmt(_self != nullptr, "boxed::Box::*: deref null");
+    panicking::assert(_self != nullptr, "boxed::Box::*: deref null");
     return (_meta->_call)(_self, static_cast<T&&>(args)...);
   }
 };
@@ -170,7 +174,7 @@ class Box<T&> {
   }
 
   auto operator->() -> T* {
-    panicking::assert_fmt(_impl._self != nullptr, "boxed::Box::->: deref null");
+    panicking::assert(_impl._self != nullptr, "boxed::Box::->: deref null");
     return &_impl;
   }
 };
@@ -181,8 +185,3 @@ auto box(X x) -> Box<X> {
 }
 
 }  // namespace sfc::boxed
-
-namespace sfc {
-using boxed::Box;
-using boxed::box;
-}  // namespace sfc

@@ -5,26 +5,29 @@
 namespace sfc::sync {
 
 class ReentrantLock {
-  friend class ReentrantLockGuard;
-
   struct Inn;
   Box<Inn> _inn;
 
  public:
   explicit ReentrantLock();
   ~ReentrantLock();
-  ReentrantLock(ReentrantLock&&) noexcept;
-  ReentrantLock& operator=(ReentrantLock&&) noexcept;
 
-  [[nodiscard]] auto lock() -> class ReentrantLockGuard;
+  ReentrantLock(ReentrantLock&&) noexcept = default;
+  ReentrantLock& operator=(ReentrantLock&&) noexcept = default;
+
+  class Guard;
+  [[nodiscard]] auto lock() -> Guard;
 };
 
-class [[nodiscard]] ReentrantLockGuard {
-  ptr::Unique<ReentrantLock> _mtx = {};
+class [[nodiscard]] ReentrantLock::Guard {
+  ptr::Unique<Inn> _inn = {};
 
  public:
-  explicit ReentrantLockGuard(ReentrantLock& mtx);
-  ~ReentrantLockGuard() noexcept;
+  explicit Guard(Inn& mtx);
+  ~Guard() noexcept;
+
+  Guard(Guard&&) noexcept = default;
+  Guard& operator=(Guard&&) noexcept = default;
 };
 
 }  // namespace sfc::sync

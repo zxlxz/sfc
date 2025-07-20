@@ -6,9 +6,10 @@
 namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
+using sys_imp::thread_t;
 
 struct ThreadData {
-  Box<void()>  _fbox;
+  Box<void()> _fbox;
   ffi::CString _name;
 
  public:
@@ -32,18 +33,25 @@ static auto start_routine(void* data) -> sys_imp::thread_ret_t {
 
 auto Thread::current() -> Thread {
   const auto imp = sys_imp::Thread::current();
-  return Thread{imp.raw()};
+  return Thread{imp._raw};
 }
 
 auto Thread::name() const -> String {
-  auto res = String{};
-  res.reserve(64);
+  char buf[256];
 
-  const auto imp      = sys_imp::Thread::from_raw(_raw);
-  const auto name_len = imp.get_name(res.as_mut_ptr(), res.capacity());
-  res.set_len(name_len);
+  const auto imp = sys_imp::Thread{static_cast<thread_t>(_raw)};
+  const auto name = imp.get_name(buf);
+  return String::from_cstr(name);
+}
 
-  return res;
+void Thread::join() {
+  if (_raw == 0) {
+    return;
+  }
+
+  auto imp = sys_imp::Thread{static_cast<thread_t>(_raw)};
+  imp.join();
+  _raw = 0;
 }
 
 auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
@@ -53,35 +61,25 @@ auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
     mem::move(thr_box).into_raw();
   }
 
-  auto res  = JoinHandle{};
-  res._thrd = Thread{sys_thr.raw()};
-  return res;
+  auto thrd = Thread{sys_thr._raw};
+  return JoinHandle{thrd};
 }
 
-JoinHandle::JoinHandle() noexcept = default;
+JoinHandle::JoinHandle(Thread thrd) noexcept : _thrd{thrd} {}
 
 JoinHandle::~JoinHandle() {
-  auto thr = sys_imp::Thread::from_raw(_thrd._raw);
-  if (!thr) {
+  if (!_thrd._raw) {
     return;
   }
-  thr.detach();
+  _thrd.join();
 }
 
-JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{other._thrd} {
-  other._thrd = Thread{};
-}
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{mem::take(other._thrd)} {}
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
-  auto tmp = mem::move(other);
-  mem::swap(_thrd, tmp._thrd);
+  auto tmp = static_cast<JoinHandle&&>(*this);
+  _thrd = mem::take(other._thrd);
   return *this;
-}
-
-void JoinHandle::join() {
-  auto imp = sys_imp::Thread::from_raw(_thrd._raw);
-  _thrd    = Thread{};
-  imp.join();
 }
 
 void sleep(const time::Duration& dur) {

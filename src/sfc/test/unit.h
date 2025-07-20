@@ -10,8 +10,8 @@ class Unit {
   using Fun = void (*)();
 
   Location _loc;
-  Str _name;
-  Fun _func;
+  Str      _name;
+  Fun      _func;
 
  public:
   Unit(Location loc, Str name, Fun func) : _loc{loc}, _name{name}, _func{func} {}
@@ -25,7 +25,7 @@ class Unit {
 };
 
 class Suite {
-  String _name;
+  String    _name;
   Vec<Unit> _tests;
 
  public:
@@ -71,7 +71,7 @@ class TestManager {
 #define SFC_TEST(X)                                                                      \
   struct X##_SFCT_ {                                                                     \
     static const usize UID;                                                              \
-    static void test();                                                                  \
+    static void        test();                                                           \
   };                                                                                     \
   const usize X##_SFCT_::UID = ::sfc::test::TestManager::instance().regist<X##_SFCT_>(); \
-  void X##_SFCT_::test()
+  void        X##_SFCT_::test()

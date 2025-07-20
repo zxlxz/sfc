@@ -6,14 +6,19 @@
 namespace sfc::thread {
 
 struct Thread {
-  u64 _raw{0};
+#ifdef __unix__
+  using thrd_t = u64;
+#else
+  using thrd_t = void*;
+#endif
+  thrd_t _raw{};
 
  public:
   static auto current() -> Thread;
 
-  auto id() const -> i64;
-
   auto name() const -> String;
+
+  void join();
 };
 
 class JoinHandle {
@@ -21,18 +26,16 @@ class JoinHandle {
   Thread _thrd{};
 
  public:
-  explicit JoinHandle() noexcept;
+  explicit JoinHandle(Thread thrd) noexcept;
   ~JoinHandle();
 
   JoinHandle(JoinHandle&&) noexcept;
   auto operator=(JoinHandle&&) noexcept -> JoinHandle&;
-
-  void join();
 };
 
 struct Builder {
   usize stack_size = 0;
-  Str   name = {};
+  Str name = {};
 
  public:
   auto spawn(Box<void()> f) const -> JoinHandle;

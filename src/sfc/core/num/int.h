@@ -1,6 +1,15 @@
 #pragma once
 
-#include "sfc/core/trait.h"
+#include "sfc/core/mod.h"
+
+namespace sfc::slice {
+template <class T>
+struct Slice;
+}
+
+namespace sfc::str {
+struct Str;
+}
 
 namespace sfc::num {
 
@@ -26,7 +35,7 @@ constexpr auto is_signed() -> bool {
 
 template <class T>
 constexpr auto is_unsigned() -> bool {
-  return is_int<T>() && (T{0} - T{1} > 0);
+  return is_int<T>() && (static_cast<T>(-1) > 0);
 }
 
 template <class T>
@@ -54,7 +63,6 @@ constexpr auto max_value() -> T {
 template <class T>
 constexpr auto abs(T val) -> T {
   static_assert(is_int<T>() || is_flt<T>());
-
   return val >= 0 ? val : 0 - val;
 }
 
@@ -79,5 +87,7 @@ inline auto saturating_sub(T lhs, T rhs) -> T {
   }
   return res;
 }
+
+auto int2str(slice::Slice<char> buf, auto val, char type = 0) -> str::Str;
 
 }  // namespace sfc::num

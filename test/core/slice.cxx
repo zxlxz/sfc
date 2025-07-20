@@ -8,14 +8,14 @@ SFC_TEST(iter) {
 
   {
     auto iter = v.iter();
-    test::assert_eq(iter.next(), Option{0});
-    test::assert_eq(iter.next(), Option{1});
+    panicking::assert_eq(iter.next(), Option{0});
+    panicking::assert_eq(iter.next(), Option{1});
   }
 
   {
     auto iter = v.iter().rev();
-    test::assert_eq(iter.next(), Option{3});
-    test::assert_eq(iter.next(), Option{2});
+    panicking::assert_eq(iter.next(), Option{3});
+    panicking::assert_eq(iter.next(), Option{2});
   }
 }
 

@@ -9,56 +9,56 @@ namespace sfc::serde {
 SFC_TEST(ser_bool) {
   {
     auto node = serde::serialize(true);
-    test::assert_true(node.is_bool());
-    test::assert_true(node.as_bool());
+    panicking::assert_true(node.is_bool());
+    panicking::assert_true(node.as_bool());
   }
 
   {
     auto node = serde::serialize(false);
-    test::assert_true(node.is_bool());
-    test::assert_false(node.as_bool());
+    panicking::assert_true(node.is_bool());
+    panicking::assert_false(node.as_bool());
   }
 }
 
 SFC_TEST(ser_int) {
   {
     auto node = serde::serialize(-123);
-    test::assert_true(node.is_int());
-    test::assert_eq(node.as_int(), -123);
+    panicking::assert_true(node.is_int());
+    panicking::assert_eq(node.as_int(), -123);
   }
 
   {
     auto node = serde::serialize(12345678910U);
-    test::assert_true(node.is_int());
-    test::assert_eq(node.as_int(), static_cast<i64>(12345678910U));
+    panicking::assert_true(node.is_int());
+    panicking::assert_eq(node.as_int(), static_cast<i64>(12345678910U));
   }
 }
 
 SFC_TEST(ser_flt) {
   {
     auto node = serde::serialize(-1.23);
-    test::assert_true(node.is_flt());
-    test::assert_flt_eq(node.as_flt(), -1.23);
+    panicking::assert_true(node.is_flt());
+    panicking::assert_flt_eq(node.as_flt(), -1.23);
   }
 
   {
     auto node = serde::serialize(+1.23f);
-    test::assert_true(node.is_flt());
-    test::assert_flt_eq(node.as_flt(), +1.23f);
+    panicking::assert_true(node.is_flt());
+    panicking::assert_flt_eq(node.as_flt(), +1.23f);
   }
 }
 
 SFC_TEST(ser_str) {
   {
     auto node = serde::serialize(Str{""});
-    test::assert_true(node.is_str());
-    test::assert_eq(node.as_str(), Str{""});
+    panicking::assert_true(node.is_str());
+    panicking::assert_eq(node.as_str(), Str{""});
   }
 
   {
     auto node = serde::serialize(Str{"abc"});
-    test::assert_true(node.is_str());
-    test::assert_eq(node.as_str(), Str{"abc"});
+    panicking::assert_true(node.is_str());
+    panicking::assert_eq(node.as_str(), Str{"abc"});
   }
 }
 
@@ -66,16 +66,16 @@ SFC_TEST(ser_array) {
   {
     const int v[] = {1, 2, 3};
     auto node = serde::serialize(v);
-    test::assert_true(node.is_list());
+    panicking::assert_true(node.is_list());
 
     const auto& list = node.as_list();
-    test::assert_eq(list.len(), 3U);
+    panicking::assert_eq(list.len(), 3U);
 
-    test::assert_true(list[0].is_int());
+    panicking::assert_true(list[0].is_int());
 
-    test::assert_eq(list[0].as_int(), 1);
-    test::assert_eq(list[1].as_int(), 2);
-    test::assert_eq(list[2].as_int(), 3);
+    panicking::assert_eq(list[0].as_int(), 1);
+    panicking::assert_eq(list[1].as_int(), 2);
+    panicking::assert_eq(list[2].as_int(), 3);
   }
 }
 
@@ -87,16 +87,16 @@ SFC_TEST(ser_vector) {
     v.push(3);
 
     auto node = serde::serialize(v);
-    test::assert_true(node.is_list());
+    panicking::assert_true(node.is_list());
 
     const auto& list = node.as_list();
-    test::assert_eq(list.len(), 3U);
+    panicking::assert_eq(list.len(), 3U);
 
-    test::assert_true(list[0].is_int());
+    panicking::assert_true(list[0].is_int());
 
-    test::assert_eq(list[0].as_int(), 1);
-    test::assert_eq(list[1].as_int(), 2);
-    test::assert_eq(list[2].as_int(), 3);
+    panicking::assert_eq(list[0].as_int(), 1);
+    panicking::assert_eq(list[1].as_int(), 2);
+    panicking::assert_eq(list[2].as_int(), 3);
   }
 }
 
@@ -107,10 +107,10 @@ SFC_TEST(ser_dict) {
     v.insert(String::from("b"), 2);
 
     auto node = serde::serialize(v);
-    test::assert_true(node.is_dict());
+    panicking::assert_true(node.is_dict());
 
     auto& dict = node.as_dict();
-    test::assert_eq(dict.len(), 2U);
+    panicking::assert_eq(dict.len(), 2U);
   }
 }
 
@@ -121,8 +121,8 @@ SFC_ENUM(TestEnum1, A, B, C);
 
 SFC_TEST(ser_enum) {
   const auto node = serialize(TestEnum1::B);
-  test::assert_true(node.is_str());
-  test::assert_eq(node.as_str(), "B");
+  panicking::assert_true(node.is_str());
+  panicking::assert_eq(node.as_str(), "B");
 }
 
 namespace {
@@ -139,7 +139,7 @@ SFC_TEST(ser_struct) {
       {2, 3},
   };
   const auto node = serialize(val);
-  test::assert_true(node.is_dict());
+  panicking::assert_true(node.is_dict());
 }
 
 }  // namespace sfc::serde::ser

@@ -12,7 +12,7 @@ class GTestCase {
   bool _color = false;
 
  public:
-  GTestCase(bool use_color) : _color{use_color} {}
+  explicit GTestCase(bool use_color) : _color{use_color} {}
 
   ~GTestCase() {}
 
@@ -137,7 +137,7 @@ auto App::run(Slice<const Str> args) -> int {
   }
 
   auto filter = opts.get(Str{"gtest_filter"}).unwrap_or("");
-  auto color  = [&]() {
+  auto color = [&]() {
     const auto opt = opts.get(Str{"gtest_color"}).unwrap_or("auto");
     if (opt == "yes") {
       return true;
@@ -146,7 +146,7 @@ auto App::run(Slice<const Str> args) -> int {
       return false;
     }
     if (opt == "auto") {
-      return io::Stdout::is_tty();
+      return io::Stdout{}.is_tty();
     }
     return false;
   }();
@@ -171,7 +171,7 @@ void App::help() {
 
 void App::run_tests(Str filter, bool color) {
   auto gtest = GTestCase{color};
-  auto pats  = gtest.parse_pats(filter);
+  auto pats = gtest.parse_pats(filter);
 
   auto tests = TestManager::instance().units(pats.as_slice());
   for (auto& x : tests.as_slice()) {
@@ -189,7 +189,7 @@ void App::list_to_file(Str output) const {
     auto file = fs::File::create(fs::Path::from(file_path)).unwrap();
     file.write_str(file_text.as_str());
   } else {
-    io::Stdout::write_str(file_text.as_str());
+    io::Stdout{}.write_str(file_text.as_str());
   }
 }
 
@@ -208,7 +208,7 @@ auto App::list_tests() const -> String {
 }
 
 auto App::list_tests_xml() const -> String {
-  auto suites   = TestManager::instance().suites();
+  auto suites = TestManager::instance().suites();
   auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) { return n += x.tests().len(); });
 
   auto               sbuf = String{};
@@ -220,7 +220,7 @@ auto App::list_tests_xml() const -> String {
     f.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
       const auto name = test.name();
-      const auto loc  = test.location();
+      const auto loc = test.location();
       f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n",
                   name,
                   loc.file,

@@ -1,6 +1,15 @@
 #pragma once
 
-#include "sfc/core/mem.h"
+#include "sfc/core/mod.h"
+
+namespace sfc::slice {
+template <class T>
+struct Slice;
+}
+
+namespace sfc::str {
+struct Str;
+}
 
 namespace sfc::num {
 
@@ -83,5 +92,9 @@ constexpr inline auto fmax(f32 x, f32 y) -> f32 {
 constexpr inline auto fmax(f64 x, f64 y) -> f64 {
   return __builtin_fmax(x, y);
 }
+
+auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) -> bool;
+
+auto flt2str(slice::Slice<char> buf, auto val, u32 prec = 6, char type = 0) -> str::Str;
 
 }  // namespace sfc::num

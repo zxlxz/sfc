@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/core/panicking.h"
 #include "sfc/core/mem.h"
+#include "sfc/core/panicking.h"
 
 namespace sfc::ptr {
 
@@ -39,22 +39,22 @@ struct Unique {
   }
 
   auto operator->() const -> const T* {
-    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::assert(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::assert(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::assert(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    panicking::assert_fmt(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::assert(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 };
@@ -87,9 +87,9 @@ inline auto read(T* ptr) -> T {
   return res;
 }
 
-template <class T>
-inline void write(T* dst, auto&&... args) {
-  new (dst) T{static_cast<decltype(args)>(args)...};
+template <class T, class... U>
+inline void write(T* dst, U&&... args) {
+  new (dst) T{static_cast<U&&>(args)...};
 }
 
 template <class T>

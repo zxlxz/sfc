@@ -14,9 +14,7 @@ static inline auto level_str(Level level) -> Str {
   }
 }
 
-FileBackend::FileBackend(fs::File file) : _file{mem::move(file)} {}
-
-FileBackend::FileBackend(FileBackend&&) noexcept = default;
+FileBackend::FileBackend(fs::File&& file) : _file{mem::move(file)} {}
 
 FileBackend::~FileBackend() {}
 

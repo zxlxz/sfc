@@ -7,14 +7,14 @@ SFC_TEST(push) {
   auto q = Queue<int>{};
   q.push(1);
 
-  test::assert_eq(q.len(), 1U);
-  test::assert_eq(q.first(), 1);
-  test::assert_eq(q.last(), 1);
+  panicking::assert_eq(q.len(), 1U);
+  panicking::assert_eq(q.first(), 1);
+  panicking::assert_eq(q.last(), 1);
 
   q.push(2);
-  test::assert_eq(q.len(), 2U);
-  test::assert_eq(q.first(), 1);
-  test::assert_eq(q.last(), 2);
+  panicking::assert_eq(q.len(), 2U);
+  panicking::assert_eq(q.first(), 1);
+  panicking::assert_eq(q.last(), 2);
 }
 
 SFC_TEST(pop) {
@@ -23,10 +23,10 @@ SFC_TEST(pop) {
   q.push(2);
   q.push(3);
 
-  test::assert_eq(q.pop(), Option{1});
-  test::assert_eq(q.pop(), Option{2});
-  test::assert_eq(q.pop(), Option{3});
-  test::assert_false(q.pop());
+  panicking::assert_eq(q.pop(), Option{1});
+  panicking::assert_eq(q.pop(), Option{2});
+  panicking::assert_eq(q.pop(), Option{3});
+  panicking::assert_false(q.pop());
 }
 
 SFC_TEST(insert) {
@@ -35,13 +35,13 @@ SFC_TEST(insert) {
   q.push(3);
 
   q.insert(1, 2);
-  test::assert_eq(q[1], 2);
+  panicking::assert_eq(q[1], 2);
   q.insert(0, 0);
-  test::assert_eq(q[0], 0);
+  panicking::assert_eq(q[0], 0);
 
   q.insert(4, 4);
-  test::assert_eq(q.len(), 5U);
-  test::assert_eq(q.last(), 4);
+  panicking::assert_eq(q.len(), 5U);
+  panicking::assert_eq(q.last(), 4);
 }
 
 }  // namespace sfc::collections::queue

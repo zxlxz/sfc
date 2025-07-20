@@ -179,14 +179,14 @@ class Variant {
 
   template <class U>
   auto as() const -> const U& {
-    panicking::assert_fmt(this->is<U>(), "Variant::as<{}>: type not match.",
+    panicking::assert(this->is<U>(), "Variant::as<{}>: type not match.",
                           reflect::type_name<U>());
     return _imp.template get_unchecked<tag_t<U>::VALUE>();
   }
 
   template <class U>
   auto as_mut() -> U& {
-    panicking::assert_fmt(this->is<U>(), "Variant::as_mut<{}>: type not match.",
+    panicking::assert(this->is<U>(), "Variant::as_mut<{}>: type not match.",
                           reflect::type_name<U>());
     return _imp.template get_unchecked_mut<tag_t<U>::VALUE>();
   }

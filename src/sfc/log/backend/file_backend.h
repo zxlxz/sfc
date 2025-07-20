@@ -11,9 +11,13 @@ class FileBackend {
   fs::File _file;
 
  public:
-  explicit FileBackend(fs::File inn);
-  FileBackend(FileBackend&&) noexcept;
+  explicit FileBackend(fs::File&& inn);
+
   ~FileBackend();
+
+  FileBackend(FileBackend&&) noexcept = default;
+
+  FileBackend& operator=(FileBackend&&) noexcept = default;
 
   static auto create(fs::Path path) -> io::Result<FileBackend>;
 

@@ -4,46 +4,47 @@
 
 namespace sfc::io {
 
-struct Stdout {
+class Stdout {
   class Inn;
-
-  static auto lock() -> struct StdoutLock;
-  static auto is_tty() -> bool;
-  static void flush();
-  static void write_str(Str s);
-};
-
-struct StdoutLock {
-  using LockGuard = sync::ReentrantLockGuard;
-
-  Stdout&   _impl;
-  LockGuard _lock;
+  Inn& _inn;
 
  public:
-  auto is_tty() const -> bool {
-    return _impl.is_tty();
-  }
+  Stdout();
+  ~Stdout();
 
-  void flush() {
-    _impl.flush();
-  }
+  auto is_tty() -> bool;
+  void flush();
+  void write_str(Str s);
 
-  void write_str(Str s) {
-    _impl.write_str(s);
-  }
+  class Lock;
+  auto lock() -> Lock;
+};
+
+class Stdout::Lock {
+  using Guard = sync::ReentrantLock::Guard;
+
+  Inn&  _inn;
+  Guard _lock;
+
+ public:
+  explicit Lock(Inn& inn);
+  ~Lock();
+
+  void flush();
+  void write_str(Str s);
 
   void write_fmt(const auto&... args) {
-    fmt::write(_impl, args...);
+    fmt::Fmter{*this}.write_fmt(args...);
   }
 };
 
 void print(const auto&... args) {
-  auto out = Stdout::lock();
+  auto out = Stdout{}.lock();
   out.write_fmt(args...);
 }
 
 void println(const auto&... args) {
-  auto out = Stdout::lock();
+  auto out = Stdout{}.lock();
   out.write_fmt(args...);
   out.write_str("\n");
 }

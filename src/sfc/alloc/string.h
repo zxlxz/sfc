@@ -5,7 +5,7 @@
 namespace sfc::string {
 
 class [[nodiscard]] String {
-  Vec<char> _vec = {};
+  vec::Vec<char> _vec = {};
 
  public:
   String() noexcept = default;
@@ -15,6 +15,12 @@ class [[nodiscard]] String {
   String(String&&) noexcept = default;
 
   auto operator=(String&&) noexcept -> String& = default;
+
+  static auto with_capacity(usize capacity) -> String {
+    auto res = String{};
+    res._vec = res._vec.with_capacity(capacity);
+    return res;
+  }
 
   static auto from(Str s) -> String {
     auto res = String{};
@@ -26,6 +32,10 @@ class [[nodiscard]] String {
     auto res = String{};
     res.push_str(Str::from_cstr(s));
     return res;
+  }
+
+  operator str::Str() const {
+    return Str{_vec.as_ptr(), _vec.len()};
   }
 
   auto as_ptr() const -> const char* {
@@ -56,7 +66,7 @@ class [[nodiscard]] String {
     return String::from(this->as_str());
   }
 
-  auto as_mut_vec() -> Vec<char>& {
+  auto as_mut_vec() -> vec::Vec<char>& {
     return _vec;
   }
 
@@ -147,16 +157,17 @@ auto format(Str fmts, const auto&... args) -> String {
 
 namespace sfc::panicking {
 
-[[noreturn]] void panic_str(Location loc, Str msg);
+inline RawStr::operator sfc::str::Str() const {
+  return sfc::str::Str{_ptr, _len};
+}
 
-[[noreturn]] void panic_fmt(LocationFmt info, const auto&... args) {
-  const auto fmt = Str{info.fmt._ptr, info.fmt._len};
-  const auto msg = string::format(fmt, args...);
-  panicking::panic_str(info.loc, msg.as_str());
+[[noreturn]] void panic_str(Str msg);
+
+[[noreturn]] void panic_imp(Location loc, const auto&... args) {
+  auto s = string::String{};
+  fmt::write(s, args...);
+  fmt::write(s, "\n >: {}:{}", loc.file, loc.line);
+  panicking::panic_str(s.as_str());
 }
 
 }  // namespace sfc::panicking
-
-namespace sfc {
-using string::String;
-}  // namespace sfc

@@ -6,19 +6,15 @@ Language: Cpp
 Standard: Latest
 ColumnLimit: 100
 
-# Bracing style
 BreakBeforeBraces: Attach
 InsertBraces: true
 
-# Alignment (these differ from Google style)
-AlignConsecutiveDeclarations: true
+AlignConsecutiveDeclarations: false
 AlignConsecutiveAssignments: false
 AlignConsecutiveMacros: true
 AlignConsecutiveShortCaseStatements:
   Enabled: true
-PointerAlignment: Left  # Rust-style references
 
-# Line breaking (overrides from Google style)
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
@@ -29,7 +25,6 @@ AllowShortLoopsOnASingleLine: false
 BinPackArguments: false
 BinPackParameters: false
 
-# Break before binary operators like Rust does
 BreakBeforeBinaryOperators: None
 
 # Penalties

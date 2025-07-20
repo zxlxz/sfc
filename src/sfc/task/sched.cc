@@ -10,7 +10,8 @@ Sched::Sched() {
 }
 
 Sched::~Sched() {
-  this->shutdown();
+  _running.exchange(false);
+  _task_queue.notify();
 }
 
 auto Sched::global() -> Sched& {
@@ -36,14 +37,6 @@ void Sched::start() {
       } catch (...) {}
     }
   });
-}
-
-void Sched::shutdown() {
-  if (!_running.exchange(false)) {
-    return;
-  }
-  _task_queue.notify();
-  _thread.join();
 }
 
 void Sched::submit(Task task, Priority priority) {

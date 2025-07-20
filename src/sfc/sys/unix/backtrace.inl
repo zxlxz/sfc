@@ -16,9 +16,10 @@ struct FrameInfo {
   const char* func;
 };
 
-static inline auto trace(void* buf[], size_t buf_len) -> size_t {
-  const auto cnt = ::backtrace(buf, buf_len);
-  return cnt > 0 ? static_cast<size_t>(cnt) : 0;
+template <size_t N>
+static inline auto trace(void* (&buf)[N]) -> size_t {
+  const auto cnt = ::backtrace(buf, N);
+  return cnt > 0 ? cnt : 0U;
 }
 
 static inline auto resolve(void* addr) -> FrameInfo {

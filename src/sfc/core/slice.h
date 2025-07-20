@@ -61,12 +61,12 @@ struct Slice {
   }
 
   auto operator[](usize idx) const -> const T& {
-    panicking::assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    panicking::assert_fmt(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::assert(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
@@ -94,8 +94,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) {
-    panicking::assert_fmt(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    panicking::assert_fmt(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+    panicking::assert(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
+    panicking::assert(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
     if (i == j) {
       return;
@@ -117,7 +117,7 @@ struct Slice {
 
   void copy_from_slice(Slice<const T> src) {
     if (_len != src._len) {
-      panicking::panic_fmt("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
+      panicking::panic("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
     }
 
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);

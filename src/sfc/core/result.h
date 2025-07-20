@@ -149,22 +149,22 @@ class Result : detail::Result<T, E> {
   }
 
   auto unwrap() && -> T {
-    panicking::assert_fmt(_tag, "Result::unwrap: Err({})", _imp._err);
+    panicking::assert(_tag, "Result::unwrap: Err({})", _imp._err);
     return static_cast<T&&>(Imp::get_ok_unchecked_mut());
   }
 
   auto unwrap() const& -> T {
-    panicking::assert_fmt(_tag, "Result::unwrap: Err({})", _imp._err);
+    panicking::assert(_tag, "Result::unwrap: Err({})", _imp._err);
     return Imp::get_ok_unchecked();
   }
 
   auto unwrap_err() && -> E {
-    panicking::assert_fmt(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
+    panicking::assert(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
     return static_cast<E&&>(Imp::get_err_unchecked_mut());
   }
 
   auto unwrap_err() const& -> E {
-    panicking::assert_fmt(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
+    panicking::assert(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
     return Imp::get_err_unchecked();
   }
 };

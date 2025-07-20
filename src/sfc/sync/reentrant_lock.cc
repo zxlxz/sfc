@@ -7,36 +7,39 @@ namespace sfc::sync {
 namespace sys_imp = sys::thread;
 
 struct ReentrantLock::Inn {
+  static constexpr auto NULL_OWNER = static_cast<u64>(-1);
+
   sys_imp::Mutex _mutex{};
-  u64            _owner{0};
-  u32            _count{0};
+  u64 _owner{NULL_OWNER};
+  u32 _count{0};
 
  public:
-  Inn()  = default;
-  ~Inn() = default;
-
   void lock() {
     const auto thrd = sys_imp::Thread::get_tid();
 
-    if (thrd != _owner) {
-      _mutex.lock();
-      __atomic_store_n(&_owner, thrd, __ATOMIC_SEQ_CST);
-      __atomic_store_n(&_count, 1, __ATOMIC_SEQ_CST);
-    } else {
+    const auto cur_owner = __atomic_load_n(&_owner, __ATOMIC_SEQ_CST);
+    if (thrd == cur_owner) {
       __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
+      return;
     }
+
+    _mutex.lock();
+    __atomic_store_n(&_owner, thrd, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&_count, 1, __ATOMIC_SEQ_CST);
   }
 
   void unlock() {
     const auto thrd = sys_imp::Thread::get_tid();
 
-    // not owner
-    if (thrd != _owner) {
+    const auto cur_owner = __atomic_load_n(&_owner, __ATOMIC_SEQ_CST);
+    if (thrd != cur_owner) {
+      panicking::panic("ReentrantLock::unlock: not owner of the lock");
       return;
     }
 
-    if (__atomic_fetch_sub(&_count, 1, __ATOMIC_SEQ_CST) == 1) {
-      __atomic_store_n(&_owner, 0, __ATOMIC_SEQ_CST);
+    const auto old_count = __atomic_load_n(&_count, __ATOMIC_SEQ_CST);
+    if (old_count == 1) {
+      __atomic_store_n(&_owner, NULL_OWNER, __ATOMIC_SEQ_CST);
       _mutex.unlock();
     }
   }
@@ -44,23 +47,19 @@ struct ReentrantLock::Inn {
 
 ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}
 
-ReentrantLock::~ReentrantLock() = default;
+ReentrantLock::~ReentrantLock() {}
 
-ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
-
-ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
-
-auto ReentrantLock::lock() -> ReentrantLockGuard {
-  _inn ? _inn->lock() : (void)0;
-  return ReentrantLockGuard{*this};
+auto ReentrantLock::lock() -> Guard {
+  panicking::assert(_inn, "ReentrantLock::lock: cannot lock on a dropped object");
+  return Guard{*_inn};
 }
 
-ReentrantLockGuard::ReentrantLockGuard(ReentrantLock& mtx) : _mtx{&mtx} {}
+ReentrantLock::Guard::Guard(Inn& inn) : _inn{&inn} {
+  _inn->lock();
+}
 
-ReentrantLockGuard::~ReentrantLockGuard() noexcept {
-  if (_mtx && _mtx->_inn) {
-    _mtx->_inn->unlock();
-  }
+ReentrantLock::Guard::~Guard() noexcept {
+  _inn->unlock();
 }
 
 }  // namespace sfc::sync

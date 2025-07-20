@@ -118,12 +118,12 @@ struct File {
 struct OpenOptions {
   static const auto kFileMode = 0666;
 
-  bool append     = false;
-  bool create     = false;
+  bool append = false;
+  bool create = false;
   bool create_new = false;
-  bool read       = false;
-  bool write      = false;
-  bool truncate   = false;
+  bool read = false;
+  bool write = false;
+  bool truncate = false;
 
  public:
   static auto from(const auto& t) -> OpenOptions {
@@ -186,23 +186,20 @@ struct FileAttr {
   }
 };
 
-static inline auto stdin() -> File& {
-  static auto res = File{0};
-  return res;
+static inline auto stdin() -> File {
+  return File{0};
 }
 
-static inline auto stdout() -> File& {
-  static auto res = File{1};
-  return res;
+static inline auto stdout() -> File {
+  return File{1};
 }
 
-static inline auto stderr() -> File& {
-  static auto res = File{2};
-  return res;
+static inline auto stderr() -> File {
+  return File{2};
 }
 
 static inline auto lstat(const char* path) -> FileAttr {
-  auto       st  = stat_t{};
+  auto       st = stat_t{};
   const auto ret = ::lstat(path, &st);
   if (ret == -1) {
     return FileAttr{0, 0};

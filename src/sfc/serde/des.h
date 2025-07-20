@@ -28,7 +28,7 @@ struct Deserialize<T> {
   static auto deserialize(const auto& de) -> T {
     const auto str = de.des_str();
     const auto res = reflect::enum_from_name<T>(str);
-    assert_fmt(res, "serde::des<{}>: cannot parse `{}` to enum.", reflect::type_name<T>(), str);
+    assert(res, "serde::des<{}>: cannot parse `{}` to enum.", reflect::type_name<T>(), str);
     return *res;
   }
 };
@@ -75,7 +75,7 @@ struct Deserialize<T> {
     info.fields().map([&](auto& field) {
       auto name = Str{field.name};
       auto node = dict.get(name);
-      assert_fmt(node, "serde::des<{}>: `{}` not found.", reflect::type_name<T>(), name);
+      assert(node, "serde::des<{}>: `{}` not found.", reflect::type_name<T>(), name);
       Deserialize::des_field(D{*node}, field.value);
     });
     return res;
@@ -90,7 +90,7 @@ struct Deserialize<T> {
   template <class D, class U, usize N>
   static void des_field(const D& de, const U (&val)[N]) {
     auto& list = de.des_list();
-    assert_fmt(list.len() == N, "serde::des<{}[{}]>: len(=`{}`) not match", reflect::type_name<U>(),
+    assert(list.len() == N, "serde::des<{}[{}]>: len(=`{}`) not match", reflect::type_name<U>(),
                N, list.len());
 
     list.iter_mut().for_each_idx([&](auto j, auto& t) {  //

@@ -92,22 +92,22 @@ class Rc {
   }
 
   auto operator->() const -> const T* {
-    panicking::assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::assert(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator->() -> T* {
-    panicking::assert_fmt(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::assert(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::assert(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
   auto operator*() -> T& {
-    panicking::assert_fmt(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::assert(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
@@ -163,7 +163,3 @@ auto Rc<T>::weak() -> Weak<T> {
 }
 
 }  // namespace sfc::rc
-
-namespace sfc {
-using rc::Rc;
-}  // namespace sfc

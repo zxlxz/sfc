@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::fmt {
+namespace sfc::fmt::test {
 
 enum class E1 {
   EA,
@@ -8,8 +8,8 @@ enum class E1 {
 };
 
 SFC_TEST(enum) {
-  //test::assert_eq(string::format("{}", Enum1::EA), "EA");
-  //test::assert_eq(string::format("{}", Enum1::EB), "EB");
+  //panicking::assert_eq(string::format("{}", Enum1::EA), "EA");
+  //panicking::assert_eq(string::format("{}", Enum1::EB), "EB");
 }
 
 }  // namespace sfc::fmt

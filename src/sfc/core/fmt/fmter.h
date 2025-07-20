@@ -5,14 +5,14 @@
 namespace sfc::fmt {
 
 struct Style {
-  char _fill   = 0;
-  char _align  = 0;  // [<>^=]
-  char _sign   = 0;  // [+- ]
+  char _fill = 0;
+  char _align = 0;   // [<>^=]
+  char _sign = 0;    // [+- ]
   char _prefix = 0;  // [#]
-  char _point  = 0;  // [.]
-  char _type   = 0;  // [*]
+  char _point = 0;   // [.]
+  char _type = 0;    // [*]
 
-  u8 _width     = 0;
+  u8 _width = 0;
   u8 _precision = 0;
 
  public:
@@ -46,7 +46,7 @@ struct Style {
     }
     switch (_sign) {
       case '+': return "+";
-      case ' ': return " ";
+      case '-': return " ";
       default:  return "";
     }
   }
@@ -76,7 +76,7 @@ struct IFmt;
 
 template <class W>
 class DebugTuple {
-  W&    _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
@@ -105,7 +105,7 @@ class DebugTuple {
 
 template <class W>
 class DebugList {
-  W&    _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
@@ -134,7 +134,7 @@ class DebugList {
 
 template <class W>
 class DebugSet {
-  W&    _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
@@ -166,7 +166,7 @@ class DebugSet {
 
 template <class W>
 class DebugMap {
-  W&    _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
@@ -180,7 +180,7 @@ class DebugMap {
 
   DebugMap(const DebugMap&) noexcept = delete;
 
-  void entry(const auto& name, const auto& value) {
+  void entry(str::Str name, const auto& value) {
     if (_cnt != 0) {
       _fmt.write_str(", ");
     }
@@ -193,7 +193,7 @@ class DebugMap {
     _cnt += 1;
   }
 
-  void entries(auto iter) {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
@@ -203,7 +203,7 @@ class DebugMap {
 
 template <class W>
 class DebugStruct {
-  W&    _fmt;
+  W& _fmt;
   usize _cnt = 0;
 
  public:
@@ -241,7 +241,7 @@ class DebugStruct {
 
 template <class... T>
 struct Args {
-  str::Str                  _pats = {};
+  str::Str _pats = {};
   tuple::Tuple<const T*...> _args = {};
 
  public:
@@ -268,7 +268,7 @@ struct Args {
 
 template <class W>
 class Fmter {
-  W&    _out;
+  W& _out;
   Style _style = {};
 
  public:
@@ -282,12 +282,11 @@ class Fmter {
     _style = s;
   }
 
-  void write_str(const auto& s) {
-    if constexpr (__is_convertible_to(decltype(s), str::Str)) {
-      _out.write_str(s);
-    } else {
-      _out.write_str(s.as_str());
+  void write_str(str::Str s) {
+    if (s.is_empty()) {
+      return;
     }
+    _out.write_str(s);
   }
 
   void pad(str::Str s) {
@@ -310,13 +309,13 @@ class Fmter {
 
     switch (_style.align()) {
       default:
-      case '<':
-        _out.write_str(s);
-        pad_fill(npad);
-        break;
       case '>':
         pad_fill(npad);
         _out.write_str(s);
+        break;
+      case '<':
+        _out.write_str(s);
+        pad_fill(npad);
         break;
       case '=':
       case '^':
@@ -328,12 +327,12 @@ class Fmter {
   }
 
   void pad_num(bool is_neg, str::Str body) {
-    const auto width  = _style.width();
-    const auto sign   = _style.sign(is_neg);
+    const auto width = _style.width();
+    const auto sign = _style.sign(is_neg);
     const auto prefix = _style.prefix();
-    const auto fill   = _style.fill(_style._prefix ? '0' : ' ');
-    const auto align  = fill == '0' ? '=' : _style.align();
-    const auto npad   = num::saturating_sub<usize>(width, sign.len() + body.len());
+    const auto fill = _style.fill(_style._prefix ? '0' : ' ');
+    const auto align = fill == '0' ? '=' : _style.align();
+    const auto npad = num::saturating_sub<usize>(width, sign.len() + body.len());
 
     auto pad_fill = [&](usize n) {
       for (auto i = 0U; i < n; ++i) {
@@ -343,17 +342,17 @@ class Fmter {
 
     switch (align) {
       default:
-      case '<':
-        this->write_str(sign);
-        this->write_str(prefix);
-        this->write_str(body);
-        pad_fill(npad);
-        break;
       case '>':
         pad_fill(npad);
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
+        break;
+      case '<':
+        this->write_str(sign);
+        this->write_str(prefix);
+        this->write_str(body);
+        pad_fill(npad);
         break;
       case '=':
         _out.write_str(sign);
@@ -378,7 +377,11 @@ class Fmter {
   }
 
   void write_fmt(str::Str fmts, const auto&... args) {
-    Args{fmts, args...}.fmt(*this);
+    if constexpr (sizeof...(args) == 0) {
+      this->write_str(fmts);
+    } else {
+      Args{fmts, args...}.fmt(*this);
+    }
   }
 
   auto debug_tuple() -> DebugTuple<Fmter> {
