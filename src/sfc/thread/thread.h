@@ -7,11 +7,10 @@ namespace sfc::thread {
 
 struct Thread {
 #ifdef __unix__
-  using thrd_t = u64;
+  u64 _raw{0};
 #else
-  using thrd_t = void*;
+  void* _raw{nullptr};
 #endif
-  thrd_t _raw{};
 
  public:
   static auto current() -> Thread;

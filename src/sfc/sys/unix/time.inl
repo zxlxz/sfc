@@ -5,45 +5,22 @@
 
 namespace sfc::sys::time {
 
+static constexpr auto NANOS_PER_SEC = 1000000000UL;
+
+using tm_t = struct ::tm;
 using timespec_t = struct ::timespec;
 
-struct Instant {
-  time_t _nanos;
+inline auto instant_now() -> unsigned long {
+  auto ts = timespec_t{};
+  ::clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec;
+}
 
-  static auto now() -> Instant {
-    auto ts = timespec_t{};
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
-
-    const auto nanos = ts.tv_sec * 1000000000 + ts.tv_nsec;
-    return Instant{nanos};
-  }
-
-  auto nanos() const -> time_t {
-    return _nanos;
-  }
-};
-
-struct System {
-  time_t _nanos;
-
- public:
-  static auto from_secs(time_t s) -> System {
-    // 1s = 1000000000ns
-    return System{s * 1000000000};
-  }
-
-  static auto now() -> System {
-    auto ts = timespec_t{};
-    ::clock_gettime(CLOCK_REALTIME, &ts);
-
-    const auto nanos = time_t(ts.tv_sec * 1000000000 + ts.tv_nsec);
-    return System{nanos};
-  }
-
-  auto micros() const -> time_t {
-    return _nanos / 1000;
-  }
-};
+inline auto system_now() -> unsigned long {
+  auto ts = timespec_t{};
+  ::clock_gettime(CLOCK_REALTIME, &ts);
+  return ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec;
+}
 
 struct DateTime {
   unsigned short year;
@@ -55,7 +32,7 @@ struct DateTime {
 
  public:
   static auto from_secs(time_t secs) -> DateTime {
-    struct tm tm{};
+    auto tm = tm_t{};
     ::localtime_r(&secs, &tm);
 
     const auto res = DateTime{

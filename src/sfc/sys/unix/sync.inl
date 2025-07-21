@@ -7,9 +7,10 @@ namespace sfc::sys::sync {
 
 using mutex_t = pthread_mutex_t;
 using cond_t = pthread_cond_t;
+using timespec_t = struct ::timespec;
 
 inline void lock(mutex_t& mtx) {
-  ::pthread_mutex_lock(mtx);
+  ::pthread_mutex_lock(&mtx);
 }
 
 inline void unlock(mutex_t& mtx) {
@@ -37,7 +38,7 @@ inline auto wait_timeout_ns(cond_t& cond, mutex_t& mtx, size_t nanos) -> bool {
   ts.tv_sec += nanos / NANOS_PER_SEC;
   ts.tv_nsec += nanos % NANOS_PER_SEC;
 
-  const auto err = ::pthread_cond_timedwait(&_raw, &mtx._raw, &ts_wait);
+  const auto err = ::pthread_cond_timedwait(&cond, &mtx, &ts);
   return err == 0;
 }
 

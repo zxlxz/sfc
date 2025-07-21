@@ -7,8 +7,8 @@ namespace sfc::time {
 namespace sys_imp = sys::time;
 
 auto System::now() -> System {
-  const auto imp = sys_imp::System::now();
-  return System{imp.micros()};
+  const auto nanos = sys_imp::system_now();
+  return System{nanos};
 }
 
 auto System::elapsed() const -> Duration {
@@ -18,29 +18,29 @@ auto System::elapsed() const -> Duration {
 }
 
 auto System::operator-(const System& rhs) const -> Duration {
-  const auto micros = num::saturating_sub(_micros, rhs._micros);
-  return Duration::from_micros(micros);
+  const auto nanos = num::saturating_sub(_nanos, rhs._nanos);
+  return Duration::from_nanos(nanos);
 }
 
 auto System::operator+(const Duration& dur) const -> System {
-  const auto micros = num::saturating_add(_micros, dur.as_micros());
-  return System{micros};
+  const auto nanos = num::saturating_add(_nanos, dur.as_nanos());
+  return System{nanos};
 }
 
 auto System::operator-(const Duration& dur) const -> System {
-  const auto micros = num::saturating_sub(_micros, dur.as_micros());
-  return System{micros};
+  const auto nanos = num::saturating_sub(_nanos, dur.as_nanos());
+  return System{nanos};
 }
 
 auto System::operator+=(const Duration& dur) -> System& {
-  const auto micros = num::saturating_sub(_micros, dur.as_micros());
-  _micros = micros;
+  const auto nanos = num::saturating_add(_nanos, dur.as_nanos());
+  _nanos = nanos;
   return *this;
 }
 
 auto System::operator-=(const Duration& dur) -> System& {
-  const auto micros = num::saturating_add(_micros, dur.as_micros());
-  _micros = micros;
+  const auto nanos = num::saturating_sub(_nanos, dur.as_nanos());
+  _nanos = nanos;
   return *this;
 }
 

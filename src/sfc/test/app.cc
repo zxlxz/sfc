@@ -45,7 +45,7 @@ class GTestCase {
     this->on_run(na, nb);
     const auto tim = time::Instant::now();
     const auto res = test.invoke();
-    const auto dur = tim.elpased();
+    const auto dur = tim.elapsed();
     const auto tms = dur.as_millis();
     if (res) {
       this->on_ok(na, nb, tms);

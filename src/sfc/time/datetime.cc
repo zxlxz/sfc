@@ -8,30 +8,34 @@ namespace sys_imp = sys::time;
 
 auto NaiveTime::from_hms(u32 hour, u32 min, u32 sec) -> NaiveTime {
   const auto secs = (hour * 60 + min) * 60 + sec;
-  return {._secs = secs, ._micros = 0};
+  return {._secs = secs, ._nanos = 0};
 }
 
 auto NaiveTime::from_hms_micro(u32 hour, u32 min, u32 sec, u32 micros) -> NaiveTime {
   const auto secs = (hour * 60 + min) * 60 + sec;
-  return {._secs = secs, ._micros = micros};
+  const auto nanos = static_cast<u32>(NANOS_PER_MICRO * micros);
+  return {._secs = secs, ._nanos = nanos};
 }
 
 auto NaiveTime::from_hms_milli(u32 hour, u32 min, u32 sec, u32 millis) -> NaiveTime {
-  const auto total_secs = (hour * 60 + min) * 60 + sec;
-  return {._secs = total_secs, ._micros = static_cast<u32>(MICROS_PER_MILLI * millis)};
+  const auto secs = (hour * 60 + min) * 60 + sec;
+  const auto nanos = NANOS_PER_MILLI * millis;
+  return {._secs = secs, ._nanos = nanos};
+}
+
+auto NaiveTime::from_hms_nano(u32 hour, u32 min, u32 sec, u32 nano) -> NaiveTime {
+  const auto secs = (hour * 60 + min) * 60 + sec;
+  return {._secs = secs, ._nanos = nano};
 }
 
 auto DateTime::from(const System& sys_time) -> DateTime {
-  static auto seconds = sys_time._micros / MICROS_PER_SEC;
+  const auto secs = sys_time.secs();
+  const auto nanos = sys_time.sub_nanos();
+  const auto dt = sys_imp::DateTime::from_secs(secs);
 
-  static auto imp_date = sys_imp::DateTime::from_secs(seconds);
-
-  const auto naive_date = NaiveDate::from_ymd(imp_date.year, imp_date.month, imp_date.mday);
-  const auto naive_time = NaiveTime::from_hms_micro(imp_date.hour,
-                                                    imp_date.min,
-                                                    imp_date.sec,
-                                                    sys_time._micros % MICROS_PER_SEC);
-  return {naive_date, naive_time};
+  const auto date = NaiveDate::from_ymd(dt.year, dt.month, dt.mday);
+  const auto time = NaiveTime::from_hms_nano(dt.hour, dt.min, dt.sec, nanos);
+  return {date, time};
 }
 
 auto DateTime::now() -> DateTime {

@@ -6,12 +6,13 @@ namespace sfc::time {
 
 struct NaiveTime {
   u32 _secs = 0;
-  u32 _micros = 0;
+  u32 _nanos = 0;
 
  public:
   static auto from_hms(u32 hour, u32 min, u32 sec) -> NaiveTime;
   static auto from_hms_milli(u32 hour, u32 min, u32 sec, u32 milli) -> NaiveTime;
   static auto from_hms_micro(u32 hour, u32 min, u32 sec, u32 micro) -> NaiveTime;
+  static auto from_hms_nano(u32 hour, u32 min, u32 sec, u32 nano) -> NaiveTime;
 
   auto hour() const -> u32 {
     return _secs / 60 / 60;
@@ -25,33 +26,33 @@ struct NaiveTime {
     return _secs % 60;
   }
 
-  auto millis() const -> u32 {
-    return _micros / static_cast<u32>(MICROS_PER_MILLI);
+  auto subsec_millis() const -> u32 {
+    return _nanos / static_cast<u32>(NANOS_PER_MILLI);
   }
 
-  auto micros() const -> u32 {
-    return static_cast<u32>(_micros);
+  auto subsec_micros() const -> u32 {
+    return static_cast<u32>(_nanos / NANOS_PER_MICRO);
   }
 
   void fmt(auto& f) const {
     const auto hour = this->hour();
     const auto minute = this->minute();
     const auto second = this->second();
-    const auto millis = this->millis();
+    const auto millis = this->subsec_millis();
     f.write_fmt("{02}:{02}:{02}.{03}", hour, minute, second, millis);
   }
 };
 
 struct NaiveDate {
   u16 _year;
-  u8  _month;
-  u8  _day;
+  u8 _month;
+  u8 _day;
 
  public:
-  static auto from_ymd(u32 year, u32 month, u32 date) -> NaiveDate {
+  static auto from_ymd(u32 year, u32 month, u32 day) -> NaiveDate {
     const auto y = static_cast<u16>(year);
     const auto m = static_cast<u8>(month);
-    const auto d = static_cast<u8>(date);
+    const auto d = static_cast<u8>(day);
     return {y, m, d};
   }
 

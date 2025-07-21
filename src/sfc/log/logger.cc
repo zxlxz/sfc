@@ -19,8 +19,9 @@ static auto make_time_str() -> str::Str {
   };
 
   const auto now_time = time::System::now();
-  if (now_time._micros != tls_time._micros) {
-    fmt_uint(now_time.sub_millis(), buf + sizeof("0000-00-00 00:00:00"), 3);
+  const auto now_millis = now_time.sub_millis();
+  if (now_millis != tls_time.sub_millis()) {
+    fmt_uint(now_millis, buf + sizeof("0000-00-00 00:00:00"), 3);
   }
 
   const auto now_secs = now_time.secs();

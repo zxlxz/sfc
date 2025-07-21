@@ -36,12 +36,12 @@ inline auto join(thrd_t thrd) -> bool {
 }
 
 inline auto detach(thrd_t thrd) -> bool {
-  const auto err = ::pthread_detach(_raw);
+  const auto err = ::pthread_detach(thrd);
   return err == 0;
 }
 
 template <size_t N>
-inline auto get_name(thrd_t thrd, char (&buf)[N]) const -> const char* {
+inline auto get_name(thrd_t thrd, char (&buf)[N]) -> const char* {
   const auto err = ::pthread_getname_np(thrd, buf, sizeof(buf));
   if (err != 0) {
     return "";
@@ -62,11 +62,11 @@ inline auto sleep_ns(size_t nanos) -> bool {
   static constexpr auto NANOS_PER_SEC = 1000000000U;
 
   const auto ts = timespec_t{
-      .tv_sec = nanos / NANOS_PER_SEC,
-      .tv_nsec = nanos % NANOS_PER_SEC,
+      .tv_sec = static_cast<long>(nanos / NANOS_PER_SEC),
+      .tv_nsec = static_cast<int>(nanos % NANOS_PER_SEC),
   };
 
-  const auto ret = ::nanosleep(&req, nullptr);
+  const auto ret = ::nanosleep(&ts, nullptr);
   return ret != -1;
 }
 

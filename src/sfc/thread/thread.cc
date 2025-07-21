@@ -7,6 +7,8 @@ namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
 
+using sys_imp::thrd_t;
+
 struct ThreadData {
   Box<void()> _fbox;
   ffi::CString _name;
@@ -38,7 +40,7 @@ auto Thread::current() -> Thread {
 auto Thread::name() const -> String {
   char buf[256];
 
-  const auto name = sys_imp::get_name(_raw, buf);
+  const auto name = sys_imp::get_name(static_cast<thrd_t>(_raw), buf);
   return String::from_cstr(name);
 }
 
@@ -47,7 +49,7 @@ void Thread::join() {
     return;
   }
 
-  sys_imp::join(_raw);
+  sys_imp::join(static_cast<thrd_t>(_raw));
   _raw = 0;
 }
 
@@ -64,16 +66,17 @@ auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
 JoinHandle::JoinHandle(Thread thrd) noexcept : _thrd{thrd} {}
 
 JoinHandle::~JoinHandle() {
-  if (!_thrd._raw) {
-    return;
+  if (_thrd._raw) {
+    _thrd.join();
   }
-  _thrd.join();
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{mem::take(other._thrd)} {}
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
-  auto tmp = static_cast<JoinHandle&&>(*this);
+  if (_thrd._raw) {
+    _thrd.join();
+  }
   _thrd = mem::take(other._thrd);
   return *this;
 }

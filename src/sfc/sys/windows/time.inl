@@ -6,92 +6,69 @@
 
 namespace sfc::sys::time {
 
-struct Instant {
-  // Windows performance counter is in counts since system boot
-  LONG64 _cnt = 0;
+using instant_t = ULONG64;
+using system_t = FILETIME;
 
- public:
-  static auto performance_freq() -> LONG64 {
-    auto val = ::LARGE_INTEGER{};
-    if (!::QueryPerformanceFrequency(&val)) {
-      return 1;
-    }
-    return val.QuadPart;
+static constexpr auto NANOS_PER_SEC = 1000000000UL;
+
+inline auto instant_freq() -> instant_t {
+  auto val = ::LARGE_INTEGER{};
+  if (!::QueryPerformanceFrequency(&val)) {
+    return 1;
   }
+  return val.QuadPart;
+}
 
-  static auto now() -> Instant {
-    auto val = ::LARGE_INTEGER{};
-    if (!::QueryPerformanceCounter(&val)) {
-      return Instant{};
-    };
-    return Instant{val.QuadPart};
+inline auto instant_now() -> ULONG64 {
+  static auto freq = instant_freq();
+
+  auto cnt = ::LARGE_INTEGER{};
+  if (!::QueryPerformanceCounter(&cnt)) {
+    return 0;
   }
+  const auto nanos = cnt.QuadPart * NANOS_PER_SEC / freq;
+  return nanos;
+}
 
-  auto nanos() const -> ULONG64 {
-    static const auto freq = performance_freq();
-    return static_cast<ULONG64>(_cnt * 1000000000U / freq);
-  }
-};
+inline auto system_now() -> ULONG64 {
+  auto file_time = FILETIME{};
+  ::GetSystemTimeAsFileTime(&file_time);
 
-struct System {
-  // Windows FILETIME is in 100-nanosecond intervals since January 1, 1601
-  ::FILETIME _ft = {};
+  const auto cnt = static_cast<ULONG64>(file_time.dwHighDateTime) +
+                   (static_cast<ULONG64>(file_time.dwLowDateTime) << 32);
 
- public:
-  static auto from_secs(ULONG64 secs) -> System {
-    // Convert seconds to 100-nanosecond intervals
-    const auto counts = secs * 10000000;
-
-    const auto file_time = ::FILETIME{
-        .dwLowDateTime = static_cast<DWORD>(counts & 0xFFFFFFFFU),
-        .dwHighDateTime = static_cast<DWORD>(counts >> 32),
-    };
-
-    return System{file_time};
-  }
-
-  static auto now() -> System {
-    auto file_time = FILETIME{0};
-    ::GetSystemTimeAsFileTime(&file_time);
-    return {file_time};
-  }
-
-  auto micros() const -> ULONG64 {
-    // Convert FILETIME to 100-nanosecond intervals
-    const auto counts =
-        static_cast<ULONG64>(_ft.dwHighDateTime) + (static_cast<ULONG64>(_ft.dwLowDateTime) << 32);
-    const auto micros = counts / 10;
-    return micros;
-  }
-};
+  const auto nanos = cnt * 100UL;
+  return nanos;
+}
 
 struct DateTime {
-  USHORT year = 0;
-  USHORT month = 0;
-  USHORT mday = 0;
-  USHORT hour = 0;
-  USHORT min = 0;
-  USHORT sec = 0;
+  unsigned short year = 0;
+  unsigned short month = 0;
+  unsigned short mday = 0;
+  unsigned short hour = 0;
+  unsigned short min = 0;
+  unsigned short sec = 0;
 
  public:
-  static auto from_secs(SIZE_T filetime_sec) -> DateTime {
+  static auto from_secs(ULONG64 secs) -> DateTime {
     // Convert from filetime_sec to FILETIME struct
-    ::FILETIME filetime = {};
-    filetime.dwLowDateTime = static_cast<DWORD>(filetime_sec & 0xFFFFFFFFU);
-    filetime.dwHighDateTime = static_cast<DWORD>(filetime_sec >> 32);
+    const auto cnts = secs * 10000UL;
+    auto file_time = FILETIME{};
+    file_time.dwLowDateTime = static_cast<DWORD>(cnts & 0xFFFFFFFFU);
+    file_time.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
 
     // Convert FILETIME to SYSTEMTIME
-    ::SYSTEMTIME system_time = {};
-    ::FileTimeToSystemTime(&filetime, &system_time);
+    auto sys_time = SYSTEMTIME{};
+    FileTimeToSystemTime(&file_time, &sys_time);
 
     // Convert SYSTEMTIME to DateTime
     const auto res = DateTime{
-        .year = system_time.wYear,
-        .month = system_time.wMonth,
-        .mday = system_time.wDay,
-        .hour = system_time.wHour,
-        .min = system_time.wMinute,
-        .sec = system_time.wSecond,
+        .year = sys_time.wYear,
+        .month = sys_time.wMonth,
+        .mday = sys_time.wDay,
+        .hour = sys_time.wHour,
+        .min = sys_time.wMinute,
+        .sec = sys_time.wSecond,
     };
     return res;
   }

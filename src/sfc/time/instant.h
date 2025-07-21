@@ -10,21 +10,41 @@ struct Instant {
  public:
   static auto now() -> Instant;
 
-  auto elpased() const -> Duration;
+  auto elapsed() const -> Duration;
 
-  auto duration_since(const Instant& earlier) const -> Duration;
+  auto operator==(const Instant& other) const -> bool {
+    return _nanos == other._nanos;
+  }
 
-  auto operator==(const Instant& other) const -> bool;
-  auto operator<(const Instant& other) const -> bool;
-  auto operator<=(const Instant& other) const -> bool;
+  auto operator<(const Instant& other) const -> bool {
+    return _nanos < other._nanos;
+  }
 
-  auto operator-(const Instant& earlier) const -> Duration;
+  auto operator<=(const Instant& other) const -> bool {
+    return _nanos <= other._nanos;
+  }
 
-  auto operator+(const Duration& dur) const -> Instant;
-  auto operator-(const Duration& dur) const -> Instant;
+  auto operator-(const Instant& earlier) const -> Duration {
+    return Duration{_nanos < earlier._nanos ? 0U : _nanos - earlier._nanos};
+  }
 
-  void operator+=(const Duration& dur);
-  void operator-=(const Duration& dur);
+  auto operator+(const Duration& dur) const -> Instant {
+    return Instant{_nanos + dur._nanos};
+  }
+
+  auto operator-(const Duration& dur) const -> Instant {
+    return Instant{_nanos - dur._nanos};
+  }
+
+  auto operator+=(const Duration& dur) -> Instant& {
+    _nanos += dur._nanos;
+    return *this;
+  }
+
+  auto operator-=(const Duration& dur) -> Instant& {
+    _nanos -= dur._nanos;
+    return *this;
+  }
 };
 
 }  // namespace sfc::time
