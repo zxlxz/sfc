@@ -81,18 +81,6 @@ auto cast_mut(const T* p) -> T* {
 }
 
 template <class T>
-inline auto read(T* ptr) -> T {
-  auto res = static_cast<T&&>(*ptr);
-  ptr->~T();
-  return res;
-}
-
-template <class T, class... U>
-inline void write(T* dst, U&&... args) {
-  new (dst) T{static_cast<U&&>(args)...};
-}
-
-template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) {
   if (cnt != 0) {
     __builtin_memset(dst, val, cnt * sizeof(T));
@@ -101,7 +89,7 @@ inline void write_bytes(T* dst, u8 val, usize cnt) {
 
 template <class T>
 inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
-  if constexpr (!__is_trivially_copyable(T)) {
+  if constexpr (!__is_trivially_destructible(T)) {
     for (const auto end = ptr + cnt; ptr != end; ++ptr) {
       ptr->~T();
     }
@@ -110,20 +98,19 @@ inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
 
 template <class T>
 inline void copy(const T* src, T* dst, usize cnt) {
+  if (cnt == 0 || src == dst) {
+    return;
+  }
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memmove(dst, src, cnt * sizeof(T));
-    }
+    __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
-      for (const auto end = src + cnt; src != end; ++src, ++dst) {
-        *dst = *src;
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        dst[idx] = src[idx];
       }
-    } else if (dst > src) {
-      src += cnt - 1;
-      dst += cnt - 1;
-      for (const auto end = src - cnt; src != end; --src, --dst) {
-        *dst = *src;
+    } else {
+      for (const auto end = src; cnt > 0; --cnt) {
+        dst[cnt - 1] = src[cnt - 1];
       }
     }
   }
@@ -131,20 +118,21 @@ inline void copy(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
+  if (cnt == 0 || src == dst) {
+    return;
+  }
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memcpy(dst, src, cnt * sizeof(T));
-    }
+    __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    for (const auto end = src + cnt; src != end; ++src, ++dst) {
-      *dst = *src;
+    for (auto idx = 0UL; idx < cnt; ++idx) {
+      dst[idx] = src[idx];
     }
   }
 }
 
 template <class T>
 inline void move(T* src, T* dst, usize cnt) {
-  if (cnt == 0) {
+  if (cnt == 0 || src == dst) {
     return;
   }
 
@@ -152,14 +140,12 @@ inline void move(T* src, T* dst, usize cnt) {
     __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
-      for (const auto end = src + cnt; src != end; ++src, ++dst) {
-        *dst = static_cast<T&&>(*src);
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        dst[idx] = static_cast<T&&>(src[idx]);
       }
-    } else if (dst > src) {
-      src += cnt - 1;
-      dst += cnt - 1;
-      for (const auto end = src - cnt; src != end; --src, --dst) {
-        *dst = static_cast<T&&>(*src);
+    } else {
+      for (const auto end = src; cnt > 0; --cnt) {
+        dst[cnt - 1] = static_cast<T&&>(src[cnt - 1]);
       }
     }
   }
@@ -167,26 +153,40 @@ inline void move(T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_move(T* src, T* dst, usize cnt) {
+  if (cnt == 0 || src == dst) {
+    return;
+  }
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memcpy(dst, src, sizeof(T) * cnt);
-    }
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
-    for (const auto end = src + cnt; src != end; ++src, ++dst) {
-      new (dst) T{static_cast<T&&>(*src)};
+    if (dst < src) {
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        new (dst + idx) T{static_cast<T&&>(src[idx])};
+      }
+    } else {
+      for (; cnt > 0; --cnt) {
+        new (dst + cnt - 1) T{static_cast<T&&>(src[cnt - 1])};
+      }
     }
   }
 }
 
 template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) {
+  if (cnt == 0 || src == dst) {
+    return;
+  }
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memcpy(dst, src, sizeof(T) * cnt);
-    }
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
-    for (const auto end = src + cnt; src != end; ++src, ++dst) {
-      new (dst) T{src->clone()};
+    if (dst < src) {
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        new (dst + idx) T{src[idx]};
+      }
+    } else {
+      for (const auto end = src; cnt > 0; --cnt) {
+        new (dst + cnt - 1) T{src[cnt - 1]};
+      }
     }
   }
 }

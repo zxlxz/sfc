@@ -6,9 +6,6 @@
 namespace sfc::sync {
 
 class Mutex {
-  friend class LockGuard;
-  friend class Condvar;
-
   struct Inn;
   Box<Inn> _inn;
 
@@ -18,16 +15,17 @@ class Mutex {
   Mutex(Mutex&&) noexcept;
   Mutex& operator=(Mutex&&) noexcept;
 
-  [[nodiscard]] auto lock() -> class LockGuard;
+  class Guard;
+  auto lock() -> Guard;
 };
 
-class [[nodiscard]] LockGuard {
+class [[nodiscard]] Mutex::Guard {
   friend class Condvar;
-  ptr::Unique<Mutex> _mtx = {};
+  ptr::Unique<Inn> _mtx = {};
 
  public:
-  explicit LockGuard(Mutex& mtx);
-  ~LockGuard();
+  explicit Guard(Inn& mtx);
+  ~Guard();
 };
 
 }  // namespace sfc::sync

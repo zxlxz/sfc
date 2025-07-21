@@ -4,6 +4,8 @@
 
 #if defined(__APPLE__)
 #include <malloc/malloc.h>
+#else
+#include <malloc.h>
 #endif
 
 namespace sfc::sys::alloc {

@@ -31,8 +31,8 @@ void Sched::start() {
         continue;
       }
 
+      auto& task = *task_opt;
       try {
-        auto task = task_opt.unwrap();
         (task._func)(task._self);
       } catch (...) {}
     }

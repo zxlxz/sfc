@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/mem.h"
 #include "sfc/core/option.h"
 #include "sfc/core/tuple.h"
 
@@ -150,14 +151,14 @@ struct Iterator {
   }
 
   auto sum() {
-    using U   = decltype(declval<Item>() + declval<Item>());
+    using U = decltype(declval<Item>() + declval<Item>());
     auto init = U{0};
 
     return this->fold(init, [](const auto& a, const auto& b) { return a + b; });
   }
 
   auto product() {
-    using U   = decltype(declval<Item>() * declval<Item>());
+    using U = decltype(declval<Item>() * declval<Item>());
     auto init = U{1};
 
     return this->fold(init, [](const auto& a, const auto& b) { return a * b; });
@@ -239,7 +240,7 @@ struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item
     if (!b) {
       return {};
     }
-    return Item{a.unwrap(), b.unwrap()};
+    return Item{mem::move(a).unwrap(), mem::move(b).unwrap()};
   }
 
   auto next_back() -> option::Option<Item> {
@@ -251,7 +252,7 @@ struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item
     if (!b) {
       return {};
     }
-    return Item{a.unwrap_unchecked(), b.unwrap_unchecked()};
+    return Item{mem::move(a).unwrap(), mem::move(b).unwrap()};
   }
 };
 

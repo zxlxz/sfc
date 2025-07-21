@@ -1,9 +1,9 @@
 #pragma once
 
 #if defined(__unix__) || defined(__APPLE__)
-#include "unix/io.inl"
+#include "sfc/sys/unix/io.inl"
 #endif
 
 #ifdef _WIN32
-#include "windows/io.inl"
+#include "sfc/sys/windows/io.inl"
 #endif

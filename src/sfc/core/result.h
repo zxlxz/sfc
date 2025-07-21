@@ -18,7 +18,7 @@ class Result {
     ~Imp() {}
   };
   bool _tag;
-  Imp  _imp;
+  Imp _imp;
 
  public:
   Result(T ok) : _tag{true}, _imp{static_cast<T&&>(ok)} {}
@@ -35,9 +35,9 @@ class Result {
 
   Result(Result&& other) noexcept : _tag{other._tag} {
     if (_tag) {
-      new (mem::inplace_t{}, &_imp._ok) T{static_cast<T&&>(other._imp._ok)};
+      new (&_imp._ok) T{static_cast<T&&>(other._imp._ok)};
     } else {
-      new (mem::inplace_t{}, &_imp._err) T{static_cast<T&&>(other._imp._err)};
+      new (&_imp._err) T{static_cast<T&&>(other._imp._err)};
     }
   }
 
@@ -47,8 +47,7 @@ class Result {
     } else {
       _tag ? _imp._ok.~T() : _imp._err.~E();
       _tag = other._tag;
-      _tag ? new (mem::inplace_t{}, &_imp._ok) T{other._imp._ok}
-           : new (mem::inplace_t{}, &_imp._err) E{other._imp._err};
+      _tag ? new (&_imp._ok) T{other._imp._ok} : new (&_imp._err) E{other._imp._err};
     }
     return *this;
   }
@@ -60,8 +59,8 @@ class Result {
     } else {
       _tag ? _imp._ok.~T() : _imp._err.~E();
       _tag = other._tag;
-      _tag ? new (mem::inplace_t{}, &_imp._ok) T{static_cast<T&&>(other._imp._ok)}
-           : new (mem::inplace_t{}, &_imp._err) E{static_cast<E&&>(other._imp._err)};
+      _tag ? new (&_imp._ok) T{static_cast<T&&>(other._imp._ok)}
+           : new (&_imp._err) E{static_cast<E&&>(other._imp._err)};
     }
     return *this;
   }

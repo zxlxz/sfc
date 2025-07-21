@@ -10,7 +10,7 @@ struct FromStr;
 
 struct Str {
   const char* _ptr = nullptr;
-  usize       _len = 0;
+  usize _len = 0;
 
  public:
   constexpr Str() = default;
@@ -70,7 +70,7 @@ struct Str {
     return idx < _len ? _ptr[idx] : '\0';
   }
 
-  auto operator[](Range ids) const -> Str {
+  auto operator[](ops::Range ids) const -> Str {
     const auto end = cmp::min(ids._end, _len);
     const auto pos = cmp::min(ids._start, end);
     return {_ptr + pos, end - pos};
@@ -136,8 +136,8 @@ struct Str {
 
 struct SearchStep {
   enum Kind { Match, Reject, Done };
-  Kind  kind;
-  Range range = {0UL, 0UL};
+  Kind kind;
+  ops::Range range = {0UL, 0UL};
 
   explicit operator bool() const {
     return kind != Kind::Done;
@@ -146,9 +146,9 @@ struct SearchStep {
 
 template <class P>
 struct CharPredSercher {
-  Str   _haystack;
-  P     _pred;
-  usize _finger      = 0U;
+  Str _haystack;
+  P _pred;
+  usize _finger = 0U;
   usize _finger_back = _haystack.len();
 
  public:
@@ -176,37 +176,37 @@ struct CharPredSercher {
     return ss;
   }
 
-  auto next_match() -> Option<Range> {
+  auto next_match() -> option::Option<ops::Range> {
     while (const auto ss = this->next()) {
       if (ss.kind == SearchStep::Match) {
-        return Option{ss.range};
+        return option::Option{ss.range};
       }
     }
     return {};
   }
 
-  auto next_match_back() -> Option<Range> {
+  auto next_match_back() -> option::Option<ops::Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Match) {
-        return Option{ss.range};
+        return option::Option{ss.range};
       }
     }
     return {};
   }
 
-  auto next_reject() -> Option<Range> {
+  auto next_reject() -> option::Option<ops::Range> {
     while (const auto ss = this->next()) {
       if (ss.kind == SearchStep::Reject) {
-        return Option{ss.range};
+        return option::Option{ss.range};
       }
     }
     return {};
   }
 
-  auto next_reject_back() -> Option<Range> {
+  auto next_reject_back() -> option::Option<ops::Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Reject) {
-        return Option{ss.range};
+        return option::Option{ss.range};
       }
     }
     return {};
@@ -214,9 +214,9 @@ struct CharPredSercher {
 };
 
 struct CharSearcher {
-  Str   _haystack;
-  char  _needle;
-  usize _finger      = 0U;
+  Str _haystack;
+  char _needle;
+  usize _finger = 0U;
   usize _finger_back = _haystack.len();
 
  public:
@@ -225,8 +225,8 @@ struct CharSearcher {
       return {.kind = SearchStep::Done};
     }
 
-    const auto ch  = _haystack.get_unchecked(_finger);
-    const auto mm  = ch == _needle ? SearchStep::Match : SearchStep::Reject;
+    const auto ch = _haystack.get_unchecked(_finger);
+    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
     const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + 1}};
     _finger += 1;
     return res;
@@ -237,30 +237,30 @@ struct CharSearcher {
       return {.kind = SearchStep::Done};
     }
 
-    const auto ch  = _haystack.get_unchecked(_finger_back - 1);
-    const auto mm  = ch == _needle ? SearchStep::Match : SearchStep::Reject;
+    const auto ch = _haystack.get_unchecked(_finger_back - 1);
+    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
     const auto res = SearchStep{.kind = mm, .range = {_finger_back - 1, _finger_back}};
     _finger_back -= 1;
     return res;
   }
 
-  auto next_match() -> Option<Range> {
+  auto next_match() -> option::Option<ops::Range> {
     if (_finger >= _finger_back) {
       return {};
     }
 
     if (auto p = __builtin_memchr(_haystack._ptr, _needle, _finger_back - _finger)) {
       const auto n = static_cast<usize>(static_cast<const char*>(p) - _haystack._ptr);
-      return Option{Range{n, n + 1}};
+      return option::Option{ops::Range{n, n + 1}};
     }
 
     return {};
   }
 
-  auto next_match_back() -> Option<Range> {
+  auto next_match_back() -> option::Option<ops::Range> {
     while (const auto ss = this->next_back()) {
       if (ss.kind == SearchStep::Match) {
-        return Option{ss.range};
+        return option::Option{ss.range};
       }
     }
     return {};
@@ -268,9 +268,9 @@ struct CharSearcher {
 };
 
 struct StrSearcher {
-  Str   _haystack;
-  Str   _needle;
-  usize _finger      = 0;
+  Str _haystack;
+  Str _needle;
+  usize _finger = 0;
   usize _finger_back = num::saturating_sub(_haystack.len() + 1, _needle.len());
 
  public:
@@ -279,8 +279,8 @@ struct StrSearcher {
       return {.kind = SearchStep::Done};
     }
 
-    const auto ss  = _haystack[{_finger, _finger + _needle._len}];
-    const auto mm  = ss == _needle ? SearchStep::Match : SearchStep::Reject;
+    const auto ss = _haystack[{_finger, _finger + _needle._len}];
+    const auto mm = ss == _needle ? SearchStep::Match : SearchStep::Reject;
     const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + _needle._len}};
     _finger += mm == SearchStep::Match ? _needle._len : 1U;
     return res;
@@ -291,8 +291,8 @@ struct StrSearcher {
       return {.kind = SearchStep::Done};
     }
 
-    const auto ch  = _haystack[{_finger_back - _needle._len, _finger_back}];
-    const auto mm  = ch == _needle ? SearchStep::Match : SearchStep::Reject;
+    const auto ch = _haystack[{_finger_back - _needle._len, _finger_back}];
+    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
     const auto res = SearchStep{.kind = mm, .range = {_finger_back, _finger_back + 1}};
     _finger_back -= mm == SearchStep::Match ? _needle._len : 1U;
     return res;
@@ -344,24 +344,24 @@ struct Split : iter::Iterator<Split<S>, Str> {
   S _searcher;
 
  public:
-  auto next() -> Option<Str> {
+  auto next() -> option::Option<Str> {
     const auto cur_pos = _searcher._finger;
     _searcher.next();
   }
 };
 
 template <class P>
-auto Str::find(P&& p) const -> Option<usize> {
+auto Str::find(P&& p) const -> option::Option<usize> {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto t = s.next_match();
-  return t.map([](auto ids) { return ids._start; });
+  auto o = s.next_match().map([](auto ids) { return ids._start; });
+  return o;
 }
 
 template <class P>
-auto Str::rfind(P&& p) const -> Option<usize> {
+auto Str::rfind(P&& p) const -> option::Option<usize> {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto t = s.next_match_back();
-  return t.map([](auto ids) { return ids._start; });
+  auto o = s.next_match_back().map([](auto ids) { return ids._start; });
+  return o;
 }
 
 template <class P>

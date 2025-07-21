@@ -89,7 +89,7 @@ union Union<T0, Ts...> {
 
   void move_ctor(usize idx, Union& src) {
     if (idx == 0) {
-      ptr::write(&_0, static_cast<T0&&>(src._0));
+      new(&_0) T0{ static_cast<T0&&>(src._0)};
     } else {
       _1.move_ctor(idx - 1, src._1);
     }
@@ -97,7 +97,7 @@ union Union<T0, Ts...> {
 
   void copy_ctor(usize idx, Union& src) {
     if (idx == 0) {
-      ptr::write(&_0, src._0);
+      new(&_0) T0{ src._0 };
     } else {
       _1.copy_ctor(idx - 1, src._1);
     }

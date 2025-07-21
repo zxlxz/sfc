@@ -13,25 +13,26 @@ namespace sfc::sys::backtrace {
 struct FrameInfo {
   static constexpr auto kMaxFuncLen = 256U;
 
-  const char* file;
-  unsigned    line;
-  char        func[kMaxFuncLen];
+  PCHAR file;
+  DWORD line;
+  char func[kMaxFuncLen];
 };
 
 static inline auto sym_init() -> bool {
-  static auto process  = ::GetCurrentProcess();
+  static auto process = ::GetCurrentProcess();
   static auto sym_init = ::SymInitialize(process, nullptr, TRUE);
   return sym_init != FALSE;
 }
 
-static inline auto trace(void* frame_ptr[], SIZE_T frame_size) -> SIZE_T {
+template <DWORD N>
+static inline auto trace(void* (&frame_buf)[N]) -> SIZE_T {
   static constexpr auto kSkipFrames = 2U;
 
   if (!sym_init()) {
     return 0;
   }
 
-  const auto frame_cnt = ::RtlCaptureStackBackTrace(0, frame_size, frame_ptr, nullptr);
+  const auto frame_cnt = ::RtlCaptureStackBackTrace(0, N, frame_buf, nullptr);
   return frame_cnt >= kSkipFrames ? frame_cnt - kSkipFrames : 0;
 }
 
@@ -49,15 +50,15 @@ static inline auto resolve(void* addr) -> FrameInfo {
     char _NameBuf[sizeof(FrameInfo::func)] = {};
   } sym_info;
   sym_info.SizeOfStruct = sizeof(::SYMBOL_INFO);
-  sym_info.MaxNameLen   = sizeof(sym_info._NameBuf);
+  sym_info.MaxNameLen = sizeof(sym_info._NameBuf);
 
   auto sym_displacement = 0ULL;
   if (!::SymFromAddr(process, reinterpret_cast<DWORD64>(addr), &sym_displacement, &sym_info)) {
     return {};
   }
 
-  auto line_displayment  = 0UL;
-  auto line_info         = ::IMAGEHLP_LINE64{};
+  auto line_displayment = 0UL;
+  auto line_info = ::IMAGEHLP_LINE64{};
   line_info.SizeOfStruct = sizeof(::IMAGEHLP_LINE64);
   if (::SymGetLineFromAddr64(process,
                              reinterpret_cast<DWORD64>(addr),

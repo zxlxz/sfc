@@ -8,9 +8,9 @@ namespace sfc::collections {
 template <class T>
 class CircBuf {
   vec::Buf<T> _buf = {};
-  usize       _len = 0;
-  usize       _first = 0;  // begin of the buffer
-  usize       _last = 0;   // end of the buffer(behind the last element)
+  usize _len = 0;
+  usize _first = 0;  // begin of the buffer
+  usize _last = 0;   // end of the buffer(behind the last element)
 
  public:
   CircBuf() = default;
@@ -84,7 +84,7 @@ class CircBuf {
       _last = _first;
     } else {
       this->wrap_dec(_first);
-      ptr::write(&_buf[_first], static_cast<T&&>(val));
+      new (&_buf[_first]) T(static_cast<T&&>(val));
       _len += 1;
     }
   }
@@ -98,7 +98,7 @@ class CircBuf {
       this->wrap_inc(_last);
       _first = _last;
     } else {
-      ptr::write(&_buf[_last], static_cast<T&&>(val));
+      new (&_buf[_last]) T(static_cast<T&&>(val));
       this->wrap_inc(_last);
       _len += 1;
     }
@@ -109,7 +109,9 @@ class CircBuf {
       return {};
     }
 
-    auto res = Option{ptr::read(&_buf[_first])};
+    const auto ptr = &_buf[_first];
+    auto res = Option{static_cast<T&&>(*ptr)};
+    ptr->~T();
     this->wrap_inc(_first);
 
     _len -= 1;
@@ -118,10 +120,10 @@ class CircBuf {
 
   auto pop_back() -> Option<T> {
     this->wrap_dec(_last);
-    auto ret = Option{ptr::read(&_buf[_last])};
+    auto res = Option{static_cast<T&&>(_buf[_last])};
 
     _len -= 1;
-    return Option{ret};
+    return res;
   }
 
  private:
@@ -151,7 +153,3 @@ class CircBuf {
 };
 
 }  // namespace sfc::collections
-
-namespace sfc {
-using collections::CircBuf;
-}  // namespace sfc

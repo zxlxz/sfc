@@ -4,44 +4,42 @@
 
 namespace sfc::vec {
 
-template <class T>
-class Vec;
-
 template <class T, class A = alloc::Global>
 class [[nodiscard]] Buf {
-  friend class Vec<T>;
-
-  T* _ptr = nullptr;
-  usize _cap = 0;
-  A _a{};
+ public:
+  T* _ptr{nullptr};
+  usize _cap{0};
+  A _alloc{};
 
  public:
   Buf() noexcept = default;
 
   ~Buf() {
-    if (_ptr == nullptr) {
-      return;
+    if (_ptr) {
+      _alloc.dealloc_array(_ptr, _cap);
     }
-
-    _a.dealloc_array(_ptr, _cap);
-    _ptr = nullptr;
   }
 
   Buf(Buf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
 
   auto operator=(Buf&& other) noexcept -> Buf& {
-    auto tmp = static_cast<Buf&&>(*this);
-    _ptr = mem::take(other._ptr);
-    _cap = mem::take(other._cap);
-    _a = mem::move(other._a);
+    if (this != &other) {
+      if (_ptr) {
+        _alloc.dealloc_array(_ptr, _cap);
+      }
+      _ptr = mem::take(other._ptr);
+      _cap = mem::take(other._cap);
+      _alloc = mem::move(other._alloc);
+    }
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> Buf {
+  static auto with_capacity(usize capacity, A alloc = A{}) -> Buf {
     auto res = Buf{};
-    res._ptr = res._a.template alloc_array<T>(capacity);
+    res._ptr = alloc.template alloc_array<T>(capacity);
     res._cap = capacity;
+    res._alloc = static_cast<A&&>(alloc);
     return res;
   }
 
@@ -62,37 +60,31 @@ class [[nodiscard]] Buf {
   }
 
   void shrink_to(usize used, usize min_cap) {
-    if (min_cap >= _cap) {
-      return;
+    if (min_cap < _cap) {
+      this->reserve_extract(used, min_cap - _cap);
     }
-
-    this->reserve_extract(used, min_cap - _cap);
   }
 
   void reserve(usize used, usize additional) {
-    if (used + additional <= _cap) {
-      return;
+    if (used + additional > _cap) {
+      const auto new_cap = cmp::max(2 * _cap, used + additional);
+      const auto new_add = cmp::max(usize{8U}, new_cap - used);
+      this->reserve_extract(used, new_add);
     }
-
-    const auto new_cap = cmp::max(2 * _cap, used + additional);
-    const auto new_add = cmp::max(usize{8U}, new_cap - used);
-    this->reserve_extract(used, new_add);
   }
 
   void reserve_extract(usize used, usize additional) {
-    if (used + additional <= _cap) {
-      return;
+    if (used + additional > _cap) {
+      const auto new_cap = used + additional;
+      _ptr = _alloc.realloc_array(_ptr, _cap, new_cap);
+      _cap = new_cap;
     }
-
-    const auto new_cap = used + additional;
-    _ptr = _a.realloc_array(_ptr, _cap, new_cap);
-    _cap = new_cap;
   }
 };
 
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] Vec {
-  Buf<T> _buf = {};
+  Buf<T, A> _buf = {};
   usize _len = 0;
 
  public:
@@ -105,15 +97,16 @@ class [[nodiscard]] Vec {
   Vec(Vec&& other) noexcept : _buf{mem::move(other._buf)}, _len{mem::take(other._len)} {}
 
   Vec& operator=(Vec&& other) noexcept {
-    auto tmp = static_cast<Vec&&>(*this);
-    _buf = mem::move(other._buf);
-    _len = mem::take(other._len);
+    if (this != &other) {
+      _buf = mem::move(other._buf);
+      _len = mem::take(other._len);
+    }
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> Vec {
+  static auto with_capacity(usize capacity, A alloc = A{}) -> Vec {
     auto res = Vec{};
-    res._buf = Buf<T>::with_capacity(capacity);
+    res._buf = Buf<T>::with_capacity(capacity, static_cast<A&&>(alloc));
     return res;
   }
 
@@ -182,11 +175,11 @@ class [[nodiscard]] Vec {
 
  public:
   auto get_unchecked(usize idx) const -> const T& {
-    return _buf._ptr[idx];
+    return _buf[idx];
   }
 
   auto get_unchecked_mut(usize idx) -> T& {
-    return _buf._ptr[idx];
+    return _buf[idx];
   }
 
   auto operator[](usize idx) const -> const T& {
@@ -209,12 +202,12 @@ class [[nodiscard]] Vec {
 
   auto first() const -> const T& {
     panicking::assert(_len != 0, "Vec::first: vec is empty");
-    return _buf[0];
+    return _buf._ptr[0];
   }
 
   auto last() const -> const T& {
     panicking::assert(_len != 0, "Vec::last: vec is empty");
-    return _buf[_len - 1];
+    return _buf._ptr[_len - 1];
   }
 
   void fill(const T& val) {
@@ -228,7 +221,7 @@ class [[nodiscard]] Vec {
  public:
   void push(T val) {
     this->reserve(1);
-    ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
+    new (&_buf[_len]) T{static_cast<T&&>(val)};
     _len += 1;
   }
 
@@ -237,9 +230,12 @@ class [[nodiscard]] Vec {
       return {};
     }
 
-    auto res = ptr::read(&_buf._ptr[_len - 1]);
+    auto& tmp = _buf[_len - 1];
+    auto res = Option{static_cast<T&&>(tmp)};
+    tmp.~T();
     _len -= 1;
-    return Option{res};
+
+    return res;
   }
 
   void truncate(usize len) {
@@ -247,7 +243,7 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    ptr::drop_in_place(_buf._ptr + len, _len - len);
+    ptr::drop_in_place(&_buf[len], _len - len);
     _len = len;
   }
 
@@ -268,17 +264,23 @@ class [[nodiscard]] Vec {
   }
 
   void clear() {
-    this->truncate(0);
+    ptr::drop_in_place(_buf._ptr, _len);
+    _len = 0;
   }
 
   // swap with last, then remove
   auto swap_remove(usize idx) -> T {
-    panicking::assert(idx <= _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::assert(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = this->pop().unwrap();
-    if (idx != _len - 1) {
-      mem::swap(res, _buf._ptr[idx]);
+    auto& hole = _buf[idx];
+    auto& tail = _buf[_len - 1];
+    auto res = static_cast<T&&>(hole);
+    if (&hole != &tail) {
+      hole = static_cast<T&&>(tail);
     }
+    tail.~T();
+    --_len;
+
     return res;
   }
 
@@ -287,12 +289,11 @@ class [[nodiscard]] Vec {
 
     this->reserve(1);
 
-    const auto hole = _buf._ptr + idx;
-
+    const auto hole = &_buf[idx];
     if (idx == _len) {
-      ptr::write(hole, static_cast<T&&>(element));
+      new (hole) T{static_cast<T&&>(element)};
     } else if (_len != 0) {
-      const auto tail = _buf._ptr + _len;
+      const auto tail = &_buf[_len];
       ptr::uninit_move(tail - 1, tail, 1);
       ptr::move(hole, hole + 1, _len - idx - 1);
       *hole = static_cast<T&&>(element);
@@ -303,8 +304,9 @@ class [[nodiscard]] Vec {
   auto remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    const auto res = mem::move(_buf[idx]);
-    this->drain({idx, idx + 1});
+    auto ptr = &_buf[idx];
+    auto res = static_cast<T&&>(*ptr);
+    ptr::move(ptr + 1, ptr, _len - idx - 1);
     return res;
   }
 
@@ -330,14 +332,16 @@ class [[nodiscard]] Vec {
   }
 
   void append(Vec& other) {
-    this->reserve(other.len());
-
-    ptr::uninit_move(other.as_mut_ptr(), this->as_mut_ptr() + _len, other.len());
-    this->set_len(_len + other.len());
+    const auto cnt = other.len();
+    this->reserve(cnt);
+    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, cnt);
+    _len += cnt;
   }
 
   void extend(auto iter) {
-    this->reserve(iter.len());
+    if constexpr (requires { iter.len(); }) {
+      this->reserve(iter.len());
+    }
     iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
   }
 
@@ -351,8 +355,9 @@ class [[nodiscard]] Vec {
 
   void extend_from_slice(Slice<const T> other) {
     this->reserve(other._len);
-    ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
-    this->set_len(_len + other._len);
+
+    ptr::uninit_copy(other._ptr, &_buf[_len], other._len);
+    _len += other._len;
   }
 
   void retain(auto&& f) {

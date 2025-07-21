@@ -20,7 +20,7 @@ class GTestCase {
     auto res = Vec<Str>{};
     for (; s;) {
       const auto n = s.len();
-      auto       i = 0U;
+      auto i = 0U;
       for (; i < n; ++i) {
         if (s[i] == ':') {
           if (s[i + 1] == ':') {
@@ -180,9 +180,9 @@ void App::run_tests(Str filter, bool color) {
 }
 
 void App::list_to_file(Str output) const {
-  const auto type_indx = output.find(':');
-  const auto file_type = output[{0, type_indx.unwrap_or(0)}];
-  const auto file_path = output[{type_indx.unwrap_or(output.len() - 1) + 1, _}];
+  const auto file_indx = output.find(':');
+  const auto file_type = file_indx ? output[{0, *file_indx}] : Str{};
+  const auto file_path = file_indx ? output[{*file_indx + 1, _}] : output;
 
   const auto file_text = file_type == Str{"xml"} ? this->list_tests_xml() : this->list_tests();
   if (file_path) {
@@ -196,7 +196,7 @@ void App::list_to_file(Str output) const {
 auto App::list_tests() const -> String {
   auto suites = TestManager::instance().suites();
 
-  auto               sbuf = String{};
+  auto sbuf = String{};
   fmt::Fmter<String> f{sbuf};
   for (const auto& suite : suites) {
     f.write_fmt("{}.\n", suite.name());
@@ -211,7 +211,7 @@ auto App::list_tests_xml() const -> String {
   auto suites = TestManager::instance().suites();
   auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) { return n += x.tests().len(); });
 
-  auto               sbuf = String{};
+  auto sbuf = String{};
   fmt::Fmter<String> f{sbuf};
   f.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   f.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", test_cnt);

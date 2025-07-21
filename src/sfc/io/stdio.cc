@@ -37,7 +37,7 @@ class Stdout::Inn {
       return;
     }
 
-    const auto n = pos.unwrap();
+    const auto n = *pos;
     _imp.write(_buf.as_ptr(), n + 1);
     _buf.drain({0, n + 1});
   }

@@ -4,8 +4,6 @@
 
 namespace sfc::mem {
 
-struct inplace_t {};
-
 template <class T>
 inline void drop(T& x) {
   x.~T();
@@ -40,6 +38,6 @@ inline auto take(T& dst) -> T {
 }  // namespace sfc::mem
 
 template <class T>
-constexpr auto operator new(sfc::usize size, T* ptr, sfc::mem::inplace_t) noexcept -> void* {
+constexpr void* operator new(sfc::usize size, T* ptr) noexcept {
   return ptr;
 }

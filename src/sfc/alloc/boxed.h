@@ -12,19 +12,20 @@ class Box {
   Box() noexcept = default;
 
   ~Box() {
-    if (_ptr == nullptr) {
-      return;
+    if (_ptr) {
+      delete _ptr;
     }
-    delete _ptr;
   }
 
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = nullptr;
-  }
+  Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {}
 
   auto operator=(Box&& other) noexcept -> Box& {
-    auto tmp = static_cast<Box&&>(other);
-    mem::swap(_ptr, tmp._ptr);
+    if (this != &other) {
+      if (_ptr) {
+        delete _ptr;
+      }
+      _ptr = mem::take(other._ptr);
+    }
     return *this;
   }
 
@@ -47,7 +48,7 @@ class Box {
   auto ptr() const -> T* {
     return _ptr;
   }
-  
+
   auto operator->() const -> const T* {
     panicking::assert(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
@@ -86,54 +87,72 @@ class Box<R(T...)> {
   struct Meta {
     void (*_dtor)(void*) = nullptr;
     R (*_call)(void*, T&&...) = nullptr;
+
+    template <class X>
+    static auto of() -> Meta {
+      if constexpr (__is_trivially_copyable(X) && sizeof(X) <= sizeof(void*)) {
+        const auto call = +[](void* x, T&&... t) -> R {  //
+          return (*static_cast<X*>(static_cast<void*>(&x)))(static_cast<T&&>(t)...);
+        };
+        return Meta{nullptr, call};
+      }
+
+      const auto dtor = +[](void* p) { delete static_cast<X*>(p); };
+      const auto call = +[](void* p, T&&... t) -> R {  //
+        return (*static_cast<X*>(p))(static_cast<T&&>(t)...);
+      };
+      return Meta{dtor, call};
+    }
   };
 
-  void*       _self = nullptr;
   const Meta* _meta = nullptr;
+  void* _data = nullptr;
 
  public:
   Box() noexcept = default;
 
   ~Box() {
-    if (!_self) {
-      return;
+    if (_meta && _meta->_dtor) {
+      (_meta->_dtor)(_data);
     }
-
-    (_meta->_dtor)(_self);
   }
 
-  Box(Box&& other) noexcept : _self{other._self}, _meta{other._meta} {
-    other._self = nullptr;
+  Box(Box&& other) noexcept : _meta{other._meta}, _data{other._data} {
     other._meta = nullptr;
   }
 
-  auto operator=(Box&& other) noexcept -> Box& {
-    auto tmp = mem::move(other);
-    _self = tmp._self;
-    _meta = tmp._meta;
+  Box& operator=(Box&& other) noexcept {
+    if (this != &other) {
+      if (_meta && _meta->_dtor) {
+        (_meta->_dtor)(_data);
+      }
+      _meta = mem::take(other._meta);
+      _data = mem::take(other._data);
+    }
+
     return *this;
   }
 
   template <class X>
   static auto xnew(X fun) -> Box {
-    static const auto META = Meta{
-        ._dtor = [](void* p) { delete static_cast<X*>(p); },
-        ._call = [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
-    };
-
+    static const auto meta = Meta::template of<X>();
     auto res = Box{};
-    res._self = new X{mem::move(fun)};
-    res._meta = &META;
+    res._meta = &meta;
+    if (!meta._dtor) {
+      __builtin_memcpy(&res._data, &fun, sizeof(X));
+    } else {
+      res._data = new X{static_cast<X&&>(fun)};
+    }
     return res;
   }
 
   explicit operator bool() const {
-    return _self != nullptr;
+    return _meta != nullptr;
   }
 
   auto operator()(T... args) -> auto {
-    panicking::assert(_self != nullptr, "boxed::Box::*: deref null");
-    return (_meta->_call)(_self, static_cast<T&&>(args)...);
+    panicking::assert(_meta != nullptr, "boxed::Box::*: deref null");
+    return (_meta->_call)(_data, static_cast<T&&>(args)...);
   }
 };
 
@@ -145,19 +164,20 @@ class Box<T&> {
   Box() noexcept = default;
 
   ~Box() {
-    if (!_impl._self) {
-      return;
+    if (_impl._meta && _impl._meta->_dtor) {
+      (_impl._meta->_dtor)(_impl._self);
     }
-    (_impl._meta->_dtor)(_impl._self);
   }
 
-  Box(Box&& other) noexcept : _impl{other._impl} {
-    other._impl = {};
-  }
+  Box(Box&& other) noexcept : _impl{mem::take(other._impl)} {}
 
   auto operator=(Box&& other) noexcept -> Box& {
-    auto tmp = static_cast<Box&&>(other);
-    mem::swap(_impl, tmp._impl);
+    if (this != &other) {
+      if (_impl._meta && _impl._meta->_dtor) {
+        (_impl._meta->_dtor)(_impl._self);
+      }
+      _impl = mem::take(other._impl);
+    }
     return *this;
   }
 

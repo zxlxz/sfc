@@ -12,6 +12,7 @@
 #include "sfc/core/variant.h"
 
 namespace sfc {
+using ops::Range;
 using option::Option;
 using result::Result;
 using slice::Slice;

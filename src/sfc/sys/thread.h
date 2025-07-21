@@ -1,9 +1,9 @@
 #pragma once
 
 #if defined(__unix__) || defined(__APPLE__)
-#include "unix/thread.inl"
+#include "sfc/sys/unix/thread.inl"
 #endif
 
 #ifdef _WIN32
-#include "windows/thread.inl"
+#include "sfc/sys/windows/thread.inl"
 #endif

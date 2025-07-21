@@ -2,9 +2,11 @@
 
 #include "sfc/core/cmp.h"
 #include "sfc/core/iter.h"
+#include "sfc/core/mem.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/option.h"
 #include "sfc/core/panicking.h"
+#include "sfc/core/ptr.h"
 #include "sfc/core/tuple.h"
 
 namespace sfc::slice {
@@ -20,7 +22,7 @@ struct Truncks;
 
 template <class T>
 struct Slice {
-  T*    _ptr = nullptr;
+  T* _ptr = nullptr;
   usize _len = 0;
 
  public:
@@ -70,13 +72,13 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto operator[](Range ids) const -> Slice<const T> {
+  auto operator[](ops::Range ids) const -> Slice<const T> {
     const auto end = cmp::min(ids._end, _len);
     const auto pos = cmp::min(ids._start, end);
     return {_ptr + pos, end - pos};
   }
 
-  auto operator[](Range ids) -> Slice<T> {
+  auto operator[](ops::Range ids) -> Slice<T> {
     const auto end = cmp::min(ids._end, _len);
     const auto pos = cmp::min(ids._start, end);
     return {_ptr + pos, end - pos};
@@ -97,10 +99,9 @@ struct Slice {
     panicking::assert(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
     panicking::assert(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
-    if (i == j) {
-      return;
+    if (i != j) {
+      mem::swap(_ptr[i], _ptr[j]);
     }
-    mem::swap(_ptr[i], _ptr[j]);
   }
 
   void fill(T val) {
@@ -124,7 +125,17 @@ struct Slice {
   }
 
  public:
-  auto operator==(Slice<const T> other) const -> bool {}
+  auto operator==(Slice<const T> other) const -> bool {
+    if (_len != other._len) {
+      return false;
+    }
+    for (auto i = 0U; i < _len; ++i) {
+      if (_ptr[i] != other._ptr[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   auto contains(const T& x) const -> bool {
     for (auto i = 0U; i < _len; ++i) {
@@ -212,7 +223,7 @@ struct Iter : iter::Iterator<Iter<T>, T&> {
 template <class T>
 struct Windows : iter::Iterator<Windows<T>, Slice<T>> {
   Slice<T> _buf;
-  usize    _len;
+  usize _len;
 
  public:
   explicit operator bool() const {
@@ -244,7 +255,7 @@ struct Windows : iter::Iterator<Windows<T>, Slice<T>> {
 template <class T>
 struct Truncks : iter::Iterator<Truncks<T>, Slice<T>> {
   Slice<T> _buf;
-  usize    _len;
+  usize _len;
 
  public:
   explicit operator bool() const {
