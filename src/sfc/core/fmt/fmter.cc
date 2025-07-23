@@ -8,7 +8,7 @@ struct StyleStr {
 
  public:
   // [<fill>align][sign][#][0][width][.][precision][type]
-  auto parse() -> Option<Style> {
+  auto parse() -> option::Option<Style> {
     if (_ptr == _end) {
       return {};
     }
@@ -79,7 +79,7 @@ struct StyleStr {
   }
 };
 
-auto Style::from_str(str::Str s) -> Option<Style> {
+auto Style::from_str(str::Str s) -> option::Option<Style> {
   auto imp = StyleStr{s._ptr, s._ptr + s._len};
   return imp.parse();
 }

@@ -20,7 +20,7 @@ struct Iterator {
   using Item = T;
 
  public:
-  auto nth(usize n) -> Option<Item> {
+  auto nth(usize n) -> option::Option<Item> {
     auto& self = static_cast<I&>(*this);
 
     for (auto i = 0UL; i < n; ++i) {
@@ -64,7 +64,7 @@ struct Iterator {
     }
   }
 
-  auto reduce(auto&& f) -> Option<Item> {
+  auto reduce(auto&& f) -> option::Option<Item> {
     auto& self = static_cast<I&>(*this);
 
     auto first = self.next();
@@ -75,7 +75,7 @@ struct Iterator {
     return this->fold<Item>(mem::move(first).unwrap(), f);
   }
 
-  auto find(auto&& pred) -> Option<Item> {
+  auto find(auto&& pred) -> option::Option<Item> {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
@@ -86,7 +86,7 @@ struct Iterator {
     return {};
   }
 
-  auto rfind(auto&& pred) -> Option<Item> {
+  auto rfind(auto&& pred) -> option::Option<Item> {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next_back();) {
@@ -97,19 +97,19 @@ struct Iterator {
     return {};
   }
 
-  auto position(auto&& pred) -> Option<usize> {
+  auto position(auto&& pred) -> option::Option<usize> {
     auto& self = static_cast<I&>(*this);
 
     for (usize idx = 0UL; auto x = self.next(); ++idx) {
       if (pred(x.get_unchecked_mut())) {
-        return Option{idx};
+        return idx;
       }
     }
 
     return {};
   }
 
-  auto rposition(auto&& pred) -> Option<usize> {
+  auto rposition(auto&& pred) -> option::Option<usize> {
     auto& self = static_cast<I&>(*this);
 
     for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
@@ -193,11 +193,11 @@ struct Rev : Iterator<Rev<I>, typename I::Item> {
     return _iter.len();
   }
 
-  auto next() -> Option<Item> {
+  auto next() -> option::Option<Item> {
     return _iter.next_back();
   }
 
-  auto next_back() -> Option<Item> {
+  auto next_back() -> option::Option<Item> {
     return _iter.next();
   }
 };
@@ -214,11 +214,11 @@ struct Map : Iterator<Map<I, F>, decltype(declval<F>()(declval<typename I::Item>
     return _iter.len();
   }
 
-  auto next() -> Option<Item> {
+  auto next() -> option::Option<Item> {
     return _iter.next().map(_func);
   }
 
-  auto next_back() -> Option<Item> {
+  auto next_back() -> option::Option<Item> {
     return _iter.next_back().map(_func);
   }
 };

@@ -7,10 +7,10 @@ namespace sfc::backtrace {
 namespace sys_imp = sys::backtrace;
 
 auto Frame::func() const -> String {
-  const auto info = sys_imp::resolve(_addr);
+  const auto info = sys_imp::get_frame(_addr);
 
   char       buf[1024];
-  const auto cnt = sys_imp::cxx_demangle(info.func, buf, sizeof(buf));
+  const auto cnt = sys_imp::cxx_demangle(info.func, buf);
   if (cnt > 0 && cnt < sizeof(buf)) {
     return String::from(Str{buf, cnt});
   }

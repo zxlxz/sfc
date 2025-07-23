@@ -1,22 +1,31 @@
 #include "sfc/io/stdio.h"
 
+#include "sfc/io/file.h"
 #include "sfc/sync/mutex.h"
 #include "sfc/sys/io.h"
 
 namespace sfc::io {
 
+namespace sys_imp = sys::io;
+
 class Stdout::Inn {
   friend class Stdout;
   friend class Stdout::Lock;
+
   static constexpr auto BUF_CAP = 4096U;
 
   sync::ReentrantLock _mtx{};
-  sys::io::File _imp{sys::io::stdout()};
-  String _buf{String::with_capacity(BUF_CAP * 2)};
+  File _imp{sys::io::stdout()};
+  Vec<u8> _buf{Vec<u8>::with_capacity(BUF_CAP * 2)};
 
  public:
   static inline auto instance() -> Inn& {
     static auto res = Inn{};
+    return res;
+  }
+
+  auto is_tty() const -> bool {
+    const auto res = sys_imp::is_tty(_imp.as_fd());
     return res;
   }
 
@@ -25,32 +34,26 @@ class Stdout::Inn {
       return;
     }
 
-    _imp.write(_buf.as_ptr(), _buf.len());
+    _imp.write_all(_buf.as_slice());
     _buf.clear();
   }
 
-  void write_str(Str s) {
-    this->write_buf(s);
-
-    const auto pos = _buf.rfind('\n');
-    if (!pos) {
-      return;
-    }
-
-    const auto n = *pos;
-    _imp.write(_buf.as_ptr(), n + 1);
-    _buf.drain({0, n + 1});
-  }
-
- private:
-  void write_buf(Str s) {
+  void write(Slice<const u8> s) {
     if (s.len() > BUF_CAP) {
       this->flush();
-      _imp.write(s.as_ptr(), s.len());
+      _imp.write_all(s);
       return;
     }
 
-    _buf.write_str(s);
+    if (const auto pos = s.rfind('\n')) {
+      const auto [a, b] = s.split_at(*pos);
+      _buf.extend_from_slice(a);
+      this->flush();
+      _buf.extend_from_slice(b);
+    } else {
+      _buf.extend_from_slice(s);
+    }
+
     if (_buf.len() > BUF_CAP) {
       this->flush();
     }
@@ -66,7 +69,7 @@ auto Stdout::lock() -> Lock {
 }
 
 auto Stdout::is_tty() -> bool {
-  return _inn._imp.is_tty();
+  return _inn.is_tty();
 }
 
 void Stdout::flush() {
@@ -76,7 +79,7 @@ void Stdout::flush() {
 
 void Stdout::write_str(Str s) {
   auto lock = _inn._mtx.lock();
-  _inn.write_str(s);
+  _inn.write(s.as_bytes());
 }
 
 Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
@@ -90,7 +93,7 @@ void Stdout::Lock::flush() {
 }
 
 void Stdout::Lock::write_str(Str s) {
-  return _inn.write_str(s);
+  return _inn.write(s.as_bytes());
 }
 
 }  // namespace sfc::io

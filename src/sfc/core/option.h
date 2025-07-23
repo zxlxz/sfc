@@ -8,77 +8,73 @@ namespace detail {
 
 template <class T>
 class Option {
-  union Data {
+  bool _tag;
+  union {
     T _val;
-    char _nil = 0;
-
-    ~Data() {}
   };
 
-  bool _tag{false};
-  Data _dat{};
-
  public:
-  inline Option() noexcept = default;
+  Option() noexcept : _tag{false} {}
 
-  inline explicit Option(T&& val) noexcept : _tag{true} {
-    new (&_dat) T{static_cast<T&&>(val)};
+  explicit Option(T&& val) noexcept : _tag{true} {
+    new (&_val) T{static_cast<T&&>(val)};
   }
 
-  inline ~Option() {
+  ~Option() {
     if (_tag) {
-      _dat._val.~T();
+      _val.~T();
     }
   }
 
-  inline Option(const Option& other) : _tag{other._tag} {
+  Option(const Option& other) : _tag{other._tag} {
     if (_tag) {
-      new (&_dat) T{other._dat._val};
+      new (&_val) T{other._val};
     }
   }
 
-  inline Option(Option&& other) noexcept : _tag{other._tag} {
+  Option(Option&& other) noexcept : _tag{other._tag} {
     if (_tag) {
-      new (&_dat) T{static_cast<T&&>(other._dat._val)};
+      new (&_val) T{static_cast<T&&>(other._val)};
     }
   }
 
-  inline auto operator=(const Option& other) noexcept -> Option& {
+  auto operator=(const Option& other) noexcept -> Option& {
+    if (this == &other) {
+      return *this;
+    }
+    if (_tag) {
+      _val.~T();
+    }
+    if (other._tag) {
+      new (&_val) T{other._val};
+    }
+    _tag = other._tag;
+    return *this;
+  }
+
+  auto operator=(Option&& other) noexcept -> Option& {
     if (this != &other) {
       if (_tag) {
-        _dat._val.~T();
+        _val.~T();
       }
       if (other._tag) {
-        new (&_dat) T{other._dat._val};
+        new (&_val) T{static_cast<T&&>(other._val)};
       }
       _tag = other._tag;
     }
     return *this;
   }
 
-  inline auto operator=(Option&& other) noexcept -> Option& {
-    if (this != &other) {
-      if (_tag) {
-        _dat._val.~T();
-      }
-      if (other._tag) {
-        new (&_dat) T{static_cast<T&&>(other._dat._val)};
-      }
-      _tag = other._tag;
-    }
-    return *this;
-  }
-
-  inline explicit operator bool() const {
+  explicit operator bool() const {
     return _tag;
   }
 
-  inline auto operator*() const -> const T& {
-    return _dat._val;
+  auto operator*() const -> const T& {
+    return _val;
   }
 
-  inline auto operator*() -> T& {
-    return _dat._val;
+  auto operator*() -> T& {
+    return _val;
   }
 };
 
@@ -136,12 +132,12 @@ class Option {
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_inn, "Option::operator*: None.");
+    panicking::assert(_inn, "Option::operator*: None");
     return *_inn;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_inn, "Option::operator*: None.");
+    panicking::assert(_inn, "Option::operator*: None");
     return *_inn;
   }
 
@@ -150,7 +146,7 @@ class Option {
   }
 
   auto unwrap() && -> T {
-    panicking::assert(_inn, "Option::unwrap: None.");
+    panicking::assert(_inn, "Option::unwrap: None");
     return static_cast<T&&>(*_inn);
   }
 
@@ -164,7 +160,7 @@ class Option {
   }
 
   auto map(auto&& pred) && {
-  using U = decltype(pred(static_cast<T&&>(*_inn)));
+    using U = decltype(pred(static_cast<T&&>(*_inn)));
     return _inn ? Option<U>{pred(static_cast<T&&>(*_inn))} : Option<U>{};
   }
 
@@ -178,7 +174,3 @@ class Option {
 };
 
 }  // namespace sfc::option
-
-namespace sfc {
-using option::Option;
-}  // namespace sfc

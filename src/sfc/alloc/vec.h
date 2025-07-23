@@ -60,25 +60,26 @@ class [[nodiscard]] Buf {
   }
 
   void shrink_to(usize used, usize min_cap) {
-    if (min_cap < _cap) {
-      this->reserve_extract(used, min_cap - _cap);
+    if (min_cap >= _cap) {
+      return;
     }
+    this->reserve_extract(used, min_cap - _cap);
   }
 
   void reserve(usize used, usize additional) {
-    if (used + additional > _cap) {
-      const auto new_cap = cmp::max(2 * _cap, used + additional);
-      const auto new_add = cmp::max(usize{8U}, new_cap - used);
-      this->reserve_extract(used, new_add);
+    if (used + additional <= _cap) {
+      return;
     }
+
+    const auto min_cap = _cap < 4 ? 8U : 2 * _cap;
+    const auto req_cap = used + additional;
+    const auto new_cap = min_cap < req_cap ? req_cap : min_cap;
+    this->reserve_extract(used, new_cap - _cap);
   }
 
   void reserve_extract(usize used, usize additional) {
-    if (used + additional > _cap) {
-      const auto new_cap = used + additional;
-      _ptr = _alloc.realloc_array(_ptr, _cap, new_cap);
-      _cap = new_cap;
-    }
+    _ptr = _alloc.realloc_array(_ptr, _cap, used + additional);
+    _cap = used + additional;
   }
 };
 
@@ -159,13 +160,14 @@ class [[nodiscard]] Vec {
   }
 
   void set_len(usize new_len) {
-    new_len = cmp::min(new_len, _buf._cap);
-    _len = new_len;
+    if (new_len <= _buf._cap) {
+      _len = new_len;
+    }
   }
 
   auto clone() const -> Vec {
-    auto res = Vec::with_capacity(_len);
-    res.extend(this->as_slice().iter());
+    auto res = Vec{};
+    res.extend_from_slice(this->as_slice());
     return res;
   }
 
@@ -175,21 +177,21 @@ class [[nodiscard]] Vec {
 
  public:
   auto get_unchecked(usize idx) const -> const T& {
-    return _buf[idx];
+    return _buf._ptr[idx];
   }
 
   auto get_unchecked_mut(usize idx) -> T& {
-    return _buf[idx];
+    return _buf._ptr[idx];
   }
 
   auto operator[](usize idx) const -> const T& {
     panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
-    return _buf[idx];
+    return _buf._ptr[idx];
   }
 
   auto operator[](usize idx) -> T& {
     panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
-    return _buf[idx];
+    return _buf._ptr[idx];
   }
 
   auto operator[](Range ids) const -> slice::Slice<const T> {
@@ -221,7 +223,7 @@ class [[nodiscard]] Vec {
  public:
   void push(T val) {
     this->reserve(1);
-    new (&_buf[_len]) T{static_cast<T&&>(val)};
+    new (&_buf._ptr[_len]) T{static_cast<T&&>(val)};
     _len += 1;
   }
 
@@ -230,7 +232,7 @@ class [[nodiscard]] Vec {
       return {};
     }
 
-    auto& tmp = _buf[_len - 1];
+    auto& tmp = _buf._ptr[_len - 1];
     auto res = Option{static_cast<T&&>(tmp)};
     tmp.~T();
     _len -= 1;
@@ -285,15 +287,15 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T element) {
-    panicking::assert(idx <= _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::assert(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
 
-    const auto hole = &_buf[idx];
+    const auto hole = _buf._ptr + idx;
     if (idx == _len) {
       new (hole) T{static_cast<T&&>(element)};
-    } else if (_len != 0) {
-      const auto tail = &_buf[_len];
+    } else {
+      const auto tail = _buf._ptr + _len;
       ptr::uninit_move(tail - 1, tail, 1);
       ptr::move(hole, hole + 1, _len - idx - 1);
       *hole = static_cast<T&&>(element);
@@ -304,23 +306,25 @@ class [[nodiscard]] Vec {
   auto remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto ptr = &_buf[idx];
-    auto res = static_cast<T&&>(*ptr);
-    ptr::move(ptr + 1, ptr, _len - idx - 1);
+    auto res = static_cast<T&&>(_buf._ptr[idx]);
+    ptr::move(_buf._ptr + idx + 1, _buf._ptr + idx, _len - idx - 1);
+    _buf._ptr[_len].~T();
+    _len -= 1;
+
     return res;
   }
 
   void drain(Range ids) {
-    auto tmp = (*this)[ids];
-    if (tmp.is_empty()) {
+    ids = ids.wrap(_len);
+
+    const auto cnt = ids.len();
+    if (cnt == 0) {
       return;
     }
 
-    const auto dst = tmp._ptr;
-    const auto src = dst + tmp._len;
-    const auto end = _buf._ptr + _len;
-    ptr::move(src, dst, static_cast<usize>(end - dst));
-    this->truncate(_len - tmp._len);
+    ptr::move(_buf._ptr + ids._end, _buf._ptr + ids._start, _len - ids._end);
+    ptr::drop_in_place(_buf._ptr + _len - cnt, cnt);
+    _len -= cnt;
   }
 
   void resize(usize new_len, T value) {
@@ -333,7 +337,11 @@ class [[nodiscard]] Vec {
 
   void append(Vec& other) {
     const auto cnt = other.len();
-    this->reserve(cnt);
+    if (cnt == 0) {
+      return;
+    }
+
+    this->reserve(other.len());
     ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, cnt);
     _len += cnt;
   }
@@ -342,21 +350,25 @@ class [[nodiscard]] Vec {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
-    iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
+    iter.for_each([&](T val) {
+      new (_buf._ptr + _len) T{static_cast<T&&>(val)};
+      ++_len;
+    });
   }
 
   void extend_with(usize cnt, T value) {
     this->reserve(cnt);
 
-    for (auto idx = 0U; idx < cnt; ++idx) {
-      this->push(value);
+    const auto new_len = _len + cnt;
+    for (; _len < new_len; ++_len) {
+      new (_buf._ptr + _len) T{value};
     }
   }
 
   void extend_from_slice(Slice<const T> other) {
     this->reserve(other._len);
 
-    ptr::uninit_copy(other._ptr, &_buf[_len], other._len);
+    ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
     _len += other._len;
   }
 
@@ -373,6 +385,15 @@ class [[nodiscard]] Vec {
     }
 
     this->truncate(pdst - _buf._ptr);
+  }
+
+ public:
+  auto find(const T& x) const -> Option<usize> {
+    return this->as_slice().find(x);
+  }
+
+  auto rfind(const T& x) const -> Option<usize> {
+    return this->as_slice().rfind(x);
   }
 
  public:

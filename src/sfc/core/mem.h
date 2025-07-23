@@ -38,6 +38,6 @@ inline auto take(T& dst) -> T {
 }  // namespace sfc::mem
 
 template <class T>
-constexpr void* operator new(sfc::usize size, T* ptr) noexcept {
+constexpr void* operator new(sfc::usize, T* ptr) noexcept {
   return ptr;
 }

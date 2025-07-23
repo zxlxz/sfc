@@ -9,7 +9,7 @@ struct FltStr {
 
  public:
   template <class T>
-  auto parse() -> Option<T> {
+  auto parse() -> option::Option<T> {
     const auto sign = this->extract_sign();
     const auto int_part = this->extract_int_part();
     const auto flt_part = this->extract_flt_part();
@@ -18,7 +18,7 @@ struct FltStr {
     }
 
     const auto res = sign * (int_part + flt_part);
-    return Option{static_cast<T>(res)};
+    return static_cast<T>(res);
   }
 
  private:
@@ -227,7 +227,7 @@ auto flt_eq_ulp(f64 a, f64 b, u32 ulp) -> bool {
 namespace sfc::str {
 
 template <class T>
-auto FromStr<T>::from_str(Str s) -> Option<T> {
+auto FromStr<T>::from_str(Str s) -> option::Option<T> {
   auto imp = num::FltStr{s._ptr, s._ptr + s._len};
   return imp.parse<T>();
 }

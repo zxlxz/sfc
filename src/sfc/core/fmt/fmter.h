@@ -17,7 +17,7 @@ struct Style {
 
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  static auto from_str(str::Str s) -> Option<Style>;
+  static auto from_str(str::Str s) -> option::Option<Style>;
 
   auto fill(char default_val = ' ') const -> char {
     return _fill ? _fill : default_val;

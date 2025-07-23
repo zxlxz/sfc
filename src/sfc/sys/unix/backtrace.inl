@@ -9,8 +9,6 @@
 namespace sfc::sys::backtrace {
 
 struct FrameInfo {
-  static constexpr auto kMaxFuncLen = 256U;
-
   const char* file;
   unsigned    line;
   const char* func;
@@ -22,7 +20,7 @@ static inline auto trace(void* (&buf)[N]) -> size_t {
   return cnt > 0 ? cnt : 0U;
 }
 
-static inline auto resolve(void* addr) -> FrameInfo {
+static inline auto get_frame(void* addr) -> FrameInfo {
   auto dl_info = ::Dl_info{};
   if (!::dladdr(addr, &dl_info)) {
     return {};
@@ -37,10 +35,12 @@ static inline auto resolve(void* addr) -> FrameInfo {
   return res;
 }
 
-static auto cxx_demangle(const char in[], char out_buf[], size_t buf_len) -> size_t {
+template<size_t N>
+static auto cxx_demangle(const char in[], char (&out)[N]) -> size_t {
+  auto out_len = N;
   auto status = 0;
-  __cxxabiv1::__cxa_demangle(in, out_buf, &buf_len, &status);
-  return status == 0 ? buf_len : 0UL;
+  __cxxabiv1::__cxa_demangle(in, out, &out_len, &status);
+  return status == 0 ? out_len : 0UL;
 }
 
 }  // namespace sfc::sys::backtrace

@@ -8,59 +8,67 @@ namespace detail {
 
 template <class T, class E>
 class Result {
- protected:
-  union Imp {
+  bool _tag;
+  union {
     T _ok;
     E _err;
-
-    Imp(T&& ok) : _ok{static_cast<T&&>(ok)} {}
-    Imp(E&& err) : _err{static_cast<E&&>(err)} {}
-    ~Imp() {}
   };
-  bool _tag;
-  Imp _imp;
 
  public:
-  Result(T ok) : _tag{true}, _imp{static_cast<T&&>(ok)} {}
+  Result(T&& ok) : _tag{true}, _ok{static_cast<T&&>(ok)} {}
 
-  Result(E err) : _tag{false}, _imp{static_cast<E&&>(err)} {}
+  Result(E&& err) : _tag{false}, _err{static_cast<E&&>(err)} {}
 
   ~Result() {
     if (_tag) {
-      _imp._ok.~T();
+      _ok.~T();
     } else {
-      _imp._err.~E();
+      _err.~E();
+    }
+  }
+
+  Result(const Result& other) : _tag{other._tag} {
+    if (_tag) {
+      new (&_ok) T{other._ok};
+    } else {
+      new (&_err) E{other._err};
     }
   }
 
   Result(Result&& other) noexcept : _tag{other._tag} {
     if (_tag) {
-      new (&_imp._ok) T{static_cast<T&&>(other._imp._ok)};
+      new (&_ok) T{static_cast<T&&>(other._ok)};
     } else {
-      new (&_imp._err) T{static_cast<T&&>(other._imp._err)};
+      new (&_err) E{static_cast<E&&>(other._err)};
     }
   }
 
   Result& operator=(const Result& other) {
+    if (this == &other) {
+      return *this;
+    }
+
     if (_tag == other._tag) {
-      _tag ? _imp._ok = other._imp._ok : _imp._err = other._imp._err;
+      _tag ? _ok = other._ok : _err = other._err;
     } else {
-      _tag ? _imp._ok.~T() : _imp._err.~E();
+      _tag ? _ok.~T() : _err.~E();
+      _tag ? new (&_err) E{other._err} : new (&_ok) T{other._ok};
       _tag = other._tag;
-      _tag ? new (&_imp._ok) T{other._imp._ok} : new (&_imp._err) E{other._imp._err};
     }
     return *this;
   }
 
   Result& operator=(Result&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
     if (_tag == other._tag) {
-      _tag ? _imp._ok = static_cast<T&&>(other._imp._ok)
-           : _imp._err = static_cast<E&&>(other._imp._err);
+      _tag ? _ok = static_cast<T&&>(other._ok) : _err = static_cast<E&&>(other._err);
     } else {
-      _tag ? _imp._ok.~T() : _imp._err.~E();
+      _tag ? _ok.~T() : _err.~E();
+      _tag ? new (&_err) E{static_cast<E&&>(other._err)}
+           : new (&_ok) T{static_cast<T&&>(other._ok)};
       _tag = other._tag;
-      _tag ? new (&_imp._ok) T{static_cast<T&&>(other._imp._ok)}
-           : new (&_imp._err) E{static_cast<E&&>(other._imp._err)};
     }
     return *this;
   }
@@ -69,33 +77,33 @@ class Result {
     return _tag;
   }
 
-  auto get_ok_unchecked() const -> const T& {
-    return _imp._ok;
+  auto operator*() const -> const T& {
+    return _ok;
   }
 
-  auto get_ok_unchecked_mut() -> T& {
-    return _imp._ok;
+  auto operator*() -> T& {
+    return _ok;
   }
 
-  auto get_err_unchecked() const -> const E& {
-    return _imp._err;
+  auto operator~() const -> const E& {
+    return _err;
   }
 
-  auto get_err_unchecked_mut() -> E& {
-    return _imp._err;
+  auto operator~() -> E& {
+    return _err;
   }
 };
 
 }  // namespace detail
 
 template <class T, class E>
-class Result : detail::Result<T, E> {
-  using Imp = detail::Result<T, E>;
-  using Imp::_imp;
-  using Imp::_tag;
+class Result {
+  detail::Result<T, E> _inn;
 
  public:
-  using Imp::Imp;
+  Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+
+  Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
 
   ~Result() = default;
 
@@ -103,73 +111,57 @@ class Result : detail::Result<T, E> {
 
   Result(Result&&) noexcept = default;
 
-  auto operator=(Result&&) noexcept -> Result& = default;
+  Result& operator=(const Result&) noexcept = default;
 
-  auto is_ok() const -> bool {
-    return this->_tag;
+  Result& operator=(Result&&) noexcept = default;
+
+  operator bool() const {
+    return static_cast<bool>(_inn);
   }
 
-  auto is_err() const -> bool {
-    return !this->_tag;
+  auto operator*() const -> const T& {
+    panicking::assert(_inn, "Result::operator*: Err");
+    return *_inn;
   }
 
-  using Imp::get_ok_unchecked;
-  using Imp::get_ok_unchecked_mut;
+  auto operator*() -> T& {
+    panicking::assert(_inn, "Result::operator*: Err");
+    return *_inn;
+  }
 
-  using Imp::get_err_unchecked;
-  using Imp::get_err_unchecked_mut;
+  auto operator~() const -> const E& {
+    panicking::assert(!_inn, "Result::operator*: Ok");
+    return ~_inn;
+  }
 
-  auto ok() && -> Option<T> {
-    if (!_tag) {
+  auto operator~() -> E& {
+    panicking::assert(!_inn, "Result::operator*: Ok");
+    return ~_inn;
+  }
+
+  auto ok() && -> option::Option<T> {
+    if (!_inn) {
       return {};
     }
-    return static_cast<T&&>(Imp::get_ok_unchecked_mut());
+    return static_cast<T&&>(*_inn);
   }
 
-  auto ok() const& -> Option<T> {
-    if (!_tag) {
+  auto err() && -> option::Option<E> {
+    if (_inn) {
       return {};
     }
-    return Imp::get_ok_unchecked();
-  }
-
-  auto err() && -> Option<E> {
-    if (_tag) {
-      return {};
-    }
-    return static_cast<E&&>(Imp::get_err_unchecked_mut());
-  }
-
-  auto err() const& -> Option<E> {
-    if (_tag) {
-      return {};
-    }
-    return Imp::get_err_unchecked();
+    return static_cast<E&&>(~_inn);
   }
 
   auto unwrap() && -> T {
-    panicking::assert(_tag, "Result::unwrap: Err({})", _imp._err);
-    return static_cast<T&&>(Imp::get_ok_unchecked_mut());
-  }
-
-  auto unwrap() const& -> T {
-    panicking::assert(_tag, "Result::unwrap: Err({})", _imp._err);
-    return Imp::get_ok_unchecked();
+    panicking::assert(_inn, "Result::unwrap: Err({})", ~_inn);
+    return static_cast<T&&>(*_inn);
   }
 
   auto unwrap_err() && -> E {
-    panicking::assert(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
-    return static_cast<E&&>(Imp::get_err_unchecked_mut());
-  }
-
-  auto unwrap_err() const& -> E {
-    panicking::assert(!_tag, "Option::unwrap_err: Ok({})", _imp._ok);
-    return Imp::get_err_unchecked();
+    panicking::assert(!_inn, "Result::unwrap_err: Ok({})", *_inn);
+    return static_cast<E&&>(~_inn);
   }
 };
 
 }  // namespace sfc::result
-
-namespace sfc {
-using result::Result;
-}  // namespace sfc

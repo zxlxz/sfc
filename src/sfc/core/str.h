@@ -1,12 +1,8 @@
 #pragma once
 
-#include "sfc/core/chr.h"
 #include "sfc/core/slice.h"
 
 namespace sfc::str {
-
-template <class T>
-struct FromStr;
 
 struct Str {
   const char* _ptr = nullptr;
@@ -109,158 +105,182 @@ struct Str {
   auto split(auto&& p) const;
 
   auto trim_start() const -> Str {
-    return this->trim_start_matches(chr::is_whitespace);
+    return this->trim_start_matches([](auto c) {
+      return c == ' ' || ('\x09' <= c && c <= '\x0d');
+    });
   }
 
   auto trim_end() const -> Str {
-    return this->trim_end_matches(chr::is_whitespace);
+    return this->trim_end_matches([](auto c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
   auto trim() const -> Str {
-    return this->trim_matches(chr::is_whitespace);
+    return this->trim_matches([](auto c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
   template <class T>
-  auto parse() const -> option::Option<T> {
-    if constexpr (requires { T::from_str(*this); }) {
-      return T::from_str(*this);
-    } else {
-      return FromStr<T>::from_str(*this);
-    }
-  }
+  auto parse() const -> option::Option<T>;
 
   void fmt(auto& f) const {
     f.pad(*this);
   }
 };
 
-struct SearchStep {
-  enum Kind { Match, Reject, Done };
-  Kind kind;
-  ops::Range range = {0UL, 0UL};
+template <class T>
+struct FromStr {
+  static auto from_str(Str) -> option::Option<T>;
+};
 
-  explicit operator bool() const {
-    return kind != Kind::Done;
+template <class T>
+auto Str::parse() const -> option::Option<T> {
+  if constexpr (requires { T::from_str(*this); }) {
+    return T::from_str(*this);
+  } else {
+    return FromStr<T>::from_str(*this);
+  }
+}
+
+struct CharSearcher {
+  Str _str;
+  char _pat;
+  usize _idx = 0U;
+  usize _end = _str._len;
+
+ public:
+  auto step() const -> usize {
+    return 1;
+  }
+
+  auto next() -> option::Option<usize> {
+    if (_idx >= _end) {
+      return {};
+    }
+
+    if (_str._ptr[_idx++] != _pat) {
+      return {};
+    }
+
+    return _idx - 1;
+  }
+
+  auto next_back() -> option::Option<usize> {
+    if (_idx >= _end) {
+      return {};
+    }
+
+    if (_str._ptr[--_end] != _pat) {
+      return {};
+    }
+
+    return _end;
+  }
+
+  auto next_match() -> option::Option<usize> {
+    for (; _idx < _end; ++_idx) {
+      if (_str._ptr[_idx] == _pat) {
+        return _idx;
+      }
+    }
+    return {};
+  }
+
+  auto next_match_back() -> option::Option<usize> {
+    for (; _idx < _end; --_end) {
+      if (_str._ptr[_end - 1] == _pat) {
+        return _end - 1;
+      }
+    }
+
+    return {};
+  }
+
+  auto next_reject() -> option::Option<usize> {
+    for (; _idx < _end; ++_idx) {
+      if (_str._ptr[_idx] != _pat) {
+        return _idx;
+      }
+    }
+    return {};
+  }
+
+  auto next_reject_back() -> option::Option<usize> {
+    for (; _idx < _end; --_end) {
+      if (_str._ptr[_end - 1] != _pat) {
+        return _end - 1;
+      }
+    }
+    return {};
   }
 };
 
 template <class P>
-struct CharPredSercher {
-  Str _haystack;
-  P _pred;
-  usize _finger = 0U;
-  usize _finger_back = _haystack.len();
+struct PredSercher {
+  Str _str;
+  P _pat;
+  usize _idx = 0U;
+  usize _end = _str._len;
 
  public:
-  auto next() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
-    }
-
-    const auto ch = _haystack.get_unchecked(_finger);
-    const auto mm = _pred(ch) ? SearchStep::Match : SearchStep::Reject;
-    const auto ss = SearchStep{mm, {_finger, _finger + 1}};
-    _finger += 1;
-    return ss;
+  auto step() const -> usize {
+    return 1;
   }
 
-  auto next_back() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
-    }
-
-    const auto ch = _haystack.get_unchecked(_finger_back);
-    const auto mm = _pred(ch) ? SearchStep::Match : SearchStep::Reject;
-    const auto ss = SearchStep{mm, {_finger_back - 1, _finger_back}};
-    _finger_back -= 1;
-    return ss;
-  }
-
-  auto next_match() -> option::Option<ops::Range> {
-    while (const auto ss = this->next()) {
-      if (ss.kind == SearchStep::Match) {
-        return option::Option{ss.range};
-      }
-    }
-    return {};
-  }
-
-  auto next_match_back() -> option::Option<ops::Range> {
-    while (const auto ss = this->next_back()) {
-      if (ss.kind == SearchStep::Match) {
-        return option::Option{ss.range};
-      }
-    }
-    return {};
-  }
-
-  auto next_reject() -> option::Option<ops::Range> {
-    while (const auto ss = this->next()) {
-      if (ss.kind == SearchStep::Reject) {
-        return option::Option{ss.range};
-      }
-    }
-    return {};
-  }
-
-  auto next_reject_back() -> option::Option<ops::Range> {
-    while (const auto ss = this->next_back()) {
-      if (ss.kind == SearchStep::Reject) {
-        return option::Option{ss.range};
-      }
-    }
-    return {};
-  }
-};
-
-struct CharSearcher {
-  Str _haystack;
-  char _needle;
-  usize _finger = 0U;
-  usize _finger_back = _haystack.len();
-
- public:
-  auto next() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
-    }
-
-    const auto ch = _haystack.get_unchecked(_finger);
-    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + 1}};
-    _finger += 1;
-    return res;
-  }
-
-  auto next_back() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
-    }
-
-    const auto ch = _haystack.get_unchecked(_finger_back - 1);
-    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{.kind = mm, .range = {_finger_back - 1, _finger_back}};
-    _finger_back -= 1;
-    return res;
-  }
-
-  auto next_match() -> option::Option<ops::Range> {
-    if (_finger >= _finger_back) {
+  auto next() -> option::Option<usize> {
+    if (_idx >= _end) {
       return {};
     }
 
-    if (auto p = __builtin_memchr(_haystack._ptr, _needle, _finger_back - _finger)) {
-      const auto n = static_cast<usize>(static_cast<const char*>(p) - _haystack._ptr);
-      return option::Option{ops::Range{n, n + 1}};
+    if (!_pat(_str._ptr[_idx++])) {
+      return {};
+    }
+
+    return _idx - 1;
+  }
+
+  auto next_back() -> option::Option<usize> {
+    if (_idx >= _end) {
+      return {};
+    }
+
+    if (!_pat(_str._ptr[--_end])) {
+      return {};
+    }
+
+    return _end;
+  }
+
+  auto next_match() -> option::Option<usize> {
+    for (; _idx < _end; ++_idx) {
+      if (_pat(_str._ptr[_idx])) {
+        return _idx;
+      }
+    }
+    return {};
+  }
+
+  auto next_match_back() -> option::Option<usize> {
+    for (; _idx < _end; --_end) {
+      if (_pat(_str._ptr[_end - 1])) {
+        return _end - 1;
+      }
     }
 
     return {};
   }
 
-  auto next_match_back() -> option::Option<ops::Range> {
-    while (const auto ss = this->next_back()) {
-      if (ss.kind == SearchStep::Match) {
-        return option::Option{ss.range};
+  auto next_reject() -> option::Option<usize> {
+    for (; _idx < _end; ++_idx) {
+      if (!_pat(_str._ptr[_idx])) {
+        return _idx;
+      }
+    }
+    return {};
+  }
+
+  auto next_reject_back() -> option::Option<usize> {
+    for (; _idx < _end; --_end) {
+      if (!_pat(_str._ptr[_end - 1])) {
+        return _end - 1;
       }
     }
     return {};
@@ -268,61 +288,94 @@ struct CharSearcher {
 };
 
 struct StrSearcher {
-  Str _haystack;
-  Str _needle;
-  usize _finger = 0;
-  usize _finger_back = num::saturating_sub(_haystack.len() + 1, _needle.len());
+  Str _str;
+  Str _pat;
+  usize _idx = 0;
+  usize _end = _str._len + 1 - _pat._len;
 
  public:
-  auto next() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
-    }
-
-    const auto ss = _haystack[{_finger, _finger + _needle._len}];
-    const auto mm = ss == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{.kind = mm, .range = {_finger, _finger + _needle._len}};
-    _finger += mm == SearchStep::Match ? _needle._len : 1U;
-    return res;
+  auto step() const -> usize {
+    return _pat._len;
   }
 
-  auto next_back() -> SearchStep {
-    if (_finger >= _finger_back) {
-      return {.kind = SearchStep::Done};
+  auto next() -> option::Option<usize> {
+    if (_idx >= _end) {
+      return {};
     }
 
-    const auto ch = _haystack[{_finger_back - _needle._len, _finger_back}];
-    const auto mm = ch == _needle ? SearchStep::Match : SearchStep::Reject;
-    const auto res = SearchStep{.kind = mm, .range = {_finger_back, _finger_back + 1}};
-    _finger_back -= mm == SearchStep::Match ? _needle._len : 1U;
-    return res;
+    if (_idx + _pat._len > _end) {
+      _idx = _end;
+      return {};
+    }
+
+    if (__builtin_memcmp(_str._ptr + _idx, _pat._ptr, _pat._len) != 0) {
+      _idx += 1;
+      return {};
+    }
+
+    _idx += _pat._len;
+    return _idx - _pat._len;
+  }
+
+  auto next_back() -> option::Option<usize> {
+    if (_idx >= _end) {
+      return {};
+    }
+
+    if (_idx + _pat._len > _end) {
+      _end = _idx;
+      return {};
+    }
+
+    if (__builtin_memcmp(_str._ptr + _end - 1, _pat._ptr, _pat._len) != 0) {
+      _end -= 1;
+      return {};
+    }
+
+    _end -= _pat._len;
+    return _end + _pat._len - 1;
   }
 };
 
 template <class P>
 struct Pattern {
-  P _pred;
+  P _val;
 
-  auto into_searcher(Str s) && -> CharPredSercher<P> {
-    return CharPredSercher<P>{s, static_cast<P&&>(_pred)};
+ public:
+  auto len() const -> usize {
+    return 1;
+  }
+
+  auto into_searcher(Str s) && -> PredSercher<P> {
+    return {s, static_cast<P&&>(_val)};
   }
 };
 
 template <>
 struct Pattern<char> {
-  char _needle;
+  char _val;
+
+ public:
+  auto len() const -> usize {
+    return 1;
+  }
 
   auto into_searcher(Str s) const -> CharSearcher {
-    return CharSearcher{._haystack = s, ._needle = _needle};
+    return {s, _val};
   }
 };
 
 template <>
 struct Pattern<Str> {
-  Str _needle;
+  Str _val;
+
+ public:
+  auto len() const -> usize {
+    return _val.len();
+  }
 
   auto into_searcher(Str s) const -> StrSearcher {
-    return StrSearcher{._haystack = s, ._needle = _needle};
+    return {s, _val};
   }
 };
 
@@ -345,7 +398,7 @@ struct Split : iter::Iterator<Split<S>, Str> {
 
  public:
   auto next() -> option::Option<Str> {
-    const auto cur_pos = _searcher._finger;
+    const auto cur_pos = _searcher._idx;
     _searcher.next();
   }
 };
@@ -353,58 +406,59 @@ struct Split : iter::Iterator<Split<S>, Str> {
 template <class P>
 auto Str::find(P&& p) const -> option::Option<usize> {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto o = s.next_match().map([](auto ids) { return ids._start; });
-  return o;
+  return s.next_match();
 }
 
 template <class P>
 auto Str::rfind(P&& p) const -> option::Option<usize> {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto o = s.next_match_back().map([](auto ids) { return ids._start; });
-  return o;
+  return s.next_match_back();
 }
 
 template <class P>
 auto Str::contains(P&& p) const -> bool {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto t = s.next_match();
-  return t;
+  return s.next_match();
 }
 
 template <class P>
 auto Str::starts_with(P&& p) const -> bool {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto t = s.next();
-  return t.kind == SearchStep::Match;
+  return s.next();
 }
 
 template <class P>
 auto Str::ends_with(P&& p) const -> bool {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto t = s.next_back();
-  return t.kind == SearchStep::Match;
+  return s.next_back();
 }
 
 template <class P>
 auto Str::trim_start_matches(P&& p) const -> Str {
-  auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto i = s.next_reject().unwrap_or({0U, 0U});
-  return (*this)[{i._start, _len}];
+  auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
+  auto idx = ser.next_reject();
+  return idx ? (*this)[{*idx, ser.step()}] : *this;
 }
 
 template <class P>
 auto Str::trim_end_matches(P&& p) const -> Str {
-  auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto j = s.next_reject_back().unwrap_or({_len, _len});
-  return (*this)[{0, j._start}];
+  auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
+  auto idx = ser.next_reject_back();
+  return idx ? (*this)[{*idx - ser.step(), ser.step()}] : *this;
 }
 
 template <class P>
 auto Str::trim_matches(P&& p) const -> Str {
-  auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto i = s.next_reject().unwrap_or({0U, 0U});
-  auto j = s.next_reject_back().unwrap_or({_len, _len});
-  return (*this)[{i._start, j._start}];
+  auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
+
+  auto res = *this;
+  if (auto idx = ser.next_reject_back()) {
+    res = res[{0, *idx}];
+  }
+  if (auto idx = ser.next_reject()) {
+    res = res[{*idx, res.len() - *idx}];
+  }
+  return res;
 }
 
 template <class P>
@@ -412,10 +466,5 @@ auto Str::split(P&& p) const {
   auto s = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
   return Split{*this, s};
 }
-
-template <class T>
-struct FromStr {
-  static auto from_str(Str) -> option::Option<T>;
-};
 
 }  // namespace sfc::str

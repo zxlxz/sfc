@@ -86,12 +86,12 @@ struct Slice {
 
   auto split_at(usize mid) const -> tuple::Tuple<Slice<const T>, Slice<const T>> {
     const auto x = cmp::min(mid, _len);
-    return tuple::Tuple{{_ptr, x}, {_ptr + x, _len - x}};
+    return tuple::Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
   }
 
   auto split_at_mut(usize mid) -> tuple::Tuple<Slice, Slice> {
     const auto x = cmp::min(mid, _len);
-    return tuple::Tuple{{_ptr, x}, {_ptr + x, _len - x}};
+    return tuple::Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
   }
 
  public:
@@ -135,6 +135,24 @@ struct Slice {
       }
     }
     return true;
+  }
+
+  auto find(const T& x) const -> option::Option<usize> {
+    for (auto i = usize{0UL}; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return i;
+      }
+    }
+    return {};
+  }
+
+  auto rfind(const T& x) const -> option::Option<usize> {
+    for (auto i = _len; i > 0; --i) {
+      if (_ptr[i - 1] == x) {
+        return i - 1;
+      }
+    }
+    return {};
   }
 
   auto contains(const T& x) const -> bool {
@@ -203,20 +221,18 @@ struct Iter : iter::Iterator<Iter<T>, T&> {
     return res >= 0 ? static_cast<usize>(res) : 0U;
   }
 
-  auto next() -> Option<T&> {
+  auto next() -> option::Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
-    _ptr += 1;
-    return Option<T&>{*(_ptr - 1)};
+    return *_ptr++;
   }
 
-  auto next_back() -> Option<T&> {
+  auto next_back() -> option::Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
-    _end -= 1;
-    return Option<T&>{*_end};
+    return *--_end;
   }
 };
 
@@ -230,7 +246,7 @@ struct Windows : iter::Iterator<Windows<T>, Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() -> Option<Slice<T>> {
+  auto next() -> option::Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
@@ -241,7 +257,7 @@ struct Windows : iter::Iterator<Windows<T>, Slice<T>> {
     return res;
   }
 
-  auto next_back() -> Option<Slice<T>> {
+  auto next_back() -> option::Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
@@ -262,7 +278,7 @@ struct Truncks : iter::Iterator<Truncks<T>, Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() -> Option<Slice<T>> {
+  auto next() -> option::Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }

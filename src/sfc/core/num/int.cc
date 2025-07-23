@@ -9,7 +9,7 @@ struct IntStr {
 
  public:
   template <class T>
-  auto parse() -> Option<T> {
+  auto parse() -> option::Option<T> {
     if (_ptr == _end) {
       return {};
     }
@@ -195,7 +195,7 @@ template auto int2str(slice::Slice<char> buf, unsigned long long val, char type)
 namespace sfc::str {
 
 template <class T>
-auto FromStr<T>::from_str(Str s) -> Option<T> {
+auto FromStr<T>::from_str(Str s) -> option::Option<T> {
   auto imp = num::IntStr{s._ptr, s._ptr + s._len};
   return imp.parse<T>();
 }

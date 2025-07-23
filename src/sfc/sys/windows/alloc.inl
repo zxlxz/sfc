@@ -4,27 +4,25 @@
 
 namespace sfc::sys::alloc {
 
+static inline auto heap() -> HANDLE {
+  static const auto res = ::GetProcessHeap();
+  return res;
+}
+
 static inline auto malloc(SIZE_T size) {
-  static auto proc = ::GetProcessHeap();
-  const auto  addr = ::HeapAlloc(proc, 0, size);
-  return addr;
+  return ::HeapAlloc(heap(), 0, size);
 }
 
 static inline auto free(void* addr) {
-  static auto proc = ::GetProcessHeap();
-  ::HeapFree(proc, 0, addr);
+  ::HeapFree(heap(), 0, addr);
 }
 
 static inline auto realloc(void* ptr, SIZE_T new_size) -> void* {
-  static auto proc = ::GetProcessHeap();
-  const auto  addr = ::HeapReAlloc(proc, 0, ptr, new_size);
-  return addr;
+  return ::HeapReAlloc(heap(), 0, ptr, new_size);
 }
 
-static inline auto msize(void* addr) -> size_t {
-  static auto proc = ::GetProcessHeap();
-  const auto  size = ::HeapSize(proc, 0, addr);
-  return size;
+static inline auto msize(void* addr) -> SIZE_T {
+  return ::HeapSize(heap(), 0, addr);
 }
 
 }  // namespace sfc::sys::alloc

@@ -42,7 +42,7 @@ inline auto detach(thrd_t thrd) -> bool {
 
 template <size_t N>
 inline auto get_name(thrd_t thrd, char (&buf)[N]) -> const char* {
-  const auto err = ::pthread_getname_np(thrd, buf, sizeof(buf));
+  const auto err = ::pthread_getname_np(thrd, buf, N);
   if (err != 0) {
     return "";
   }

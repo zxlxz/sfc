@@ -9,12 +9,12 @@ using thrd_ret_t = DWORD;
 
 template <int N>
 static auto wchar_to_u8(const wchar_t src[], char (&dst)[N]) -> int {
-  return ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, sizeof(dst), nullptr, nullptr);
+  return ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, N, nullptr, nullptr);
 }
 
 template <int N>
 static auto u8_to_wchar(const char src[], wchar_t (&dst)[N]) -> int {
-  return ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, sizeof(dst));
+  return ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
 }
 
 inline auto current() -> thrd_t {

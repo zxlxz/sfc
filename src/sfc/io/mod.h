@@ -5,28 +5,32 @@
 namespace sfc::io {
 
 enum class ErrorKind : u8 {
-    NotFound,
-    PermissionDenied,
-    ConnectionRefused,
-    ConnectionReset,
-    ConnectionAborted,
-    NotConnected,
-    AddrInUse,
-    AddrNotAvailable,
-    BrokenPipe,
-    AlreadyExists,
-    WouldBlock,
-    InvalidInput,
-    InvalidData,
-    TimedOut,
-    WriteZero,
-    UnexpectedEof,
-    Interrupted,
-    Other,
+  NotFound,
+  PermissionDenied,
+  ConnectionRefused,
+  ConnectionReset,
+  ConnectionAborted,
+  NotConnected,
+  AddrInUse,
+  AddrNotAvailable,
+  BrokenPipe,
+  AlreadyExists,
+  WouldBlock,
+  InvalidInput,
+  InvalidData,
+  TimedOut,
+  WriteZero,
+  UnexpectedEof,
+  Interrupted,
+  Other,
 };
 
+auto to_str(ErrorKind kind) -> Str;
+
 struct Error {
-  ErrorKind _kind;
+  using Kind = ErrorKind;
+
+  Kind _kind;
   int _code = 0;
 
  public:
@@ -38,11 +42,8 @@ struct Error {
     return _kind;
   }
 
-  auto as_str() const -> Str;
-
   void fmt(auto& f) const {
-    const auto s = this->as_str();
-    f.write(s);
+    f.write(to_str(_kind));
   }
 };
 

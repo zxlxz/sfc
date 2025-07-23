@@ -6,7 +6,9 @@
 
 namespace sfc::sys::os {
 
-static auto getenv(const char* key, char buf[], size_t buf_len) -> const char* {
+template <size_t N>
+static auto getenv(const char* key, char (&buf)[N]) -> const char* {
+  (void)buf;
   const auto res = ::getenv(key);
   return res;
 }
@@ -25,14 +27,14 @@ auto unsetenv(const char* key) -> bool {
   return ret == 0;
 }
 
-auto getcwd(char* buf, size_t buf_len) -> size_t {
-  const auto res = ::getcwd(buf, buf_len);
+template <size_t N>
+auto getcwd(char (&buf)[N]) -> const char* {
+  const auto res = ::getcwd(buf, N);
   if (res == nullptr) {
-    return 0;
+    return nullptr;
   }
 
-  const auto len = __builtin_strlen(buf);
-  return len;
+  return buf;
 }
 
 auto chdir(cstr_t path) -> bool {
@@ -40,9 +42,13 @@ auto chdir(cstr_t path) -> bool {
   return ret == 0;
 }
 
-auto current_exe(char buf[], size_t buf_len) -> size_t {
-  const auto ret = ::readlink("/proc/self/exe", buf, buf_len);
-  return ret > 0 ? static_cast<usize>(ret) : 0;
+template <unsigned short N>
+auto current_exe(char (&buf)[N]) -> const char* {
+  const auto ret = ::readlink("/proc/self/exe", buf, N);
+  if (ret < 0 || ret >= N) {
+    return nullptr;
+  }
+  return buf;
 }
 
 auto home_dir() -> const char* {

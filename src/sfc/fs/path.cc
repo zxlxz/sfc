@@ -1,53 +1,40 @@
 #include "sfc/fs/path.h"
 
-#include "sfc/fs/meta.h"
+#include "sfc/ffi/cstring.h"
+#include "sfc/sys/fs.h"
 
 namespace sfc::fs {
 
-namespace {
 struct Components {
-  Str _0;
+  Str _str;
 
  public:
   auto as_str() const -> Str {
-    return _0;
+    return _str;
   }
 
   auto next_back() -> Str {
-    auto s = Str{};
-    while (_0) {
-      s = this->_next_back();
-      if (s && !(s == Str{"."})) {
+    if (_str.is_empty()) {
+      return {};
+    }
+
+    while (_str) {
+      _str.trim_end_matches('/');
+      const auto p = _str.rfind('/');
+      if (!p) {
         break;
       }
+      const auto [a, b] = _str.split_at(*p + 1);
+      _str = a;
+      if (b != ".") {
+        return b;
+      }
     }
-    return s;
-  }
-
- private:
-  auto _next_back() -> Str {
-    if (!_0)
-      return {};
-
-    const auto p = _0.rfind('/');
-    if (!p) {
-      const auto s = _0;
-      _0 = {};
-      return s;
-    }
-
-    const auto i = *p;
-    if (i == 0 && _0.len() == 1) {
-      _0 = {};
-      return "/";
-    }
-
-    const auto s = _0[{i + 1, _}];
-    _0 = _0[{0, cmp::max(i, 1UL)}];
-    return s;
+    return "";
   }
 };
-}  // namespace
+
+namespace sys_imp = sys::fs;
 
 Path::Path() = default;
 
@@ -65,6 +52,10 @@ auto Path::from(Str s) -> Path {
 
 auto Path::clone() const -> Path {
   return Path::from(_inn.as_str());
+}
+
+auto Path::as_ptr() const -> const char* {
+  return _inn.as_ptr();
 }
 
 auto Path::as_str() const -> Str {
@@ -148,7 +139,8 @@ void Path::set_file_name(Str file_name) {
 }
 
 auto Path::exists() const -> bool {
-  return fs::meta(*this).is_ok();
+  auto m = meta(*this);
+  return !!fs::meta(*this);
 }
 
 auto Path::is_file() const -> bool {
@@ -159,6 +151,67 @@ auto Path::is_file() const -> bool {
 auto Path::is_dir() const -> bool {
   const auto t = fs::meta(*this).ok();
   return t && (*t).is_dir();
+}
+
+auto Meta::exists() const -> bool {
+  return _attr != 0;
+}
+
+auto Meta::file_len() const -> u64 {
+  return _size;
+}
+
+auto Meta::is_dir() const -> bool {
+  return sys_imp::is_dir(_attr);
+}
+
+auto Meta::is_file() const -> bool {
+  return sys_imp::is_file(_attr);
+}
+
+auto meta(const Path& path) -> io::Result<Meta> {
+  auto res = Meta{};
+  if (!sys_imp::lstat(path.as_ptr(), res)) {
+    return io::Error::last_os_error();
+  }
+  return res;
+}
+
+auto create_dir(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::mkdir(path.as_ptr());
+
+  if (!ret) {
+    return io::Error::last_os_error();
+  }
+
+  return _;
+}
+
+auto remove_dir(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::rmdir(path.as_ptr());
+  if (!ret) {
+    return io::Error::last_os_error();
+  }
+
+  return _;
+}
+
+auto remove_file(const Path& path) -> io::Result<> {
+  const auto ret = sys_imp::unlink(path.as_ptr());
+  if (!ret) {
+    return io::Error::last_os_error();
+  }
+
+  return _;
+}
+
+auto rename(const Path& old_path, const Path& new_path) -> io::Result<> {
+  const auto ret = sys_imp::rename(old_path.as_ptr(), new_path.as_ptr());
+  if (!ret) {
+    return io::Error::last_os_error();
+  }
+
+  return _;
 }
 
 }  // namespace sfc::fs

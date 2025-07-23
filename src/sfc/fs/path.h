@@ -20,6 +20,8 @@ class Path {
 
   auto clone() const -> Path;
 
+  auto as_ptr() const -> const char*;
+
   auto as_str() const -> Str;
 
   // a/b.txt -> b.txt
@@ -64,5 +66,28 @@ class Path {
 
   auto is_dir() const -> bool;
 };
+
+struct Meta {
+  u32 _attr = 0;
+  u64 _size = 0;
+
+ public:
+  auto exists() const -> bool;
+
+  auto file_len() const -> u64;
+
+  auto is_dir() const -> bool;
+  auto is_file() const -> bool;
+};
+
+auto meta(const Path& path) -> io::Result<Meta>;
+
+auto create_dir(const Path& path) -> io::Result<>;
+
+auto remove_dir(const Path& path) -> io::Result<>;
+
+auto remove_file(const Path& path) -> io::Result<>;
+
+auto rename(const Path& from, const Path& to) -> io::Result<>;
 
 }  // namespace sfc::fs

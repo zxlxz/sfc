@@ -1,216 +1,116 @@
 #pragma once
 
 #include <Windows.h>
-#undef min
-#undef max
-
-#include "sfc/io/mod.h"
 
 namespace sfc::sys::io {
 
-struct Error {
-  int _code = 0;
+static const HANDLE NULL_FD = nullptr;
 
- public:
-  static auto last() -> Error {
-    return {static_cast<int>(::GetLastError())};
+static inline auto get_err() -> int {
+  return static_cast<int>(::GetLastError());
+}
+
+template <class T>
+static inline auto kind_of(int code) -> T {
+  switch (code) {
+    case ERROR_ACCESS_DENIED:              return T::PermissionDenied;
+    case ERROR_ALREADY_EXISTS:             return T::AlreadyExists;
+    case ERROR_FILE_EXISTS:                return T::AlreadyExists;
+    case ERROR_FILE_NOT_FOUND:             return T::NotFound;
+    case ERROR_PATH_NOT_FOUND:             return T::NotFound;
+    case ERROR_INVALID_HANDLE:             return T::InvalidInput;
+    case ERROR_NOT_ENOUGH_MEMORY:          return T::BrokenPipe;
+    case ERROR_BROKEN_PIPE:                return T::BrokenPipe;
+    case ERROR_DISK_FULL:                  return T::Other;
+    case ERROR_IO_PENDING:                 return T::WouldBlock;
+    case ERROR_OPERATION_ABORTED:          return T::Interrupted;
+    case ERROR_TIMEOUT:                    return T::TimedOut;
+    case ERROR_INVALID_DATA:               return T::InvalidData;
+    case ERROR_INVALID_PARAMETER:          return T::InvalidInput;
+    case ERROR_NOT_CONNECTED:              return T::NotConnected;
+    case ERROR_CONNECTION_REFUSED:         return T::ConnectionRefused;
+    case ERROR_CONNECTION_ABORTED:         return T::ConnectionAborted;
+    case ERROR_ADDRESS_ALREADY_ASSOCIATED: return T::AddrInUse;
+    case ERROR_ADDRESS_NOT_ASSOCIATED:     return T::AddrNotAvailable;
+    case ERROR_NO_DATA:                    return T::UnexpectedEof;
+    case ERROR_NOACCESS:                   return T::InvalidInput;
+    default:                               return T::Other;
+  }
+}
+
+static inline auto null() -> HANDLE {
+  return nullptr;
+}
+
+static inline void close(HANDLE fd) {
+  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
+    return;
+  }
+  ::CloseHandle(fd);
+}
+
+static inline void flush(HANDLE fd) {
+  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
+    return;
+  }
+  ::FlushFileBuffers(fd);
+}
+
+static inline auto read(HANDLE fd, void* buf, SIZE_T buf_size) -> SSIZE_T {
+  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
+    return -1;
   }
 
-  auto code() const -> int {
-    return _code;
+  if (buf == nullptr || buf_size == 0) {
+    return 0;
   }
 
-  auto kind() const -> sfc::io::ErrorKind {
-    switch (_code) {
-        // clang-format off
-    case ERROR_ACCESS_DENIED:               return sfc::io::ErrorKind::PermissionDenied;
-    case ERROR_ALREADY_EXISTS:              return sfc::io::ErrorKind::AlreadyExists;
-    case ERROR_FILE_EXISTS:                 return sfc::io::ErrorKind::AlreadyExists;
-    case ERROR_FILE_NOT_FOUND:              return sfc::io::ErrorKind::NotFound;
-    case ERROR_PATH_NOT_FOUND:              return sfc::io::ErrorKind::NotFound;
-    case ERROR_INVALID_HANDLE:              return sfc::io::ErrorKind::InvalidInput;
-    case ERROR_NOT_ENOUGH_MEMORY:           return sfc::io::ErrorKind::BrokenPipe;
-    case ERROR_BROKEN_PIPE:                 return sfc::io::ErrorKind::BrokenPipe;
-    case ERROR_DISK_FULL:                   return sfc::io::ErrorKind::Other;
-    case ERROR_IO_PENDING:                  return sfc::io::ErrorKind::WouldBlock;
-    case ERROR_OPERATION_ABORTED:           return sfc::io::ErrorKind::Interrupted;
-    case ERROR_TIMEOUT:                     return sfc::io::ErrorKind::TimedOut;
-    case ERROR_INVALID_DATA:                return sfc::io::ErrorKind::InvalidData;
-    case ERROR_INVALID_PARAMETER:           return sfc::io::ErrorKind::InvalidInput;
-    case ERROR_NOT_CONNECTED:               return sfc::io::ErrorKind::NotConnected;
-    case ERROR_CONNECTION_REFUSED:          return sfc::io::ErrorKind::ConnectionRefused;
-    case ERROR_CONNECTION_ABORTED:          return sfc::io::ErrorKind::ConnectionAborted;
-    case ERROR_ADDRESS_ALREADY_ASSOCIATED:  return sfc::io::ErrorKind::AddrInUse;
-    case ERROR_ADDRESS_NOT_ASSOCIATED:      return sfc::io::ErrorKind::AddrNotAvailable;
-    case ERROR_NO_DATA:                     return sfc::io::ErrorKind::UnexpectedEof;
-    case ERROR_NOACCESS:                    return sfc::io::ErrorKind::InvalidInput;
-   default:                                 return sfc::io::ErrorKind::Other;
-        // clang-format on
-    }
+  auto bytes_read = 0UL;
+  if (!::ReadFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr)) {
+    return -1;
   }
+
+  return bytes_read;
 };
 
-struct File {
-  static const inline auto INVALID_FD = INVALID_HANDLE_VALUE;
-
-  void* _fd = INVALID_FD;
-
- public:
-  explicit operator bool() const {
-    return _fd != INVALID_FD;
+static inline auto write(HANDLE fd, const void* buf, SIZE_T buf_size) -> SSIZE_T {
+  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
+    return -1;
   }
 
-  void close() {
-    if (_fd == INVALID_FD) {
-      return;
-    }
-    ::CloseHandle(_fd);
+  if (buf == nullptr || buf_size == 0) {
+    return 0;
   }
 
-  void flush() {
-    if (_fd == INVALID_FD) {
-      return;
-    }
-    ::FlushFileBuffers(_fd);
+  auto bytes_write = 0UL;
+  if (!::WriteFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_write, nullptr)) {
+    return -1;
   }
-
-  auto read(void* buf, SIZE_T buf_size) -> LONG64 {
-    if (buf == nullptr || buf_size == 0) {
-      return 0;
-    }
-
-    if (_fd == INVALID_HANDLE_VALUE) {
-      return -1;
-    }
-
-    auto bytes_read = 0UL;
-    if (::ReadFile(_fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr) == 0) {
-      return -1;
-    }
-
-    return static_cast<LONG64>(bytes_read);
-  }
-
-  auto write(const void* buf, SIZE_T buf_size) -> LONG64 {
-    if (buf == nullptr || buf_size == 0) {
-      return 0;
-    }
-
-    if (_fd == INVALID_HANDLE_VALUE) {
-      return -1;
-    }
-
-    auto bytes_write = 0UL;
-    if (::WriteFile(_fd, buf, buf_size, &bytes_write, nullptr) == 0) {
-      return -1;
-    }
-    return static_cast<LONG64>(bytes_write);
-  }
-
-  auto is_tty() const -> bool {
-    if (_fd == INVALID_HANDLE_VALUE) {
-      return false;
-    }
-
-    auto mode = 0UL;
-    return ::GetConsoleMode(_fd, &mode) == TRUE;
-  }
-};
-
-struct OpenOptions {
-  bool append     = false;
-  bool create     = false;
-  bool create_new = false;
-  bool read       = false;
-  bool write      = false;
-  bool truncate   = false;
-
- public:
-  static auto from(const auto& t) -> OpenOptions {
-    return OpenOptions{t._append, t._create, t._create_new, t._read, t._write, t._truncate};
-  }
-
-  auto open(const char* path) const -> HANDLE {
-    const auto access_mode = append ? FILE_APPEND_DATA : write ? GENERIC_WRITE : GENERIC_READ;
-    const auto create_mode = create_new ? CREATE_NEW : write ? CREATE_ALWAYS : OPEN_EXISTING;
-
-    const auto handle = ::CreateFileA(path,
-                                      access_mode,
-                                      FILE_SHARE_READ,
-                                      nullptr,
-                                      create_mode,
-                                      FILE_ATTRIBUTE_NORMAL,
-                                      nullptr);
-    return handle;
-  }
-};
-
-struct FileAttr {
-  DWORD  _attr = 0;
-  SIZE_T _size = 0;
-
- public:
-  explicit operator bool() const {
-    return _attr != 0;
-  }
-
-  auto size() const -> SIZE_T {
-    return _size;
-  }
-
-  auto is_dir() const -> bool {
-    return _attr & FILE_ATTRIBUTE_DIRECTORY;
-  }
-
-  auto is_file() const -> bool {
-    return _attr & FILE_ATTRIBUTE_NORMAL;
-  }
-};
-
-static inline auto stdout() -> File& {
-  static auto res = File{::GetStdHandle(STD_OUTPUT_HANDLE)};
-  return res;
+  return bytes_write;
 }
 
-static inline auto stderr() -> File& {
-  static auto res = File{::GetStdHandle(STD_ERROR_HANDLE)};
-  return res;
-}
-
-static inline auto stdin() -> File& {
-  static auto res = File{::GetStdHandle(STD_INPUT_HANDLE)};
-  return res;
-}
-
-static inline auto lstat(const char* path) -> FileAttr {
-  auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
-  if (::GetFileAttributesExA(path, GetFileExInfoStandard, &attr) == 0) {
-    return {};
+static inline auto is_tty(HANDLE fd) -> bool {
+  if (fd == INVALID_HANDLE_VALUE) {
+    return false;
   }
 
-  const auto file_size = static_cast<SIZE_T>(attr.nFileSizeHigh) +
-                         (static_cast<SIZE_T>(attr.nFileSizeLow) << 32);
-  return FileAttr{._attr = attr.dwFileAttributes, ._size = file_size};
+  auto mode = 0UL;
+  if (!::GetConsoleMode(fd, &mode)) {
+    return false;
+  }
+  return mode != 0;
 }
 
-static inline auto unlink(const char* path) -> bool {
-  const auto ret = ::DeleteFileA(path);
-  return ret != FALSE;
+static inline auto stdout() -> HANDLE {
+  return ::GetStdHandle(STD_OUTPUT_HANDLE);
 }
 
-static inline auto rename(const char* old_path, const char* new_path) -> bool {
-  const auto ret = ::MoveFileA(old_path, new_path);
-  return ret != FALSE;
+static inline auto stderr() -> HANDLE {
+  return ::GetStdHandle(STD_ERROR_HANDLE);
 }
 
-static inline auto mkdir(const char* path) -> bool {
-  const auto ret = ::CreateDirectoryA(path, nullptr);
-  return ret != FALSE;
-}
-
-static inline auto rmdir(const char* path) -> bool {
-  const auto ret = ::RemoveDirectoryA(path);
-  return ret != FALSE;
+static inline auto stdin() -> HANDLE {
+  return ::GetStdHandle(STD_INPUT_HANDLE);
 }
 
 }  // namespace sfc::sys::io

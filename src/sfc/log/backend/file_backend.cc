@@ -19,14 +19,15 @@ FileBackend::FileBackend(fs::File&& file) : _file{mem::move(file)} {}
 FileBackend::~FileBackend() {}
 
 auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
-  auto opts = fs::OpenOptions{};
-  opts._append = true;
-  opts._write = true;
-  opts._create = true;
+  const auto opts = fs::OpenOptions{
+      .append = true,
+      .create = true,
+      .write = true,
+  };
 
   auto file = opts.open(path);
-  if (file.is_err()) {
-    return mem::move(file).get_err_unchecked();
+  if (!file) {
+    return ~file;
   }
   return FileBackend{mem::move(file).unwrap()};
 }

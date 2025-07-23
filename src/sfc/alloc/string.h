@@ -66,8 +66,8 @@ class [[nodiscard]] String {
     return String::from(this->as_str());
   }
 
-  auto as_mut_vec() -> vec::Vec<char>& {
-    return _vec;
+  auto as_mut_vec() -> vec::Vec<u8>& {
+    return reinterpret_cast<vec::Vec<u8>&>(_vec);
   }
 
  public:
@@ -114,7 +114,6 @@ class [[nodiscard]] String {
   void reserve(usize additional);
   void truncate(usize len);
   auto remove(usize idx) -> char;
-  void set_len(usize new_len);
 
   void drain(Range range);
 

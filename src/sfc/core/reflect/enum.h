@@ -42,7 +42,7 @@ auto enum_name(T val) -> str::Str {
 }
 
 template <class T>
-auto enum_from_name(str::Str name) -> Option<T> {
+auto enum_from_name(str::Str name) -> option::Option<T> {
   const auto info = reflect_enum(static_cast<T>(0));
   return info.get_value_by_name(name);
 }
