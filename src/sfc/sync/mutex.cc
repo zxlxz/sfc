@@ -8,17 +8,6 @@ namespace sys_imp = sys::sync;
 
 struct Mutex::Inn {
   sys_imp::mutex_t _raw;
-
- public:
-#ifdef _WIN32
-  Inn() {
-    sys_imp::init(_raw);
-  }
-
-  ~Inn() {
-    sys_imp::drop(_raw);
-  }
-#endif
 };
 
 Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}

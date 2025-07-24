@@ -11,16 +11,6 @@ struct ReentrantLock::Inn {
   int _count{0};
 
  public:
-#ifdef _WIN32
-  Inn() {
-    sys::sync::init(_mutex);
-  }
-
-  ~Inn() {
-    sys::sync::drop(_mutex);
-  }
-#endif
-
   void lock() {
     const auto thrd = sys::thread::current();
 
@@ -44,8 +34,8 @@ struct ReentrantLock::Inn {
       return;
     }
 
-    const auto old_count = __atomic_fetch_add(&_count, -1, __ATOMIC_SEQ_CST);
-    if (old_count == 1) {
+    const auto old_cnt = __atomic_fetch_add(&_count, -1, __ATOMIC_SEQ_CST);
+    if (old_cnt == 1) {
       sys::sync::unlock(_mutex);
       __atomic_store_n(&_owner, sys::thread::thrd_t{}, __ATOMIC_SEQ_CST);
     }

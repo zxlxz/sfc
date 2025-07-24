@@ -25,8 +25,8 @@ auto File::create(const Path& path) -> io::Result<File> {
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
   const auto sys_path = ffi::CString::from(path.as_str());
 
-  auto fd = io::fd_t{};
-  if (!sys_imp::open(*this, sys_path.c_str(), &fd)) {
+  const auto fd = sys_imp::open(sys_path.c_str(), *this);
+  if (fd == sys_imp::null()) {
     return io::Error::last_os_error();
   }
 

@@ -4,8 +4,6 @@
 
 namespace sfc::sys::io {
 
-static const HANDLE NULL_FD = nullptr;
-
 static inline auto get_err() -> int {
   return static_cast<int>(::GetLastError());
 }

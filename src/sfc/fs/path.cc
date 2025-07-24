@@ -14,23 +14,21 @@ struct Components {
   }
 
   auto next_back() -> Str {
-    if (_str.is_empty()) {
-      return {};
+    while (!_str.is_empty()) {
+      _str.trim_end_matches('/');
+
+      if (const auto p = _str.rfind('/')) {
+        const auto b = _str[{*p + 1, _}];
+        _str = _str[{0, *p}];
+        if (b != ".") {
+          return b;
+        }
+      } else {
+        return mem::take(_str);
+      }
     }
 
-    while (_str) {
-      _str.trim_end_matches('/');
-      const auto p = _str.rfind('/');
-      if (!p) {
-        break;
-      }
-      const auto [a, b] = _str.split_at(*p + 1);
-      _str = a;
-      if (b != ".") {
-        return b;
-      }
-    }
-    return "";
+    return {};
   }
 };
 
@@ -47,6 +45,11 @@ auto Path::operator=(Path&&) noexcept -> Path& = default;
 auto Path::from(Str s) -> Path {
   auto res = Path{};
   res._inn = String::from(s);
+  for (auto& c : res._inn.as_mut_chars()) {
+    if (c == '\\') {
+      c = '/';
+    }
+  }
   return res;
 }
 

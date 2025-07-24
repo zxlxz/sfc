@@ -9,21 +9,21 @@ namespace sys_imp = sys::io;
 File::File(fd_t fd) : _fd{fd} {}
 
 File::~File() {
-  if (_fd != sys_imp::NULL_FD) {
+  if (_fd != sys_imp::null()) {
     sys_imp::close(_fd);
   }
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = sys_imp::NULL_FD;
+  other._fd = sys_imp::null();
 }
 
 File& File::operator=(File&& other) noexcept {
-  if (_fd != sys_imp::NULL_FD) {
+  if (_fd != sys_imp::null()) {
     sys_imp::close(_fd);
   }
   _fd = other._fd;
-  other._fd = sys_imp::NULL_FD;
+  other._fd = sys_imp::null();
   return *this;
 }
 

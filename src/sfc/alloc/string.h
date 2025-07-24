@@ -66,6 +66,14 @@ class [[nodiscard]] String {
     return String::from(this->as_str());
   }
 
+  auto as_chars() const -> slice::Slice<const char> {
+    return {_vec.as_ptr(), _vec.len()};
+  }
+
+  auto as_mut_chars() -> slice::Slice<char> {
+    return {_vec.as_mut_ptr(), _vec.len()};
+  }
+  
   auto as_mut_vec() -> vec::Vec<u8>& {
     return reinterpret_cast<vec::Vec<u8>&>(_vec);
   }

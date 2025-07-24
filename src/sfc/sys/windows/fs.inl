@@ -4,26 +4,28 @@
 
 namespace sfc::sys::fs {
 
-static inline bool open(const auto& opts, const char* path, HANDLE* fd) {
-  const auto access_mode = (opts.read ? GENERIC_READ : 0) | (opts.write ? GENERIC_WRITE : 0);
-  const auto share_mode = opts.read ? FILE_SHARE_READ : 0;
-  const auto create_mode = opts.create_new ? CREATE_NEW : opts.create ? OPEN_ALWAYS : OPEN_EXISTING;
-  const auto flags = opts.append ? FILE_FLAG_OVERLAPPED : 0;
+static inline auto null() -> HANDLE {
+  return nullptr;
+}
 
-  const auto handle = ::CreateFileA(path,
-                                    access_mode,
-                                    share_mode,
-                                    nullptr,
-                                    create_mode,
-                                    flags | FILE_ATTRIBUTE_NORMAL,
-                                    nullptr);
+static inline auto open(const char* path, const auto& opts) -> HANDLE {
+  const auto access_mode = (opts.read ? GENERIC_READ : 0) | (opts.write ? GENERIC_WRITE : 0) |
+                           (opts.append ? FILE_APPEND_DATA : 0);
 
-  if (handle == INVALID_HANDLE_VALUE) {
-    return false;
+  auto create_mode = 0U;
+  if (opts.create_new) {
+    create_mode = CREATE_NEW;
+  } else if (opts.create) {
+    create_mode = opts.truncate ? CREATE_ALWAYS : OPEN_ALWAYS;
+  } else {
+    create_mode = opts.truncate ? TRUNCATE_EXISTING : OPEN_EXISTING;
   }
 
-  *fd = handle;
-  return true;
+  // File attributes
+  const auto flags = FILE_ATTRIBUTE_NORMAL;
+
+  // Call CreateFileA and return the handle (ignore failures)
+  return ::CreateFileA(path, access_mode, opts.share_mode, nullptr, create_mode, flags, nullptr);
 }
 
 static inline auto is_dir(DWORD attr) -> bool {
@@ -63,6 +65,5 @@ static inline auto mkdir(const char* path) -> bool {
 static inline auto rmdir(const char* path) -> bool {
   return RemoveDirectoryA(path);
 }
-
 
 }  // namespace sfc::sys::fs
