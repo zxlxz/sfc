@@ -76,11 +76,6 @@ auto cast(const F* p) -> const T* {
 }
 
 template <class T>
-auto cast_mut(const T* p) -> T* {
-  return const_cast<T*>(p);
-}
-
-template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) {
   if (cnt != 0) {
     __builtin_memset(dst, val, cnt * sizeof(T));
@@ -131,47 +126,6 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void move(T* src, T* dst, usize cnt) {
-  if (cnt == 0 || src == dst) {
-    return;
-  }
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, cnt * sizeof(T));
-  } else {
-    if (dst < src) {
-      for (auto idx = 0UL; idx < cnt; ++idx) {
-        dst[idx] = static_cast<T&&>(src[idx]);
-      }
-    } else {
-      for (const auto end = src; cnt > 0; --cnt) {
-        dst[cnt - 1] = static_cast<T&&>(src[cnt - 1]);
-      }
-    }
-  }
-}
-
-template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) {
-  if (cnt == 0 || src == dst) {
-    return;
-  }
-  if constexpr (false&&__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, sizeof(T) * cnt);
-  } else {
-    if (dst < src) {
-      for (auto idx = 0UL; idx < cnt; ++idx) {
-        new (dst + idx) T{static_cast<T&&>(src[idx])};
-      }
-    } else {
-      for (; cnt > 0; --cnt) {
-        new (dst + cnt - 1) T{static_cast<T&&>(src[cnt - 1])};
-      }
-    }
-  }
-}
-
-template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) {
   if (cnt == 0 || src == dst) {
     return;
@@ -187,6 +141,63 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
       for (; cnt > 0; --cnt) {
         new (dst + cnt - 1) T{src[cnt - 1]};
       }
+    }
+  }
+}
+
+template <class T>
+inline void uninit_move(T* src, T* dst, usize cnt) {
+  if (cnt == 0 || src == dst) {
+    return;
+  }
+  if constexpr (false && __is_trivially_copyable(T)) {
+    __builtin_memmove(dst, src, sizeof(T) * cnt);
+  } else {
+    if (dst < src) {
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        new (dst + idx) T{static_cast<T&&>(src[idx])};
+      }
+    } else {
+      for (; cnt > 0; --cnt) {
+        new (dst + cnt - 1) T{static_cast<T&&>(src[cnt - 1])};
+      }
+    }
+  }
+}
+
+template <class T>
+inline void shift_elements(T* src, usize len, isize offset) {
+  if (len == 0 || offset == 0) {
+    return;
+  }
+
+  const auto dst = src + offset;
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memmove(dst, src, len * sizeof(T));
+    return;
+  }
+
+  if (offset > 0) {
+    const auto off = static_cast<usize>(offset);
+    for (auto idx = len; idx > len - off; --idx) {
+      new (&dst[idx - 1]) T{static_cast<T&&>(src[idx - 1])};
+    }
+    for (auto idx = len - off; idx > 0; --idx) {
+      dst[idx - 1] = static_cast<T&&>(src[idx - 1]);
+    }
+    for (auto idx = off; idx > 0; --idx) {
+      src[idx].~T();
+    }
+  } else {
+    const auto off = static_cast<usize>(-offset);
+    for (auto idx = 0UL; idx < off; ++idx) {
+      new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+    }
+    for (auto idx = off; idx < len; ++idx) {
+      dst[idx] = static_cast<T&&>(src[idx]);
+    }
+    for (auto idx = len - off; idx < len; ++idx) {
+      src[idx].~T();
     }
   }
 }

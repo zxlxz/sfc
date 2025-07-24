@@ -84,29 +84,37 @@ class Box {
 
 template <class R, class... T>
 class Box<R(T...)> {
-  struct Meta {
-    void (*_dtor)(void*) = nullptr;
-    R (*_call)(void*, T&&...) = nullptr;
+  union Data {
+    void* _ptr = nullptr;
+    alignas(void*) char _buf[sizeof(void*)];
 
     template <class X>
-    static auto of() -> Meta {
-      if constexpr (__is_trivially_copyable(X) && sizeof(X) <= sizeof(void*)) {
-        const auto call = +[](void* x, T&&... t) -> R {  //
-          return (*static_cast<X*>(static_cast<void*>(&x)))(static_cast<T&&>(t)...);
-        };
-        return Meta{nullptr, call};
-      }
+    static auto from(X& x) -> Data {
+      static constexpr auto SOO = __is_trivially_copyable(X) && sizeof(X) <= sizeof(Data::_buf);
+      auto res = Data{};
+      SOO ? new (res._buf) X{x} : res._ptr = new X{static_cast<X&&>(x)};
+      return res;
+    }
+  };
 
-      const auto dtor = +[](void* p) { delete static_cast<X*>(p); };
-      const auto call = +[](void* p, T&&... t) -> R {  //
-        return (*static_cast<X*>(p))(static_cast<T&&>(t)...);
+  struct Meta {
+    void (*_dtor)(Data&) = nullptr;
+    R (*_call)(Data&, T&&...) = nullptr;
+
+    template <class X>
+    static auto of(const X&) -> Meta {
+      static constexpr auto SOO = __is_trivially_copyable(X) && sizeof(X) <= sizeof(Data::_buf);
+      const auto dtor = SOO ? nullptr : +[](Data& x) { delete static_cast<X*>(x._ptr); };
+      const auto call = +[](Data& x, T&&... t) -> R {
+        auto& obj = (SOO ? reinterpret_cast<X&>(x) : *reinterpret_cast<X*>(x._ptr));
+        return obj(static_cast<T&&>(t)...);
       };
       return Meta{dtor, call};
     }
   };
 
-  const Meta* _meta = nullptr;
-  void* _data = nullptr;
+  const Meta* _meta{nullptr};
+  Data _data{nullptr};
 
  public:
   Box() noexcept = default;
@@ -135,14 +143,11 @@ class Box<R(T...)> {
 
   template <class X>
   static auto xnew(X fun) -> Box {
-    static const auto meta = Meta::template of<X>();
+    static const auto meta = Meta::of(fun);
+
     auto res = Box{};
     res._meta = &meta;
-    if (!meta._dtor) {
-      __builtin_memcpy(&res._data, &fun, sizeof(X));
-    } else {
-      res._data = new X{static_cast<X&&>(fun)};
-    }
+    res._data = Data::from(fun);
     return res;
   }
 

@@ -162,6 +162,10 @@ class Result {
     panicking::assert(!_inn, "Result::unwrap_err: Ok({})", *_inn);
     return static_cast<E&&>(~_inn);
   }
+
+  void fmt(auto& f) const {
+    _inn ? f.write_fmt("Ok({})", *_inn) : f.write_fmt("Err({})", ~_inn);
+  }
 };
 
 }  // namespace sfc::result

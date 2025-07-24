@@ -292,13 +292,8 @@ class [[nodiscard]] Vec {
     this->reserve(1);
 
     const auto hole = _buf._ptr + idx;
-    if (idx == _len) {
+    if (idx != _len) {
       new (hole) T{static_cast<T&&>(element)};
-    } else {
-      const auto tail = _buf._ptr + _len;
-      ptr::uninit_move(tail - 1, tail, 1);
-      ptr::move(hole, hole + 1, _len - idx - 1);
-      *hole = static_cast<T&&>(element);
     }
     _len += 1;
   }
@@ -306,25 +301,25 @@ class [[nodiscard]] Vec {
   auto remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = static_cast<T&&>(_buf._ptr[idx]);
-    ptr::move(_buf._ptr + idx + 1, _buf._ptr + idx, _len - idx - 1);
-    _buf._ptr[_len].~T();
+    const auto hole = _buf._ptr + idx;
+    auto res = static_cast<T&&>(*hole);
+    hole->~T();
+    ptr::shift_elements(hole, _len - idx - 1, -1);
     _len -= 1;
-
     return res;
   }
 
   void drain(Range ids) {
     ids = ids.wrap(_len);
 
-    const auto cnt = ids.len();
-    if (cnt == 0) {
+    const auto off = ids.len();
+    if (off == 0) {
       return;
     }
 
-    ptr::move(_buf._ptr + ids._end, _buf._ptr + ids._start, _len - ids._end);
-    ptr::drop_in_place(_buf._ptr + _len - cnt, cnt);
-    _len -= cnt;
+    const auto hole = _buf._ptr + ids._start;
+    ptr::shift_elements(hole, _len - ids._end, -static_cast<isize>(off));
+    _len -= off;
   }
 
   void resize(usize new_len, T value) {
