@@ -76,10 +76,19 @@ auto cast(const F* p) -> const T* {
 }
 
 template <class T>
-inline void write_bytes(T* dst, u8 val, usize cnt) {
-  if (cnt != 0) {
-    __builtin_memset(dst, val, cnt * sizeof(T));
+inline auto read(T* src) -> T {
+  if constexpr (__is_trivially_copyable(T)) {
+    return *src;
+  } else {
+    auto val = *src;
+    src->~T();
+    return val;
   }
+}
+
+template <class T, class... U>
+inline void write(T* dst, U&&... args) {
+  new (dst) T{static_cast<U&&>(args)...};
 }
 
 template <class T>
@@ -189,7 +198,7 @@ inline void shift_elements(T* src, usize len, isize offset) {
       src[idx].~T();
     }
   } else {
-    const auto off = static_cast<usize>(-offset);
+    const auto off = static_cast<usize>(0 - offset);
     for (auto idx = 0UL; idx < off; ++idx) {
       new (&dst[idx]) T{static_cast<T&&>(src[idx])};
     }

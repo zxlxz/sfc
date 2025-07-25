@@ -9,26 +9,33 @@ namespace sys_imp = sys::io;
 File::File(fd_t fd) : _fd{fd} {}
 
 File::~File() {
-  if (_fd != sys_imp::null()) {
-    sys_imp::close(_fd);
+  if (_fd == sys_imp::INVALID_FD) {
+    return;
   }
+
+  sys_imp::close(_fd);
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = sys_imp::null();
+  other._fd = sys_imp::INVALID_FD;
 }
 
 File& File::operator=(File&& other) noexcept {
-  if (_fd != sys_imp::null()) {
+  if (_fd != sys_imp::INVALID_FD) {
     sys_imp::close(_fd);
   }
+
   _fd = other._fd;
-  other._fd = sys_imp::null();
+  other._fd = sys_imp::INVALID_FD;
   return *this;
 }
 
 auto File::as_fd() const -> fd_t {
   return _fd;
+}
+
+File::operator bool() const {
+  return _fd != sys_imp::INVALID_FD;
 }
 
 auto File::read(Slice<u8> buf) -> Result<usize> {

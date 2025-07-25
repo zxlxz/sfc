@@ -6,24 +6,20 @@ namespace sfc::io {
 
 class Stdout {
   class Inn;
-  Inn& _inn;
 
  public:
-  Stdout();
-  ~Stdout();
-
-  auto is_tty() -> bool;
-  void flush();
-  void write_str(Str s);
+  static auto is_tty() -> bool;
+  static void flush();
+  static void write_str(Str s);
 
   class Lock;
-  auto lock() -> Lock;
+  static auto lock() -> Lock;
 };
 
 class Stdout::Lock {
   using Guard = sync::ReentrantLock::Guard;
 
-  Inn&  _inn;
+  Inn& _inn;
   Guard _lock;
 
  public:

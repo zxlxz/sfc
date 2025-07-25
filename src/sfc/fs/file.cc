@@ -1,6 +1,5 @@
 #include "sfc/fs/file.h"
 
-#include "sfc/ffi/cstring.h"
 #include "sfc/sys/fs.h"
 
 namespace sfc::fs {
@@ -23,14 +22,12 @@ auto File::create(const Path& path) -> io::Result<File> {
 }
 
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
-  const auto sys_path = ffi::CString::from(path.as_str());
-
-  const auto fd = sys_imp::open(sys_path.c_str(), *this);
-  if (fd == sys_imp::null()) {
+  auto file = io::File{sys_imp::open(path.as_ptr(), *this)};
+  if (!file) {
     return io::Error::last_os_error();
   }
 
-  return File{fd};
+  return File{static_cast<io::File&&>(file)};
 }
 
 }  // namespace sfc::fs

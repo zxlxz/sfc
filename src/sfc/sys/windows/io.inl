@@ -4,6 +4,8 @@
 
 namespace sfc::sys::io {
 
+static constexpr auto INVALID_FD = static_cast<HANDLE>(nullptr);
+
 static inline auto get_err() -> int {
   return static_cast<int>(::GetLastError());
 }
@@ -34,10 +36,6 @@ static inline auto kind_of(int code) -> T {
     case ERROR_NOACCESS:                   return T::InvalidInput;
     default:                               return T::Other;
   }
-}
-
-static inline auto null() -> HANDLE {
-  return nullptr;
 }
 
 static inline void close(HANDLE fd) {

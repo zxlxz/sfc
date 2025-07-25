@@ -1,6 +1,5 @@
-#include "sfc/thread/thread.h"
+#include "sfc/thread.h"
 
-#include "sfc/ffi/cstring.h"
 #include "sfc/sys/thread.h"
 
 namespace sfc::thread {
@@ -11,12 +10,12 @@ using sys_imp::thrd_t;
 
 struct ThreadData {
   Box<void()> _fbox;
-  ffi::CString _name;
+  String _name;
 
  public:
   void run() {
-    if (_name) {
-      sys_imp::set_name(_name.c_str());
+    if (!_name.is_empty()) {
+      sys_imp::set_name(_name.as_ptr());
     }
 
     try {
@@ -41,7 +40,7 @@ auto Thread::name() const -> String {
   char buf[256];
 
   const auto name = sys_imp::get_name(static_cast<thrd_t>(_raw), buf);
-  return String::from_cstr(name);
+  return String::from(name);
 }
 
 void Thread::join() {
@@ -54,7 +53,7 @@ void Thread::join() {
 }
 
 auto Builder::spawn(Box<void()> fun) const -> JoinHandle {
-  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::CString::from(name));
+  auto data = Box<ThreadData>::xnew(mem::move(fun), String::from(name));
   auto thrd = sys_imp::start(stack_size, start_routine, &*data);
   if (thrd) {
     mem::move(data).into_raw();

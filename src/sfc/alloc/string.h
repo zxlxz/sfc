@@ -5,7 +5,7 @@
 namespace sfc::string {
 
 class [[nodiscard]] String {
-  vec::Vec<char> _vec = {};
+  vec::Vec<char>  _vec = {};
 
  public:
   String() noexcept = default;
@@ -25,12 +25,6 @@ class [[nodiscard]] String {
   static auto from(Str s) -> String {
     auto res = String{};
     res.push_str(s);
-    return res;
-  }
-
-  static auto from_cstr(const char* s) -> String {
-    auto res = String{};
-    res.push_str(Str::from_cstr(s));
     return res;
   }
 
@@ -73,7 +67,7 @@ class [[nodiscard]] String {
   auto as_mut_chars() -> slice::Slice<char> {
     return {_vec.as_mut_ptr(), _vec.len()};
   }
-  
+
   auto as_mut_vec() -> vec::Vec<u8>& {
     return reinterpret_cast<vec::Vec<u8>&>(_vec);
   }
@@ -101,13 +95,8 @@ class [[nodiscard]] String {
 
  public:
   auto operator==(const auto& other) const -> bool {
-    if constexpr (__is_convertible_to(decltype(other), const String&)) {
-      return this->as_str() == other.as_str();
-    }
-    if constexpr (__is_convertible_to(decltype(other), Str)) {
-      return this->as_str() == other;
-    }
-    return this->as_str() == other;
+    const auto s = this->as_str();
+    return s.operator==(other);
   }
 
  public:
@@ -116,16 +105,15 @@ class [[nodiscard]] String {
   void push_str(Str s);
   void write_str(Str s);
 
+  void reserve(usize additional);
+  void truncate(usize len);
+  void clear();
+
   void insert(usize idx, char ch);
   void insert_str(usize idx, Str str);
 
-  void reserve(usize additional);
-  void truncate(usize len);
   auto remove(usize idx) -> char;
-
   void drain(Range range);
-
-  void clear();
 
  public:
   auto find(auto&& p) const -> Option<usize> {

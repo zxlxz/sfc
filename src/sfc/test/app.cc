@@ -6,115 +6,55 @@
 
 namespace sfc::test {
 
-namespace {
+static auto parse_opts(Slice<const Str> args) -> VecMap<Str, Str> {
+  auto opts = VecMap<Str, Str>{};
 
-class GTestCase {
-  bool _color = false;
+  auto prev_key = Str{};
 
- public:
-  explicit GTestCase(bool use_color) : _color{use_color} {}
-
-  ~GTestCase() {}
-
-  auto parse_pats(Str s) const -> Vec<Str> {
-    auto res = Vec<Str>{};
-    for (; s;) {
-      const auto n = s.len();
-      auto i = 0U;
-      for (; i < n; ++i) {
-        if (s[i] == ':') {
-          if (s[i + 1] == ':') {
-            i += 1;
-            continue;
-          }
-          break;
-        }
+  for (auto arg : args) {
+    if (arg.starts_with("-")) {
+      if (prev_key) {
+        opts.insert(prev_key, "");
+        prev_key = {};
       }
 
-      res.push(s[{0, i}]);
-      s = s[{i + 1, _}];
-    }
-
-    return res;
-  }
-
-  auto operator()(Unit test) -> bool {
-    auto na = test.suite();
-    auto nb = test.name();
-
-    this->on_run(na, nb);
-    const auto tim = time::Instant::now();
-    const auto res = test.invoke();
-    const auto dur = tim.elapsed();
-    const auto tms = dur.as_millis();
-    if (res) {
-      this->on_ok(na, nb, tms);
-    } else {
-      this->on_failed(na, nb, tms);
-    }
-    return res;
-  }
-
- private:
-  void on_run(Str suite, Str name) {
-    const auto s = _color ? Str{"\e[32m[ RUN      ]\e[39m"} : Str{"[ RUN      ]"};
-    io::println("{} {}.{}", s, suite, name);
-  }
-
-  void on_ok(Str suite, Str name, u64 tms) {
-    const auto s = _color ? Str{"\e[32m[       OK ]\e[39m"} : Str{"[       OK ]"};
-    io::println("{} {}.{} ({} ms)", s, suite, name, tms);
-  }
-
-  void on_failed(Str suite, Str name, u64 tms) {
-    const auto s = _color ? Str{"\e[31m[  FAILED  ]\e[39m"} : Str{"[  FAILED  ]"};
-    io::println("{} {}.{} ({} ms)", s, suite, name, tms);
-  }
-};
-
-class CmdLine {
- public:
-  auto parse(Slice<const Str> args) const -> VecMap<Str, Str> {
-    auto opts = VecMap<Str, Str>{};
-
-    auto prev_key = Str{};
-
-    for (auto arg : args) {
-      if (arg.starts_with("-")) {
-        if (prev_key) {
-          opts.insert(prev_key, "");
-          prev_key = {};
-        }
-
-        if (arg.starts_with("--")) {
-          arg = arg[{2, _}];
-          if (auto p = arg.find('=')) {
-            auto k = arg[{0, *p}];
-            auto v = arg[{*p + 1, _}];
-            opts.insert(k, v);
-          } else {
-            prev_key = arg;
-          }
+      if (arg.starts_with("--")) {
+        arg = arg[{2, _}];
+        if (auto p = arg.find('=')) {
+          auto k = arg[{0, *p}];
+          auto v = arg[{*p + 1, _}];
+          opts.insert(k, v);
         } else {
-          auto k = arg[{1, _}];
-          opts.insert(k, "");
+          prev_key = arg;
         }
       } else {
-        if (prev_key) {
-          opts.insert(prev_key, arg);
-          prev_key = {};
-        }
+        auto k = arg[{1, _}];
+        opts.insert(k, "");
+      }
+    } else {
+      if (prev_key) {
+        opts.insert(prev_key, arg);
+        prev_key = {};
       }
     }
-    if (prev_key) {
-      opts.insert(prev_key, "");
-    }
-
-    return opts;
   }
-};
 
-}  // namespace
+  if (prev_key) {
+    opts.insert(prev_key, "");
+  }
+
+  return opts;
+}
+
+static auto yes_or_no(Str s, bool default_val) -> bool {
+  if (s == "yes" || s == "true" || s == "on" || s == "1") {
+    return true;
+  }
+  if (s == "no" || s == "false" || s == "off" || s == "0") {
+    return false;
+  }
+  return default_val;
+}
 
 App::App() {}
 
@@ -123,35 +63,23 @@ App::~App() {}
 App::App(App&&) noexcept = default;
 
 auto App::run(Slice<const Str> args) -> int {
-  auto opts = CmdLine{}.parse(args);
+  auto opts = parse_opts(args);
 
-  if (opts.contains_key(Str{"help"}) || opts.contains_key(Str{"h"})) {
+  if (opts.contains_key("help") || opts.contains_key("h")) {
     this->help();
     return 0;
   }
 
-  if (opts.contains_key(Str{"gtest_list_tests"})) {
-    auto path = opts.get(Str{"gtest_output"}).unwrap_or("");
+  if (opts.contains_key("gtest_list_tests")) {
+    auto path = opts.get("gtest_output").unwrap_or("");
     this->list_to_file(path);
     return 0;
   }
 
-  auto filter = opts.get(Str{"gtest_filter"}).unwrap_or("");
-  auto color = [&]() {
-    const auto opt = opts.get(Str{"gtest_color"}).unwrap_or("auto");
-    if (opt == "yes") {
-      return true;
-    }
-    if (opt == "no") {
-      return false;
-    }
-    if (opt == "auto") {
-      return io::Stdout{}.is_tty();
-    }
-    return false;
-  }();
-
-  this->run_tests(filter, color);
+  const auto pats = opts.get("gtest_filter").unwrap_or("");
+  const auto color_str = opts.get("gtest_color").unwrap_or("");
+  const auto color_val = yes_or_no(color_str, io::Stdout::is_tty());
+  this->run_tests(pats, color_val);
 
   return 0;
 }
@@ -170,13 +98,8 @@ void App::help() {
 }
 
 void App::run_tests(Str filter, bool color) {
-  auto gtest = GTestCase{color};
-  auto pats = gtest.parse_pats(filter);
-
-  auto tests = TestManager::instance().units(pats.as_slice());
-  for (auto& x : tests.as_slice()) {
-    gtest(x);
-  }
+  auto& tester = Tester::instance();
+  tester.invoke({}, color);
 }
 
 void App::list_to_file(Str output) const {
@@ -194,7 +117,7 @@ void App::list_to_file(Str output) const {
 }
 
 auto App::list_tests() const -> String {
-  auto suites = TestManager::instance().suites();
+  auto suites = Tester::instance().suites();
 
   auto sbuf = String{};
   fmt::Fmter<String> f{sbuf};
@@ -208,7 +131,7 @@ auto App::list_tests() const -> String {
 }
 
 auto App::list_tests_xml() const -> String {
-  auto suites = TestManager::instance().suites();
+  auto suites = Tester::instance().suites();
   auto test_cnt = suites.iter().fold(0UL, [](auto n, auto& x) { return n += x.tests().len(); });
 
   auto sbuf = String{};
@@ -220,7 +143,7 @@ auto App::list_tests_xml() const -> String {
     f.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
       const auto name = test.name();
-      const auto loc = test.location();
+      const auto loc = test._loc;
       f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n",
                   name,
                   loc.file,

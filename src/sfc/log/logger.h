@@ -5,7 +5,7 @@
 namespace sfc::log {
 
 class Logger {
-  Level               _level{Level::Info};
+  Level _level{Level::Info};
   Vec<Box<IBackend&>> _backends{};
 
  public:
@@ -13,7 +13,7 @@ class Logger {
   ~Logger();
 
   Logger(Logger&&) noexcept;
-  auto operator=(Logger&&) noexcept -> Logger&;
+  Logger& operator=(Logger&&) noexcept;
 
   auto get_level() const -> Level;
 

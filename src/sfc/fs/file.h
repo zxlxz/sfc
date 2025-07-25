@@ -8,7 +8,11 @@ class [[nodiscard]] File : io::File {
   using Inn = io::File;
 
  public:
-  using Inn::Inn;
+  explicit File(io::File inn) : Inn{static_cast<Inn&&>(inn)} {}
+  ~File() = default;
+
+  File(File&&) noexcept = default;
+  File& operator=(File&&) noexcept = default;
 
   using Inn::read;
   using Inn::read_all;

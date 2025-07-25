@@ -5,7 +5,7 @@ using namespace sfc;
 int main(int argc, cstr_t argv[]) {
   auto args = Vec<Str>{};
   for (auto idx = 0; idx < argc; ++idx) {
-    args.push(Str::from_cstr(argv[idx]));
+    args.push(Str{argv[idx]});
   }
 
   auto app = test::App{};

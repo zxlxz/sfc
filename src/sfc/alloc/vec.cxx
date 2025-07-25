@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::vec {
+namespace sfc::vec::test {
 
 SFC_TEST(index) {
   auto v = Vec<int>::from((int[]){0, 1, 2, 3});
@@ -58,4 +58,4 @@ SFC_TEST(remove) {
 
 SFC_TEST(retain) {}
 
-}  // namespace sfc::vec
+}  // namespace sfc::vec::test

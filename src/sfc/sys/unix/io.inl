@@ -12,6 +12,8 @@ namespace sfc::sys::io {
 
 using stat_t = struct stat;
 
+static constexpr auto INVALID_FD = -1;
+
 static inline auto get_err() -> int {
   return errno;
 }
@@ -36,10 +38,6 @@ static inline auto kind_of(int code) -> T {
     case EWOULDBLOCK:   return T::WouldBlock;
     default:            return T::Other;
   }
-}
-
-static inline auto null() -> int {
-  return -1;
 }
 
 static inline void close(int fd) {

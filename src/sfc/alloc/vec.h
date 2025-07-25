@@ -223,7 +223,7 @@ class [[nodiscard]] Vec {
  public:
   void push(T val) {
     this->reserve(1);
-    new (&_buf._ptr[_len]) T{static_cast<T&&>(val)};
+    ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
     _len += 1;
   }
 
@@ -232,12 +232,8 @@ class [[nodiscard]] Vec {
       return {};
     }
 
-    auto& tmp = _buf._ptr[_len - 1];
-    auto res = Option{static_cast<T&&>(tmp)};
-    tmp.~T();
     _len -= 1;
-
-    return res;
+    return ptr::read(&_buf._ptr[_len]);
   }
 
   void truncate(usize len) {
@@ -274,14 +270,11 @@ class [[nodiscard]] Vec {
   auto swap_remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto& hole = _buf[idx];
-    auto& tail = _buf[_len - 1];
-    auto res = static_cast<T&&>(hole);
-    if (&hole != &tail) {
-      hole = static_cast<T&&>(tail);
+    auto res = ptr::read(_buf._ptr + idx);
+    if (idx != _len - 1) {
+      ptr::write(_buf._ptr + idx, ptr::read(_buf._ptr + _len - 1));
     }
-    tail.~T();
-    --_len;
+    _len -= 1;
 
     return res;
   }
@@ -291,20 +284,16 @@ class [[nodiscard]] Vec {
 
     this->reserve(1);
 
-    const auto hole = _buf._ptr + idx;
-    if (idx != _len) {
-      new (hole) T{static_cast<T&&>(element)};
-    }
+    ptr::shift_elements(_buf._ptr + idx, _len - idx, 1);
+    ptr::write(_buf._ptr + idx, static_cast<T&&>(element));
     _len += 1;
   }
 
   auto remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    const auto hole = _buf._ptr + idx;
-    auto res = static_cast<T&&>(*hole);
-    hole->~T();
-    ptr::shift_elements(hole, _len - idx - 1, -1);
+    auto res = ptr::read(_buf._ptr + idx);
+    ptr::shift_elements(_buf._ptr + idx + 1, _len - idx - 1, -1);
     _len -= 1;
     return res;
   }
@@ -317,8 +306,7 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    const auto hole = _buf._ptr + ids._start;
-    ptr::shift_elements(hole, _len - ids._end, -static_cast<isize>(off));
+    ptr::shift_elements(_buf._ptr + ids._start, _len - ids._end, -static_cast<isize>(off));
     _len -= off;
   }
 
@@ -346,7 +334,7 @@ class [[nodiscard]] Vec {
       this->reserve(iter.len());
     }
     iter.for_each([&](T val) {
-      new (_buf._ptr + _len) T{static_cast<T&&>(val)};
+      ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
       ++_len;
     });
   }
@@ -356,7 +344,7 @@ class [[nodiscard]] Vec {
 
     const auto new_len = _len + cnt;
     for (; _len < new_len; ++_len) {
-      new (_buf._ptr + _len) T{value};
+      ptr::write(&_buf._ptr[_len], value);
     }
   }
 

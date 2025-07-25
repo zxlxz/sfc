@@ -69,11 +69,11 @@ struct Duration {
   }
 
   auto as_secs_f32() const -> f32 {
-    return static_cast<f32>(_nanos) * 1e-9f;
+    return static_cast<f32>(_nanos) / static_cast<f32>(NANOS_PER_SEC);
   }
 
   auto as_secs_f64() const -> f64 {
-    return static_cast<f64>(_nanos) * 1e-9;
+    return static_cast<f64>(_nanos) / static_cast<f64>(NANOS_PER_SEC);
   }
 
   auto operator+(Duration rhs) const -> Duration {
@@ -82,6 +82,15 @@ struct Duration {
 
   auto operator-(Duration rhs) const -> Duration {
     return Duration{num::saturating_sub(_nanos, rhs._nanos)};
+  }
+
+  void fmt(auto& f) const {
+    const auto secs = this->as_secs_f64();
+    if (secs < 1e-3) {
+      f.write_fmt("{.3}ms", secs * 1e3);
+    } else {
+      f.write_fmt("{.3}s", secs);
+    }
   }
 };
 

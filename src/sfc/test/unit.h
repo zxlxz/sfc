@@ -4,74 +4,90 @@
 
 namespace sfc::test {
 
-using panicking::Location;
-
-class Unit {
+struct Unit {
   using Fun = void (*)();
+  using Loc = panicking::Location;
 
-  Location _loc;
-  Str      _name;
-  Fun      _func;
+  Str _str;
+  Fun _fun;
+  Loc _loc = {};
 
  public:
-  Unit(Location loc, Str name, Fun func) : _loc{loc}, _name{name}, _func{func} {}
+  template <typename T>
+  static auto of(Loc loc) -> Unit {
+#ifdef __clang__
+    static constexpr auto S1 = sizeof("static Unit sfc::test::Unit::of(Loc) [T =");
+    static constexpr auto S2 = sizeof("_UT_]");
+#endif
+    const auto name = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+    return Unit{name, &T::test, loc};
+  }
+
+  auto invoke(bool color = false) const -> bool;
 
   auto suite() const -> Str;
   auto name() const -> Str;
-  auto location() const -> Location;
-  auto invoke() const -> bool;
 
   auto match(Slice<const Str> pats) const -> bool;
 };
 
 class Suite {
-  String    _name;
-  Vec<Unit> _tests;
+  String _name{};
+  Vec<Unit> _unit{};
 
  public:
-  explicit Suite(Str name);
-  ~Suite();
-  Suite(Suite&&) noexcept;
-  auto operator=(Suite&&) noexcept -> Suite&;
+  explicit Suite(Str name) : _name{String::from(name)} {}
 
-  auto name() const -> Str;
-  auto tests() const -> Slice<const Unit>;
+  ~Suite() = default;
 
-  void push(Unit unit);
+  Suite(Suite&&) noexcept = default;
+
+  Suite& operator=(Suite&&) noexcept = default;
+
+  auto name() const -> Str {
+    return _name;
+  }
+
+  auto tests() const -> Slice<const Unit> {
+    return _unit.as_slice();
+  }
+
+  auto push(Unit unit) -> const Unit& {
+    _unit.push(unit);
+    return _unit.last();
+  }
+
   auto match(Slice<const Str> pats) const -> bool;
+
+  void invoke(Slice<const Str> pats, bool color = false);
 };
 
-class TestManager {
-  VecMap<Str, Suite> _suites;
+class Tester {
+  Vec<Suite> _suites{};
 
  public:
-  static auto instance() -> TestManager&;
+  static auto instance() -> Tester&;
 
   auto suites() const -> Slice<const Suite>;
 
-  auto units(Slice<const Str> pats) const -> Vec<Unit>;
+  auto operator[](Str name) -> Suite&;
+
+  void invoke(Slice<const Str> pats, bool color = false);
 
   template <class T>
-  auto regist(Location loc = {}) -> usize {
-    static auto name = reflect::type_name<T>();
-    static auto unid = this->regist_imp({loc, name, &T::test});
-    return unid;
+  static auto regist(panicking::Location loc = {}) -> const Unit* {
+    static const auto unit = Unit::of<T>(loc);
+    auto& suite = instance()[unit.suite()];
+    return &suite.push(unit);
   }
-
- private:
-  TestManager();
-  ~TestManager();
-  TestManager(const TestManager&) = delete;
-
-  auto regist_imp(Unit) -> usize;
 };
 
 }  // namespace sfc::test
 
-#define SFC_TEST(X)                                                                      \
-  struct X##_SFCT_ {                                                                     \
-    static const usize UID;                                                              \
-    static void        test();                                                           \
-  };                                                                                     \
-  const usize X##_SFCT_::UID = ::sfc::test::TestManager::instance().regist<X##_SFCT_>(); \
-  void        X##_SFCT_::test()
+#define SFC_TEST(X)                                                            \
+  struct X##_UT_ {                                                             \
+    static const sfc::test::Unit* _UT_;                                        \
+    static void test();                                                        \
+  };                                                                           \
+  const sfc::test::Unit* X##_UT_::_UT_ = sfc::test::Tester::regist<X##_UT_>(); \
+  void X##_UT_::test()

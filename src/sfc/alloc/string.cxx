@@ -1,10 +1,10 @@
 #include "sfc/test.h"
 
-namespace sfc::str {
+namespace sfc::string::test {
 
 SFC_TEST(property) {
-  const auto test_str = Str{"abc"};
-  const auto null_str = Str{""};
+  const auto test_str = String::from("abc");
+  const auto null_str = String::from("");
 
   panicking::assert_eq(test_str.len(), 3U);
   panicking::assert_false(test_str.is_empty());
@@ -14,16 +14,15 @@ SFC_TEST(property) {
 }
 
 SFC_TEST(index) {
-  auto s = Str{"abc"};
+  const auto s = String::from("abc");
 
   panicking::assert_eq(s[0], 'a');
   panicking::assert_eq(s[1], 'b');
   panicking::assert_eq(s[2], 'c');
-  panicking::assert_eq(s[3], '\0');
 }
 
 SFC_TEST(index_range) {
-  auto s = Str{"abc"};
+  const auto s = String::from("abc");
 
   panicking::assert_eq((s[{0, _}]), "abc");
   panicking::assert_eq((s[{0, 2}]), "ab");
@@ -36,38 +35,28 @@ SFC_TEST(index_range) {
 }
 
 SFC_TEST(cmp) {
-  const auto s = Str{"abcd"};
+  const auto s = String::from("abcd");
 
   panicking::assert_true(s == "abcd");
   panicking::assert_false(s == "abc");
 }
 
-SFC_TEST(iter) {
-  const auto s = Str{"abc"};
-
-  auto n = 0;
-  for (auto c : s.as_chars()) {
-    panicking::assert_eq(c, 'a' + n);
-    n += 1;
-  }
-}
-
 SFC_TEST(find) {
-  const auto s = Str{"abc"};
+  const auto s = String::from("abc");
 
   panicking::assert_eq(s.find('a'), Option<usize>{0UL});
   panicking::assert_eq(s.find('b'), Option<usize>{1UL});
-  panicking::assert_eq(s.find('c'), Option<usize>{2UL});
-  panicking::assert_false(s.find('d'));
+  panicking::assert_eq(s.rfind('c'), Option<usize>{2UL});
+  panicking::assert_eq(s.find('d'), Option<usize>{});
 }
 
 SFC_TEST(rfind) {
-  const auto s = Str{"abc"};
+  const auto s = String::from("abc");
 
   panicking::assert_eq(s.rfind('a'), Option<usize>{0UL});
   panicking::assert_eq(s.rfind('b'), Option<usize>{1UL});
   panicking::assert_eq(s.rfind('c'), Option<usize>{2UL});
-  panicking::assert_false(s.rfind('d'));
+  panicking::assert_eq(s.rfind('d'), Option<usize>{});
 }
 
-}  // namespace sfc::str
+}  // namespace sfc::string

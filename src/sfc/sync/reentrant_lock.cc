@@ -1,43 +1,44 @@
 #include "sfc/sync/reentrant_lock.h"
 
+#include "sfc/sync/atomic.h"
 #include "sfc/sys/sync.h"
-#include "sfc/sys/thread.h"
+#include "sfc/thread.h"
 
 namespace sfc::sync {
 
+using sys::sync::mutex_t;
+using thread::Thread;
+
 struct ReentrantLock::Inn {
-  sys::sync::mutex_t _mutex{};
-  sys::thread::thrd_t _owner{};
-  int _count{0};
+  Atomic<thread::raw_t> _owner{{}};
+  Atomic<int> _count{0};
+  mutex_t _mutex{};
 
  public:
   void lock() {
-    const auto thrd = sys::thread::current();
+    const auto cur_thrd = Thread::current()._raw;
 
-    const auto cur_owner = __atomic_load_n(&_owner, __ATOMIC_SEQ_CST);
-    if (thrd == cur_owner) {
-      __atomic_fetch_add(&_count, 1, __ATOMIC_SEQ_CST);
+    if (cur_thrd == _owner.load()) {
+      _count.fetch_add(1);
       return;
     }
 
     sys::sync::lock(_mutex);
-    __atomic_store_n(&_owner, thrd, __ATOMIC_SEQ_CST);
-    __atomic_store_n(&_count, 1, __ATOMIC_SEQ_CST);
+    _owner.store(cur_thrd);
+    _count.store(1);
   }
 
   void unlock() {
-    const auto thrd = sys::thread::current();
+    const auto cur_thrd = Thread::current()._raw;
 
-    const auto cur_owner = __atomic_load_n(&_owner, __ATOMIC_SEQ_CST);
-    if (thrd != cur_owner) {
+    if (cur_thrd != _owner.load()) {
       panicking::panic("ReentrantLock::unlock: not owner of the lock");
       return;
     }
 
-    const auto old_cnt = __atomic_fetch_add(&_count, -1, __ATOMIC_SEQ_CST);
-    if (old_cnt == 1) {
+    if (_count.fetch_sub(1) == 1) {
       sys::sync::unlock(_mutex);
-      __atomic_store_n(&_owner, sys::thread::thrd_t{}, __ATOMIC_SEQ_CST);
+      _owner.store({});
     }
   }
 };

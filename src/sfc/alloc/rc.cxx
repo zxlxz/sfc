@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::rc {
+namespace sfc::rc::test {
 
 namespace {
 struct T {
@@ -42,4 +42,4 @@ SFC_TEST(rc) {
   panicking::assert_eq(T::obj_cnt(), 0);
 }
 
-}  // namespace sfc::rc
+}  // namespace sfc::rc::test

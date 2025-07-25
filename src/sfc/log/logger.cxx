@@ -1,7 +1,7 @@
 #include "sfc/log.h"
 #include "sfc/test.h"
 
-namespace sfc::log {
+namespace sfc::log::test {
 
 SFC_TEST(console) {
   auto logger = Logger{};
@@ -16,4 +16,4 @@ SFC_TEST(console) {
   logger.write_fmt(Level::Fatal, "log {}", 6);
 }
 
-}  // namespace sfc::log
+}  // namespace sfc::log::test

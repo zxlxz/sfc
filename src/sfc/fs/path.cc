@@ -1,6 +1,5 @@
 #include "sfc/fs/path.h"
 
-#include "sfc/ffi/cstring.h"
 #include "sfc/sys/fs.h"
 
 namespace sfc::fs {
@@ -15,7 +14,7 @@ struct Components {
 
   auto next_back() -> Str {
     while (!_str.is_empty()) {
-      _str.trim_end_matches('/');
+      _str = _str.trim_end_matches('/');
 
       if (const auto p = _str.rfind('/')) {
         const auto b = _str[{*p + 1, _}];

@@ -216,7 +216,7 @@ struct IFmt<const char*> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(str::Str::from_cstr(_val));
+    f.pad(str::Str{_val});
   }
 };
 
@@ -226,7 +226,7 @@ struct IFmt<char*> {
 
  public:
   void fmt(auto& f) const {
-    f.pad(str::Str::from_cstr(_val));
+    f.pad(str::Str{_val});
   }
 };
 

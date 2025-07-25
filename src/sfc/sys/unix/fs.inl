@@ -6,11 +6,8 @@
 #include <unistd.h>
 
 namespace sfc::sys::fs {
-using stat_t = struct stat;
 
-static inline auto null() -> int {
-  return -1;
-}
+using stat_t = struct stat;
 
 static inline auto open(const char* path, const auto& opts) -> int {
   const auto access_flags = opts.write ? opts.read ? O_RDWR : O_WRONLY : O_RDONLY;
@@ -37,7 +34,7 @@ static inline auto lstat(const char* path, auto& res) -> bool {
     return false;
   }
 
-  res._attr = st.st_mode;
+  res._attr = static_cast<uint32_t>(st.st_mode);
   res._size = static_cast<size_t>(st.st_size);
   return true;
 }

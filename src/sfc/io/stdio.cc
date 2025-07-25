@@ -60,26 +60,26 @@ class Stdout::Inn {
   }
 };
 
-Stdout::Stdout() : _inn{Inn::instance()} {}
-
-Stdout::~Stdout() {}
-
 auto Stdout::lock() -> Lock {
-  return Lock{_inn};
+  static auto& inn = Inn::instance();
+  return Lock{inn};
 }
 
 auto Stdout::is_tty() -> bool {
-  return _inn.is_tty();
+  static auto& inn = Inn::instance();
+    return inn.is_tty();
 }
 
 void Stdout::flush() {
-  auto lock = _inn._mtx.lock();
-  return _inn.flush();
+  static auto& inn = Inn::instance();
+  auto lock = inn._mtx.lock();
+  return inn.flush();
 }
 
 void Stdout::write_str(Str s) {
-  auto lock = _inn._mtx.lock();
-  _inn.write(s.as_bytes());
+  static auto& inn = Inn::instance();
+  auto lock = inn._mtx.lock();
+  inn.write(s.as_bytes());
 }
 
 Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}

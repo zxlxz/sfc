@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::boxed {
+namespace sfc::boxed::test {
 
 SFC_TEST(box_obj) {
   auto b1 = Box<int>::xnew(42);
@@ -33,4 +33,4 @@ SFC_TEST(box_fn) {
   panicking::assert_false(bool(b1));
 }
 
-}  // namespace sfc::boxed
+}  // namespace sfc::boxed::test

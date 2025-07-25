@@ -23,6 +23,8 @@ class File {
 
   auto as_fd() const -> fd_t;
 
+  operator bool() const;
+
   auto read(Slice<u8> buf) -> Result<usize>;
   auto read_all(Vec<u8>& buf, usize buf_len = 256) -> Result<usize>;
   auto read_to_string(String& buf, usize buf_len = 256) -> Result<usize>;

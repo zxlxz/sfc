@@ -13,12 +13,7 @@ struct Str {
 
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
-  template <usize N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
-
-  static constexpr auto from_cstr(const char* p) -> Str {
-    return Str{p, p ? __builtin_strlen(p) : 0};
-  }
+  constexpr Str(const char* p) noexcept : _ptr{p}, _len{p ? __builtin_strlen(p) : 0} {}
 
   static constexpr auto from_chars(slice::Slice<const char> s) -> Str {
     return Str{s._ptr, s._len};
@@ -436,15 +431,16 @@ auto Str::ends_with(P&& p) const -> bool {
 template <class P>
 auto Str::trim_start_matches(P&& p) const -> Str {
   auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto idx = ser.next_reject();
-  return idx ? (*this)[{*idx, ser.step()}] : *this;
+  const auto cnt = ser.step();
+  const auto idx = ser.next_reject();
+  return idx ? (*this)[{*idx, cnt}] : Str{};
 }
 
 template <class P>
 auto Str::trim_end_matches(P&& p) const -> Str {
   auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  auto idx = ser.next_reject_back();
-  return idx ? (*this)[{*idx - ser.step(), ser.step()}] : *this;
+  const auto idx = ser.next_reject_back();
+  return idx ? (*this)[{0, *idx + 1}] : Str{};
 }
 
 template <class P>

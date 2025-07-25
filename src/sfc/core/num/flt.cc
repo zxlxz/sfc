@@ -120,7 +120,7 @@ struct FltBuf {
   template <usize N>
   void write_str(const char (&s)[N]) {
     for (auto i = N; i != 0; --i) {
-      *--_end = s[i - 1];
+      *--_ptr = s[i - 1];
     }
   }
 
@@ -158,7 +158,9 @@ struct FltBuf {
         int_part += 1;
         flt_part -= frac_exp;
       }
-      this->write_dec(flt_part);
+      this->write_dec(frac_exp + flt_part);
+      ++_ptr;
+
       this->push('.');
     }
 
