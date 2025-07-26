@@ -33,7 +33,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
-      f(x.get_unchecked_mut());
+      f(*x);
     }
   }
 
@@ -41,7 +41,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (auto i = 0UL; auto x = self.next(); ++i) {
-      f(i, x.get_unchecked_mut());
+      f(i, *x);
     }
   }
 
@@ -52,13 +52,13 @@ struct Iterator {
     if constexpr (!__is_same(B, B&)) {
       auto accum = static_cast<B&&>(init);
       for (; auto x = self.next();) {
-        accum = f(accum, x.get_unchecked_mut());
+        accum = f(accum, *x);
       }
       return accum;
     } else {
       auto accum_ptr = &init;
       for (; auto x = self.next();) {
-        accum_ptr = &f(*accum_ptr, x.get_unchecked_mut());
+        accum_ptr = &f(*accum_ptr, *x);
       }
       return *accum_ptr;
     }
@@ -79,7 +79,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
-      if (pred(x.get_unchecked_mut())) {
+      if (pred(*x)) {
         return x;
       }
     }
@@ -90,7 +90,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next_back();) {
-      if (pred(x.get_unchecked_mut())) {
+      if (pred(*x)) {
         return x;
       }
     }
@@ -101,7 +101,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (usize idx = 0UL; auto x = self.next(); ++idx) {
-      if (pred(x.get_unchecked_mut())) {
+      if (pred(*x)) {
         return idx;
       }
     }
@@ -113,7 +113,7 @@ struct Iterator {
     auto& self = static_cast<I&>(*this);
 
     for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
-      if (pred(x.get_unchecked_mut())) {
+      if (pred(*x)) {
         return idx;
       }
     }

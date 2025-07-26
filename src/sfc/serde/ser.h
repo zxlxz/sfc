@@ -12,7 +12,7 @@ class Serialize<T> : T {
  public:
   auto serialize(const auto& se) const {
     const auto info = reflect_struct(static_cast<const T&>(*this));
-    auto       res = se.ser_dict();
+    auto res = se.ser_dict();
     info.fields().map([&](const auto& item) {
       auto node = se.ser(item.value);
       res.insert(item.name, mem::move(node));
@@ -107,14 +107,14 @@ class Serialize<String> : String {
 template <class S>
 class FmtAdapter {
   const S& _ser;
-  Node&    _node;
+  Node& _node;
 
  public:
   FmtAdapter(const S& ser, Node& node) : _ser{ser}, _node{node} {}
 
   struct DebugList {
     const S& _ser;
-    Node&    _root;
+    Node& _root;
 
    public:
     void entry(const auto& element) {
@@ -124,14 +124,14 @@ class FmtAdapter {
 
     void entries(auto iter) {
       for (; auto e = iter.next();) {
-        this->entry(e.get_unchecked());
+        this->entry(*e);
       }
     }
   };
 
   struct DebugMap {
     const S& _ser;
-    Node&    _root;
+    Node& _root;
 
    public:
     void entry(const auto& name, const auto& element) {
@@ -149,7 +149,7 @@ class FmtAdapter {
 
   struct DebugStruct {
     const S& _ser;
-    Node&    _root;
+    Node& _root;
 
    public:
     void field(Str name, const auto& element) {

@@ -1,23 +1,55 @@
 #include "json.h"
+
 #include "sfc/fs/file.h"
 
 namespace sfc::serde::json {
 
-struct Json2Node {
-  Str _str;
+struct JsonStr {
+  const char* _ptr;
+  const char* _end;
 
  public:
   auto parse() -> Option<Node> {
-    auto res = this->extract_node();
-    return res;
+    this->trim();
+    if (_ptr == _end) {
+      return {};
+    }
+
+    switch (*_ptr) {
+      case '[': return this->extract_list();
+      case '{': return this->extract_dict();
+      case '"': return this->extract_str();
+      case '+':
+      case '-':
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9': return this->extract_num();
+      case 't': return this->extract_key('t');
+      case 'f': return this->extract_key('f');
+      case 'n': return this->extract_key('n');
+      default:  return {};
+    }
   }
 
  private:
-  auto extract_keyword() -> Option<Node> {
-    const auto k = this->read_keyword();
-    if (k == "null") return Node{};
-    if (k == "true") return Node{true};
-    if (k == "false") return Node{false};
+  auto extract_key(char c) -> Option<Node> {
+    const auto k = this->read_key();
+    if (c == 'n' && k == "null") {
+      return Node{};
+    }
+    if (c == 't' && k == "true") {
+      return Node{true};
+    }
+    if (c == 'f' && k == "false") {
+      return Node{false};
+    }
     return {};
   }
 
@@ -43,45 +75,44 @@ struct Json2Node {
   }
 
   auto extract_list() -> Option<Node> {
-    auto list = List{};
-
-    this->pop();  // pop '['
-
-    // check end
-    if (this->peak_ctrl() == ']') {
-      this->pop();
-      return Node{mem::move(list)};
+    if (!this->pop('[')) {
+      return {};
     }
 
+    if (this->pop(']')) {
+      return Node{List{}};
+    }
+
+    auto list = List{};
     for (;;) {
-      if (auto node = this->extract_node()) {
-        list.push(mem::move(node).unwrap());
+      if (auto val = this->parse()) {
+        list.push(static_cast<Node&&>(*val));
       } else {
         return {};
       }
 
-      const auto ch = this->read_ctrl();
-      if (ch != ',') {
-        if (ch == ']') break;
-        return {};
+      if (this->pop(',')) {
+        continue;
       }
+      if (this->pop(']')) {
+        break;
+      }
+      return {};
     }
 
-    return Node{mem::move(list)};
+    return Node{static_cast<List&&>(list)};
   }
 
   auto extract_dict() -> Option<Node> {
-    auto dict = Dict{};
-
-    // pop '{'
-    this->pop();
-
-    // check end
-    if (this->peak_ctrl() == '}') {
-      this->pop();
-      return Node{mem::move(dict)};
+    if (!this->pop('{')) {
+      return {};
     }
 
+    if (this->pop('}')) {
+      return Node{Dict{}};
+    }
+
+    auto dict = Dict{};
     for (;;) {
       this->trim();
       const auto key = this->read_str();
@@ -89,130 +120,99 @@ struct Json2Node {
         return {};
       }
 
-      {
-        auto ch = this->read_ctrl();
-        if (ch != ':') {
-          return {};
-        }
+      if (!this->pop(':')) {
+        return {};
       }
 
-      if (auto node = this->extract_node()) {
-        dict.insert(String::from(key), mem::move(node).unwrap());
+      if (auto val = this->parse()) {
+        dict.insert(String::from(key), static_cast<Node&&>(*val));
       } else {
         return {};
       }
 
-      {
-        const auto ch = this->read_ctrl();
-        if (ch != ',') {
-          if (ch == '}') break;
-          return {};
-        }
+      if (this->pop(',')) {
+        continue;
       }
+      if (this->pop('}')) {
+        break;
+      }
+      return {};
     }
 
     return Node{mem::move(dict)};
   }
 
-  auto extract_node() -> Option<Node> {
-    const auto ch = this->peak_ctrl();
-
-    switch (ch) {
-      case '[':
-        return this->extract_list();
-      case '{':
-        return this->extract_dict();
-      case '"':
-        return this->extract_str();
-      case '+':
-      case '-':
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-        return this->extract_num();
-      case 't':
-      case 'f':
-      case 'n':
-        return this->extract_keyword();
-      default:
-        return {};
+ private:
+  void trim() {
+    for (; _ptr < _end; ++_ptr) {
+      const auto c = *_ptr;
+      if (c != ' ' && c != '\t' && c != '\n' && c != '\r') {
+        break;
+      }
     }
   }
 
- private:
-  void pop() {
-    _str._ptr += 1;
-    _str._len -= 1;
-  }
-
-  void trim() {
-    _str = _str.trim_start();
-  }
-
-  auto peak_ctrl() -> char {
+  auto pop(char ch) -> bool {
     this->trim();
-    const auto ch = _str[0];
-    return ch;
-  }
-
-  auto read_ctrl() -> char {
-    this->trim();
-    const auto ch = _str[0];
-    this->pop();
-    return ch;
+    if (_ptr == _end || *_ptr != ch) {
+      return false;
+    }
+    ++_ptr;
+    return true;
   }
 
   auto read_str() -> Str {
-    if (_str[0] != '"') return {};
-
-    this->pop();
-
-    const auto p = _str.find('"').unwrap_or(_str._len);
-    if (p == _str._len) {
+    if (*_ptr != '"') {
       return {};
     }
 
-    const auto v = _str.split_at(p);
-    const auto a = v.template get<0>();
-    const auto b = v.template get<1>();
-    _str = b[{1U, _str._len}];
-    return a;
+    const auto start = ++_ptr;
+    for (; _ptr < _end; ++_ptr) {
+      const auto c = *_ptr;
+      if (c == '"') {
+        break;
+      }
+    }
+    if (_ptr >= _end) {
+      return {};
+    }
+
+    const auto end = _ptr++;
+    const auto len = static_cast<usize>(end - start);
+    return Str{start, len};
   }
 
   auto read_num() -> Str {
-    const auto f = [](char c) {  //
-      return !(c == '.' || c == '+' || c == '-' || ('0' <= c && c <= '9'));
-    };
-
-    const auto p = _str.find(f).unwrap_or(_str._len);
-    const auto v = _str.split_at(p);
-    const auto a = v.template get<0>();
-    const auto b = v.template get<1>();
-    _str = b;
-    return a;
+    const auto start = _ptr;
+    for (; _ptr < _end; ++_ptr) {
+      const auto c = *_ptr;
+      if (c >= '0' && c <= '9') {
+        continue;
+      } else if (c == '+' || c == '-' || c == '.') {
+        continue;
+      } else {
+        break;
+      }
+    }
+    return Str{start, static_cast<usize>(_ptr - start)};
   }
 
-  auto read_keyword() -> Str {
-    const auto f = [](char c) { return !(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')); };
-    const auto p = _str.find(f).unwrap_or(_str._len);
-    const auto v = _str.split_at(p);
-    const auto a = v.template get<0>();
-    const auto b = v.template get<1>();
-    _str = b;
-    return a;
+  auto read_key() -> Str {
+    const auto start = _ptr;
+    for (; _ptr < _end; ++_ptr) {
+      const auto c = *_ptr | 32;
+      if (c < 'a' || c > 'z') {
+        break;
+      }
+    }
+    return Str{start, static_cast<usize>(_ptr - start)};
   }
 };
 
 auto parse(Str s) -> Option<Node> {
-  auto imp = Json2Node{s};
-  return imp.parse();
+  auto imp = JsonStr{s._ptr, s._ptr + s._len};
+  auto res = imp.parse();
+  return res;
 }
 
 }  // namespace sfc::serde::json

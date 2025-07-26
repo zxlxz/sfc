@@ -123,22 +123,24 @@ class Option {
     return bool(_inn);
   }
 
-  auto get_unchecked() const -> const T& {
-    return *_inn;
-  }
-
-  auto get_unchecked_mut() -> T& {
-    return *_inn;
-  }
-
   auto operator*() const -> const T& {
-    panicking::assert(_inn, "Option::operator*: None");
+    panicking::assert(_inn, "Option::operator*: deref None");
     return *_inn;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_inn, "Option::operator*: None");
+    panicking::assert(_inn, "Option::operator*: deref None");
     return *_inn;
+  }
+
+  auto operator->() const {
+    panicking::assert(_inn, "Option::operator->: deref None");
+    return &*_inn;
+  }
+
+  auto operator->() {
+    panicking::assert(_inn, "Option::operator->: deref None");
+    return &*_inn;
   }
 
   auto operator==(const Option& other) const -> bool {

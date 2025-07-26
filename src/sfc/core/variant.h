@@ -1,38 +1,64 @@
 #pragma once
 
-#include "sfc/core/tuple.h"
+#include "sfc/core/mod.h"
 
 namespace sfc::variant {
 
-using tuple::idx_t;
+template <u32 I>
+struct tag_t {};
 
 template <class... T>
 union Union;
 
 template <>
-union Union<> {
-  Union() {}
+union Union<> {};
+
+template <class T>
+union Union<T> {
+  T _0;
+
+ public:
+  template <u32 I, class... U>
+  Union(tag_t<I>, U&&... u) : _0{static_cast<U&&>(u)...} {}
+
+  Union(u32 tag, Union&& other) {
+    if (tag == 0) {
+      ptr::write(&_0, static_cast<T&&>(other._0));
+    }
+  }
+
+  Union(u32 tag, const Union& other) {
+    if (tag == 0) {
+      ptr::write(&_0, other._0);
+    }
+  }
+
   ~Union() {}
 
-  Union(idx_t<0>, auto&&...) noexcept {}
+  template <class U>
+  static constexpr auto tag() -> u32 {
+    return __is_same(T, U) ? 0U : 1U;
+  }
 
-  template <usize>
-  void get_unchecked() const {}
+  operator const T&() const {
+    return _0;
+  }
 
-  template <usize>
-  void get_unchecked_mut() {}
+  operator T&() {
+    return _0;
+  }
 
-  void dtor(usize) {}
+  operator T&&() {
+    return static_cast<T&&>(_0);
+  }
 
-  void move_ctor(usize, Union&) {}
-  void copy_ctor(usize, const Union&) {}
+  auto map([[maybe_unused]] u32 tag, auto&& f) const {
+    return f(_0);
+  }
 
-  void move_assign(usize, Union&) {}
-  void copy_assign(usize, const Union&) {}
-
-  void map(usize, auto&&) const {}
-
-  void map_mut(usize, auto&&) {}
+  auto map_mut([[maybe_unused]] u32 tag, auto&& f) {
+    return f(_0);
+  }
 };
 
 template <class T0, class... Ts>
@@ -41,14 +67,23 @@ union Union<T0, Ts...> {
   Union<Ts...> _1;
 
  public:
-  Union() noexcept {}
-
   template <class... U>
-  Union(idx_t<0>, U&&... args) noexcept : _0{static_cast<U&&>(args)...} {}
+  Union(tag_t<0>, U&&... u) : _0{static_cast<U&&>(u)...} {}
 
-  template <usize I, class... U>
-  Union(idx_t<I>, U&&... args) noexcept
-      : _1{idx_t<I - 1>{}, static_cast<U&&>(args)...} {}
+  template <u32 I, class... U>
+  Union(tag_t<I>, U&&... u) : _1{tag_t<I - 1>{}, static_cast<U&&>(u)...} {}
+
+  Union(u32 tag, Union&& other) : _1{tag - 1, static_cast<Union<Ts...>&&>(other._1)} {
+    if (tag == 0) {
+      new (&_0) T0{static_cast<T0&&>(other._0)};
+    }
+  }
+
+  Union(u32 tag, const Union& other) : _1{tag - 1, other._1} {
+    if (tag == 0) {
+      new (&_0) T0{other._0};
+    }
+  }
 
   ~Union() {}
 
@@ -61,147 +96,119 @@ union Union<T0, Ts...> {
     }
   }
 
-  template <usize I>
-  auto get_unchecked() const -> const auto& {
-    if constexpr (I == 0) {
+  template <class U>
+  operator const U&() const {
+    if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
-      return _1.template get_unchecked<I - 1>();
+      return static_cast<const U&>(_1);
     }
   }
 
-  template <usize I>
-  auto get_unchecked_mut() -> auto& {
-    if constexpr (I == 0) {
+  template <class U>
+  operator U&() {
+    if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
-      return _1.template get_unchecked_mut<I - 1>();
+      return static_cast<U&>(_1);
     }
   }
 
-  void dtor(usize idx) {
-    if (idx == 0) {
-      _0.~T0();
+  template <class U>
+  operator U&&() {
+    if constexpr (__is_same(T0, U)) {
+      return static_cast<U&&>(_0);
     } else {
-      _1.dtor(idx - 1);
+      return static_cast<U&&>(_1);
     }
   }
 
-  void move_ctor(usize idx, Union& src) {
-    if (idx == 0) {
-      new(&_0) T0{ static_cast<T0&&>(src._0)};
+  auto map(u32 tag, auto&& f) const {
+    if (tag == 0) {
+      return f(_0);
     } else {
-      _1.move_ctor(idx - 1, src._1);
+      return _1.map(tag - 1, f);
     }
   }
 
-  void copy_ctor(usize idx, Union& src) {
-    if (idx == 0) {
-      new(&_0) T0{ src._0 };
+  auto map_mut(u32 tag, auto&& f) {
+    if (tag == 0) {
+      return f(_0);
     } else {
-      _1.copy_ctor(idx - 1, src._1);
-    }
-  }
-
-  void move_assign(usize idx, Union& src) {
-    if (idx == 0) {
-      _0 = static_cast<T0&&>(src._0);
-    } else {
-      _1.move_assign(idx - 1, src._1);
-    }
-  }
-
-  void copy_assign(usize idx, const Union& src) {
-    if (idx == 0) {
-      _0 = src._0;
-    } else {
-      _1.copy_assign(idx - 1, src._1);
-    }
-  }
-
-  void map(usize idx, auto&& f) const {
-    if (idx == 0) {
-      f(_0);
-    } else {
-      _1.map(idx - 1, f);
-    }
-  }
-
-  void map_mut(usize idx, auto&& f) {
-    if (idx == 0) {
-      f(_0);
-    } else {
-      _1.map_mut(idx - 1, f);
+      return _1.map_mut(tag - 1, f);
     }
   }
 };
 
 template <class... T>
 class Variant {
-  template <class U>
-  using tag_t = idx_t<Union<T...>::template tag<U>()>;
+  using Inn = Union<T...>;
 
   u8 _tag;
-  Union<T...> _imp;
+  Inn _inn;
 
  public:
-  template <class U>
-  explicit Variant(U val) noexcept
-      : _tag{static_cast<u8>(tag_t<U>::VALUE)}, _imp{tag_t<U>{}, static_cast<U&&>(val)} {}
+  template <u32 I, class... U>
+  Variant(tag_t<I>, U&&... u) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(u)...} {
+    static_assert(I < sizeof...(T), "variant::Variant: invalid tag");
+  }
+
+  template <class U, u32 I = Inn::template tag<U>()>
+  Variant(U val) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(val)} {
+    static_assert(I < sizeof...(T), "variant::Variant: invalid type");
+  }
 
   ~Variant() {
-    _imp.dtor(_tag);
+    _inn.map(_tag, []<class U>(U& x) { x.~U(); });
   }
 
-  Variant(const Variant& other) noexcept : _tag{other._tag} {
-    _imp.copy_ctor(_tag, other._imp);
-  }
+  Variant(Variant&& other) noexcept
+      : _tag{other._tag}, _inn{_tag, static_cast<Inn&&>(other._inn)} {}
 
-  Variant(Variant&& other) noexcept : _tag{other._tag} {
-    _imp.move_ctor(_tag, other._imp);
-  }
+  Variant(const Variant& other) : _tag{other._tag}, _inn{other._tag, other._inn} {}
 
-  auto operator=(Variant&& other) noexcept -> Variant& {
-    if (_tag == other._tag) {
-      _imp.move_assign(_tag, other._imp);
-    } else {
-      _imp.dtor(_tag);
-      _imp.move_ctor(other._tag, other._imp);
+  Variant& operator=(Variant&& other) noexcept {
+    if (this != &other) {
+      _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
       _tag = other._tag;
+      _inn.map_mut(_tag, [&]<class U>(U& x) { ptr::write(&x, static_cast<U&&>(other._inn)); });
+    }
+    return *this;
+  }
+
+  Variant& operator=(const Variant& other) {
+    if (this != &other) {
+      _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
+      _tag = other._tag;
+      _inn = {other._tag, other._inn};
     }
     return *this;
   }
 
   template <class U>
-  [[nodiscard]] auto is() const -> bool {
-    return _tag == tag_t<U>::VALUE;
+  auto is() const -> bool {
+    return _tag == _inn.template tag<U>();
   }
 
   template <class U>
   auto as() const -> const U& {
-    panicking::assert(this->is<U>(), "Variant::as<{}>: type not match.",
-                          reflect::type_name<U>());
-    return _imp.template get_unchecked<tag_t<U>::VALUE>();
+    panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as: invalid type");
+    return static_cast<const U&>(_inn);
   }
 
   template <class U>
   auto as_mut() -> U& {
-    panicking::assert(this->is<U>(), "Variant::as_mut<{}>: type not match.",
-                          reflect::type_name<U>());
-    return _imp.template get_unchecked_mut<tag_t<U>::VALUE>();
+    panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as_mut: invalid type");
+    return static_cast<U&>(_inn);
   }
 
   void map(auto&& f) const {
-    _imp.map(_tag, f);
+    return _inn.map(_tag, f);
   }
 
   void map_mut(auto&& f) {
-    _imp.map_mut(_tag, f);
+    return _inn.map_mut(_tag, f);
   }
 };
 
 }  // namespace sfc::variant
-
-namespace sfc {
-using variant::Variant;
-}  // namespace sfc

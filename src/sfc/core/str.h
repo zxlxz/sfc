@@ -431,30 +431,23 @@ auto Str::ends_with(P&& p) const -> bool {
 template <class P>
 auto Str::trim_start_matches(P&& p) const -> Str {
   auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  const auto cnt = ser.step();
-  const auto idx = ser.next_reject();
-  return idx ? (*this)[{*idx, cnt}] : Str{};
+  const auto idx = ser.next_reject().unwrap_or(0);
+  return Str{_ptr + idx, _len - idx};
 }
 
 template <class P>
 auto Str::trim_end_matches(P&& p) const -> Str {
   auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-  const auto idx = ser.next_reject_back();
-  return idx ? (*this)[{0, *idx + 1}] : Str{};
+  const auto idx = ser.next_reject_back().unwrap_or(_len - 1);
+  return Str{_ptr, idx + 1};
 }
 
 template <class P>
 auto Str::trim_matches(P&& p) const -> Str {
   auto ser = Pattern{static_cast<P&&>(p)}.into_searcher(*this);
-
-  auto res = *this;
-  if (auto idx = ser.next_reject_back()) {
-    res = res[{0, *idx}];
-  }
-  if (auto idx = ser.next_reject()) {
-    res = res[{*idx, res.len() - *idx}];
-  }
-  return res;
+  const auto i1 = ser.next_reject_back().unwrap_or(_len - 1);
+  const auto i0 = ser.next_reject().unwrap_or(0);
+  return Str{_ptr + i0, i1 + 1 - i0};
 }
 
 template <class P>
