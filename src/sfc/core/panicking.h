@@ -65,12 +65,12 @@ void assert_ne(const auto& a, const auto& b, Location loc = {}) {
   cond ? void(0) : panicking::panic_imp(loc, "assert(`{}`!=`{}`) failed", a, b);
 }
 
-inline void assert_flt_eq(f64 a, f64 b, u32 ulp = 4, Location loc = {}) {
+inline void assert_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) {
   const auto cond = num::flt_eq_ulp(a, b, ulp);
   cond ? void(0) : panicking::panic_imp(loc, "assert.flt(`{}`==`{}`) failed", a, b);
 }
 
-inline void assert_flt_ne(f64 a, f64 b, u32 ulp = 4, Location loc = {}) {
+inline void assert_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) {
   const auto cond = num::flt_eq_ulp(a, b, ulp);
   !cond ? void(0) : panicking::panic_imp(loc, "assert.flt(`{}`!=`{}`) failed", a, b);
 }

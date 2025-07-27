@@ -42,7 +42,7 @@ struct IntStr {
 
  private:
   auto extract_sign() -> char {
-    if (_ptr == _end) {
+    if (_ptr + 1 >= _end) {
       return 0;
     }
 
@@ -54,7 +54,7 @@ struct IntStr {
   }
 
   auto extract_radix() -> u32 {
-    if (_ptr == _end) {
+    if (_ptr + 1 >= _end) {
       return 10;
     }
 
@@ -83,7 +83,7 @@ struct IntStr {
 
     for (; _ptr != _end; ++_ptr) {
       const auto c = *_ptr;
-      const auto n = c <= '9' ? u32(c - '0') : u32((c | 32) - 'a');
+      const auto n = c <= '9' ? u32(c - '0') : u32((c | 32) - ('a' - 10));
       if (n >= radix) {
         break;
       }

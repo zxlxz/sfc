@@ -4,123 +4,71 @@
 
 namespace sfc::tuple {
 
-template <usize... I>
-struct idx_t {};
-
-template <usize I>
-struct idx_t<I> {
-  static constexpr const auto VALUE = I;
-};
-
-#if __has_builtin(__make_integer_seq)
-template <class T, T... I>
-struct _idxs_helper {
-  using Type = idx_t<I...>;
-};
-
-template <usize N>
-using idx_seq_t = typename __make_integer_seq<_idxs_helper, usize, N>::Type;
-#else
-template <usize N>
-using idx_seq_t = idx_t<__integer_pack(N)...>;
-#endif
-
-#if __has_builtin(__type_pack_element)
-template <usize I, typename... T>
+template <usize I, class... T>
 using element_t = __type_pack_element<I, T...>;
-#else
-namespace sfc {
-template <usize I, typename... T>
-struct _NthType;
 
-template <class T0, class... Ts>
-struct _NthType<0, T0, Ts...> {
-  using Type = T0;
-};
-
-template <class T0, class T1, class... U>
-struct _NthType<1, T0, T1, U...> {
-  using Type = T1;
-};
-
-template <class T0, class T1, class T2, class... U>
-struct _NthType<2, T0, T1, T2, U...> {
-  using Type = T2;
-};
-
-template <usize I, class T0, class T1, class T2, class... U>
-struct _NthType<I, T0, T1, T2, U...> : _NthType<I - 3, U...> {};
-
-}  // namespace sfc
-
-template <usize I, typename... T>
-using element_t = typename sfc::_NthType<I, T...>::Type;
-#endif
-
-namespace detail {
-
-template <class I, class... T>
-struct Tuple;
-
-template <usize I, class T>
+template <int I, class T>
 struct Entry {
   T _0;
 };
 
-template <usize... I, class... T>
-struct Tuple<idx_t<I...>, T...> : Entry<I, T>... {
- public:
-  explicit Tuple(T... vals) : Entry<I, T>{static_cast<T&&>(vals)}... {}
+template <class, int... I>
+struct Idxs {};
 
-  template <usize J>
-  auto get() const -> auto& {
-    using U = __type_pack_element<J, T...>;
-    return static_cast<const Entry<J, U>&>(*this)._0;
-  }
+template <class I, class... T>
+struct TupleImpl;
 
-  template <usize J>
-  auto get() -> auto& {
-    using U = __type_pack_element<J, T...>;
-    return static_cast<Entry<J, U>&>(*this)._0;
-  }
+template <int... I, class... T>
+struct TupleImpl<Idxs<int, I...>, T...> : Entry<I, T>... {
+  TupleImpl(T&&... args) : Entry<I, T>{static_cast<T&&>(args)}... {}
+
+  TupleImpl(TupleImpl&&) noexcept = default;
+  TupleImpl(const TupleImpl&) = default;
+
+  TupleImpl& operator=(TupleImpl&&) noexcept = default;
+  TupleImpl& operator=(const TupleImpl&) = default;
 
   void map(auto&& f) const {
-    (f(this->get<I>()), ...);
+    (void)(f(static_cast<const Entry<I, T>&>(*this)._0), ...);
   }
 
   void map_mut(auto&& f) {
-    (f(this->get<I>()), ...);
-  }
-
-  void imap(auto&& f) const {
-    (f(I, this->get<I>()), ...);
-  }
-
-  void imap_mut(auto&& f) {
-    (f(I, this->get<I>()), ...);
+    (void)(f(static_cast<Entry<I, T>&>(*this)._0), ...);
   }
 };
 
-}  // namespace detail
-
 template <class... T>
-class Tuple : detail::Tuple<idx_seq_t<sizeof...(T)>, T...> {
-  using Inn = detail::Tuple<idx_seq_t<sizeof...(T)>, T...>;
+struct Tuple {
+  TupleImpl<__make_integer_seq<Idxs, int, sizeof...(T)>, T...> _impl;
 
  public:
-  using Inn::Inn;
+  Tuple(T... args) : _impl{static_cast<T&&>(args)...} {}
 
-  using Inn::get;
+  template <int I>
+  auto get() -> element_t<I, T...>& {
+    using U = element_t<I, T...>;
+    return static_cast<Entry<I, U>&>(_impl)._0;
+  }
 
-  using Inn::map;
-  using Inn::map_mut;
+  template <int I>
+  auto get() const -> const element_t<I, T...>& {
+    using U = element_t<I, T...>;
+    return static_cast<const Entry<I, U>&>(_impl)._0;
+  }
 
-  using Inn::imap;
-  using Inn::imap_mut;
+  void map(auto&& f) const {
+    return _impl.map(f);
+  }
+
+  void map_mut(auto&& f) {
+    _impl.map_mut(f);
+  }
+
+  void fmt(auto& f) const {
+    auto x = f.debug_tuple();
+    _impl.map([&](const auto& e) { x.entry(e); });
+  }
 };
-
-template <class... T>
-Tuple(T...) -> Tuple<T...>;
 
 }  // namespace sfc::tuple
 

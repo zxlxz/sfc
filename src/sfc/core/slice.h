@@ -1,11 +1,9 @@
 #pragma once
 
-#include "sfc/core/cmp.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/option.h"
-#include "sfc/core/panicking.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/tuple.h"
 
@@ -26,39 +24,39 @@ struct Slice {
   usize _len = 0;
 
  public:
-  constexpr Slice() = default;
+  constexpr Slice() noexcept = default;
 
-  constexpr Slice(T* ptr, usize len) : _ptr{ptr}, _len{len} {}
+  constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  constexpr Slice(T (&v)[N]) : _ptr{v}, _len{N} {}
+  constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  auto as_ptr() const -> const T* {
+  auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
 
-  auto as_mut_ptr() -> T* {
+  auto as_mut_ptr() noexcept -> T* {
     return _ptr;
   }
 
-  auto len() const -> usize {
+  auto len() const noexcept -> usize {
     return _len;
   }
 
-  auto is_empty() const -> bool {
+  auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _len != 0;
   }
 
  public:
-  auto get_unchecked(usize idx) const -> const T& {
+  auto get_unchecked(usize idx) const noexcept -> const T& {
     return _ptr[idx];
   }
 
-  auto get_unchecked_mut(usize idx) -> T& {
+  auto get_unchecked_mut(usize idx) noexcept -> T& {
     return _ptr[idx];
   }
 
@@ -72,25 +70,27 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const -> Slice<const T> {
-    const auto end = cmp::min(ids._end, _len);
-    const auto pos = cmp::min(ids._start, end);
-    return {_ptr + pos, end - pos};
+  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
+    const auto end = ids._end < _len ? ids._end : _len;
+    const auto pos = ids._start < end ? ids._start : end;
+    const auto len = pos <= end ? end - pos : 0U;
+    return {_ptr + pos, len};
   }
 
-  auto operator[](ops::Range ids) -> Slice<T> {
-    const auto end = cmp::min(ids._end, _len);
-    const auto pos = cmp::min(ids._start, end);
-    return {_ptr + pos, end - pos};
+  auto operator[](ops::Range ids) noexcept -> Slice<T> {
+    const auto end = ids._end < _len ? ids._end : _len;
+    const auto pos = ids._start < end ? ids._start : end;
+    const auto len = pos <= end ? end - pos : 0U;
+    return {_ptr + pos, len};
   }
 
-  auto split_at(usize mid) const -> tuple::Tuple<Slice<const T>, Slice<const T>> {
-    const auto x = cmp::min(mid, _len);
+  auto split_at(usize mid) const noexcept -> tuple::Tuple<Slice<const T>, Slice<const T>> {
+    const auto x = mid < _len ? mid : _len;
     return tuple::Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
   }
 
-  auto split_at_mut(usize mid) -> tuple::Tuple<Slice, Slice> {
-    const auto x = cmp::min(mid, _len);
+  auto split_at_mut(usize mid) noexcept -> tuple::Tuple<Slice, Slice> {
+    const auto x = mid < _len ? mid : _len;
     return tuple::Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
   }
 
@@ -137,7 +137,7 @@ struct Slice {
     return true;
   }
 
-  auto find(const T& x) const -> option::Option<usize> {
+  auto find(const T& x) const noexcept -> option::Option<usize> {
     for (auto i = usize{0UL}; i < _len; ++i) {
       if (_ptr[i] == x) {
         return i;
@@ -146,7 +146,7 @@ struct Slice {
     return {};
   }
 
-  auto rfind(const T& x) const -> option::Option<usize> {
+  auto rfind(const T& x) const noexcept -> option::Option<usize> {
     for (auto i = _len; i > 0; --i) {
       if (_ptr[i - 1] == x) {
         return i - 1;
@@ -155,7 +155,7 @@ struct Slice {
     return {};
   }
 
-  auto contains(const T& x) const -> bool {
+  auto contains(const T& x) const noexcept -> bool {
     for (auto i = 0U; i < _len; ++i) {
       if (_ptr[i] == x) {
         return true;
@@ -164,7 +164,7 @@ struct Slice {
     return false;
   }
 
-  auto starts_with(Slice<const T> needle) const -> bool {
+  auto starts_with(Slice<const T> needle) const noexcept -> bool {
     if (_len < needle._len) {
       return false;
     }
@@ -179,27 +179,27 @@ struct Slice {
   }
 
  public:
-  auto iter() const -> Iter<const T> {
+  auto iter() const noexcept -> Iter<const T> {
     return Iter<const T>{._ptr = _ptr, ._end = _ptr + _len};
   }
 
-  auto iter_mut() -> Iter<T> {
+  auto iter_mut() noexcept -> Iter<T> {
     return Iter<T>{._ptr = _ptr, ._end = _ptr + _len};
   }
 
-  auto windows(usize n) const -> Windows<const T> {
+  auto windows(usize n) const noexcept -> Windows<const T> {
     return {*this, n};
   }
 
-  auto windows_mut(usize n) -> Windows<T> {
+  auto windows_mut(usize n) noexcept -> Windows<T> {
     return {*this, n};
   }
 
-  auto truncks(usize n) const -> Truncks<const T> {
+  auto truncks(usize n) const noexcept -> Truncks<const T> {
     return {*this, n};
   }
 
-  auto truncks_mut(usize n) -> Truncks<T> {
+  auto truncks_mut(usize n) noexcept -> Truncks<T> {
     return {*this, n};
   }
 

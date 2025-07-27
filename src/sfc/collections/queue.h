@@ -8,7 +8,7 @@ namespace sfc::collections {
 template <class T>
 class [[nodiscard]] Queue {
   Vec<T> _vec{};
-  usize  _pos{0};
+  usize _pos{0};
 
  public:
   Queue() = default;
@@ -17,7 +17,7 @@ class [[nodiscard]] Queue {
 
   Queue(Queue&& other) noexcept : _vec{mem::move(other._vec)}, _pos{mem::take(other._pos)} {}
 
-  auto operator=(Queue&& other) noexcept -> Queue& {
+  Queue& operator=(Queue&& other) noexcept {
     _vec = mem::move(other._vec);
     _pos = mem::take(other._pos);
     return *this;

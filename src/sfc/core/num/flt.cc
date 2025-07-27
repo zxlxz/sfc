@@ -17,25 +17,25 @@ struct FltStr {
       return {};
     }
 
-    const auto res = sign * (int_part + flt_part);
-    return static_cast<T>(res);
+    const auto val = static_cast<T>(int_part + flt_part);
+    return sign == -1 ? -val : val;
   }
 
  private:
-  auto extract_sign() -> f32 {
+  auto extract_sign() -> int {
     if (_ptr == _end) {
-      return 1.0f;
+      return 1;
     }
 
     const auto c = *_ptr;
     if (c == '+' || c == '-') {
       ++_ptr;
     }
-    return c == '-' ? -1.0f : 1.0f;
+    return c == '-' ? -1 : 1;
   }
 
   auto extract_int_part() -> f64 {
-    f64 res = 0.0;
+    i64 res = 0;
     for (; _ptr != _end; ++_ptr) {
       const auto c = *_ptr;
       const auto n = static_cast<u8>(c - '0');
@@ -44,7 +44,7 @@ struct FltStr {
       }
       res = 10 * res + n;
     }
-    return res;
+    return static_cast<f64>(res);
   }
 
   auto extract_flt_part() -> f64 {
@@ -53,8 +53,8 @@ struct FltStr {
     }
     ++_ptr;
 
-    f64 res = 0.0;
-    f64 exp = 1.0;
+    i64 val = 0;
+    i64 exp = 1;
     for (; _ptr != _end; ++_ptr) {
       const auto c = *_ptr;
       const auto n = static_cast<u8>(c - '0');
@@ -62,10 +62,10 @@ struct FltStr {
         break;
       }
 
-      exp /= 10.0;
-      res += n * exp;
+      exp *= 10;
+      val = 10 * val + n;
     }
-    return res;
+    return static_cast<f64>(val) / exp;
   }
 };
 
@@ -204,6 +204,25 @@ auto flt2str(slice::Slice<char> buf, auto val, u32 precision, char type) -> str:
 
 template auto flt2str(slice::Slice<char> buf, float val, u32 precision, char type) -> str::Str;
 template auto flt2str(slice::Slice<char> buf, double val, u32 precision, char type) -> str::Str;
+
+auto flt_eq_ulp(f32 a, f32 b, u32 ulp) -> bool {
+  if (__builtin_isnan(a) || __builtin_isnan(b)) {
+    return false;
+  }
+
+  if (__builtin_isinf(a) || __builtin_isinf(b)) {
+    return a == b;
+  }
+
+  const auto ia = __builtin_bit_cast(i32, a);
+  const auto ib = __builtin_bit_cast(i32, b);
+  if ((ia ^ ib) < 0) {
+    return a == b;
+  }
+
+  const auto diff = __builtin_llabs(ia - ib);
+  return diff <= ulp;
+}
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp) -> bool {
   if (__builtin_isnan(a) || __builtin_isnan(b)) {

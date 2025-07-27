@@ -42,9 +42,9 @@ SFC_TEST(ser_flt) {
   }
 
   {
-    auto node = serde::serialize(+1.23f);
+    auto node = serde::serialize(+1.23);
     panicking::assert_true(node.is_flt());
-    panicking::assert_flt_eq(node.as_flt(), +1.23f);
+    panicking::assert_flt_eq(node.as_flt(), +1.23);
   }
 }
 
