@@ -134,9 +134,9 @@ class [[nodiscard]] Queue {
     _vec.remove(_pos + idx);
   }
 
-  void drain(Range range) {
-    range = range % this->len();
-    _vec.drain({range._start + _pos, range._end + _pos});
+  void drain(Range ids) {
+    ids = ids % this->len();
+    _vec.drain({ids._start + _pos, ids._end + _pos});
   }
 
   void truncate(usize len) {

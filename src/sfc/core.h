@@ -18,5 +18,6 @@ using option::Option;
 using result::Result;
 using slice::Slice;
 using str::Str;
+using tuple::Tuple;
 using variant::Variant;
 }  // namespace sfc

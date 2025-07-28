@@ -325,8 +325,10 @@ class [[nodiscard]] Vec {
     }
 
     this->reserve(other.len());
-    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, cnt);
     _len += cnt;
+
+    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, cnt);
+    other._len = 0;
   }
 
   void extend(auto iter) {

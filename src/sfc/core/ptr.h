@@ -140,7 +140,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
     return;
   }
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, sizeof(T) * cnt);
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     if (dst < src) {
       for (auto idx = 0UL; idx < cnt; ++idx) {
@@ -159,16 +159,18 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
   if (cnt == 0 || src == dst) {
     return;
   }
-  if constexpr (false && __is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, sizeof(T) * cnt);
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     if (dst < src) {
       for (auto idx = 0UL; idx < cnt; ++idx) {
-        new (dst + idx) T{static_cast<T&&>(src[idx])};
+        new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+        src[idx].~T();
       }
     } else {
       for (; cnt > 0; --cnt) {
-        new (dst + cnt - 1) T{static_cast<T&&>(src[cnt - 1])};
+        new (&dst[cnt - 1]) T{static_cast<T&&>(src[cnt - 1])};
+        src[cnt - 1].~T();
       }
     }
   }

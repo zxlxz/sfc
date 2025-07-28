@@ -2,16 +2,13 @@
 
 #include "sfc/core.h"
 
-namespace sfc::collections::btree {
+namespace sfc::collections {
 
-template <class K, class V, usize B = 6>
-struct BTree {
-  static_assert(B >= 2, "B-tree branching factor must be at least 2");
-
+template <class K, class V, u16 B = 4>
+class [[nodiscard]] BTree {
   struct Node;
-  struct Entry {};
+  static_assert(B >= 2, "BTree: check `B>=2` failed");
 
- private:
   Node* _root = nullptr;
   usize _len = 0;
 
@@ -19,435 +16,298 @@ struct BTree {
   BTree() = default;
 
   ~BTree() {
-    clear();
-  }
-
-  BTree(BTree&& other) noexcept : _root{mem::take(other._root)}, _len{mem::take(other._len)} {}
-
-  auto operator=(BTree&& other) noexcept -> BTree& {
-    if (this != &other) {
-      this->clear();
-      _root = mem::take(other._root);
-      _len = mem::take(other._len);
+    if (_root) {
+      delete _root;
     }
-    return *this;
   }
 
   auto len() const -> usize {
     return _len;
   }
 
-  auto is_empty() const -> bool {
-    return _len == 0;
-  }
-
-  void clear() {
-    if (_root != nullptr) {
-      _root->clear_recursive();
-      delete _root;
-      _root = nullptr;
-      _len = 0;
-    }
-  }
-
   auto get(const K& key) const -> Option<const V&> {
     if (_root == nullptr) {
-      return Option<const V&>{};
+      return {};
     }
-    return _root->search(key);
+
+    const auto [node, idx] = _root->find(key);
+    if (!node) {
+      return {};
+    }
+    return node->_vals[idx];
   }
 
   auto get_mut(const K& key) -> Option<V&> {
     if (_root == nullptr) {
-      return Option<V&>{};
-    }
-    return _root->search_mut(key);
-  }
-
-  auto insert(K key, V value) -> Option<V> {
-    if (_root == nullptr) {
-      _root = new Node{true};
-    }
-
-    auto old_value = _root->insert(mem::move(key), mem::move(value));
-
-    // Handle root split
-    if (_root->_len == 2 * B) {
-      auto new_root = new Node{false};
-      auto right = _root->split();
-      new_root->_keys[0] = mem::move(_root->_keys[B - 1]);
-      new_root->_vals[0] = mem::move(_root->_vals[B - 1]);
-      new_root->_children[0] = _root;
-      new_root->_children[1] = right;
-      new_root->_len = 1;
-      _root->_len = B - 1;
-      _root = new_root;
-    }
-
-    if (!old_value.has_value()) {
-      ++_len;
-    }
-    return old_value;
-  }
-
-  auto remove(const K& key) -> Option<V> {
-    if (_root == nullptr) {
-      return Option<V>{};
-    }
-
-    auto result = _root->remove(key);
-    if (result.has_value()) {
-      --_len;
-
-      // Handle root underflow
-      if (_root->_len == 0 && !_root->_is_leaf) {
-        auto old_root = _root;
-        _root = _root->_children[0];
-        delete old_root;
-      }
-    }
-    return result;
-  }
-
-  auto contains_key(const K& key) const -> bool {
-    return get(key).has_value();
-  }
-
-  void append(BTree& other) {
-    // Simple implementation - insert each element from other
-    if (other._root != nullptr) {
-      other._root->append_to(*this);
-      other.clear();
-    }
-  }
-
-  auto entry(K key) -> Entry {
-    return Entry{};  // Placeholder
-  }
-};
-
-template <class K, class V, usize B>
-struct BTree<K, V, B>::Node {
-  static constexpr usize MAX_KEYS = 2 * B - 1;
-  static constexpr usize MIN_KEYS = B - 1;
-
-  Node* _parent = nullptr;
-  Node* _childs[MAX_KEYS + 1];
-  u16 _idx = 0;
-  u16 _len = 0;
-  K _keys[MAX_KEYS];
-  V _vals[MAX_KEYS];
-
- public:
-  Node() = default;
-
-  ~Node() = default;
-
-  void clear_recursive() {
-    for (auto i = 0U; i <= _len; ++i) {
-      if (_childs[i] != nullptr) {
-        _childs[i]->clear_recursive();
-        delete _childs[i];
-      }
-    }
-  }
-
-  auto find(const K& key) const -> Option<const V&> {
-    auto idx = 0U;
-    for (; idx < _len; ++idx) {
-      if (key == _keys[idx]) {
-        return _vals[idx];
-      }
-      if (key < _keys[idx]) {
-        break;
-      }
-    }
-    if (idx == 0 || _children[idx] == nullptr) {
       return {};
     }
 
-    auto next = _childs[idx];
-    return next->find(key);
+    const auto [node, idx] = _root->find(key);
+    if (!node) {
+      return {};
+    }
+    return node->_vals[idx];
   }
 
-  auto insert(K key, V val) -> V& {
-    auto idx = 0U;
-    for (; idx < _len; ++idx) {
-      if (key == _keys[idx]) {
-        _vals[idx] = static_cast<V&&>(val);
-        return _vals[idx];
-      }
-      if (key < _keys[idx]) {
-        break;
-      }
-    }
-
-    if (_len == 0) {
-
-    }
-    
-    if (_len != 0) {
-      return _childs[idx]->insert(static_cast<K&&>(key), static_cast<V&&>(val));
-    }
-
-  }
-  auto remove(const K& key) -> Option<V> {
-    auto idx = find_key_index(key);
-
-    if (idx < _len && _keys[idx] == key) {
-      if (_is_leaf) {
-        return remove_from_leaf(idx);
-      } else {
-        return remove_from_internal(idx);
-      }
-    }
-
-    if (_is_leaf) {
-      return Option<V>{};
-    }
-
-    auto result = _children[idx]->remove(key);
-
-    // Handle child underflow
-    if (_children[idx]->_len < MIN_KEYS) {
-      fix_child_underflow(idx);
-    }
-
-    return result;
+  auto operator[](const K& key) const -> const V& {
+    const auto opt = this->get(key);
+    panicking::assert(opt, "collections::BTree::[]: key(=`{}`) not exists", key);
+    return *opt;
   }
 
-  void append_to(BTree& tree) {
-    // In-order traversal to append all elements
-    for (usize i = 0; i < _len; ++i) {
-      if (!_is_leaf) {
-        _children[i]->append_to(tree);
-      }
-      tree.insert(mem::move(_keys[i]), mem::move(_vals[i]));
-    }
-    if (!_is_leaf && _len > 0) {
-      _children[_len]->append_to(tree);
-    }
+  auto operator[](const K& key) -> V& {
+    const auto opt = this->get_mut(key);
+    panicking::assert(opt, "collections::BTree::[]: key(=`{}`) not exists", key);
+    return *opt;
   }
 
- private:
-  void insert_at_index(usize idx, K key, V value) {
-    // Shift elements to the right
-    for (usize i = _len; i > idx; --i) {
-      _keys[i] = mem::move(_keys[i - 1]);
-      _vals[i] = mem::move(_vals[i - 1]);
+  auto try_insert(K key, V val) -> Option<V&> {
+    if (_root == nullptr) {
+      _root = new Node{false};
     }
 
-    _keys[idx] = mem::move(key);
-    _vals[idx] = mem::move(value);
-    ++_len;
+    const auto ptr = _root->insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    if (ptr) {
+      return *ptr;
+    }
+
+    _len += 1;
+    if (_root->_top) {
+      _root = _root->_top;
+    }
+    return {};
   }
 
-  auto split() -> Node* {
-    auto right = new Node{_is_leaf};
-    auto mid = B - 1;
-
-    // Move keys and values to right node
-    for (usize i = 0; i < B; ++i) {
-      right->_keys[i] = mem::move(_keys[mid + 1 + i]);
-      right->_vals[i] = mem::move(_vals[mid + 1 + i]);
+  auto insert(K key, V val) -> Option<V> {
+    if (_root == nullptr) {
+      _root = new Node{false};
     }
 
-    // Move children if internal node
-    if (!_is_leaf) {
-      for (usize i = 0; i <= B; ++i) {
-        right->_children[i] = _children[mid + 1 + i];
-      }
+    const auto ptr = _root->insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    if (ptr) {
+      return mem::replace(*ptr, static_cast<V&&>(val));
     }
 
-    right->_len = B;
-    _len = mid;
-
-    return right;
+    _len += 1;
+    if (_root->_top) {
+      _root = _root->_top;
+    }
+    return {};
   }
 
-  void split_child(usize idx) {
-    auto child = _children[idx];
-    auto new_child = child->split();
-
-    // Move the middle key up
-    for (usize i = _len; i > idx; --i) {
-      _keys[i] = mem::move(_keys[i - 1]);
-      _vals[i] = mem::move(_vals[i - 1]);
-      _children[i + 1] = _children[i];
+  auto remove(const auto& key) -> Option<V> {
+    if (_root == nullptr) {
+      return {};
     }
 
-    _keys[idx] = mem::move(child->_keys[B - 1]);
-    _vals[idx] = mem::move(child->_vals[B - 1]);
-    _children[idx + 1] = new_child;
-    ++_len;
-  }
-
-  auto remove_from_leaf(usize idx) -> Option<V> {
-    auto result = mem::move(_vals[idx]);
-
-    // Shift elements left
-    for (usize i = idx; i < _len - 1; ++i) {
-      _keys[i] = mem::move(_keys[i + 1]);
-      _vals[i] = mem::move(_vals[i + 1]);
-    }
-    --_len;
-
-    return Option<V>{mem::move(result)};
-  }
-
-  auto remove_from_internal(usize idx) -> Option<V> {
-    auto result = mem::move(_vals[idx]);
-
-    // Find predecessor or successor
-    if (_children[idx]->_len >= B) {
-      // Use predecessor
-      auto pred_key = _children[idx]->get_max_key();
-      auto pred_val = _children[idx]->remove(pred_key);
-      _keys[idx] = mem::move(pred_key);
-      _vals[idx] = mem::move(pred_val.value());
-    } else if (_children[idx + 1]->_len >= B) {
-      // Use successor
-      auto succ_key = _children[idx + 1]->get_min_key();
-      auto succ_val = _children[idx + 1]->remove(succ_key);
-      _keys[idx] = mem::move(succ_key);
-      _vals[idx] = mem::move(succ_val.value());
-    } else {
-      // Merge children
-      merge_children(idx);
-      return _children[idx]->remove(_keys[idx]);
+    const auto ss = _root->find(key);
+    if (!ss.node) {
+      return {};
     }
 
-    return Option<V>{mem::move(result)};
-  }
+    auto item = ss.node->remove(ss.index);
+    _len -= 1;
 
-  auto get_min_key() const -> K {
-    if (_is_leaf) {
-      return _keys[0];
-    }
-    return _children[0]->get_min_key();
-  }
-
-  auto get_max_key() const -> K {
-    if (_is_leaf) {
-      return _keys[_len - 1];
-    }
-    return _children[_len]->get_max_key();
-  }
-
-  void merge_children(usize idx) {
-    auto left = _children[idx];
-    auto right = _children[idx + 1];
-
-    // Move the key down from this node
-    left->_keys[left->_len] = mem::move(_keys[idx]);
-    left->_vals[left->_len] = mem::move(_vals[idx]);
-
-    // Move keys and values from right to left
-    for (usize i = 0; i < right->_len; ++i) {
-      left->_keys[left->_len + 1 + i] = mem::move(right->_keys[i]);
-      left->_vals[left->_len + 1 + i] = mem::move(right->_vals[i]);
+    if (_root->_len == 0 && _root->_has_node) {
+      auto old_root = _root;
+      _root = _root->_nodes[0];
+      _root->_top = nullptr;
+      _root->_idx = 0;
+      old_root->_has_node = false;
+      delete old_root;
     }
 
-    // Move children if internal nodes
-    if (!left->_is_leaf) {
-      for (usize i = 0; i <= right->_len; ++i) {
-        left->_children[left->_len + 1 + i] = right->_children[i];
-      }
-    }
-
-    left->_len += right->_len + 1;
-
-    // Shift keys, values, and children in this node
-    for (usize i = idx; i < _len - 1; ++i) {
-      _keys[i] = mem::move(_keys[i + 1]);
-      _vals[i] = mem::move(_vals[i + 1]);
-      _children[i + 1] = _children[i + 2];
-    }
-    --_len;
-
-    delete right;
-  }
-
-  void fix_child_underflow(usize idx) {
-    if (idx > 0 && _children[idx - 1]->_len >= B) {
-      // Borrow from left sibling
-      borrow_from_left(idx);
-    } else if (idx < _len && _children[idx + 1]->_len >= B) {
-      // Borrow from right sibling
-      borrow_from_right(idx);
-    } else {
-      // Merge with sibling
-      if (idx > 0) {
-        merge_children(idx - 1);
-      } else {
-        merge_children(idx);
-      }
-    }
-  }
-
-  void borrow_from_left(usize idx) {
-    auto child = _children[idx];
-    auto sibling = _children[idx - 1];
-
-    // Shift child's elements right
-    for (usize i = child->_len; i > 0; --i) {
-      child->_keys[i] = mem::move(child->_keys[i - 1]);
-      child->_vals[i] = mem::move(child->_vals[i - 1]);
-    }
-
-    if (!child->_is_leaf) {
-      for (usize i = child->_len + 1; i > 0; --i) {
-        child->_children[i] = child->_children[i - 1];
-      }
-    }
-
-    // Move key from parent to child
-    child->_keys[0] = mem::move(_keys[idx - 1]);
-    child->_vals[0] = mem::move(_vals[idx - 1]);
-
-    // Move key from sibling to parent
-    _keys[idx - 1] = mem::move(sibling->_keys[sibling->_len - 1]);
-    _vals[idx - 1] = mem::move(sibling->_vals[sibling->_len - 1]);
-
-    if (!child->_is_leaf) {
-      child->_children[0] = sibling->_children[sibling->_len];
-    }
-
-    ++child->_len;
-    --sibling->_len;
-  }
-
-  void borrow_from_right(usize idx) {
-    auto child = _children[idx];
-    auto sibling = _children[idx + 1];
-
-    // Move key from parent to child
-    child->_keys[child->_len] = mem::move(_keys[idx]);
-    child->_vals[child->_len] = mem::move(_vals[idx]);
-
-    // Move key from sibling to parent
-    _keys[idx] = mem::move(sibling->_keys[0]);
-    _vals[idx] = mem::move(sibling->_vals[0]);
-
-    if (!child->_is_leaf) {
-      child->_children[child->_len + 1] = sibling->_children[0];
-    }
-
-    // Shift sibling's elements left
-    for (usize i = 0; i < sibling->_len - 1; ++i) {
-      sibling->_keys[i] = mem::move(sibling->_keys[i + 1]);
-      sibling->_vals[i] = mem::move(sibling->_vals[i + 1]);
-    }
-
-    if (!sibling->_is_leaf) {
-      for (usize i = 0; i < sibling->_len; ++i) {
-        sibling->_children[i] = sibling->_children[i + 1];
-      }
-    }
-
-    ++child->_len;
-    --sibling->_len;
+    return static_cast<V&&>(item.val);
   }
 };
 
-}  // namespace sfc::collections::btree
+template <class K, class V, u16 B>
+struct BTree<K, V, B>::Node {
+  struct Item {
+    K key;
+    V val;
+  };
+
+  struct FindResult {
+    Node* node;
+    usize index;
+  };
+
+  Node* _top = nullptr;
+  u16 _idx = 0;
+  u16 _len = 0;
+  bool _has_node = false;
+
+  union {
+    struct {
+      K _keys[2 * B - 1];
+      V _vals[2 * B - 1];
+    };
+  };
+  Node* _nodes[2 * B] = {nullptr};
+
+ public:
+  Node(bool has_node = false) : _has_node{has_node} {
+    for (auto& node : _nodes) {
+      node = nullptr;
+    }
+  }
+
+  ~Node() {
+    if (_len == 0) {
+      return;
+    }
+    ptr::drop_in_place(_keys, _len);
+    ptr::drop_in_place(_vals, _len);
+    if (_has_node) {
+      for (auto i = 0U; i <= _len; ++i) {
+        delete _nodes[i];
+      }
+    }
+  }
+
+  auto find(const auto& key) const -> FindResult {
+    const auto idx = this->position(key);
+    if (idx < _len && key == _keys[idx]) {
+      return {const_cast<Node*>(this), idx};
+    }
+    if (!_has_node) {
+      return {};
+    }
+    return _nodes[idx]->find(key);
+  }
+
+  auto insert(Item&& t) -> V* {
+    const auto idx = this->position(t.key);
+    if (idx < _len && _keys[idx] == t.key) {
+      return &_vals[idx];
+    }
+
+    if (!_has_node) {
+      this->insert_at(idx, static_cast<Item&&>(t));
+      return nullptr;
+    }
+
+    return _nodes[idx]->insert(static_cast<Item&&>(t));
+  }
+
+  auto remove(u32 idx) -> Item {
+    panicking::assert(idx < _len,
+                      "BTree::Node::remove: index(=`{}`) out of bounds(<`{}`)",
+                      idx,
+                      _len);
+
+    auto res = Item{ptr::read(&_keys[idx]), ptr::read(&_vals[idx])};
+
+    if (!_has_node) {
+      ptr::shift_elements(_keys + idx + 1, _len - idx - 1, -1);
+      ptr::shift_elements(_vals + idx + 1, _len - idx - 1, -1);
+      --_len;
+      return res;
+    }
+
+    auto lhs = _nodes[idx];
+    if (lhs->_len >= B) {
+      auto u = lhs->remove(lhs->_len - 1);
+      new (&_keys[idx]) K{static_cast<K&&>(u.key)};
+      new (&_vals[idx]) V{static_cast<V&&>(u.val)};
+      return res;
+    }
+
+    auto rhs = _nodes[idx + 1];
+    if (rhs->_len >= B) {
+      auto u = rhs->remove(0);
+      new (&_keys[idx]) K{static_cast<K&&>(u.key)};
+      new (&_vals[idx]) V{static_cast<V&&>(u.val)};
+      return res;
+    }
+
+    ptr::shift_elements(_keys + idx + 1, _len - idx - 1, -1);
+    ptr::shift_elements(_vals + idx + 1, _len - idx - 1, -1);
+    ptr::shift_elements(_nodes + idx + 2, _len - idx - 1, -1);
+    _len -= 1;
+
+    const auto pos = lhs->merge_with(static_cast<Item&&>(res), rhs);
+    return lhs->remove(pos);
+  }
+
+ private:
+  auto position(const auto& key) const -> u32 {
+    auto idx = 0U;
+    while (idx < _len && key > _keys[idx]) {
+      ++idx;
+    }
+    return idx;
+  }
+
+  void insert_at(u32 idx, Item&& t, Node* child = nullptr) {
+    ptr::shift_elements(_keys + idx, _len - idx, 1);
+    ptr::shift_elements(_vals + idx, _len - idx, 1);
+    new (&_keys[idx]) K{static_cast<K&&>(t.key)};
+    new (&_vals[idx]) V{static_cast<V&&>(t.val)};
+
+    if (child) {
+      ptr::shift_elements(_nodes + idx + 1, _len - idx, 1);
+      _nodes[idx + 1] = child;
+      child->_top = this;
+      child->_idx = static_cast<u16>(idx + 1);
+    }
+    ++_len;
+
+    if (_len == 2 * B - 1) {
+      this->split();
+    }
+  }
+
+  void split() {
+    if (_len < 2 * B - 1) {
+      return;
+    }
+
+    _len = B - 1;
+
+    if (_top == nullptr) {
+      _top = new Node{true};
+      _top->_nodes[0] = this;
+    }
+
+    auto rhs = new Node{_has_node};
+    rhs->_len = B - 1;
+    ptr::uninit_move(_keys + B, rhs->_keys, B - 1);
+    ptr::uninit_move(_vals + B, rhs->_vals, B - 1);
+    if (_has_node) {
+      ptr::uninit_move(_nodes + B, rhs->_nodes, B);
+      for (auto i = 0U; i < B; ++i) {
+        rhs->_nodes[i]->_top = rhs;
+        rhs->_nodes[i]->_idx = i;
+      }
+    }
+
+    auto item = Item{ptr::read(&_keys[B - 1]), ptr::read(&_vals[B - 1])};
+    _top->insert_at(_idx, static_cast<Item&&>(item), rhs);
+  }
+
+  auto merge_with(Item&& item, Node* rhs) -> u32 {
+    const auto pos = _len;
+    new (&_keys[_len]) K{static_cast<K&&>(item.key)};
+    new (&_vals[_len]) V{static_cast<V&&>(item.val)};
+    _len += 1;
+
+    ptr::uninit_move(rhs->_keys, _keys + _len, rhs->_len);
+    ptr::uninit_move(rhs->_vals, _vals + _len, rhs->_len);
+    if (_has_node) {
+      ptr::uninit_move(rhs->_nodes, _nodes + _len, rhs->_len + 1);
+      for (auto i = _len; i < _len + rhs->_len + 1; ++i) {
+        _nodes[i]->_top = this;
+        _nodes[i]->_idx = i;
+      }
+    }
+    _len += rhs->_len;
+    rhs->_len = 0;
+    delete rhs;
+
+    return pos;
+  }
+};
+
+}  // namespace sfc::collections
