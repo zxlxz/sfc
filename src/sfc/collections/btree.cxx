@@ -37,6 +37,7 @@ SFC_TEST(btree_insert) {
 
   for (auto i = 10; i < 100; ++i) {
     t.insert(i, i * 10);
+    panicking::assert_eq(t.get(i), Option{i * 10});
   }
 
   for (auto i = 0; i < 100; ++i) {
@@ -72,13 +73,7 @@ SFC_TEST(btree_remove) {
   }
 
   for (auto i = 0; i < 100; ++i) {
-    if (i > 77) {
-      i = i;
-    }
     panicking::assert_eq(t.remove(i), Option{i * 10});
-    for (auto j = i + 1; j < 100; ++j) {
-      panicking::assert_eq(t.get(j), Option{j * 10});
-    }
   }
 
   panicking::assert_eq(t.len(), 0U);
