@@ -5,17 +5,15 @@
 namespace sfc::collections {
 
 template <class K, class V, u16 B = 4>
-class [[nodiscard]] BTree {
+class [[nodiscard]] BTreeMap {
   struct Node;
-  static_assert(B >= 2, "BTree: check `B>=2` failed");
-
   Node* _root = nullptr;
   usize _len = 0;
 
  public:
-  BTree() = default;
+  BTreeMap() = default;
 
-  ~BTree() {
+  ~BTreeMap() {
     if (_root) {
       delete _root;
     }
@@ -49,25 +47,31 @@ class [[nodiscard]] BTree {
     return node->_vals[idx];
   }
 
-  auto operator[](const K& key) const -> const V& {
-    const auto opt = this->get(key);
-    panicking::assert(opt, "collections::BTree::[]: key(=`{}`) not exists", key);
-    return *opt;
-  }
-
   auto operator[](const K& key) -> V& {
-    const auto opt = this->get_mut(key);
-    panicking::assert(opt, "collections::BTree::[]: key(=`{}`) not exists", key);
-    return *opt;
-  }
-
-  auto try_insert(K key, V val) -> Option<V&> {
     if (_root == nullptr) {
-      _root = new Node{false};
+      return {};
     }
 
-    const auto ptr = _root->insert({static_cast<K&&>(key), static_cast<V&&>(val)});
-    if (ptr) {
+    const auto [node, idx] = _root->find(key);
+    if (!node) {
+      return {};
+    }
+    return node->_vals[idx];
+  }
+
+  void init() {
+    if (_root != nullptr) {
+      return;
+    }
+    _root = new Node{false};
+  }
+
+  auto insert(K key, V val) -> Option<V&> {
+    if (_root == nullptr) {
+      this->init();
+    }
+
+    if (auto ptr = _root->try_insert(static_cast<K&&>(key), static_cast<V&&>(val))) {
       return *ptr;
     }
 
@@ -78,20 +82,22 @@ class [[nodiscard]] BTree {
     return {};
   }
 
-  auto insert(K key, V val) -> Option<V> {
+  auto replace(K key, V val) -> Option<V> {
     if (_root == nullptr) {
-      _root = new Node{false};
+      this->init();
     }
 
-    const auto ptr = _root->insert({static_cast<K&&>(key), static_cast<V&&>(val)});
-    if (ptr) {
-      return mem::replace(*ptr, static_cast<V&&>(val));
+    if (auto ptr = _root->try_insert(static_cast<K&&>(key), static_cast<V&&>(val))) {
+      auto res = Option<V>{static_cast<V&&>(*ptr)};
+      *ptr = static_cast<V&&>(val);
+      return res;
     }
 
     _len += 1;
     if (_root->_top) {
       _root = _root->_top;
     }
+
     return {};
   }
 
@@ -100,12 +106,13 @@ class [[nodiscard]] BTree {
       return {};
     }
 
-    const auto ss = _root->find(key);
-    if (!ss.node) {
+    const auto [ptr, idx] = _root->find(key);
+    if (!ptr) {
       return {};
     }
 
-    auto item = ss.node->remove(ss.index);
+    auto res = Option{static_cast<V&&>(ptr->_vals[idx])};
+    ptr->remove(idx);
     _len -= 1;
 
     if (_root->_len == 0 && _root->_has_node) {
@@ -117,12 +124,13 @@ class [[nodiscard]] BTree {
       delete old_root;
     }
 
-    return static_cast<V&&>(item.val);
+    return res;
   }
 };
 
 template <class K, class V, u16 B>
-struct BTree<K, V, B>::Node {
+struct BTreeMap<K, V, B>::Node {
+  static_assert(B >= 2, "BTreeMap: check `B>=2` failed");
   static constexpr auto MAX_LEN = 2 * B - 1;
   static constexpr auto MIN_LEN = B - 1;
 
@@ -132,8 +140,8 @@ struct BTree<K, V, B>::Node {
   };
 
   struct FindResult {
-    Node* node;
-    usize index;
+    Node* ptr = nullptr;
+    usize idx = 0;
   };
 
   Node* _top = nullptr;
@@ -150,11 +158,7 @@ struct BTree<K, V, B>::Node {
   Node* _nodes[2 * B] = {nullptr};
 
  public:
-  Node(bool has_node = false) : _has_node{has_node} {
-    for (auto& node : _nodes) {
-      node = nullptr;
-    }
-  }
+  Node(bool has_node) : _has_node{has_node} {}
 
   ~Node() {
     if (_len == 0) {
@@ -180,94 +184,53 @@ struct BTree<K, V, B>::Node {
     return _nodes[idx]->find(key);
   }
 
-  auto insert(Item&& t) -> V* {
-    const auto idx = this->position(t.key);
-    if (idx < _len && _keys[idx] == t.key) {
+  auto try_insert(K&& k, V&& v) -> V* {
+    const auto idx = this->position(k);
+    if (idx < _len && _keys[idx] == k) {
       return &_vals[idx];
     }
 
-    if (!_has_node) {
-      this->insert_at(idx, static_cast<Item&&>(t));
-      return nullptr;
+    if (_has_node) {
+      return _nodes[idx]->try_insert(static_cast<K&&>(k), static_cast<V&&>(v));
     }
 
-    auto ptr = _nodes[idx];
-    auto res = ptr->insert(static_cast<Item&&>(t));
-    return res;
+    this->insert_at(idx, static_cast<K&&>(k), static_cast<V&&>(v), nullptr);
+    this->split();
+    return nullptr;
   }
 
-  auto remove(u32 idx) -> Item {
-    panicking::assert(idx < _len,
-                      "BTree::Node::remove: index(=`{}`) out of bounds(<`{}`)",
-                      idx,
-                      _len);
+  void remove(u16 idx) {
+    if (idx >= _len) {
+      return;
+    }
 
     if (!_has_node) {
-      auto res = Item{ptr::read(&_keys[idx]), ptr::read(&_vals[idx])};
-      ptr::shift_elements(_keys + idx + 1, _len - idx - 1, -1);
-      ptr::shift_elements(_vals + idx + 1, _len - idx - 1, -1);
-      _len -= 1;
-
-      if (_top && _len < MIN_LEN) {
-        _top->fix(_idx);
-      }
-      return res;
+      this->erase_at(idx);
+      return;
     }
 
     auto lhs = _nodes[idx];
     if (lhs->_len > MIN_LEN) {
-      auto res = Item{static_cast<K&&>(_keys[idx]), static_cast<V&&>(_vals[idx])};
-      auto tmp = lhs->remove(lhs->_len - 1);
-      _keys[idx] = static_cast<K&&>(tmp.key);
-      _vals[idx] = static_cast<V&&>(tmp.val);
-      return res;
+      _keys[idx] = static_cast<K&&>(lhs->_keys[lhs->_len - 1]);
+      _vals[idx] = static_cast<V&&>(lhs->_vals[lhs->_len - 1]);
+      return lhs->remove(lhs->_len - 1);
     }
 
     auto rhs = _nodes[idx + 1];
     if (rhs->_len > MIN_LEN) {
-      auto res = Item{static_cast<K&&>(_keys[idx]), static_cast<V&&>(_vals[idx])};
-      auto tmp = rhs->remove(0);
-      _keys[idx] = static_cast<K&&>(tmp.key);
-      _vals[idx] = static_cast<V&&>(tmp.val);
-      return res;
+      _keys[idx] = static_cast<K&&>(rhs->_keys[0]);
+      _vals[idx] = static_cast<V&&>(rhs->_vals[0]);
+      return rhs->remove(0);
     }
 
-    this->merge(idx);
+    this->merge_at(idx);
     return lhs->remove(MIN_LEN);
   }
 
- private:
-  auto position(const auto& key) const -> u32 {
-    auto idx = 0U;
-    while (idx < _len && key > _keys[idx]) {
-      ++idx;
-    }
-    return idx;
-  }
-
-  void insert_at(u32 idx, Item&& t, Node* child = nullptr) {
-    ptr::shift_elements(_keys + idx, _len - idx, 1);
-    ptr::shift_elements(_vals + idx, _len - idx, 1);
-    new (&_keys[idx]) K{static_cast<K&&>(t.key)};
-    new (&_vals[idx]) V{static_cast<V&&>(t.val)};
-
-    if (child) {
-      ptr::shift_elements(_nodes + idx + 1, _len - idx, 1);
-      _nodes[idx + 1] = child;
-
-      for (auto i = idx + u16{1U}; i <= _len + 1; ++i) {
-        _nodes[i]->_idx = i;
-      }
-    }
-    _len += 1;
-
-    if (_len == MAX_LEN) {
-      this->split();
-    }
-  }
-
   void split() {
-    _len = MIN_LEN;
+    if (_len != MAX_LEN) {
+      return;
+    }
 
     if (_top == nullptr) {
       _top = new Node{true};
@@ -275,84 +238,124 @@ struct BTree<K, V, B>::Node {
     }
 
     auto rhs = new Node{_has_node};
-    rhs->_top = _top;
-    rhs->_idx = _idx + 1;
-    rhs->_len = MIN_LEN;
-    ptr::uninit_move(_keys + B, rhs->_keys, MIN_LEN);
-    ptr::uninit_move(_vals + B, rhs->_vals, MIN_LEN);
+    rhs->append(*this, B);
 
-    if (_has_node) {
-      ptr::uninit_move(_nodes + B, rhs->_nodes, B);
-      for (auto i = u16{0U}; i < B; ++i) {
-        rhs->_nodes[i]->_top = rhs;
-        rhs->_nodes[i]->_idx = i;
-      }
-    }
-
-    auto item = Item{ptr::read(&_keys[B - 1]), ptr::read(&_vals[B - 1])};
-    _top->insert_at(_idx, static_cast<Item&&>(item), rhs);
-  }
-
-  void merge(u32 idx) {
-    auto lhs = _nodes[idx];
-    auto rhs = _nodes[idx + 1];
-
-    new (&lhs->_keys[lhs->_len]) K{static_cast<K&&>(_keys[idx])};
-    new (&lhs->_vals[lhs->_len]) V{static_cast<V&&>(_vals[idx])};
-    lhs->_len += 1;
-
-    _keys[idx].~K();
-    _vals[idx].~V();
-    ptr::shift_elements(_keys + idx + 1, _len - idx - 1, -1);
-    ptr::shift_elements(_vals + idx + 1, _len - idx - 1, -1);
-    ptr::shift_elements(_nodes + idx + 2, _len - idx - 1, -1);
+    auto& k = _keys[MIN_LEN];
+    auto& v = _vals[MIN_LEN];
+    _top->insert_at(_idx, static_cast<K&&>(k), static_cast<V&&>(v), rhs);
+    k.~K();
+    v.~V();
     _len -= 1;
 
-    for (auto i = idx + u16{1U}; i <= _len; ++i) {
-      _nodes[i]->_idx = i;
-    }
-
-    ptr::uninit_move(rhs->_keys, lhs->_keys + lhs->_len, rhs->_len);
-    ptr::uninit_move(rhs->_vals, lhs->_vals + lhs->_len, rhs->_len);
-
-    if (lhs->_has_node) {
-      ptr::uninit_move(rhs->_nodes, lhs->_nodes + lhs->_len, rhs->_len + 1);
-      for (auto i = lhs->_len; i < lhs->_len + rhs->_len + 1; ++i) {
-        lhs->_nodes[i]->_top = lhs;
-        lhs->_nodes[i]->_idx = i;
-      }
-    }
-    lhs->_len += rhs->_len;
-    rhs->_len = 0;
-    delete rhs;
-
-    if (_top && _len < MIN_LEN) {
-      _top->fix(_idx);
-    }
+    _top->split();
   }
 
-  void fix(u32 idx) {
-    if (_nodes[idx]->_len >= MIN_LEN) {
+  void rebalance() {
+    if (_top == nullptr || _len >= MIN_LEN) {
       return;
     }
 
-    if (idx > 0) {
-      auto lhs = _nodes[idx - 1];
-      auto rhs = _nodes[idx];
+    if (_idx > 0) {
+      auto lhs = _top->_nodes[_idx - 1];
+      auto rhs = this;
       if (lhs->_len + rhs->_len < MAX_LEN) {
-        this->merge(idx - 1);
-        return;
+        return _top->merge_at(_idx - 1);
       }
     }
 
-    if (idx < _len) {
-      auto lhs = _nodes[idx];
-      auto rhs = _nodes[idx + 1];
+    if (_idx < _top->_len) {
+      auto lhs = this;
+      auto rhs = _top->_nodes[_idx + 1];
       if (lhs->_len + rhs->_len < MAX_LEN) {
-        this->merge(idx);
-        return;
+        return _top->merge_at(_idx);
       }
     }
+  }
+
+ private:
+  auto position(const auto& key) const -> u16 {
+    auto idx = 0U;
+    while (idx < _len && key > _keys[idx]) {
+      ++idx;
+    }
+    return idx;
+  }
+
+  void insert_at(u16 idx, K&& k, V&& v, Node* c) {
+    ptr::shift_elements(_keys + idx, _len - idx, 1);
+    new (&_keys[idx]) K{static_cast<K&&>(k)};
+
+    ptr::shift_elements(_vals + idx, _len - idx, 1);
+    new (&_vals[idx]) V{static_cast<V&&>(v)};
+    _len += 1;
+
+    if (c) {
+      c->_top = this;
+      c->_idx = idx + 1;
+      for (auto i = _len; i > idx + 1; --i) {
+        _nodes[i] = _nodes[i - 1];
+        _nodes[i]->_idx = i;
+      }
+      _nodes[idx + 1] = c;
+    }
+  }
+
+  void erase_at(u16 idx) {
+    if (idx >= _len) {
+      return;
+    }
+
+    _keys[idx].~K();
+    ptr::shift_elements(_keys + idx + 1, _len - idx - 1, -1);
+
+    _vals[idx].~V();
+    ptr::shift_elements(_vals + idx + 1, _len - idx - 1, -1);
+
+    if (_has_node) {
+      for (auto i = idx + 1U; i < _len; ++i) {
+        _nodes[i] = _nodes[i + 1];
+        _nodes[i]->_idx = i;
+      }
+    }
+    _len -= 1;
+
+    this->rebalance();
+  }
+
+  void merge_at(u16 idx) {
+    auto lhs = _nodes[idx];
+    auto rhs = _nodes[idx + 1];
+    new (&lhs->_keys[lhs->_len]) K{static_cast<K&&>(_keys[idx])};
+    new (&lhs->_vals[lhs->_len]) V{static_cast<V&&>(_vals[idx])};
+    lhs->_len += 1;
+    lhs->append(*rhs, 0);
+    delete rhs;
+
+    this->erase_at(idx);
+  }
+
+  void append(Node& src, u16 idx) {
+    if (_len >= MAX_LEN) {
+      return;
+    }
+
+    const auto cnt = static_cast<u16>(src._len - idx);
+    ptr::uninit_move(src._keys + idx, _keys + _len, cnt);
+    ptr::drop_in_place(src._keys + idx, cnt);
+
+    ptr::uninit_move(src._vals + idx, _vals + _len, cnt);
+    ptr::drop_in_place(src._vals + idx, cnt);
+
+    if (_has_node) {
+      for (auto i = _len, j = idx; i < _len + cnt + 1; ++i, ++j) {
+        _nodes[i] = src._nodes[j];
+        _nodes[i]->_top = this;
+        _nodes[i]->_idx = i;
+      }
+    }
+
+    src._len -= cnt;
+    _len += cnt;
   }
 };
 

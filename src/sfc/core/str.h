@@ -108,6 +108,19 @@ struct Str {
     return this->trim_matches([](auto c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
+ public:
+  auto hash() const -> usize {
+    static constexpr auto PRIME = 0x100000001b3ULL;
+    static constexpr auto BASIS = 0xcbf29ce484222325ULL;
+
+    auto res = BASIS;
+    for (auto i = 0U; i < _len; ++i) {
+      res ^= static_cast<usize>(_ptr[i]);
+      res *= PRIME;
+    }
+    return res;
+  }
+
   template <class T>
   auto parse() const noexcept -> option::Option<T>;
 

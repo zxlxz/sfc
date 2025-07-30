@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/cmp.h"
 #include "sfc/core/fmt.h"
 #include "sfc/core/mod.h"
 #include "sfc/core/num.h"

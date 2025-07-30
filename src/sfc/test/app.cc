@@ -6,6 +6,8 @@
 
 namespace sfc::test {
 
+using collections::VecMap;
+
 static auto parse_opts(Slice<const Str> args) -> VecMap<Str, Str> {
   auto opts = VecMap<Str, Str>{};
 

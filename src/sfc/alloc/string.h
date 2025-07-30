@@ -5,7 +5,7 @@
 namespace sfc::string {
 
 class [[nodiscard]] String {
-  vec::Vec<char>  _vec = {};
+  vec::Vec<char> _vec = {};
 
  public:
   String() noexcept = default;
@@ -13,8 +13,10 @@ class [[nodiscard]] String {
   ~String() = default;
 
   String(String&&) noexcept = default;
+  String(const String&) = delete;
 
-  auto operator=(String&&) noexcept -> String& = default;
+  String& operator=(String&&) noexcept = default;
+  String& operator=(const String&) = delete;
 
   static auto with_capacity(usize capacity) -> String {
     auto res = String{};

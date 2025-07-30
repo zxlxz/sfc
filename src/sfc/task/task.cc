@@ -74,7 +74,7 @@ void TaskQueue::wait(const time::Duration& dur) {
 }
 
 void TaskQueue::push_imp(Task task, Priority priority) {
-  const auto pid = cmp::min(static_cast<usize>(priority), _queues.len() - 1);
+  const auto pid = static_cast<u32>(priority);
 
   // check valid
   auto& tasks = _queues[pid];

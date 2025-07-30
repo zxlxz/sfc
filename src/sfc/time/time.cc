@@ -1,4 +1,4 @@
-#include "sfc/time/instant.h"
+#include "sfc/time.h"
 
 #include "sfc/sys/time.h"
 
@@ -11,10 +11,9 @@ auto Instant::now() -> Instant {
   return Instant{nanos};
 }
 
-auto Instant::elapsed() const -> Duration {
-  const auto now = Instant::now();
-  const auto res = now - *this;
-  return res;
+auto System::now() -> System {
+  const auto nanos = sys_imp::system_now();
+  return System{nanos};
 }
 
 }  // namespace sfc::time

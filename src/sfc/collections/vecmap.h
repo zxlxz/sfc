@@ -120,7 +120,3 @@ class VecMap {
 };
 
 }  // namespace sfc::collections
-
-namespace sfc {
-using collections::VecMap;
-}  // namespace sfc

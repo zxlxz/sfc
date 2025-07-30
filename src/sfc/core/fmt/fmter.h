@@ -332,7 +332,8 @@ class Fmter {
     const auto prefix = _style.prefix();
     const auto fill = _style.fill(_style._prefix ? '0' : ' ');
     const auto align = fill == '0' ? '=' : _style.align();
-    const auto npad = num::saturating_sub<usize>(width, sign.len() + body.len());
+    const auto len = sign.len() + body.len();
+    const auto npad = width > len ? width - len : 0U;
 
     auto pad_fill = [&](usize n) {
       for (auto i = 0U; i < n; ++i) {

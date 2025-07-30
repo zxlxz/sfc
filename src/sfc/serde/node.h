@@ -14,7 +14,7 @@ struct Null {
 };
 
 using List = Vec<Node>;
-using Dict = VecMap<String, Node>;
+using Dict = collections::VecMap<String, Node>;
 
 class [[nodiscard]] Node {
   using Inn = Variant<Null, bool, i64, f64, String, List, Dict>;
@@ -65,7 +65,7 @@ class [[nodiscard]] Node {
 
  public:
   static auto from_json(Str text) -> Option<Node>;
-  
+
   auto to_json() const -> String;
 };
 

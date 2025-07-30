@@ -3,8 +3,11 @@
 namespace sfc::string {
 
 auto String::pop() -> Option<char> {
-  auto ret = _vec.pop();
-  return ret;
+  auto res = _vec.pop();
+  if (res) {
+    _vec.get_unchecked_mut(_vec.len()) = 0;
+  }
+  return res;
 }
 
 void String::push(char c) {

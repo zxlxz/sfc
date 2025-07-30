@@ -108,19 +108,26 @@ class Option {
 
  public:
   Option() = default;
-
   Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
 
   ~Option() = default;
 
   Option(const Option&) noexcept = default;
-
   Option(Option&&) noexcept = default;
 
-  auto operator=(Option&&) noexcept -> Option& = default;
+  Option& operator=(Option&&) noexcept = default;
+  Option& operator=(const Option&) noexcept = default;
 
   operator bool() const {
-    return bool(_inn);
+    return !!_inn;
+  }
+
+  auto is_some() const -> bool {
+    return !!_inn;
+  }
+
+  auto is_none() const -> bool {
+    return !_inn;
   }
 
   auto operator*() const -> const T& {

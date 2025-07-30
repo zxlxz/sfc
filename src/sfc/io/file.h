@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/io/mod.h"
+#include "sfc/io/error.h"
 
 namespace sfc::io {
 

@@ -15,7 +15,7 @@ struct IntStr {
     }
 
     const auto sign = this->extract_sign();
-    if constexpr (is_unsigned<T>()) {
+    if constexpr (T{0} - T{1} > 0) {
       if (sign == '-') {
         return {};
       }
@@ -31,7 +31,7 @@ struct IntStr {
       return {};
     }
 
-    if constexpr (is_signed<T>()) {
+    if constexpr (T{0} - T{1} < 0) {
       if (sign == '-') {
         return -uval;
       }
@@ -77,8 +77,6 @@ struct IntStr {
 
   template <class T>
   auto extract_int(u32 radix) -> T {
-    static constexpr auto MAX_VALUE = num::max_value<T>();
-
     auto res = T{0} + 0U;
 
     for (; _ptr != _end; ++_ptr) {
@@ -87,11 +85,11 @@ struct IntStr {
       if (n >= radix) {
         break;
       }
-      const auto t = radix * res + n;
-      if (t < res || t > MAX_VALUE) {
+      const auto tmp = static_cast<T>(radix * res + n);
+      if (tmp < res) {
         break;
       }
-      res = t;
+      res = tmp;
     }
 
     return static_cast<T>(res);

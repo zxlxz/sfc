@@ -2,7 +2,7 @@
 
 #include "backend/console_backend.h"
 #include "backend/file_backend.h"
-#include "sfc/time/datetime.h"
+#include "sfc/chrono.h"
 
 namespace sfc::log {
 
@@ -19,15 +19,16 @@ static auto make_time_str() -> str::Str {
   };
 
   const auto now_time = time::System::now();
-  const auto now_millis = now_time.sub_millis();
-  if (now_millis != tls_time.sub_millis()) {
+  const auto now_millis = now_time.sub_nanos() / time::NANOS_PER_MILLI;
+  const auto tls_millis = tls_time.sub_nanos() / time::NANOS_PER_MILLI;
+  if (now_millis != tls_millis) {
     fmt_uint(now_millis, buf + sizeof("0000-00-00 00:00:00"), 3);
   }
 
   const auto now_secs = now_time.secs();
   const auto tls_secs = tls_time.secs();
   if (now_secs / 60 != tls_secs / 60) {
-    const auto date_time = time::DateTime::from(now_time);
+    const auto date_time = chrono::DateTime::from_local(now_time);
     fmt_uint(date_time.year(), buf, 4);
     fmt_uint(date_time.month(), buf + sizeof("0000"), 2);
     fmt_uint(date_time.day(), buf + sizeof("0000-00"), 2);

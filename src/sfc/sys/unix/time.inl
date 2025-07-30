@@ -22,29 +22,34 @@ inline auto system_now() -> unsigned long {
   return ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec;
 }
 
-struct DateTime {
-  unsigned short year;
-  unsigned short month;
-  unsigned short mday;
-  unsigned short hour;
-  unsigned short min;
-  unsigned short sec;
+template <class T>
+static inline auto make_utc(time_t secs) -> T {
+  auto tm = tm_t{};
+  ::gmtime_r(&secs, &tm);
 
- public:
-  static auto from_secs(time_t secs) -> DateTime {
-    auto tm = tm_t{};
-    ::localtime_r(&secs, &tm);
+  return T{
+      static_cast<short>(tm.tm_year + 1900),
+      static_cast<unsigned char>(tm.tm_mon + 1),
+      static_cast<unsigned char>(tm.tm_mday),
+      static_cast<unsigned char>(tm.tm_hour),
+      static_cast<unsigned char>(tm.tm_min),
+      static_cast<unsigned char>(tm.tm_sec),
+  };
+}
 
-    const auto res = DateTime{
-        static_cast<unsigned short>(tm.tm_year + 1900),
-        static_cast<unsigned short>(tm.tm_mon + 1),
-        static_cast<unsigned short>(tm.tm_mday),
-        static_cast<unsigned short>(tm.tm_hour),
-        static_cast<unsigned short>(tm.tm_min),
-        static_cast<unsigned short>(tm.tm_sec),
-    };
-    return res;
-  }
-};
+template <class T>
+static inline auto make_local(time_t secs) -> T {
+  auto tm = tm_t{};
+  ::localtime_r(&secs, &tm);
+
+  return T{
+      static_cast<short>(tm.tm_year + 1900),
+      static_cast<unsigned char>(tm.tm_mon + 1),
+      static_cast<unsigned char>(tm.tm_mday),
+      static_cast<unsigned char>(tm.tm_hour),
+      static_cast<unsigned char>(tm.tm_min),
+      static_cast<unsigned char>(tm.tm_sec),
+  };
+}
 
 }  // namespace sfc::sys::time

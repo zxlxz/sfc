@@ -1,11 +1,11 @@
-#include "sfc/collections/btree.h"
+#include "sfc/collections/hash.h"
 
 #include "sfc/test.h"
 
 namespace sfc::collections::test {
 
-SFC_TEST(btree_get) {
-  auto t = BTreeMap<int, int>{};
+SFC_TEST(hashmap_get) {
+  auto t = HashMap<int, int>{};
   t.insert(1, 10);
   auto v = t.get_mut(1);
   panicking::assert_true(v);
@@ -15,8 +15,8 @@ SFC_TEST(btree_get) {
   panicking::assert_eq(t.get(1), Option{42});
 }
 
-SFC_TEST(btree_insert) {
-  auto t = BTreeMap<int, int>{};
+SFC_TEST(hashmap_insert) {
+  auto t = HashMap<int, int>{};
 
   for (auto i = 0; i < 5; ++i) {
     t.insert(i, i * 10);
@@ -45,10 +45,12 @@ SFC_TEST(btree_insert) {
   for (auto i = 0; i < 100; ++i) {
     panicking::assert_eq(t.get(i), Option{i * 10});
   }
+
+  panicking::assert_true(t.capacity() < t.len() * 2);
 }
 
-SFC_TEST(btree_replace) {
-  auto t = BTreeMap<int, int>{};
+SFC_TEST(hashmap_replace) {
+  auto t = HashMap<int, int>{};
   for (auto i = 0; i < 10; ++i) {
     t.replace(i, i * 10);
     panicking::assert_eq(t.get(i), Option{i * 10});
@@ -59,8 +61,8 @@ SFC_TEST(btree_replace) {
   panicking::assert_eq(t.len(), 10U);
 }
 
-SFC_TEST(btree_remove) {
-  auto t = BTreeMap<int, int>{};
+SFC_TEST(hashmap_remove) {
+  auto t = HashMap<int, int>{};
   for (auto i = 0; i < 3; ++i) {
     t.insert(i, i * 10);
   }

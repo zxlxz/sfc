@@ -5,6 +5,8 @@
 
 namespace sfc::ptr {
 
+using nullptr_t = decltype(nullptr);
+
 template <class T>
 struct Unique {
   T* _ptr = nullptr;
@@ -12,7 +14,7 @@ struct Unique {
  public:
   Unique() noexcept = default;
 
-  Unique(decltype(nullptr)) noexcept {}
+  Unique(nullptr_t) noexcept {}
 
   explicit Unique(T* ptr) noexcept : _ptr{ptr} {}
 

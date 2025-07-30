@@ -102,7 +102,7 @@ SFC_TEST(ser_vector) {
 
 SFC_TEST(ser_dict) {
   {
-    auto v = VecMap<String, int>{};
+    auto v = collections::VecMap<String, int>{};
     v.insert(String::from("a"), 1);
     v.insert(String::from("b"), 2);
 
