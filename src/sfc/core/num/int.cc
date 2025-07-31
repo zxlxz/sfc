@@ -107,7 +107,7 @@ struct IntBuf {
   }
 
   void fill(auto val, char type) {
-    const auto uval = val > 0 ? val : 0 - val;
+    const auto uval = 0 - val > 0 ? val : 0 - val;
 
     switch (type) {
       default:  this->write_dec(uval); break;
@@ -115,8 +115,10 @@ struct IntBuf {
       case 'b': this->write_bin<2>(uval); break;
       case 'O': this->write_bin<8>(uval); break;
       case 'o': this->write_bin<8>(uval); break;
-      case 'X': this->write_bin<16, true>(uval); break;
-      case 'x': this->write_bin<16, false>(uval); break;
+      case 'X': this->write_bin<16, 'X'>(uval); break;
+      case 'x': this->write_bin<16, 'x'>(uval); break;
+      case 'P': this->write_bin<16, 'P'>(uval); break;
+      case 'p': this->write_bin<16, 'p'>(uval); break;
     }
 
     if (val != uval) {
@@ -154,11 +156,11 @@ struct IntBuf {
     }
   }
 
-  template <u32 RADIX, bool UC = false>
+  template <u32 RADIX, char TYPE = 0>
   void write_bin(auto val) {
     const auto MASK = RADIX - 1;
-    const auto DIGITS = UC ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           : "0123456789abcdefghijklmnopqrstuvwxyz";
+    const auto DIGITS = TYPE < 'a' ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                   : "0123456789abcdefghijklmnopqrstuvwxyz";
 
     if (val == 0) {
       return this->push('0');
@@ -167,12 +169,24 @@ struct IntBuf {
     for (; val != 0; val /= RADIX) {
       this->push(DIGITS[val & MASK]);
     }
+
+    if constexpr (TYPE == 'p' || TYPE == 'P') {
+      const auto kMinLen = 12U;
+      const auto kCurLen = static_cast<usize>(_end - _ptr);
+      for (auto i = kCurLen; i < kMinLen; ++i) {
+        this->push('0');
+      }
+    }
   }
 };
 
 auto int2str(slice::Slice<char> buf, auto val, char type) -> str::Str {
   auto imp = IntBuf{buf._ptr, buf._ptr + buf._len};
-  imp.fill(val, type);
+  if constexpr (__is_same(decltype(val), const void*)) {
+    imp.fill(reinterpret_cast<usize>(val), type);
+  } else {
+    imp.fill(val + 0, type);
+  }
   return imp.as_str();
 }
 
@@ -187,6 +201,8 @@ template auto int2str(slice::Slice<char> buf, unsigned short val, char type) -> 
 template auto int2str(slice::Slice<char> buf, unsigned int val, char type) -> str::Str;
 template auto int2str(slice::Slice<char> buf, unsigned long val, char type) -> str::Str;
 template auto int2str(slice::Slice<char> buf, unsigned long long val, char type) -> str::Str;
+
+template auto int2str(slice::Slice<char> buf, const void* val, char type) -> str::Str;
 
 }  // namespace sfc::num
 

@@ -69,14 +69,13 @@ static inline auto get_frame(void* ptr) -> FrameInfo {
       .line = line_info.LineNumber,
       .func = {},
   };
-  __builtin_memcpy(res.func, sym_info._NameBuf, sizeof(sym_info._NameBuf));
+  __builtin_memcpy(res.func, sym_info.Name, sizeof(sym_info._NameBuf));
   return res;
 }
 
-template <DWORD N>
-static inline auto cxx_demangle(const char in[], char (&out)[N]) -> DWORD {
-  const auto nbytes = ::UnDecorateSymbolName(in, out, N, UNDNAME_COMPLETE);
-  return nbytes;
+static inline auto cxx_demangle(const char in[], char buf[], DWORD buf_len) -> bool {
+  const auto ret = ::UnDecorateSymbolName(in, buf, buf_len, UNDNAME_COMPLETE);
+  return ret > 0 && ret < buf_len;
 }
 
 }  // namespace sfc::sys::backtrace

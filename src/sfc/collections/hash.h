@@ -5,9 +5,8 @@
 
 namespace sfc::collections {
 
-template <class K, class V, class A = alloc::Global>
+template <class K, class V>
 class HashMap {
-  static constexpr usize kMinCap = 16U;
   static constexpr u8 kDelete = 0x80U;
   static constexpr u8 kEmpty = 0xFFU;
 
@@ -16,48 +15,51 @@ class HashMap {
     u8 ctrl;
   };
 
-  usize _len = 0;
-  usize _mask = 0;
-  u8* _ctrl = nullptr;
-  K* _keys = nullptr;
-  V* _vals = nullptr;
-  A _alloc = {};
+  usize _len{0};
+  usize _mask{0};
+  vec::Buf<u8> _ctrl{};
+  vec::Buf<K> _keys{};
+  vec::Buf<V> _vals{};
 
  public:
   HashMap() = default;
 
-  ~HashMap() {
-    this->drop();
-  }
+  ~HashMap() {}
 
   HashMap(HashMap&& other) noexcept
       : _len{mem::take(other._len)},
         _mask{mem::take(other._mask)},
         _ctrl{mem::take(other._ctrl)},
         _keys{mem::take(other._keys)},
-        _vals{mem::take(other._vals)},
-        _alloc{mem::move(other._alloc)} {}
+        _vals{mem::take(other._vals)} {}
 
   HashMap& operator=(HashMap&& other) noexcept {
     if (this != &other) {
-      this->drop();
       _len = mem::take(other._len);
       _mask = mem::take(other._mask);
-      _ctrl = mem::take(other._ctrl);
-      _keys = mem::take(other._keys);
-      _vals = mem::take(other._vals);
-      _alloc = mem::move(other._alloc);
+      _ctrl = mem::move(other._ctrl);
+      _keys = mem::move(other._keys);
+      _vals = mem::move(other._vals);
     }
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> HashMap {
-    if (capacity == 0) {
+  static auto with_capacity(usize min_capacity) -> HashMap {
+    if (min_capacity == 0) {
       return {};
     }
 
+    auto cap = 1U;
+    while (cap < min_capacity) {
+      cap *= 2;
+    }
+
     auto res = HashMap{};
-    res.init(capacity);
+    res._mask = cap - 1;
+    res._ctrl.reserve_extract(0, cap);
+    res._keys.reserve_extract(0, cap);
+    res._vals.reserve_extract(0, cap);
+    __builtin_memset(res._ctrl._ptr, kEmpty, cap);
     return res;
   }
 
@@ -66,7 +68,7 @@ class HashMap {
   }
 
   auto capacity() const -> usize {
-    return _ctrl ? _mask + 1 : 0U;
+    return _ctrl._cap;
   }
 
   auto get(const auto& key) const -> Option<const V&> {
@@ -93,24 +95,23 @@ class HashMap {
     return _vals[idx];
   }
 
-  auto insert(K key, V val) -> Option<V&> {
-    const auto idx = this->try_insert(static_cast<K&&>(key), static_cast<V&&>(val));
-    if (idx != -1) {
-      return _vals[idx];
+  auto try_insert(K key, V val) -> Option<V&> {
+    const auto idx = this->find_or_insert(static_cast<K&&>(key), static_cast<V&&>(val));
+    if (idx == -1) {
+      return {};
     }
-
-    return {};
+    return _vals._ptr[idx];
   }
 
-  auto replace(K key, V val) -> Option<V> {
-    const auto idx = this->try_insert(static_cast<K&&>(key), static_cast<V&&>(val));
-    if (idx != -1) {
-      auto res = Option<V>{static_cast<V&&>(_vals[idx])};
-      _vals[idx] = static_cast<V&&>(val);
-      return res;
+  auto insert(K key, V val) -> Option<V> {
+    const auto idx = this->find_or_insert(static_cast<K&&>(key), static_cast<V&&>(val));
+    if (idx == -1) {
+      return {};
     }
 
-    return {};
+    auto res = Option<V>{static_cast<V&&>(_vals._ptr[idx])};
+    _vals._ptr[idx] = static_cast<V&&>(val);
+    return res;
   }
 
   auto remove(const K& key) -> Option<V> {
@@ -137,7 +138,7 @@ class HashMap {
         _vals[i].~V();
       }
     }
-    __builtin_memset(_ctrl, kEmpty, _mask + 1);
+    __builtin_memset(_ctrl._ptr, kEmpty, _mask + 1);
 
     _len = 0;
   }
@@ -159,37 +160,6 @@ class HashMap {
     const auto h2 = (h0 >> 57) & kMask;
     return {h1, static_cast<u8>(h2)};
   };
-
-  void init(usize min_capacity) {
-    if (_ctrl || min_capacity == 0) {
-      return;
-    }
-
-    auto capacity = kMinCap;
-    while (capacity < min_capacity) {
-      capacity *= 2;
-    }
-
-    _mask = capacity - 1;
-    _ctrl = _alloc.template alloc_array<u8>(capacity);
-    _keys = _alloc.template alloc_array<K>(capacity);
-    _vals = _alloc.template alloc_array<V>(capacity);
-    __builtin_memset(_ctrl, kEmpty, capacity);
-  }
-
-  void drop() {
-    if (!_ctrl) {
-      return;
-    }
-
-    this->clear();
-    _alloc.dealloc_array(_ctrl, _mask + 1);
-    _alloc.dealloc_array(_keys, _mask + 1);
-    _alloc.dealloc_array(_vals, _mask + 1);
-    _ctrl = nullptr;
-    _keys = nullptr;
-    _vals = nullptr;
-  }
 
   auto insert_at(usize idx, u8 ctrl, K&& key, V&& val) {
     _ctrl[idx] = ctrl;
@@ -224,7 +194,7 @@ class HashMap {
     }
   }
 
-  auto try_insert(K&& key, V&& val) -> isize {
+  auto find_or_insert(K&& key, V&& val) -> isize {
     if (_len * 4 >= _mask * 3) {
       this->rehash();
     }
@@ -234,7 +204,7 @@ class HashMap {
       const auto c = _ctrl[idx];
       if (c >= kDelete) {
         this->insert_at(idx, h2, static_cast<K&&>(key), static_cast<V&&>(val));
-        return -1;
+        break;
       }
 
       if (c == h2 && key == _keys[idx]) {
@@ -246,22 +216,27 @@ class HashMap {
   }
 
   void rehash() {
-    const auto old_cap = this->capacity();
-    const auto new_cap = old_cap == 0 ? kMinCap : old_cap * 2;
-    auto src = static_cast<HashMap&&>(*this);
-    this->init(new_cap);
+    constexpr auto kMinCap = 4U;
 
-    for (auto i = 0U; i < old_cap; ++i) {
-      const auto c = src._ctrl[i];
+    const auto old_cap = this->capacity();
+    const auto new_cap = old_cap < kMinCap ? kMinCap * 2 : old_cap * 2;
+
+    auto tmp = HashMap::with_capacity(new_cap);
+
+    for (auto i = 0U; tmp._len < _len; ++i) {
+      const auto c = _ctrl._ptr[i];
       if (c >= kDelete) {
         continue;
       }
-      auto& k = src._keys[i];
-      auto& v = src._vals[i];
-      this->insert(static_cast<K&&>(k), static_cast<V&&>(v));
+
+      auto& k = _keys._ptr[i];
+      auto& v = _vals._ptr[i];
+      tmp.try_insert(static_cast<K&&>(k), static_cast<V&&>(v));
       k.~K();
       v.~V();
     }
+
+    *this = static_cast<HashMap&&>(tmp);
   }
 };
 

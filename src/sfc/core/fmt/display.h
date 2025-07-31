@@ -40,7 +40,6 @@ struct IFmt<signed char> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
@@ -53,7 +52,6 @@ struct IFmt<short> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
@@ -66,7 +64,6 @@ struct IFmt<int> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
@@ -79,7 +76,6 @@ struct IFmt<long> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
@@ -92,7 +88,6 @@ struct IFmt<long long> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, num::abs(_val), f.style()._type);
     f.pad_num(_val < 0, digits);
   }
@@ -105,7 +100,6 @@ struct IFmt<unsigned char> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, digits);
   }
@@ -118,7 +112,6 @@ struct IFmt<unsigned short> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto digits = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, digits);
   }
@@ -131,7 +124,6 @@ struct IFmt<unsigned int> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto s = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, s);
   }
@@ -144,7 +136,6 @@ struct IFmt<unsigned long> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-
     const auto s = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, s);
   }
@@ -157,7 +148,18 @@ struct IFmt<unsigned long long> {
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
+    const auto s = num::int2str(buf, _val, f.style()._type);
+    f.pad_num(false, s);
+  }
+};
 
+template <class T>
+struct IFmt<T*> {
+  const void* _val;
+
+ public:
+  void fmt(auto& f) const {
+    char buf[8 * sizeof(_val)];
     const auto s = num::int2str(buf, _val, f.style()._type);
     f.pad_num(false, s);
   }
@@ -207,26 +209,6 @@ struct IFmt<char[N]> {
  public:
   void fmt(auto& f) const {
     f.pad(_val);
-  }
-};
-
-template <>
-struct IFmt<const char*> {
-  const char* _val;
-
- public:
-  void fmt(auto& f) const {
-    f.pad(str::Str{_val});
-  }
-};
-
-template <>
-struct IFmt<char*> {
-  const char* _val;
-
- public:
-  void fmt(auto& f) const {
-    f.pad(str::Str{_val});
   }
 };
 

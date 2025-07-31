@@ -18,7 +18,8 @@ struct Range {
   Range(usize start, Dummy) : _start{start}, _end{static_cast<usize>(-1)} {}
 
   auto wrap(usize len) const -> Range {
-    return _end < len ? Range{_start, _end} : Range{_start, len};
+    const auto end = _end < len ? _end : len;
+    return {_start, end};
   }
 
   auto len() const -> usize {

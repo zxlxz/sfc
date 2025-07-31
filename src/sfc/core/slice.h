@@ -180,11 +180,11 @@ struct Slice {
 
  public:
   auto iter() const noexcept -> Iter<const T> {
-    return Iter<const T>{._ptr = _ptr, ._end = _ptr + _len};
+    return Iter<const T>{_ptr, _ptr + _len};
   }
 
   auto iter_mut() noexcept -> Iter<T> {
-    return Iter<T>{._ptr = _ptr, ._end = _ptr + _len};
+    return Iter<T>{_ptr, _ptr + _len};
   }
 
   auto windows(usize n) const noexcept -> Windows<const T> {
@@ -216,6 +216,8 @@ struct Iter : iter::Iterator<Iter<T>, T&> {
   T* _end;
 
  public:
+  Iter(T* _ptr, T* _end) noexcept : _ptr{_ptr}, _end{_end} {}
+
   [[nodiscard]] auto len() const -> usize {
     const auto res = _end - _ptr;
     return res >= 0 ? static_cast<usize>(res) : 0U;

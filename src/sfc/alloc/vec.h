@@ -4,42 +4,39 @@
 
 namespace sfc::vec {
 
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] Buf {
  public:
   T* _ptr{nullptr};
   usize _cap{0};
-  A _alloc{};
 
  public:
-  Buf() noexcept = default;
+  Buf() noexcept {}
 
   ~Buf() {
     if (_ptr) {
-      _alloc.dealloc_array(_ptr, _cap);
+      ::operator delete(_ptr);
     }
   }
 
-  Buf(Buf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
+  Buf(Buf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
 
   auto operator=(Buf&& other) noexcept -> Buf& {
-    if (this != &other) {
-      if (_ptr) {
-        _alloc.dealloc_array(_ptr, _cap);
-      }
-      _ptr = mem::take(other._ptr);
-      _cap = mem::take(other._cap);
-      _alloc = mem::move(other._alloc);
+    if (this == &other) {
+      return *this;
     }
+
+    if (_ptr) {
+      ::operator delete(_ptr);
+    }
+    _ptr = mem::take(other._ptr);
+    _cap = mem::take(other._cap);
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = A{}) -> Buf {
+  static auto with_capacity(usize capacity) -> Buf {
     auto res = Buf{};
-    res._ptr = alloc.template alloc_array<T>(capacity);
-    res._cap = capacity;
-    res._alloc = static_cast<A&&>(alloc);
+    res.reserve_extract(0, capacity);
     return res;
   }
 
@@ -67,29 +64,37 @@ class [[nodiscard]] Buf {
   }
 
   void reserve(usize used, usize additional) {
+    static constexpr auto kMinCap = 8U;
     if (used + additional <= _cap) {
       return;
     }
 
-    const auto min_cap = _cap < 4 ? 8U : 2 * _cap;
-    const auto req_cap = used + additional;
-    const auto new_cap = min_cap < req_cap ? req_cap : min_cap;
-    this->reserve_extract(used, new_cap - _cap);
+    const auto min_cap = used + additional;
+    const auto fit_cap = _cap < kMinCap ? kMinCap * 2 : _cap * 2;
+    const auto new_cap = min_cap < fit_cap ? fit_cap : min_cap;
+    this->reserve_extract(used, new_cap - used);
   }
 
   void reserve_extract(usize used, usize additional) {
-    _ptr = _alloc.realloc_array(_ptr, _cap, used + additional);
+    const auto old_ptr = _ptr;
+
     _cap = used + additional;
+    _ptr = static_cast<T*>(::operator new(_cap * sizeof(T)));
+
+    if (old_ptr) {
+      ptr::uninit_move(old_ptr, _ptr, used);
+      ::operator delete(old_ptr);
+    }
   }
 };
 
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] Vec {
-  Buf<T, A> _buf = {};
+  Buf<T> _buf = {};
   usize _len = 0;
 
  public:
-  Vec() noexcept = default;
+  Vec() noexcept : _buf{} {}
 
   ~Vec() {
     this->clear();
@@ -99,15 +104,16 @@ class [[nodiscard]] Vec {
 
   Vec& operator=(Vec&& other) noexcept {
     if (this != &other) {
+      this->clear();
       _buf = mem::move(other._buf);
       _len = mem::take(other._len);
     }
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = A{}) -> Vec {
+  static auto with_capacity(usize capacity) -> Vec {
     auto res = Vec{};
-    res._buf = Buf<T>::with_capacity(capacity, static_cast<A&&>(alloc));
+    res.reserve(capacity);
     return res;
   }
 
@@ -167,12 +173,12 @@ class [[nodiscard]] Vec {
 
   auto clone() const -> Vec {
     auto res = Vec{};
-    res.extend_from_slice(this->as_slice());
+    res.extend_from_slice({_buf._ptr, _len});
     return res;
   }
 
   void fmt(auto& f) const {
-    f.debug_list().entries(this->iter());
+    this->as_slice().fmt(f);
   }
 
  public:
@@ -241,20 +247,20 @@ class [[nodiscard]] Vec {
       return;
     }
 
-    ptr::drop_in_place(&_buf[len], _len - len);
+    ptr::drop_in_place(_buf._ptr + len, _len - len);
     _len = len;
   }
 
-  void reserve(usize additional) {
-    _buf.reserve(_len, additional);
+  void reserve(usize amt) {
+    _buf.reserve(_len, amt);
   }
 
-  void reserve_extract(usize additional) {
-    _buf.reserve_extract(_len, additional);
+  void reserve_extract(usize amt) {
+    _buf.reserve_extract(_len, amt);
   }
 
-  void shrink_to(usize min_capacity) {
-    _buf.shrink_to(_len, min_capacity);
+  void shrink_to(usize min_cap) {
+    _buf.shrink_to(_len, min_cap);
   }
 
   void shrink_to_fit() {
@@ -319,15 +325,14 @@ class [[nodiscard]] Vec {
   }
 
   void append(Vec& other) {
-    const auto cnt = other.len();
-    if (cnt == 0) {
+    if (other._len == 0) {
       return;
     }
 
-    this->reserve(other.len());
-    _len += cnt;
+    this->reserve(other._len);
 
-    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, cnt);
+    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, other._len);
+    _len += other._len;
     other._len = 0;
   }
 
@@ -335,8 +340,9 @@ class [[nodiscard]] Vec {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
+
     iter.for_each([&](T val) {
-      ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
+      ptr::write(_buf._ptr + _len, static_cast<T&&>(val));
       ++_len;
     });
   }
@@ -346,7 +352,7 @@ class [[nodiscard]] Vec {
 
     const auto new_len = _len + cnt;
     for (; _len < new_len; ++_len) {
-      ptr::write(&_buf._ptr[_len], value);
+      ptr::write(_buf._ptr + _len, value);
     }
   }
 
@@ -361,6 +367,7 @@ class [[nodiscard]] Vec {
     auto pdst = _buf._ptr;
     for (auto psrc = _buf._ptr; psrc != _buf._ptr + _len; ++psrc) {
       if (!f(*psrc)) {
+        psrc->~T();
         continue;
       }
       if (psrc != pdst) {

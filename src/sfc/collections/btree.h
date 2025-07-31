@@ -66,7 +66,7 @@ class [[nodiscard]] BTreeMap {
     _root = new Node{false};
   }
 
-  auto insert(K key, V val) -> Option<V&> {
+  auto try_insert(K key, V val) -> Option<V&> {
     if (_root == nullptr) {
       this->init();
     }
@@ -82,7 +82,7 @@ class [[nodiscard]] BTreeMap {
     return {};
   }
 
-  auto replace(K key, V val) -> Option<V> {
+  auto insert(K key, V val) -> Option<V> {
     if (_root == nullptr) {
       this->init();
     }

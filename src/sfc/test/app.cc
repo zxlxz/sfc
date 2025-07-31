@@ -148,7 +148,7 @@ auto App::list_tests_xml() const -> String {
       const auto loc = test._loc;
       f.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\" />\n",
                   name,
-                  loc.file,
+                  Str::from(loc.file),
                   loc.line);
     }
     f.write_str("  </testsuite>\n");

@@ -16,11 +16,17 @@ template <class I, class F>
 struct Map;
 
 template <class I, class T>
-struct Iterator {
-  using Item = T;
+class Iterator {
+ protected:
+  Iterator() = default;
+  ~Iterator() = default;
+  Iterator(const Iterator&) = default;
+  Iterator& operator=(const Iterator&) = default;
 
  public:
-  auto nth(usize n) -> option::Option<Item> {
+  using Item = T;
+
+  auto nth(usize n) -> option::Option<T> {
     auto& self = static_cast<I&>(*this);
 
     for (auto i = 0UL; i < n; ++i) {
@@ -64,7 +70,7 @@ struct Iterator {
     }
   }
 
-  auto reduce(auto&& f) -> option::Option<Item> {
+  auto reduce(auto&& f) -> option::Option<T> {
     auto& self = static_cast<I&>(*this);
 
     auto first = self.next();
@@ -72,10 +78,10 @@ struct Iterator {
       return {};
     }
 
-    return this->fold<Item>(mem::move(first).unwrap(), f);
+    return this->fold<T>(mem::move(first).unwrap(), f);
   }
 
-  auto find(auto&& pred) -> option::Option<Item> {
+  auto find(auto&& pred) -> option::Option<T> {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next();) {
@@ -86,7 +92,7 @@ struct Iterator {
     return {};
   }
 
-  auto rfind(auto&& pred) -> option::Option<Item> {
+  auto rfind(auto&& pred) -> option::Option<T> {
     auto& self = static_cast<I&>(*this);
 
     for (; auto x = self.next_back();) {
@@ -134,11 +140,11 @@ struct Iterator {
     return accum;
   }
 
-  auto min() -> Item {
+  auto min() -> T {
     return this->reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
   }
 
-  auto max() -> Item {
+  auto max() -> T {
     return this->reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
   }
 
@@ -151,14 +157,14 @@ struct Iterator {
   }
 
   auto sum() {
-    using U = decltype(declval<Item>() + declval<Item>());
+    using U = decltype(declval<T>() + declval<T>());
     auto init = U{0};
 
     return this->fold(init, [](const auto& a, const auto& b) { return a + b; });
   }
 
   auto product() {
-    using U = decltype(declval<Item>() * declval<Item>());
+    using U = decltype(declval<T>() * declval<T>());
     auto init = U{1};
 
     return this->fold(init, [](const auto& a, const auto& b) { return a * b; });
@@ -183,8 +189,8 @@ struct Iterator {
 };
 
 template <class I>
-struct Rev : Iterator<Rev<I>, typename I::Item> {
-  using Item = typename I::Item;
+struct Rev : Iterator<Rev<I>, typename I::T> {
+  using T = typename I::T;
 
   I _iter;
 
@@ -193,18 +199,18 @@ struct Rev : Iterator<Rev<I>, typename I::Item> {
     return _iter.len();
   }
 
-  auto next() -> option::Option<Item> {
+  auto next() -> option::Option<T> {
     return _iter.next_back();
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> option::Option<T> {
     return _iter.next();
   }
 };
 
 template <class I, class F>
-struct Map : Iterator<Map<I, F>, decltype(declval<F>()(declval<typename I::Item>()))> {
-  using Item = decltype(declval<F>()(declval<typename I::Item>()));
+struct Map : Iterator<Map<I, F>, decltype(declval<F>()(declval<typename I::T>()))> {
+  using T = decltype(declval<F>()(declval<typename I::T>()));
 
   I _iter;
   F _func;
@@ -214,24 +220,24 @@ struct Map : Iterator<Map<I, F>, decltype(declval<F>()(declval<typename I::Item>
     return _iter.len();
   }
 
-  auto next() -> option::Option<Item> {
+  auto next() -> option::Option<T> {
     return _iter.next().map(_func);
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> option::Option<T> {
     return _iter.next_back().map(_func);
   }
 };
 
 template <class A, class B>
 struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item>> {
-  using Item = tuple::Tuple<typename A::Item, typename B::Item>;
+  using T = tuple::Tuple<typename A::Item, typename B::Item>;
 
   A _a;
   B _b;
 
  public:
-  auto next() -> option::Option<Item> {
+  auto next() -> option::Option<T> {
     auto a = _a.next();
     if (!a) {
       return {};
@@ -240,10 +246,10 @@ struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item
     if (!b) {
       return {};
     }
-    return Item{mem::move(a).unwrap(), mem::move(b).unwrap()};
+    return T{mem::move(a).unwrap(), mem::move(b).unwrap()};
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> option::Option<T> {
     auto a = _a.next_back();
     if (!a) {
       return {};
@@ -252,7 +258,7 @@ struct Zip : Iterator<Zip<A, B>, tuple::Tuple<typename A::Item, typename B::Item
     if (!b) {
       return {};
     }
-    return Item{mem::move(a).unwrap(), mem::move(b).unwrap()};
+    return T{mem::move(a).unwrap(), mem::move(b).unwrap()};
   }
 };
 

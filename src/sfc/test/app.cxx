@@ -2,10 +2,10 @@
 
 using namespace sfc;
 
-int main(int argc, cstr_t argv[]) {
+int main(int argc, const char* argv[]) {
   auto args = Vec<Str>{};
   for (auto idx = 0; idx < argc; ++idx) {
-    args.push(Str{argv[idx]});
+    args.push(Str::from(argv[idx]));
   }
 
   auto app = test::App{};

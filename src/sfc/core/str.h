@@ -11,17 +11,30 @@ struct Str {
  public:
   constexpr Str() noexcept = default;
 
+  constexpr Str(const u8* p, usize n) noexcept
+      : _ptr{static_cast<const char*>((void*)p)}, _len{n} {}
+
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
-  constexpr Str(const char* p) noexcept : _ptr{p}, _len{p ? __builtin_strlen(p) : 0} {}
+  template <usize N>
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+
+  template <usize N>
+  constexpr Str(char (&s)[N]) noexcept = delete;
 
   static constexpr auto from_chars(slice::Slice<const char> s) noexcept -> Str {
     return Str{s._ptr, s._len};
   }
 
   static constexpr auto from_bytes(slice::Slice<const u8> s) noexcept -> Str {
-    const auto p = reinterpret_cast<const char*>(s._ptr);
-    return Str{p, s._len};
+    return Str{s._ptr, s._len};
+  }
+
+  static constexpr auto from(const char* p) noexcept -> Str {
+    if (p == nullptr) {
+      return {};
+    }
+    return Str{p, __builtin_strlen(p)};
   }
 
   auto as_ptr() const noexcept -> const char* {

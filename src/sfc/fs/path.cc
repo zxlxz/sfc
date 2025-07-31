@@ -43,21 +43,12 @@ auto Path::operator=(Path&&) noexcept -> Path& = default;
 
 auto Path::from(Str s) -> Path {
   auto res = Path{};
-  res._inn = String::from(s);
-  for (auto& c : res._inn.as_mut_chars()) {
-    if (c == '\\') {
-      c = '/';
-    }
-  }
+  res._inn.push_str(s);
   return res;
 }
 
 auto Path::clone() const -> Path {
   return Path::from(_inn.as_str());
-}
-
-auto Path::as_ptr() const -> const char* {
-  return _inn.as_ptr();
 }
 
 auto Path::as_str() const -> Str {
@@ -172,15 +163,18 @@ auto Meta::is_file() const -> bool {
 }
 
 auto meta(const Path& path) -> io::Result<Meta> {
+  const auto c_path = CString::from(path.as_str());
+
   auto res = Meta{};
-  if (!sys_imp::lstat(path.as_ptr(), res)) {
+  if (!sys_imp::lstat(c_path, res)) {
     return io::Error::last_os_error();
   }
   return res;
 }
 
 auto create_dir(const Path& path) -> io::Result<> {
-  const auto ret = sys_imp::mkdir(path.as_ptr());
+  const auto c_path = CString::from(path.as_str());
+  const auto ret = sys_imp::mkdir(c_path);
 
   if (!ret) {
     return io::Error::last_os_error();
@@ -190,7 +184,9 @@ auto create_dir(const Path& path) -> io::Result<> {
 }
 
 auto remove_dir(const Path& path) -> io::Result<> {
-  const auto ret = sys_imp::rmdir(path.as_ptr());
+  const auto c_path = CString::from(path.as_str());
+
+  const auto ret = sys_imp::rmdir(c_path);
   if (!ret) {
     return io::Error::last_os_error();
   }
@@ -199,7 +195,9 @@ auto remove_dir(const Path& path) -> io::Result<> {
 }
 
 auto remove_file(const Path& path) -> io::Result<> {
-  const auto ret = sys_imp::unlink(path.as_ptr());
+  const auto c_path = CString::from(path.as_str());
+
+  const auto ret = sys_imp::unlink(c_path);
   if (!ret) {
     return io::Error::last_os_error();
   }
@@ -208,7 +206,10 @@ auto remove_file(const Path& path) -> io::Result<> {
 }
 
 auto rename(const Path& old_path, const Path& new_path) -> io::Result<> {
-  const auto ret = sys_imp::rename(old_path.as_ptr(), new_path.as_ptr());
+  const auto c_old = CString::from(old_path.as_str());
+  const auto c_new = CString::from(new_path.as_str());
+
+  const auto ret = sys_imp::rename(c_old, c_new);
   if (!ret) {
     return io::Error::last_os_error();
   }

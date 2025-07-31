@@ -10,7 +10,7 @@ namespace sfc::sys::backtrace {
 
 struct FrameInfo {
   const char* file;
-  unsigned    line;
+  unsigned line;
   const char* func;
 };
 
@@ -35,12 +35,10 @@ static inline auto get_frame(void* addr) -> FrameInfo {
   return res;
 }
 
-template<size_t N>
-static auto cxx_demangle(const char in[], char (&out)[N]) -> size_t {
-  auto out_len = N;
+static auto cxx_demangle(const char in[], char buf[], size_t buf_len) -> bool {
   auto status = 0;
-  __cxxabiv1::__cxa_demangle(in, out, &out_len, &status);
-  return status == 0 ? out_len : 0UL;
+  __cxxabiv1::__cxa_demangle(in, buf, &buf_len, &status);
+  return status == 0;
 }
 
 }  // namespace sfc::sys::backtrace

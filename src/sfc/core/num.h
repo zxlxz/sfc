@@ -118,6 +118,7 @@ constexpr inline auto fmax(T x, T y) -> T {
 
 auto flt_eq_ulp(f32 a, f32 b, u32 ulp = 4) -> bool;
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) -> bool;
+
 auto int2str(slice::Slice<char> buf, auto val, char type = 0) -> str::Str;
 auto flt2str(slice::Slice<char> buf, auto val, u32 prec = 6, char type = 0) -> str::Str;
 

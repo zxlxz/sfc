@@ -8,10 +8,11 @@ struct Frame {
   void* _addr;
 
  public:
-  auto func() const -> String;
+  auto to_str(Slice<char> buf) const -> Str;
 
   void fmt(auto& f) const {
-    const auto s = this->func();
+    char buf[256];
+    const auto s = this->to_str({buf});
     f.write_str(s);
   }
 };

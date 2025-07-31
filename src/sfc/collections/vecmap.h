@@ -95,27 +95,23 @@ class VecMap {
     _vals.clear();
   }
 
-  void reserve(usize additional) {
-    _keys.reserve(additional);
-    _vals.reserve(additional);
+  void reserve(usize amt) {
+    _keys.reserve(amt);
+    _vals.reserve(amt);
   }
 
  public:
-  auto iter() const -> iter::Zip<slice::Iter<const K>, slice::Iter<const V>> {
-    return iter::Zip{{}, _keys.iter(), _vals.iter()};
-  }
-
-  auto iter_mut() -> iter::Zip<slice::Iter<K>, slice::Iter<V>> {
-    return iter::Zip{{}, _keys.iter_mut(), _vals.iter_mut()};
-  }
-
   auto contains_key(const auto& key) const -> bool {
-    const auto val = this->get(key);
-    return static_cast<bool>(val);
+    return bool(this->get(key));
   }
 
   void fmt(auto& f) const {
-    f.debug_map().entries(this->iter());
+    const auto cnt = _keys.len();
+
+    auto imp = f.debug_map();
+    for (auto i = 0U; i < cnt; ++i) {
+      imp.entry(_keys[i], _vals[i]);
+    }
   }
 };
 

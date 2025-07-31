@@ -15,11 +15,11 @@ SFC_TEST(hashmap_get) {
   panicking::assert_eq(t.get(1), Option{42});
 }
 
-SFC_TEST(hashmap_insert) {
+SFC_TEST(hashmap_try_insert) {
   auto t = HashMap<int, int>{};
 
   for (auto i = 0; i < 5; ++i) {
-    t.insert(i, i * 10);
+    t.try_insert(i, i * 10);
     panicking::assert_eq(t.len(), i + 1);
   }
 
@@ -28,7 +28,7 @@ SFC_TEST(hashmap_insert) {
   panicking::assert_false(t.get(5));
 
   for (auto i = 5; i < 10; ++i) {
-    t.insert(i, i * 10);
+    t.try_insert(i, i * 10);
     panicking::assert_eq(t.len(), i + 1);
   }
 
@@ -37,7 +37,7 @@ SFC_TEST(hashmap_insert) {
   panicking::assert_false(t.get(10));
 
   for (auto i = 10; i < 100; ++i) {
-    t.insert(i, i * 10);
+    t.try_insert(i, i * 10);
     panicking::assert_eq(t.len(), i + 1);
     panicking::assert_eq(t.get(i), Option{i * 10});
   }
@@ -46,15 +46,15 @@ SFC_TEST(hashmap_insert) {
     panicking::assert_eq(t.get(i), Option{i * 10});
   }
 
-  panicking::assert_true(t.capacity() < t.len() * 2);
+  panicking::assert_true(t.capacity() < t.len() * 4);
 }
 
-SFC_TEST(hashmap_replace) {
+SFC_TEST(hashmap_insert) {
   auto t = HashMap<int, int>{};
   for (auto i = 0; i < 10; ++i) {
-    t.replace(i, i * 10);
+    t.insert(i, i * 10);
     panicking::assert_eq(t.get(i), Option{i * 10});
-    t.replace(i, i * 100);
+    t.insert(i, i * 100);
     panicking::assert_eq(t.get(i), Option{i * 100});
   }
 

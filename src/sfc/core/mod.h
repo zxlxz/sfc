@@ -27,10 +27,3 @@ template <class T>
 auto declval() -> T&&;
 
 }  // namespace sfc
-
-#if !defined(_NEW) && !defined(_LIBCPP_NEW) && !defined(__PLACEMENT_NEW_INLINE)
-inline auto operator new(sfc::usize size, void* ptr) noexcept -> void* {
-  (void)size;
-  return ptr;
-}
-#endif

@@ -6,7 +6,7 @@ namespace sfc::rc {
 
 template <class T>
 struct RcBox {
-  T   _val;
+  T _val;
   i32 _strong = 1;
   i32 _weak = 1;
 
@@ -127,7 +127,7 @@ class Weak {
     }
 
     if (_ptr->dec_weak() == 0) {
-      alloc::Global{}.dealloc_one(_ptr);
+      delete _ptr;
     }
   }
 

@@ -22,7 +22,9 @@ auto File::create(const Path& path) -> io::Result<File> {
 }
 
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
-  auto file = io::File{sys_imp::open(path.as_ptr(), *this)};
+  const auto c_path = CString::from(path.as_str());
+
+  auto file = io::File{sys_imp::open(c_path, *this)};
   if (!file) {
     return io::Error::last_os_error();
   }

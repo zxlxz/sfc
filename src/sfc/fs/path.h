@@ -20,8 +20,6 @@ class Path {
 
   auto clone() const -> Path;
 
-  auto as_ptr() const -> const char*;
-
   auto as_str() const -> Str;
 
   // a/b.txt -> b.txt

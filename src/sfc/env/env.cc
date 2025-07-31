@@ -11,16 +11,16 @@ static constexpr auto MAX_PATH_LEN = 256U;
 auto var(Str key) -> String {
   char buf[MAX_PATH_LEN] = {};
 
-  const auto os_key = String::from(key);
-  const auto os_val = sys_imp::getenv(os_key.as_ptr(), buf);
-  return String::from(os_val);
+  const auto c_key = CString::from(key);
+  const auto c_val = Str::from(sys_imp::getenv(c_key, buf));
+  return String::from(c_val);
 }
 
 void set_var(Str key, Str val) {
-  const auto os_key = String::from(val);
-  const auto os_val = String::from(val);
+  const auto c_key = CString::from(key);
+  const auto c_val = CString::from(val);
 
-  const auto ret = sys_imp::setenv(os_key.as_ptr(), os_val.as_ptr());
+  const auto ret = sys_imp::setenv(c_key, c_val);
   panicking::assert(ret,
                     "env::set: key=`{}`, val=`{}`, err={}",
                     key,
@@ -29,19 +29,21 @@ void set_var(Str key, Str val) {
 }
 
 void remove_var(Str key) {
-  const auto os_key = String::from(key);
-  sys_imp::unsetenv(os_key.as_ptr());
+  const auto c_key = CString::from(key);
+  sys_imp::unsetenv(c_key);
 }
 
 auto current_dir() -> fs::Path {
   char buf[MAX_PATH_LEN] = {};
 
-  const auto str = sys_imp::getcwd(buf);
+  const auto str = Str::from(sys_imp::getcwd(buf));
   return fs::Path::from(str);
 }
 
 void set_current_dir(const fs::Path& path) {
-  const auto ret = sys_imp::chdir(path.as_ptr());
+  const auto c_path = CString::from(path.as_str());
+
+  const auto ret = sys_imp::chdir(c_path);
   panicking::assert(ret,
                     "env::set_current_dir: path=`{}`, err=`{}`",
                     path,
@@ -51,12 +53,12 @@ void set_current_dir(const fs::Path& path) {
 auto current_exe() -> fs::Path {
   char buf[MAX_PATH_LEN];
 
-  const auto str = sys_imp::current_exe(buf);
+  const auto str = Str::from(sys_imp::current_exe(buf));
   return fs::Path::from(str);
 }
 
 auto home_dir() -> fs::Path {
-  const auto str = sys_imp::home_dir();
+  const auto str = Str::from(sys_imp::home_dir());
   return fs::Path::from(str);
 }
 

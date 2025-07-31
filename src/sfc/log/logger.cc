@@ -40,7 +40,7 @@ static auto make_time_str() -> str::Str {
   }
 
   tls_time = now_time;
-  return str::Str{tls_buf};
+  return str::Str{tls_buf, sizeof(tls_buf) - 1};
 }
 
 Logger::Logger() = default;

@@ -59,20 +59,6 @@ struct Global {
     const auto m = Layout::array<T>(n);
     this->dealloc_imp(p, m);
   }
-
-  template <class T>
-  auto realloc_array(T* old_ptr, usize old_len, usize new_len) -> T* {
-    if constexpr (__is_trivially_copyable(T)) {
-      const auto layout = Layout::array<T>(old_len);
-      const auto new_ptr = this->realloc_imp(old_ptr, layout, new_len * sizeof(T));
-      return static_cast<T*>(new_ptr);
-    }
-
-    const auto new_ptr = this->alloc_array<T>(new_len);
-    ptr::uninit_move(old_ptr, new_ptr, old_len);
-    ptr::drop_in_place(old_ptr, old_len);
-    return new_ptr;
-  }
 };
 
 }  // namespace sfc::alloc

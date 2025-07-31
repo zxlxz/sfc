@@ -16,20 +16,31 @@ auto Unit::name() const -> Str {
 }
 
 auto Unit::invoke(bool color) const -> bool {
-  const auto s_run = color ? "\e[32m[ RUN      ]\e[39m" : "[ RUN      ]";
-  const auto s_ok = color ? "\e[32m[       OK ]\e[39m" : "[       OK ]";
-  const auto s_failed = color ? "\e[31m[  FAILED  ]\e[39m" : "[  FAILED  ]";
+  const auto timer = time::Instant::now();
+  auto on_run = [&](const auto&... args) {
+    const auto s = color ? Str{"\e[32m[ RUN      ]\e[39m {}"} : Str{"[ RUN      ] {}"};
+    io::println(s, args...);
+  };
 
-  io::println("{} {}", s_run, _str);
+  auto on_ok = [&](const auto&... args) {
+    const auto s = color ? Str{"\e[32m[       OK ]\e[39m {} ({})"} : Str{"[       OK ] {}"};
+    io::println(s, args..., timer.elapsed());
+  };
 
-  const auto start_time = time::Instant::now();
+  auto on_failed = [&](const auto&... args) {
+    const auto s = color ? Str{"\e[31m[  FAILED  ]\e[39m {} ({})"} : Str{"[  FAILED  ] {}"};
+    io::println(s, args..., timer.elapsed());
+  };
+
+  on_run(_str);
   try {
     (_fun)();
+    on_ok(_str);
   } catch (...) {
-    io::println("{} {} ({})", s_failed, _str, start_time.elapsed());
+    on_failed(_str);
     return false;
   }
-  io::println("{} {} ({})", s_ok, _str, start_time.elapsed());
+
   return true;
 }
 

@@ -2,77 +2,77 @@
 
 #include "sfc/core/num.h"
 
-namespace sfc::str {
-struct Str;
-}
-
 namespace sfc::panicking {
 
 struct PanicErr {};
 
 struct Location {
-  cstr_t file = __builtin_FILE();
-  i64 line = __builtin_LINE();
+  const char* file = __builtin_FILE();
+  u32 line = __builtin_LINE();
 };
 
-template <class T>
-struct XLocation {
-  Location _loc;
-  T _val;
+struct PanicInfo {
+  const char* val;
+  Location loc;
 
- public:
-  XLocation(auto&& val, Location loc = {}) : _loc{loc}, _val{val} {}
+  PanicInfo(const char* s) : val{s}, loc{} {}
 };
 
-struct RawStr {
-  const char* _ptr;
-  usize _len;
+struct AssertInfo {
+  bool val;
+  Location loc;
 
- public:
-  template <usize N>
-  explicit RawStr(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
-
-  explicit RawStr(const auto& s) : _ptr{s._ptr}, _len{s._len} {}
-
-  operator str::Str() const;
+  AssertInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
 [[noreturn]] void panic_imp(Location loc, const auto&... args);
 
-[[noreturn]] void panic(XLocation<RawStr> fmts, const auto&... args) {
-  panicking::panic_imp(fmts._loc, fmts._val, args...);
-}
+[[noreturn]] void panic(PanicInfo info, const auto&... args);
 
-void assert(XLocation<bool> cond, const auto&... args) {
-  cond._val ? void(0) : panicking::panic_imp(cond._loc, args...);
+void assert(AssertInfo info, const auto&... args) {
+  info.val ? void(0) : panicking::panic_imp(info.loc, args...);
 }
 
 void assert_true(const auto& val, Location loc = {}) {
-  !!val ? void(0) : panicking::panic_imp(loc, "assert(`{}`) failed", val);
+  if (val) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert(`{}`) failed", val);
 }
 
 void assert_false(const auto& val, Location loc = {}) {
-  !val ? void(0) : panicking::panic_imp(loc, "assert(!`{}`) failed", val);
+  if (!val) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert(!`{}`) failed", val);
 }
 
 void assert_eq(const auto& a, const auto& b, Location loc = {}) {
-  const auto cond = a == b;
-  cond ? void(0) : panicking::panic_imp(loc, "assert(`{}`==`{}`) failed", a, b);
+  if (a == b) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert(`{}`==`{}`) failed", a, b);
 }
 
 void assert_ne(const auto& a, const auto& b, Location loc = {}) {
-  const auto cond = a != b;
-  cond ? void(0) : panicking::panic_imp(loc, "assert(`{}`!=`{}`) failed", a, b);
+  if (a != b) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert(`{}`!=`{}`) failed", a, b);
 }
 
 inline void assert_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) {
-  const auto cond = num::flt_eq_ulp(a, b, ulp);
-  cond ? void(0) : panicking::panic_imp(loc, "assert.flt(`{}`==`{}`) failed", a, b);
+  if (num::flt_eq_ulp(a, b, ulp)) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert.flt(`{}`==`{}`) failed", a, b);
 }
 
 inline void assert_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) {
-  const auto cond = num::flt_eq_ulp(a, b, ulp);
-  !cond ? void(0) : panicking::panic_imp(loc, "assert.flt(`{}`!=`{}`) failed", a, b);
+  if (num::flt_eq_ulp(a, b, ulp)) {
+    return;
+  }
+  panicking::panic_imp(loc, "assert.flt(`{}`!=`{}`) failed", a, b);
 }
 
 }  // namespace sfc::panicking
