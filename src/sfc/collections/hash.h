@@ -56,9 +56,9 @@ class HashMap {
 
     auto res = HashMap{};
     res._mask = cap - 1;
-    res._ctrl.reserve_extract(0, cap);
-    res._keys.reserve_extract(0, cap);
-    res._vals.reserve_extract(0, cap);
+    res._ctrl.realloc(0, cap);
+    res._keys.realloc(0, cap);
+    res._vals.realloc(0, cap);
     __builtin_memset(res._ctrl._ptr, kEmpty, cap);
     return res;
   }
@@ -148,7 +148,13 @@ class HashMap {
     if constexpr (requires { key.hash(); }) {
       return key.hash();
     } else {
-      return static_cast<usize>(key);
+      const auto* p = static_cast<const u8*>(static_cast<const void*>(&key));
+      auto h = usize{0xcbf29ce484222325ULL};
+      for (auto i = 0U; i < sizeof(K); ++i) {
+        h ^= p[i];
+        h *= 0x100000001b3ULL;
+      }
+      return h;
     }
   }
 

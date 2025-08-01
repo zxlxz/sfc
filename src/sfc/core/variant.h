@@ -209,6 +209,10 @@ class Variant {
   void map_mut(auto&& f) {
     return _inn.map_mut(_tag, f);
   }
+
+  void fmt(auto& f) const {
+    _inn.map(_tag, [&](const auto& val) { f.write(val); });
+  }
 };
 
 }  // namespace sfc::variant

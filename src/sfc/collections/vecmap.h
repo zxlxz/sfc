@@ -113,6 +113,14 @@ class VecMap {
       imp.entry(_keys[i], _vals[i]);
     }
   }
+
+  auto serialize(auto& s) const {
+    auto dict = s.new_dict();
+    for (auto i = 0U; i < _keys.len(); ++i) {
+      dict.insert(_keys[i], s.ser(_vals[i]));
+    }
+    return dict;
+  }
 };
 
 }  // namespace sfc::collections

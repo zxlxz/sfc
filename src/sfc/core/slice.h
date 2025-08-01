@@ -206,6 +206,10 @@ struct Slice {
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
   }
+
+  auto serialize(auto& s) const {
+    return s.ser_list(*this);
+  }
 };
 
 template <class T>

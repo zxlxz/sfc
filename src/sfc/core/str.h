@@ -123,13 +123,10 @@ struct Str {
 
  public:
   auto hash() const -> usize {
-    static constexpr auto PRIME = 0x100000001b3ULL;
-    static constexpr auto BASIS = 0xcbf29ce484222325ULL;
-
-    auto res = BASIS;
+    auto res = 0xaf63bd4c8601b7dfULL;
     for (auto i = 0U; i < _len; ++i) {
-      res ^= static_cast<usize>(_ptr[i]);
-      res *= PRIME;
+      res ^= static_cast<u8>(_ptr[i]);
+      res *= 0xaf63bd4c8601b7dfULL;
     }
     return res;
   }
@@ -139,6 +136,10 @@ struct Str {
 
   void fmt(auto& f) const {
     f.pad(*this);
+  }
+
+  auto serialize(auto& s) const {
+    return s.ser_str(*this);
   }
 };
 

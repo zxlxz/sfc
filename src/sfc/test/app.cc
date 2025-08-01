@@ -20,6 +20,24 @@ static auto parse_color(Str color_str) -> bool {
   return false;
 }
 
+static auto parse_gtest_filter(Str pats) -> Vec<Str> {
+  auto v = Vec<Str>{};
+  for (auto s = pats; s;) {
+    auto p = 0U;
+    for (; p < s._len; p++) {
+      if (s[p] != ':') {
+        continue;
+      }
+      if (s[p + 1] == ':') {
+        p += 1;
+      }
+    }
+    v.push(s);
+    s = s[{p + 1, _}];
+  }
+  return v;
+}
+
 auto App::run(Slice<const Str> args) -> int {
   auto opts = app::Opts{};
   opts.add_opt("help", "Show this help message", 'h');
@@ -47,10 +65,12 @@ auto App::run(Slice<const Str> args) -> int {
     return 0;
   }
 
-  const auto pats = opts.get("gtest_filter");
-  const auto color_str = opts.get("gtest_color");
-  const auto color_val = parse_color(color_str);
-  this->run_tests(pats, color_val);
+  const auto gtest_filter = opts.get("gtest_filter");
+  const auto gtest_color = opts.get("gtest_color");
+
+  const auto filters = parse_gtest_filter(gtest_filter);
+  const auto color_val = parse_color(gtest_color);
+  this->run_tests(filters.as_slice(), color_val);
 
   return 0;
 }
@@ -68,9 +88,9 @@ void App::help() {
   io::println(msg);
 }
 
-void App::run_tests(Str filter, bool color) {
+void App::run_tests(Slice<const Str> pats, bool color) {
   auto& tester = Tester::instance();
-  tester.invoke({}, color);
+  tester.invoke(pats, color);
 }
 
 void App::list_to_file(Str output) const {

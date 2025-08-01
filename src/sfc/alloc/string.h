@@ -97,7 +97,7 @@ class [[nodiscard]] String {
     return _vec.pop();
   }
 
-  void push(u8 c) {
+  auto push(u8 c) -> u8& {
     return _vec.push(c);
   }
 

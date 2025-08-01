@@ -1,8 +1,6 @@
-#include "json.h"
+#include "sfc/serde.h"
 
-#include "sfc/fs/file.h"
-
-namespace sfc::serde::json {
+namespace sfc::serde {
 
 struct JsonStr {
   const char* _ptr;
@@ -58,7 +56,7 @@ struct JsonStr {
     if (!s) {
       return {};
     }
-    return Node{s};
+    return Node{String::from(s)};
   }
 
   auto extract_num() -> Option<Node> {
@@ -209,10 +207,81 @@ struct JsonStr {
   }
 };
 
-auto parse(Str s) -> Option<Node> {
-  auto imp = JsonStr{s._ptr, s._ptr + s._len};
-  auto res = imp.parse();
-  return res;
+class JsonNode : public Node {
+ public:
+  void fmt(auto& f) const {
+    this->map([&](const auto& val) { this->fmt_imp(val, f); });
+  }
+
+  static void fmt_imp(const Null& t, auto& f) {
+    f.write_str("null");
+  }
+
+  static void fmt_imp(const bool& t, auto& f) {
+    f.write_str(t ? Str{"true"} : Str{"false"});
+  }
+
+  static void fmt_imp(const i64& t, auto& f) {
+    char buf[32];
+    const auto s = num::int2str(buf, t);
+    f.write_str(s);
+  }
+
+  static void fmt_imp(const f64& t, auto& f) {
+    char buf[32];
+    const auto s = num::flt2str(buf, t);
+    f.write_str(s);
+  }
+
+  static void fmt_imp(const String& t, auto& f) {
+    f.write_str("\"");
+    f.write_str(t);
+    f.write_str("\"");
+  }
+
+  static void fmt_imp(const List& t, auto& f) {
+    const auto vals = t.as_slice();
+    const auto cnt = t.len();
+
+    f.write_str("[");
+    for (auto i = 0U; i < cnt; ++i) {
+      if (i != 0) {
+        f.write_str(", ");
+      }
+      static_cast<const JsonNode&>(vals[i]).fmt(f);
+    }
+    f.write_str("]");
+  }
+
+  static void fmt_imp(const Dict& t, auto& f) {
+    const auto keys = t.keys();
+    const auto vals = t.vals();
+    const auto cnt = t.len();
+
+    f.write_str("{");
+    for (auto i = 0U; i < cnt; ++i) {
+      if (i != 0) {
+        f.write_str(", ");
+      }
+      f.write_str("\"");
+      f.write_str(keys[i]);
+      f.write_str("\": ");
+      static_cast<const JsonNode&>(vals[i]).fmt(f);
+    }
+    f.write_str("}");
+  }
+};
+
+auto Node::from_json(Str text) -> Option<Node> {
+  auto imp = JsonStr{text._ptr, text._ptr + text._len};
+  return imp.parse();
 }
 
-}  // namespace sfc::serde::json
+auto Node::to_json() const -> String {
+  auto buf = String{};
+  auto out = fmt::Fmter{buf};
+  static_cast<const JsonNode&>(*this).fmt(out);
+  return buf;
+}
+
+}  // namespace sfc::serde

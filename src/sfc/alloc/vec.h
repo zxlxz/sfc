@@ -14,7 +14,7 @@ class [[nodiscard]] Buf {
   Buf() noexcept {}
 
   ~Buf() {
-    this->reserve_extract(0, 0);
+    this->realloc(0, 0);
   }
 
   Buf(Buf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
@@ -24,7 +24,7 @@ class [[nodiscard]] Buf {
       return *this;
     }
 
-    this->shrink_to(0, 0);
+    this->realloc(0, 0);
     _ptr = mem::take(other._ptr);
     _cap = mem::take(other._cap);
     return *this;
@@ -52,33 +52,13 @@ class [[nodiscard]] Buf {
     return _ptr[idx];
   }
 
-  void shrink_to(usize used, usize min_cap) {
-    if (min_cap >= _cap) {
-      return;
-    }
-    this->reserve_extract(used, min_cap - _cap);
-  }
-
-  void reserve(usize used, usize additional) {
-    static constexpr auto kMinCap = 8U;
-    if (used + additional <= _cap) {
-      return;
-    }
-
-    const auto min_cap = used + additional;
-    const auto fit_cap = _cap < kMinCap ? kMinCap * 2 : _cap * 2;
-    const auto new_cap = min_cap < fit_cap ? fit_cap : min_cap;
-    this->reserve_extract(used, new_cap - used);
-  }
-
-  void reserve_extract(usize used, usize additional) {
-    const auto old_cap = _cap;
+  void realloc(usize used, usize new_cap) {
     const auto old_ptr = _ptr;
 
-    _cap = used + additional;
+    _cap = new_cap;
     _ptr = _cap ? static_cast<T*>(__builtin_operator_new(_cap * sizeof(T))) : nullptr;
 
-    if (old_ptr && _ptr) {
+    if (used && old_ptr && _ptr) {
       ptr::uninit_move(old_ptr, _ptr, used);
     }
 
@@ -254,20 +234,35 @@ class [[nodiscard]] Vec {
     _len = len;
   }
 
-  void reserve(usize amt) {
-    _buf.reserve(_len, amt);
+  void reserve(usize additional) {
+    if (_len + additional <= _buf._cap) {
+      return;
+    }
+    const auto min_cap = _len + additional;
+    const auto fit_cap = _buf._cap < 8U ? 8U * 2 : _buf._cap * 2;
+    const auto new_cap = min_cap > fit_cap ? min_cap : fit_cap;
+    _buf.realloc(_len, new_cap);
   }
 
-  void reserve_extract(usize amt) {
-    _buf.reserve_extract(_len, amt);
+  void reserve_extract(usize additional) {
+    if (_len + additional <= _buf._cap) {
+      return;
+    }
+    _buf.realloc(_len, _len + additional);
   }
 
   void shrink_to(usize min_cap) {
-    _buf.shrink_to(_len, min_cap);
+    if (min_cap < _len || min_cap >= _buf._cap) {
+      return;
+    }
+    _buf.realloc(_len, min_cap);
   }
 
   void shrink_to_fit() {
-    _buf.shrink_to(_len, _len);
+    if (_len == _buf._cap) {
+      return;
+    }
+    _buf.realloc(_len, _len);
   }
 
   void clear() {
@@ -414,6 +409,15 @@ class [[nodiscard]] Vec {
 
   auto truncks_mut(usize n) -> slice::Truncks<T> {
     return this->as_mut_slice().truncks_mut(n);
+  }
+
+ public:
+  void fmt(auto&& f) const {
+    this->as_slice().fmt(f);
+  }
+
+  auto serialize(auto& s) const {
+    return this->as_slice().serialize(s);
   }
 };
 

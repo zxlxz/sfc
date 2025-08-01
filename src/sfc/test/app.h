@@ -10,7 +10,7 @@ class App {
   void help();
 
  private:
-  void run_tests(Str filter, bool color);
+  void run_tests(Slice<const Str> pats, bool color);
   void list_to_file(Str output) const;
 
   auto list_tests() const -> String;
