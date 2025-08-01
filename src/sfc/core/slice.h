@@ -218,9 +218,12 @@ struct Iter : iter::Iterator<Iter<T>, T&> {
  public:
   Iter(T* _ptr, T* _end) noexcept : _ptr{_ptr}, _end{_end} {}
 
-  [[nodiscard]] auto len() const -> usize {
-    const auto res = _end - _ptr;
-    return res >= 0 ? static_cast<usize>(res) : 0U;
+  operator bool() const noexcept {
+    return _ptr < _end;
+  }
+
+  auto len() const -> usize {
+    return _ptr < _end ? static_cast<usize>(_end - _ptr) : 0U;
   }
 
   auto next() -> option::Option<T&> {

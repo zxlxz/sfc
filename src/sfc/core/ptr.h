@@ -124,7 +124,7 @@ inline void copy(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
-  if (cnt == 0 || src == dst) {
+  if (cnt == 0 || !src || !dst) {
     return;
   }
   if constexpr (__is_trivially_copyable(T)) {
@@ -138,7 +138,7 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) {
-  if (cnt == 0 || src == dst) {
+  if (cnt == 0 || !src || !dst) {
     return;
   }
   if constexpr (__is_trivially_copyable(T)) {

@@ -10,9 +10,9 @@ auto Unit::suite() const -> Str {
 }
 
 auto Unit::name() const -> Str {
-  const auto p = _str.rfind(':');
-  const auto s = p ? _str[{*p + 1, _}] : _str;
-  return s[{0, s.len() - sizeof("_UT")}];
+  const auto pos = _str.rfind(':');
+  const auto res = pos ? _str[{*pos + 1, _}] : _str;
+  return res;
 }
 
 auto Unit::invoke(bool color) const -> bool {
@@ -23,12 +23,12 @@ auto Unit::invoke(bool color) const -> bool {
   };
 
   auto on_ok = [&](const auto&... args) {
-    const auto s = color ? Str{"\e[32m[       OK ]\e[39m {} ({})"} : Str{"[       OK ] {}"};
+    const auto s = color ? Str{"\e[32m[       OK ]\e[39m {} ({})"} : Str{"[       OK ] {} ({})"};
     io::println(s, args..., timer.elapsed());
   };
 
   auto on_failed = [&](const auto&... args) {
-    const auto s = color ? Str{"\e[31m[  FAILED  ]\e[39m {} ({})"} : Str{"[  FAILED  ] {}"};
+    const auto s = color ? Str{"\e[31m[  FAILED  ]\e[39m {} ({})"} : Str{"[  FAILED  ] {} ({})"};
     io::println(s, args..., timer.elapsed());
   };
 

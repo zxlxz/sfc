@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/core.h"
 
 namespace sfc::vec {
 
@@ -14,9 +14,7 @@ class [[nodiscard]] Buf {
   Buf() noexcept {}
 
   ~Buf() {
-    if (_ptr) {
-      ::operator delete(_ptr);
-    }
+    this->reserve_extract(0, 0);
   }
 
   Buf(Buf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
@@ -26,9 +24,7 @@ class [[nodiscard]] Buf {
       return *this;
     }
 
-    if (_ptr) {
-      ::operator delete(_ptr);
-    }
+    this->shrink_to(0, 0);
     _ptr = mem::take(other._ptr);
     _cap = mem::take(other._cap);
     return *this;
@@ -76,14 +72,18 @@ class [[nodiscard]] Buf {
   }
 
   void reserve_extract(usize used, usize additional) {
+    const auto old_cap = _cap;
     const auto old_ptr = _ptr;
 
     _cap = used + additional;
-    _ptr = static_cast<T*>(::operator new(_cap * sizeof(T)));
+    _ptr = _cap ? static_cast<T*>(__builtin_operator_new(_cap * sizeof(T))) : nullptr;
+
+    if (old_ptr && _ptr) {
+      ptr::uninit_move(old_ptr, _ptr, used);
+    }
 
     if (old_ptr) {
-      ptr::uninit_move(old_ptr, _ptr, used);
-      ::operator delete(old_ptr);
+      __builtin_operator_delete(old_ptr);
     }
   }
 };
@@ -227,10 +227,13 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  void push(T val) {
+  auto push(T val) -> T& {
     this->reserve(1);
-    ptr::write(&_buf._ptr[_len], static_cast<T&&>(val));
+
+    auto dst = _buf._ptr + _len;
+    ptr::write(dst, static_cast<T&&>(val));
     _len += 1;
+    return *dst;
   }
 
   auto pop() -> Option<T> {
@@ -276,22 +279,22 @@ class [[nodiscard]] Vec {
   auto swap_remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = ptr::read(_buf._ptr + idx);
+    auto res = static_cast<T&&>(_buf._ptr[idx]);
     if (idx != _len - 1) {
-      ptr::write(_buf._ptr + idx, ptr::read(_buf._ptr + _len - 1));
+      _buf._ptr[idx] = static_cast<T&&>(_buf._ptr[_len - 1]);
     }
-    _len -= 1;
+    this->pop();
 
     return res;
   }
 
-  void insert(usize idx, T element) {
+  void insert(usize idx, T val) {
     panicking::assert(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
 
     ptr::shift_elements(_buf._ptr + idx, _len - idx, 1);
-    ptr::write(_buf._ptr + idx, static_cast<T&&>(element));
+    ptr::write(_buf._ptr + idx, static_cast<T&&>(val));
     _len += 1;
   }
 

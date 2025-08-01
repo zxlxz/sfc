@@ -6,10 +6,6 @@ namespace sfc::test {
 
 class App {
  public:
-  App();
-  ~App();
-  App(App&&) noexcept;
-
   auto run(Slice<const Str> args) -> int;
   void help();
 

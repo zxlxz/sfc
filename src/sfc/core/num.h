@@ -23,7 +23,7 @@ constexpr inline auto nan() -> T {
   if constexpr (__is_same(T, f32)) {
     return __builtin_nanf("");
   } else {
-    return __builtin_nn("");
+    return __builtin_nan("");
   }
 }
 
