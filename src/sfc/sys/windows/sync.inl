@@ -4,18 +4,16 @@
 
 namespace sfc::sys::sync {
 
-struct CRITICAL_SECTION_EX : CRITICAL_SECTION {
-  CRITICAL_SECTION_EX() {
-    InitializeCriticalSection(this);
-  }
-
-  ~CRITICAL_SECTION_EX() {
-    DeleteCriticalSection(this);
-  }
-};
-
-using mutex_t = CRITICAL_SECTION_EX;
+using mutex_t = CRITICAL_SECTION;
 using cond_t = CONDITION_VARIABLE;
+
+inline void init(mutex_t& mtx) {
+  ::InitializeCriticalSection(&mtx);
+} 
+
+inline void drop(mutex_t& mtx) {
+  ::DeleteCriticalSection(&mtx);
+}
 
 inline void lock(mutex_t& mtx) {
   ::EnterCriticalSection(&mtx);
@@ -26,7 +24,7 @@ inline void unlock(mutex_t& mtx) {
 }
 
 inline void init(cond_t& cond) {
-  InitializeConditionVariable(&cond);
+  ::InitializeConditionVariable(&cond);
 }
 
 inline void drop(cond_t& cond) {

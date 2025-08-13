@@ -9,6 +9,18 @@ namespace sys_imp = sys::sync;
 
 struct Mutex::Inn {
   sys_imp::mutex_t _raw;
+
+ public:
+  Inn() {
+    sys_imp::init(_raw);
+  }
+
+  ~Inn() {
+    sys_imp::drop(_raw);
+  }
+
+  Inn(const Inn&) = delete;
+  Inn& operator=(const Inn&) = delete;
 };
 
 Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
@@ -43,28 +55,36 @@ struct ReentrantLock::Inn {
   sys_imp::mutex_t _mutex{};
 
  public:
+  Inn() {
+    sys_imp::init(_mutex);
+  }
+
+  ~Inn() {
+    sys_imp::drop(_mutex);
+  }
+
   void lock() {
     const auto cur_thrd = sys::thread::current();
 
-    if (cur_thrd == _owner.load<Ordering::Acquire>()) {
-      _count.fetch_add<Ordering::Relaxed>(1);
-      return;
+    if (sys::thread::equal(cur_thrd, _owner.load())) {
+      _count.fetch_add(1);
+       return;
     }
 
     sys::sync::lock(_mutex);
-    _owner.store(cur_thrd);
     _count.store(1);
+    _owner.store(cur_thrd);
   }
 
   void unlock() {
     const auto cur_thrd = sys::thread::current();
 
-    if (cur_thrd != _owner.load<Ordering::Acquire>()) {
+    if (cur_thrd != _owner.load()) {
       // not owner of the lock, so do nothing
       return;
     }
 
-    if (_count.fetch_sub<Ordering::Relaxed>(1) == 1) {
+    if (_count.fetch_sub(1) == 1) {
       _owner.store(thrd_t{});
       sys::sync::unlock(_mutex);
     }
@@ -85,7 +105,7 @@ ReentrantLock::Guard::Guard(Inn& inn) : _inn{&inn} {
 }
 
 ReentrantLock::Guard::~Guard() noexcept {
-  _inn->unlock();
+  _inn ? _inn->unlock() : void();
 }
 
 }  // namespace sfc::sync

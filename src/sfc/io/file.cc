@@ -25,7 +25,7 @@ File& File::operator=(File&& other) noexcept {
     sys_imp::close(_fd);
   }
 
-  _fd = other._fd, other._fd = sys_imp::INVALID_FD;
+  _fd = mem::replace(other._fd, sys_imp::INVALID_FD);
   return *this;
 }
 

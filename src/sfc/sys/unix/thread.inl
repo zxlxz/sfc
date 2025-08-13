@@ -15,6 +15,10 @@ inline auto current() -> thrd_t {
   return ::pthread_self();
 }
 
+inline auto equal(thrd_t a, thrd_t b) -> bool {
+  return ::pthread_equal(a, b) != 0;
+}
+
 inline auto start(size_t stack_size, void* (*func)(void*), void* data) -> thrd_t {
   // attr
   auto attr = ::pthread_attr_t{};

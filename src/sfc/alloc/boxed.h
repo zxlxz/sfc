@@ -27,8 +27,8 @@ class Box {
       return *this;
     }
     this->reset();
-    _ptr = other._ptr, other._ptr = {};
-    _alloc = static_cast<A&&>(other._alloc);
+    _ptr = mem::take(other._ptr);
+    _alloc = mem::move(other._alloc);
     return *this;
   }
 

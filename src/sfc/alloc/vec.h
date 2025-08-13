@@ -35,9 +35,9 @@ class [[nodiscard]] Buf {
       _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
     }
 
-    _ptr = other._ptr, other._ptr = nullptr;
-    _cap = other._cap, other._cap = 0;
-    _alloc = static_cast<A&&>(other._alloc);
+    _ptr = mem::take(other._ptr);
+    _cap = mem::take(other._cap);
+    _alloc = mem::move(other._alloc);
     return *this;
   }
 

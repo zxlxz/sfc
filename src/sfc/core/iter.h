@@ -255,4 +255,9 @@ struct Zip {
   }
 };
 
+template <class A, class B>
+auto zip(A a, B b) -> Zip<A, B> {
+  return Zip<A, B>{static_cast<A&&>(a), static_cast<B&&>(b)};
+}
+
 }  // namespace sfc::iter

@@ -15,7 +15,8 @@ struct PanicInfo {
   const char* val;
   Location loc;
 
-  PanicInfo(const char* s) : val{s}, loc{} {}
+ public:
+  PanicInfo(const char* s) noexcept : val{s}, loc{} {}
 };
 
 struct AssertInfo {

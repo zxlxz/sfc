@@ -19,6 +19,23 @@ class [[nodiscard]] BTreeMap {
     }
   }
 
+  BTreeMap(BTreeMap&& other) noexcept : _root{other._root}, _len{other._len} {
+    other._root = nullptr;
+    other._len = 0;
+  }
+
+  BTreeMap& operator=(BTreeMap&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    if (_root) {
+      delete _root;
+    }
+    _root = mem::take(other._root);
+    _len = mem::take(other._len);
+    return *this;
+  }
+
   auto len() const -> usize {
     return _len;
   }

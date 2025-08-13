@@ -72,7 +72,7 @@ struct Style {
 };
 
 template <class T>
-struct IFmt;
+struct Display;
 
 template <class... T>
 struct Args;
@@ -168,12 +168,14 @@ class Fmter {
         break;
       case '=':
         _out.write_str(sign);
+        _out.write_str(prefix);
         pad_fill(npad);
         _out.write_str(body);
         break;
       case '^':
         pad_fill((npad + 0) / 2);
         _out.write_str(sign);
+        _out.write_str(prefix);
         _out.write_str(body);
         pad_fill((npad + 1) / 2);
     }
@@ -184,7 +186,7 @@ class Fmter {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      IFmt<T>{val}.fmt(*this);
+      Display<T>{val}.fmt(*this);
     }
   }
 
@@ -430,7 +432,7 @@ struct Args {
 };
 
 template <class T>
-struct IFmt {
+struct Display {
   T _val;
 
  public:
@@ -450,7 +452,7 @@ struct IFmt {
     } else if constexpr (__is_same(T, float) || __is_same(T, double)) {
       char buf[8 * sizeof(_val)];
       const auto& style = f.style();
-      const auto prec = style._precision ? style._precision : (sizeof(T) == 4 ? 4 : 6);
+      const auto prec = style._point ? style._precision : (sizeof(T) == 4 ? 4 : 6);
       f.pad_num(_val < 0, num::flt2str(buf, _val < 0 ? -_val : _val, prec, style._type));
     } else if constexpr (__is_same(decltype(_val + 0LL), long long)) {
       char buf[8 * sizeof(_val)];
@@ -463,7 +465,7 @@ struct IFmt {
 };
 
 template <class T>
-struct IFmt<T*> {
+struct Display<T*> {
   const void* _val;
 
  public:
@@ -475,7 +477,7 @@ struct IFmt<T*> {
 };
 
 template <class T, usize N>
-struct IFmt<T[N]> {
+struct Display<T[N]> {
   const T (&_val)[N];
 
  public:
@@ -488,7 +490,7 @@ struct IFmt<T[N]> {
 };
 
 template <usize N>
-struct IFmt<char[N]> {
+struct Display<char[N]> {
   const char (&_val)[N];
   void fmt(auto& f) const {
     f.pad(_val);

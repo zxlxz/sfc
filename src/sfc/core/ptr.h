@@ -17,25 +17,23 @@ struct Unique {
 
   explicit Unique(T* ptr) noexcept : _ptr{ptr} {}
 
-  ~Unique() noexcept {
-    _ptr = nullptr;
-  }
+  ~Unique() noexcept {}
 
   Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
   }
 
-  auto operator=(Unique&& other) noexcept -> Unique& {
+  Unique& operator=(Unique&& other) noexcept {
     _ptr = other._ptr;
     other._ptr = nullptr;
     return *this;
   }
 
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _ptr != nullptr;
   }
 
-  auto ptr() -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
@@ -60,24 +58,8 @@ struct Unique {
   }
 };
 
-template <class T, class F>
-auto cast(F* p) -> T* {
-  if constexpr (__is_constructible(T*, F*)) {
-    return static_cast<T*>(p);
-  }
-  return reinterpret_cast<T*>(p);
-}
-
-template <class T, class F>
-auto cast(const F* p) -> const T* {
-  if constexpr (__is_constructible(const T*, F*)) {
-    return static_cast<const T*>(p);
-  }
-  return reinterpret_cast<const T*>(p);
-}
-
 template <class T>
-inline auto read(T* src) -> T {
+inline auto read(T* src) noexcept -> T {
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
@@ -88,12 +70,12 @@ inline auto read(T* src) -> T {
 }
 
 template <class T, class... U>
-inline void write(T* dst, U&&... args) {
+inline void write(T* dst, U&&... args) noexcept {
   new (dst) T{static_cast<U&&>(args)...};
 }
 
 template <class T>
-inline void write_bytes(T* dst, u8 val, usize cnt) {
+inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
 #if defined(_MSC_VER) && !defined(__clang__)
     memset(dst, val, cnt * sizeof(T));

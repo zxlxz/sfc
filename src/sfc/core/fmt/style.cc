@@ -7,6 +7,8 @@ struct StyleStr {
   const char* _end;
 
  public:
+  explicit StyleStr(str::Str s) noexcept : _ptr{s._ptr}, _end{s._ptr + s._len} {}
+
   // [<fill>align][sign][#][0][width][.][precision][type]
   auto parse() -> option::Option<Style> {
     if (_ptr == _end) {
@@ -80,8 +82,13 @@ struct StyleStr {
 };
 
 auto Style::from_str(str::Str s) -> option::Option<Style> {
-  auto imp = StyleStr{s._ptr, s._ptr + s._len};
-  return imp.parse();
+  if (s[0] == ':') {
+    s = s[{1, s._len}];
+  }
+
+  auto imp = StyleStr{s};
+  auto res = imp.parse();
+  return res;
 }
 
 }  // namespace sfc::fmt

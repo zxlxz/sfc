@@ -14,7 +14,6 @@ struct Condvar::Inn {
   sys_imp::cond_t _raw;
 
  public:
-#ifdef _WIN32
   Inn() {
     sys_imp::init(_raw);
   }
@@ -22,7 +21,9 @@ struct Condvar::Inn {
   ~Inn() {
     sys_imp::drop(_raw);
   }
-#endif
+
+  Inn(const Inn&) = delete;
+  Inn& operator=(const Inn&) = delete;
 };
 
 Condvar::Condvar() : _inn{Box<Inn>::xnew()} {}

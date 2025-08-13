@@ -49,6 +49,9 @@ class [[nodiscard]] ReentrantLock::Guard {
  public:
   explicit Guard(Inn& mtx);
   ~Guard() noexcept;
+
+  Guard(Guard&&) noexcept = default;
+  Guard& operator=(Guard&&) noexcept = default;
 };
 
 }  // namespace sfc::sync

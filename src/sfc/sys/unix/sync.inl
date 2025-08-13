@@ -11,12 +11,28 @@ using mutex_t = pthread_mutex_t;
 using cond_t = pthread_cond_t;
 using timespec_t = struct ::timespec;
 
+inline void init(mutex_t& mtx) {
+  mtx = PTHREAD_MUTEX_INITIALIZER;
+}
+
+inline void drop(mutex_t& mtx) {
+  (void)mtx;
+}
+
 inline void lock(mutex_t& mtx) {
   ::pthread_mutex_lock(&mtx);
 }
 
 inline void unlock(mutex_t& mtx) {
   ::pthread_mutex_unlock(&mtx);
+}
+
+inline void init(cond_t& cond) {
+  cond = PTHREAD_COND_INITIALIZER;
+}
+
+inline void drop(cond_t& cond) {
+  (void)cond;
 }
 
 inline void notify_one(cond_t& cond) {
