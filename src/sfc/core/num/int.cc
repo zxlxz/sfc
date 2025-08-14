@@ -72,7 +72,6 @@ struct IntStr {
       case 'X': ++_ptr; return 16;
       default:  return 8;
     }
-    return 10;
   }
 
   template <class T>

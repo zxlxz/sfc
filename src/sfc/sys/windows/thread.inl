@@ -4,6 +4,7 @@
 
 namespace sfc::sys::thread {
 
+using tid_t = DWORD;
 using thrd_t = HANDLE;
 using thrd_ret_t = DWORD;
 
@@ -19,6 +20,10 @@ auto u8_to_wchar(const char src[], wchar_t (&dst)[N]) -> int {
 
 inline auto current() -> thrd_t {
   return ::GetCurrentThread();
+}
+
+inline auto current_id() -> tid_t {
+  return ::GetCurrentThreadId();
 }
 
 inline auto start(SIZE_T stack_size, DWORD (*func)(void*), void* data) -> thrd_t {
@@ -61,7 +66,6 @@ inline auto set_name(const char* name) -> bool {
   const auto hres = ::SetThreadDescription(thrd, wbuff);
   return SUCCEEDED(hres);
 }
-
 
 inline void sleep_ms(DWORD millis) {
   ::Sleep(millis);

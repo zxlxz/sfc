@@ -8,6 +8,7 @@ namespace sfc::sys::thread {
 
 using timespec_t = struct ::timespec;
 
+using tid_t = pthread_t;
 using thrd_t = pthread_t;
 using thrd_ret_t = void*;
 
@@ -15,8 +16,8 @@ inline auto current() -> thrd_t {
   return ::pthread_self();
 }
 
-inline auto equal(thrd_t a, thrd_t b) -> bool {
-  return ::pthread_equal(a, b) != 0;
+inline auto current_id() -> tid_t {
+  return ::pthread_self();
 }
 
 inline auto start(size_t stack_size, void* (*func)(void*), void* data) -> thrd_t {

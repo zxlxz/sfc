@@ -8,7 +8,7 @@ struct PanicErr {};
 
 struct Location {
   const char* file = __builtin_FILE();
-  u32 line = __builtin_LINE();
+  int line = __builtin_LINE();
 };
 
 struct PanicInfo {

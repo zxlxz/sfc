@@ -4,54 +4,52 @@
 
 namespace sfc::collections {
 
-template <class K, class V>
-class HashMap {
-  static constexpr u8 kDelete = 0x80U;
-  static constexpr u8 kEmpty = 0xFFU;
+template <class T, class A = alloc::Global>
+class HashTable {
+  static constexpr u8 kEmpty = 0x80;
+  static constexpr u8 kDeleted = 0xFF;
+  static constexpr auto kAlign = 128U;
+  static constexpr auto kMaxLoadFactor = 0.75;
 
-  struct HIdx {
-    usize idx;
-    u8 ctrl;
-  };
-
-  usize _len{0};
-  usize _mask{0};
-  vec::Buf<u8> _ctrl{};
-  vec::Buf<K> _keys{};
-  vec::Buf<V> _vals{};
+  usize _mask = 0;
+  u8* _ptr = nullptr;
+  usize _rem = 0;
+  usize _len = 0;
 
  public:
-  HashMap() = default;
+  constexpr HashTable() noexcept = default;
 
-  ~HashMap() {}
+  ~HashTable() {
+    this->clear();
+    this->dealloc();
+  }
 
-  HashMap(HashMap&& other) noexcept
-      : _len{mem::take(other._len)}
-      , _mask{mem::take(other._mask)}
-      , _ctrl{mem::take(other._ctrl)}
-      , _keys{mem::take(other._keys)}
-      , _vals{mem::take(other._vals)} {}
+  HashTable(HashTable&& other) noexcept
+      : _mask{other._mask}, _ptr{other._ptr}, _rem{other._rem}, _len{other._len} {
+    other._mask = 0;
+    other._ptr = nullptr;
+    other._rem = 0;
+    other._len = 0;
+  }
 
-  HashMap& operator=(HashMap&& other) noexcept {
+  HashTable& operator=(HashTable&& other) noexcept {
     if (this == &other) {
       return *this;
     }
-    _len = mem::take(other._len);
+
+    this->clear();
+    this->dealloc();
+
     _mask = mem::take(other._mask);
-    _ctrl = mem::move(other._ctrl);
-    _keys = mem::move(other._keys);
-    _vals = mem::move(other._vals);
+    _ptr = mem::take(other._ptr);
+    _rem = mem::take(other._rem);
+    _len = mem::take(other._len);
     return *this;
   }
 
-  static auto with_capacity(usize min_capacity) -> HashMap {
-    if (min_capacity == 0) {
-      return {};
-    }
-
-    auto res = HashMap{};
-    res.init(min_capacity);
-    return res;
+  auto data() const -> T* {
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    return reinterpret_cast<T*>(_ptr + offs);
   }
 
   auto len() const -> usize {
@@ -59,102 +57,134 @@ class HashMap {
   }
 
   auto capacity() const -> usize {
-    return _ctrl._cap;
+    return _mask == 0 ? 0 : _mask + 1;
   }
 
-  auto get(const auto& key) const -> Option<const V&> {
+  auto search(const auto& key) const -> T* {
     if (_len == 0) {
-      return {};
+      return nullptr;
     }
 
-    const auto idx = this->find(key);
-    if (idx == -1) {
-      return {};
+    const auto hx = this->hash(key);
+    const auto h1 = hx & _mask;
+    const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
+
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + offs);
+    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+      if (_ptr[idx] == kEmpty) {
+        return nullptr;
+      } else if (_ptr[idx] == h2 && data[idx].key == key) {
+        return &data[idx];
+      }
     }
-    return _vals[idx];
+    return nullptr;
   }
 
-  auto get_mut(const auto& key) -> Option<V&> {
-    if (_len == 0) {
-      return {};
+  auto search_or_insert(T&& entry) -> T* {
+    if (_rem == 0) {
+      this->reserve(1);
     }
 
-    const auto idx = this->find(key);
-    if (idx == -1) {
-      return {};
+    const auto hx = this->hash(entry.key);
+    const auto h1 = hx & _mask;
+    const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
+
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + offs);
+    auto del = _mask + 1;
+    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+      if (_ptr[idx] == kEmpty) {
+        const auto pos = del == _mask + 1 ? idx : del;
+        this->insert_at(pos, h2, static_cast<T&&>(entry));
+        break;
+      } else if (_ptr[idx] == kDeleted) {
+        (void)(del == _mask + 1 ? del = idx : del);
+      } else if (_ptr[idx] == h2 && data[idx].key == entry.key) {
+        return &data[idx];
+      }
     }
-    return _vals[idx];
+    return nullptr;
   }
 
-  auto try_insert(K key, V val) -> Option<V&> {
-    const auto [idx, inserted] = this->find_or_insert(mem::move(key), mem::move(val));
-    if (!inserted) {
-      return {};
-    }
-    return _vals[idx];
-  }
-
-  auto insert(K key, V val) -> Option<V> {
-    const auto [idx, inserted] = this->find_or_insert(mem::move(key), mem::move(val));
-    if (!inserted) {
-      return {};
+  auto erase_at(usize idx) -> bool {
+    if (_len == 0 || idx > _mask || _ptr[idx] >= kEmpty) {
+      return false;
     }
 
-    auto res = Option<V>{mem::move(_vals[idx])};
-    _vals[idx] = mem::move(val);
-    return res;
-  }
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + offs);
 
-  auto remove(const K& key) -> Option<V> {
-    if (_len == 0) {
-      return {};
-    }
-
-    const auto idx = this->find(key);
-    if (idx == -1) {
-      return {};
-    }
-
-    return this->erase_at(static_cast<usize>(idx));
+    _ptr[idx] = kDeleted;
+    data[idx].~T();
+    _len -= 1;
+    return true;
   }
 
   void clear() {
+    if (_ptr == nullptr || _len == 0) {
+      return;
+    }
+
+    const auto off = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + off);
+
+    const auto cap = _mask + 1;
+    for (auto i = 0UL; i < cap; ++i) {
+      if (_ptr[i] < kEmpty) {
+        data[i].~T();
+      }
+    }
+    _len = 0;
+    _rem = static_cast<usize>(static_cast<f64>(cap) * kMaxLoadFactor);
+    ptr::write_bytes(_ptr, kEmpty, cap);
+  }
+
+  void reserve(usize additional) {
+    if (additional < _rem) {
+      return;
+    }
+
+    const auto old_cap = _mask + 1;
+    const auto old_offs = (old_cap - 1 + kAlign) & ~(kAlign - 1);
+    const auto old_ctrl = _ptr;
+    const auto old_data = reinterpret_cast<T*>(old_ctrl + old_offs);
+
+    this->alloc(old_cap + additional);
+    if (old_ctrl == nullptr) {
+      return;
+    }
+
+    const auto new_offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto new_data = reinterpret_cast<T*>(_ptr + new_offs);
+    for (auto i = 0UL; i < old_cap; ++i) {
+      if (old_ctrl[i] >= kEmpty) {
+        continue;
+      }
+      auto& tmp = old_data[i];
+      this->insert_new(tmp.key, static_cast<T&&>(tmp));
+      tmp.~T();
+    }
+
+    A::dealloc(old_ctrl, {old_offs + old_cap * sizeof(T), kAlign});
+  }
+
+  void for_each(auto&& f) {
     if (_len == 0) {
       return;
     }
 
-    for (auto i = 0UL; i < _ctrl._cap; ++i) {
-      if (_ctrl[i] < kDelete) {
-        _keys[i].~K();
-        _vals[i].~V();
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + offs);
+    for (auto i = 0UL; i < _mask + 1; ++i) {
+      if (_ptr[i] < kEmpty) {
+        f(data[i]);
       }
     }
-    __builtin_memset(_ctrl._ptr, kEmpty, _ctrl._cap);
-
-    _len = 0;
-  }
-
- public:
-  void fmt(auto& f) const {
-    auto imp = f.debug_map();
-    for (auto i = 0UL; i < _ctrl._cap; ++i) {
-      if (_ctrl[i] < kDelete) {
-        imp.entry(_keys[i], _vals[i]);
-      }
-    }
-  }
-
-  void serialize(auto& s) const {
-    auto dict = s.new_dict();
-    for (auto i = 0UL; i < _ctrl._cap; ++i) {
-      if (_ctrl[i] < kDelete) {
-        dict.insert(_keys[i], s.ser(_vals[i]));
-      }
-    }
-    return dict;
   }
 
  private:
+  template <class K>
   static auto hash(const K& key) -> usize {
     if constexpr (requires { key.hash(); }) {
       return key.hash();
@@ -169,113 +199,191 @@ class HashMap {
     }
   }
 
-  auto hidx(const K& key) const -> HIdx {
-    static constexpr u8 kMask = 0x7Fu;
-
-    const auto h0 = HashMap::hash(key);
-    const auto h1 = h0 & _mask;
-    const auto h2 = (h0 >> 57) & kMask;
-    return {h1, static_cast<u8>(h2)};
-  };
-
-  void init(usize min_capacity) {
-    if (min_capacity == 0) {
-      _len = 0;
-      _mask = 0;
-      return;
+  void alloc(usize min_cap) {
+    auto cap = 16U;
+    while (cap < min_cap) {
+      cap *= 2;
     }
 
-    auto new_cap = usize{8U};
-    while (new_cap < min_capacity) {
-      new_cap *= 2;
-    }
+    const auto offs = (cap - 1 + kAlign) & ~(kAlign - 1);
+    const auto size = offs + (cap * sizeof(T));
 
+    _mask = cap - 1;
+    _ptr = static_cast<u8*>(A::alloc({size, kAlign}));
+    _rem = static_cast<usize>(static_cast<f64>(cap) * kMaxLoadFactor);
     _len = 0;
-    _mask = new_cap - 1;
-    _ctrl.reserve_extract(0, new_cap);
-    _keys.reserve_extract(0, new_cap);
-    _vals.reserve_extract(0, new_cap);
-    ptr::write_bytes(_ctrl._ptr, kEmpty, _ctrl._cap);
+
+    ptr::write_bytes(_ptr, kEmpty, cap);
   }
 
-  void insert_at(usize idx, u8 ctrl, K&& key, V&& val) {
-    _ctrl[idx] = ctrl;
-    new (&_keys[idx]) K{mem::move(key)};
-    new (&_vals[idx]) V{mem::move(val)};
+  void dealloc() {
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto size = offs + (_mask + 1) * sizeof(T);
+    A::dealloc(_ptr, {size, kAlign});
+  }
+
+  auto insert_new(const auto& key, T&& val) -> bool {
+    const auto hx = this->hash(key);
+    const auto h1 = hx & _mask;
+    const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
+
+    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+      if (_ptr[idx] == kEmpty) {
+        this->insert_at(idx, h2, static_cast<T&&>(val));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void insert_at(usize idx, usize h2, T&& val) {
+    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(_ptr + offs);
+
+    _ptr[idx] = h2;
+    new (&data[idx]) T{static_cast<T&&>(val)};
     _len += 1;
+    _rem -= 1;
   }
+};
 
-  auto erase_at(usize idx) -> V {
-    auto res = mem::move(_vals[idx]);
-    _keys[idx].~K();
-    _vals[idx].~V();
-    _ctrl[idx] = kDelete;
-    _len -= 1;
+template <class K, class V>
+class HashMap {
+  struct Entry {
+    K key;
+    V val;
+  };
+  HashTable<Entry> _inn;
+
+ public:
+  HashMap() = default;
+
+  ~HashMap() {}
+
+  HashMap(HashMap&& other) noexcept = default;
+
+  HashMap& operator=(HashMap&& other) noexcept = default;
+
+  static auto with_capacity(usize min_capacity) -> HashMap {
+    auto res = HashMap{};
+    res._inn.reserve(min_capacity);
     return res;
   }
 
-  auto find(const auto& key) const -> isize {
-    if (_len == 0) {
-      return -1;
-    }
-
-    const auto [h1, h2] = this->hidx(key);
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
-      const auto c = _ctrl[idx];
-      if (c == h2 && key == _keys[idx]) {
-        return static_cast<isize>(idx);
-      }
-      if (c == kEmpty) {
-        return -1;
-      }
-    }
+  auto len() const -> usize {
+    return _inn.len();
   }
 
-  struct FindOrInsert {
-    usize idx;
-    bool inserted;
+  auto capacity() const -> usize {
+    return _inn.capacity();
+  }
+
+  auto get(const auto& key) const -> Option<const V&> {
+    const auto ptr = _inn.search(key);
+    if (!ptr) {
+      return {};
+    }
+    return ptr->val;
+  }
+
+  auto get_mut(const auto& key) -> Option<V&> {
+    const auto ptr = _inn.search(key);
+    if (!ptr) {
+      return {};
+    }
+    return ptr->val;
+  }
+
+  auto try_insert(K key, V val) -> Option<V&> {
+    const auto p = _inn.search_or_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    if (!p) {
+      return {};
+    }
+    return p->val;
+  }
+
+  auto insert(K key, V val) -> Option<V> {
+    const auto p = _inn.search_or_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    if (!p) {
+      return {};
+    }
+    return mem::replace(p->val, static_cast<V&&>(val));
+  }
+
+  auto remove(const K& key) -> Option<V> {
+    const auto p = _inn.search(key);
+    if (!p) {
+      return {};
+    }
+    auto res = Option<V>{static_cast<V&&>(p->val)};
+    _inn.erase_at(static_cast<usize>(p - _inn.data()));
+    return res;
+  }
+
+  void clear() {
+    _inn.clear();
+  }
+
+ public:
+  void fmt(auto& f) const {
+    auto imp = f.debug_map();
+    _inn.for_each([&](const auto& entry) { imp.entry(entry.key, entry.val); });
+  }
+
+  void serialize(auto& s) const {
+    auto dict = s.new_dict();
+    _inn.for_each([&](const auto& entry) { dict.insert(entry.key, s.ser(entry.val)); });
+    return dict;
+  }
+};
+
+template <class K>
+class HashSet {
+  struct Entry {
+    K key;
   };
-  auto find_or_insert(K&& key, V&& val) -> FindOrInsert {
-    this->reserve(1);
+  HashTable<Entry> _inn;
 
-    const auto [h1, h2] = this->hidx(key);
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
-      const auto c = _ctrl[idx];
-      if (c >= kDelete) {
-        this->insert_at(idx, h2, mem::move(key), mem::move(val));
-        return {idx, true};
-      }
+ public:
+  HashSet() = default;
 
-      if (c == h2 && key == _keys[idx]) {
-        return {idx, false};
-      }
-    }
+  ~HashSet() {}
 
-    return {static_cast<usize>(-1), false};
+  HashSet(HashSet&& other) noexcept = default;
+
+  HashSet& operator=(HashSet&& other) noexcept = default;
+
+  static auto with_capacity(usize min_capacity) -> HashSet {
+    auto res = HashSet{};
+    res._inn.reserve(min_capacity);
+    return res;
   }
 
-  void reserve(usize additional) {
-    if (_len + additional <= _ctrl._cap * 3 / 4) {
-      return;
+  auto len() const -> usize {
+    return _inn.len();
+  }
+
+  auto capacity() const -> usize {
+    return _inn.capacity();
+  }
+
+  auto contains(const auto& val) const -> bool {
+    const auto p = _inn.search({static_cast<K&&>(val)});
+    return p != nullptr;
+  }
+
+  auto insert(K val) -> bool {
+    const auto p = _inn.search_or_insert({static_cast<K&&>(val)});
+    return p != nullptr;
+  }
+
+  auto remove(const auto& val) -> bool {
+    const auto p = _inn.search({static_cast<K&&>(val)});
+    if (!p) {
+      return false;
     }
-
-    auto olen = mem::take(_len);
-    auto ctrl = mem::move(_ctrl);
-    auto keys = mem::move(_keys);
-    auto vals = mem::move(_vals);
-    this->init(olen + additional);
-
-    for (auto i = 0UL; _len < olen; ++i) {
-      if (ctrl[i] >= kDelete) {
-        continue;
-      }
-
-      auto& k = keys[i];
-      auto& v = vals[i];
-      this->try_insert(mem::move(k), mem::move(v));
-      k.~K();
-      v.~V();
-    }
+    _inn.erase_at(static_cast<usize>(p - _inn.data()));
+    return true;
   }
 };
 

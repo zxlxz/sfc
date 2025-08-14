@@ -5,7 +5,11 @@
 namespace sfc::env::test {
 
 SFC_TEST(var) {
+#ifdef _WIN32
+  panicking::assert_eq(env::var("OS"), "Windows_NT");
+#else
   panicking::assert_ne(env::var("HOME"), "");
+#endif
 }
 
 SFC_TEST(set_var) {
@@ -38,7 +42,7 @@ SFC_TEST(home_dir) {
 SFC_TEST(current_exe) {
   const auto exe = env::current_exe();
   panicking::assert_ne(exe, "");
-  panicking::assert_true(exe.ends_with("sfc_test"));
+  panicking::assert_true(exe.contains("sfc_test"));
 }
 
 }  // namespace sfc::env::test

@@ -48,9 +48,9 @@ Mutex::Guard::~Guard() {
 }
 
 struct ReentrantLock::Inn {
-  using thrd_t = sys::thread::thrd_t;
+  using tid_t = sys::thread::tid_t;
 
-  Atomic<thrd_t> _owner{{}};
+  Atomic<tid_t> _owner{{}};
   Atomic<int> _count{0};
   sys_imp::mutex_t _mutex{};
 
@@ -63,12 +63,14 @@ struct ReentrantLock::Inn {
     sys_imp::drop(_mutex);
   }
 
-  void lock() {
-    const auto cur_thrd = sys::thread::current();
+  Inn(const Inn&) = delete;
 
-    if (sys::thread::equal(cur_thrd, _owner.load())) {
+  void lock() {
+    const auto cur_thrd = sys::thread::current_id();
+
+    if (cur_thrd == _owner.load()) {
       _count.fetch_add(1);
-       return;
+      return;
     }
 
     sys::sync::lock(_mutex);
@@ -77,7 +79,7 @@ struct ReentrantLock::Inn {
   }
 
   void unlock() {
-    const auto cur_thrd = sys::thread::current();
+    const auto cur_thrd = sys::thread::current_id();
 
     if (cur_thrd != _owner.load()) {
       // not owner of the lock, so do nothing
@@ -85,7 +87,7 @@ struct ReentrantLock::Inn {
     }
 
     if (_count.fetch_sub(1) == 1) {
-      _owner.store(thrd_t{});
+      _owner.store(tid_t{});
       sys::sync::unlock(_mutex);
     }
   }
