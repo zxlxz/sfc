@@ -13,7 +13,7 @@ struct ThreadData {
   CString _name;
 
  public:
-  void run() {
+  void run() noexcept {
     sys_imp::set_name(_name);
 
     try {
@@ -22,10 +22,9 @@ struct ThreadData {
   }
 };
 
-static auto start_routine(void* data) -> sys_imp::thrd_ret_t {
+static auto start_routine(void* data) -> sys_imp::ret_t {
   auto obj = Box<ThreadData>::from_raw(static_cast<ThreadData*>(data));
   obj->run();
-
   return {};
 };
 

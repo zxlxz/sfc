@@ -21,31 +21,15 @@ struct Mutex::Inn {
 
   Inn(const Inn&) = delete;
   Inn& operator=(const Inn&) = delete;
-};
 
-Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
-
-Mutex::~Mutex() {}
-
-Mutex::Mutex(Mutex&&) noexcept = default;
-
-Mutex& Mutex::operator=(Mutex&&) noexcept = default;
-
-auto Mutex::lock() -> Guard {
-  panicking::assert(_inn, "Mutex::lock: on a dropped object");
-  return Guard{*_inn};
-}
-
-Mutex::Guard::Guard(Inn& mtx) : _mtx{&mtx} {
-  sys_imp::lock(mtx._raw);
-}
-
-Mutex::Guard::~Guard() {
-  if (!_mtx) {
-    return;
+  void lock() {
+    sys_imp::lock(_raw);
   }
-  sys_imp::unlock(_mtx->_raw);
-}
+
+  void unlock() {
+    sys_imp::unlock(_raw);
+  }
+};
 
 struct ReentrantLock::Inn {
   using tid_t = sys::thread::tid_t;
@@ -64,6 +48,7 @@ struct ReentrantLock::Inn {
   }
 
   Inn(const Inn&) = delete;
+  Inn& operator=(const Inn&) = delete;
 
   void lock() {
     const auto cur_thrd = sys::thread::current_id();
@@ -93,6 +78,27 @@ struct ReentrantLock::Inn {
   }
 };
 
+Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
+
+Mutex::~Mutex() {}
+
+Mutex::Mutex(Mutex&&) noexcept = default;
+
+Mutex& Mutex::operator=(Mutex&&) noexcept = default;
+
+auto Mutex::lock() -> Guard {
+  panicking::assert(_inn, "Mutex::lock: on a dropped object");
+  return Guard{*_inn};
+}
+
+Mutex::Guard::Guard(Inn& mtx) : _mtx{&mtx} {
+  _mtx->lock();
+}
+
+Mutex::Guard::~Guard() {
+  _mtx ? _mtx->unlock() : void();
+}
+
 ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}
 
 ReentrantLock::~ReentrantLock() {}
@@ -102,12 +108,12 @@ auto ReentrantLock::lock() -> Guard {
   return Guard{*_inn};
 }
 
-ReentrantLock::Guard::Guard(Inn& inn) : _inn{&inn} {
-  _inn->lock();
+ReentrantLock::Guard::Guard(Inn& inn) : _mtx{&inn} {
+  _mtx->lock();
 }
 
 ReentrantLock::Guard::~Guard() noexcept {
-  _inn ? _inn->unlock() : void();
+  _mtx ? _mtx->unlock() : void();
 }
 
 }  // namespace sfc::sync

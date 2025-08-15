@@ -4,17 +4,19 @@
 
 namespace sfc::collections {
 
-template <class T, class A = alloc::Global>
+template <class T>
 class HashTable {
+  using A = alloc::Global;
+
   static constexpr u8 kEmpty = 0x80;
   static constexpr u8 kDeleted = 0xFF;
   static constexpr auto kAlign = 128U;
   static constexpr auto kMaxLoadFactor = 0.75;
 
-  usize _mask = 0;
   u8* _ptr = nullptr;
-  usize _rem = 0;
+  usize _mask = 0;
   usize _len = 0;
+  usize _rem = 0;
 
  public:
   constexpr HashTable() noexcept = default;
@@ -25,11 +27,11 @@ class HashTable {
   }
 
   HashTable(HashTable&& other) noexcept
-      : _mask{other._mask}, _ptr{other._ptr}, _rem{other._rem}, _len{other._len} {
-    other._mask = 0;
+      : _ptr{other._ptr}, _mask{other._mask}, _len{other._len}, _rem{other._rem} {
     other._ptr = nullptr;
-    other._rem = 0;
+    other._mask = 0;
     other._len = 0;
+    other._rem = 0;
   }
 
   HashTable& operator=(HashTable&& other) noexcept {
@@ -40,16 +42,11 @@ class HashTable {
     this->clear();
     this->dealloc();
 
-    _mask = mem::take(other._mask);
     _ptr = mem::take(other._ptr);
+    _mask = mem::take(other._mask);
     _rem = mem::take(other._rem);
     _len = mem::take(other._len);
     return *this;
-  }
-
-  auto data() const -> T* {
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    return reinterpret_cast<T*>(_ptr + offs);
   }
 
   auto len() const -> usize {
@@ -96,7 +93,7 @@ class HashTable {
     for (auto idx = h1;; idx = (idx + 1) & _mask) {
       if (_ptr[idx] == kEmpty) {
         const auto pos = del == _mask + 1 ? idx : del;
-        this->insert_at(pos, h2, static_cast<T&&>(entry));
+        this->insert_at(data, pos, h2, static_cast<T&&>(entry));
         break;
       } else if (_ptr[idx] == kDeleted) {
         (void)(del == _mask + 1 ? del = idx : del);
@@ -107,18 +104,27 @@ class HashTable {
     return nullptr;
   }
 
-  auto erase_at(usize idx) -> bool {
-    if (_len == 0 || idx > _mask || _ptr[idx] >= kEmpty) {
+  auto remove(const auto& key, auto&& f) -> bool {
+    if (_len == 0) {
       return false;
     }
 
+    const auto hx = this->hash(key);
+    const auto h1 = hx & _mask;
+    const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
+
     const auto offs = (_mask + kAlign) & ~(kAlign - 1);
     const auto data = reinterpret_cast<T*>(_ptr + offs);
-
-    _ptr[idx] = kDeleted;
-    data[idx].~T();
-    _len -= 1;
-    return true;
+    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+      if (_ptr[idx] == kEmpty) {
+        return false;
+      } else if (_ptr[idx] == h2 && data[idx].key == key) {
+        f(data[idx]);
+        this->erase_at(data, idx);
+        return true;
+      }
+    }
+    return false;
   }
 
   void clear() {
@@ -162,7 +168,7 @@ class HashTable {
         continue;
       }
       auto& tmp = old_data[i];
-      this->insert_new(tmp.key, static_cast<T&&>(tmp));
+      this->insert_new(new_data, tmp.key, static_cast<T&&>(tmp));
       tmp.~T();
     }
 
@@ -222,28 +228,31 @@ class HashTable {
     A::dealloc(_ptr, {size, kAlign});
   }
 
-  auto insert_new(const auto& key, T&& val) -> bool {
+  auto insert_new(T* data, const auto& key, T&& val) -> bool {
     const auto hx = this->hash(key);
     const auto h1 = hx & _mask;
     const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
 
     for (auto idx = h1;; idx = (idx + 1) & _mask) {
       if (_ptr[idx] == kEmpty) {
-        this->insert_at(idx, h2, static_cast<T&&>(val));
+        this->insert_at(data, idx, h2, static_cast<T&&>(val));
         return true;
       }
     }
     return false;
   }
 
-  void insert_at(usize idx, usize h2, T&& val) {
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto data = reinterpret_cast<T*>(_ptr + offs);
-
+  void insert_at(T* data, usize idx, u8 h2, T&& val) {
     _ptr[idx] = h2;
     new (&data[idx]) T{static_cast<T&&>(val)};
     _len += 1;
     _rem -= 1;
+  }
+
+  void erase_at(T* data, usize idx) {
+    _ptr[idx] = kEmpty;
+    data[idx].~T();
+    _len -= 1;
   }
 };
 
@@ -311,12 +320,8 @@ class HashMap {
   }
 
   auto remove(const K& key) -> Option<V> {
-    const auto p = _inn.search(key);
-    if (!p) {
-      return {};
-    }
-    auto res = Option<V>{static_cast<V&&>(p->val)};
-    _inn.erase_at(static_cast<usize>(p - _inn.data()));
+    auto res = Option<V>{};
+    _inn.remove(key, [&res](auto& x) { res = static_cast<V&&>(x.val); });
     return res;
   }
 
@@ -378,12 +383,7 @@ class HashSet {
   }
 
   auto remove(const auto& val) -> bool {
-    const auto p = _inn.search({static_cast<K&&>(val)});
-    if (!p) {
-      return false;
-    }
-    _inn.erase_at(static_cast<usize>(p - _inn.data()));
-    return true;
+    return _inn.remove(val, [](auto&) {});
   }
 };
 

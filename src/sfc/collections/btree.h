@@ -1,8 +1,282 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/alloc.h"
 
 namespace sfc::collections {
+
+template <class K, class V, u16 B = 6>
+class BTreeNode {
+  using A = alloc::Global;
+
+  static_assert(B >= 2, "BTreeMap: check `B>=2` failed");
+  static constexpr auto MAX_LEN = 2 * B - 1;
+  static constexpr auto MIN_LEN = B - 1;
+
+  BTreeNode* _top = nullptr;
+  u16 _idx = 0;
+  u16 _len = 0;
+  bool _has_edge = false;
+
+  union {
+    K _keys[MAX_LEN];
+  };
+  union {
+    V _vals[MAX_LEN];
+  };
+  BTreeNode* _edges[2 * B] = {nullptr};
+
+ public:
+  explicit BTreeNode(bool has_edge = false) : _has_edge{has_edge} {}
+
+  ~BTreeNode() {
+    this->clear();
+  }
+
+  auto search(const auto& key) -> V* {
+    const auto idx = this->find_idx(key);
+    if (idx < _len && _keys[idx] == key) {
+      return &_vals[idx];
+    }
+    if (!_has_edge) {
+      return nullptr;
+    }
+    return _edges[idx]->search(key);
+  }
+
+  auto search_or_insert(K&& key, V&& val) -> V* {
+    const auto idx = this->find_idx(key);
+    if (idx < _len && _keys[idx] == key) {
+      return &_vals[idx];
+    }
+
+    if (!_has_edge) {
+      this->insert_at(idx, static_cast<K&&>(key), static_cast<V&&>(val));
+      return nullptr;
+    }
+
+    return _edges[idx]->search_or_insert(static_cast<K&&>(key), static_cast<V&&>(val));
+  }
+
+  auto remove(const auto& key, auto&& f) -> bool {
+    const auto idx = this->find_idx(key);
+    if (idx < _len && _keys[idx] == key) {
+      f(_vals[idx]);
+      this->erase_at(idx);
+      if (_len < MIN_LEN) {
+        this->rebalance();
+      }
+      return true;
+    }
+    if (!_has_edge) {
+      return false;
+    }
+    return _edges[idx]->remove(key, f);
+  }
+
+  void clear() {
+    ptr::drop_in_place(_keys, _len);
+    ptr::drop_in_place(_vals, _len);
+
+    if (_has_edge) {
+      for (auto i = 0U; i <= _len; ++i) {
+        BTreeNode::xdel(_edges[i]);
+      }
+    }
+    _len = 0;
+  }
+
+ private:
+  static auto xnew(bool has_edge) -> BTreeNode {
+    const auto size = (has_edge) ? sizeof(BTreeNode) : sizeof(BTreeNode) - sizeof(_edges);
+    const auto ptr = static_cast<BTreeNode*>(A::alloc({size, alignof(BTreeNode)}));
+    return new (ptr) BTreeNode{has_edge};
+  }
+
+  static auto xdel(BTreeNode* ptr) -> void {
+    if (ptr == nullptr) {
+      return;
+    }
+    ptr->clear();
+    A::dealloc(ptr);
+  }
+
+  auto find_idx(const auto& key) const -> u16 {
+    auto idx = u16{0};
+    while (idx < _len && _keys[idx] < key) {
+      idx += 1;
+    }
+    return idx;
+  }
+
+  void insert_at(u16 idx, K&& key, V&& val, BTreeNode* child = nullptr) {
+    ptr::shift_elements_right(_keys + idx, _len - idx, 1);
+    ptr::write(&_keys[idx], static_cast<K&&>(key));
+
+    ptr::shift_elements_right(_vals + idx, _len - idx, 1);
+    ptr::write(&_vals[idx], static_cast<V&&>(val));
+    _len += 1;
+
+    if (child) {
+      ptr::shift_elements_right(_edges + idx + 1, _len - idx - 1, 1);
+      _edges[idx + 1] = child;
+      child->_top = this;
+
+      for (auto i = idx + 1U; i <= _len; ++i) {
+        _edges[i]->_top = this;
+      }
+    }
+
+    if (_len == MAX_LEN) {
+      this->split();
+    }
+  }
+
+  void erase_at(u16 idx) {
+    if (!_has_edge) {
+      ptr::pop_front(_keys + idx, _len - idx);
+      ptr::pop_front(_vals + idx, _len - idx);
+      _len -= 1;
+
+      if (_len < MIN_LEN) {
+        this->rebalance();
+      }
+      return;
+    }
+
+    auto leaf = _edges[idx + 1];
+    while (leaf->_has_edge) {
+      leaf = leaf->_edges[0];
+    }
+    _keys[idx] = static_cast<K&&>(leaf->_keys[0]);
+    _vals[idx] = static_cast<V&&>(leaf->_vals[0]);
+    leaf->erase_at(0);
+  }
+
+  void merge_at(u16 idx) {
+    auto lhs = _edges[idx];
+    auto rhs = _edges[idx + 1];
+
+    ptr::write(&lhs->_keys[lhs->_len], static_cast<K&&>(_keys[idx]));
+    ptr::write(&lhs->_vals[lhs->_len], static_cast<V&&>(_vals[idx]));
+    lhs->_len += 1;
+
+    lhs->append_elements(*rhs, 0);
+    BTreeNode::xdel(rhs);
+
+    this->erase_at(idx);
+  }
+
+  void append_elements(BTreeNode& src, u16 idx) {
+    const auto cnt = src._len - idx;
+    ptr::uninit_move(src._keys + idx, _keys + _len, cnt);
+    ptr::uninit_move(src._vals + idx, _vals + _len, cnt);
+
+    if (_has_edge) {
+      ptr::uninit_move(src._edges + idx, _edges + _len, cnt + 1);
+      for (auto i = _len; i <= _len + cnt; ++i) {
+        _edges[i]->_top = this;
+        _edges[i]->_idx = i;
+      }
+    }
+
+    _len += cnt;
+    src._len -= cnt;
+  }
+
+  void split() {
+    auto mid_key = ptr::read(&_keys[MIN_LEN]);
+    auto mid_val = ptr::read(&_vals[MIN_LEN]);
+
+    auto rhs = BTreeNode::xnew(_has_edge);
+    _len = MIN_LEN;
+    rhs->_len = MIN_LEN;
+    ptr::uninit_move(_keys + B, rhs->_keys, MIN_LEN);
+    ptr::uninit_move(_vals + B, rhs->_vals, MIN_LEN);
+    if (_has_edge) {
+      ptr::uninit_move(_edges + B, rhs->_edges, MIN_LEN);
+      for (auto i = 0U; i <= MIN_LEN; ++i) {
+        rhs->_edges[i]->_top = rhs;
+        rhs->_edges[i]->_idx = i;
+      }
+    }
+
+    if (!_top) {
+      _top = BTreeNode::xnew(true);
+      _top->_edges[0] = this;
+    }
+
+    rhs->_top = _top;
+    _top->insert_at(_idx, static_cast<K&&>(mid_key), static_cast<V&&>(mid_val), rhs);
+    if (_top->_len >= MAX_LEN) {
+      _top->split();
+    }
+  }
+
+  void rebalance() {
+    if (_top == nullptr) {
+      return;
+    }
+
+    if (_idx > 0) {
+      if (auto lhs = _top->_edges[_idx - 1]; lhs->_len > MIN_LEN) {
+        this->borrow_left(*lhs);
+      } else {
+        _top->merge_at(_idx - 1);
+        return;
+      }
+    }
+
+    if (_idx < _top->_len) {
+      if (auto rhs = _top->_edges[_idx + 1]; rhs->_len > MIN_LEN) {
+        this->borrow_right(*rhs);
+      } else {
+        _top->merge_at(_idx);
+      }
+    }
+  }
+
+  void borrow_left(BTreeNode& lhs) {
+    auto lhs_key = ptr::read(&lhs._keys[lhs._len - 1]);
+    auto lhs_val = ptr::read(&lhs._vals[lhs._len - 1]);
+    auto lhs_edge = _has_edge ? lhs._edges[lhs._len] : nullptr;
+    lhs._len -= 1;
+
+    auto& top_key = _top->_keys[_idx - 1];
+    auto& top_val = _top->_vals[_idx - 1];
+    ptr::push_front(_keys, _len, static_cast<K&&>(top_key));
+    ptr::push_front(_vals, _len, static_cast<V&&>(top_val));
+    top_key = static_cast<K&&>(lhs_key);
+    top_val = static_cast<V&&>(lhs_val);
+
+    if (lhs_edge) {
+      lhs_edge->_top = this;
+      lhs_edge->_idx = 0;
+      ptr::push_front(_edges, _len + 1, lhs_edge);
+    }
+    _len += 1;
+  }
+
+  void borrow_right(BTreeNode& rhs) {
+    auto rhs_key = ptr::pop_front(rhs._keys, rhs._len);
+    auto rhs_val = ptr::pop_front(rhs._vals, rhs._len);
+    auto rhs_edge = _has_edge ? rhs._edges[rhs._len + 1] : nullptr;
+    rhs._len -= 1;
+
+    auto& top_key = _top->_keys[_idx];
+    auto& top_val = _top->_vals[_idx];
+    ptr::write(&_keys[_len], static_cast<K&&>(top_key));
+    ptr::write(&_vals[_len], static_cast<V&&>(top_val));
+    top_key = static_cast<K&&>(rhs_key);
+    top_val = static_cast<V&&>(rhs_val);
+
+    if (rhs_edge) {
+      rhs_edge->_top = this;
+      rhs_edge->_idx = _len;
+      _edges[_len] = rhs_edge;
+    }
+    _len += 1;
+  }
+};
 
 template <class K, class V, u16 B = 4>
 class [[nodiscard]] BTreeMap {
@@ -142,235 +416,6 @@ class [[nodiscard]] BTreeMap {
     }
 
     return res;
-  }
-};
-
-template <class K, class V, u16 B>
-struct BTreeMap<K, V, B>::Node {
-  static_assert(B >= 2, "BTreeMap: check `B>=2` failed");
-  static constexpr auto MAX_LEN = 2 * B - 1;
-  static constexpr auto MIN_LEN = B - 1;
-
-  struct Item {
-    K key;
-    V val;
-  };
-
-  struct FindResult {
-    Node* ptr = nullptr;
-    usize idx = 0;
-  };
-
-  Node* _top = nullptr;
-  u16 _idx = 0;
-  u16 _len = 0;
-  bool _has_node = false;
-
-  union {
-    struct {
-      K _keys[MAX_LEN];
-      V _vals[MAX_LEN];
-    };
-  };
-  Node* _nodes[2 * B] = {nullptr};
-
- public:
-  Node(bool has_node) : _has_node{has_node} {}
-
-  ~Node() {
-    if (_len == 0) {
-      return;
-    }
-    ptr::drop_in_place(_keys, _len);
-    ptr::drop_in_place(_vals, _len);
-    if (_has_node) {
-      for (auto i = 0U; i <= _len; ++i) {
-        delete _nodes[i];
-      }
-    }
-  }
-
-  auto find(const auto& key) const -> FindResult {
-    const auto idx = this->position(key);
-    if (idx < _len && key == _keys[idx]) {
-      return {const_cast<Node*>(this), idx};
-    }
-    if (!_has_node) {
-      return {};
-    }
-    return _nodes[idx]->find(key);
-  }
-
-  auto try_insert(K&& k, V&& v) -> V* {
-    const auto idx = this->position(k);
-    if (idx < _len && _keys[idx] == k) {
-      return &_vals[idx];
-    }
-
-    if (_has_node) {
-      return _nodes[idx]->try_insert(mem::move(k), mem::move(v));
-    }
-
-    this->insert_at(idx, mem::move(k), mem::move(v), nullptr);
-    this->split();
-    return nullptr;
-  }
-
-  void remove(u16 idx) {
-    if (idx >= _len) {
-      return;
-    }
-
-    if (!_has_node) {
-      this->erase_at(idx);
-      return;
-    }
-
-    auto lhs = _nodes[idx];
-    if (lhs->_len > MIN_LEN) {
-      _keys[idx] = mem::move(lhs->_keys[lhs->_len - 1]);
-      _vals[idx] = mem::move(lhs->_vals[lhs->_len - 1]);
-      return lhs->remove(lhs->_len - 1);
-    }
-
-    auto rhs = _nodes[idx + 1];
-    if (rhs->_len > MIN_LEN) {
-      _keys[idx] = mem::move(rhs->_keys[0]);
-      _vals[idx] = mem::move(rhs->_vals[0]);
-      return rhs->remove(0);
-    }
-
-    this->merge_at(idx);
-    return lhs->remove(MIN_LEN);
-  }
-
-  void split() {
-    if (_len != MAX_LEN) {
-      return;
-    }
-
-    if (_top == nullptr) {
-      _top = new Node{true};
-      _top->_nodes[0] = this;
-    }
-
-    auto rhs = new Node{_has_node};
-    rhs->append(*this, B);
-
-    auto k = ptr::read(&_keys[MIN_LEN]);
-    auto v = ptr::read(&_vals[MIN_LEN]);
-    _top->insert_at(_idx, mem::move(k), mem::move(v), rhs);
-    _len -= 1;
-
-    _top->split();
-  }
-
-  void rebalance() {
-    if (_top == nullptr || _len >= MIN_LEN) {
-      return;
-    }
-
-    if (_idx > 0) {
-      auto lhs = _top->_nodes[_idx - 1];
-      auto rhs = this;
-      if (lhs->_len + rhs->_len < MAX_LEN) {
-        return _top->merge_at(_idx - 1);
-      }
-    }
-
-    if (_idx < _top->_len) {
-      auto lhs = this;
-      auto rhs = _top->_nodes[_idx + 1];
-      if (lhs->_len + rhs->_len < MAX_LEN) {
-        return _top->merge_at(_idx);
-      }
-    }
-  }
-
- private:
-  auto position(const auto& key) const -> u16 {
-    auto idx = 0U;
-    while (idx < _len && key > _keys[idx]) {
-      ++idx;
-    }
-    return idx;
-  }
-
-  void insert_at(u16 idx, K&& k, V&& v, Node* c) {
-    ptr::shift_elements_right(_keys + idx, _len - idx, 1);
-    ptr::write(&_keys[idx], mem::move(k));
-
-    ptr::shift_elements_right(_vals + idx, _len - idx, 1);
-    ptr::write(&_vals[idx], mem::move(v));
-    _len += 1;
-
-    if (c) {
-      c->_top = this;
-      c->_idx = idx + 1;
-      for (auto i = _len; i > idx + 1; --i) {
-        _nodes[i] = _nodes[i - 1];
-        _nodes[i]->_idx = i;
-      }
-      _nodes[idx + 1] = c;
-    }
-  }
-
-  void erase_at(u16 idx) {
-    if (idx >= _len) {
-      return;
-    }
-
-    _keys[idx].~K();
-    ptr::shift_elements_left(_keys + idx + 1, _len - idx - 1, 1);
-
-    _vals[idx].~V();
-    ptr::shift_elements_left(_vals + idx + 1, _len - idx - 1, 1);
-
-    if (_has_node) {
-      for (auto i = idx + 1U; i < _len; ++i) {
-        _nodes[i] = _nodes[i + 1];
-        _nodes[i]->_idx = i;
-      }
-    }
-    _len -= 1;
-
-    this->rebalance();
-  }
-
-  void merge_at(u16 idx) {
-    auto lhs = _nodes[idx];
-    auto rhs = _nodes[idx + 1];
-    ptr::write(&lhs->_keys[lhs->_len], mem::move(_keys[idx]));
-    ptr::write(&lhs->_vals[lhs->_len], mem::move(_vals[idx]));
-    lhs->_len += 1;
-    lhs->append(*rhs, 0);
-    delete rhs;
-
-    this->erase_at(idx);
-  }
-
-  void append(Node& src, u16 idx) {
-    if (_len >= MAX_LEN) {
-      return;
-    }
-
-    const auto cnt = static_cast<u16>(src._len - idx);
-    ptr::uninit_move(src._keys + idx, _keys + _len, cnt);
-    ptr::drop_in_place(src._keys + idx, cnt);
-
-    ptr::uninit_move(src._vals + idx, _vals + _len, cnt);
-    ptr::drop_in_place(src._vals + idx, cnt);
-
-    if (_has_node) {
-      for (auto i = _len, j = idx; i < _len + cnt + 1; ++i, ++j) {
-        _nodes[i] = src._nodes[j];
-        _nodes[i]->_top = this;
-        _nodes[i]->_idx = i;
-      }
-    }
-
-    src._len -= cnt;
-    _len += cnt;
   }
 };
 

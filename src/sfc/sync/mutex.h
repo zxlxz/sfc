@@ -44,7 +44,7 @@ class ReentrantLock {
 };
 
 class [[nodiscard]] ReentrantLock::Guard {
-  ptr::Unique<Inn> _inn = {};
+  ptr::Unique<Inn> _mtx = {};
 
  public:
   explicit Guard(Inn& mtx);

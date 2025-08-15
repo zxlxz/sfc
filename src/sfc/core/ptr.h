@@ -143,11 +143,15 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_move(T* src, T* dst, usize cnt) {
+  if (cnt == 0) {
+    return;
+  }
   if constexpr (__is_trivially_copyable(T)) {
-    cnt ? (void)__builtin_memcpy(dst, src, sizeof(T) * cnt) : (void)0;
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
       new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+      src[idx].~T();
     }
   }
 }
@@ -159,10 +163,6 @@ inline void shift_elements_left(T* src, usize len, usize offset) {
   }
 
   const auto dst = src - offset;
-  if (offset >= len) {
-    return uninit_move(src, dst, len);
-  }
-
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
@@ -185,10 +185,6 @@ inline void shift_elements_right(T* src, usize len, usize offset) {
   }
 
   const auto dst = src + offset;
-  if (offset >= len) {
-    return uninit_move(src, dst, len);
-  }
-
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
@@ -202,6 +198,33 @@ inline void shift_elements_right(T* src, usize len, usize offset) {
       src[idx].~T();
     }
   }
+}
+
+template <class T>
+inline auto pop_front(T* ptr, usize len) -> T {
+  auto res = static_cast<T&&>(ptr[0]);
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memmove(ptr, ptr + 1, (len - 1) * sizeof(T));
+  } else {
+    for (auto idx = 1UL; idx < len; ++idx) {
+      ptr[idx - 1] = static_cast<T&&>(ptr[idx]);
+    }
+    ptr[len - 1].~T();
+  }
+  return res;
+}
+
+template <class T>
+inline void push_front(T* ptr, usize len, auto&& val) {
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memmove(ptr + 1, ptr, len * sizeof(T));
+  } else {
+    new (&ptr[len]) T{static_cast<T&&>(ptr[len - 1])};
+    for (auto idx = len - 1; idx > 0; --idx) {
+      ptr[idx] = static_cast<T&&>(ptr[idx - 1]);
+    }
+  }
+  ptr[0] = static_cast<decltype(val)&&>(val);
 }
 
 }  // namespace sfc::ptr

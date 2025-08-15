@@ -45,9 +45,12 @@ struct Style {
       return "-";
     }
     switch (_sign) {
-      case '+': return "+";
-      case '-': return " ";
-      default:  return "";
+      case '+':
+        return "+";
+      case '-':
+        return " ";
+      default:
+        return "";
     }
   }
 
@@ -60,13 +63,20 @@ struct Style {
       return "";
     }
     switch (_type) {
-      case 'X': return "0X";
-      case 'x': return "0x";
-      case 'O': return "0";
-      case 'o': return "0";
-      case 'B': return "0B";
-      case 'b': return "0b";
-      default:  return "";
+      case 'X':
+        return "0X";
+      case 'x':
+        return "0x";
+      case 'O':
+        return "0";
+      case 'o':
+        return "0";
+      case 'B':
+        return "0B";
+      case 'b':
+        return "0b";
+      default:
+        return "";
     }
   }
 };
@@ -437,7 +447,7 @@ struct Display {
 
  public:
   void fmt(auto& f) const {
-    if constexpr (requires { _val.fmt(f); }) {
+    if constexpr (__is_class(T)) {
       _val.fmt(f);
     } else if constexpr (__is_same(T, bool)) {
       f.pad(_val ? str::Str{"true"} : str::Str{"false"});

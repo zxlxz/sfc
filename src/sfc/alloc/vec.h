@@ -105,7 +105,6 @@ class [[nodiscard]] Buf {
     const auto new_ptr = static_cast<T*>(_alloc.alloc(alloc::Layout::array<T>(new_cap)));
     if (_ptr) {
       ptr::uninit_move(_ptr, new_ptr, used);
-      ptr::drop_in_place(_ptr, used);
       _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
     }
 
@@ -331,24 +330,24 @@ class [[nodiscard]] Vec {
     panicking::assert(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
-    ptr::shift_elements_right(_buf._ptr + idx, _len - idx, 1);
-    new (&_buf._ptr[idx]) T{static_cast<T&&>(val)};
+    ptr::push_front(_buf._ptr + idx, _len - idx, static_cast<T&&>(val));
     _len += 1;
   }
 
   auto remove(usize idx) -> T {
     panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = ptr::read(_buf._ptr + idx);
-    ptr::shift_elements_left(_buf._ptr + idx + 1, _len - idx - 1, 1);
+    auto res = ptr::pop_front(_buf._ptr + idx, _len - idx);
     _len -= 1;
     return res;
   }
 
   void drain(Range ids) {
     ids = ids.wrap(_len);
-    ptr::shift_elements_left(_buf._ptr + ids._start, _len - ids._end, ids.len());
-    _len -= ids.len();
+    if (const auto cnt = ids.len()) {
+      ptr::shift_elements_left(_buf._ptr + ids._start, _len - ids._end, cnt);
+      _len -= cnt;
+    }
   }
 
   void resize(usize new_len, T value) {
@@ -365,8 +364,10 @@ class [[nodiscard]] Vec {
     }
 
     this->reserve(other._len);
-    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, other._len);
     _len += other._len;
+
+    ptr::uninit_move(other._buf._ptr, _buf._ptr + _len, other._len);
+    other._len = 0;
   }
 
   void extend(auto iter) {

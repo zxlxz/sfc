@@ -5,8 +5,8 @@
 namespace sfc::sys::thread {
 
 using tid_t = DWORD;
+using ret_t = DWORD;
 using thrd_t = HANDLE;
-using thrd_ret_t = DWORD;
 
 template <int N>
 auto wchar_to_u8(const wchar_t src[], char (&dst)[N]) -> int {
