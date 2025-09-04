@@ -2,6 +2,7 @@
 
 #include "sfc/core/num.h"
 
+
 namespace sfc::panicking {
 
 struct PanicErr {};
@@ -30,6 +31,9 @@ struct AssertInfo {
 
 [[noreturn]] void panic(PanicInfo info, const auto&... args);
 
+#ifdef assert
+#undef assert
+#endif
 void assert(AssertInfo info, const auto&... args) {
   info.val ? void(0) : panicking::panic_imp(info.loc, args...);
 }

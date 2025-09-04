@@ -12,6 +12,7 @@ using boxed::Box;
 
 using rc::Rc;
 
+using vec::Buf;
 using vec::Vec;
 
 using string::String;

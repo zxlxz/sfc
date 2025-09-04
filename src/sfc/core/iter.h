@@ -113,7 +113,11 @@ struct Iterator : I {
 
   auto count(auto&& f) -> usize {
     auto accum = usize{0};
-    this->for_each([&](auto& x) mutable { f(x) ? accum += 1 : void(); });
+    this->for_each([&](auto& x) mutable {
+      if (f(x)) {
+        accum += 1;
+      }
+    });
     return accum;
   }
 

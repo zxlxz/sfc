@@ -57,6 +57,12 @@ struct Unique {
 };
 
 template <class T>
+inline auto read(const T* src) noexcept -> T {
+  static_assert(__is_trivially_copyable(T));
+  return *src;
+}
+
+template <class T>
 inline auto read(T* src) noexcept -> T {
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
