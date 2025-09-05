@@ -57,12 +57,6 @@ struct Unique {
 };
 
 template <class T>
-inline auto read(const T* src) noexcept -> T {
-  static_assert(__is_trivially_copyable(T));
-  return *src;
-}
-
-template <class T>
 inline auto read(T* src) noexcept -> T {
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
@@ -71,6 +65,20 @@ inline auto read(T* src) noexcept -> T {
     src->~T();
     return val;
   }
+}
+
+template <class T>
+inline auto read(const T* src) noexcept -> T {
+  static_assert(__is_trivially_copyable(T));
+  return *src;
+}
+
+template <class T>
+inline auto read_unaligned(const void* src) noexcept -> T {
+  static_assert(__is_trivially_copyable(T));
+  auto res = T{};
+  __builtin_memcpy(&res, src, sizeof(T));
+  return res;
 }
 
 template <class T>

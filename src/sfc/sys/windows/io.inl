@@ -4,7 +4,7 @@
 
 namespace sfc::sys::io {
 
-static constexpr auto INVALID_FD = static_cast<HANDLE>(nullptr);
+static const auto INVALID_FD = INVALID_HANDLE_VALUE;
 
 static inline auto get_err() -> int {
   return static_cast<int>(::GetLastError());

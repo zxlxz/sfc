@@ -11,7 +11,7 @@ SFC_TEST(read_write) {
   {
     auto file_res = File::create(path_buf.as_path());
     panicking::assert_true(file_res.is_ok());
-    auto& file = *file_res;
+    auto file = mem::move(file_res).unwrap();
     file.write_str("hello world");
   }
 
@@ -19,7 +19,7 @@ SFC_TEST(read_write) {
   {
     auto file_res = File::open(path_buf.as_path());
     panicking::assert_true(file_res.is_ok());
-    auto& file = *file_res;
+    auto file = mem::move(file_res).unwrap();
 
     String read_content;
     auto read_res = file.read_to_string(read_content);

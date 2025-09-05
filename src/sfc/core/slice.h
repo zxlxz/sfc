@@ -47,6 +47,10 @@ struct Slice {
     return _len == 0;
   }
 
+  operator Slice<const T>() const noexcept {
+    return {_ptr, _len};
+  }
+
   explicit operator bool() const noexcept {
     return _len != 0;
   }

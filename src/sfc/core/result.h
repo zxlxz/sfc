@@ -106,27 +106,7 @@ class Result {
     return _inn.tag() == Tag::Err;
   }
 
-  auto operator*() const -> const T& {
-    panicking::assert(_inn.tag() == Tag::Ok, "Result::operator*: Err");
-    return *_inn;
-  }
-
-  auto operator*() -> T& {
-    panicking::assert(_inn.tag() == Tag::Ok, "Result::operator*: Err");
-    return *_inn;
-  }
-
-  auto operator~() const -> const E& {
-    panicking::assert(_inn.tag() == Tag::Err, "Result::operator*: Ok");
-    return ~_inn;
-  }
-
-  auto operator~() -> E& {
-    panicking::assert(_inn.tag() == Tag::Err, "Result::operator*: Ok");
-    return ~_inn;
-  }
-
-  auto ok() && -> option::Option<T> {
+  auto ok() -> option::Option<T> {
     if (_inn.tag() == Tag::Err) {
       return {};
     }

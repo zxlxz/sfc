@@ -6,7 +6,7 @@ namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
 
-File::File(io::File&& inn) noexcept : _inn{static_cast<io::File&&>(inn)} {}
+File::File() noexcept = default;
 
 File::~File() noexcept = default;
 
@@ -51,12 +51,14 @@ auto File::write_str(Str str) -> io::Result<usize> {
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {
   const auto c_path = CString::from(path.as_str());
 
-  const auto fd = sys_imp::open(c_path, *this);
-  if (fd == sys_imp::INVALID_FD) {
+  auto file = io::File::from_fd(sys_imp::open(c_path, *this));
+  if (!file.is_open()) {
     return io::Error::last_os_error();
   }
 
-  return File{io::File{fd}};
+  auto res = File{};
+  res._inn = mem::move(file);
+  return res;
 }
 
 }  // namespace sfc::fs

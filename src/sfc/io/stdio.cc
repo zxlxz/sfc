@@ -14,7 +14,7 @@ class Stdout::Inn {
   static constexpr usize BUF_SIZE = 4096U;
 
   sync::ReentrantLock _mtx{};
-  File _imp{sys::io::stdout()};
+  File _imp{File::from_fd(sys::io::stdout())};
   Vec<u8> _buf{Vec<u8>::with_capacity(2 * BUF_SIZE)};
 
  public:
@@ -65,7 +65,7 @@ class Stderr::Inn {
   friend class Stderr::Lock;
 
   sync::ReentrantLock _mtx{};
-  File _imp{sys::io::stderr()};
+  File _imp{File::from_fd(sys::io::stderr())};
 
  public:
   static inline auto instance() -> Inn& {

@@ -10,7 +10,7 @@ class FileBackend {
 
  public:
   explicit FileBackend(fs::File&& inn);
-  ~FileBackend();
+  ~FileBackend() noexcept;
 
   FileBackend(FileBackend&&) noexcept = default;
   FileBackend& operator=(FileBackend&&) noexcept = default;

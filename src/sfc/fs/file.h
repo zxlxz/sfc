@@ -5,11 +5,12 @@
 namespace sfc::fs {
 
 class [[nodiscard]] File {
+  friend struct OpenOptions;
   io::File _inn;
 
  public:
-  explicit File(io::File&& inn) noexcept;
-  ~File()noexcept;
+  File() noexcept;
+  ~File() noexcept;
 
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
