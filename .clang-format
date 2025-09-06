@@ -4,7 +4,7 @@ BasedOnStyle: Google
 ---
 Language: Cpp
 Standard: Latest
-ColumnLimit: 100
+ColumnLimit: 120
 
 BreakBeforeBraces: Attach
 InsertBraces: true

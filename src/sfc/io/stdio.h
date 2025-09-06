@@ -17,8 +17,8 @@ class Stdout {
     explicit Lock();
     ~Lock() noexcept;
 
-    Lock(Lock&&) noexcept = delete;
-    Lock& operator=(Lock&&) noexcept = delete;
+    Lock(const Lock&) noexcept = delete;
+    Lock& operator=(const Lock&) noexcept = delete;
 
     static auto is_tty() -> bool;
     void flush();
@@ -59,8 +59,8 @@ class Stderr {
     explicit Lock();
     ~Lock() noexcept;
 
-    Lock(Lock&&) noexcept = delete;
-    Lock& operator=(Lock&&) noexcept = delete;
+    Lock(const Lock&) noexcept = delete;
+    Lock& operator=(const Lock&) noexcept = delete;
 
     static auto is_tty() -> bool;
     void flush();
@@ -89,23 +89,23 @@ class Stderr {
 };
 
 void print(const auto&... args) {
-  auto out = Stdout{}.lock();
+  auto out = Stdout::lock();
   out.write_fmt(args...);
 }
 
 void println(const auto&... args) {
-  auto out = Stdout{}.lock();
+  auto out = Stdout::lock();
   out.write_fmt(args...);
   out.write_str("\n");
 }
 
 void eprint(const auto&... args) {
-  auto out = Stderr{}.lock();
+  auto out = Stderr::lock();
   out.write_fmt(args...);
 }
 
 void eprintln(const auto&... args) {
-  auto out = Stderr{}.lock();
+  auto out = Stderr::lock();
   out.write_fmt(args...);
   out.write_str("\n");
 }

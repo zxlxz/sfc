@@ -164,7 +164,7 @@ void Opts::parse_args(Slice<const Str> args) {
 
 void Opts::parse_cmdline(int argc, const char* argv[]) {
   for (auto i = 1; i < argc; i++) {
-    auto arg = Str::from(argv[i]);
+    auto arg = Str::from_cstr(argv[i]);
     _inn->parse_arg(arg);
   }
 }

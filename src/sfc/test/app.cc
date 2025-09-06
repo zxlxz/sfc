@@ -3,6 +3,7 @@
 #include "sfc/io.h"
 #include "sfc/serde/xml.h"
 #include "sfc/test.h"
+#include "sfc/test/app.h"
 
 namespace sfc::test {
 
@@ -10,7 +11,8 @@ static auto parse_filter(Str filter) -> Vec<Str> {
   auto find_pos = [](Str s) -> usize {
     for (auto p = 0U; p < s._len; p++) {
       switch (s[p]) {
-        case ';': return p;
+        case ';':
+          return p;
         case ':':
           if (s[p + 1] != ':') {
             return p;
@@ -31,24 +33,26 @@ static auto parse_filter(Str filter) -> Vec<Str> {
 }
 
 static auto format_xml(Slice<const Suite> suites) -> String {
+  using serde::XmlNode, serde::XmlAttr;
+
   auto all_cnt = usize{0};
   for (const auto& suite : suites) {
     all_cnt += suite.tests().len();
   }
 
-  auto testsuites = serde::XmlNode{"testsuites"};
-  testsuites.add_attr("tests", string::to_string(all_cnt));
-  testsuites.add_attr("name", "AllTests");
+  auto testsuites = XmlNode{"testsuites"};
+  testsuites.add_attr(XmlAttr::from("tests", string::to_string(all_cnt)));
+  testsuites.add_attr(XmlAttr::from("name", "AllTests"));
 
   for (auto& suite : suites) {
-    auto& testsuite = testsuites.add_node(serde::XmlNode{"testsuite"});
-    testsuite.add_attr("name", suite.name());
-    testsuite.add_attr("tests", string::to_string(suite.tests().len()));
+    auto& testsuite = testsuites.add_node(XmlNode{"testsuite"});
+    testsuite.add_attr(XmlAttr::from("name", suite.name()));
+    testsuite.add_attr(XmlAttr::from("tests", string::to_string(suite.tests().len())));
     for (auto& test : suite.tests()) {
-      auto& testcase = testsuite.add_node(serde::XmlNode{"testcase"});
-      testcase.add_attr("name", test.name());
-      testcase.add_attr("file", Str::from(test._loc.file));
-      testcase.add_attr("line", string::to_string(test._loc.line));
+      auto& testcase = testsuite.add_node(XmlNode{"testcase"});
+      testcase.add_attr(XmlAttr::from("name", test.name()));
+      testcase.add_attr(XmlAttr::from("file", string::to_string(test._loc.file)));
+      testcase.add_attr(XmlAttr::from("line", string::to_string(test._loc.line)));
     }
   }
 
@@ -56,18 +60,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
   return xml_str;
 }
 
-App::App() : _suites{_suites.with_capacity(64)} {}
-
-App::~App() {}
-
-auto App::operator[](Str name) -> Suite& {
-  for (auto& suite : _suites.as_mut_slice()) {
-    if (suite.name() == name) {
-      return suite;
-    }
-  }
-  return _suites.push(Suite{name});
-}
+auto suites() -> Slice<Suite>;
 
 void App::help() {
   static const char msg[] =
@@ -82,17 +75,18 @@ void App::help() {
   io::println(msg);
 }
 
-void App::run(Str filter, Option<bool> color_opt) {
+void App::exec(Str filter, Option<bool> color_opt) {
   const auto pats = parse_filter(filter);
   const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
 
-  for (auto& suite : _suites.as_mut_slice()) {
-    suite.run_tests(pats.as_slice(), color);
+  auto suites = test::suites();
+  for (auto& suite : suites) {
+    suite.run(pats.as_slice(), color);
   }
 }
 
 void App::list() const {
-  auto suites = _suites.as_slice();
+  auto suites = test::suites();
 
   auto outs = io::Stdout::lock();
   for (auto& suite : suites) {
@@ -104,7 +98,8 @@ void App::list() const {
 }
 
 void App::list_xml(Str path) const {
-  const auto xml_str = format_xml(_suites.as_slice());
+  auto suites = test::suites();
+  const auto xml_str = format_xml(suites);
   if (!path || path == "stdout") {
     io::println(xml_str);
     return;
@@ -120,9 +115,36 @@ void App::list_xml(Str path) const {
   xml_file->write_str(xml_str);
 }
 
-auto App::instance() -> App& {
-  static auto res = App{};
-  return res;
+void App::main(int argc, const char* argv[]) {
+  auto opts = app::Opts{};
+  opts.add_opt("help", "Show this help message", 'h');
+  opts.add_opt("list", "List all tests", 'l');
+  opts.add_opt("gtest_list_tests", "List all tests instead of running them");
+  opts.add_opt("gtest_filter", "Run only tests matching the given pattern");
+  opts.add_opt("gtest_color", "Enable or disable colored output", 0, "auto");
+  opts.add_opt("gtest_output", "Output file for test results", 0, "stdout");
+
+  opts.parse_cmdline(argc, argv);
+
+  if (opts.has("help")) {
+    this->help();
+    return;
+  }
+
+  if (opts.has("list")) {
+    this->list();
+    return;
+  }
+
+  if (opts.has("gtest_list_tests")) {
+    const auto output = opts.get("gtest_output").unwrap_or("stdout");
+    this->list_xml(output);
+    return;
+  }
+
+  const auto gtest_color = opts.get_flag("gtest_color");
+  const auto gtest_filter = opts.get("gtest_filter").unwrap_or("");
+  this->exec(gtest_filter, gtest_color);
 }
 
 }  // namespace sfc::test

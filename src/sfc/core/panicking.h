@@ -2,7 +2,6 @@
 
 #include "sfc/core/num.h"
 
-
 namespace sfc::panicking {
 
 struct PanicErr {};

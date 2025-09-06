@@ -11,30 +11,33 @@ struct Str {
  public:
   constexpr Str() noexcept = default;
 
-  constexpr Str(const u8* p, usize n) noexcept
-      : _ptr{static_cast<const char*>((void*)p)}, _len{n} {}
-
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
-  template <usize N>
+  template <u32 N>
   constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
   template <usize N>
   constexpr Str(char (&s)[N]) noexcept = delete;
 
-  static auto from_chars(slice::Slice<const char> s) noexcept -> Str {
-    return Str{s._ptr, s._len};
+  constexpr Str(slice::Slice<const char> s) : _ptr{s._ptr}, _len{s._len} {}
+
+  static auto from_u8(slice::Slice<const u8> s) noexcept -> Str {
+    return Str{static_cast<const char*>(static_cast<const void*>(s._ptr)), s._len};
   }
 
-  static auto from_bytes(slice::Slice<const u8> s) noexcept -> Str {
-    return Str{s._ptr, s._len};
+  static auto from_cstr(const char* s) noexcept -> Str {
+    return Str{s, s ? __builtin_strlen(s) : 0};
   }
 
-  static auto from(const char* p) noexcept -> Str {
-    if (p == nullptr) {
-      return {};
+  template <class F>
+  static auto from(F&& f) noexcept -> Str {
+    if constexpr (requires { Str{f}; }) {
+      return Str{static_cast<F&&>(f)};
+    } else if constexpr (requires { f.as_str(); }) {
+      return f.as_str();
+    } else {
+      return f;
     }
-    return Str{p, __builtin_strlen(p)};
   }
 
   auto as_ptr() const noexcept -> const char* {

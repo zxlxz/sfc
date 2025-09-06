@@ -13,7 +13,7 @@ else()
 endif()
 
 # test
-if(SFC_ENABLE_TESTING)
+if(SFC_ENABLE_TEST)
   file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/**.cxx")
   add_executable(sfc_test ${SRC})
   target_link_libraries(sfc_test sfc)

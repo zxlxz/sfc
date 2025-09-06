@@ -74,7 +74,7 @@ auto Suite::push(Case unit) -> Case& {
   return _cases.push(unit);
 }
 
-void Suite::run_tests(Slice<const Str> pats, bool color) {
+void Suite::run(Slice<const Str> pats, bool color) {
   if (!pats) {
     for (auto& test : _cases.as_mut_slice()) {
       test.run(color);
@@ -94,6 +94,34 @@ void Suite::run_tests(Slice<const Str> pats, bool color) {
       }
     }
   }
+}
+
+static auto suites_vec() -> Vec<Suite>& {
+  static auto res = Vec<Suite>{};
+  return res;
+}
+
+static auto get_suite(Str name) -> Suite& {
+  auto& suites = suites_vec();
+  for (auto& suite : suites.as_mut_slice()) {
+    if (suite.name() == name) {
+      return suite;
+    }
+  }
+  return suites.push(Suite{name});
+}
+
+auto suites() -> Slice<Suite> {
+  auto& vec = test::suites_vec();
+  return vec.as_mut_slice();
+}
+
+auto regist(Case test_case) -> bool {
+  const auto suite_name = test_case.suite();
+
+  auto& suite = get_suite(suite_name);
+  suite.push(test_case);
+  return true;
 }
 
 }  // namespace sfc::test

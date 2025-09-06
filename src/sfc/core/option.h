@@ -3,6 +3,10 @@
 #include "sfc/core/panicking.h"
 #include "sfc/core/ptr.h"
 
+namespace sfc::str {
+struct Str;
+}
+
 namespace sfc::option {
 
 enum class Tag : u8 { None, Some };

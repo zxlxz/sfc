@@ -34,7 +34,7 @@ static void panic_dump_frames() {
 
     auto frame_ptr = frame_buf[idx];
     auto frame_info = sys::backtrace::frame_info(frame_ptr);
-    auto frame_func = Str::from(frame_info.func);
+    auto frame_func = Str::from_cstr(frame_info.func);
     char func_buf[256] = {};
     if (auto len = sys::backtrace::cxx_demangle(frame_info.func, func_buf, sizeof(func_buf))) {
       frame_func = Str{func_buf, len};

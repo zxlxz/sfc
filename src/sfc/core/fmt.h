@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/str.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::fmt {
 
@@ -83,6 +84,9 @@ struct Style {
 
 template <class T>
 struct Display;
+
+template<class T>
+Display(const T&) -> Display<T>;
 
 template <class... T>
 struct Args;
@@ -191,12 +195,11 @@ class Fmter {
     }
   }
 
-  template <class T>
-  void write(const T& val) {
+  void write(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      Display<T>{val}.fmt(*this);
+      Display{val}.fmt(*this);
     }
   }
 
@@ -209,19 +212,29 @@ class Fmter {
   }
 
   class DebugTuple;
-  auto debug_tuple() -> DebugTuple;
+  auto debug_tuple() -> DebugTuple {
+    return DebugTuple{*this};
+  }
 
   class DebugList;
-  auto debug_list() -> DebugList;
+  auto debug_list() -> DebugList {
+    return DebugList{*this};
+  }
 
   class DebugSet;
-  auto debug_set() -> DebugSet;
+  auto debug_set() -> DebugSet {
+    return DebugSet{*this};
+  }
 
   class DebugMap;
-  auto debug_map() -> DebugMap;
+  auto debug_map() -> DebugMap {
+    return DebugMap{*this};
+  }
 
   class DebugStruct;
-  auto debug_struct() -> DebugStruct;
+  auto debug_struct() -> DebugStruct {
+    return DebugStruct{*this};
+  }
 };
 
 template <class W>
@@ -254,11 +267,6 @@ class Fmter<W>::DebugTuple {
 };
 
 template <class W>
-auto Fmter<W>::debug_tuple() -> DebugTuple {
-  return DebugTuple{*this};
-}
-
-template <class W>
 class Fmter<W>::DebugList {
   Fmter& _fmt;
   usize _cnt = 0;
@@ -286,11 +294,6 @@ class Fmter<W>::DebugList {
     iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
-
-template <class W>
-auto Fmter<W>::debug_list() -> DebugList {
-  return DebugList{*this};
-}
 
 template <class W>
 class Fmter<W>::DebugSet {
@@ -323,11 +326,6 @@ class Fmter<W>::DebugSet {
     iter.for_each([&](auto&& val) { this->entry(val); });
   }
 };
-
-template <class W>
-auto Fmter<W>::debug_set() -> DebugSet {
-  return DebugSet{*this};
-}
 
 template <class W>
 class Fmter<W>::DebugMap {
@@ -367,11 +365,6 @@ class Fmter<W>::DebugMap {
 };
 
 template <class W>
-auto Fmter<W>::debug_map() -> DebugMap {
-  return DebugMap{*this};
-}
-
-template <class W>
 class Fmter<W>::DebugStruct {
   Fmter& _fmt;
   usize _cnt = 0;
@@ -409,11 +402,6 @@ class Fmter<W>::DebugStruct {
   }
 };
 
-template <class W>
-auto Fmter<W>::debug_struct() -> DebugStruct {
-  return DebugStruct{*this};
-}
-
 template <class... T>
 struct Args {
   str::Str _pats = {};
@@ -441,12 +429,9 @@ struct Args {
   }
 };
 
-template <class T>
-struct Display;
-
 template <>
 struct Display<bool> {
-  const bool& _val;
+  bool _val;
 
  public:
   void fmt(auto& f) const {
@@ -456,7 +441,7 @@ struct Display<bool> {
 
 template <>
 struct Display<char> {
-  const char& _val;
+  char _val;
 
  public:
   void fmt(auto& f) const {
@@ -464,74 +449,55 @@ struct Display<char> {
   }
 };
 
-template <num::SInt T>
+template <trait::int_ T>
 struct Display<T> {
-  const T& _val;
+  T _val;
+
+ public:
+  void fmt(auto& f) const {
+    char buf[32];
+    const auto s = this->fill(buf, f.style());
+    f.pad_num(_val < 0, s);
+  }
+
+  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
+};
+
+template <trait::float_ T>
+struct Display<T> {
+  T _val;
 
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(T)];
-    // NOLINTNEXTLINE (clang-analyzer-core.uninitialized.Branch)
-    const auto uval = _val < 0 ? -_val : _val;
-    const auto nums = num::int2str(buf, uval, f.style()._type);
+    const auto nums = this->fill(buf, f.style());
     f.pad_num(_val < 0, nums);
   }
-};
 
-template <num::UInt T>
-struct Display<T> {
-  const T& _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(T)];
-
-    const auto uval = _val + 0U;
-    const auto nums = num::int2str(buf, uval, f.style()._type);
-    f.pad_num(false, nums);
-  }
+  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
 };
 
 template <>
-struct Display<float> {
-  const float& _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(float)];
-
-    const auto& style = f.style();
-    const auto prec = style.precision(4);
-    const auto nums = num::flt2str(buf, _val < 0 ? -_val : _val, prec, style._type);
-    f.pad_num(_val < 0, nums);
-  }
-};
-
-template <>
-struct Display<double> {
-  const double& _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(double)];
-
-    const auto& style = f.style();
-    const auto prec = style.precision(6);
-    const auto nums = num::flt2str(buf, _val < 0 ? -_val : _val, prec, style._type);
-    f.pad_num(_val < 0, nums);
-  }
-};
-
-template <class T>
-struct Display<T*> {
-  using P = T*;
-  const P& _val;
+struct Display<const void*> {
+  const void* _val;
 
  public:
   void fmt(auto& f) const {
     char buf[8 * sizeof(_val)];
-    const auto s = num::int2str(buf, static_cast<const void*>(_val), f.style()._type);
-    f.pad_num(false, s);
+    const auto nums = this->fill(buf, f.style());
+    f.pad_num(false, nums);
+  }
+
+  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
+};
+
+template <class T>
+struct Display<T*> {
+  T* _val;
+
+ public:
+  void fmt(auto& f) const {
+    return Display<const void*>{_val}.fmt(f);
   }
 };
 
@@ -556,22 +522,18 @@ struct Display<char[N]> {
   }
 };
 
-template <class T>
-  requires(__is_enum(T))
+template <trait::enum_ T>
 struct Display<T> {
-  const T& _val;
+  T _val;
 
  public:
   void fmt(auto& f) const {
+    using U = __underlying_type(T);
     if constexpr (requires { to_str(_val); }) {
-      f.pad(to_str(_val));
+      const auto s = to_str(_val);
+      f.pad(s);
     } else {
-      using U = __underlying_type(T);
-
-      const auto val = static_cast<U>(_val);
-      char buf[8 * sizeof(U)];
-      const auto str = num::int2str(buf, val, f.style()._type);
-      f.pad_num(false, str);
+      Display<U>{static_cast<U>(_val)}.fmt(f);
     }
   }
 };

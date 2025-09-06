@@ -89,7 +89,7 @@ struct Serialize<bool> {
   }
 };
 
-template <num::Int T>
+template <trait::int_ T>
 struct Serialize<T> {
   const T& _val;
 
@@ -99,7 +99,7 @@ struct Serialize<T> {
   }
 };
 
-template <num::Float T>
+template <trait::float_ T>
 struct Serialize<T> {
   const T& _val;
 
@@ -133,14 +133,14 @@ struct Deserialize<bool> {
   }
 };
 
-template <num::Int T>
+template <trait::int_ T>
 struct Deserialize<T> {
   static auto deserialize(auto& de) -> Option<T> {
     return de.template des_int<T>();
   }
 };
 
-template <num::Float T>
+template <trait::float_ T>
 struct Deserialize<T> {
   static auto deserialize(auto& de) -> Option<T> {
     return de.template des_flt<T>();

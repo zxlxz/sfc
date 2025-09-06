@@ -4,14 +4,14 @@ namespace sfc::serde {
 
 XmlNode::XmlNode(Str type, Str value) : _type{String::from(type)}, _value{String::from(value)} {}
 
-XmlNode::~XmlNode()noexcept = default;
+XmlNode::~XmlNode() noexcept = default;
 
 XmlNode::XmlNode(XmlNode&& other) noexcept = default;
 
 XmlNode& XmlNode::operator=(XmlNode&& other) noexcept = default;
 
-auto XmlNode::add_attr(Str name, Str value) -> XmlAttr& {
-  return _attrs.push(XmlAttr{String::from(name), String::from(value)});
+auto XmlNode::add_attr(XmlAttr attr) -> XmlAttr& {
+  return _attrs.push(mem::move(attr));
 }
 
 auto XmlNode::add_node(XmlNode child) -> XmlNode& {

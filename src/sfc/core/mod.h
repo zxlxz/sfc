@@ -2,11 +2,6 @@
 
 #if defined(__clang__) && defined(_WIN32)
 #pragma clang diagnostic ignored "-Wunknown-attributes"
-#pragma clang diagnostic ignored "-Wc++11-extensions"
-#pragma clang diagnostic ignored "-Wc++14-extensions"
-#pragma clang diagnostic ignored "-Wc++17-extensions"
-#pragma clang diagnostic ignored "-Wc++20-extensions"
-#pragma clang diagnostic ignored "-Wc++23-extensions"
 #endif
 
 // clang-format off
@@ -55,6 +50,9 @@ struct Expr<F(T...)> {
 
 template <class X>
 using expr_t = typename Expr<X>::Type;
+
+template <class T, class... U>
+concept IsAny = (... || __is_same(T, U));
 
 #if defined(_MSC_VER) && !defined(__clang__)  // clang-format off
 template <class T, class U> struct is_same       { static constexpr bool VALUE = false;};

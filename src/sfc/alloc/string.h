@@ -23,14 +23,21 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from(Str s) -> String {
-    auto res = String{};
-    res.push_str(s);
-    return res;
+  template <class F>
+  static auto from(F&& f) -> String {
+    if constexpr (requires { String{static_cast<F &&>(f)}; }) {
+      return String{static_cast<F&&>(f)};
+    } else if constexpr (requires { f.to_string()->String; }) {
+      return f.to_string();
+    } else {
+      auto res = String{};
+      res.push_str(f);
+      return res;
+    }
   }
 
   operator str::Str() const noexcept {
-    return Str::from_bytes(_vec.as_slice());
+    return Str::from_u8(_vec.as_slice());
   }
 
   auto as_ptr() const -> const u8* {
@@ -46,7 +53,7 @@ class [[nodiscard]] String {
   }
 
   auto as_str() const -> Str {
-    return Str{_vec.as_ptr(), _vec.len()};
+    return Str::from_u8(_vec.as_slice());
   }
 
   auto is_empty() const -> bool {
@@ -79,7 +86,7 @@ class [[nodiscard]] String {
   }
 
   auto operator[](Range ids) const -> Str {
-    return Str::from_bytes(_vec[ids]);
+    return Str::from_u8(_vec[ids]);
   }
 
   auto iter() const {
@@ -214,12 +221,12 @@ namespace sfc::panicking {
 [[noreturn]] void panic_imp(Location loc, const auto&... args) {
   auto s = string::String{};
   fmt::write(s, args...);
-  fmt::write(s, "\n >: {}:{}", Str::from(loc.file), loc.line);
+  fmt::write(s, "\n >: {}:{}", Str::from_cstr(loc.file), loc.line);
   panicking::panic_str(s.as_str());
 }
 
 [[noreturn]] void panic(PanicInfo info, const auto&... args) {
-  panicking::panic_imp(info.loc, Str::from(info.val), args...);
+  panicking::panic_imp(info.loc, Str::from_cstr(info.val), args...);
 }
 
 }  // namespace sfc::panicking

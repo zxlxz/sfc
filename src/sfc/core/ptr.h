@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/mem.h"
+#include "sfc/core/panicking.h"
 
 namespace sfc::ptr {
 
