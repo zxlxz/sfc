@@ -16,9 +16,10 @@ template <class I, class F>
 struct Map;
 
 template <class I>
-struct Iterator : I {
+class Iterator : public I {
   using Item = typename I::Item;
 
+ public:
   Iterator() = delete;
   ~Iterator() = delete;
 

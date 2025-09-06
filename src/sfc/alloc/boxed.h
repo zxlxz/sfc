@@ -127,9 +127,8 @@ class Box<R(T...), A> {
 
     static auto meta() -> Meta {
       const auto dtor = SSO ? nullptr : +[](U& u) { static_cast<X*>(u._ptr)->~X(); };
-      const auto call =
-          SSO ? [](U& u, T&&... t) { return (reinterpret_cast<X&>(u))(static_cast<T&&>(t)...); }
-              : [](U& u, T&&... t) { return (*static_cast<X*>(u._ptr))(static_cast<T&&>(t)...); };
+      const auto call = SSO ? [](U& u, T&&... t) { return (reinterpret_cast<X&>(u))(static_cast<T&&>(t)...); }
+                            : [](U& u, T&&... t) { return (*static_cast<X*>(u._ptr))(static_cast<T&&>(t)...); };
 
       return Meta{Layout::of<X>(), dtor, call};
     }
@@ -159,8 +158,7 @@ class Box<R(T...), A> {
   Box(const Box&) = delete;
   Box& operator=(const Box&) = delete;
 
-  Box(Box&& other) noexcept
-      : _meta{other._meta}, _data{other._data}, _alloc{static_cast<A&&>(other._alloc)} {
+  Box(Box&& other) noexcept : _meta{other._meta}, _data{other._data}, _alloc{static_cast<A&&>(other._alloc)} {
     other._meta = {};
     other._data = {};
   }
@@ -210,8 +208,7 @@ class Box<T&, A> {
     void (*_dtor)(void*) = nullptr;
 
     template <class X>
-    explicit Meta(X*)
-        : _layout(Layout::of<X>()), _dtor([](void* p) { static_cast<X*>(p)->~X(); }) {}
+    explicit Meta(X*) : _layout(Layout::of<X>()), _dtor([](void* p) { static_cast<X*>(p)->~X(); }) {}
   };
 
   const Meta* _meta = nullptr;
@@ -229,8 +226,7 @@ class Box<T&, A> {
 
   Box& operator=(const Box&) = delete;
 
-  Box(Box&& other) noexcept
-      : _meta{other._meta}, _self{other._self}, _alloc{static_cast<A&&>(other._alloc)} {
+  Box(Box&& other) noexcept : _meta{other._meta}, _self{other._self}, _alloc{static_cast<A&&>(other._alloc)} {
     other._meta = {};
     other._self = {};
   }
@@ -277,18 +273,19 @@ class Box<T&, A> {
 
 }  // namespace sfc::boxed
 
-namespace sfc::option::detail {
+namespace sfc::option {
+
 template <class... T>
-class Option<boxed::Box<T...>> {
+class Inner<boxed::Box<T...>> {
   using Box = boxed::Box<T...>;
   Box _val{};
 
  public:
-  Option() = default;
-  explicit Option(Box&& val) noexcept : _val{static_cast<Box&&>(val)} {}
+  Inner() = default;
+  explicit Inner(Box&& val) noexcept : _val{static_cast<Box&&>(val)} {}
 
-  Option(Option&&) noexcept = default;
-  Option& operator=(Option&&) noexcept = default;
+  Inner(Inner&&) noexcept = default;
+  Inner& operator=(Inner&&) noexcept = default;
 
   auto tag() const noexcept -> Tag {
     return _val ? Tag::Some : Tag::None;
@@ -303,4 +300,4 @@ class Option<boxed::Box<T...>> {
   }
 };
 
-}  // namespace sfc::option::detail
+}  // namespace sfc::option

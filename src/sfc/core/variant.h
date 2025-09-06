@@ -8,48 +8,46 @@ template <u32 I>
 struct tag_t {};
 
 template <class... T>
-union Union;
+union Inner;
 
 template <>
-union Union<> {};
+union Inner<> {};
 
 template <class T>
-union Union<T> {
+union Inner<T> {
   T _0;
 
  public:
   template <u32 I, class... U>
-  Union(tag_t<I>, U&&... u) : _0{static_cast<U&&>(u)...} {}
+  Inner(tag_t<I>, U&&... u) : _0{static_cast<U&&>(u)...} {}
 
-  Union(u32 tag, Union&& other) {
+  Inner(u32 tag, Inner&& other) {
     if (tag == 0) {
       new (&_0) T{static_cast<T&&>(other._0)};
     }
   }
 
-  Union(u32 tag, const Union& other) {
+  Inner(u32 tag, const Inner& other) {
     if (tag == 0) {
       new (&_0) T{other._0};
     }
   }
 
-  ~Union() {}
+  ~Inner() {}
 
   template <class U>
   static constexpr auto tag() -> u32 {
     return __is_same(T, U) ? 0U : 1U;
   }
 
-  operator const T&() const {
+  template <class U>
+  auto as() const -> const U& {
     return _0;
   }
 
-  operator T&() {
+  template <class U>
+  auto as_mut() -> U& {
     return _0;
-  }
-
-  operator T&&() {
-    return static_cast<T&&>(_0);
   }
 
   auto map([[maybe_unused]] u32 tag, auto&& f) const {
@@ -62,64 +60,55 @@ union Union<T> {
 };
 
 template <class T0, class... Ts>
-union Union<T0, Ts...> {
+union Inner<T0, Ts...> {
   T0 _0;
-  Union<Ts...> _1;
+  Inner<Ts...> _1;
 
  public:
   template <class... U>
-  Union(tag_t<0>, U&&... u) : _0{static_cast<U&&>(u)...} {}
+  Inner(tag_t<0>, U&&... u) : _0{static_cast<U&&>(u)...} {}
 
   template <u32 I, class... U>
-  Union(tag_t<I>, U&&... u) : _1{tag_t<I - 1>{}, static_cast<U&&>(u)...} {}
+  Inner(tag_t<I>, U&&... u) : _1{tag_t<I - 1>{}, static_cast<U&&>(u)...} {}
 
-  Union(u32 tag, Union&& other) : _1{tag - 1, static_cast<Union<Ts...>&&>(other._1)} {
+  Inner(u32 tag, Inner&& other) : _1{tag - 1, static_cast<Inner<Ts...>&&>(other._1)} {
     if (tag == 0) {
       new (&_0) T0{static_cast<T0&&>(other._0)};
     }
   }
 
-  Union(u32 tag, const Union& other) : _1{tag - 1, other._1} {
+  Inner(u32 tag, const Inner& other) : _1{tag - 1, other._1} {
     if (tag == 0) {
       new (&_0) T0{other._0};
     }
   }
 
-  ~Union() {}
+  ~Inner() {}
 
   template <class U>
   static constexpr auto tag() -> u32 {
     if constexpr (__is_same(T0, U)) {
       return 0;
     } else {
-      return Union<Ts...>::template tag<U>() + 1;
+      return Inner<Ts...>::template tag<U>() + 1;
     }
   }
 
   template <class U>
-  operator const U&() const {
+  auto as() const -> const U& {
     if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
-      return static_cast<const U&>(_1);
+      return _1.template as<U>();
     }
   }
 
   template <class U>
-  operator U&() {
+  auto as_mut() -> U& {
     if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
-      return static_cast<U&>(_1);
-    }
-  }
-
-  template <class U>
-  operator U&&() {
-    if constexpr (__is_same(T0, U)) {
-      return static_cast<U&&>(_0);
-    } else {
-      return static_cast<U&&>(_1);
+      return _1.template as_mut<U>();
     }
   }
 
@@ -142,7 +131,7 @@ union Union<T0, Ts...> {
 
 template <class... T>
 class Variant {
-  using Inn = Union<T...>;
+  using Inn = Inner<T...>;
 
   u8 _tag;
   Inn _inn;
@@ -162,26 +151,27 @@ class Variant {
     _inn.map(_tag, []<class U>(U& x) { x.~U(); });
   }
 
-  Variant(Variant&& other) noexcept
-      : _tag{other._tag}, _inn{_tag, static_cast<Inn&&>(other._inn)} {}
+  Variant(Variant&& other) noexcept : _tag{other._tag}, _inn{_tag, static_cast<Inn&&>(other._inn)} {}
 
   Variant(const Variant& other) : _tag{other._tag}, _inn{other._tag, other._inn} {}
 
   Variant& operator=(Variant&& other) noexcept {
-    if (this != &other) {
-      _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
-      _tag = other._tag;
-      _inn.map_mut(_tag, [&]<class U>(U& x) { new (&x) U{static_cast<U&&>(other._inn)}; });
+    if (this == &other) {
+      return *this;
     }
+    _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
+    _tag = other._tag;
+    _inn.map_mut(_tag, [&]<class U>(U& x) { new (&x) U{static_cast<U&&>(other._inn.template as_mut<U>())}; });
     return *this;
   }
 
   Variant& operator=(const Variant& other) {
-    if (this != &other) {
-      _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
-      _tag = other._tag;
-      _inn = {other._tag, other._inn};
+    if (this == &other) {
+      return *this;
     }
+    _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
+    _tag = other._tag;
+    _inn = {other._tag, other._inn};
     return *this;
   }
 
@@ -193,13 +183,13 @@ class Variant {
   template <class U>
   auto as() const -> const U& {
     panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as: invalid type");
-    return static_cast<const U&>(_inn);
+    return _inn.template as<U>();
   }
 
   template <class U>
   auto as_mut() -> U& {
     panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as_mut: invalid type");
-    return static_cast<U&>(_inn);
+    return _inn.template as_mut<U>();
   }
 
   void map(auto&& f) const {

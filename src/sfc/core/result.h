@@ -6,10 +6,8 @@ namespace sfc::result {
 
 enum class Tag : u8 { Ok, Err };
 
-namespace detail {
-
 template <class T, class E>
-class Result {
+class Inner {
   Tag _tag;
   union {
     T _ok;
@@ -17,24 +15,23 @@ class Result {
   };
 
  public:
-  explicit Result(T&& ok) noexcept : _tag{Tag::Ok}, _ok{static_cast<T&&>(ok)} {}
+  explicit Inner(T&& ok) noexcept : _tag{Tag::Ok}, _ok{static_cast<T&&>(ok)} {}
 
-  explicit Result(E&& err) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(err)} {}
+  explicit Inner(E&& err) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(err)} {}
 
-  ~Result() noexcept {
+  ~Inner() noexcept {
     _tag == Tag::Ok ? _ok.~T() : _err.~E();
   }
 
-  Result(const Result& other) noexcept : _tag{other._tag} {
+  Inner(const Inner& other) noexcept : _tag{other._tag} {
     _tag == Tag::Ok ? new (&_ok) T{other._ok} : new (&_err) E{other._err};
   }
 
-  Result(Result&& other) noexcept : _tag{other._tag} {
-    _tag == Tag::Ok ? new (&_ok) T{static_cast<T&&>(other._ok)}
-                    : new (&_err) E{static_cast<E&&>(other._err)};
+  Inner(Inner&& other) noexcept : _tag{other._tag} {
+    _tag == Tag::Ok ? new (&_ok) T{static_cast<T&&>(other._ok)} : new (&_err) E{static_cast<E&&>(other._err)};
   }
 
-  Result& operator=(const Result& other) noexcept {
+  Inner& operator=(const Inner& other) noexcept {
     if (this == &other) {
       return *this;
     }
@@ -44,13 +41,12 @@ class Result {
     return *this;
   }
 
-  Result& operator=(Result&& other) noexcept {
+  Inner& operator=(Inner&& other) noexcept {
     if (this == &other) {
       return *this;
     }
     _tag == Tag::Ok ? _ok.~T() : _err.~E();
-    other._tag == Tag::Ok ? new (&_ok) T{static_cast<T&&>(other._ok)}
-                          : new (&_err) E{static_cast<E&&>(other._err)};
+    other._tag == Tag::Ok ? new (&_ok) T{static_cast<T&&>(other._ok)} : new (&_err) E{static_cast<E&&>(other._err)};
     _tag = other._tag;
     return *this;
   }
@@ -76,26 +72,20 @@ class Result {
   }
 };
 
-}  // namespace detail
-
 template <class T, class E>
 class Result {
   static_assert(!__is_same(T, E));
-  detail::Result<T, E> _inn;
+  Inner<T, E> _inn;
 
  public:
   Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
-
   Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
-
   ~Result() noexcept = default;
 
   Result(const Result&) noexcept = default;
-
   Result(Result&&) noexcept = default;
 
   Result& operator=(const Result&) noexcept = default;
-
   Result& operator=(Result&&) noexcept = default;
 
   auto is_ok() const noexcept -> bool {

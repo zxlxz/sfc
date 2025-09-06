@@ -161,10 +161,11 @@ struct FltBuf {
 
 template <trait::float_ T>
 auto Display<T>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  const auto precision = style.precision(sizeof(T) == 4 ? 4U : 6U);
+  const auto uval = _val >= 0 ? _val : -_val;
+  const auto prec = style.precision(sizeof(T) == 4 ? 4U : 6U);
 
   auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(_val, precision, style.type());
+  ss.fill(uval, prec, style.type());
   return ss.as_str();
 }
 

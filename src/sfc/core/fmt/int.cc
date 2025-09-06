@@ -105,16 +105,19 @@ struct IntBuf {
 
 template <trait::int_ T>
 auto Display<T>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
+  const auto uval = _val > 0 ? _val : 0 - _val;
+
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(_val + 0, style.type());
+  ss.fill(uval, style.type());
   return ss.as_str();
 }
 
 auto Display<const void*>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  auto imp = IntBuf{buf._ptr, buf._ptr + buf._len};
-  auto uval = __builtin_bit_cast(usize, _val);
-  imp.fill(uval, style.type() ? style.type() : 'p');
-  return imp.as_str();
+  const auto uval = __builtin_bit_cast(usize, _val);
+
+  auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
+  ss.fill(uval, style.type() ? style.type() : 'p');
+  return ss.as_str();
 }
 
 template struct Display<signed char>;

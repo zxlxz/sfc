@@ -11,39 +11,37 @@ namespace sfc::option {
 
 enum class Tag : u8 { None, Some };
 
-namespace detail {
-
 template <class T>
-class Option {
+class Inner {
   Tag _tag = Tag::None;
   union {
     T _val;
   };
 
  public:
-  explicit Option() noexcept {}
+  explicit Inner() noexcept {}
 
-  explicit Option(T&& val) noexcept : _tag{Tag::Some}, _val{static_cast<T&&>(val)} {}
+  explicit Inner(T&& val) noexcept : _tag{Tag::Some}, _val{static_cast<T&&>(val)} {}
 
-  ~Option() noexcept {
+  ~Inner() noexcept {
     if (_tag == Tag::Some) {
       _val.~T();
     }
   }
 
-  Option(const Option& other) noexcept : _tag{other._tag} {
+  Inner(const Inner& other) noexcept : _tag{other._tag} {
     if (_tag == Tag::Some) {
       new (&_val) T{other._val};
     }
   }
 
-  Option(Option&& other) noexcept : _tag{other._tag} {
+  Inner(Inner&& other) noexcept : _tag{other._tag} {
     if (_tag == Tag::Some) {
       new (&_val) T{static_cast<T&&>(other._val)};
     }
   }
 
-  auto operator=(const Option& other) noexcept -> Option& {
+  auto operator=(const Inner& other) noexcept -> Inner& {
     if (this == &other) {
       return *this;
     }
@@ -57,7 +55,7 @@ class Option {
     return *this;
   }
 
-  auto operator=(Option&& other) noexcept -> Option& {
+  auto operator=(Inner&& other) noexcept -> Inner& {
     if (this == &other) {
       return *this;
     }
@@ -85,13 +83,13 @@ class Option {
 };
 
 template <class T>
-class Option<T&> {
+class Inner<T&> {
   T* _ptr{nullptr};
 
  public:
-  Option() noexcept = default;
+  Inner() noexcept = default;
 
-  explicit Option(T& val) noexcept : _ptr{&val} {}
+  explicit Inner(T& val) noexcept : _ptr{&val} {}
 
   auto tag() const noexcept -> Tag {
     return _ptr != nullptr ? Tag::Some : Tag::None;
@@ -106,13 +104,9 @@ class Option<T&> {
   }
 };
 
-}  // namespace detail
-
 template <class T>
 class Option {
-  template <class U>
-  friend class Option;
-  detail::Option<T> _inn{};
+  Inner<T> _inn{};
 
  public:
   Option() noexcept = default;
@@ -159,11 +153,10 @@ class Option {
 
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
-    if (_inn.tag() == Tag::Some) {
-      // NOLINTNEXTLINE (clang-analyzer-core.uninitialized.Branch)
-      return other._inn.tag() == Tag::Some && *_inn == *other._inn;
+    if (this->is_none()) {
+      return other.is_none();
     }
-    return other._inn.tag() == Tag::None;
+    return other.is_some() && *_inn == *other;
   }
 
   [[nodiscard]] auto unwrap() && -> T {
