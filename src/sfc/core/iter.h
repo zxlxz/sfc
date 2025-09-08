@@ -1,8 +1,9 @@
 #pragma once
 
 #include "sfc/core/mem.h"
-#include "sfc/core/option.h"
+#include "sfc/core/trait.h"
 #include "sfc/core/tuple.h"
+#include "sfc/core/option.h"
 
 namespace sfc::iter {
 
@@ -52,7 +53,7 @@ class Iterator : public I {
       return {};
     }
 
-    if constexpr (!__is_same(U, U&)) {
+    if constexpr (!trait::same_<U, U&>) {
       auto res_val = static_cast<U>(*first);
       for (; auto x = this->next();) {
         res_val = f(res_val, *x);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/trait.h"
 #include "sfc/core/option.h"
 
 namespace sfc::result {
@@ -74,7 +75,7 @@ class Inner {
 
 template <class T, class E>
 class Result {
-  static_assert(!__is_same(T, E));
+  static_assert(!trait::same_<T, E>);
   Inner<T, E> _inn;
 
  public:

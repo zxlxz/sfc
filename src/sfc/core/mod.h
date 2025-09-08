@@ -51,13 +51,5 @@ struct Expr<F(T...)> {
 template <class X>
 using expr_t = typename Expr<X>::Type;
 
-template <class T, class... U>
-concept IsAny = (... || __is_same(T, U));
-
-#if defined(_MSC_VER) && !defined(__clang__)  // clang-format off
-template <class T, class U> struct is_same       { static constexpr bool VALUE = false;};
-template <class T>          struct is_same<T, T> { static constexpr bool VALUE = true; };
-#define __is_same(T, U)     sfc::is_same<T, U>::VALUE
-#endif  // clang-format on
 
 }  // namespace sfc

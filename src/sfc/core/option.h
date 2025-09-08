@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/core/panicking.h"
-#include "sfc/core/ptr.h"
 
 namespace sfc::str {
 struct Str;

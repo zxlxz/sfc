@@ -85,7 +85,7 @@ struct Style {
 template <class T>
 struct Display;
 
-template<class T>
+template <class T>
 Display(const T&) -> Display<T>;
 
 template <class... T>

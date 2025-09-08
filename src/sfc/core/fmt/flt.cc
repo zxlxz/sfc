@@ -159,10 +159,18 @@ struct FltBuf {
   }
 };
 
-template <trait::float_ T>
-auto Display<T>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
+template<> auto Display<float>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
   const auto uval = _val >= 0 ? _val : -_val;
-  const auto prec = style.precision(sizeof(T) == 4 ? 4U : 6U);
+  const auto prec = style.precision(4);
+
+  auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
+  ss.fill(uval, prec, style.type());
+  return ss.as_str();
+}
+
+template<> auto Display<double>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
+  const auto uval = _val >= 0 ? _val : -_val;
+  const auto prec = style.precision(6);
 
   auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(uval, prec, style.type());
@@ -171,6 +179,5 @@ auto Display<T>::fill(slice::Slice<char> buf, const Style& style) const -> str::
 
 template struct Display<float>;
 template struct Display<double>;
-template struct Display<long double>;
 
 }  // namespace sfc::fmt
