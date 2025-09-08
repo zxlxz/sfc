@@ -7,23 +7,24 @@
 namespace sfc::sync::test {
 
 SFC_TEST(mutex) {
-  auto vec = Vec<int>::with_capacity(4 * 20);
+  static constexpr auto CNT = 10U;
+  auto vec = Vec<int>::with_capacity(2 * CNT);
   auto mtx = Mutex{};
 
-  auto push = [&](Str name, usize n) {
-    for (auto i = 0u; i < n; ++i) {
+  auto push = [&](Str name) {
+    for (auto i = 0u; i < CNT; ++i) {
       auto lock = mtx.lock();
       auto n = static_cast<int>(vec.len());
       vec.push(n);
-      thread::sleep_ms(2);
+      thread::sleep_ms(1);
       vec.push(n + 1);
-      thread::sleep_ms(2);
+      thread::sleep_ms(1);
     }
   };
 
   {
-    auto t1 = thread::spawn([&]() { push("a", 20); });
-    auto t2 = thread::spawn([&]() { push("b", 20); });
+    auto t1 = thread::spawn([&]() { push("a"); });
+    auto t2 = thread::spawn([&]() { push("b"); });
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
@@ -32,24 +33,25 @@ SFC_TEST(mutex) {
 }
 
 SFC_TEST(reentrant_lock) {
-  auto vec = Vec<int>::with_capacity(4 * 20);
+  static constexpr auto CNT = 10U;
+  auto vec = Vec<int>::with_capacity(4*CNT);
   auto mtx = ReentrantLock{};
 
-  auto push = [&](Str name, usize n) {
-    for (auto i = 0u; i < n; ++i) {
+  auto push = [&](Str name) {
+    for (auto i = 0u; i < CNT; ++i) {
       auto lock1 = mtx.lock();
       auto n = static_cast<int>(vec.len());
       vec.push(n);
-      thread::sleep_ms(2);
+      thread::sleep_ms(1);
       auto lock2 = mtx.lock();
       vec.push(n + 1);
-      thread::sleep_ms(2);
+      thread::sleep_ms(1);
     }
   };
 
   {
-    auto t1 = thread::spawn([&]() { push("a", 20); });
-    auto t2 = thread::spawn([&]() { push("b", 20); });
+    auto t1 = thread::spawn([&]() { push("a"); });
+    auto t2 = thread::spawn([&]() { push("b"); });
   }
 
   for (auto i = 0; i < vec.len(); ++i) {

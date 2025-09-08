@@ -1,4 +1,3 @@
-#include "sfc/app/opts.h"
 #include "sfc/fs.h"
 #include "sfc/io.h"
 #include "sfc/serde/xml.h"
@@ -116,34 +115,34 @@ void App::list_xml(Str path) const {
 }
 
 void App::main(int argc, const char* argv[]) {
-  auto opts = app::Opts{};
-  opts.add_opt("help", "Show this help message", 'h');
-  opts.add_opt("list", "List all tests", 'l');
-  opts.add_opt("gtest_list_tests", "List all tests instead of running them");
-  opts.add_opt("gtest_filter", "Run only tests matching the given pattern");
-  opts.add_opt("gtest_color", "Enable or disable colored output", 0, "auto");
-  opts.add_opt("gtest_output", "Output file for test results", 0, "stdout");
+  auto cmd = app::Cmd{"sfc_test"};
+  cmd.arg({'h', "help", "Show this help message"});
+  cmd.arg({'l', "list", "List all tests"});
+  cmd.arg({0, "gtest_list_tests", "List all tests instead of running them"});
+  cmd.arg({0, "gtest_filter", "Run only tests matching the given pattern"});
+  cmd.arg({0, "gtest_color", "Enable or disable colored output", "auto"});
+  cmd.arg({0, "gtest_output", "Output file for test results", "stdout"});
 
-  opts.parse_cmdline(argc, argv);
+  cmd.parse_cmdline(argc, argv);
 
-  if (opts.has("help")) {
+  if (cmd.get("help")) {
     this->help();
     return;
   }
 
-  if (opts.has("list")) {
+  if (cmd.get("list")) {
     this->list();
     return;
   }
 
-  if (opts.has("gtest_list_tests")) {
-    const auto output = opts.get("gtest_output").unwrap_or("stdout");
+  if (cmd.get("gtest_list_tests")) {
+    const auto output = cmd.get("gtest_output").unwrap_or("stdout");
     this->list_xml(output);
     return;
   }
 
-  const auto gtest_color = opts.get_flag("gtest_color");
-  const auto gtest_filter = opts.get("gtest_filter").unwrap_or("");
+  const auto gtest_color = cmd.get_flag("gtest_color");
+  const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   this->exec(gtest_filter, gtest_color);
 }
 

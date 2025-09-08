@@ -1,4 +1,3 @@
-#include "sfc/app/opts.h"
 #include "sfc/test/app.h"
 
 using namespace sfc;
