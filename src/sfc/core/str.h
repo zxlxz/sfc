@@ -93,8 +93,11 @@ struct Str {
     if (_len != other._len) {
       return false;
     }
-    if (_len == 0 || _ptr == other._ptr) {
+    if (_ptr == other._ptr) {
       return true;
+    }
+    if (_ptr == nullptr || other._ptr == nullptr) {
+      return false;
     }
     return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
   }
@@ -113,21 +116,15 @@ struct Str {
   auto trim_matches(auto&& p) const noexcept -> Str;
 
   auto trim_start() const noexcept -> Str {
-    return this->trim_start_matches([](char c) -> bool {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    });
+    return this->trim_start_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
   auto trim_end() const noexcept -> Str {
-    return this->trim_end_matches([](char c) -> bool {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    });
+    return this->trim_end_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
   auto trim() const noexcept -> Str {
-    return this->trim_matches([](char c) -> bool {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    });
+    return this->trim_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
   }
 
  public:

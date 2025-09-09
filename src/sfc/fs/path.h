@@ -60,8 +60,8 @@ class PathBuf {
   String _inn = {};
 
  public:
-  PathBuf();
-  ~PathBuf();
+  PathBuf() noexcept;
+  ~PathBuf() noexcept;
 
   PathBuf(PathBuf&&) noexcept;
   PathBuf& operator=(PathBuf&&) noexcept;
@@ -103,14 +103,14 @@ struct Meta {
   auto is_file() const noexcept -> bool;
 };
 
-auto meta(const Path& path) -> io::Result<Meta>;
+auto meta(Path path) -> io::Result<Meta>;
 
-auto create_dir(const Path& path) -> io::Result<>;
+auto create_dir(Path path) -> io::Result<>;
 
-auto remove_dir(const Path& path) -> io::Result<>;
+auto remove_dir(Path path) -> io::Result<>;
 
-auto remove_file(const Path& path) -> io::Result<>;
+auto remove_file(Path path) -> io::Result<>;
 
-auto rename(const Path& from, const Path& to) -> io::Result<>;
+auto rename(Path from, Path to) -> io::Result<>;
 
 }  // namespace sfc::fs

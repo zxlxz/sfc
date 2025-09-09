@@ -4,6 +4,8 @@
 
 namespace sfc::fs {
 
+namespace sys_imp = sys::fs;
+
 struct Components {
   Str _str;
 
@@ -30,8 +32,6 @@ struct Components {
     return {};
   }
 };
-
-namespace sys_imp = sys::fs;
 
 auto Path::file_name() const noexcept -> Str {
   const auto s = Components{_inn.as_str()}.next_back();
@@ -89,8 +89,8 @@ auto Path::is_dir() const noexcept -> bool {
   return t && (*t).is_dir();
 }
 
-PathBuf::PathBuf() = default;
-PathBuf::~PathBuf() = default;
+PathBuf::PathBuf() noexcept = default;
+PathBuf::~PathBuf() noexcept = default;
 
 PathBuf::PathBuf(PathBuf&&) noexcept = default;
 PathBuf& PathBuf::operator=(PathBuf&&) noexcept = default;
@@ -174,7 +174,7 @@ auto Meta::is_file() const noexcept -> bool {
   return sys_imp::is_file(_attr);
 }
 
-auto meta(const Path& path) -> io::Result<Meta> {
+auto meta(Path path) -> io::Result<Meta> {
   const auto c_path = CString::from(path.as_str());
 
   auto res = Meta{};
@@ -184,7 +184,7 @@ auto meta(const Path& path) -> io::Result<Meta> {
   return res;
 }
 
-auto create_dir(const Path& path) -> io::Result<> {
+auto create_dir(Path path) -> io::Result<> {
   const auto c_path = CString::from(path.as_str());
   const auto ret = sys_imp::mkdir(c_path);
 
@@ -195,7 +195,7 @@ auto create_dir(const Path& path) -> io::Result<> {
   return _;
 }
 
-auto remove_dir(const Path& path) -> io::Result<> {
+auto remove_dir(Path path) -> io::Result<> {
   const auto c_path = CString::from(path.as_str());
 
   const auto ret = sys_imp::rmdir(c_path);
@@ -206,7 +206,7 @@ auto remove_dir(const Path& path) -> io::Result<> {
   return _;
 }
 
-auto remove_file(const Path& path) -> io::Result<> {
+auto remove_file(Path path) -> io::Result<> {
   const auto c_path = CString::from(path.as_str());
 
   const auto ret = sys_imp::unlink(c_path);
@@ -217,7 +217,7 @@ auto remove_file(const Path& path) -> io::Result<> {
   return _;
 }
 
-auto rename(const Path& old_path, const Path& new_path) -> io::Result<> {
+auto rename(Path old_path, Path new_path) -> io::Result<> {
   const auto c_old = CString::from(old_path.as_str());
   const auto c_new = CString::from(new_path.as_str());
 
