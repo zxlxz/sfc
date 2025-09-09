@@ -116,12 +116,12 @@ void App::list_xml(Str path) const {
 
 void App::main(int argc, const char* argv[]) {
   auto cmd = app::Cmd{"sfc_test"};
-  cmd.arg({'h', "help", "Show this help message"});
-  cmd.arg({'l', "list", "List all tests"});
-  cmd.arg({0, "gtest_list_tests", "List all tests instead of running them"});
-  cmd.arg({0, "gtest_filter", "Run only tests matching the given pattern"});
-  cmd.arg({0, "gtest_color", "Enable or disable colored output", "auto"});
-  cmd.arg({0, "gtest_output", "Output file for test results", "stdout"});
+  cmd.add_arg({'h', "help", "Show this help message"});
+  cmd.add_arg({'l', "list", "List all tests"});
+  cmd.add_arg({0, "gtest_list_tests", "List all tests instead of running them"});
+  cmd.add_arg({0, "gtest_filter", "Run only tests matching the given pattern"});
+  cmd.add_arg({0, "gtest_color", "Enable or disable colored output", "auto"});
+  cmd.add_arg({0, "gtest_output", "Output file for test results", "stdout"});
 
   cmd.parse_cmdline(argc, argv);
 

@@ -7,7 +7,7 @@ namespace sfc::app {
 struct Arg {
   char _short;
   Str _long;
-  Str _desc;
+  Str _help;
   Str _default = {};
 };
 
@@ -24,15 +24,16 @@ class Cmd {
   Cmd(Str name) noexcept;
   ~Cmd() noexcept;
 
-  auto author(Str s) -> Cmd&;
-  auto version(Str s) -> Cmd&;
-  auto about(Str s) -> Cmd&;
-  auto arg(Arg arg) -> Cmd&;
+  void set_author(Str s);
+  void set_version(Str s);
+  void set_about(Str s);
+  void add_arg(Arg arg);
+  void add_flag(Arg flag);
 
   auto get(Str name) const -> Option<Str>;
   auto get_flag(Str name) const -> Option<bool>;
+  auto get_args(Str name) const -> Slice<const String>;
 
-  auto update(Str key, Str val) -> bool;
   void parse(Slice<const Str> args);
   void parse_cmdline(int argc, const char* argv[]);
 

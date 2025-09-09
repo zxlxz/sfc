@@ -7,9 +7,9 @@ namespace sfc::app::test {
 // add test for Cmd
 SFC_TEST(cmd) {
   auto cmd = Cmd{"cmd_test"};
-  cmd.arg({'v', "verbose", "Enable verbose output", "false"});
-  cmd.arg({'o', "output", "Output file", "output.txt"});
-  cmd.arg({'c', "config", "Configuration file", "config.yaml"});
+  cmd.add_flag({'v', "verbose", "Enable verbose output", "false"});
+  cmd.add_arg({'o', "output", "Output file", "output.txt"});
+  cmd.add_arg({'c', "config", "Configuration file", "config.yaml"});
 
   const Str args[] = {
       "--verbose=true",
