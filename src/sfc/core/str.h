@@ -93,11 +93,8 @@ struct Str {
     if (_len != other._len) {
       return false;
     }
-    if (_ptr == other._ptr) {
+    if (_ptr == other._ptr || _len == 0) {
       return true;
-    }
-    if (_ptr == nullptr || other._ptr == nullptr) {
-      return false;
     }
     return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
   }

@@ -40,18 +40,18 @@ static auto format_xml(Slice<const Suite> suites) -> String {
   }
 
   auto testsuites = XmlNode{"testsuites"};
-  testsuites.add_attr(XmlAttr::from("tests", string::to_string(all_cnt)));
+  testsuites.add_attr(XmlAttr::from("tests", all_cnt));
   testsuites.add_attr(XmlAttr::from("name", "AllTests"));
 
   for (auto& suite : suites) {
     auto& testsuite = testsuites.add_node(XmlNode{"testsuite"});
     testsuite.add_attr(XmlAttr::from("name", suite.name()));
-    testsuite.add_attr(XmlAttr::from("tests", string::to_string(suite.tests().len())));
+    testsuite.add_attr(XmlAttr::from("tests", suite.tests().len()));
     for (auto& test : suite.tests()) {
       auto& testcase = testsuite.add_node(XmlNode{"testcase"});
       testcase.add_attr(XmlAttr::from("name", test.name()));
-      testcase.add_attr(XmlAttr::from("file", string::to_string(test._loc.file)));
-      testcase.add_attr(XmlAttr::from("line", string::to_string(test._loc.line)));
+      testcase.add_attr(XmlAttr::from("file", Str::from_cstr(test._loc.file)));
+      testcase.add_attr(XmlAttr::from("line", test._loc.line));
     }
   }
 
@@ -141,7 +141,7 @@ void App::main(int argc, const char* argv[]) {
     return;
   }
 
-  const auto gtest_color = cmd.get_flag("gtest_color");
+  const auto gtest_color = cmd.get_opt("gtest_color");
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   this->exec(gtest_filter, gtest_color);
 }

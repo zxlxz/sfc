@@ -9,12 +9,8 @@ struct XmlAttr {
   String value;
 
  public:
-  template <class Name, class Value>
-  static auto from(Name&& name, Value&& value) -> XmlAttr {
-    return XmlAttr{
-        String::from(static_cast<Name&&>(name)),
-        String::from(static_cast<Value&&>(value)),
-    };
+  static auto from(const auto& name, const auto& value) -> XmlAttr {
+    return XmlAttr{string::to_string(name), string::to_string(value)};
   }
 };
 

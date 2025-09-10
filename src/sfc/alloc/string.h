@@ -29,10 +29,10 @@ class [[nodiscard]] String {
       return String{static_cast<F&&>(f)};
     } else if constexpr (requires { f.to_string()->String; }) {
       return f.to_string();
-    } else {
-      auto res = String{};
-      res.push_str(f);
-      return res;
+    } else if constexpr (requires { Str::from(f); }) {
+      auto s = String{};
+      s.push_str(Str::from(f));
+      return s;
     }
   }
 
