@@ -1,6 +1,7 @@
 #pragma once
 
-#include "sfc/io/error.h"
+#include "sfc/io/mod.h"
+#include "sfc/sync/mutex.h"
 
 namespace sfc::io {
 

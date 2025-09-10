@@ -79,7 +79,7 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
   return static_cast<usize>(res);
 }
 
-auto File::read_all(Vec<u8>& buf, usize buf_len) -> Result<usize> {
+auto File::read_to_end(Vec<u8>& buf, usize buf_len) -> Result<usize> {
   if (!this->is_open()) {
     return io::Error{io::ErrorKind::InvalidInput, 0};
   }
@@ -100,6 +100,10 @@ auto File::read_all(Vec<u8>& buf, usize buf_len) -> Result<usize> {
 
   const auto nread = buf.len() - old_len;
   return nread;
+}
+
+auto File::read_to_string(String& buf, usize buf_len) -> Result<usize> {
+  return this->read_to_end(buf.as_mut_vec(), buf_len);
 }
 
 auto File::write_all(Slice<const u8> buf) -> Result<usize> {
@@ -124,4 +128,7 @@ auto File::write_all(Slice<const u8> buf) -> Result<usize> {
   return nwrite;
 }
 
+auto File::write_str(Str buf) -> io::Result<usize> {
+  return this->write_all(buf.as_bytes());
+}
 }  // namespace sfc::io

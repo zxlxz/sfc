@@ -19,12 +19,11 @@ class [[nodiscard]] File {
   static auto create(const Path& path) -> io::Result<File>;
 
   auto read(Slice<u8> buf) -> io::Result<usize>;
-  auto read_all(Vec<u8>& buf, usize buf_len = 256) -> io::Result<usize>;
+  auto read_to_end(Vec<u8>& buf, usize buf_len = 256) -> io::Result<usize>;
+  auto read_to_string(String& buf, usize buf_len = 256) -> io::Result<usize>;
 
   auto write(Slice<const u8> buf) -> io::Result<usize>;
   auto write_all(Slice<const u8> buf) -> io::Result<usize>;
-
-  auto read_to_string(String& buf, usize buf_len = 256) -> io::Result<usize>;
   auto write_str(Str str) -> io::Result<usize>;
 };
 
