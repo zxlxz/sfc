@@ -3,7 +3,13 @@
 
 namespace sfc::app {
 
-struct Cmd::XArg {
+struct Cmd::Item {
+  enum class Type : u8 {
+    Arg,
+    Opt,
+  };
+
+  Type _type;
   char _short;
   String _long;
   String _help;
@@ -11,8 +17,12 @@ struct Cmd::XArg {
   Vec<String> _values = {};
 
  public:
-  static auto from(const Arg& t) -> XArg {
-    return {t._short, String::from(t._long), String::from(t._help), String::from(t._default)};
+  static auto from(const Opt& t) -> Item {
+    return {Type::Opt, t._short, String::from(t._long), String::from(t._help)};
+  }
+
+  static auto from(const Arg& t) -> Item {
+    return {Type::Arg, t._short, String::from(t._long), String::from(t._help), String::from(t._default)};
   }
 
   auto match(Str key) const -> bool {
@@ -27,20 +37,29 @@ struct Cmd::XArg {
     return key == _long;
   }
 
-  auto update(Str key) -> XArg* {
-    _values.push(String::from(key));
-
-    if (!_long.is_empty() && !_long.ends_with("*")) {
-      return nullptr;
+  auto is_complete() const -> bool {
+    if (_values.is_empty() || _values[0].is_empty()) {
+      return false;
     }
-    return this;
+    if (!_long.ends_with('*')) {
+      return true;
+    }
+    return false;
+  }
+
+  void update(Str key) {
+    if (!_values.is_empty() && _values.last()->is_empty()) {
+      _values.pop();
+    }
+    _values.push(String::from(key));
   }
 
   auto var() const -> Option<Str> {
     if (_values.is_empty()) {
       return {};
     }
-    return _values[0].as_str();
+    const auto& res = _values[0];
+    return res.as_str();
   }
 
   auto flag() const -> Option<bool> {
@@ -75,9 +94,7 @@ struct Cmd::XArg {
   }
 };
 
-Cmd::Cmd(Str name) noexcept : _name{String::from(name)} {
-  this->add_arg({});
-}
+Cmd::Cmd(Str name) noexcept : _name{String::from(name)} {}
 
 Cmd::~Cmd() noexcept {}
 
@@ -94,35 +111,35 @@ void Cmd::set_about(Str s) {
 }
 
 void Cmd::add_arg(Arg arg) {
-  _args.push(XArg::from(arg));
+  _items.push(Item::from(arg));
 }
 
-void Cmd::add_flag(Arg arg) {
-  _args.push(XArg::from(arg));
+void Cmd::add_opt(Opt opt) {
+  _items.push(Item::from(opt));
 }
 
 auto Cmd::get(Str s) const -> Option<Str> {
-  for (auto& xarg : _args) {
-    if (xarg.match(s)) {
-      return xarg.var();
+  for (auto& item : _items) {
+    if (item.match(s)) {
+      return item.var();
     }
   }
   return {};
 }
 
-auto Cmd::get_flag(Str s) const -> Option<bool> {
-  for (auto& xarg : _args) {
-    if (xarg.match(s)) {
-      return xarg.flag();
+auto Cmd::get_opt(Str s) const -> Option<bool> {
+  for (auto& item : _items) {
+    if (item.match(s)) {
+      return item.flag();
     }
   }
   return {};
 }
 
 auto Cmd::get_args(Str s) const -> Slice<const String> {
-  for (auto& xarg : _args) {
-    if (xarg.match(s)) {
-      return xarg._values.as_slice();
+  for (auto& item : _items) {
+    if (item.match(s)) {
+      return item._values.as_slice();
     }
   }
   return {};
@@ -138,33 +155,47 @@ void Cmd::parse(Slice<const Str> args) {
     return {s[{0, *p}], s[{*p + 1, _}]};
   };
 
-  auto find_xarg = [this](Str s) -> XArg* {
-    for (auto& xarg : _args) {
-      if (xarg.match(s)) {
-        return &xarg;
+  auto find_args = [this]() -> Item* {
+    for (auto& item : _items) {
+      if (item._type == Item::Type::Arg && !item.is_complete()) {
+        return &item;
       }
     }
     return nullptr;
   };
 
-  auto prev_xarg = static_cast<XArg*>(nullptr);
+  auto find_item = [this](Str s) -> Item* {
+    for (auto& item : _items) {
+      if (item.match(s)) {
+        return &item;
+      }
+    }
+    return nullptr;
+  };
+
+  auto prev_item = static_cast<Item*>(nullptr);
   for (auto arg : args) {
     if (!arg) {
       continue;
     }
 
     if (arg[0] == '-') {
-      const auto [k, v] = parse_kv(arg);
-      if ((prev_xarg = find_xarg(k))) {
-        prev_xarg->update(v);
+      const auto [key, val] = parse_kv(arg);
+      if ((prev_item = find_item(key))) {
+        prev_item->update(val);
       }
       continue;
     }
 
-    if (prev_xarg) {
-      prev_xarg = prev_xarg->update(arg);
-    } else {
-      _args[0].update(arg);
+    if (prev_item) {
+      prev_item->update(arg);
+      prev_item = prev_item->is_complete() ? nullptr : prev_item;
+      continue;
+    }
+
+    if (auto item = find_args()) {
+      item->update(arg);
+      continue;
     }
   }
 }
@@ -186,8 +217,8 @@ void Cmd::print_help() const {
   io::println("Usage: {}\n", _name);
 
   io::println("Options:");
-  for (const auto& arg : _args) {
-    io::println("    {}", arg);
+  for (const auto& item : _items) {
+    io::println("    {}", item);
   }
 }
 

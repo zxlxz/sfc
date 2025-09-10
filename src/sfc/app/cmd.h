@@ -4,6 +4,12 @@
 
 namespace sfc::app {
 
+struct Opt {
+  char _short;
+  Str _long;
+  Str _help;
+};
+
 struct Arg {
   char _short;
   Str _long;
@@ -12,13 +18,13 @@ struct Arg {
 };
 
 class Cmd {
-  struct XArg;
+  struct Item;
 
   String _name;
   String _version;
   String _author;
   String _about;
-  Vec<XArg> _args;
+  Vec<Item> _items;
 
  public:
   Cmd(Str name) noexcept;
@@ -28,10 +34,10 @@ class Cmd {
   void set_version(Str s);
   void set_about(Str s);
   void add_arg(Arg arg);
-  void add_flag(Arg flag);
+  void add_opt(Opt opt);
 
   auto get(Str name) const -> Option<Str>;
-  auto get_flag(Str name) const -> Option<bool>;
+  auto get_opt(Str name) const -> Option<bool>;
   auto get_args(Str name) const -> Slice<const String>;
 
   void parse(Slice<const Str> args);
