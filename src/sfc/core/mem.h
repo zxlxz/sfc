@@ -35,26 +35,22 @@ inline auto take(T& dst) noexcept -> T {
   return res;
 }
 
+template <class T>
+inline auto as_bytes(const T& x) -> const u8 (&)[sizeof(T)] {
+  if constexpr (requires { x.as_bytes(); }) {
+    return x.as_bytes();
+  } else {
+    return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
+  }
+}
+
+template <class T>
+inline auto as_bytes_mut(T& x) -> u8 (&)[sizeof(T)] {
+  if constexpr (requires { x.as_bytes_mut(); }) {
+    return x.as_bytes_mut();
+  } else {
+    return reinterpret_cast<u8(&)[sizeof(T)]>(x);
+  }
+}
+
 }  // namespace sfc::mem
-
-#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
-inline void* operator new(sfc::usize, void* ptr) noexcept {
-  return ptr;
-}
-inline void operator delete(void*, void*) noexcept {
-  return;
-}
-#endif
-
-#if defined(_MSC_VER) && !defined(__clang__)
-extern "C" void* __cdecl memset(void*, int, unsigned __int64);
-extern "C" void* __cdecl memcpy(void*, const void*, unsigned __int64);
-extern "C" void* __cdecl memmove(void*, const void*, unsigned __int64);
-#pragma intrinsic(memset)
-#pragma intrinsic(memcpy)
-#pragma intrinsic(memmove)
-
-#define __builtin_memset  memset
-#define __builtin_memcpy  memcpy
-#define __builtin_memmove memmove
-#endif

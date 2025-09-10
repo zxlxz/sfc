@@ -32,7 +32,7 @@ struct Slice {
   constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
   template <class U>
-  constexpr Slice(Slice<U> v) noexcept : _ptr{v._ptr}, _len{v._len} {}
+  constexpr Slice(const Slice<U>& v) noexcept : _ptr{v._ptr}, _len{v._len} {}
 
   auto as_ptr() const noexcept -> const T* {
     return _ptr;
@@ -206,6 +206,10 @@ struct Slice {
     return {*this, n};
   }
 
+  auto as_bytes_mut() -> Slice<u8> {
+    return {reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
+  }
+
   void fmt(auto& f) const {
     auto imp = f.debug_list();
     for (auto& x : *this) {
@@ -222,7 +226,7 @@ template <class T, usize N>
 Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
-Slice(T*, usize) -> Slice<T>;
+Slice(T*, auto) -> Slice<T>;
 
 template <class T>
 struct Iter {

@@ -3,6 +3,27 @@
 #include "sfc/core/mem.h"
 #include "sfc/core/panicking.h"
 
+#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
+inline void* operator new(sfc::usize, void* ptr) noexcept {
+  return ptr;
+}
+inline void operator delete(void*, void*) noexcept {
+  return;
+}
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+extern "C" void* __cdecl memset(void*, int, unsigned long long);
+extern "C" void* __cdecl memcpy(void*, const void*, unsigned long long);
+extern "C" void* __cdecl memmove(void*, const void*, unsigned long long);
+#define __builtin_memset  memset
+#define __builtin_memcpy  memcpy
+#define __builtin_memmove memmove
+#pragma intrinsic(memset)
+#pragma intrinsic(memcpy)
+#pragma intrinsic(memmove)
+#endif
+
 namespace sfc::ptr {
 
 using nullptr_t = decltype(nullptr);
@@ -75,6 +96,11 @@ inline auto read(const T* src) noexcept -> T {
 }
 
 template <class T>
+inline void write(T* dst, auto&& val) noexcept {
+  new (dst) T{static_cast<decltype(val)&&>(val)};
+}
+
+template <class T>
 inline auto read_unaligned(const void* src) noexcept -> T {
   static_assert(__is_trivially_copyable(T));
   auto res = T{};
@@ -83,18 +109,15 @@ inline auto read_unaligned(const void* src) noexcept -> T {
 }
 
 template <class T>
-inline void write(T* dst, auto&&... args) noexcept {
-  new (dst) T{static_cast<decltype(args)&&>(args)...};
+inline void write_unaligned(void* dst, const T& val) noexcept {
+  static_assert(__is_trivially_copyable(T));
+  __builtin_memcpy(dst, &val, sizeof(T));
 }
 
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
-#if defined(_MSC_VER) && !defined(__clang__)
-    memset(dst, val, cnt * sizeof(T));
-#else
     __builtin_memset(dst, val, cnt * sizeof(T));
-#endif
   } else {
     for (auto i = 0UL; i < cnt; ++i) {
       new (&dst[i]) T{static_cast<T&&>(val)};
@@ -103,18 +126,20 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
 }
 
 template <class T>
-inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) {
-  if constexpr (!__is_trivially_destructible(T)) {
-    for (auto i = 0UL; i < cnt; ++i) {
-      ptr[i].~T();
-    }
+inline void drop_in_place(T* ptr, usize cnt) {
+  for (auto i = 0UL; i < cnt; ++i) {
+    ptr[i].~T();
   }
 }
 
 template <class T>
 inline void copy(const T* src, T* dst, usize cnt) {
+  if (cnt == 0) {
+    return;
+  }
+
   if constexpr (__is_trivially_copyable(T)) {
-    cnt ? (void)__builtin_memmove(dst, src, cnt * sizeof(T)) : (void)0;
+    __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
       for (auto idx = 0UL; idx < cnt; ++idx) {
@@ -130,11 +155,21 @@ inline void copy(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
+  if (cnt == 0) {
+    return;
+  }
+
   if constexpr (__is_trivially_copyable(T)) {
-    cnt ? (void)__builtin_memcpy(dst, src, cnt * sizeof(T)) : (void)0;
+    __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    for (auto idx = 0UL; idx < cnt; ++idx) {
-      dst[idx] = src[idx];
+    if (dst < src) {
+      for (auto idx = 0UL; idx < cnt; ++idx) {
+        dst[idx] = src[idx];
+      }
+    } else {
+      for (const auto end = src; cnt > 0; --cnt) {
+        dst[cnt - 1] = src[cnt - 1];
+      }
     }
   }
 }
@@ -144,6 +179,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
   if (cnt == 0 || !src || !dst) {
     return;
   }
+
   if constexpr (__is_trivially_copyable(T)) {
     cnt ? (void)__builtin_memcpy(dst, src, sizeof(T) * cnt) : (void)0;
   } else {
@@ -158,6 +194,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
   if (cnt == 0) {
     return;
   }
+
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {

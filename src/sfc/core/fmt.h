@@ -41,17 +41,18 @@ struct Style {
     return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
   }
 
+  auto verbose() const -> bool {
+    return _prefix == '#';
+  }
+
   auto sign(bool is_neg) const -> str::Str {
     if (is_neg) {
       return "-";
     }
     switch (_sign) {
-      case '+':
-        return "+";
-      case '-':
-        return " ";
-      default:
-        return "";
+      case '+': return "+";
+      case '-': return " ";
+      default:  return "";
     }
   }
 
@@ -64,20 +65,13 @@ struct Style {
       return "";
     }
     switch (_type) {
-      case 'X':
-        return "0X";
-      case 'x':
-        return "0x";
-      case 'O':
-        return "0";
-      case 'o':
-        return "0";
-      case 'B':
-        return "0B";
-      case 'b':
-        return "0b";
-      default:
-        return "";
+      case 'X': return "0X";
+      case 'x': return "0x";
+      case 'O': return "0";
+      case 'o': return "0";
+      case 'B': return "0B";
+      case 'b': return "0b";
+      default:  return "";
     }
   }
 };
@@ -95,6 +89,7 @@ template <class W>
 class Fmter {
   W& _out;
   Style _style = {};
+  int _depth = 0;
 
  public:
   explicit Fmter(W& out) : _out{out} {}
@@ -211,6 +206,17 @@ class Fmter {
     }
   }
 
+  void indent() {
+    if (_style._prefix != '#') {
+      this->write_str(" ");
+    } else {
+      this->write_str("\n");
+      for (auto i = 0; i < _depth; ++i) {
+        this->write_str("  ");
+      }
+    }
+  }
+
   class DebugTuple;
   auto debug_tuple() -> DebugTuple {
     return DebugTuple{*this};
@@ -240,14 +246,16 @@ class Fmter {
 template <class W>
 class Fmter<W>::DebugTuple {
   Fmter& _fmt;
-  usize _cnt = 0;
+  u32 _cnt = 0;
 
  public:
   explicit DebugTuple(Fmter& fmt) : _fmt{fmt} {
     _fmt.write_str("(");
+    _fmt._depth += 1;
   }
 
   ~DebugTuple() {
+    _fmt.indent();
     _fmt.write_str(")");
   }
 
@@ -255,8 +263,9 @@ class Fmter<W>::DebugTuple {
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt.write_str(", ");
+      _fmt.write_str(",");
     }
+    _fmt.indent();
     _fmt.write(val);
     _cnt += 1;
   }
@@ -269,14 +278,17 @@ class Fmter<W>::DebugTuple {
 template <class W>
 class Fmter<W>::DebugList {
   Fmter& _fmt;
-  usize _cnt = 0;
+  u32 _cnt = 0;
 
  public:
   explicit DebugList(Fmter& fmt) : _fmt{fmt} {
     _fmt.write_str("[");
+    _fmt._depth += 1;
   }
 
   ~DebugList() {
+    _fmt._depth -= 1;
+    _fmt.indent();
     _fmt.write_str("]");
   }
 
@@ -284,8 +296,9 @@ class Fmter<W>::DebugList {
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt.write_str(", ");
+      _fmt.write_str(",");
     }
+    _fmt.indent();
     _fmt.write(val);
     _cnt += 1;
   }
@@ -298,7 +311,7 @@ class Fmter<W>::DebugList {
 template <class W>
 class Fmter<W>::DebugSet {
   Fmter& _fmt;
-  usize _cnt = 0;
+  u32 _cnt = 0;
 
  public:
   explicit DebugSet(Fmter& fmt) : _fmt{fmt} {
@@ -306,9 +319,8 @@ class Fmter<W>::DebugSet {
   }
 
   ~DebugSet() {
-    if (!_fmt) {
-      return;
-    }
+    _fmt._depth -= 1;
+    _fmt.indent();
     _fmt.write_str("}");
   }
 
@@ -316,8 +328,9 @@ class Fmter<W>::DebugSet {
 
   void entry(const auto& val) {
     if (_cnt != 0) {
-      _fmt.write_str(", ");
+      _fmt.write_str(",");
     }
+    _fmt.indent();
     _fmt.write(val);
     _cnt += 1;
   }
@@ -330,14 +343,17 @@ class Fmter<W>::DebugSet {
 template <class W>
 class Fmter<W>::DebugMap {
   Fmter& _fmt;
-  usize _cnt = 0;
+  u32 _cnt = 0;
 
  public:
   explicit DebugMap(Fmter& fmt) : _fmt{fmt} {
     _fmt.write_str("{");
+    _fmt._depth += 1;
   }
 
   ~DebugMap() {
+    _fmt._depth -= 1;
+    _fmt.indent();
     _fmt.write_str("}");
   }
 
@@ -345,9 +361,9 @@ class Fmter<W>::DebugMap {
 
   void entry(str::Str name, const auto& value) {
     if (_cnt != 0) {
-      _fmt.write_str(", ");
+      _fmt.write_str(",");
     }
-
+    _fmt.indent();
     _fmt.write_str("\"");
     _fmt.write_str(name);
     _fmt.write_str("\": ");
@@ -367,14 +383,17 @@ class Fmter<W>::DebugMap {
 template <class W>
 class Fmter<W>::DebugStruct {
   Fmter& _fmt;
-  usize _cnt = 0;
+  u32 _cnt = 0;
 
  public:
   explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
     _fmt.write_str("{");
+    _fmt._depth += 1;
   }
 
   ~DebugStruct() {
+    _fmt._depth -= 1;
+    _fmt.indent();
     _fmt.write_str("}");
   }
 
@@ -382,9 +401,9 @@ class Fmter<W>::DebugStruct {
 
   auto field(str::Str name, const auto& value) -> DebugStruct& {
     if (_cnt != 0) {
-      _fmt.write_str(", ");
+      _fmt.write_str(",");
     }
-
+    _fmt.indent();
     _fmt.write_str(name);
     _fmt.write_str(": ");
     _fmt.write(value);
@@ -411,8 +430,12 @@ struct Args {
   explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
 
   void fmt(auto& f) const {
-    auto pats = _pats;
+    const auto old_style = f.style();
+    this->fmt_imp(_pats, f);
+    f.set_style(old_style);
+  }
 
+  void fmt_imp(str::Str pats, auto& f) const {
     _args.map([&](auto& val) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
       f.write_str(pats[{0, i0}]);
