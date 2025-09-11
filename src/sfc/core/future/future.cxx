@@ -15,11 +15,11 @@ SFC_TEST(await) {
 
   for (auto i = 0; i < 5; ++i) {
     f.poll();
-    panicking::assert_eq(i, val);
+    panicking::expect_eq(i, val);
   }
 
   f.poll();
-  panicking::assert_eq(4, val);
+  panicking::expect_eq(4, val);
 }
 
 SFC_TEST(yield) {
@@ -32,10 +32,10 @@ SFC_TEST(yield) {
 
   for (auto i = 0; i < 5; ++i) {
     auto p = f.poll();
-    panicking::assert_eq(i, *p);
+    panicking::expect_eq(i, *p);
   }
   auto p = f.poll();
-  panicking::assert_eq(5, *p);
+  panicking::expect_eq(5, *p);
 }
 
 SFC_TEST(await_yield) {
@@ -58,7 +58,7 @@ SFC_TEST(await_yield) {
   while (true) {
     auto p = f2.poll();
     if (p.is_ready()) {
-      panicking::assert_eq(*p, 15);
+      panicking::expect_eq(*p, 15);
       break;
     }
   }

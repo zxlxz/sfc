@@ -32,24 +32,4 @@ using f64 = double;
 
 using cstr_t = const char*;
 
-struct Dummy {};
-static constexpr Dummy _ = {};
-
-template <class T>
-auto declval() -> T&&;
-
-template <class T>
-struct Expr {
-  using Type = T;
-};
-
-template <class F, class... T>
-struct Expr<F(T...)> {
-  using Type = decltype(declval<F>()(declval<T>()...));
-};
-
-template <class X>
-using expr_t = typename Expr<X>::Type;
-
-
 }  // namespace sfc

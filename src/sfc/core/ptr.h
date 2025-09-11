@@ -58,22 +58,22 @@ struct Unique {
   }
 
   auto operator->() const -> const T* {
-    panicking::assert(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::expect(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    panicking::assert(_ptr != nullptr, "ptr::Unique::->: deref null");
+    panicking::expect(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_ptr != nullptr, "ptr::Unique::*: deref null");
+    panicking::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 };

@@ -46,7 +46,7 @@ class Iterator : public I {
     return accum;
   }
 
-  template <class F, class U = expr_t<F(Item, Item)>>
+  template <class F, class U = trait::expr_t<F(Item, Item)>>
   auto reduce(F&& f) -> option::Option<U> {
     auto first = this->next();
     if (!first) {
@@ -139,12 +139,12 @@ class Iterator : public I {
     return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
   }
 
-  template <class S = decltype(+declval<Item>())>
+  template <class S = decltype(Item{} + Item{})>
   auto sum(S init = 0) -> S {
     return this->fold(init, [](const auto& a, const auto& b) { return a + b; });
   }
 
-  template <class S = decltype(+declval<Item>())>
+  template <class S = decltype(Item{} * Item{})>
   auto product(S init = 1) -> S {
     return this->fold(init, [](const auto& a, const auto& b) { return a * b; });
   }
@@ -193,7 +193,8 @@ struct Rev {
 
 template <class I, class F>
 struct Map {
-  using Item = expr_t<F(typename I::Item)>;
+  using Item = trait::expr_t<F(typename I::Item)>;
+
 
   I _iter;
   F _func;

@@ -4,74 +4,81 @@
 
 namespace sfc::tuple {
 
-namespace detail {
+template <class T, T... I>
+struct IntSeq {};
 
-template <usize I, class... T>
-struct Element;
+template <int I, class... T>
+struct Element {};
 
 template <class T, class... Ts>
 struct Element<0, T, Ts...> {
   using Type = T;
 };
 
-template <usize I, class T, class... Ts>
+template <int I, class T, class... Ts>
 struct Element<I, T, Ts...> : Element<I - 1, Ts...> {};
+
+#ifdef __clang__
+template <usize I, class... T>
+using element_t = __type_pack_element<I, T...>;
+#else
+template <usize I, class... T>
+using element_t = Element<I, T...>::Type;
+#endif
 
 template <int I, class T>
 struct Entry {
   T _0;
 };
 
-template <class, int... I>
-struct Idxs {};
-
 template <class I, class... T>
-struct Tuple;
+struct Inner;
 
 template <int... I, class... T>
-struct Tuple<Idxs<int, I...>, T...> : Entry<I, T>... {
-  Tuple(T&&... args) : Entry<I, T>{static_cast<T&&>(args)}... {}
+struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
+  Inner(T&&... args) : Entry<I, T>{static_cast<T&&>(args)}... {}
 
-  Tuple(Tuple&&) noexcept = default;
-  Tuple(const Tuple&) = default;
+  Inner(Inner&&) noexcept = default;
+  Inner(const Inner&) = default;
 
-  Tuple& operator=(Tuple&&) noexcept = default;
-  Tuple& operator=(const Tuple&) = default;
+  Inner& operator=(Inner&&) noexcept = default;
+  Inner& operator=(const Inner&) = default;
+
+  template <int X, class U = element_t<X, T...>>
+  auto get() -> U& {
+    return Entry<X, U>::_0;
+  }
+
+  template <int X, class U = element_t<X, T...>>
+  auto get() const -> const U& {
+    return Entry<X, U>::_0;
+  }
 
   void map(auto&& f) const {
-    (void)(f(static_cast<const Entry<I, T>&>(*this)._0), ...);
+    (void)(f(Entry<I, T>::_0), ...);
   }
 
   void map_mut(auto&& f) {
-    (void)(f(static_cast<Entry<I, T>&>(*this)._0), ...);
+    (void)(f(Entry<I, T>::_0), ...);
   }
 };
-}  // namespace detail
-
-#ifndef __clang__
-template <usize I, class... T>
-using __type_pack_element = detail::Element<I, T...>::Type;
-#endif
-
-template <usize I, class... T>
-using element_t = __type_pack_element<I, T...>;
 
 template <class... T>
 struct Tuple {
-  using Inn = detail::Tuple<__make_integer_seq<detail::Idxs, int, sizeof...(T)>, T...>;
+  using Inn = Inner<__make_integer_seq<IntSeq, int, sizeof...(T)>, T...>;
   Inn _inn;
 
  public:
   Tuple(T... args) : _inn{static_cast<T&&>(args)...} {}
 
-  template <int I, class U = element_t<I, T...>>
-  auto get() -> U& {
-    return static_cast<detail::Entry<I, U>&>(_inn)._0;
+  template <int I>
+  auto get() -> element_t<I, T...>& {
+    return _inn.template get<I>();
   }
 
-  template <int I, class U = element_t<I, T...>>
-  auto get() const -> const U& {
-    return static_cast<const detail::Entry<I, U>&>(_inn)._0;
+  template <int I>
+  auto get() const -> const element_t<I, T...>& {
+    return _inn.template get<I>();
   }
 
   void map(auto&& f) const {
@@ -87,6 +94,9 @@ struct Tuple {
     _inn.map([&](const auto& e) { x.entry(e); });
   }
 };
+
+template <>
+struct Tuple<> {};
 
 }  // namespace sfc::tuple
 

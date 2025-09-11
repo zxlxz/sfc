@@ -57,22 +57,22 @@ class [[nodiscard]] VecDeque {
 
  public:
   auto front() const -> const T& {
-    panicking::assert(_len != 0, "VecDeque::front: queue is empty");
+    panicking::expect(_len != 0, "VecDeque::front: queue is empty");
     return _buf[_pos];
   }
 
   auto front_mut() -> T& {
-    panicking::assert(_len != 0, "VecDeque::front_mut: queue is empty");
+    panicking::expect(_len != 0, "VecDeque::front_mut: queue is empty");
     return _buf[_pos];
   }
 
   auto back() const -> const T& {
-    panicking::assert(_len != 0, "VecDeque::back: queue is empty");
+    panicking::expect(_len != 0, "VecDeque::back: queue is empty");
     return _buf[_buf.wrap_idx(_pos + _len - 1)];
   }
 
   auto back_mut() -> T& {
-    panicking::assert(_len != 0, "VecDeque::back_mut: queue is empty");
+    panicking::expect(_len != 0, "VecDeque::back_mut: queue is empty");
     return _buf[_buf.wrap_idx(_pos + _len - 1)];
   }
 

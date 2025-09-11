@@ -18,8 +18,12 @@
 #include "sfc/core/future.h"
 
 namespace sfc {
-using str::Str;
+
+using ops::_;
 using ops::Range;
+
+using str::Str;
+
 using slice::Slice;
 
 using option::Option;

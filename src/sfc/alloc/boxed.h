@@ -70,22 +70,22 @@ class Box {
   }
 
   auto operator->() const -> const T* {
-    panicking::assert(_ptr != nullptr, "boxed::Box::->: deref null");
+    panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    panicking::assert(_ptr != nullptr, "boxed::Box::->: deref null");
+    panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_ptr != nullptr, "boxed::Box::*: deref null");
+    panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_ptr != nullptr, "boxed::Box::*: deref null");
+    panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
@@ -193,7 +193,7 @@ class Box<R(T...), A> {
   }
 
   auto operator()(T... args) -> auto {
-    panicking::assert(_meta != nullptr, "boxed::Box::*: deref null");
+    panicking::expect(_meta != nullptr, "boxed::Box::*: deref null");
     return (_meta->_call)(_data, static_cast<T&&>(args)...);
   }
 };
@@ -257,7 +257,7 @@ class Box<T&, A> {
   }
 
   auto operator->() -> T* {
-    panicking::assert(_self != nullptr, "boxed::Box::->: deref null");
+    panicking::expect(_self != nullptr, "boxed::Box::->: deref null");
     return static_cast<T*>(this);
   }
 

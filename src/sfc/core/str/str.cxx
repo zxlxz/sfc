@@ -5,54 +5,54 @@ namespace sfc::str {
 SFC_TEST(simple) {
   {
     const auto s = Str{};
-    panicking::assert_eq(s.len(), 0U);
-    panicking::assert_true(s.is_empty());
-    panicking::assert_false(s);
+    panicking::expect_eq(s.len(), 0U);
+    panicking::expect_true(s.is_empty());
+    panicking::expect_false(s);
   }
 
   {
     const auto s = Str{"abc"};
-    panicking::assert_eq(s.as_ptr(), s._ptr);
-    panicking::assert_eq(s.as_chars()._len, s._len);
-    panicking::assert_eq(s.as_chars()._ptr, s._ptr);
-    panicking::assert_eq(s.as_bytes()._len, s._len);
+    panicking::expect_eq(s.as_ptr(), s._ptr);
+    panicking::expect_eq(s.as_chars()._len, s._len);
+    panicking::expect_eq(s.as_chars()._ptr, s._ptr);
+    panicking::expect_eq(s.as_bytes()._len, s._len);
   }
 }
 
 SFC_TEST(index) {
   const auto s = Str{"abc"};
-  panicking::assert_eq(s.len(), 3U);
-  panicking::assert_true(s);
-  panicking::assert_true(s.is_empty() == false);
-  panicking::assert_eq(s[0], 'a');
-  panicking::assert_eq(s[1], 'b');
-  panicking::assert_eq(s[2], 'c');
-  panicking::assert_eq(s[3], '\0');
+  panicking::expect_eq(s.len(), 3U);
+  panicking::expect_true(s);
+  panicking::expect_true(s.is_empty() == false);
+  panicking::expect_eq(s[0], 'a');
+  panicking::expect_eq(s[1], 'b');
+  panicking::expect_eq(s[2], 'c');
+  panicking::expect_eq(s[3], '\0');
 }
 
 SFC_TEST(cmp) {
   {
     const auto s = Str{"abc"};
-    panicking::assert_eq(s, Str{"abc"});
-    panicking::assert_ne(s, Str{"ab"});
-    panicking::assert_ne(s, Str{"abcd"});
+    panicking::expect_eq(s, Str{"abc"});
+    panicking::expect_ne(s, Str{"ab"});
+    panicking::expect_ne(s, Str{"abcd"});
   }
 }
 
 SFC_TEST(range) {
   {
     const auto s = Str{"abc"};
-    panicking::assert_eq(s[{0, 3}], Str{"abc"});
-    panicking::assert_eq(s[{1, 3}], Str{"bc"});
-    panicking::assert_eq(s[{0, 2}], Str{"ab"});
-    panicking::assert_eq(s[{1, 2}], Str{"b"});
-    panicking::assert_eq(s[{3, 3}], Str{""});
-    panicking::assert_eq(s[{4, 5}], Str{""});
+    panicking::expect_eq(s[{0, 3}], Str{"abc"});
+    panicking::expect_eq(s[{1, 3}], Str{"bc"});
+    panicking::expect_eq(s[{0, 2}], Str{"ab"});
+    panicking::expect_eq(s[{1, 2}], Str{"b"});
+    panicking::expect_eq(s[{3, 3}], Str{""});
+    panicking::expect_eq(s[{4, 5}], Str{""});
 
-    panicking::assert_eq(s[{0, _}], Str{"abc"});
-    panicking::assert_eq(s[{1, _}], Str{"bc"});
-    panicking::assert_eq(s[{2, _}], Str{"c"});
-    panicking::assert_eq(s[{3, _}], Str{""});
+    panicking::expect_eq(s[{0, _}], Str{"abc"});
+    panicking::expect_eq(s[{1, _}], Str{"bc"});
+    panicking::expect_eq(s[{2, _}], Str{"c"});
+    panicking::expect_eq(s[{3, _}], Str{""});
   }
 }
 
@@ -61,16 +61,16 @@ SFC_TEST(search_next) {
 
   {
     auto x = s.search('a');
-    panicking::assert_eq(x.next(), Option<usize>{0});
-    panicking::assert_eq(x.next(), Option<usize>{1});
-    panicking::assert_false(x.next());
+    panicking::expect_eq(x.next(), Option<usize>{0});
+    panicking::expect_eq(x.next(), Option<usize>{1});
+    panicking::expect_false(x.next());
   }
 
   {
     auto x = s.search("ab");
-    panicking::assert_false(x.next());
-    panicking::assert_eq(x.next(), Option<usize>{1});
-    panicking::assert_false(x.next());
+    panicking::expect_false(x.next());
+    panicking::expect_eq(x.next(), Option<usize>{1});
+    panicking::expect_false(x.next());
   }
 }
 
@@ -79,18 +79,18 @@ SFC_TEST(search_next_back) {
 
   {
     auto x = s.search('b');
-    panicking::assert_false(x.next_back());
-    panicking::assert_false(x.next_back());
-    panicking::assert_eq(x.next_back(), Option<usize>{3});
-    panicking::assert_eq(x.next_back(), Option<usize>{2});
-    panicking::assert_false(x.next_back());
+    panicking::expect_false(x.next_back());
+    panicking::expect_false(x.next_back());
+    panicking::expect_eq(x.next_back(), Option<usize>{3});
+    panicking::expect_eq(x.next_back(), Option<usize>{2});
+    panicking::expect_false(x.next_back());
   }
 
   {
     auto x = s.search("bc");
-    panicking::assert_false(x.next_back());
-    panicking::assert_eq(x.next_back(), Option<usize>{3});
-    panicking::assert_false(x.next_back());
+    panicking::expect_false(x.next_back());
+    panicking::expect_eq(x.next_back(), Option<usize>{3});
+    panicking::expect_false(x.next_back());
   }
 }
 
@@ -99,108 +99,108 @@ SFC_TEST(search_match) {
 
   {
     auto x = s.search('c');
-    panicking::assert_eq(x.next_match(), Option<usize>{4});
-    panicking::assert_eq(x.next_match(), Option<usize>{5});
-    panicking::assert_false(x.next_match());
+    panicking::expect_eq(x.next_match(), Option<usize>{4});
+    panicking::expect_eq(x.next_match(), Option<usize>{5});
+    panicking::expect_false(x.next_match());
   }
 
   {
     auto x = s.search("ab");
-    panicking::assert_eq(x.next_match(), Option<usize>{1});
-    panicking::assert_false(x.next_match());
+    panicking::expect_eq(x.next_match(), Option<usize>{1});
+    panicking::expect_false(x.next_match());
   }
 }
 
 SFC_TEST(find) {
   const auto s = Str{"abcabc"};
-  panicking::assert_eq(s.find('a'), Option<usize>{0});
-  panicking::assert_eq(s.find('b'), Option<usize>{1});
-  panicking::assert_eq(s.find('c'), Option<usize>{2});
-  panicking::assert_false(s.find('d'));
+  panicking::expect_eq(s.find('a'), Option<usize>{0});
+  panicking::expect_eq(s.find('b'), Option<usize>{1});
+  panicking::expect_eq(s.find('c'), Option<usize>{2});
+  panicking::expect_false(s.find('d'));
 
-  panicking::assert_eq(s.find("ab"), Option<usize>{0});
-  panicking::assert_eq(s.find("bc"), Option<usize>{1});
-  panicking::assert_eq(s.find("ac"), Option<usize>{});
+  panicking::expect_eq(s.find("ab"), Option<usize>{0});
+  panicking::expect_eq(s.find("bc"), Option<usize>{1});
+  panicking::expect_eq(s.find("ac"), Option<usize>{});
 }
 
 SFC_TEST(rfind) {
   const auto s = Str{"abcabc"};
-  panicking::assert_eq(s.rfind('a'), Option<usize>{3});
-  panicking::assert_eq(s.rfind('b'), Option<usize>{4});
-  panicking::assert_eq(s.rfind('c'), Option<usize>{5});
-  panicking::assert_false(s.rfind('d'));
+  panicking::expect_eq(s.rfind('a'), Option<usize>{3});
+  panicking::expect_eq(s.rfind('b'), Option<usize>{4});
+  panicking::expect_eq(s.rfind('c'), Option<usize>{5});
+  panicking::expect_false(s.rfind('d'));
 
-  panicking::assert_eq(s.rfind("ab"), Option<usize>{3});
-  panicking::assert_eq(s.rfind("bc"), Option<usize>{4});
-  panicking::assert_eq(s.rfind("ac"), Option<usize>{});
+  panicking::expect_eq(s.rfind("ab"), Option<usize>{3});
+  panicking::expect_eq(s.rfind("bc"), Option<usize>{4});
+  panicking::expect_eq(s.rfind("ac"), Option<usize>{});
 }
 
 SFC_TEST(contains) {
   const auto s = Str{"abc"};
-  panicking::assert_false(s.contains('0'));
-  panicking::assert_true(s.contains('a'));
-  panicking::assert_true(s.contains('b'));
+  panicking::expect_false(s.contains('0'));
+  panicking::expect_true(s.contains('a'));
+  panicking::expect_true(s.contains('b'));
 
-  panicking::assert_true(s.contains("ab"));
-  panicking::assert_true(s.contains("abc"));
-  panicking::assert_false(s.contains("abcd"));
+  panicking::expect_true(s.contains("ab"));
+  panicking::expect_true(s.contains("abc"));
+  panicking::expect_false(s.contains("abcd"));
 }
 
 SFC_TEST(starts_with) {
   const auto s = Str{"abc"};
-  panicking::assert_true(s.starts_with('a'));
-  panicking::assert_false(s.starts_with('b'));
+  panicking::expect_true(s.starts_with('a'));
+  panicking::expect_false(s.starts_with('b'));
 
-  panicking::assert_true(s.starts_with("ab"));
-  panicking::assert_true(s.starts_with("abc"));
-  panicking::assert_false(s.starts_with("abcd"));
+  panicking::expect_true(s.starts_with("ab"));
+  panicking::expect_true(s.starts_with("abc"));
+  panicking::expect_false(s.starts_with("abcd"));
 
-  panicking::assert_true(s.starts_with([](auto c) { return c == 'a'; }));
-  panicking::assert_false(s.starts_with([](auto c) { return c == 'b'; }));
+  panicking::expect_true(s.starts_with([](auto c) { return c == 'a'; }));
+  panicking::expect_false(s.starts_with([](auto c) { return c == 'b'; }));
 }
 
 SFC_TEST(ends_with) {
   const auto s = Str{"abc"};
-  panicking::assert_true(s.ends_with('c'));
-  panicking::assert_false(s.ends_with('b'));
+  panicking::expect_true(s.ends_with('c'));
+  panicking::expect_false(s.ends_with('b'));
 
-  panicking::assert_true(s.ends_with("bc"));
-  panicking::assert_true(s.ends_with("abc"));
-  panicking::assert_false(s.ends_with("abcd"));
+  panicking::expect_true(s.ends_with("bc"));
+  panicking::expect_true(s.ends_with("abc"));
+  panicking::expect_false(s.ends_with("abcd"));
 
-  panicking::assert_true(s.ends_with([](auto c) { return c == 'c'; }));
-  panicking::assert_false(s.ends_with([](auto c) { return c == 'b'; }));
+  panicking::expect_true(s.ends_with([](auto c) { return c == 'c'; }));
+  panicking::expect_false(s.ends_with([](auto c) { return c == 'b'; }));
 }
 
 SFC_TEST(trim) {
   {
     const auto s = Str{"   abc   "};
-    panicking::assert_eq(s.trim_start(), Str{"abc   "});
-    panicking::assert_eq(s.trim_end(), Str{"   abc"});
-    panicking::assert_eq(s.trim(), Str{"abc"});
+    panicking::expect_eq(s.trim_start(), Str{"abc   "});
+    panicking::expect_eq(s.trim_end(), Str{"   abc"});
+    panicking::expect_eq(s.trim(), Str{"abc"});
   }
 
   {
     const auto s = Str{"abc"};
-    panicking::assert_eq(s.trim_start(), Str{"abc"});
-    panicking::assert_eq(s.trim_end(), Str{"abc"});
-    panicking::assert_eq(s.trim(), Str{"abc"});
+    panicking::expect_eq(s.trim_start(), Str{"abc"});
+    panicking::expect_eq(s.trim_end(), Str{"abc"});
+    panicking::expect_eq(s.trim(), Str{"abc"});
   }
 }
 
 SFC_TEST(trim_matches) {
   {
     const auto s = Str{"   abc   "};
-    panicking::assert_eq(s.trim_start_matches(' '), Str{"abc   "});
-    panicking::assert_eq(s.trim_end_matches(' '), Str{"   abc"});
-    panicking::assert_eq(s.trim_matches(' '), Str{"abc"});
+    panicking::expect_eq(s.trim_start_matches(' '), Str{"abc   "});
+    panicking::expect_eq(s.trim_end_matches(' '), Str{"   abc"});
+    panicking::expect_eq(s.trim_matches(' '), Str{"abc"});
   }
 
   {
     const auto s = Str{"abc"};
-    panicking::assert_eq(s.trim_start_matches(' '), Str{"abc"});
-    panicking::assert_eq(s.trim_end_matches(' '), Str{"abc"});
-    panicking::assert_eq(s.trim_matches(' '), Str{"abc"});
+    panicking::expect_eq(s.trim_start_matches(' '), Str{"abc"});
+    panicking::expect_eq(s.trim_end_matches(' '), Str{"abc"});
+    panicking::expect_eq(s.trim_matches(' '), Str{"abc"});
   }
 }
 

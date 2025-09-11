@@ -20,11 +20,11 @@ SFC_TEST(cmd) {
   };
   cmd.parse(args);
 
-  panicking::assert_eq(cmd.get("verbose"), Option<Str>{"true"});
-  panicking::assert_eq(cmd.get_opt("verbose"), Option{true});
+  panicking::expect_eq(cmd.get("verbose"), Option<Str>{"true"});
+  panicking::expect_eq(cmd.get_opt("verbose"), Option{true});
 
-  panicking::assert_eq(cmd.get("output"), Option<Str>{"output.txt"});
-  panicking::assert_eq(cmd.get("config"), Option<Str>{"config.yaml"});
+  panicking::expect_eq(cmd.get("output"), Option<Str>{"output.txt"});
+  panicking::expect_eq(cmd.get("config"), Option<Str>{"config.yaml"});
 }
 
 }  // namespace sfc::app::test

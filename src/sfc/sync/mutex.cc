@@ -87,7 +87,7 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
 auto Mutex::lock() -> Guard {
-  panicking::assert(_inn, "Mutex::lock: on a dropped object");
+  panicking::expect(_inn, "Mutex::lock: on a dropped object");
   return Guard{*_inn};
 }
 
@@ -107,7 +107,7 @@ ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}
 ReentrantLock::~ReentrantLock() noexcept {}
 
 auto ReentrantLock::lock() -> Guard {
-  panicking::assert(_inn, "ReentrantLock::lock: on a dropped object");
+  panicking::expect(_inn, "ReentrantLock::lock: on a dropped object");
   return Guard{*_inn};
 }
 

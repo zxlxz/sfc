@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/trait.h"
 #include "sfc/core/option.h"
 
 namespace sfc::result {
@@ -97,7 +96,7 @@ class Result {
     return _inn.tag() == Tag::Err;
   }
 
-  auto ok() -> option::Option<T> {
+  auto ok() && -> option::Option<T> {
     if (_inn.tag() == Tag::Err) {
       return {};
     }
@@ -112,12 +111,12 @@ class Result {
   }
 
   auto unwrap() && -> T {
-    panicking::assert(_inn.tag() == Tag::Ok, "Result::unwrap: Err({})", ~_inn);
+    panicking::expect(_inn.tag() == Tag::Ok, "Result::unwrap: Err({})", ~_inn);
     return static_cast<T&&>(*_inn);
   }
 
   auto unwrap_err() && -> E {
-    panicking::assert(_inn.tag() == Tag::Err, "Result::unwrap_err: Ok({})", *_inn);
+    panicking::expect(_inn.tag() == Tag::Err, "Result::unwrap_err: Ok({})", *_inn);
     return static_cast<E&&>(~_inn);
   }
 
@@ -137,23 +136,23 @@ class Result {
     return static_cast<T&&>(*_inn);
   }
 
-  template <class F, class ResultUE = expr_t<F(T)>>
-  auto and_then(F&& op) && -> ResultUE {
+  template <class F>
+  auto and_then(F&& op) && -> trait::expr_t<F(T)> {
     if (_inn.tag() == Tag::Ok) {
       return op(static_cast<T&&>(*_inn));
     }
     return static_cast<E&&>(~_inn);
   }
 
-  template <class O, class ResultTF = expr_t<O(E)>>
-  auto or_else(O&& op) && -> ResultTF {
+  template <class O>
+  auto or_else(O&& op) && -> trait::expr_t<O(E)> {
     if (_inn.tag() == Tag::Err) {
       return op(static_cast<E&&>(~_inn));
     }
     return static_cast<T&&>(*_inn);
   }
 
-  template <class F, class U = expr_t<F(T)>>
+  template <class F, class U = trait::expr_t<F(T)>>
   auto map(F&& op) && -> Result<U, E> {
     if (_inn.tag() == Tag::Ok) {
       return op(static_cast<T&&>(*_inn));
@@ -161,7 +160,7 @@ class Result {
     return static_cast<E&&>(~_inn);
   }
 
-  template <class O, class F = expr_t<O(E)>>
+  template <class O, class F = trait::expr_t<O(E)>>
   auto map_err(O&& op) && -> Result<T, F> {
     if (_inn.tag() == Tag::Err) {
       return op(static_cast<E&&>(~_inn));

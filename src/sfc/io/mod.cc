@@ -32,12 +32,12 @@ auto to_str(ErrorKind kind) -> Str {
 auto Error::last_os_error() -> Error {
   const auto code = sys_imp::get_err();
   const auto kind = sys_imp::kind_of<ErrorKind>(code);
-  return Error{._kind = kind, ._code = code};
+  return Error{.kind = kind, .code = code};
 }
 
 auto Error::from_os_error(int code) -> Error {
   const auto kind = sys_imp::kind_of<ErrorKind>(code);
-  return Error{._kind = kind, ._code = code};
+  return Error{.kind = kind, .code = code};
 }
 
 }  // namespace sfc::io

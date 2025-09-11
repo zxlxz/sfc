@@ -54,7 +54,7 @@ auto File::read(Slice<u8> buf) -> Result<usize> {
     return 0UL;
   }
   if (!this->is_open()) {
-    return io::Error{io::ErrorKind::InvalidInput, 0};
+    return io::Error{ErrorKind::InvalidInput, 0};
   }
 
   const auto res = sys_imp::read(_fd, buf.as_mut_ptr(), buf.len());
@@ -69,7 +69,7 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
     return 0UL;
   }
   if (!this->is_open()) {
-    return io::Error{io::ErrorKind::InvalidInput, 0};
+    return io::Error{ErrorKind::InvalidInput, 0};
   }
 
   const auto res = sys_imp::write(_fd, buf.as_ptr(), buf.len());
@@ -81,7 +81,7 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
 
 auto File::read_to_end(Vec<u8>& buf, usize buf_len) -> Result<usize> {
   if (!this->is_open()) {
-    return io::Error{io::ErrorKind::InvalidInput, 0};
+    return io::Error{ErrorKind::InvalidInput, 0};
   }
   const auto old_len = buf.len();
 
@@ -108,7 +108,7 @@ auto File::read_to_string(String& buf, usize buf_len) -> Result<usize> {
 
 auto File::write_all(Slice<const u8> buf) -> Result<usize> {
   if (!this->is_open()) {
-    return io::Error{io::ErrorKind::InvalidInput, 0};
+    return io::Error{ErrorKind::InvalidInput, 0};
   }
 
   const auto old_len = buf.len();

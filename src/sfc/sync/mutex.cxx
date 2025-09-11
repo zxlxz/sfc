@@ -28,7 +28,7 @@ SFC_TEST(mutex) {
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
-    panicking::assert_eq(vec[i], i);
+    panicking::expect_eq(vec[i], i);
   }
 }
 
@@ -55,7 +55,7 @@ SFC_TEST(reentrant_lock) {
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
-    panicking::assert_eq(vec[i], i);
+    panicking::expect_eq(vec[i], i);
   }
 }
 

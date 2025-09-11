@@ -75,22 +75,22 @@ class [[nodiscard]] Rc {
   }
 
   auto operator->() const -> const T* {
-    panicking::assert(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::expect(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator->() -> T* {
-    panicking::assert(_ptr != nullptr, "Rc::operator->: deref null");
+    panicking::expect(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::expect(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_ptr != nullptr, "Rc::operator*: deref null");
+    panicking::expect(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 

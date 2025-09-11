@@ -19,64 +19,64 @@ struct PanicInfo {
   PanicInfo(const char* s) noexcept : val{s}, loc{} {}
 };
 
-struct AssertInfo {
+struct expectInfo {
   bool val;
   Location loc;
 
-  AssertInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
+  expectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
 [[noreturn]] void panic_imp(Location loc, const auto&... args);
 
 [[noreturn]] void panic(PanicInfo info, const auto&... args);
 
-#ifdef assert
-#undef assert
-#endif
-void assert(AssertInfo info, const auto&... args) {
-  info.val ? void(0) : panicking::panic_imp(info.loc, args...);
+void expect(expectInfo info, const auto&... args) {
+  if (info.val) {
+    return;
+  }
+  panicking::panic_imp(info.loc, args...);
 }
 
-void assert_true(const auto& val, Location loc = {}) {
+void expect_true(const auto& val, Location loc = {}) {
   if (val) {
     return;
   }
-  panicking::panic_imp(loc, "assert(`{}`) failed", val);
+  panicking::panic_imp(loc, "expect(`{}`) failed", val);
 }
 
-void assert_false(const auto& val, Location loc = {}) {
+void expect_false(const auto& val, Location loc = {}) {
   if (!val) {
     return;
   }
-  panicking::panic_imp(loc, "assert(!`{}`) failed", val);
+  panicking::panic_imp(loc, "expect(!`{}`) failed", val);
 }
 
-void assert_eq(const auto& a, const auto& b, Location loc = {}) {
+void expect_eq(const auto& a, const auto& b, Location loc = {}) {
   if (a == b) {
     return;
   }
-  panicking::panic_imp(loc, "assert(`{}`==`{}`) failed", a, b);
+  panicking::panic_imp(loc, "expect(`{}`==`{}`) failed", a, b);
 }
 
-void assert_ne(const auto& a, const auto& b, Location loc = {}) {
+void expect_ne(const auto& a, const auto& b, Location loc = {}) {
   if (a != b) {
     return;
   }
-  panicking::panic_imp(loc, "assert(`{}`!=`{}`) failed", a, b);
+  panicking::panic_imp(loc, "expect(`{}`!=`{}`) failed", a, b);
 }
 
-inline void assert_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) {
+inline void expect_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) {
   if (num::flt_eq_ulp(a, b, ulp)) {
     return;
   }
-  panicking::panic_imp(loc, "assert.flt(`{}`==`{}`) failed", a, b);
+  panicking::panic_imp(loc, "expect.flt(`{}`==`{}`) failed", a, b);
 }
 
-inline void assert_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) {
+inline void expect_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) {
   if (num::flt_eq_ulp(a, b, ulp)) {
     return;
   }
-  panicking::panic_imp(loc, "assert.flt(`{}`!=`{}`) failed", a, b);
+  panicking::panic_imp(loc, "expect.flt(`{}`!=`{}`) failed", a, b);
 }
 
 }  // namespace sfc::panicking

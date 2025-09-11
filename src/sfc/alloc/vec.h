@@ -213,12 +213,12 @@ class [[nodiscard]] Vec {
   }
 
   auto operator[](usize idx) const -> const T& {
-    panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    panicking::assert(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
@@ -286,7 +286,7 @@ class [[nodiscard]] Vec {
   }
 
   auto swap_remove(usize idx) -> T {
-    panicking::assert(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     auto res = mem::move(_buf._ptr[idx]);
     if (idx != _len - 1) {
@@ -341,7 +341,7 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T val) {
-    panicking::assert(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::expect(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
     ptr::push_front(_buf._ptr + idx, _len - idx, static_cast<T&&>(val));
@@ -349,7 +349,7 @@ class [[nodiscard]] Vec {
   }
 
   auto remove(usize idx) -> T {
-    panicking::assert(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::expect(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
 
     auto res = ptr::pop_front(_buf._ptr + idx, _len - idx);
     _len -= 1;

@@ -60,13 +60,13 @@ class VecMap {
 
   auto operator[](const auto& key) const -> const V& {
     const auto idx = this->get(key);
-    panicking::assert(idx, "VecMap::[]: key(=`{}`) not exists", key);
+    panicking::expect(idx, "VecMap::[]: key(=`{}`) not exists", key);
     return *idx;
   }
 
   auto operator[](const auto& key) -> V& {
     const auto opt = this->get_mut(key);
-    panicking::assert(opt, "VecMap::[]: key(=`{}`) not exists", key);
+    panicking::expect(opt, "VecMap::[]: key(=`{}`) not exists", key);
     return *opt;
   }
 

@@ -31,24 +31,24 @@ struct Allocator {
 
 SFC_TEST(box_obj) {
   auto b1 = Box<int>::xnew(42);
-  panicking::assert_eq(*b1, 42);
+  panicking::expect_eq(*b1, 42);
 
   auto b2 = Box<int>::xnew(43);
-  panicking::assert_eq(*b2, 43);
+  panicking::expect_eq(*b2, 43);
 
   mem::swap(b1, b2);
-  panicking::assert_eq(*b1, 43);
-  panicking::assert_eq(*b2, 42);
+  panicking::expect_eq(*b1, 43);
+  panicking::expect_eq(*b2, 42);
 }
 
 SFC_TEST(box_fn) {
   auto f1 = [](int x) { return 10 * x; };
 
   auto b1 = Box<int(int)>::xnew(f1);
-  panicking::assert_eq(b1(1), 10);
+  panicking::expect_eq(b1(1), 10);
 
   auto b2 = mem::move(b1);
-  panicking::assert_eq(b2(2), 20);
+  panicking::expect_eq(b2(2), 20);
 }
 
 SFC_TEST(box_fn_copy) {
@@ -62,34 +62,34 @@ SFC_TEST(box_fn_copy) {
   {
     Allocator::reset();
     auto a1 = Box<int(int), Allocator>::xnew(f1);
-    panicking::assert_eq(a1(1), 11);
+    panicking::expect_eq(a1(1), 11);
 
     auto b2 = mem::move(a1);
-    panicking::assert_false(bool(a1));
+    panicking::expect_false(bool(a1));
   }
-  panicking::assert_eq(Allocator::alloc_cnt(), 0);
-  panicking::assert_eq(Allocator::dealloc_cnt(), 0);
+  panicking::expect_eq(Allocator::alloc_cnt(), 0);
+  panicking::expect_eq(Allocator::dealloc_cnt(), 0);
 
   {
     auto a2 = Box<int(int), Allocator>::xnew(f2);
-    panicking::assert_eq(a2(1), 13);
+    panicking::expect_eq(a2(1), 13);
 
     auto b2 = mem::move(a2);
-    panicking::assert_eq(b2(1), 13);
+    panicking::expect_eq(b2(1), 13);
   }
-  panicking::assert_eq(Allocator::alloc_cnt(), 0);
-  panicking::assert_eq(Allocator::dealloc_cnt(), 0);
+  panicking::expect_eq(Allocator::alloc_cnt(), 0);
+  panicking::expect_eq(Allocator::dealloc_cnt(), 0);
 
   {
     auto a3 = Box<int(int), Allocator>::xnew(f3);
-    panicking::assert_eq(a3(1), 13);
+    panicking::expect_eq(a3(1), 13);
 
     auto b3 = mem::move(a3);
-    panicking::assert_false(bool(a3));
-    panicking::assert_eq(b3(1), 13);
+    panicking::expect_false(bool(a3));
+    panicking::expect_eq(b3(1), 13);
   }
-  panicking::assert_eq(Allocator::alloc_cnt(), 1);
-  panicking::assert_eq(Allocator::dealloc_cnt(), 1);
+  panicking::expect_eq(Allocator::alloc_cnt(), 1);
+  panicking::expect_eq(Allocator::dealloc_cnt(), 1);
 }
 
 class IAdd : Box<IAdd&> {
@@ -117,11 +117,11 @@ struct XAdd {
 
 SFC_TEST(box_ref) {
   auto b1 = Box<IAdd&>::xnew(XAdd{});
-  panicking::assert_eq(b1->add(1, 2), 3);
+  panicking::expect_eq(b1->add(1, 2), 3);
 
   auto b2 = mem::move(b1);
-  panicking::assert_eq(b2->add(3, 4), 7);
-  panicking::assert_false(bool(b1));
+  panicking::expect_eq(b2->add(3, 4), 7);
+  panicking::expect_false(bool(b1));
 }
 
 }  // namespace sfc::boxed::test

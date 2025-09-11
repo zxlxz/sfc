@@ -192,7 +192,7 @@ auto create_dir(Path path) -> io::Result<> {
     return io::Error::last_os_error();
   }
 
-  return _;
+  return Tuple{};
 }
 
 auto remove_dir(Path path) -> io::Result<> {
@@ -203,7 +203,7 @@ auto remove_dir(Path path) -> io::Result<> {
     return io::Error::last_os_error();
   }
 
-  return _;
+  return Tuple{};
 }
 
 auto remove_file(Path path) -> io::Result<> {
@@ -214,7 +214,7 @@ auto remove_file(Path path) -> io::Result<> {
     return io::Error::last_os_error();
   }
 
-  return _;
+  return Tuple{};
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
@@ -226,7 +226,7 @@ auto rename(Path old_path, Path new_path) -> io::Result<> {
     return io::Error::last_os_error();
   }
 
-  return _;
+  return Tuple{};
 }
 
 }  // namespace sfc::fs

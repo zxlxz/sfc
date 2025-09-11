@@ -1,10 +1,9 @@
 #pragma once
 
-#include "sfc/core/iter.h"
-#include "sfc/core/mem.h"
 #include "sfc/core/ops.h"
-#include "sfc/core/option.h"
 #include "sfc/core/ptr.h"
+#include "sfc/core/iter.h"
+#include "sfc/core/result.h"
 #include "sfc/core/tuple.h"
 
 namespace sfc::slice {
@@ -64,12 +63,12 @@ struct Slice {
   }
 
   auto operator[](usize idx) const -> const T& {
-    panicking::assert(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
   auto operator[](usize idx) -> T& {
-    panicking::assert(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
@@ -99,8 +98,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) {
-    panicking::assert(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    panicking::assert(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+    panicking::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
+    panicking::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
     if (i != j) {
       mem::swap(_ptr[i], _ptr[j]);
@@ -120,11 +119,23 @@ struct Slice {
   }
 
   void copy_from_slice(Slice<const T> src) {
+    static_assert(trait::trivially_copyable_<T>);
+
     if (_len != src._len) {
       panicking::panic("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
     }
 
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
+  }
+
+  template <class U>
+  auto read(Slice<U> buf) -> usize {
+    static_assert(trait::same_<const T, const U>);
+    const auto amt = _len < buf._len ? _len : buf._len;
+    ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return amt;
   }
 
  public:

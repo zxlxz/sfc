@@ -18,9 +18,9 @@ SFC_TEST(spsc) {
     vals.push(*msg);
   }
 
-  panicking::assert_eq(vals.len(), 10);
+  panicking::expect_eq(vals.len(), 10);
   for (auto i = 0; i < 10; ++i) {
-    panicking::assert_eq(vals[i], 42);
+    panicking::expect_eq(vals[i], 42);
   }
 }
 
@@ -44,12 +44,12 @@ SFC_TEST(spmc) {
     vals2.push(*msg);
   }
 
-  panicking::assert_eq(vals1.len(), 10);
-  panicking::assert_eq(vals2.len(), 10);
+  panicking::expect_eq(vals1.len(), 10);
+  panicking::expect_eq(vals2.len(), 10);
 
   for (auto i = 0; i < 10; ++i) {
-    panicking::assert_eq(vals1[i], i);
-    panicking::assert_eq(vals2[i], i);
+    panicking::expect_eq(vals1[i], i);
+    panicking::expect_eq(vals2[i], i);
   }
 }
 
@@ -69,9 +69,9 @@ SFC_TEST(mpsc) {
     vals.push(*msg);
   }
 
-  panicking::assert_eq(vals.len(), 10);
+  panicking::expect_eq(vals.len(), 10);
   for (auto i = 0; i < 10; ++i) {
-    panicking::assert_eq(vals[i], i);
+    panicking::expect_eq(vals[i], i);
   }
 }
 
@@ -97,12 +97,12 @@ SFC_TEST(mpmc) {
     vals2.push(*msg);
   }
 
-  panicking::assert_eq(vals1.len(), 10);
-  panicking::assert_eq(vals2.len(), 10);
+  panicking::expect_eq(vals1.len(), 10);
+  panicking::expect_eq(vals2.len(), 10);
 
   for (auto i = 0; i < 10; ++i) {
-    panicking::assert_eq(vals1[i], i);
-    panicking::assert_eq(vals2[i], i);
+    panicking::expect_eq(vals1[i], i);
+    panicking::expect_eq(vals2[i], i);
   }
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/panicking.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::str {
 struct Str;
@@ -131,22 +132,22 @@ class Option {
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_inn.tag() == Tag::Some, "Option::operator*: deref None");
+    panicking::expect(_inn.tag() == Tag::Some, "Option::operator*: deref None");
     return *_inn;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_inn.tag() == Tag::Some, "Option::operator*: deref None");
+    panicking::expect(_inn.tag() == Tag::Some, "Option::operator*: deref None");
     return *_inn;
   }
 
   auto operator->() const {
-    panicking::assert(_inn.tag() == Tag::Some, "Option::operator->: deref None");
+    panicking::expect(_inn.tag() == Tag::Some, "Option::operator->: deref None");
     return &*_inn;
   }
 
   auto operator->() {
-    panicking::assert(_inn.tag() == Tag::Some, "Option::operator->: deref None");
+    panicking::expect(_inn.tag() == Tag::Some, "Option::operator->: deref None");
     return &*_inn;
   }
 
@@ -159,7 +160,7 @@ class Option {
   }
 
   [[nodiscard]] auto unwrap() && -> T {
-    panicking::assert(_inn.tag() == Tag::Some, "Option::unwrap: None");
+    panicking::expect(_inn.tag() == Tag::Some, "Option::unwrap: None");
     return static_cast<T&&>(*_inn);
   }
 
@@ -168,7 +169,7 @@ class Option {
   }
 
   [[nodiscard]] auto expect(const auto&... msg) && -> T {
-    panicking::assert(_inn.tag() == Tag::Some, msg...);
+    panicking::expect(_inn.tag() == Tag::Some, msg...);
     return static_cast<T&&>(*_inn);
   }
 
@@ -187,8 +188,8 @@ class Option {
     return static_cast<Option&&>(optb);
   }
 
-  template <class F, class OptionU = expr_t<F(T)>>
-  [[nodiscard]] auto and_then(F&& op) && -> OptionU {
+  template <class F, class U=trait::expr_t<F(T)>>
+  [[nodiscard]] auto and_then(F&& op) && -> U {
     if (_inn.tag() == Tag::None) {
       return {};
     }
@@ -203,7 +204,7 @@ class Option {
     return f();
   }
 
-  template <class F, class U = expr_t<F(T)>>
+  template <class F, class U = trait::expr_t<F(T)>>
   [[nodiscard]] auto map(F&& op) && -> Option<U> {
     if (_inn.tag() == Tag::None) {
       return {};

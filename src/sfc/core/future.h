@@ -49,13 +49,13 @@ struct Poll {
   }
 
   auto operator*() const -> const T& {
-    panicking::assert(_state != State::Pending,
+    panicking::expect(_state != State::Pending,
                       "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }
 
   auto operator*() -> T& {
-    panicking::assert(_state != State::Pending,
+    panicking::expect(_state != State::Pending,
                       "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }

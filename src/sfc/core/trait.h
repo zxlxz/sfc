@@ -6,16 +6,16 @@ namespace sfc::trait {
 
 #if defined(_MSC_VER) && !defined(__clang__)
 template <class T, class U>
-struct IsSame {
+struct Same {
   static constexpr bool VALUE = false;
 };
 
 template <class T>
-struct IsSame<T, T> {
+struct IsSaSameme<T, T> {
   static constexpr bool VALUE = true;
 };
 template <class T, class U>
-concept same_ = IsSame<T, U>::VALUE;
+concept same_ = Same<T, U>::VALUE;
 #else
 template <class T, class U>
 concept same_ = __is_same(T, U);
@@ -31,9 +31,6 @@ template <class T>
 concept class_ = __is_class(T);
 
 template <class T>
-concept float_ = any_<T, float, double>;
-
-template <class T>
 concept signed_ = any_<T, signed char, short, int, long, long long>;
 
 template <class T>
@@ -41,5 +38,28 @@ concept unsigned_ = any_<T, unsigned char, unsigned short, unsigned int, unsigne
 
 template <class T>
 concept int_ = signed_<T> || unsigned_<T>;
+
+template <class T>
+concept float_ = any_<T, float, double>;
+
+template <class T>
+concept trivially_copyable_ = __is_trivially_copyable(T);
+
+template <class T>
+concept trivially_destructible_ = __is_trivially_destructible(T);
+
+template <class T>
+auto declval() -> T&&;
+
+template <class>
+struct Expr;
+
+template <class F, class... T>
+struct Expr<F(T...)> {
+  using Type = decltype(declval<F>()(declval<T>()...));
+};
+
+template <class X>
+using expr_t = typename Expr<X>::Type;
 
 }  // namespace sfc::trait

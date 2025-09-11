@@ -43,7 +43,7 @@ SFC re-imagines the “stdlib” surface for C++23 with explicit design: minimal
 ## 🔍 Design Principles
 
 1. Zero STL dependency – everything is internally defined.
-2. Fail fast: panicking assertions and explicit `Result`/`Option` return types.
+2. Fail fast: panicking expections and explicit `Result`/`Option` return types.
 3. No hidden allocations: APIs surface ownership & lifetime.
 4. Cross-platform parity: identical semantic contracts on Win/macOS/Linux.
 5. Small & auditable: each module stays focused; headers avoid template bloat.
@@ -100,7 +100,7 @@ build\src\Debug\sfc_test.exe
 ./build/src/sfc_test
 ```
 
-Test assertions use `panicking::assert_*` macros; a failure aborts fast with context.
+Test expections use `panicking::expect_*` macros; a failure aborts fast with context.
 
 ---
 
@@ -126,7 +126,7 @@ task/         Task primitives (emerging)
 
 | Concern | std:: | SFC |
 |---------|-------|-----|
-| Error handling | Return codes / exceptions | `Result<T,E>` + panic asserts |
+| Error handling | Return codes / exceptions | `Result<T,E>` + panic expects |
 | Optional values | `std::optional` | `Option<T>` (match-like ergonomics) |
 | Strings | `std::string` (allocator-heavy) | Explicit owned vs view types |
 | Collections | Broad, legacy semantics | Purpose-built, STL-free, predictable |

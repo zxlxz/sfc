@@ -182,13 +182,13 @@ class Variant {
 
   template <class U>
   auto as() const -> const U& {
-    panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as: invalid type");
+    panicking::expect(_tag == _inn.template tag<U>(), "variant::Variant::as: invalid type");
     return _inn.template as<U>();
   }
 
   template <class U>
   auto as_mut() -> U& {
-    panicking::assert(_tag == _inn.template tag<U>(), "variant::Variant::as_mut: invalid type");
+    panicking::expect(_tag == _inn.template tag<U>(), "variant::Variant::as_mut: invalid type");
     return _inn.template as_mut<U>();
   }
 

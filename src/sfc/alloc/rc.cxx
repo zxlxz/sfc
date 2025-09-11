@@ -26,19 +26,19 @@ SFC_TEST(rc) {
   Foo::obj_cnt() = 0;
   {
     auto a = Rc<Foo>::xnew(1);
-    panicking::assert_eq(a->_val, 1);
-    panicking::assert_eq(Foo::obj_cnt(), 1);
+    panicking::expect_eq(a->_val, 1);
+    panicking::expect_eq(Foo::obj_cnt(), 1);
 
     {
       auto b = a.clone();
-      panicking::assert_eq(b->_val, 1);
-      panicking::assert_eq(Foo::obj_cnt(), 1);
+      panicking::expect_eq(b->_val, 1);
+      panicking::expect_eq(Foo::obj_cnt(), 1);
     }
 
-    panicking::assert_eq(Foo::obj_cnt(), 1);
+    panicking::expect_eq(Foo::obj_cnt(), 1);
   }
 
-  panicking::assert_eq(Foo::obj_cnt(), 0);
+  panicking::expect_eq(Foo::obj_cnt(), 0);
 }
 
 }  // namespace sfc::rc::test
