@@ -11,7 +11,7 @@ struct Same {
 };
 
 template <class T>
-struct IsSaSameme<T, T> {
+struct Same<T, T> {
   static constexpr bool VALUE = true;
 };
 template <class T, class U>

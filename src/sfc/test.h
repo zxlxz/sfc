@@ -37,17 +37,10 @@ auto regist(Case) -> bool;
 
 template <class T>
 static auto auto_regist(panicking::Location loc = {}) -> bool {
-#if defined(__clang__) || defined(__GNUC__)
-  static const auto S1 = sizeof("bool sfc::test::auto_regist(panicking::Location) [T = ");
-  static const auto S2 = sizeof("_UT_]");
-  static const auto SS = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
-#elif defined(_MSC_VER)
-  static const auto S1 = sizeof("bool __cdecl sfc::test::regist<struct");
-  static const auto S2 = sizeof("UT_<(void)>");
-  static const auto SS = Str{__FUNCSIG__ + S1, sizeof(__FUNCSIG__) - S1 - S2};
-#endif
+  const auto full_name = str::type_name<T>();
+  const auto test_name = full_name[{0, full_name.len() - 4}];
 
-  static const auto test_case = Case{SS, &T::test, loc};
+  static const auto test_case = Case{test_name, &T::test, loc};
   static const auto regist_val = test::regist(test_case);
   return regist_val;
 }
