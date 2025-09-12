@@ -13,16 +13,6 @@ enum class Ordering {
   SeqCst,
 };
 
-#if defined(_MSC_VER) && !defined(__clang__)
-// clang-format off
-template <class T>auto __atomic_load_n    (T* ptr, int) -> T;
-template <class T>void __atomic_store_n   (T* ptr, T val, int);
-template <class T>auto __atomic_exchange_n(T* ptr, T val, int) -> T;
-template <class T>auto __atomic_fetch_add (T* ptr, T val, int) -> T;
-template <class T>auto __atomic_fetch_sub (T* ptr, T val, int) -> T;
-// clang-format on
-#endif
-
 template <class T>
 class Atomic {
   T _val;

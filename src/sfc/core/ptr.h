@@ -3,26 +3,6 @@
 #include "sfc/core/mem.h"
 #include "sfc/core/panicking.h"
 
-#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
-inline void* operator new(sfc::usize, void* ptr) noexcept {
-  return ptr;
-}
-inline void operator delete(void*, void*) noexcept {
-  return;
-}
-#endif
-
-#if defined(_MSC_VER) && !defined(__clang__)
-extern "C" void* __cdecl memset(void*, int, unsigned long long);
-extern "C" void* __cdecl memcpy(void*, const void*, unsigned long long);
-extern "C" void* __cdecl memmove(void*, const void*, unsigned long long);
-#define __builtin_memset  memset
-#define __builtin_memcpy  memcpy
-#define __builtin_memmove memmove
-#pragma intrinsic(memset)
-#pragma intrinsic(memcpy)
-#pragma intrinsic(memmove)
-#endif
 
 namespace sfc::ptr {
 

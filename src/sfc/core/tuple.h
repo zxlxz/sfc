@@ -4,38 +4,20 @@
 
 namespace sfc::tuple {
 
-template <class T, T... I>
-struct IntSeq {};
-
-template <int I, class... T>
-struct Element {};
-
-template <class T, class... Ts>
-struct Element<0, T, Ts...> {
-  using Type = T;
-};
-
-template <int I, class T, class... Ts>
-struct Element<I, T, Ts...> : Element<I - 1, Ts...> {};
-
-#ifdef __clang__
-template <usize I, class... T>
-using element_t = __type_pack_element<I, T...>;
-#else
-template <usize I, class... T>
-using element_t = Element<I, T...>::Type;
-#endif
-
 template <int I, class T>
 struct Entry {
   T _0;
 };
+
+template <class T, T... I>
+struct IntSeq {};
 
 template <class I, class... T>
 struct Inner;
 
 template <int... I, class... T>
 struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
+ public:
   Inner(T&&... args) : Entry<I, T>{static_cast<T&&>(args)}... {}
 
   Inner(Inner&&) noexcept = default;
@@ -44,15 +26,8 @@ struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
   Inner& operator=(Inner&&) noexcept = default;
   Inner& operator=(const Inner&) = default;
 
-  template <int X, class U = element_t<X, T...>>
-  auto get() -> U& {
-    return Entry<X, U>::_0;
-  }
-
-  template <int X, class U = element_t<X, T...>>
-  auto get() const -> const U& {
-    return Entry<X, U>::_0;
-  }
+  template <usize J>
+  using entry_t = Entry<J, T...[J]>;
 
   void map(auto&& f) const {
     (void)(f(Entry<I, T>::_0), ...);
@@ -71,14 +46,17 @@ struct Tuple {
  public:
   Tuple(T... args) : _inn{static_cast<T&&>(args)...} {}
 
+  template <usize I>
+  using element_t = T...[I];
+
   template <int I>
-  auto get() -> element_t<I, T...>& {
-    return _inn.template get<I>();
+  auto get() -> element_t<I>& {
+    return static_cast<typename Inn::template entry_t<I>&>(_inn)._0;
   }
 
   template <int I>
-  auto get() const -> const element_t<I, T...>& {
-    return _inn.template get<I>();
+  auto get() const -> const element_t<I>& {
+    return static_cast<const typename Inn::template entry_t<I>&>(_inn)._0;
   }
 
   void map(auto&& f) const {
@@ -120,12 +98,12 @@ struct tuple_element;
 
 template <sfc::usize I, class... T>
 struct tuple_element<I, sfc::tuple::Tuple<T...>> {
-  using type = sfc::tuple::element_t<I, T...>;
+  using type = sfc::tuple::Tuple<T...>::template element_t<I>;
 };
 
 template <sfc::usize I, class... T>
 struct tuple_element<I, const sfc::tuple::Tuple<T...>> {
-  using type = const sfc::tuple::element_t<I, T...>;
+  using type = const sfc::tuple::Tuple<T...>::template element_t<I>;
 };
 
 }  // namespace SFC_STD

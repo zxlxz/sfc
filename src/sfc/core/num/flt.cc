@@ -3,34 +3,6 @@
 
 namespace sfc::num {
 
-#if defined(_MSC_VER) && !defined(__clang__)
-static constexpr auto kF32Mask = 0x7F800000u;
-static constexpr auto kF32Bits = 0x007FFFFFu;
-
-static constexpr auto kF64Mask = 0x7FF0000000000000ull;
-static constexpr auto kF64Bits = 0x000FFFFFFFFFFFFFull;
-
-inline bool __builtin_isnan(f32 val) {
-  const auto bits = __builtin_bit_cast(u32, val);
-  return ((bits & kF32Mask) == kF32Mask) && (bits & kF32Bits);
-}
-
-inline bool __builtin_isinf(f32 val) {
-  const auto bits = __builtin_bit_cast(u32, val);
-  return ((bits & kF32Mask) == kF32Mask) && !(bits & kF32Bits);
-}
-
-inline bool __builtin_isnan(f64 val) {
-  const auto bits = __builtin_bit_cast(u64, val);
-  return ((bits & kF64Mask) == kF64Mask) && (bits & kF64Bits);
-}
-
-inline bool __builtin_isinf(f64 val) {
-  const auto bits = __builtin_bit_cast(u64, val);
-  return ((bits & kF64Mask) == kF64Mask) && !(bits & kF64Bits);
-}
-#endif
-
 struct FltStr {
   const char* _ptr;
   const char* _end;

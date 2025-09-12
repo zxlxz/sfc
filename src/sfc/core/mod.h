@@ -1,16 +1,11 @@
 #pragma once
 
-#if defined(__clang__) && defined(_WIN32)
+#ifdef __clang__
 #pragma clang diagnostic ignored "-Wunknown-attributes"
+#pragma clang diagnostic ignored "-Wc++26-extensions"
 #endif
 
-// clang-format off
-#if defined(__clang__) && defined(__APPLE__)
-#define SFC_STD std::inline __1
-#else
 #define SFC_STD std
-#endif
-// clang-format on
 
 namespace sfc {
 
@@ -33,3 +28,12 @@ using f64 = double;
 using cstr_t = const char*;
 
 }  // namespace sfc
+
+#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
+inline void* operator new(sfc::usize, void* ptr) noexcept {
+  return ptr;
+}
+inline void operator delete(void*, void*) noexcept {
+  return;
+}
+#endif

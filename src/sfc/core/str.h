@@ -467,15 +467,9 @@ auto Str::trim_matches(auto&& p) const noexcept -> Str {
 
 template <class T>
 static auto type_name() -> Str {
-#if defined(__clang__) || defined(__GNUC__)
   static const auto S1 = sizeof("Str sfc::str::type_name() [T = ") - 1;
   static const auto S2 = sizeof("]");
   return {__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
-#elif defined(_MSC_VER)
-  static const auto S1 = sizeof("struct sfc::str::Str __cdecl sfc::str::type_name<") - 1;
-  static const auto S2 = sizeof(">(void)");
-  return Str{__FUNCSIG__ + S1, sizeof(__FUNCSIG__) - S1 - S2};
-#endif
 }
 
 }  // namespace sfc::str

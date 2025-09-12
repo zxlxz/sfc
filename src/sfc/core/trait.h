@@ -4,22 +4,8 @@
 
 namespace sfc::trait {
 
-#if defined(_MSC_VER) && !defined(__clang__)
-template <class T, class U>
-struct Same {
-  static constexpr bool VALUE = false;
-};
-
-template <class T>
-struct Same<T, T> {
-  static constexpr bool VALUE = true;
-};
-template <class T, class U>
-concept same_ = Same<T, U>::VALUE;
-#else
 template <class T, class U>
 concept same_ = __is_same(T, U);
-#endif
 
 template <class T, class... U>
 concept any_ = (... || trait::same_<T, U>);
