@@ -37,20 +37,14 @@ inline auto take(T& dst) noexcept -> T {
 
 template <class T>
 inline auto as_bytes(const T& x) -> const u8 (&)[sizeof(T)] {
-  if constexpr (requires { x.as_bytes(); }) {
-    return x.as_bytes();
-  } else {
-    return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
-  }
+  static_assert(__is_trivially_copyable(T));
+  return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
 }
 
 template <class T>
 inline auto as_bytes_mut(T& x) -> u8 (&)[sizeof(T)] {
-  if constexpr (requires { x.as_bytes_mut(); }) {
-    return x.as_bytes_mut();
-  } else {
-    return reinterpret_cast<u8(&)[sizeof(T)]>(x);
-  }
+  static_assert(__is_trivially_copyable(T));
+  return reinterpret_cast<u8(&)[sizeof(T)]>(x);
 }
 
 }  // namespace sfc::mem

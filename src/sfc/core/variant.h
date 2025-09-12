@@ -1,6 +1,7 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/panicking.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::variant {
 
@@ -9,9 +10,6 @@ struct tag_t {};
 
 template <class... T>
 union Inner;
-
-template <>
-union Inner<> {};
 
 template <class T>
 union Inner<T> {

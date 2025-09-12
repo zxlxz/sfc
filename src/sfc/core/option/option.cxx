@@ -53,40 +53,40 @@ SFC_TEST(or) {
   auto a = Option<int>{};
   auto b = Option<int>{10};
 
-  panicking::expect_eq(mem::move(a) or Option{1}, Option{1});
-  panicking::expect_eq(mem::move(b) or Option{1}, Option{10});
+  panicking::expect_eq(a or Option{1}, Option{1});
+  panicking::expect_eq(b or Option{1}, Option{10});
 }
 
 SFC_TEST(and_then) {
   auto a = Option<int>{10};
   auto b = Option<int>{};
 
-  panicking::expect_eq(mem::move(a).and_then([](int x) { return Option{x + 1}; }), Option{11});
-  panicking::expect_eq(mem::move(b).and_then([](int x) { return Option{x + 1}; }), Option<int>{});
+  panicking::expect_eq(a.and_then([](int x) { return Option{x + 1}; }), Option{11});
+  panicking::expect_eq(b.and_then([](int x) { return Option{x + 1}; }), Option<int>{});
 }
 
 SFC_TEST(or_else) {
   auto a = Option<int>{};
   auto b = Option<int>{10};
 
-  panicking::expect_eq(mem::move(a).or_else([] { return Option{1}; }), Option{1});
-  panicking::expect_eq(mem::move(b).or_else([] { return Option{1}; }), Option{10});
+  panicking::expect_eq(a.or_else([] { return Option{1}; }), Option{1});
+  panicking::expect_eq(b.or_else([] { return Option{1}; }), Option{10});
 }
 
 SFC_TEST(map) {
   auto a = Option<int>{};
   auto b = Option<int>{10};
 
-  panicking::expect_eq(mem::move(a).map([](int x) { return x + 1; }), Option<int>{});
-  panicking::expect_eq(mem::move(b).map([](int x) { return x + 1; }), Option{11});
+  panicking::expect_eq(a.map([](int x) { return x + 1; }), Option<int>{});
+  panicking::expect_eq(b.map([](int x) { return x + 1; }), Option{11});
 }
 
 SFC_TEST(map_or) {
   auto a = Option<int>{};
   auto b = Option<int>{10};
 
-  panicking::expect_eq(mem::move(a).map_or(5, [](int x) { return x + 1; }), 5);
-  panicking::expect_eq(mem::move(b).map_or(5, [](int x) { return x + 1; }), 11);
+  panicking::expect_eq(a.map_or(5, [](int x) { return x + 1; }), 5);
+  panicking::expect_eq(b.map_or(5, [](int x) { return x + 1; }), 11);
 }
 
 }  // namespace sfc::option::test

@@ -87,11 +87,12 @@ auto File::read_to_end(Vec<u8>& buf, usize buf_len) -> Result<usize> {
 
   while (true) {
     buf.reserve(buf_len);
-    auto read_res = this->read({buf.as_mut_ptr() + buf.len(), buf_len});
+
+    const auto read_res = this->read({buf.as_mut_ptr() + buf.len(), buf_len});
     if (read_res.is_err()) {
-      return mem::move(read_res).unwrap_err();
+      return read_res.unwrap_err();
     }
-    const auto cnt = mem::move(read_res).unwrap();
+    const auto cnt = read_res.unwrap();
     if (cnt == 0) {
       break;
     }
@@ -113,12 +114,13 @@ auto File::write_all(Slice<const u8> buf) -> Result<usize> {
 
   const auto old_len = buf.len();
   while (!buf.is_empty()) {
-    auto write_res = this->write(buf);
+    const auto write_res = this->write(buf);
+
     if (write_res.is_err()) {
-      return mem::move(write_res).unwrap_err();
+      return write_res.unwrap_err();
     }
 
-    const auto cnt = mem::move(write_res).unwrap();
+    const auto cnt = write_res.unwrap();
     if (cnt == 0) {
       break;
     }

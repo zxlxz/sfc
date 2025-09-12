@@ -139,12 +139,12 @@ class Iterator : public I {
     return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
   }
 
-  template <class S = decltype(Item{} + Item{})>
+  template <class S = decltype(auto(Item{}))>
   auto sum(S init = 0) -> S {
     return this->fold(init, [](const auto& a, const auto& b) { return a + b; });
   }
 
-  template <class S = decltype(Item{} * Item{})>
+  template <class S = decltype(auto(Item{}))>
   auto product(S init = 1) -> S {
     return this->fold(init, [](const auto& a, const auto& b) { return a * b; });
   }
@@ -194,7 +194,6 @@ struct Rev {
 template <class I, class F>
 struct Map {
   using Item = trait::expr_t<F(typename I::Item)>;
-
 
   I _iter;
   F _func;

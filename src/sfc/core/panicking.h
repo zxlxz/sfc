@@ -19,18 +19,18 @@ struct PanicInfo {
   PanicInfo(const char* s) noexcept : val{s}, loc{} {}
 };
 
-struct expectInfo {
+struct ExpectInfo {
   bool val;
   Location loc;
 
-  expectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
+  ExpectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
 [[noreturn]] void panic_imp(Location loc, const auto&... args);
 
 [[noreturn]] void panic(PanicInfo info, const auto&... args);
 
-void expect(expectInfo info, const auto&... args) {
+void expect(ExpectInfo info, const auto&... args) {
   if (info.val) {
     return;
   }

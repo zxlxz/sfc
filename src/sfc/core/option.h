@@ -159,18 +159,21 @@ class Option {
     return other.is_some() && *_inn == *other;
   }
 
-  [[nodiscard]] auto unwrap() && -> T {
-    panicking::expect(_inn.tag() == Tag::Some, "Option::unwrap: None");
-    return static_cast<T&&>(*_inn);
+  [[nodiscard]] auto unwrap(this auto self) -> T {
+    panicking::expect(self._inn.tag() == Tag::Some, "Option::unwrap: None");
+    return static_cast<T&&>(*self._inn);
   }
 
-  [[nodiscard]] auto unwrap_or(T default_val) && -> T {
-    return _inn.tag() == Tag::Some ? static_cast<T&&>(*_inn) : static_cast<T&&>(default_val);
+  [[nodiscard]] auto unwrap_or(this auto self, T default_val) -> T {
+    if (self._inn.tag() == Tag::Some) {
+      return static_cast<T&&>(*self._inn);
+    }
+    return static_cast<T&&>(default_val);
   }
 
-  [[nodiscard]] auto expect(const auto&... msg) && -> T {
-    panicking::expect(_inn.tag() == Tag::Some, msg...);
-    return static_cast<T&&>(*_inn);
+  [[nodiscard]] auto expect(this auto self, const auto&... msg) -> T {
+    panicking::expect(self._inn.tag() == Tag::Some, msg...);
+    return static_cast<T&&>(*self._inn);
   }
 
   template <class U>
@@ -181,43 +184,43 @@ class Option {
     return {};
   }
 
-  [[nodiscard]] auto operator||(Option<T> optb) && -> Option<T> {
-    if (_inn.tag() == Tag::Some) {
-      return static_cast<Option&&>(*this);
+  [[nodiscard]] auto operator||(this auto self, Option<T> optb) -> Option<T> {
+    if (self._inn.tag() == Tag::Some) {
+      return static_cast<Option&&>(self);
     }
     return static_cast<Option&&>(optb);
   }
 
-  template <class F, class U=trait::expr_t<F(T)>>
-  [[nodiscard]] auto and_then(F&& op) && -> U {
-    if (_inn.tag() == Tag::None) {
+  template <class F, class U = trait::expr_t<F(T)>>
+  [[nodiscard]] auto and_then(this auto self, F&& op) -> U {
+    if (self._inn.tag() == Tag::None) {
       return {};
     }
-    return op(static_cast<T&&>(*_inn));
+    return op(static_cast<T&&>(*self._inn));
   }
 
   template <class F>
-  [[nodiscard]] auto or_else(F&& f) && -> Option {
-    if (_inn.tag() == Tag::Some) {
-      return static_cast<T&&>(*_inn);
+  [[nodiscard]] auto or_else(this auto self, F&& f) -> Option {
+    if (self._inn.tag() == Tag::Some) {
+      return static_cast<T&&>(*self._inn);
     }
     return f();
   }
 
   template <class F, class U = trait::expr_t<F(T)>>
-  [[nodiscard]] auto map(F&& op) && -> Option<U> {
-    if (_inn.tag() == Tag::None) {
+  [[nodiscard]] auto map(this auto self, F&& op) -> Option<U> {
+    if (self._inn.tag() == Tag::None) {
       return {};
     }
-    return {op(static_cast<T&&>(*_inn))};
+    return {op(static_cast<T&&>(*self._inn))};
   }
 
   template <class U, class F>
-  [[nodiscard]] auto map_or(U default_val, F&& f) && -> U {
-    if (_inn.tag() == Tag::None) {
+  [[nodiscard]] auto map_or(this auto self, U default_val, F&& f) -> U {
+    if (self._inn.tag() == Tag::None) {
       return static_cast<U&&>(default_val);
     }
-    return f(static_cast<T&&>(*_inn));
+    return f(static_cast<T&&>(*self._inn));
   }
 
   void fmt(auto& f) const {
