@@ -85,8 +85,8 @@ class [[nodiscard]] String {
     return _vec[idx];
   }
 
-  auto operator[](Range ids) const -> Str {
-    return Str::from_u8(_vec[ids]);
+  auto slice(usize start, usize end = static_cast<usize>(-1)) const -> Str {
+    return Str::from_u8(_vec.slice(start, end));
   }
 
   auto iter() const {
@@ -140,8 +140,8 @@ class [[nodiscard]] String {
     return _vec.remove(idx);
   }
 
-  void drain(Range ids) {
-    return _vec.drain(ids);
+  void drain(usize start, usize end) {
+    return _vec.drain(start, end);
   }
 
   void insert_str(usize idx, Str str) {

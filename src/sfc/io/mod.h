@@ -45,21 +45,13 @@ struct Error {
 template <class T = Tuple<>>
 using Result = result::Result<T, Error>;
 
-template <class T>
 struct Read {
-  T _inn;
-
- public:
-  auto read(Slice<u8> buf) -> Result<usize> {
-    return _inn.read(buf);
-  }
-
-  auto read_to_end(Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
+  auto read_to_end(this auto& self, Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
     const auto old_len = buf.len();
     while (true) {
       buf.reserve(buf_len);
 
-      const auto read_res = this->read({buf.as_mut_ptr() + buf.len(), buf_len});
+      const auto read_res = Result{self.read({buf.as_mut_ptr() + buf.len(), buf_len})};
       if (read_res.is_err()) {
         return read_res.unwrap_err();
       }
@@ -73,12 +65,12 @@ struct Read {
     return buf.len() - old_len;
   }
 
-  auto read_to_string(String& buf) -> Result<usize> {
-    return this->read_to_end(buf.as_mut_vec());
+  auto read_to_string(this auto& self, String& buf) -> Result<usize> {
+    return self.read_to_end(buf.as_mut_vec());
   }
 
-  auto read_bytes(auto& dst) -> Result<> {
-    auto res = this->read(mem::as_bytes_mut(dst));
+  auto read_bytes(this auto& self, auto& dst) -> Result<> {
+    auto res = self.read(mem::as_bytes_mut(dst));
     if (res.is_err()) {
       return res.unwrap_err();
     }
@@ -86,42 +78,28 @@ struct Read {
   }
 };
 
-template <class T>
 struct Write {
-  T _inn;
-
- public:
-  auto write(Slice<const u8> buf) -> Result<usize> {
-    return _inn.write(buf);
-  }
-
-  auto write_all(Slice<const u8> buf) -> Result<usize> {
+  auto write_all(this auto& self, Slice<const u8> buf) -> Result<usize> {
     const auto old_len = buf.len();
 
     while (!buf.is_empty()) {
-      const auto write_res = this->write(buf);
+      const auto write_res = Result{self.write(buf)};
       if (write_res.is_err()) {
         return write_res.unwrap_err();
       }
 
-      const auto cnt = write_res.unwrap();
-      if (cnt == 0) {
+      if (const auto cnt = write_res.unwrap()) {
+        buf = buf.slice(cnt, buf.len());
+      } else {
         break;
       }
-      buf = buf[{cnt, buf.len()}];
     }
     return old_len - buf.len();
   }
 
-  auto write_str(Str buf) -> Result<usize> {
-    return this->write_all(buf.as_bytes());
+  auto write_str(this auto& self, Str buf) -> Result<usize> {
+    return self.write_all(buf.as_bytes());
   }
 };
-
-template <class T>
-Read(T) -> Read<T>;
-
-template <usize N>
-Read(const u8 (&)[N]) -> Read<Slice<const u8>>;
 
 }  // namespace sfc::io

@@ -35,7 +35,7 @@ union Inner<T> {
 
   template <class U>
   static constexpr auto tag() -> u32 {
-    return trait::same_<T, U> ? 0U : 1U;
+    return __is_same(T, U) ? 0U : 1U;
   }
 
   template <class U>
@@ -85,7 +85,7 @@ union Inner<T0, Ts...> {
 
   template <class U>
   static constexpr auto tag() -> u32 {
-    if constexpr (trait::same_<T0, U>) {
+    if constexpr (__is_same(T0, U)) {
       return 0;
     } else {
       return Inner<Ts...>::template tag<U>() + 1;
@@ -94,7 +94,7 @@ union Inner<T0, Ts...> {
 
   template <class U>
   auto as() const -> const U& {
-    if constexpr (trait::same_<T0, U>) {
+    if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
       return _1.template as<U>();
@@ -103,7 +103,7 @@ union Inner<T0, Ts...> {
 
   template <class U>
   auto as_mut() -> U& {
-    if constexpr (trait::same_<T0, U>) {
+    if constexpr (__is_same(T0, U)) {
       return _0;
     } else {
       return _1.template as_mut<U>();

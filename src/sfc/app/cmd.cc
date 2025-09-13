@@ -31,7 +31,7 @@ struct Cmd::Item {
     }
 
     if (_long.ends_with('*')) {
-      return key == _long[{0, key.len() - 1}];
+      return key == _long.slice(0, key.len() - 1);
     }
 
     return key == _long;
@@ -150,9 +150,9 @@ void Cmd::parse(Slice<const Str> args) {
     s = s.trim_start_matches('-');
     const auto p = s.find('=');
     if (!p) {
-      return {s, {}};
+      return Tuple{s, Str{}};
     }
-    return {s[{0, *p}], s[{*p + 1, _}]};
+    return Tuple{s.slice(0, *p), s.slice(*p + 1, s.len())};
   };
 
   auto find_args = [this]() -> Item* {

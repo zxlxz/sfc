@@ -4,7 +4,7 @@
 
 namespace sfc::io {
 
-class [[nodiscard]] File {
+class [[nodiscard]] File : public Read, public Write {
 #ifdef _WIN32
   using fd_t = void*;
 #else
@@ -29,12 +29,7 @@ class [[nodiscard]] File {
   void close();
 
   auto read(Slice<u8> buf) -> Result<usize>;
-  auto read_to_end(Vec<u8>& buf, usize buf_len = 256) -> Result<usize>;
-  auto read_to_string(String& buf, usize buf_len = 256) -> Result<usize>;
-
   auto write(Slice<const u8> buf) -> Result<usize>;
-  auto write_all(Slice<const u8> buf) -> Result<usize>;
-  auto write_str(Str str) -> io::Result<usize>;
 };
 
 }  // namespace sfc::io

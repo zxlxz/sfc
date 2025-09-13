@@ -281,14 +281,18 @@ class Inner<boxed::Box<T...>> {
   Box _val{};
 
  public:
-  Inner() = default;
+  Inner() noexcept = default;
   explicit Inner(Box&& val) noexcept : _val{static_cast<Box&&>(val)} {}
+  ~Inner() noexcept = default;
 
   Inner(Inner&&) noexcept = default;
-  Inner& operator=(Inner&&) noexcept = default;
 
-  auto tag() const noexcept -> Tag {
-    return _val ? Tag::Some : Tag::None;
+  auto is_some() const noexcept -> bool {
+    return bool(_val);
+  }
+
+  auto is_none() const noexcept -> bool {
+    return !bool(_val);
   }
 
   auto operator*() const noexcept -> const Box& {

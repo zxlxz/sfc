@@ -438,13 +438,13 @@ struct Args {
   void fmt_imp(str::Str pats, auto& f) const {
     _args.map([&](auto& val) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
-      f.write_str(pats[{0, i0}]);
-      pats = pats[{i0 + 1, pats.len()}];
+      f.write_str(pats.slice(0, i0));
+      pats = pats.slice(i0 + 1, pats.len());
 
       const auto i1 = pats.find('}').unwrap_or(pats.len());
-      const auto ss = pats[{0, i1}];
+      const auto ss = pats.slice(0, i1);
       f.set_style(Style::from_str(ss).unwrap_or({}));
-      pats = pats[{i1 + 1, pats.len()}];
+      pats = pats.slice(i1 + 1, pats.len());
 
       f.write(*val);
     });

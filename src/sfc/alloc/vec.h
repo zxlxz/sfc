@@ -222,12 +222,12 @@ class [[nodiscard]] Vec {
     return _buf._ptr[idx];
   }
 
-  auto operator[](Range ids) const -> slice::Slice<const T> {
-    return Slice<const T>{_buf._ptr, _len}[ids];
+  auto slice(usize start, usize end = static_cast<usize>(-1)) const -> slice::Slice<const T> {
+    return Slice<const T>{_buf._ptr, _len}.slice(start, end);
   }
 
-  auto operator[](Range ids) -> slice::Slice<T> {
-    return Slice{_buf._ptr, _len}[ids];
+  auto slice_mut(usize start, usize end = static_cast<usize>(-1)) -> slice::Slice<T> {
+    return Slice{_buf._ptr, _len}.slice(start, end);
   }
 
   auto first() const -> option::Option<const T&> {
@@ -356,12 +356,14 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  void drain(Range ids) {
-    ids = ids.wrap(_len);
-    if (const auto cnt = ids.len()) {
-      ptr::shift_elements_left(_buf._ptr + ids._start, _len - ids._end, cnt);
-      _len -= cnt;
+  void drain(usize start, usize end) {
+    auto tmp = this->slice_mut(start, end);
+    if (tmp._len == 0) {
+      return;
     }
+    const auto tail_len = _len - static_cast<usize>(tmp._ptr + tmp._len - _buf._ptr);
+    ptr::shift_elements_left(tmp._ptr + tmp._len, tail_len, tmp._len);
+    _len -= tmp._len;
   }
 
   void resize(usize new_len, T value) {
@@ -388,7 +390,7 @@ class [[nodiscard]] Vec {
       this->reserve(iter.len());
     }
 
-    iter->for_each([&](T val) { this->push(static_cast<T&&>(val)); });
+    iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
   }
 
   void extend_with(usize cnt, T value) {

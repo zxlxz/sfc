@@ -6,32 +6,32 @@ namespace sfc::test {
 
 static auto parse_filter(Str s) -> Tuple<Str, Str> {
   if (s.is_empty()) {
-    return {{}, {}};
+    return Tuple{Str{}, Str{}};
   }
 
   if (auto p = s.find('.')) {
     const auto i = *p;
-    return {s[{0, i}], s[{i + 1, _}]};
+    return Tuple{s.slice(0, i), s.slice(i + 1, s.len())};
   }
 
   if (auto p = s.rfind(':')) {
     const auto i = *p;
     if (i != 0 && s[i - 1] == ':') {
-      return {s[{0, i - 1}], s[{i + 1, _}]};
+      return Tuple{s.slice(0, i - 1), s.slice(i + 1, s.len())};
     }
   }
 
-  return {s, {}};
+  return {s, Str{}};
 }
 
 auto Case::suite() const -> Str {
   const auto p = _str.rfind(':');
-  return p ? _str[{0, *p - 1}] : Str{};
+  return p ? _str.slice(0, *p - 1) : Str{};
 }
 
 auto Case::name() const -> Str {
   const auto pos = _str.rfind(':');
-  const auto res = pos ? _str[{*pos + 1, _}] : _str;
+  const auto res = pos ? _str.slice(*pos + 1, _str.len()) : _str;
   return res;
 }
 

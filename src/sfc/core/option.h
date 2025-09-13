@@ -3,10 +3,6 @@
 #include "sfc/core/panicking.h"
 #include "sfc/core/trait.h"
 
-namespace sfc::str {
-struct Str;
-}
-
 namespace sfc::option {
 
 enum class Tag : u8 { None, Some };
@@ -41,36 +37,12 @@ class Inner {
     }
   }
 
-  auto operator=(const Inner& other) noexcept -> Inner& {
-    if (this == &other) {
-      return *this;
-    }
-    if (_tag == Tag::Some) {
-      _val.~T();
-    }
-    if (other._tag == Tag::Some) {
-      new (&_val) T{other._val};
-    }
-    _tag = other._tag;
-    return *this;
+  auto is_some() const noexcept -> bool {
+    return _tag == Tag::Some;
   }
 
-  auto operator=(Inner&& other) noexcept -> Inner& {
-    if (this == &other) {
-      return *this;
-    }
-    if (_tag == Tag::Some) {
-      _val.~T();
-    }
-    if (other._tag == Tag::Some) {
-      new (&_val) T{static_cast<T&&>(other._val)};
-    }
-    _tag = other._tag;
-    return *this;
-  }
-
-  auto tag() const noexcept -> Tag {
-    return _tag;
+  auto is_none() const noexcept -> bool {
+    return _tag == Tag::None;
   }
 
   auto operator*() const noexcept -> const T& {
@@ -91,8 +63,12 @@ class Inner<T&> {
 
   explicit Inner(T& val) noexcept : _ptr{&val} {}
 
-  auto tag() const noexcept -> Tag {
-    return _ptr != nullptr ? Tag::Some : Tag::None;
+  auto is_some() const noexcept -> bool {
+    return _ptr != nullptr;
+  }
+
+  auto is_none() const noexcept -> bool {
+    return _ptr == nullptr;
   }
 
   auto operator*() const noexcept -> const T& {
@@ -106,7 +82,10 @@ class Inner<T&> {
 
 template <class T>
 class Option {
-  Inner<T> _inn{};
+  using Some = T;
+  using Inn = Inner<T>;
+
+  Inn _inn{};
 
  public:
   Option() noexcept = default;
@@ -116,38 +95,53 @@ class Option {
   Option(const Option&) noexcept = default;
   Option(Option&&) noexcept = default;
 
-  Option& operator=(Option&&) noexcept = default;
-  Option& operator=(const Option&) noexcept = default;
+  Option& operator=(const Option& other) {
+    if (this == &other) {
+      return *this;
+    }
+    _inn.~Inn();
+    new (&_inn) Inn{other._inn};
+    return *this;
+  }
 
-  explicit operator bool() const noexcept {
-    return _inn.tag() == Tag::Some;
+  Option& operator=(Option&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    _inn.~Inn();
+    new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
+    return *this;
   }
 
   auto is_some() const noexcept -> bool {
-    return _inn.tag() == Tag::Some;
+    return _inn.is_some();
   }
 
   auto is_none() const noexcept -> bool {
-    return _inn.tag() == Tag::None;
+    return _inn.is_none();
+  }
+
+  explicit operator bool() const noexcept {
+    return _inn.is_some();
   }
 
   auto operator*() const -> const T& {
-    panicking::expect(_inn.tag() == Tag::Some, "Option::operator*: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
     return *_inn;
   }
 
   auto operator*() -> T& {
-    panicking::expect(_inn.tag() == Tag::Some, "Option::operator*: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
     return *_inn;
   }
 
   auto operator->() const {
-    panicking::expect(_inn.tag() == Tag::Some, "Option::operator->: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
     return &*_inn;
   }
 
   auto operator->() {
-    panicking::expect(_inn.tag() == Tag::Some, "Option::operator->: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
     return &*_inn;
   }
 
@@ -160,40 +154,40 @@ class Option {
   }
 
   [[nodiscard]] auto unwrap(this auto self) -> T {
-    panicking::expect(self._inn.tag() == Tag::Some, "Option::unwrap: None");
+    panicking::expect(self._inn.is_some(), "Option::unwrap: None");
     return static_cast<T&&>(*self._inn);
   }
 
   [[nodiscard]] auto unwrap_or(this auto self, T default_val) -> T {
-    if (self._inn.tag() == Tag::Some) {
+    if (self._inn.is_some()) {
       return static_cast<T&&>(*self._inn);
     }
     return static_cast<T&&>(default_val);
   }
 
   [[nodiscard]] auto expect(this auto self, const auto&... msg) -> T {
-    panicking::expect(self._inn.tag() == Tag::Some, msg...);
+    panicking::expect(self._inn.is_some(), msg...);
     return static_cast<T&&>(*self._inn);
   }
 
   template <class U>
   [[nodiscard]] auto operator&&(Option<U> optb) const -> Option<U> {
-    if (_inn.tag() == Tag::Some) {
+    if (_inn.is_some()) {
       return static_cast<Option<U>&&>(optb);
     }
     return {};
   }
 
   [[nodiscard]] auto operator||(this auto self, Option<T> optb) -> Option<T> {
-    if (self._inn.tag() == Tag::Some) {
+    if (self._inn.is_some()) {
       return static_cast<Option&&>(self);
     }
     return static_cast<Option&&>(optb);
   }
 
-  template <class F, class U = trait::expr_t<F(T)>>
-  [[nodiscard]] auto and_then(this auto self, F&& op) -> U {
-    if (self._inn.tag() == Tag::None) {
+  template <class F, class U = typename trait::invoke_t<F(T)>::Some>
+  [[nodiscard]] auto and_then(this auto self, F&& op) -> Option<U> {
+    if (self._inn.is_none()) {
       return {};
     }
     return op(static_cast<T&&>(*self._inn));
@@ -201,30 +195,30 @@ class Option {
 
   template <class F>
   [[nodiscard]] auto or_else(this auto self, F&& f) -> Option {
-    if (self._inn.tag() == Tag::Some) {
+    if (self._inn.is_some()) {
       return static_cast<T&&>(*self._inn);
     }
     return f();
   }
 
-  template <class F, class U = trait::expr_t<F(T)>>
+  template <class F, class U = trait::invoke_t<F(T)>>
   [[nodiscard]] auto map(this auto self, F&& op) -> Option<U> {
-    if (self._inn.tag() == Tag::None) {
+    if (self._inn.is_none()) {
       return {};
     }
     return {op(static_cast<T&&>(*self._inn))};
   }
 
-  template <class U, class F>
-  [[nodiscard]] auto map_or(this auto self, U default_val, F&& f) -> U {
-    if (self._inn.tag() == Tag::None) {
+  template <class U>
+  [[nodiscard]] auto map_or(this auto self, U default_val, auto&& f) -> U {
+    if (self._inn.is_none()) {
       return static_cast<U&&>(default_val);
     }
     return f(static_cast<T&&>(*self._inn));
   }
 
   void fmt(auto& f) const {
-    if (_inn.tag() == Tag::None) {
+    if (_inn.is_none()) {
       f.write_str("None()");
     } else {
       f.write_fmt("Some({})", *_inn);
@@ -234,8 +228,5 @@ class Option {
 
 template <class T>
 Option(T) -> Option<T>;
-
-template <usize N>
-Option(const char (&s)[N]) -> Option<str::Str>;
 
 }  // namespace sfc::option

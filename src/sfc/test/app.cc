@@ -25,8 +25,8 @@ static auto parse_filter(Str filter) -> Vec<Str> {
   auto v = Vec<Str>{};
   while (filter) {
     const auto pos = find_pos(filter);
-    v.push(filter[{0, pos}]);
-    filter = filter[{pos + 1, _}];
+    v.push(filter.slice(0, pos));
+    filter = filter.slice(pos + 1, filter.len());
   }
   return v;
 }
@@ -105,7 +105,7 @@ void App::list_xml(Str path) const {
   }
 
   const auto pos = path.find(':');
-  const auto xml_path = pos ? path[{*pos + 1, _}] : path;
+  const auto xml_path = pos ? path.slice(*pos + 1) : path;
   auto xml_file = fs::File::create(fs::Path{xml_path}).ok();
   if (!xml_file) {
     io::println("Failed to create file '{}'", xml_path);

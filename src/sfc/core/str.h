@@ -73,11 +73,11 @@ struct Str {
     return _ptr && idx < _len ? _ptr[idx] : '\0';
   }
 
-  auto operator[](ops::Range ids) const noexcept -> Str {
-    const auto end = ids._end < _len ? ids._end : _len;
-    const auto pos = ids._start < end ? ids._start : end;
-    const auto len = pos <= end ? end - pos : 0U;
-    return Str{_ptr + pos, len};
+  auto slice(usize start, usize end = static_cast<usize>(-1)) const noexcept -> Str {
+    end = end < _len ? end : _len;
+    start = start < end ? start : end;
+    const auto len = start < end ? end - start : 0U;
+    return Str{_ptr + start, len};
   }
 
   auto split_at(usize mid) const noexcept -> tuple::Tuple<Str, Str> {
@@ -473,3 +473,8 @@ static auto type_name() -> Str {
 }
 
 }  // namespace sfc::str
+
+namespace sfc::option {
+template <usize N>
+Option(const char (&s)[N]) -> Option<str::Str>;
+}

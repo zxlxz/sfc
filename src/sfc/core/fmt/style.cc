@@ -83,7 +83,7 @@ struct StyleStr {
 
 auto Style::from_str(str::Str s) -> option::Option<Style> {
   if (s[0] == ':') {
-    s = s[{1, s._len}];
+    s = s.slice(1, s.len());
   }
 
   auto imp = StyleStr{s};

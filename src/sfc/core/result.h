@@ -20,11 +20,7 @@ class Inner {
   explicit Inner(E&& err) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(err)} {}
 
   ~Inner() noexcept {
-    if (_tag == Tag::Ok) {
-      _ok.~T();
-    } else {
-      _err.~E();
-    }
+    _tag == Tag::Ok ? _ok.~T() : _err.~E();
   }
 
   Inner(const Inner& other) noexcept : _tag{other._tag} {
@@ -41,42 +37,6 @@ class Inner {
     } else {
       new (&_err) E{static_cast<E&&>(other._err)};
     }
-  }
-
-  Inner& operator=(const Inner& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    if (_tag == Tag::Ok) {
-      _ok.~T();
-    } else {
-      _err.~E();
-    }
-    _tag = other._tag;
-    if (other._tag == Tag::Ok) {
-      new (&_ok) T{other._ok};
-    } else {
-      new (&_err) E{other._err};
-    }
-    return *this;
-  }
-
-  Inner& operator=(Inner&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    if (_tag == Tag::Ok) {
-      _ok.~T();
-    } else {
-      _err.~E();
-    }
-    _tag = other._tag;
-    if (_tag == Tag::Ok) {
-      new (&_ok) T{static_cast<T&&>(other._ok)};
-    } else {
-      new (&_err) E{static_cast<E&&>(other._err)};
-    }
-    return *this;
   }
 
   auto is_ok() const noexcept -> bool {
@@ -106,8 +66,12 @@ class Inner {
 
 template <class T, class E>
 class Result {
-  static_assert(!trait::same_<T, E>);
-  Inner<T, E> _inn;
+  static_assert(!__is_same(T, E));
+  using Ok = T;
+  using Err = E;
+  using Inn = Inner<T, E>;
+
+  Inn _inn;
 
  public:
   Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
@@ -117,8 +81,23 @@ class Result {
   Result(const Result&) noexcept = default;
   Result(Result&&) noexcept = default;
 
-  Result& operator=(const Result&) noexcept = default;
-  Result& operator=(Result&&) noexcept = default;
+  Result& operator=(const Result& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    _inn.~Inn();
+    new (&_inn) Inn{other._inn};
+    return *this;
+  }
+
+  Result& operator=(Result&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    _inn.~Inn();
+    new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
+    return *this;
+  }
 
   auto is_ok() const noexcept -> bool {
     return _inn.is_ok();
@@ -168,23 +147,23 @@ class Result {
     return static_cast<T&&>(*self._inn);
   }
 
-  template <class F>
-  auto and_then(this auto self, F&& op) -> trait::expr_t<F(T)> {
+  template <class F, class U = trait::invoke_t<F(T)>::Ok>
+  auto and_then(this auto self, F&& op) -> Result<U, E> {
     if (self._inn.is_ok()) {
       return op(static_cast<T&&>(*self._inn));
     }
     return static_cast<E&&>(~self._inn);
   }
 
-  template <class O>
-  auto or_else(this auto self, O&& op) -> trait::expr_t<O(E)> {
+  template <class O, class F = trait::invoke_t<O(E)>::Err>
+  auto or_else(this auto self, O&& op) -> Result<T, F> {
     if (self._inn.is_err()) {
       return op(static_cast<E&&>(~self._inn));
     }
     return static_cast<T&&>(*self._inn);
   }
 
-  template <class F, class U = trait::expr_t<F(T)>>
+  template <class F, class U = trait::invoke_t<F(T)>>
   auto map(this auto self, F&& op) -> Result<U, E> {
     if (self._inn.is_ok()) {
       return op(static_cast<T&&>(*self._inn));
@@ -192,7 +171,7 @@ class Result {
     return static_cast<E&&>(~self._inn);
   }
 
-  template <class O, class F = trait::expr_t<O(E)>>
+  template <class O, class F = trait::invoke_t<O(E)>>
   auto map_err(this auto self, O&& op) -> Result<T, F> {
     if (self._inn.is_err()) {
       return op(static_cast<E&&>(~self._inn));

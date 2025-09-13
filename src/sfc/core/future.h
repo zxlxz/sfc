@@ -49,14 +49,12 @@ struct Poll {
   }
 
   auto operator*() const -> const T& {
-    panicking::expect(_state != State::Pending,
-                      "Poll::operator*: cannot dereference a pending poll");
+    panicking::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }
 
   auto operator*() -> T& {
-    panicking::expect(_state != State::Pending,
-                      "Poll::operator*: cannot dereference a pending poll");
+    panicking::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }
 };
@@ -99,7 +97,7 @@ class Future {
       _frame.resume();
     }
     const auto promise = static_cast<Promise<T>*>(_frame.promise<alignof(Promise<T>)>());
-    if constexpr (trait::same_<T, void>) {
+    if constexpr (__is_void(T)) {
       return Poll<T>{promise->_state};
     } else {
       return Poll<T>{promise->_state, promise->_value};
@@ -120,7 +118,7 @@ class Future {
     }
 
     auto await_resume() -> T {
-      if constexpr (!trait::same_<T, void>) {
+      if constexpr (!__is_void(T)) {
         const auto promise = static_cast<Promise<T>*>(_frame.promise<alignof(Promise<T>)>());
         return static_cast<T&&>(promise->_value);
       }

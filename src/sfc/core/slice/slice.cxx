@@ -36,14 +36,14 @@ SFC_TEST(slice) {
   const auto a = Slice{v};
 
   {
-    const auto b = a[{1, 3}];
+    const auto b = a.slice(1, 3);
     panicking::expect_eq(b.len(), 2U);
     panicking::expect_eq(b[0], 2);
     panicking::expect_eq(b[1], 3);
   }
 
   {
-    const auto c = a[{0, 3}];
+    const auto c = a.slice(0, 3);
     panicking::expect_eq(c.len(), 3U);
     panicking::expect_eq(c[0], 1);
     panicking::expect_eq(c[1], 2);
@@ -51,13 +51,13 @@ SFC_TEST(slice) {
   }
 
   {
-    const auto d = a[{2, _}];
+    const auto d = a.slice(2);
     panicking::expect_eq(d.len(), 1U);
     panicking::expect_eq(d[0], 3);
   }
 
   {
-    const auto e = a[{5, 6}];
+    const auto e = a.slice(5, 6);
     panicking::expect_eq(e.len(), 0U);
     panicking::expect_true(e.is_empty());
     panicking::expect_false(e);

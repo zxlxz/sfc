@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef __clang__
-#pragma clang diagnostic ignored "-Wunknown-attributes"
 #pragma clang diagnostic ignored "-Wc++26-extensions"
+#pragma clang diagnostic ignored "-Wunknown-attributes"
 #endif
 
 #define SFC_STD std

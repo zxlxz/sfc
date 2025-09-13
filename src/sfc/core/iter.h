@@ -16,106 +16,101 @@ struct Filter;
 template <class I, class F>
 struct Map;
 
-template <class I>
-class Iterator : public I {
-  using Item = typename I::Item;
+template <class T>
+struct Iterator {
+  using Item = T;
 
- public:
-  Iterator() = delete;
-  ~Iterator() = delete;
+  auto find(this auto&& self, auto&& pred) -> option::Option<Item> {
+    for (; auto x = self.next();) {
+      if (pred(*x)) {
+        return x;
+      }
+    }
+    return {};
+  }
 
- public:
-  void for_each(auto&& f) {
-    for (; auto x = this->next();) {
+  auto rfind(this auto&& self, auto&& pred) -> option::Option<Item> {
+    for (; auto x = self.next_back();) {
+      if (pred(*x)) {
+        return x;
+      }
+    }
+    return {};
+  }
+
+  auto position(this auto&& self, auto&& pred) -> option::Option<usize> {
+    for (usize idx = 0UL; auto x = self.next(); ++idx) {
+      if (pred(*x)) {
+        return idx;
+      }
+    }
+
+    return {};
+  }
+
+  auto rposition(this auto&& self, auto&& pred) -> option::Option<usize> {
+    for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
+      if (pred(*x)) {
+        return idx;
+      }
+    }
+    return {};
+  }
+
+  void for_each(this auto&& self, auto&& f) {
+    for (; auto x = self.next();) {
       f(*x);
     }
   }
 
-  void for_each_idx(auto&& f) {
-    for (auto i = 0UL; auto x = this->next(); ++i) {
+  void for_each_idx(this auto&& self, auto&& f) {
+    for (auto i = 0UL; auto x = self.next(); ++i) {
       f(i, *x);
     }
   }
 
   template <class B>
-  auto fold(B init, auto&& f) -> B {
+  auto fold(this auto&& self, B init, auto&& f) -> B {
     auto accum = static_cast<B&&>(init);
-    for (; auto x = this->next();) {
+    for (; auto x = self.next();) {
       accum = f(accum, *x);
     }
     return accum;
   }
 
-  template <class F, class U = trait::expr_t<F(Item, Item)>>
-  auto reduce(F&& f) -> option::Option<U> {
-    auto first = this->next();
+  template <class F, class B = trait::invoke_t<F(Item, Item)>>
+  auto reduce(this auto self, F&& f) -> option::Option<B> {
+    auto first = self.next();
     if (!first) {
       return {};
     }
 
-    if constexpr (!trait::same_<U, U&>) {
-      auto res_val = static_cast<U>(*first);
-      for (; auto x = this->next();) {
+    if constexpr (!__is_same(B, B&)) {
+      auto res_val = mem::move(first).unwrap();
+      for (; auto x = self.next();) {
         res_val = f(res_val, *x);
       }
       return res_val;
     } else {
-      auto res_ptr = &static_cast<U>(*first);
-      for (; auto x = this->next();) {
+      auto res_ptr = &mem::move(first).unwrap();
+      for (; auto x = self.next();) {
         res_ptr = &f(*res_ptr, *x);
       }
       return *res_ptr;
     }
   }
 
-  auto find(auto&& pred) -> option::Option<Item> {
-    for (; auto x = this->next();) {
-      if (pred(*x)) {
-        return x;
-      }
-    }
-    return {};
+  auto all(this auto self, auto&& f) -> bool {
+    return !self.position([&](auto& x) { return !f(x); });
   }
 
-  auto rfind(auto&& pred) -> option::Option<Item> {
-    for (; auto x = this->next_back();) {
-      if (pred(*x)) {
-        return x;
-      }
-    }
-    return {};
+  auto any(this auto self, auto&& f) -> bool {
+    return self.position(f).is_some();
   }
 
-  auto position(auto&& pred) -> option::Option<usize> {
-    for (usize idx = 0UL; auto x = this->next(); ++idx) {
-      if (pred(*x)) {
-        return idx;
-      }
-    }
-
-    return {};
-  }
-
-  auto rposition(auto&& pred) -> option::Option<usize> {
-    for (auto idx = this->len() - 1; auto x = this->next_back(); --idx) {
-      if (pred(*x)) {
-        return idx;
-      }
-    }
-    return {};
-  }
-
-  auto all(auto&& f) -> bool {
-    return !this->position([&](auto& x) { return !f(x); });
-  }
-
-  auto any(auto&& f) -> bool {
-    return this->position(f).is_some();
-  }
-
-  auto count(auto&& f) -> usize {
+  auto count(this auto self, auto&& f) -> usize {
     auto accum = usize{0};
-    this->for_each([&](auto& x) mutable {
+    self.for_each([&](auto& x) mutable {
       if (f(x)) {
         accum += 1;
       }
@@ -123,50 +118,52 @@ class Iterator : public I {
     return accum;
   }
 
-  auto min() -> option::Option<Item> {
-    return this->reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
+  auto min(this auto self) -> option::Option<Item> {
+    return self.reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
   }
 
-  auto max() -> option::Option<Item> {
-    return this->reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
+  auto max(this auto self) -> option::Option<Item> {
+    return self.reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
   }
 
-  auto min_by_key(auto&& f) -> option::Option<Item> {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) < f(b) ? a : b; });
+  auto min_by_key(this auto self, auto&& f) -> option::Option<Item> {
+    return self.reduce([&](auto&& a, auto&& b) -> auto& { return f(a) < f(b) ? a : b; });
   }
 
-  auto max_by_key(auto&& f) -> option::Option<Item> {
-    return this->reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
+  auto max_by_key(this auto self, auto&& f) -> option::Option<Item> {
+    return self.reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
   }
 
-  template <class S = decltype(auto(Item{}))>
-  auto sum(S init = 0) -> S {
-    return this->fold(init, [](const auto& a, const auto& b) { return a + b; });
+  template <class S = trait::decay_t<Item>>
+  auto sum(this auto&& self, S init = 0) -> S {
+    return self.fold(init, [](const auto& a, const auto& b) { return a + b; });
   }
 
-  template <class S = decltype(auto(Item{}))>
-  auto product(S init = 1) -> S {
-    return this->fold(init, [](const auto& a, const auto& b) { return a * b; });
+  template <class S = trait::decay_t<Item>>
+  auto product(this auto&& self, S init = 1) -> S {
+    return self.fold(init, [](const auto& a, const auto& b) { return a * b; });
   }
 
   template <class B>
-  auto collect() -> B {
-    return B::from_iter(static_cast<I&&>(*this));
+  auto collect(this auto&& self) -> B {
+    return B::from_iter(static_cast<decltype(self)&&>(self));
   }
 
-  auto rev() -> Rev<I> {
-    return Rev{static_cast<I&&>(*this)};
+  template <class Self>
+  auto rev(this Self self) -> Rev<Self> {
+    return Rev{{}, static_cast<Self&&>(self)};
   }
 
-  template <class F>
-  auto map(F f) -> Map<I, F> {
-    return Map{static_cast<I&&>(*this), static_cast<F&&>(f)};
+  template <class Self, class F>
+  auto map(this Self self, F f) -> Map<Self, F> {
+    return {{}, static_cast<Self&&>(self), static_cast<F&&>(f)};
   }
 };
 
 template <class I>
-struct Rev {
+struct Rev : Iterator<typename I::Item> {
   using Item = typename I::Item;
+
   I _iter;
 
  public:
@@ -181,20 +178,11 @@ struct Rev {
   auto next_back() -> option::Option<Item> {
     return _iter.next();
   }
-
-  auto operator->() const -> const iter::Iterator<Rev>* {
-    return this;
-  }
-
-  auto operator->() -> iter::Iterator<Rev>* {
-    return this;
-  }
 };
 
 template <class I, class F>
-struct Map {
-  using Item = trait::expr_t<F(typename I::Item)>;
-
+struct Map : Iterator<trait::invoke_t<F(typename I::Item)>> {
+  using Item = trait::invoke_t<F(typename I::Item)>;
   I _iter;
   F _func;
 
@@ -210,18 +198,10 @@ struct Map {
   auto next_back() -> option::Option<Item> {
     return _iter.next_back().map(_func);
   }
-
-  auto operator->() const -> const iter::Iterator<Map>* {
-    return this;
-  }
-
-  auto operator->() -> iter::Iterator<Map>* {
-    return this;
-  }
 };
 
 template <class A, class B>
-struct Zip {
+struct Zip : Iterator<typename A::Item> {
   using Item = tuple::Tuple<typename A::Item, typename B::Item>;
 
   A _a;
@@ -263,7 +243,7 @@ struct Zip {
 
 template <class A, class B>
 auto zip(A a, B b) -> Zip<A, B> {
-  return Zip<A, B>{static_cast<A&&>(a), static_cast<B&&>(b)};
+  return {{}, static_cast<A&&>(a), static_cast<B&&>(b)};
 }
 
 }  // namespace sfc::iter

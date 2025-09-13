@@ -28,24 +28,9 @@ auto File::read(Slice<u8> buf) -> io::Result<usize> {
   return _inn.read(buf);
 }
 
-auto File::read_to_end(Vec<u8>& buf, usize buf_len) -> io::Result<usize> {
-  return _inn.read_to_end(buf, buf_len);
-}
-
-auto File::read_to_string(String& buf, usize buf_len) -> io::Result<usize> {
-  return _inn.read_to_string(buf, buf_len);
-}
 
 auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   return _inn.write(buf);
-}
-
-auto File::write_all(Slice<const u8> buf) -> io::Result<usize> {
-  return _inn.write_all(buf);
-}
-
-auto File::write_str(Str buf) -> io::Result<usize> {
-  return _inn.write_str(buf);
 }
 
 auto OpenOptions::open(const Path& path) const -> io::Result<File> {

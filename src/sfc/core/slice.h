@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/result.h"
@@ -72,18 +71,14 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
-    const auto end = ids._end < _len ? ids._end : _len;
-    const auto pos = ids._start < end ? ids._start : end;
-    const auto len = pos <= end ? end - pos : 0U;
-    return {_ptr + pos, len};
+  auto slice_mut(usize start, usize end = static_cast<usize>(-1)) noexcept -> Slice<const T> {
+    end = end < _len ? end : _len;
+    return {_ptr + start, start < end ? end - start : 0U};
   }
 
-  auto operator[](ops::Range ids) noexcept -> Slice<T> {
-    const auto end = ids._end < _len ? ids._end : _len;
-    const auto pos = ids._start < end ? ids._start : end;
-    const auto len = pos <= end ? end - pos : 0U;
-    return {_ptr + pos, len};
+  auto slice(usize start, usize end = static_cast<usize>(-1)) const noexcept -> Slice<T> {
+    end = end < _len ? end : _len;
+    return {_ptr + start, start < end ? end - start : 0U};
   }
 
   auto split_at(usize mid) const noexcept -> tuple::Tuple<Slice<const T>, Slice<const T>> {
@@ -119,7 +114,7 @@ struct Slice {
   }
 
   void copy_from_slice(Slice<const T> src) {
-    static_assert(trait::trivially_copyable_<T>);
+    static_assert(__is_trivially_copyable(T));
 
     if (_len != src._len) {
       panicking::panic("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
@@ -130,7 +125,8 @@ struct Slice {
 
   template <class U>
   auto read(Slice<U> buf) -> usize {
-    static_assert(trait::same_<const T, const U>);
+    static_assert(__is_same(const T, const U));
+
     const auto amt = _len < buf._len ? _len : buf._len;
     ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
     _ptr += amt;
@@ -193,32 +189,49 @@ struct Slice {
   }
 
  public:
+  auto begin() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  auto begin() noexcept -> T* {
+    return _ptr;
+  }
+
+  auto end() const noexcept -> const T* {
+    return _ptr + _len;
+  }
+
+  auto end() noexcept -> T* {
+    return _ptr + _len;
+  }
+
   auto iter() const noexcept -> Iter<const T> {
-    return Iter<const T>{_ptr, _ptr + _len};
+    return Iter<const T>{{}, _ptr, _ptr + _len};
   }
 
   auto iter_mut() noexcept -> Iter<T> {
-    return Iter<T>{_ptr, _ptr + _len};
+    return Iter<T>{{}, _ptr, _ptr + _len};
   }
 
   auto windows(usize n) const noexcept -> Windows<const T> {
-    return {*this, n};
+    return Windows{{}, *this, n};
   }
 
   auto windows_mut(usize n) noexcept -> Windows<T> {
-    return {*this, n};
+    return Windows{{}, *this, n};
   }
 
   auto chunks(usize n) const noexcept -> Chunks<const T> {
-    return {*this, n};
+    return Chunks{{}, *this, n};
   }
 
   auto chunks_mut(usize n) noexcept -> Chunks<T> {
-    return {*this, n};
+    return Chunks{{}, *this, n};
   }
 
+ public:
   auto as_bytes_mut() -> Slice<u8> {
-    return {reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
+    return Slice{reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
   }
 
   void fmt(auto& f) const {
@@ -240,8 +253,7 @@ template <class T>
 Slice(T*, auto) -> Slice<T>;
 
 template <class T>
-struct Iter {
-  using Item = T&;
+struct Iter : iter::Iterator<T&> {
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -267,19 +279,10 @@ struct Iter {
     }
     return *--_end;
   }
-
-  auto operator->() const -> const iter::Iterator<Iter>* {
-    return static_cast<const iter::Iterator<Iter>*>(this);
-  }
-
-  auto operator->() -> iter::Iterator<Iter>* {
-    return static_cast<iter::Iterator<Iter>*>(this);
-  }
 };
 
 template <class T>
-struct Windows {
-  using Item = Slice<T>;
+struct Windows : iter::Iterator<Slice<T>> {
   Slice<T> _buf = {};
   usize _len = 0;
 
@@ -308,20 +311,10 @@ struct Windows {
     _buf._len -= 1;
     return res;
   }
-
-  auto operator->() const -> const iter::Iterator<Windows>* {
-    return this;
-  }
-
-  auto operator->() -> iter::Iterator<Windows>* {
-    return this;
-  }
 };
 
 template <class T>
-struct Chunks {
-  using Item = Slice<T>;
-
+struct Chunks : iter::Iterator<Slice<T>> {
   Slice<T> _buf = {};
   usize _len = 0;
 
@@ -340,38 +333,6 @@ struct Chunks {
     _buf._len -= pos;
     return res;
   }
-
-  auto operator->() const -> const iter::Iterator<Chunks>* {
-    return this;
-  }
-
-  auto operator->() -> iter::Iterator<Chunks>* {
-    return this;
-  }
 };
 
-template <class T>
-auto begin(const Slice<T>& self) -> const T* {
-  return self._ptr;
-}
-
-template <class T>
-auto end(const Slice<T>& self) -> const T* {
-  return self._ptr + self._len;
-}
-
-template <class T>
-auto begin(Slice<T>& self) -> T* {
-  return self._ptr;
-}
-
-template <class T>
-auto end(Slice<T>& self) -> T* {
-  return self._ptr + self._len;
-}
-
 }  // namespace sfc::slice
-
-namespace sfc {
-using slice::Slice;
-}  // namespace sfc

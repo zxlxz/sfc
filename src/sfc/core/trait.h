@@ -29,23 +29,29 @@ template <class T>
 concept float_ = any_<T, float, double>;
 
 template <class T>
-concept trivially_copyable_ = __is_trivially_copyable(T);
-
-template <class T>
-concept trivially_destructible_ = __is_trivially_destructible(T);
-
-template <class T>
-auto declval() -> T&&;
+using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class>
-struct Expr;
+struct __fn;
 
-template <class F, class... T>
-struct Expr<F(T...)> {
-  using Type = decltype(declval<F>()(declval<T>()...));
+template <class R, class... T>
+struct __fn<R(T...)> {
+  using Ret = R;
 };
 
 template <class X>
-using expr_t = typename Expr<X>::Type;
+struct __invoke;
+
+template <class F, class... T>
+struct __invoke<F(T...)> {
+  static auto operator()(F f, T... t) -> decltype(auto) {
+    return f((T&&)t...);
+  }
+
+  using type = typename __fn<decltype(__invoke::operator())>::Ret;
+};
+
+template <class X>
+using invoke_t = typename __invoke<X>::type;
 
 }  // namespace sfc::trait
