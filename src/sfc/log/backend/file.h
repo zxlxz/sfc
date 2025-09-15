@@ -19,7 +19,7 @@ class FileBackend {
 
   void flush();
 
-  void write_entry(Entry entry);
+  void write(Record entry);
 };
 
 }  // namespace sfc::log

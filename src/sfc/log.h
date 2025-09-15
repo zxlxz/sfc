@@ -8,37 +8,40 @@ enum class Level {
   Trace,
   Debug,
   Info,
-  Warning,
+  Warn,
   Error,
   Fatal,
 };
 
-struct Entry {
+struct Record {
   Level level;
   Str time;
   Str msg;
 };
 
-class IBackend : Box<IBackend&> {
-  friend Box<IBackend&>;
-  struct Meta : Box<IBackend&>::Meta {
+struct IBackend {
+  struct Meta {
     void (*_flush)(void*) = nullptr;
-    void (*_write_entry)(void*, Entry) = nullptr;
+    void (*_write)(void*, Record) = nullptr;
 
     template <class X>
-    explicit Meta(X* x) : Box<IBackend&>::Meta{x} {
-      _flush = ([](void* p) { static_cast<X*>(p)->flush(); });
-      _write_entry = ([](void* p, Entry entry) { static_cast<X*>(p)->write_entry(entry); });
+    static auto from(const X&) -> Meta {
+      const auto flush = [](void* p) { static_cast<X*>(p)->flush(); };
+      const auto write = [](void* p, Record r) { static_cast<X*>(p)->write(r); };
+      return {flush, write};
     }
   };
 
+  const Meta* _meta = nullptr;
+  void* _self = nullptr;
+
  public:
   void flush() {
-    return (static_cast<const Meta*>(_meta)->_flush)(_self);
+    return (_meta->_flush)(_self);
   }
 
-  void write_entry(Entry entry) {
-    return (static_cast<const Meta*>(_meta)->_write_entry)(_self, entry);
+  void write(Record entry) {
+    return (_meta->_write)(_self, entry);
   }
 };
 
@@ -48,7 +51,7 @@ class Logger {
 
  public:
   Logger();
-  ~Logger()noexcept;
+  ~Logger() noexcept;
 
   Logger(Logger&&) = delete;
   Logger& operator=(Logger&&) = delete;
@@ -93,8 +96,8 @@ void info(const auto&... args) {
   log::global().write_fmt(Level::Info, args...);
 }
 
-void warning(const auto&... args) {
-  log::global().write_fmt(Level::Warning, args...);
+void warn(const auto&... args) {
+  log::global().write_fmt(Level::Warn, args...);
 }
 
 void error(const auto&... args) {

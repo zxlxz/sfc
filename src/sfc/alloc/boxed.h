@@ -109,82 +109,67 @@ class Box {
 
 template <class R, class... T, class A>
 class Box<R(T...), A> {
-  union Data {
-    void* _ptr = nullptr;  // pointer to heap-allocated object
-    usize _buf[1];         // SSO buffer for small and trivial objects
-  };
-
   struct Meta {
     Layout _layout = {};
-    void (*_dtor)(Data&) = nullptr;  // only non-SSO have dtor
-    R (*_call)(Data&, T&&...) = nullptr;
-  };
+    void (*_dtor)(void*) = nullptr;  // only non-SSO have dtor
+    R (*_call)(void*, T&&...) = nullptr;
 
-  template <class X>
-  struct Impl {
-    using U = Data;
-    static constexpr auto SSO = __is_trivially_copyable(X) && sizeof(X) <= sizeof(void*);
-
-    static auto meta() -> Meta {
-      const auto dtor = SSO ? nullptr : +[](U& u) { static_cast<X*>(u._ptr)->~X(); };
-      const auto call = SSO ? [](U& u, T&&... t) { return (reinterpret_cast<X&>(u))(static_cast<T&&>(t)...); }
-                            : [](U& u, T&&... t) { return (*static_cast<X*>(u._ptr))(static_cast<T&&>(t)...); };
-
-      return Meta{Layout::of<X>(), dtor, call};
+    template <class X>
+    static auto from(const X&) -> Meta {
+      static constexpr auto SSO = __is_trivially_copyable(X) && sizeof(X) <= sizeof(void*);
+      const auto dtor = [](void* p) { static_cast<X*>(p)->~X(); };
+      const auto call = [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); };
+      return Meta{Layout::of<X>(), SSO ? nullptr : dtor, call};
     }
 
-    static auto xnew(X&& x, auto& alloc) -> Data {
-      auto res = Data{};
-      res._ptr = SSO ? res._buf : alloc.alloc(Layout::of<X>());
-      new (res._ptr) X{static_cast<X&&>(x)};
-      return res;
+    void drop(void* p) {
+      if (!_dtor) {
+        return;
+      }
+      _dtor(p);
     }
   };
 
   const Meta* _meta{nullptr};
-  Data _data{};
+  void* _data{nullptr};
   [[no_unique_address]] A _alloc{};
 
  public:
   Box() noexcept = default;
 
   ~Box() {
-    if (_meta && _meta->_dtor) {
-      // only non-SSO will have dtor
-      (_meta->_dtor)(_data), _alloc.dealloc(_data._ptr, _meta->_layout);
-    }
+    this->reset();
   }
 
   Box(const Box&) = delete;
   Box& operator=(const Box&) = delete;
 
-  Box(Box&& other) noexcept : _meta{other._meta}, _data{other._data}, _alloc{static_cast<A&&>(other._alloc)} {
-    other._meta = {};
-    other._data = {};
-  }
+  Box(Box&& other) noexcept
+      : _meta{mem::take(other._meta)}, _data{mem::take(other._data)}, _alloc{static_cast<A&&>(other._alloc)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this == &other) {
       return *this;
     }
-    if (_meta && _meta->_dtor) {
-      (_meta->_dtor)(_data);
-      _alloc.dealloc(_data._ptr, _meta->_layout);
-    }
-    _meta = other._meta, other._meta = {};
-    _data = other._data, other._data = {};
-    _alloc = static_cast<A&&>(other._alloc);
+    this->reset();
+    _meta = mem::take(other._meta);
+    _data = mem::take(other._data);
+    _alloc = mem::move(other._alloc);
     return *this;
   }
 
   template <class X>
-  static auto xnew(X fun) -> Box {
-    using Impl = Box::Impl<X>;
-    static const auto meta = Impl::meta();
+  static auto xnew(X obj) -> Box {
+    static const auto meta = Meta::from(obj);
 
     auto res = Box{};
     res._meta = &meta;
-    res._data = Impl::xnew(static_cast<X&&>(fun), res._alloc);
+    if (meta._dtor) {
+      res._data = res._alloc.alloc(meta._layout);
+      new (res._data) X{static_cast<X&&>(obj)};
+    } else {
+      new (&res._data) X{static_cast<X&&>(obj)};
+    }
     return res;
   }
 
@@ -194,21 +179,37 @@ class Box<R(T...), A> {
 
   auto operator()(T... args) -> auto {
     panicking::expect(_meta != nullptr, "boxed::Box::*: deref null");
-    return (_meta->_call)(_data, static_cast<T&&>(args)...);
+    const auto ptr = _meta->_dtor ? _data : static_cast<void*>(&_data);
+    return (_meta->_call)(ptr, static_cast<T&&>(args)...);
+  }
+
+  void reset() {
+    if (_meta == nullptr) {
+      return;
+    }
+    if (_meta->_dtor) {
+      _meta->_dtor(_data);
+      _alloc.dealloc(_data, _meta->_layout);
+    }
+    _data = {};
+    _meta = nullptr;
   }
 };
 
 template <class T, class A>
 class Box<T&, A> {
   static_assert(__is_class(T));
-  friend T;
 
-  struct Meta {
+  struct Meta : T::Meta {
     Layout _layout = {};
     void (*_dtor)(void*) = nullptr;
 
     template <class X>
-    explicit Meta(X*) : _layout(Layout::of<X>()), _dtor([](void* p) { static_cast<X*>(p)->~X(); }) {}
+    static auto from(const X& _) -> Meta {
+      const auto layout = Layout::of<X>();
+      const auto dtor = [](void* p) { static_cast<X*>(p)->~X(); };
+      return {T::Meta::from(_), layout, dtor};
+    }
   };
 
   const Meta* _meta = nullptr;
@@ -226,24 +227,23 @@ class Box<T&, A> {
 
   Box& operator=(const Box&) = delete;
 
-  Box(Box&& other) noexcept : _meta{other._meta}, _self{other._self}, _alloc{static_cast<A&&>(other._alloc)} {
-    other._meta = {};
-    other._self = {};
-  }
+  Box(Box&& other) noexcept
+      : _meta{mem::take(other._meta)}, _self{mem::take(other._self)}, _alloc{mem::move(other._alloc)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this == &other) {
       return *this;
     }
     this->reset();
-    _meta = other._meta, other._meta = {};
-    _self = other._self, other._self = {};
+    _meta = mem::take(other._meta);
+    _self = mem::take(other._self);
+    _alloc = mem::move(other._alloc);
     return *this;
   }
 
   template <class X>
   static auto xnew(X x) -> Box {
-    static const auto meta = typename T::Meta{&x};
+    static const auto meta = Meta::from(x);
 
     auto res = Box{};
     res._meta = &meta;
@@ -258,7 +258,7 @@ class Box<T&, A> {
 
   auto operator->() -> T* {
     panicking::expect(_self != nullptr, "boxed::Box::->: deref null");
-    return static_cast<T*>(this);
+    return reinterpret_cast<T*>(this);
   }
 
   void reset() noexcept {

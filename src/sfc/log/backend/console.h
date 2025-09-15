@@ -16,7 +16,7 @@ class ConsoleBackend {
 
   void set_color(bool value);
   void flush();
-  void write_entry(Entry entry);
+  void write(Record entry);
 };
 
 }  // namespace sfc::log

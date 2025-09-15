@@ -10,7 +10,7 @@ static inline auto level_str(Level level) -> Str {
       return "[DD] ";
     case Level::Info:
       return "[II] ";
-    case Level::Warning:
+    case Level::Warn:
       return "[WW] ";
     case Level::Error:
       return "[EE] ";
@@ -34,7 +34,7 @@ auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
 
 void FileBackend::flush() {}
 
-void FileBackend::write_entry(Entry entry) {
+void FileBackend::write(Record entry) {
   static thread_local auto buf = String();
 
   buf.clear();

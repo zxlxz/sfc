@@ -81,14 +81,14 @@ void Logger::write_msg(Level level, Str msg) {
   }
 
   time.update();
-  const auto entry = Entry{
+  const auto entry = Record{
       .level = level,
       .time = time.to_str(),
       .msg = msg,
   };
 
   for (auto& be : _backends.as_mut_slice()) {
-    be->write_entry(entry);
+    be->write(entry);
   }
 }
 

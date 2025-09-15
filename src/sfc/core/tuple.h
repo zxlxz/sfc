@@ -43,17 +43,17 @@ struct Tuple {
 
   template <int I>
   auto get() const -> const element_t<I>& {
-    return static_cast<const entry_t<I>&>(_inn)._0;
+    return _inn.entry_t<I>::_0;
   }
 
   template <int I>
   auto get() -> element_t<I>& {
-    return static_cast<entry_t<I>&>(_inn)._0;
+    return _inn.entry_t<I>::_0;
   }
 
   template <int I>
   auto get_mut() -> element_t<I>& {
-    return static_cast<entry_t<I>&>(_inn)._0;
+    return _inn.entry_t<I>::_0;
   }
 
   void map(auto&& f) const {

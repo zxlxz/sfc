@@ -92,20 +92,23 @@ SFC_TEST(box_fn_copy) {
   panicking::expect_eq(Allocator::dealloc_cnt(), 1);
 }
 
-class IAdd : Box<IAdd&> {
-  friend Box<IAdd&>;
-  struct Meta : Box<IAdd&>::Meta {
+struct IAdd {
+  struct Meta {
     int (*_add)(void*, int, int) = nullptr;
 
     template <class X>
-    Meta(X* x) : Box<IAdd&>::Meta{x} {
-      _add = [](void* p, int a, int b) { return static_cast<X*>(p)->add(a, b); };
+    static auto from(const X&) -> Meta {
+      const auto add = [](void* p, int a, int b) { return static_cast<X*>(p)->add(a, b); };
+      return {add};
     }
   };
 
+  const Meta* _meta = nullptr;
+  void* _self = nullptr;
+
  public:
   auto add(int a, int b) -> int {
-    return (static_cast<const Meta*>(_meta)->_add)(_self, a, b);
+    return (_meta->_add)(_self, a, b);
   }
 };
 
