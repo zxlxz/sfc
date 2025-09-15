@@ -35,23 +35,28 @@ struct Tuple {
   Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
   ~Tuple() = default;
 
+#ifdef __clang__
+  template <usize I>
+  using element_t = __type_pack_element<I, T...>;
+#else
   template <usize I>
   using element_t = T...[I];
+#endif
 
   template <usize I>
-  using entry_t = Entry<I, T...[I]>;
+  using entry_t = Entry<I, element_t<I>>;
 
-  template <int I>
+  template <usize I>
   auto get() const -> const element_t<I>& {
     return _inn.entry_t<I>::_0;
   }
 
-  template <int I>
+  template <usize I>
   auto get() -> element_t<I>& {
     return _inn.entry_t<I>::_0;
   }
 
-  template <int I>
+  template <usize I>
   auto get_mut() -> element_t<I>& {
     return _inn.entry_t<I>::_0;
   }

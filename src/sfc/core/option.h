@@ -125,32 +125,32 @@ class Option {
     return _inn.is_some();
   }
 
-  auto operator*() const -> const T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
-    return *_inn;
-  }
-
-  auto operator*() -> T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
-    return *_inn;
-  }
-
-  auto operator->() const {
-    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
-    return &*_inn;
-  }
-
-  auto operator->() {
-    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
-    return &*_inn;
-  }
-
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) {
       return other.is_none();
     }
     return other.is_some() && *_inn == *other;
+  }
+
+  [[nodiscard]] auto operator*() const -> const T& {
+    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
+    return *_inn;
+  }
+
+  [[nodiscard]] auto operator*() -> T& {
+    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
+    return *_inn;
+  }
+
+  [[nodiscard]] auto operator->() const {
+    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
+    return &*_inn;
+  }
+
+  [[nodiscard]] auto operator->() {
+    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
+    return &*_inn;
   }
 
   [[nodiscard]] auto unwrap(this auto self) -> T {
