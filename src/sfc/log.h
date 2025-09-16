@@ -17,9 +17,16 @@ struct Record {
   Level level;
   Str time;
   Str msg;
+
+ public:
+  static auto tls_buf() -> String&;
+  static auto time_str() -> Str;
 };
 
-struct IBackend {
+class Backend {
+  template <class T, class A>
+  friend class boxed::Box;
+
   struct Meta {
     void (*_flush)(void*) = nullptr;
     void (*_write)(void*, Record) = nullptr;
@@ -36,6 +43,18 @@ struct IBackend {
   void* _self = nullptr;
 
  public:
+  static auto from(auto& impl) -> Backend {
+    static const auto meta = Meta::from(impl);
+    auto res = Backend{};
+    res._meta = &meta;
+    res._self = &impl;
+    return res;
+  }
+
+  explicit operator bool() const {
+    return _self != nullptr;
+  }
+
   void flush() {
     return (_meta->_flush)(_self);
   }
@@ -47,39 +66,49 @@ struct IBackend {
 
 class Logger {
   Level _level{Level::Info};
-  Vec<Box<IBackend&>> _backends{};
+  Backend _backend = {};
 
  public:
-  Logger();
-  ~Logger() noexcept;
+  Logger() = default;
+  ~Logger() noexcept = default;
 
-  Logger(Logger&&) = delete;
-  Logger& operator=(Logger&&) = delete;
+  Logger(Logger&&) = default;
+  Logger& operator=(Logger&&) = default;
 
-  auto get_level() const -> Level;
+  auto level() const -> Level {
+    return _level;
+  }
 
-  void set_level(Level level);
+  void set_level(Level level) {
+    _level = level;
+  }
 
-  void flush();
+  void set_backend(auto& backend) {
+    _backend = Backend::from(backend);
+  }
 
-  void write_msg(Level level, Str msg);
+  void flush() {
+    _backend ? _backend.flush() : void();
+  }
 
-  void write_fmt(Level level, Str fmts, const auto&... args) {
-    if (level < _level) {
+  void write_str(Level level, Str msg) {
+    if (!_backend || level < _level) {
       return;
     }
 
-    auto& buf = Logger::tls_buf();
+    const auto entry = Record{level, Record::time_str(), msg};
+    _backend.write(entry);
+  }
+
+  void write_fmt(Level level, Str fmts, const auto&... args) {
+    if (!_backend || level < _level) {
+      return;
+    }
+
+    auto& buf = Record::tls_buf();
     fmt::write(buf, fmts, args...);
-    this->write_msg(level, buf.as_str());
+    this->write_str(level, buf.as_str());
   }
-
-  void add_backend(auto backend) {
-    _backends.push(Box<IBackend&>::xnew(mem::move(backend)));
-  }
-
- private:
-  static auto tls_buf() -> String&;
 };
 
 auto global() -> Logger&;

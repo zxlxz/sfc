@@ -30,84 +30,53 @@ class LogTime {
   }
 
  private:
-  template <u32 N>
-  void pad_int(u32 val, char* p) {
-    for (auto i = 0U; i < N; ++i) {
-      p[N - 1 - i] = static_cast<char>('0' + val % 10);
+  void pad_int(u32 val, Slice<char> buf) {
+    for (auto i = 0U; i < buf._len; ++i) {
+      buf._ptr[buf._len - 1 - i] = static_cast<char>('0' + val % 10);
       val /= 10;
     }
   }
 
   void fill_date() {
-    this->pad_int<4>(_day_time.year, _buf);
-    this->pad_int<2>(_day_time.month, _buf + sizeof("0000"));
-    this->pad_int<2>(_day_time.day, _buf + sizeof("0000-00"));
+    this->pad_int(_day_time.year, {_buf, 4});
+    this->pad_int(_day_time.month, {_buf + sizeof("YYYY"), 2});
+    this->pad_int(_day_time.day, {_buf + sizeof("YYYY-MM"), 2});
   }
 
   void fill_time() {
-    this->pad_int<2>(_day_time.hour, _buf + sizeof("0000-00-00T00"));
-    this->pad_int<2>(_day_time.minute, _buf + sizeof("0000-00-00T00:00"));
-    this->pad_int<2>(_day_time.second, _buf + sizeof("0000-00-00T00:00"));
+    this->pad_int(_day_time.hour, {_buf + sizeof("YYYY-MM-DD"), 2});
+    this->pad_int(_day_time.minute, {_buf + sizeof("YYYY-MM-DDTHH"), 2});
+    this->pad_int(_day_time.second, {_buf + sizeof("YYYY-MM-DDTHH:MM"), 2});
   }
 
   void fill_millis(u32 sub_millis) {
-    this->pad_int<3>(sub_millis, _buf + sizeof("0000-00-00 00:00:00"));
+    this->pad_int(sub_millis, {_buf + sizeof("YYYY-MM-DDTHH:MM:SS"), 3});
   }
 };
 
-Logger::Logger() = default;
-
-Logger::~Logger() noexcept= default;
-
-auto Logger::get_level() const -> Level {
-  return _level;
-}
-
-void Logger::set_level(Level level) {
-  _level = level;
-}
-
-void Logger::flush() {
-  for (auto& be : _backends.as_mut_slice()) {
-    be->flush();
-  }
-}
-
-void Logger::write_msg(Level level, Str msg) {
+auto Record::time_str() -> Str {
   static thread_local auto time = LogTime{};
-
-  if (level < _level) {
-    return;
-  }
-
   time.update();
-  const auto entry = Record{
-      .level = level,
-      .time = time.to_str(),
-      .msg = msg,
-  };
-
-  for (auto& be : _backends.as_mut_slice()) {
-    be->write(entry);
-  }
+  return time.to_str();
 }
 
-auto Logger::tls_buf() -> String& {
-  static thread_local auto tls_buf = String::with_capacity(1024);
-  tls_buf.clear();
-  return tls_buf;
+auto Record::tls_buf() -> String& {
+  static thread_local auto res = String::with_capacity(1024);
+  res.clear();
+  return res;
 }
 
 Logger& global() {
-  static auto res = Logger{};
+  static auto console_backend = ConsoleBackend{};
+  static auto global_logger = Logger{};
 
   [[maybe_unused]] static auto static_init = [] {
-    res.set_level(Level::Info);
-    res.add_backend(ConsoleBackend{});
+    global_logger.set_level(Level::Info);
+    global_logger.set_backend(console_backend);
     return true;
   }();
 
-  return res;
+  return global_logger;
 }
 
 }  // namespace sfc::log
