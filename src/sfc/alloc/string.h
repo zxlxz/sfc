@@ -27,7 +27,7 @@ class [[nodiscard]] String {
   static auto from(F&& f) -> String {
     if constexpr (requires { String{static_cast<F &&>(f)}; }) {
       return String{static_cast<F&&>(f)};
-    } else if constexpr (requires { f.to_string()->String; }) {
+    } else if constexpr (requires { f.to_string(); }) {
       return f.to_string();
     } else if constexpr (requires { Str::from(f); }) {
       auto s = String{};
@@ -116,24 +116,28 @@ class [[nodiscard]] String {
     return _vec.extend_from_slice(s.as_bytes());
   }
 
+  void write_char(char c) {
+    _vec.push(static_cast<u8>(c));
+  }
+
   void write_str(Str s) {
-    return _vec.extend_from_slice(s.as_bytes());
+    _vec.extend_from_slice(s.as_bytes());
   }
 
   void reserve(usize amt) {
-    return _vec.reserve(amt);
+    _vec.reserve(amt);
   }
 
   void truncate(usize len) {
-    return _vec.truncate(len);
+    _vec.truncate(len);
   }
 
   void clear() {
-    return _vec.clear();
+    _vec.clear();
   }
 
   void insert(usize idx, u8 ch) {
-    return _vec.insert(idx, ch);
+    _vec.insert(idx, ch);
   }
 
   auto remove(usize idx) -> u8 {
@@ -141,7 +145,7 @@ class [[nodiscard]] String {
   }
 
   void drain(usize start, usize end) {
-    return _vec.drain(start, end);
+    _vec.drain(start, end);
   }
 
   void insert_str(usize idx, Str str) {
@@ -208,7 +212,7 @@ auto format(Str fmts, const auto&... args) -> String {
 
 auto to_string(const auto& val) -> String {
   auto s = String{};
-  fmt::Fmter{s}.write(val);
+  fmt::write(s, {}, val);
   return s;
 }
 
@@ -220,7 +224,9 @@ namespace sfc::panicking {
 
 [[noreturn]] void panic_imp(Location loc, const auto&... args) {
   auto s = string::String{};
-  fmt::write(s, args...);
+  if constexpr (sizeof...(args)) {
+    fmt::write(s, args...);
+  }
   fmt::write(s, "\n >: {}:{}", Str::from_cstr(loc.file), loc.line);
   panicking::panic_str(s.as_str());
 }

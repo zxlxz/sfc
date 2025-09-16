@@ -18,6 +18,8 @@ struct Chunks;
 
 template <class T>
 struct Slice {
+  using Item = T;
+
   T* _ptr = nullptr;
   usize _len = 0;
 
@@ -123,17 +125,6 @@ struct Slice {
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }
 
-  template <class U>
-  auto read(Slice<U> buf) -> usize {
-    static_assert(__is_same(const T, const U));
-
-    const auto amt = _len < buf._len ? _len : buf._len;
-    ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
-    _ptr += amt;
-    _len -= amt;
-    return amt;
-  }
-
  public:
   auto operator==(Slice<const T> other) const -> bool {
     if (_len != other._len) {
@@ -231,7 +222,8 @@ struct Slice {
 
  public:
   auto as_bytes_mut() -> Slice<u8> {
-    return Slice{reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
+    static_assert(!trait::same_<T, const T>);
+    return Slice<u8>{reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
   }
 
   void fmt(auto& f) const {
@@ -243,6 +235,17 @@ struct Slice {
 
   auto serialize(auto& s) const {
     return s.ser_list(*this);
+  }
+
+ public:
+  template <class Self>
+    requires(trait::same_<const typename Self::Item, const u8>)
+  auto read(this Self& self, Slice<u8> buf) -> usize {
+    const auto amt = self._len < buf._len ? self._len : buf._len;
+    ptr::copy_nonoverlapping(self._ptr, buf._ptr, amt);
+    self._ptr += amt;
+    self._len -= amt;
+    return amt;
   }
 };
 

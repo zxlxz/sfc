@@ -5,7 +5,7 @@
 
 namespace sfc::fmt {
 
-struct Style {
+struct alignas(8) Style {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
@@ -77,10 +77,11 @@ struct Style {
 };
 
 template <class T>
-struct Display;
-
-template <class T>
-Display(const T&) -> Display<T>;
+struct Display : T {
+  Display() = delete;
+  ~Display() = delete;
+  using T::fmt;
+};
 
 template <class... T>
 struct Args;
@@ -98,8 +99,16 @@ class Fmter {
     return _style;
   }
 
-  void set_style(const Style& s) {
-    _style = s;
+  void set_style(Style style) {
+    _style = style;
+  }
+
+  void write_char(char c) {
+    if constexpr (requires { _out.write_char(c); }) {
+      _out.write_char(c);
+    } else {
+      _out.write_str({&c, 1});
+    }
   }
 
   void write_str(str::Str s) {
@@ -190,11 +199,12 @@ class Fmter {
     }
   }
 
-  void write(const auto& val) {
+  template <class T>
+  void write_val(const T& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      Display{val}.fmt(*this);
+      static_cast<const Display<T>*>(static_cast<const void*>(&val))->fmt(*this);
     }
   }
 
@@ -203,17 +213,6 @@ class Fmter {
       this->write_str(fmts);
     } else {
       Args{fmts, args...}.fmt(*this);
-    }
-  }
-
-  void indent() {
-    if (_style._prefix != '#') {
-      this->write_str(" ");
-    } else {
-      this->write_str("\n");
-      for (auto i = 0; i < _depth; ++i) {
-        this->write_str("  ");
-      }
     }
   }
 
@@ -241,6 +240,45 @@ class Fmter {
   auto debug_struct() -> DebugStruct {
     return DebugStruct{*this};
   }
+
+ private:
+  void debug_begin(str::Str s) {
+    this->write_str(s);
+    _depth += 1;
+  }
+
+  void debug_end(str::Str s, u32 cnt) {
+    _depth -= 1;
+
+    if (cnt && _style._prefix == '#') {
+      this->write_char('\n');
+      for (auto i = 0; i < _depth; ++i) {
+        this->write_str("  ");
+      }
+    }
+    this->write_str(s);
+  }
+
+  void debug_idx(u32 idx) {
+    if (idx != 0) {
+      this->write_char(',');
+    }
+    if (_style._prefix != '#') {
+      this->write_char(' ');
+    } else {
+      this->write_char('\n');
+      for (auto i = 0; i < _depth; ++i) {
+        this->write_str("  ");
+      }
+    }
+  }
+
+  void debug_val(const auto& val) {
+    const auto old_style = _style;
+    _style = Style{._type = _style._type};
+    this->write_val(val);
+    _style = old_style;
+  }
 };
 
 template <class W>
@@ -250,24 +288,18 @@ class Fmter<W>::DebugTuple {
 
  public:
   explicit DebugTuple(Fmter& fmt) : _fmt{fmt} {
-    _fmt.write_str("(");
-    _fmt._depth += 1;
+    _fmt.debug_begin("(");
   }
 
   ~DebugTuple() {
-    _fmt.indent();
-    _fmt.write_str(")");
+    _fmt.debug_end(")", _cnt);
   }
 
   DebugTuple(const DebugTuple&) = delete;
 
-  void entry(const auto& val) {
-    if (_cnt != 0) {
-      _fmt.write_str(",");
-    }
-    _fmt.indent();
-    _fmt.write(val);
-    _cnt += 1;
+  void entry(const auto& value) {
+    _fmt.debug_idx(_cnt++);
+    _fmt.debug_val(value);
   }
 
   void entries(auto&& iter) {
@@ -282,25 +314,18 @@ class Fmter<W>::DebugList {
 
  public:
   explicit DebugList(Fmter& fmt) : _fmt{fmt} {
-    _fmt.write_str("[");
-    _fmt._depth += 1;
+    _fmt.debug_begin("[");
   }
 
   ~DebugList() {
-    _fmt._depth -= 1;
-    _fmt.indent();
-    _fmt.write_str("]");
+    _fmt.debug_end("]", _cnt);
   }
 
   DebugList(const DebugList&) noexcept = delete;
 
-  void entry(const auto& val) {
-    if (_cnt != 0) {
-      _fmt.write_str(",");
-    }
-    _fmt.indent();
-    _fmt.write(val);
-    _cnt += 1;
+  void entry(const auto& value) {
+    _fmt.debug_idx(_cnt++);
+    _fmt.debug_val(value);
   }
 
   void entries(auto&& iter) {
@@ -315,24 +340,18 @@ class Fmter<W>::DebugSet {
 
  public:
   explicit DebugSet(Fmter& fmt) : _fmt{fmt} {
-    _fmt.write_str("{");
+    _fmt.debug_begin("{");
   }
 
   ~DebugSet() {
-    _fmt._depth -= 1;
-    _fmt.indent();
-    _fmt.write_str("}");
+    _fmt.debug_end("}", _cnt);
   }
 
   DebugSet(const DebugSet&) noexcept = delete;
 
-  void entry(const auto& val) {
-    if (_cnt != 0) {
-      _fmt.write_str(",");
-    }
-    _fmt.indent();
-    _fmt.write(val);
-    _cnt += 1;
+  void entry(const auto& value) {
+    _fmt.debug_idx(_cnt++);
+    _fmt.debug_val(value);
   }
 
   void entries(auto&& iter) {
@@ -347,29 +366,21 @@ class Fmter<W>::DebugMap {
 
  public:
   explicit DebugMap(Fmter& fmt) : _fmt{fmt} {
-    _fmt.write_str("{");
-    _fmt._depth += 1;
+    _fmt.debug_begin("{");
   }
 
   ~DebugMap() {
-    _fmt._depth -= 1;
-    _fmt.indent();
-    _fmt.write_str("}");
+    _fmt.debug_end("}", _cnt);
   }
 
   DebugMap(const DebugMap&) noexcept = delete;
 
   void entry(str::Str name, const auto& value) {
-    if (_cnt != 0) {
-      _fmt.write_str(",");
-    }
-    _fmt.indent();
+    _fmt.debug_idx(_cnt++);
     _fmt.write_str("\"");
     _fmt.write_str(name);
     _fmt.write_str("\": ");
-    _fmt.write(value);
-
-    _cnt += 1;
+    _fmt.debug_val(value);
   }
 
   void entries(auto&& iter) {
@@ -387,29 +398,20 @@ class Fmter<W>::DebugStruct {
 
  public:
   explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
-    _fmt.write_str("{");
-    _fmt._depth += 1;
+    _fmt.debug_begin("{");
   }
 
   ~DebugStruct() {
-    _fmt._depth -= 1;
-    _fmt.indent();
-    _fmt.write_str("}");
+    _fmt.debug_end("}", _cnt);
   }
 
   DebugStruct(DebugStruct&&) noexcept = delete;
 
   auto field(str::Str name, const auto& value) -> DebugStruct& {
-    if (_cnt != 0) {
-      _fmt.write_str(",");
-    }
-    _fmt.indent();
+    _fmt.debug_idx(_cnt++);
     _fmt.write_str(name);
     _fmt.write_str(": ");
-    _fmt.write(value);
-
-    _cnt += 1;
-
+    _fmt.debug_val(value);
     return *this;
   }
 
@@ -430,23 +432,18 @@ struct Args {
   explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
 
   void fmt(auto& f) const {
-    const auto old_style = f.style();
-    this->fmt_imp(_pats, f);
-    f.set_style(old_style);
-  }
-
-  void fmt_imp(str::Str pats, auto& f) const {
-    _args.map([&](auto& val) {
+    auto pats = _pats;
+    _args.map([&](auto ptr) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
       f.write_str(pats.slice(0, i0));
       pats = pats.slice(i0 + 1, pats.len());
 
       const auto i1 = pats.find('}').unwrap_or(pats.len());
       const auto ss = pats.slice(0, i1);
-      f.set_style(Style::from_str(ss).unwrap_or({}));
       pats = pats.slice(i1 + 1, pats.len());
 
-      f.write(*val);
+      f.set_style(Style::from_str(ss).unwrap_or({}));
+      f.write_val(*ptr);
     });
     f.write_str(pats);
   }
@@ -520,13 +517,13 @@ struct Display<T*> {
 
  public:
   void fmt(auto& f) const {
-    return Display<const void*>{_val}.fmt(f);
+    Display<const void*>{_val}.fmt(f);
   }
 };
 
 template <class T, usize N>
 struct Display<T[N]> {
-  const T (&_val)[N];
+  T _val[N];
 
  public:
   void fmt(auto& f) const {
@@ -539,7 +536,8 @@ struct Display<T[N]> {
 
 template <usize N>
 struct Display<char[N]> {
-  const char (&_val)[N];
+  char _val[N];
+
   void fmt(auto& f) const {
     f.pad(_val);
   }
@@ -547,16 +545,17 @@ struct Display<char[N]> {
 
 template <trait::enum_ T>
 struct Display<T> {
+  using U = __underlying_type(T);
   T _val;
 
  public:
   void fmt(auto& f) const {
-    using U = __underlying_type(T);
     if constexpr (requires { to_str(_val); }) {
       const auto s = to_str(_val);
       f.pad(s);
     } else {
-      Display<U>{static_cast<U>(_val)}.fmt(f);
+      const auto underly_val = static_cast<U>(_val);
+      f.write_fmt("{}({})", str::type_name<T>(), underly_val);
     }
   }
 };

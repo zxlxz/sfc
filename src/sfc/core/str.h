@@ -14,25 +14,28 @@ struct Str {
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
   template <u32 N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {
+    for (; _len && _ptr[_len - 1] == 0; --_len) {}
+  }
 
-  template <usize N>
-  constexpr Str(char (&s)[N]) noexcept = delete;
-
-  constexpr Str(slice::Slice<const char> s) : _ptr{s._ptr}, _len{s._len} {}
+  constexpr Str(slice::Slice<const char> s) : _ptr{s._ptr}, _len{s._len} {
+    for (; _len && _ptr[_len - 1] == 0; --_len) {}
+  }
 
   static auto from_u8(slice::Slice<const u8> s) noexcept -> Str {
-    return Str{static_cast<const char*>(static_cast<const void*>(s._ptr)), s._len};
+    const auto p = reinterpret_cast<const char*>(s._ptr);
+    const auto n = (s._len == 0 || p[s._len - 1]) ? s._len : __builtin_strlen(p);
+    return Str{p, n};
   }
 
   static auto from_cstr(const char* s) noexcept -> Str {
-    return Str{s, s ? __builtin_strlen(s) : 0};
+    const auto n = s ? __builtin_strlen(s) : 0;
+    return Str{s, n};
   }
 
-  template <class F>
-  static auto from(F&& f) noexcept -> Str {
+  static auto from(auto&& f) noexcept -> Str {
     if constexpr (requires { Str{f}; }) {
-      return Str{static_cast<F&&>(f)};
+      return Str{static_cast<decltype(f)&&>(f)};
     } else if constexpr (requires { f.as_str(); }) {
       return f.as_str();
     } else {
@@ -138,7 +141,10 @@ struct Str {
   auto parse() const noexcept -> option::Option<T>;
 
   void fmt(auto& f) const {
+    const auto& s = f.style();
+    s._type == '?' ? f.write_char('"') : (void)0;
     f.pad(*this);
+    s._type == '?' ? f.write_char('"') : (void)0;
   }
 
   auto serialize(auto& s) const {

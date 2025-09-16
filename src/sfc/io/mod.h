@@ -46,6 +46,23 @@ template <class T = Tuple<>>
 using Result = result::Result<T, Error>;
 
 struct Read {
+  auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
+    while (!buf.is_empty()) {
+      const auto read_res = Result{self.read(buf)};
+      if (read_res.is_err()) {
+        return read_res.unwrap_err();
+      }
+
+      if (const auto cnt = read_res.unwrap()) {
+        buf = buf.slice(cnt);
+      } else {
+        return Error{ErrorKind::UnexpectedEof, 0};
+      }
+    }
+
+    return Tuple{};
+  }
+
   auto read_to_end(this auto& self, Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
     const auto old_len = buf.len();
     while (true) {
@@ -89,7 +106,7 @@ struct Write {
       }
 
       if (const auto cnt = write_res.unwrap()) {
-        buf = buf.slice(cnt, buf.len());
+        buf = buf.slice(cnt);
       } else {
         break;
       }

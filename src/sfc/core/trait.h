@@ -54,5 +54,28 @@ struct __invoke<F(T...)> {
 template <class X>
 using invoke_t = typename __invoke<X>::type;
 
+template <class I, class X>
+struct Trait : X, I {
+  Trait() = delete;
+  ~Trait() = delete;
+};
+
+template <class I, class X>
+auto as(const X& x) -> decltype(auto) {
+  if constexpr (__is_base_of(I, X)) {
+    return static_cast<const I&>(x);
+  } else {
+    return static_cast<const Trait<I, X>&>(x);
+  }
+}
+
+template <class I, class X>
+auto as_mut(X& x) -> decltype(auto) {
+  if constexpr (__is_base_of(I, X)) {
+    return static_cast<I&>(x);
+  } else {
+    return static_cast<Trait<I, X>&>(x);
+  }
+}
 
 }  // namespace sfc::trait
