@@ -223,11 +223,11 @@ class JsonNode : public Node {
   }
 
   static void fmt_imp(const i64& t, auto& f) {
-    f.write_val(t);
+    fmt::Display::fmt(t, f);
   }
 
   static void fmt_imp(const f64& t, auto& f) {
-    f.write_val(t);
+    fmt::Display::fmt(t, f);
   }
 
   static void fmt_imp(const String& t, auto& f) {

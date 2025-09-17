@@ -76,33 +76,247 @@ struct alignas(8) Style {
   }
 };
 
-template <class T>
-struct Display : T {
-  Display() = delete;
-  ~Display() = delete;
-  using T::fmt;
+struct Display {
+  static void fmt(const auto& self, auto& f) {
+    if constexpr (requires { self.fmt(f); }) {
+      return self.fmt(f);
+    } else {
+      Display::fmt_imp(self, f);
+    }
+  }
+
+ private:
+  static auto fill_int(slice::Slice<char> buf, Style style, auto val) -> str::Str;
+  static auto fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str;
+
+  static void fmt_imp(bool val, auto& f) {
+    f.pad(val ? str::Str{"true"} : str::Str{"false"});
+  }
+
+  static void fmt_imp(char val, auto& f) {
+    f.write_str(str::Str{&val, 1});
+  }
+
+  static void fmt_imp(const trait::uint_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Display::fill_int(buf, f._style, val);
+    f.pad_num(false, s);
+  }
+
+  static void fmt_imp(const trait::sint_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Display::fill_int(buf, f._style, val >= 0 ? val : 0 - val);
+    f.pad_num(val < 0, s);
+  }
+
+  static void fmt_imp(const trait::float_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Display::fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
+    f.pad_num(val < 0, s);
+  }
+
+  static void fmt_imp(const void* val, auto& f) {
+    char buf[8 * sizeof(val)];
+    const auto s = Display::fill_int(buf, f._style, static_cast<const void*>(val));
+    f.pad_num(false, s);
+  }
+
+  static void fmt_imp(trait::enum_ auto val, auto& f) {
+    if constexpr (requires { to_str(val); }) {
+      const auto s = to_str(val);
+      f.pad(s);
+    } else {
+      using U = __underlying_type(decltype(val));
+      f.write_fmt("{}({})", str::type_name<decltype(val)>(), static_cast<U>(val));
+    }
+  }
+
+  template <class T, usize N>
+  static void fmt_imp(const T (&val)[N], auto& f) {
+    if constexpr (trait::same_<const T, const char>) {
+      f.pad(val);
+    } else {
+      auto imp = f.debug_list();
+      for (auto& x : val) {
+        imp.entry(x);
+      }
+    }
+  }
+};
+
+template <class FMT>
+class DebugTuple {
+  FMT& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugTuple(FMT& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("(");
+  }
+
+  ~DebugTuple() noexcept {
+    _fmt.debug_end(")", _cnt);
+  }
+
+  DebugTuple(const DebugTuple&) = delete;
+
+  auto entry(const auto& value) -> DebugTuple& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class FMT>
+class DebugList {
+  FMT& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugList(FMT& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("[");
+  }
+
+  ~DebugList() noexcept {
+    _fmt.debug_end("]", _cnt);
+  }
+
+  DebugList(const DebugList&) noexcept = delete;
+
+  auto entry(const auto& value) -> DebugList& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class FMT>
+class DebugSet {
+  FMT& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugSet(FMT& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugSet() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugSet(const DebugSet&) noexcept = delete;
+
+  auto entry(const auto& value) -> DebugSet& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class FMT>
+class DebugMap {
+  FMT& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugMap(FMT& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugMap() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugMap(const DebugMap&) noexcept = delete;
+
+  auto entry(str::Str name, const auto& value) -> DebugMap& {
+    _fmt.debug_val(_cnt++, value, "\"", name, "\": ");
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](const auto& item) {
+      const auto& [k, v] = item;
+      this->entry(k, v);
+    });
+  }
+};
+
+template <class FMT>
+class DebugStruct {
+  FMT& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugStruct(FMT& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugStruct() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugStruct(DebugStruct&&) noexcept = delete;
+
+  auto field(str::Str name, const auto& value) -> DebugStruct& {
+    _fmt.debug_val(_cnt++, value, name, ": ");
+    return *this;
+  }
+
+  void fields(auto&& iter) {
+    iter.for_each([&](const auto& item) {
+      const auto& [k, v] = item;
+      this->field(k, v);
+    });
+  }
 };
 
 template <class... T>
-struct Args;
+struct Args {
+  str::Str _pats = {};
+  tuple::Tuple<const T*...> _args = {};
+
+ public:
+  explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
+
+  void fmt(auto& f) const {
+    auto pats = _pats;
+    _args.map([&](auto ptr) {
+      const auto i0 = pats.find('{').unwrap_or(pats.len());
+      f.write_str(pats.slice(0, i0));
+      pats = pats.slice(i0 + 1, pats.len());
+
+      const auto i1 = pats.find('}').unwrap_or(pats.len());
+      const auto ss = pats.slice(0, i1);
+      pats = pats.slice(i1 + 1, pats.len());
+
+      f._style = Style::from_str(ss).unwrap_or({});
+      if constexpr (requires { ptr->fmt(f); }) {
+        ptr->fmt(f);
+      } else {
+        Display::fmt(*ptr, f);
+      }
+    });
+    f.write_str(pats);
+  }
+};
 
 template <class W>
-class Fmter {
+struct Fmter {
   W& _out;
   Style _style = {};
   int _depth = 0;
 
  public:
-  explicit Fmter(W& out) : _out{out} {}
-
-  auto style() const -> const Style& {
-    return _style;
-  }
-
-  void set_style(Style style) {
-    _style = style;
-  }
-
   void write_char(char c) {
     if constexpr (requires { _out.write_char(c); }) {
       _out.write_char(c);
@@ -199,15 +413,6 @@ class Fmter {
     }
   }
 
-  template <class T>
-  void write_val(const T& val) {
-    if constexpr (requires { val.fmt(*this); }) {
-      val.fmt(*this);
-    } else {
-      static_cast<const Display<T>*>(static_cast<const void*>(&val))->fmt(*this);
-    }
-  }
-
   void write_fmt(str::Str fmts, const auto&... args) {
     if constexpr (sizeof...(args) == 0) {
       this->write_str(fmts);
@@ -216,347 +421,76 @@ class Fmter {
     }
   }
 
-  class DebugTuple;
-  auto debug_tuple() -> DebugTuple {
+ public:
+  friend class DebugTuple<Fmter>;
+  auto debug_tuple() -> DebugTuple<Fmter> {
     return DebugTuple{*this};
   }
 
-  class DebugList;
-  auto debug_list() -> DebugList {
+  friend class DebugList<Fmter>;
+  auto debug_list() -> DebugList<Fmter> {
     return DebugList{*this};
   }
 
-  class DebugSet;
-  auto debug_set() -> DebugSet {
+  friend class DebugSet<Fmter>;
+  auto debug_set() -> DebugSet<Fmter> {
     return DebugSet{*this};
   }
 
-  class DebugMap;
-  auto debug_map() -> DebugMap {
+  friend class DebugMap<Fmter>;
+  auto debug_map() -> DebugMap<Fmter> {
     return DebugMap{*this};
   }
 
-  class DebugStruct;
-  auto debug_struct() -> DebugStruct {
+  friend class DebugTuple<Fmter>;
+  auto debug_struct() -> DebugStruct<Fmter> {
     return DebugStruct{*this};
   }
 
  private:
-  void debug_begin(str::Str s) {
+  static constexpr auto INDENT_SIZE = 2U;
+  static constexpr auto MAX_DEPTH = 20U;
+
+  void debug_begin(str::Str s) noexcept {
     this->write_str(s);
     _depth += 1;
   }
 
-  void debug_end(str::Str s, u32 cnt) {
+  void debug_end(str::Str s, u32 cnt) noexcept {
     _depth -= 1;
 
     if (cnt && _style._prefix == '#') {
-      this->write_char('\n');
-      for (auto i = 0; i < _depth; ++i) {
-        this->write_str("  ");
-      }
+      const auto s = "\n                                                               ";
+      const auto n = 1 + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
+      this->write_str({s, n});
     }
     this->write_str(s);
   }
 
-  void debug_idx(u32 idx) {
-    if (idx != 0) {
-      this->write_char(',');
-    }
+  void debug_val(u32 idx, const auto& val, const auto&... keys) {
     if (_style._prefix != '#') {
-      this->write_char(' ');
+      const auto s = ", ";
+      const auto i = idx == 0 ? 0U : 1U;
+      this->write_str({s + i, 2 - i});
     } else {
-      this->write_char('\n');
-      for (auto i = 0; i < _depth; ++i) {
-        this->write_str("  ");
-      }
+      const auto s = ",\n                                                               ";
+      const auto n = 1U + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
+      const auto i = idx == 0 ? 0U : 1U;
+      this->write_str({s + i, n - i});
     }
-  }
 
-  void debug_val(const auto& val) {
+    if constexpr (sizeof...(keys) > 0) {
+      (this->write_str(keys), ...);
+    }
+
     const auto old_style = _style;
     _style = Style{._type = _style._type};
-    this->write_val(val);
-    _style = old_style;
-  }
-};
-
-template <class W>
-class Fmter<W>::DebugTuple {
-  Fmter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugTuple(Fmter& fmt) : _fmt{fmt} {
-    _fmt.debug_begin("(");
-  }
-
-  ~DebugTuple() {
-    _fmt.debug_end(")", _cnt);
-  }
-
-  DebugTuple(const DebugTuple&) = delete;
-
-  void entry(const auto& value) {
-    _fmt.debug_idx(_cnt++);
-    _fmt.debug_val(value);
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class W>
-class Fmter<W>::DebugList {
-  Fmter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugList(Fmter& fmt) : _fmt{fmt} {
-    _fmt.debug_begin("[");
-  }
-
-  ~DebugList() {
-    _fmt.debug_end("]", _cnt);
-  }
-
-  DebugList(const DebugList&) noexcept = delete;
-
-  void entry(const auto& value) {
-    _fmt.debug_idx(_cnt++);
-    _fmt.debug_val(value);
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class W>
-class Fmter<W>::DebugSet {
-  Fmter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugSet(Fmter& fmt) : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugSet() {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugSet(const DebugSet&) noexcept = delete;
-
-  void entry(const auto& value) {
-    _fmt.debug_idx(_cnt++);
-    _fmt.debug_val(value);
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class W>
-class Fmter<W>::DebugMap {
-  Fmter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugMap(Fmter& fmt) : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugMap() {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugMap(const DebugMap&) noexcept = delete;
-
-  void entry(str::Str name, const auto& value) {
-    _fmt.debug_idx(_cnt++);
-    _fmt.write_str("\"");
-    _fmt.write_str(name);
-    _fmt.write_str("\": ");
-    _fmt.debug_val(value);
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& item) {
-      const auto& [k, v] = item;
-      this->entry(k, v);
-    });
-  }
-};
-
-template <class W>
-class Fmter<W>::DebugStruct {
-  Fmter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugStruct() {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugStruct(DebugStruct&&) noexcept = delete;
-
-  auto field(str::Str name, const auto& value) -> DebugStruct& {
-    _fmt.debug_idx(_cnt++);
-    _fmt.write_str(name);
-    _fmt.write_str(": ");
-    _fmt.debug_val(value);
-    return *this;
-  }
-
-  void fields(auto&& iter) {
-    iter.for_each([&](auto&& item) {
-      const auto& [k, v] = item;
-      this->field(k, v);
-    });
-  }
-};
-
-template <class... T>
-struct Args {
-  str::Str _pats = {};
-  tuple::Tuple<const T*...> _args = {};
-
- public:
-  explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
-
-  void fmt(auto& f) const {
-    auto pats = _pats;
-    _args.map([&](auto ptr) {
-      const auto i0 = pats.find('{').unwrap_or(pats.len());
-      f.write_str(pats.slice(0, i0));
-      pats = pats.slice(i0 + 1, pats.len());
-
-      const auto i1 = pats.find('}').unwrap_or(pats.len());
-      const auto ss = pats.slice(0, i1);
-      pats = pats.slice(i1 + 1, pats.len());
-
-      f.set_style(Style::from_str(ss).unwrap_or({}));
-      f.write_val(*ptr);
-    });
-    f.write_str(pats);
-  }
-};
-
-template <>
-struct Display<bool> {
-  bool _val;
-
- public:
-  void fmt(auto& f) const {
-    f.pad(_val ? str::Str{"true"} : str::Str{"false"});
-  }
-};
-
-template <>
-struct Display<char> {
-  char _val;
-
- public:
-  void fmt(auto& f) const {
-    f.write_str(str::Str{&_val, 1});
-  }
-};
-
-template <trait::int_ T>
-struct Display<T> {
-  T _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[32];
-    const auto s = this->fill(buf, f.style());
-    f.pad_num(_val < 0, s);
-  }
-
-  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
-};
-
-template <trait::float_ T>
-struct Display<T> {
-  T _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(T)];
-    const auto nums = this->fill(buf, f.style());
-    f.pad_num(_val < 0, nums);
-  }
-
-  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
-};
-
-template <>
-struct Display<const void*> {
-  const void* _val;
-
- public:
-  void fmt(auto& f) const {
-    char buf[8 * sizeof(_val)];
-    const auto nums = this->fill(buf, f.style());
-    f.pad_num(false, nums);
-  }
-
-  auto fill(slice::Slice<char> buf, const Style& style) const -> str::Str;
-};
-
-template <class T>
-struct Display<T*> {
-  T* _val;
-
- public:
-  void fmt(auto& f) const {
-    Display<const void*>{_val}.fmt(f);
-  }
-};
-
-template <class T, usize N>
-struct Display<T[N]> {
-  T _val[N];
-
- public:
-  void fmt(auto& f) const {
-    auto imp = f.debug_list();
-    for (auto& x : _val) {
-      imp.entry(x);
-    }
-  }
-};
-
-template <usize N>
-struct Display<char[N]> {
-  char _val[N];
-
-  void fmt(auto& f) const {
-    f.pad(_val);
-  }
-};
-
-template <trait::enum_ T>
-struct Display<T> {
-  using U = __underlying_type(T);
-  T _val;
-
- public:
-  void fmt(auto& f) const {
-    if constexpr (requires { to_str(_val); }) {
-      const auto s = to_str(_val);
-      f.pad(s);
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
     } else {
-      const auto underly_val = static_cast<U>(_val);
-      f.write_fmt("{}({})", str::type_name<T>(), underly_val);
+      Display::fmt(val, *this);
     }
+    _style = old_style;
   }
 };
 

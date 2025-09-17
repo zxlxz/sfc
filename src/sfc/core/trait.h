@@ -17,13 +17,13 @@ template <class T>
 concept class_ = __is_class(T);
 
 template <class T>
-concept signed_ = any_<T, signed char, short, int, long, long long>;
+concept sint_ = any_<T, signed char, short, int, long, long long>;
 
 template <class T>
-concept unsigned_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
+concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
 
 template <class T>
-concept int_ = signed_<T> || unsigned_<T>;
+concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
 concept float_ = any_<T, float, double>;

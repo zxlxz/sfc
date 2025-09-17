@@ -16,33 +16,15 @@ struct IntBuf {
     const auto uval = val > 0 ? val : 0 - val;
 
     switch (type) {
-      default:
-        this->write_dec(uval);
-        break;
-      case 'B':
-        this->write_bin<2>(uval);
-        break;
-      case 'b':
-        this->write_bin<2>(uval);
-        break;
-      case 'O':
-        this->write_bin<8>(uval);
-        break;
-      case 'o':
-        this->write_bin<8>(uval);
-        break;
-      case 'X':
-        this->write_bin<16, 'X'>(uval);
-        break;
-      case 'x':
-        this->write_bin<16, 'x'>(uval);
-        break;
-      case 'P':
-        this->write_bin<16, 'P'>(uval);
-        break;
-      case 'p':
-        this->write_bin<16, 'p'>(uval);
-        break;
+      default:  this->write_dec(uval); break;
+      case 'B': this->write_bin<2>(uval); break;
+      case 'b': this->write_bin<2>(uval); break;
+      case 'O': this->write_bin<8>(uval); break;
+      case 'o': this->write_bin<8>(uval); break;
+      case 'X': this->write_bin<16, 'X'>(uval); break;
+      case 'x': this->write_bin<16, 'x'>(uval); break;
+      case 'P': this->write_bin<16, 'P'>(uval); break;
+      case 'p': this->write_bin<16, 'p'>(uval); break;
     }
 
     if (val != uval) {
@@ -103,33 +85,30 @@ struct IntBuf {
   }
 };
 
-template <trait::int_ T>
-auto Display<T>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  const auto uval = _val > 0 ? _val : 0 - _val;
-
+auto Display::fill_int(slice::Slice<char> buf, Style style, auto val) -> str::Str {
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(uval, style.type());
+  ss.fill(val, style.type());
   return ss.as_str();
 }
 
-auto Display<const void*>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  const auto uval = __builtin_bit_cast(usize, _val);
-
+template <>
+auto Display::fill_int(slice::Slice<char> buf, Style style, const void* ptr) -> str::Str {
+  const auto val = __builtin_bit_cast(usize, ptr);
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(uval, style.type() ? style.type() : 'p');
+  ss.fill(val, style.type() ? style.type() : 'p');
   return ss.as_str();
 }
 
-template struct Display<signed char>;
-template struct Display<short>;
-template struct Display<int>;
-template struct Display<long>;
-template struct Display<long long>;
+template auto Display::fill_int(slice::Slice<char>, Style, signed char) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, short) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, int) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, long) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, long long) -> str::Str;
 
-template struct Display<unsigned char>;
-template struct Display<unsigned short>;
-template struct Display<unsigned int>;
-template struct Display<unsigned long>;
-template struct Display<unsigned long long>;
+template auto Display::fill_int(slice::Slice<char>, Style, unsigned char) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, unsigned short) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, unsigned int) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, unsigned long) -> str::Str;
+template auto Display::fill_int(slice::Slice<char>, Style, unsigned long long) -> str::Str;
 
 }  // namespace sfc::fmt

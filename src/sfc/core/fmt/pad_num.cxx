@@ -86,7 +86,7 @@ SFC_TEST(int_prefix) {
   panicking::expect_eq(string::format("{#8o}", 16), "00000020");
 }
 
-SFC_TEST(fix) {
+SFC_TEST(flt_fix) {
   panicking::expect_eq(string::format("{.0f}", +123.456), "123");
   panicking::expect_eq(string::format("{.0f}", -123.456), "-123");
 
@@ -103,7 +103,7 @@ SFC_TEST(fix) {
   panicking::expect_eq(string::format("{-8.2f}", -123.456), " -123.46");
 }
 
-SFC_TEST(exp) {
+SFC_TEST(flt_exp) {
   panicking::expect_eq(string::format("{.2e}", +123.456), "1.23e+02");
   panicking::expect_eq(string::format("{.2e}", -123.456), "-1.23e+02");
 

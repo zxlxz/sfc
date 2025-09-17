@@ -20,12 +20,8 @@ struct FltBuf {
       const auto uval = val >= 0 ? val : -val;
       switch (type | 32) {
         default:
-        case 'f':
-          this->write_fix(uval, precision);
-          break;
-        case 'e':
-          this->write_exp(uval, precision);
-          break;
+        case 'f': this->write_fix(uval, precision); break;
+        case 'e': this->write_exp(uval, precision); break;
       }
     }
 
@@ -130,25 +126,14 @@ struct FltBuf {
   }
 };
 
-template<> auto Display<float>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  const auto uval = _val >= 0 ? _val : -_val;
-  const auto prec = style.precision(4);
-
+auto Display::fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str {
+  const auto prec = style.precision(sizeof(val) < sizeof(double) ? 4 : 6);
   auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(uval, prec, style.type());
+  ss.fill(val, prec, style.type());
   return ss.as_str();
 }
 
-template<> auto Display<double>::fill(slice::Slice<char> buf, const Style& style) const -> str::Str {
-  const auto uval = _val >= 0 ? _val : -_val;
-  const auto prec = style.precision(6);
-
-  auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(uval, prec, style.type());
-  return ss.as_str();
-}
-
-template struct Display<float>;
-template struct Display<double>;
+template auto Display::fill_flt(slice::Slice<char>, Style, float) -> str::Str;
+template auto Display::fill_flt(slice::Slice<char>, Style, double) -> str::Str;
 
 }  // namespace sfc::fmt

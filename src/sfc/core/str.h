@@ -14,13 +14,7 @@ struct Str {
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
   template <u32 N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {
-    for (; _len && _ptr[_len - 1] == 0; --_len) {}
-  }
-
-  constexpr Str(slice::Slice<const char> s) : _ptr{s._ptr}, _len{s._len} {
-    for (; _len && _ptr[_len - 1] == 0; --_len) {}
-  }
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
   static auto from_u8(slice::Slice<const u8> s) noexcept -> Str {
     const auto p = reinterpret_cast<const char*>(s._ptr);
@@ -29,7 +23,7 @@ struct Str {
   }
 
   static auto from_cstr(const char* s) noexcept -> Str {
-    const auto n = s ? __builtin_strlen(s) : 0;
+    const auto n = s == nullptr ? 0 : __builtin_strlen(s);
     return Str{s, n};
   }
 
@@ -141,7 +135,7 @@ struct Str {
   auto parse() const noexcept -> option::Option<T>;
 
   void fmt(auto& f) const {
-    const auto& s = f.style();
+    const auto& s = f._style;
     s._type == '?' ? f.write_char('"') : (void)0;
     f.pad(*this);
     s._type == '?' ? f.write_char('"') : (void)0;
