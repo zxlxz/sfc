@@ -166,9 +166,9 @@ class Box<R(T...), A> {
     res._meta = &meta;
     if (meta._dtor) {
       res._data = res._alloc.alloc(meta._layout);
-      new (res._data) X{static_cast<X&&>(obj)};
+      new (res._data) auto{static_cast<X&&>(obj)};
     } else {
-      new (&res._data) X{static_cast<X&&>(obj)};
+      new (&res._data) auto{static_cast<X&&>(obj)};
     }
     return res;
   }

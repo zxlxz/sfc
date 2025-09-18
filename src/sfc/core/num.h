@@ -16,7 +16,7 @@ constexpr auto(min)(T a, T b) -> T {
 
 template <class T>
 constexpr auto(max)(T a, T b) -> T {
-  return a < b ? a : b;
+  return a < b ? b : a;
 }
 
 auto flt_eq_ulp(f32 a, f32 b, u32 ulp = 4) -> bool;

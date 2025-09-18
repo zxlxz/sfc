@@ -26,8 +26,7 @@ class HashTable {
     this->dealloc();
   }
 
-  HashTable(HashTable&& other) noexcept
-      : _ptr{other._ptr}, _mask{other._mask}, _len{other._len}, _rem{other._rem} {
+  HashTable(HashTable&& other) noexcept : _ptr{other._ptr}, _mask{other._mask}, _len{other._len}, _rem{other._rem} {
     other._ptr = nullptr;
     other._mask = 0;
     other._len = 0;
@@ -175,15 +174,15 @@ class HashTable {
     A::dealloc(old_ctrl, {old_offs + old_cap * sizeof(T), kAlign});
   }
 
-  void for_each(auto&& f) {
-    if (_len == 0) {
+  void for_each(this auto& self, auto&& f) {
+    if (self._len == 0) {
       return;
     }
 
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto data = reinterpret_cast<T*>(_ptr + offs);
-    for (auto i = 0UL; i < _mask + 1; ++i) {
-      if (_ptr[i] < kEmpty) {
+    const auto offs = (self._mask + kAlign) & ~(kAlign - 1);
+    const auto data = reinterpret_cast<T*>(self._ptr + offs);
+    for (auto i = 0UL; i < self._mask + 1; ++i) {
+      if (self._ptr[i] < kEmpty) {
         f(data[i]);
       }
     }
@@ -330,15 +329,31 @@ class HashMap {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_map();
     _inn.for_each([&](const auto& entry) { imp.entry(entry.key, entry.val); });
   }
 
-  void serialize(auto& s) const {
-    auto dict = s.new_dict();
-    _inn.for_each([&](const auto& entry) { dict.insert(entry.key, s.ser(entry.val)); });
-    return dict;
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_map();
+    _inn.for_each([&](const auto& entry) { imp.serialize_entry(entry.key, entry.val); });
+  }
+
+  // trait: serde::Deserialize
+  auto deserialize(auto& des) {
+    this->clear();
+
+    auto map = des.deserialize_map();
+    while (true) {
+      auto key = _TRY(map.deserialize_key());
+      if (!key) {
+        break;
+      }
+      auto val = _TRY(map.deserialize_val(V{}));
+      this->insert(key.unwrap(), mem::move(val));
+    }
   }
 };
 

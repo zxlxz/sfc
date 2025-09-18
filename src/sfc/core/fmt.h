@@ -144,141 +144,6 @@ struct Display {
   }
 };
 
-template <class FMT>
-class DebugTuple {
-  FMT& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugTuple(FMT& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("(");
-  }
-
-  ~DebugTuple() noexcept {
-    _fmt.debug_end(")", _cnt);
-  }
-
-  DebugTuple(const DebugTuple&) = delete;
-
-  auto entry(const auto& value) -> DebugTuple& {
-    _fmt.debug_val(_cnt++, value);
-    return *this;
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class FMT>
-class DebugList {
-  FMT& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugList(FMT& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("[");
-  }
-
-  ~DebugList() noexcept {
-    _fmt.debug_end("]", _cnt);
-  }
-
-  DebugList(const DebugList&) noexcept = delete;
-
-  auto entry(const auto& value) -> DebugList& {
-    _fmt.debug_val(_cnt++, value);
-    return *this;
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class FMT>
-class DebugSet {
-  FMT& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugSet(FMT& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugSet() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugSet(const DebugSet&) noexcept = delete;
-
-  auto entry(const auto& value) -> DebugSet& {
-    _fmt.debug_val(_cnt++, value);
-    return *this;
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](auto&& val) { this->entry(val); });
-  }
-};
-
-template <class FMT>
-class DebugMap {
-  FMT& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugMap(FMT& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugMap() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugMap(const DebugMap&) noexcept = delete;
-
-  auto entry(str::Str name, const auto& value) -> DebugMap& {
-    _fmt.debug_val(_cnt++, value, "\"", name, "\": ");
-    return *this;
-  }
-
-  void entries(auto&& iter) {
-    iter.for_each([&](const auto& item) {
-      const auto& [k, v] = item;
-      this->entry(k, v);
-    });
-  }
-};
-
-template <class FMT>
-class DebugStruct {
-  FMT& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugStruct(FMT& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugStruct() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugStruct(DebugStruct&&) noexcept = delete;
-
-  auto field(str::Str name, const auto& value) -> DebugStruct& {
-    _fmt.debug_val(_cnt++, value, name, ": ");
-    return *this;
-  }
-
-  void fields(auto&& iter) {
-    iter.for_each([&](const auto& item) {
-      const auto& [k, v] = item;
-      this->field(k, v);
-    });
-  }
-};
 
 template <class... T>
 struct Args {
@@ -318,8 +183,8 @@ struct Fmter {
 
  public:
   void write_char(char c) {
-    if constexpr (requires { _out.write_char(c); }) {
-      _out.write_char(c);
+    if constexpr (requires { _out.push(c); }) {
+      _out.push(c);
     } else {
       _out.write_str({&c, 1});
     }
@@ -329,65 +194,59 @@ struct Fmter {
     if (s.is_empty()) {
       return;
     }
-    _out.write_str(s);
+    if constexpr (requires { _out.push_str(s); }) {
+      _out.push_str(s);
+    } else {
+      _out.write_str(s);
+    }
+  }
+
+  void fill(usize n) {
+    const auto c = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
+    const char v[] = {c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += sizeof(v)) {
+      this->write_str({v, n < sizeof(v) ? n : sizeof(v)});
+    }
   }
 
   void pad(str::Str s) {
-    const auto width = _style.width();
-
-    if (width <= s.len()) {
+    if (_style._width <= s._len) {
       this->write_str(s);
       return;
     }
 
-    const auto fill = _style.fill();
+    const auto npad = usize{_style._width} - s._len;
 
-    auto pad_fill = [&](usize n) {
-      for (auto i = 0U; i < n; ++i) {
-        _out.write_str({&fill, 1});
-      }
-    };
-
-    const auto npad = width - s.len();
-
-    switch (_style.align()) {
+    switch (_style._align) {
       default:
       case '>':
-        pad_fill(npad);
-        _out.write_str(s);
+        this->fill(npad);
+        this->write_str(s);
         break;
       case '<':
-        _out.write_str(s);
-        pad_fill(npad);
+        this->write_str(s);
+        this->fill(npad);
         break;
       case '=':
       case '^':
-        pad_fill((npad + 0) / 2);
-        _out.write_str(s);
-        pad_fill((npad + 1) / 2);
+        this->fill((npad + 0) / 2);
+        this->write_str(s);
+        this->fill((npad + 1) / 2);
         break;
     }
   }
 
   void pad_num(bool is_neg, str::Str body) {
-    const auto width = _style.width();
     const auto sign = _style.sign(is_neg);
     const auto prefix = _style.prefix();
-    const auto fill = _style.fill(_style._prefix ? '0' : ' ');
-    const auto align = fill == '0' ? '=' : _style.align();
+    const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
     const auto len = prefix.len() + sign.len() + body.len();
-    const auto npad = width > len ? width - len : 0U;
-
-    auto pad_fill = [&](usize n) {
-      for (auto i = 0U; i < n; ++i) {
-        _out.write_str({&fill, 1});
-      }
-    };
+    const auto npad = _style._width > len ? _style._width - len : 0U;
 
     switch (align) {
       default:
       case '>':
-        pad_fill(npad);
+        this->fill(npad);
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
@@ -396,20 +255,20 @@ struct Fmter {
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
-        pad_fill(npad);
+        this->fill(npad);
         break;
       case '=':
-        _out.write_str(sign);
-        _out.write_str(prefix);
-        pad_fill(npad);
-        _out.write_str(body);
+        this->write_str(sign);
+        this->write_str(prefix);
+        this->fill(npad);
+        this->write_str(body);
         break;
       case '^':
-        pad_fill((npad + 0) / 2);
-        _out.write_str(sign);
-        _out.write_str(prefix);
-        _out.write_str(body);
-        pad_fill((npad + 1) / 2);
+        this->fill((npad + 0) / 2);
+        this->write_str(sign);
+        this->write_str(prefix);
+        this->write_str(body);
+        this->fill((npad + 1) / 2);
     }
   }
 
@@ -422,28 +281,28 @@ struct Fmter {
   }
 
  public:
-  friend class DebugTuple<Fmter>;
-  auto debug_tuple() -> DebugTuple<Fmter> {
+  class DebugTuple;
+  auto debug_tuple() -> DebugTuple {
     return DebugTuple{*this};
   }
 
-  friend class DebugList<Fmter>;
-  auto debug_list() -> DebugList<Fmter> {
+  class DebugList;
+  auto debug_list() -> DebugList {
     return DebugList{*this};
   }
 
-  friend class DebugSet<Fmter>;
-  auto debug_set() -> DebugSet<Fmter> {
+  class DebugSet;
+  auto debug_set() -> DebugSet {
     return DebugSet{*this};
   }
 
-  friend class DebugMap<Fmter>;
-  auto debug_map() -> DebugMap<Fmter> {
+  class DebugMap;
+  auto debug_map() -> DebugMap {
     return DebugMap{*this};
   }
 
-  friend class DebugTuple<Fmter>;
-  auto debug_struct() -> DebugStruct<Fmter> {
+  class DebugStruct;
+  auto debug_struct() -> DebugStruct {
     return DebugStruct{*this};
   }
 
@@ -493,6 +352,143 @@ struct Fmter {
     _style = old_style;
   }
 };
+
+template <class W>
+class Fmter<W>::DebugTuple {
+  Fmter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugTuple(Fmter& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("(");
+  }
+
+  ~DebugTuple() noexcept {
+    _fmt.debug_end(")", _cnt);
+  }
+
+  DebugTuple(const DebugTuple&) = delete;
+
+  auto entry(const auto& value) -> DebugTuple& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class W>
+class Fmter<W>::DebugList {
+  Fmter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugList(Fmter& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("[");
+  }
+
+  ~DebugList() noexcept {
+    _fmt.debug_end("]", _cnt);
+  }
+
+  DebugList(const DebugList&) noexcept = delete;
+
+  auto entry(const auto& value) -> DebugList& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class W>
+class Fmter<W>::DebugSet {
+  Fmter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugSet(Fmter& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugSet() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugSet(const DebugSet&) noexcept = delete;
+
+  auto entry(const auto& value) -> DebugSet& {
+    _fmt.debug_val(_cnt++, value);
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](auto&& val) { this->entry(val); });
+  }
+};
+
+template <class W>
+class Fmter<W>::DebugMap {
+  Fmter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugMap(Fmter& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugMap() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugMap(const DebugMap&) noexcept = delete;
+
+  auto entry(str::Str name, const auto& value) -> DebugMap& {
+    _fmt.debug_val(_cnt++, value, "\"", name, "\": ");
+    return *this;
+  }
+
+  void entries(auto&& iter) {
+    iter.for_each([&](const auto& item) {
+      const auto& [k, v] = item;
+      this->entry(k, v);
+    });
+  }
+};
+
+template <class W>
+class Fmter<W>::DebugStruct {
+  Fmter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugStruct(Fmter& fmt) noexcept : _fmt{fmt} {
+    _fmt.debug_begin("{");
+  }
+
+  ~DebugStruct() noexcept {
+    _fmt.debug_end("}", _cnt);
+  }
+
+  DebugStruct(DebugStruct&&) noexcept = delete;
+
+  auto field(str::Str name, const auto& value) -> DebugStruct& {
+    _fmt.debug_val(_cnt++, value, name, ": ");
+    return *this;
+  }
+
+  void fields(auto&& iter) {
+    iter.for_each([&](const auto& item) {
+      const auto& [k, v] = item;
+      this->field(k, v);
+    });
+  }
+};
+
 
 void write(auto& out, str::Str fmts, const auto&... args) {
   Fmter{out}.write_fmt(fmts, args...);

@@ -126,9 +126,13 @@ struct Slice {
   }
 
  public:
-  auto operator==(Slice<const T> other) const -> bool {
+  template <class U>
+  auto operator==(const Slice<U>& other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
+    }
+    if (_ptr == other._ptr) {
+      return true;
     }
     for (auto i = 0UL; i < _len; ++i) {
       if (_ptr[i] != other._ptr[i]) {
@@ -136,24 +140,6 @@ struct Slice {
       }
     }
     return true;
-  }
-
-  auto find(const auto& x) const noexcept -> option::Option<usize> {
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] == x) {
-        return i;
-      }
-    }
-    return {};
-  }
-
-  auto rfind(const auto& x) const noexcept -> option::Option<usize> {
-    for (auto i = _len; i > 0; --i) {
-      if (_ptr[i - 1] == x) {
-        return i - 1;
-      }
-    }
-    return {};
   }
 
   auto contains(const T& x) const noexcept -> bool {
@@ -177,6 +163,25 @@ struct Slice {
       return false;
     }
     return needle == Slice<const T>{_ptr + _len - needle._len, needle._len};
+  }
+
+  auto find(const T& x) const noexcept -> option::Option<usize> {
+    if (_len == 0) {
+      return {};
+    }
+    if constexpr (sizeof(T) == 1) {
+      const auto p = static_cast<const T*>(__builtin_memchr(_ptr, x, _len));
+      if (p) {
+        return static_cast<usize>(p - _ptr);
+      }
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (_ptr[i] == x) {
+          return i;
+        }
+      }
+    }
+    return {};
   }
 
  public:
@@ -221,11 +226,7 @@ struct Slice {
   }
 
  public:
-  auto as_bytes_mut() -> Slice<u8> {
-    static_assert(!trait::same_<T, const T>);
-    return Slice<u8>{reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
-  }
-
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_list();
     for (auto& x : *this) {
@@ -233,19 +234,22 @@ struct Slice {
     }
   }
 
-  auto serialize(auto& s) const {
-    return s.ser_list(*this);
+  // trait: io::Read
+  auto read(Slice<u8> buf) -> usize {
+    static_assert(sizeof(T) == 1);
+    const auto amt = _len < buf._len ? _len : buf._len;
+    __builtin_memcpy(buf._ptr, _ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return amt;
   }
 
- public:
-  template <class Self>
-    requires(trait::same_<const typename Self::Item, const u8>)
-  auto read(this Self& self, Slice<u8> buf) -> usize {
-    const auto amt = self._len < buf._len ? self._len : buf._len;
-    ptr::copy_nonoverlapping(self._ptr, buf._ptr, amt);
-    self._ptr += amt;
-    self._len -= amt;
-    return amt;
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_seq();
+    for (auto i = 0; i < _len; ++i) {
+      imp.serialize_element(_ptr[i]);
+    }
   }
 };
 
@@ -257,6 +261,8 @@ Slice(T*, auto) -> Slice<T>;
 
 template <class T>
 struct Iter : iter::Iterator<T&> {
+  using Item = T&;
+
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -286,6 +292,8 @@ struct Iter : iter::Iterator<T&> {
 
 template <class T>
 struct Windows : iter::Iterator<Slice<T>> {
+  using Item = Slice<T>;
+
   Slice<T> _buf = {};
   usize _len = 0;
 

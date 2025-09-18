@@ -74,7 +74,7 @@ class Result {
   Inn _inn;
 
  public:
-  Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+  Result(T val = {}) noexcept : _inn{static_cast<T&&>(val)} {}
   Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
   ~Result() noexcept = default;
 
@@ -111,7 +111,7 @@ class Result {
     if (self._inn.is_err()) {
       return {};
     }
-    return static_cast<T&&>(*self._inn);
+    return option::Option<T>{static_cast<T&&>(*self._inn)};
   }
 
   auto err(this auto self) -> option::Option<E> {
@@ -121,9 +121,24 @@ class Result {
     return static_cast<E&&>(~self._inn);
   }
 
+  auto unwrap_unchecked() -> T {
+    return static_cast<T&&>(*_inn);
+  }
+
+  auto unwrap_err_unchecked() -> E {
+    return static_cast<E&&>(~_inn);
+  }
+
   auto unwrap(this auto self) -> T {
     panicking::expect(self._inn.is_ok(), "Result::unwrap: Err({})", ~self._inn);
     return static_cast<T&&>(*self._inn);
+  }
+
+  auto unwrap_or(this auto self, T def) -> T {
+    if (self._inn.is_ok()) {
+      return static_cast<T&&>(*self._inn);
+    }
+    return static_cast<T&&>(def);
   }
 
   auto unwrap_err(this auto self) -> E {
@@ -179,7 +194,9 @@ class Result {
     return static_cast<T&&>(*self._inn);
   }
 
-  void fmt(auto&& f) const {
+ public:
+  // trait: fmt::Display
+  void fmt(auto& f) const {
     if (_inn.is_ok()) {
       f.write_fmt("Ok({})", *_inn);
     } else {
@@ -187,5 +204,18 @@ class Result {
     }
   }
 };
+
+#ifdef __INTELLISENSE__
+#define _TRY(expr) expr.unwrap()
+#else
+#define _TRY(expr)                        \
+  ({                                      \
+    auto _res = (expr);                   \
+    if (_res.is_err()) {                  \
+      return _res.unwrap_err_unchecked(); \
+    }                                     \
+    _res.unwrap_unchecked();              \
+  })
+#endif
 
 }  // namespace sfc::result

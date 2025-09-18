@@ -63,18 +63,12 @@ class [[nodiscard]] Buf {
     return _ptr[idx];
   }
 
-  auto wrap_idx(usize idx) const noexcept -> usize {
-    return idx < _cap ? idx : idx - _cap;
+  auto slice(usize start, usize end) const -> Slice<const T> {
+    return {_ptr + start, end - start};
   }
 
-  auto read(usize idx) noexcept -> T {
-    auto res = static_cast<T&&>(_ptr[idx]);
-    _ptr[idx].~T();
-    return res;
-  }
-
-  void write(usize idx, T&& val) {
-    new (&_ptr[idx]) T{static_cast<T&&>(val)};
+  auto slice_mut(usize start, usize end) -> Slice<T> {
+    return {_ptr + start, end - start};
   }
 
   void reserve(usize used, usize additional) {
@@ -228,6 +222,10 @@ class [[nodiscard]] Vec {
 
   auto slice_mut(usize start, usize end = static_cast<usize>(-1)) -> slice::Slice<T> {
     return Slice{_buf._ptr, _len}.slice(start, end);
+  }
+
+  auto spare_capacity_mut() -> slice::Slice<T> {
+    return Slice{_buf._ptr + _len, _buf._cap - _len};
   }
 
   auto first() const -> option::Option<const T&> {
@@ -426,14 +424,6 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  auto find(const auto& x) const -> Option<usize> {
-    return Slice{_buf._ptr, _len}.find(x);
-  }
-
-  auto rfind(const auto& x) const -> Option<usize> {
-    return Slice{_buf._ptr, _len}.rfind(x);
-  }
-
   auto iter() const -> slice::Iter<const T> {
     return Slice{_buf._ptr, _len}.iter();
   }
@@ -459,12 +449,29 @@ class [[nodiscard]] Vec {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     return Slice{_buf._ptr, _len}.fmt(f);
   }
 
-  auto serialize(auto& s) const {
-    return Slice{_buf._ptr, _len}.serialize(s);
+  // trait: serde::Serialize
+  auto serialize(auto& ser) const {
+    const auto v = Slice{_buf._ptr, _len};
+    return v.serialize(ser);
+  }
+
+  // trait:: serde::Deserialize
+  auto deserialize(auto& des) {
+    this->clear();
+
+    auto seq = des.deserialize_seq();
+    while (true) {
+      auto opt = _TRY(seq.next_element(T{}));
+      if (!opt) {
+        break;
+      }
+      this->push(mem::move(opt).unwrap());
+    }
   }
 };
 

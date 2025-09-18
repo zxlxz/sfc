@@ -116,14 +116,6 @@ class [[nodiscard]] String {
     return _vec.extend_from_slice(s.as_bytes());
   }
 
-  void write_char(char c) {
-    _vec.push(static_cast<u8>(c));
-  }
-
-  void write_str(Str s) {
-    _vec.extend_from_slice(s.as_bytes());
-  }
-
   void reserve(usize amt) {
     _vec.reserve(amt);
   }
@@ -177,8 +169,20 @@ class [[nodiscard]] String {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     f.pad(this->as_str());
+  }
+
+  // trait: io::Write
+  auto write(Slice<const u8> buf) -> usize {
+    _vec.extend_from_slice(buf);
+    return buf.len();
+  }
+
+  // trait: serde::Serialize
+  void serialize(auto& s) const {
+    s.serialize_str(this->as_str());
   }
 };
 

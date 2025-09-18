@@ -8,19 +8,21 @@ SFC_TEST(worker) {
   int cnt = 0;
 
   auto worker = Worker{};
-  panicking::expect_true(worker.submit([&, val = 1]() { cnt += val; }));
+  auto thrd = thread::spawn([&]() { worker.run(); });
+
+  panicking::expect_true(worker.post(Task::xnew([&, val = 1]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 1);
 
-  panicking::expect_true(worker.submit([&, val = 2]() { cnt += val; }));
+  panicking::expect_true(worker.post(Task::xnew([&, val = 2]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 3);
 
-  panicking::expect_true(worker.submit([&, val = 3]() { cnt += val; }));
+  panicking::expect_true(worker.post(Task::xnew([&, val = 3]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 6);
 
   worker.stop();
 }
 
-}  // namespace sfc::thread::test
+}  // namespace sfc::task::test
