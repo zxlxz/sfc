@@ -38,10 +38,10 @@ void FileBackend::write(Record entry) {
   static thread_local auto buf = String();
 
   buf.clear();
-  buf.write_str(entry.time);
-  buf.write_str(level_str(entry.level));
-  buf.write_str(entry.msg);
-  buf.write_str("\n");
+  buf.push_str(entry.time);
+  buf.push_str(log::level_str(entry.level));
+  buf.push_str(entry.msg);
+  buf.push_str("\n");
 
   _file.write_str(buf.as_str());
 }

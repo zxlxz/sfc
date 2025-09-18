@@ -330,15 +330,16 @@ class HashMap {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_map();
     _inn.for_each([&](const auto& entry) { imp.entry(entry.key, entry.val); });
   }
 
-  void serialize(auto& s) const {
-    auto dict = s.new_dict();
-    _inn.for_each([&](const auto& entry) { dict.insert(entry.key, s.ser(entry.val)); });
-    return dict;
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_map();
+    _inn.for_each([&](const auto& entry) { imp.serialize_field(entry.key, entry.val); });
   }
 };
 

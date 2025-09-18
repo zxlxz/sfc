@@ -105,6 +105,7 @@ class VecMap {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_map();
     for (auto& item : _items) {
@@ -112,12 +113,12 @@ class VecMap {
     }
   }
 
-  auto serialize(auto& s) const {
-    auto dict = s.new_dict();
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_map();
     for (auto& item : _items) {
-      dict.insert(item.key, s.ser(item.value));
+      imp.serialize_field(item.key, item.value);
     }
-    return dict;
   }
 };
 

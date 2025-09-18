@@ -3,7 +3,37 @@
 #include "sfc/serde.h"
 #include "sfc/test.h"
 
-namespace sfc::serde {
+namespace sfc::serde::json::test {
+
+SFC_TEST(serialize) {
+  // bool
+  panicking::expect_eq(json::to_string(true), "true");
+  panicking::expect_eq(json::to_string(false), "false");
+
+  // int
+  panicking::expect_eq(json::to_string(0), "0");
+  panicking::expect_eq(json::to_string(123), "123");
+  panicking::expect_eq(json::to_string(-123), "-123");
+
+  // float
+  panicking::expect_eq(json::to_string(0.0), "0.000000");
+  panicking::expect_eq(json::to_string(1.23), "1.230000");
+  panicking::expect_eq(json::to_string(-1.23), "-1.230000");
+
+  // str
+  panicking::expect_eq(json::to_string(Str{""}), "\"\"");
+  panicking::expect_eq(json::to_string(Str{"abc"}), "\"abc\"");
+
+  // seq
+  const int seq[] = {1, 2, 3};
+  panicking::expect_eq(json::to_string(seq), "[1,2,3]");
+
+  // map
+  auto map = collections::VecMap<Str, int>{};
+  map.insert(Str{"a"}, 1);
+  map.insert(Str{"b"}, 2);
+  panicking::expect_eq(json::to_string(map), "{\"a\":1,\"b\":2}");
+}
 
 SFC_TEST(parse_null) {
   auto val = Node::from_json("null");
@@ -180,4 +210,4 @@ SFC_TEST(parse_dict) {
   }
 }
 
-}  // namespace sfc::serde
+}  // namespace sfc::serde::json::test

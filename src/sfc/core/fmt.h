@@ -318,8 +318,8 @@ struct Fmter {
 
  public:
   void write_char(char c) {
-    if constexpr (requires { _out.write_char(c); }) {
-      _out.write_char(c);
+    if constexpr (requires { _out.push(c); }) {
+      _out.push(c);
     } else {
       _out.write_str({&c, 1});
     }
@@ -329,65 +329,59 @@ struct Fmter {
     if (s.is_empty()) {
       return;
     }
-    _out.write_str(s);
+    if constexpr (requires { _out.push_str(s); }) {
+      _out.push_str(s);
+    } else {
+      _out.write_str(s);
+    }
+  }
+
+  void fill(usize n) {
+    const auto c = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
+    const char v[] = {c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += sizeof(v)) {
+      this->write_str({v, n < sizeof(v) ? n : sizeof(v)});
+    }
   }
 
   void pad(str::Str s) {
-    const auto width = _style.width();
-
-    if (width <= s.len()) {
+    if (_style._width <= s._len) {
       this->write_str(s);
       return;
     }
 
-    const auto fill = _style.fill();
+    const auto npad = usize{_style._width} - s._len;
 
-    auto pad_fill = [&](usize n) {
-      for (auto i = 0U; i < n; ++i) {
-        _out.write_str({&fill, 1});
-      }
-    };
-
-    const auto npad = width - s.len();
-
-    switch (_style.align()) {
+    switch (_style._align) {
       default:
       case '>':
-        pad_fill(npad);
-        _out.write_str(s);
+        this->fill(npad);
+        this->write_str(s);
         break;
       case '<':
-        _out.write_str(s);
-        pad_fill(npad);
+        this->write_str(s);
+        this->fill(npad);
         break;
       case '=':
       case '^':
-        pad_fill((npad + 0) / 2);
-        _out.write_str(s);
-        pad_fill((npad + 1) / 2);
+        this->fill((npad + 0) / 2);
+        this->write_str(s);
+        this->fill((npad + 1) / 2);
         break;
     }
   }
 
   void pad_num(bool is_neg, str::Str body) {
-    const auto width = _style.width();
     const auto sign = _style.sign(is_neg);
     const auto prefix = _style.prefix();
-    const auto fill = _style.fill(_style._prefix ? '0' : ' ');
-    const auto align = fill == '0' ? '=' : _style.align();
+    const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
     const auto len = prefix.len() + sign.len() + body.len();
-    const auto npad = width > len ? width - len : 0U;
-
-    auto pad_fill = [&](usize n) {
-      for (auto i = 0U; i < n; ++i) {
-        _out.write_str({&fill, 1});
-      }
-    };
+    const auto npad = _style._width > len ? _style._width - len : 0U;
 
     switch (align) {
       default:
       case '>':
-        pad_fill(npad);
+        this->fill(npad);
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
@@ -396,20 +390,20 @@ struct Fmter {
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
-        pad_fill(npad);
+        this->fill(npad);
         break;
       case '=':
-        _out.write_str(sign);
-        _out.write_str(prefix);
-        pad_fill(npad);
-        _out.write_str(body);
+        this->write_str(sign);
+        this->write_str(prefix);
+        this->fill(npad);
+        this->write_str(body);
         break;
       case '^':
-        pad_fill((npad + 0) / 2);
-        _out.write_str(sign);
-        _out.write_str(prefix);
-        _out.write_str(body);
-        pad_fill((npad + 1) / 2);
+        this->fill((npad + 0) / 2);
+        this->write_str(sign);
+        this->write_str(prefix);
+        this->write_str(body);
+        this->fill((npad + 1) / 2);
     }
   }
 
@@ -442,7 +436,7 @@ struct Fmter {
     return DebugMap{*this};
   }
 
-  friend class DebugTuple<Fmter>;
+  friend class DebugStruct<Fmter>;
   auto debug_struct() -> DebugStruct<Fmter> {
     return DebugStruct{*this};
   }

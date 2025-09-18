@@ -16,9 +16,9 @@ SFC_TEST(vecmap_basic) {
   panicking::expect_false(map.is_empty());
   panicking::expect_eq(map.len(), 3);
 
-  panicking::expect_eq(map.get(1), Option{"one"});
-  panicking::expect_eq(map.get(2), Option{"two"});
-  panicking::expect_eq(map.get(3), Option{"three"});
+  panicking::expect_eq(map.get(1), Option<Str>{"one"});
+  panicking::expect_eq(map.get(2), Option<Str>{"two"});
+  panicking::expect_eq(map.get(3), Option<Str>{"three"});
   panicking::expect_false(map.get(4));
 }
 
@@ -29,8 +29,8 @@ SFC_TEST(vecmap_move) {
 
   auto map2 = mem::move(map1);
   panicking::expect_eq(map2.len(), 2);
-  panicking::expect_eq(map2.get(1), Option{"one"});
-  panicking::expect_eq(map2.get(2), Option{"two"});
+  panicking::expect_eq(map2.get(1), Option<Str>{"one"});
+  panicking::expect_eq(map2.get(2), Option<Str>{"two"});
 }
 
 SFC_TEST(vecmap_try_insert) {
@@ -39,11 +39,11 @@ SFC_TEST(vecmap_try_insert) {
   map.insert(2, "two");
 
   panicking::expect_eq(map.len(), 2);
-  panicking::expect_eq(map.try_insert(1, "ONE"), Option{"one"});
+  panicking::expect_eq(map.try_insert(1, "ONE"), Option<Str>{"one"});
   panicking::expect_eq(map.try_insert(3, "three").is_none(), true);
   panicking::expect_eq(map.len(), 3);
-  panicking::expect_eq(map.get(1), Option{"one"});
-  panicking::expect_eq(map.get(3), Option{"three"});
+  panicking::expect_eq(map.get(1), Option<Str>{"one"});
+  panicking::expect_eq(map.get(3), Option<Str>{"three"});
 }
 
 SFC_TEST(vecmap_remove) {
@@ -53,7 +53,7 @@ SFC_TEST(vecmap_remove) {
   map.insert(3, "three");
 
   panicking::expect_eq(map.len(), 3);
-  panicking::expect_eq(map.remove(2), Option{"two"});
+  panicking::expect_eq(map.remove(2), Option<Str>{"two"});
   panicking::expect_eq(map.len(), 2);
   panicking::expect_false(map.get(2));
 

@@ -63,18 +63,12 @@ class [[nodiscard]] Buf {
     return _ptr[idx];
   }
 
-  auto wrap_idx(usize idx) const noexcept -> usize {
-    return idx < _cap ? idx : idx - _cap;
+  auto slice(usize start, usize end) const -> Slice<const T> {
+    return {_ptr + start, end - start};
   }
 
-  auto read(usize idx) noexcept -> T {
-    auto res = static_cast<T&&>(_ptr[idx]);
-    _ptr[idx].~T();
-    return res;
-  }
-
-  void write(usize idx, T&& val) {
-    new (&_ptr[idx]) T{static_cast<T&&>(val)};
+  auto slice_mut(usize start, usize end) -> Slice<T> {
+    return {_ptr + start, end - start};
   }
 
   void reserve(usize used, usize additional) {
@@ -459,12 +453,15 @@ class [[nodiscard]] Vec {
   }
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     return Slice{_buf._ptr, _len}.fmt(f);
   }
 
-  auto serialize(auto& s) const {
-    return Slice{_buf._ptr, _len}.serialize(s);
+  // trait: serde::Serialize
+  void serialize(auto& s) const {
+    const auto v = Slice{_buf._ptr, _len};
+    v.serialize(s);
   }
 };
 

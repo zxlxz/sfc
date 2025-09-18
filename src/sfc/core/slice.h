@@ -126,9 +126,13 @@ struct Slice {
   }
 
  public:
-  auto operator==(Slice<const T> other) const -> bool {
+  template <class U>
+  auto operator==(const Slice<U>& other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
+    }
+    if (_ptr == other._ptr) {
+      return true;
     }
     for (auto i = 0UL; i < _len; ++i) {
       if (_ptr[i] != other._ptr[i]) {
@@ -138,18 +142,34 @@ struct Slice {
     return true;
   }
 
-  auto find(const auto& x) const noexcept -> option::Option<usize> {
+  auto find(auto&& p) const noexcept -> option::Option<usize> {
+    auto test = [&](const T& x) {
+      if constexpr (requires { x == p; }) {
+        return x == p;
+      } else {
+        return p(x);
+      }
+    };
+
     for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] == x) {
+      if (test(_ptr[i])) {
         return i;
       }
     }
     return {};
   }
 
-  auto rfind(const auto& x) const noexcept -> option::Option<usize> {
+  auto rfind(auto&& p) const noexcept -> option::Option<usize> {
+    auto test = [&](const T& x) {
+      if constexpr (requires { x == p; }) {
+        return x == p;
+      } else {
+        return p(x);
+      }
+    };
+
     for (auto i = _len; i > 0; --i) {
-      if (_ptr[i - 1] == x) {
+      if (test(_ptr[i - 1])) {
         return i - 1;
       }
     }
@@ -221,11 +241,7 @@ struct Slice {
   }
 
  public:
-  auto as_bytes_mut() -> Slice<u8> {
-    static_assert(!trait::same_<T, const T>);
-    return Slice<u8>{reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
-  }
-
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_list();
     for (auto& x : *this) {
@@ -233,19 +249,21 @@ struct Slice {
     }
   }
 
-  auto serialize(auto& s) const {
-    return s.ser_list(*this);
+  // trait: io::Read
+  auto read(Slice<T> buf) -> usize {
+    const auto amt = _len < buf._len ? _len : buf._len;
+    ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return amt;
   }
 
- public:
-  template <class Self>
-    requires(trait::same_<const typename Self::Item, const u8>)
-  auto read(this Self& self, Slice<u8> buf) -> usize {
-    const auto amt = self._len < buf._len ? self._len : buf._len;
-    ptr::copy_nonoverlapping(self._ptr, buf._ptr, amt);
-    self._ptr += amt;
-    self._len -= amt;
-    return amt;
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_seq();
+    for (auto i = 0; i < _len; ++i) {
+      imp.serialize_element(_ptr[i]);
+    }
   }
 };
 

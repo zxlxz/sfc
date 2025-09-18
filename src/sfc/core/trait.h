@@ -55,9 +55,9 @@ template <class X>
 using invoke_t = typename __invoke<X>::type;
 
 template <class I, class X>
-struct Trait : X, I {
-  Trait() = delete;
-  ~Trait() = delete;
+struct Impl : X, I {
+  Impl() = delete;
+  ~Impl() = delete;
 };
 
 template <class I, class X>
@@ -65,7 +65,7 @@ auto as(const X& x) -> decltype(auto) {
   if constexpr (__is_base_of(I, X)) {
     return static_cast<const I&>(x);
   } else {
-    return static_cast<const Trait<I, X>&>(x);
+    return static_cast<const Impl<I, X>&>(x);
   }
 }
 
@@ -74,7 +74,7 @@ auto as_mut(X& x) -> decltype(auto) {
   if constexpr (__is_base_of(I, X)) {
     return static_cast<I&>(x);
   } else {
-    return static_cast<Trait<I, X>&>(x);
+    return static_cast<Impl<I, X>&>(x);
   }
 }
 

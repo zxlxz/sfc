@@ -74,7 +74,7 @@ class Result {
   Inn _inn;
 
  public:
-  Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+  Result(T val = {}) noexcept : _inn{static_cast<T&&>(val)} {}
   Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
   ~Result() noexcept = default;
 
@@ -119,6 +119,14 @@ class Result {
       return {};
     }
     return static_cast<E&&>(~self._inn);
+  }
+
+  auto unwrap_unchecked() -> T {
+    return static_cast<T&&>(*_inn);
+  }
+
+  auto unwrap_err_unchecked() -> E {
+    return static_cast<E&&>(~_inn);
   }
 
   auto unwrap(this auto self) -> T {
@@ -179,7 +187,9 @@ class Result {
     return static_cast<T&&>(*self._inn);
   }
 
-  void fmt(auto&& f) const {
+ public:
+  // trait: fmt::Display
+  void fmt(auto& f) const {
     if (_inn.is_ok()) {
       f.write_fmt("Ok({})", *_inn);
     } else {
@@ -187,5 +197,18 @@ class Result {
     }
   }
 };
+
+#ifdef __INTELLISENSE__
+#define _TRY(expr) expr.unwrap()
+#else
+#define _TRY(expr)                        \
+  ({                                      \
+    auto _res = (expr);                   \
+    if (_res.is_err()) {                  \
+      return _res.unwrap_err_unchecked(); \
+    }                                     \
+    _res.unwrap_unchecked();              \
+  })
+#endif
 
 }  // namespace sfc::result

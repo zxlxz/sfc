@@ -140,10 +140,6 @@ struct Str {
     f.pad(*this);
     s._type == '?' ? f.write_char('"') : (void)0;
   }
-
-  auto serialize(auto& s) const {
-    return s.ser_str(*this);
-  }
 };
 
 template <class T>
@@ -473,8 +469,3 @@ static auto type_name() -> Str {
 }
 
 }  // namespace sfc::str
-
-namespace sfc::option {
-template <usize N>
-Option(const char (&s)[N]) -> Option<str::Str>;
-}
