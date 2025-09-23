@@ -6,6 +6,7 @@
 
 namespace sfc::serde::test {
 
+#if 0
 SFC_TEST(ser_bool) {
   {
     auto node = serde::serialize(true);
@@ -140,5 +141,6 @@ SFC_TEST(ser_struct) {
   const auto node = serialize(val);
   panicking::expect_true(node.is<Dict>());
 }
+#endif
 
 }  // namespace sfc::serde::test

@@ -6,11 +6,9 @@ namespace sfc::collections {
 
 template <class T>
 class [[nodiscard]] VecDeque {
-  using Buf = vec::Buf<T>;
-
   usize _pos{0};
   usize _len{0};
-  Buf _buf{};
+  vec::Buf<T> _buf{};
 
  public:
   VecDeque() = default;
@@ -68,12 +66,12 @@ class [[nodiscard]] VecDeque {
 
   auto back() const -> const T& {
     panicking::expect(_len != 0, "VecDeque::back: queue is empty");
-    return _buf[_buf.wrap_idx(_pos + _len - 1)];
+    return _buf[this->wrap_idx(_pos + _len - 1)];
   }
 
   auto back_mut() -> T& {
     panicking::expect(_len != 0, "VecDeque::back_mut: queue is empty");
-    return _buf[_buf.wrap_idx(_pos + _len - 1)];
+    return _buf[this->wrap_idx(_pos + _len - 1)];
   }
 
  public:
@@ -81,9 +79,9 @@ class [[nodiscard]] VecDeque {
     if (_len == _buf._cap) {
       this->reserve(1);
     }
-    _pos = _buf.wrap_idx(_pos + _buf._cap - 1);
+    _pos = this->wrap_idx(_pos + _buf._cap - 1);
     _len += 1;
-    _buf.write(_pos, mem::move(value));
+    ptr::write(&_buf[_pos], mem::move(value));
   }
 
   auto pop_front() -> Option<T> {
@@ -91,10 +89,11 @@ class [[nodiscard]] VecDeque {
       return {};
     }
 
-    const auto old_pos = _pos;
-    _pos = _buf.wrap_idx(_pos + 1);
+    auto res = ptr::read(&_buf[_pos]);
+    _pos = this->wrap_idx(_pos + 1);
     _len -= 1;
-    return _buf.read(old_pos);
+
+    return res;
   }
 
   void push_back(T value) {
@@ -102,9 +101,9 @@ class [[nodiscard]] VecDeque {
       this->reserve(1);
     }
 
-    const auto pos = _buf.wrap_idx(_pos + _len);
+    const auto pos = this->wrap_idx(_pos + _len);
+    ptr::write(&_buf[pos], mem::move(value));
     _len += 1;
-    _buf.write(pos, mem::move(value));
   }
 
   auto pop_back() -> Option<T> {
@@ -112,14 +111,15 @@ class [[nodiscard]] VecDeque {
       return {};
     }
 
-    const auto pos = _buf.wrap_idx(_pos + _len - 1);
+    const auto pos = this->wrap_idx(_pos + _len - 1);
+    auto res = ptr::read(&_buf[pos]);
     _len -= 1;
-    return _buf.read(pos);
+    return res;
   }
 
   void clear() {
     for (auto i = 0UL; i < _len; ++i) {
-      mem::drop(_buf[_buf.wrap_idx(_pos + i)]);
+      mem::drop(_buf[this->wrap_idx(_pos + i)]);
     }
     _len = 0;
   }
@@ -129,25 +129,31 @@ class [[nodiscard]] VecDeque {
       return;
     }
 
-    const auto req_cap = _len + additional;
-    const auto min_cap = _buf._cap < 8U ? 8U : _buf._cap * 2;
-    const auto new_cap = req_cap < min_cap ? min_cap : req_cap;
+    const auto min_cap = num::max(_buf._cap * 2, usize{8U});
+    const auto new_cap = num::min(_len + additional, min_cap);
+    auto new_buf = _buf.with_capacity(new_cap);
 
-    auto new_buf = Buf::with_capacity(new_cap);
     for (auto i = 0UL; i < _len; ++i) {
-      auto tmp = ptr::read(&_buf[_buf.wrap_idx(_pos + i)]);
-      new_buf.write(i, mem::move(tmp));
+      auto tmp = ptr::read(&_buf[this->wrap_idx(_pos + i)]);
+      ptr::write(&new_buf[i], mem::move(tmp));
     }
     _pos = 0;
     _buf = mem::move(new_buf);
   }
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_list();
     for (auto i = 0UL; i < _len; ++i) {
       auto& val = _buf[_buf.wrap_idx(_pos + i)];
       imp.entry(val);
     }
+  }
+
+ private:
+  auto wrap_idx(usize idx) const -> usize {
+    return idx < _buf._cap ? idx : idx - _buf._cap;
   }
 };
 

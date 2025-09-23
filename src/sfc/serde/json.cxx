@@ -2,182 +2,123 @@
 
 #include "sfc/serde.h"
 #include "sfc/test.h"
+#include "sfc/collections.h"
 
-namespace sfc::serde {
+namespace sfc::serde::json::test {
 
-SFC_TEST(parse_null) {
-  auto val = Node::from_json("null");
-  panicking::expect_true(val);
-  panicking::expect_true(val->is<Null>());
+SFC_TEST(serialize_simple) {
+  // bool
+  panicking::expect_eq(json::to_string(true), "true");
+  panicking::expect_eq(json::to_string(false), "false");
+
+  // int
+  panicking::expect_eq(json::to_string(0), "0");
+  panicking::expect_eq(json::to_string(123), "123");
+  panicking::expect_eq(json::to_string(-123), "-123");
+
+  // float
+  panicking::expect_eq(json::to_string(0.0), "0.000000");
+  panicking::expect_eq(json::to_string(1.23), "1.230000");
+  panicking::expect_eq(json::to_string(-1.23), "-1.230000");
+
+  // str
+  panicking::expect_eq(json::to_string(Str{""}), "\"\"");
+  panicking::expect_eq(json::to_string(Str{"abc"}), "\"abc\"");
 }
 
-SFC_TEST(parse_bool) {
-  {
-    auto val = Node::from_json("true");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<bool>());
-    panicking::expect_eq(val->as<bool>(), true);
-  }
-
-  {
-    auto val = Node::from_json("false");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<bool>());
-    panicking::expect_eq(val->as<bool>(), false);
-  }
+SFC_TEST(serialize_seq) {
+  const int seq[] = {1, 2, 3};
+  panicking::expect_eq(json::to_string(seq), "[1,2,3]");
 }
 
-SFC_TEST(parse_int) {
-  {
-    auto val = Node::from_json("123");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<i64>());
-    panicking::expect_eq(val->as<i64>(), 123);
-  }
-
-  {
-    auto val = Node::from_json("-123");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<i64>());
-    panicking::expect_eq(val->as<i64>(), -123);
-  }
+SFC_TEST(serialize_map) {
+  auto map = collections::HashMap<Str, int>{};
+  map.insert(Str{"a"}, 1);
+  map.insert(Str{"b"}, 2);
+  panicking::expect_eq(json::to_string(map), "{\"a\":1,\"b\":2}");
 }
 
-SFC_TEST(parse_flt) {
+SFC_TEST(deserialize_simple) {
+  // null
   {
-    auto val = Node::from_json("1.23");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<f64>());
-    panicking::expect_eq(val->as<f64>(), 1.23);
+    Str s[] = {"null"};
+    panicking::expect(Deserializer{s[0]}.deserialize_null().is_ok());
   }
 
+  // bool
   {
-    auto val = Node::from_json("-1.23");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<f64>());
-    panicking::expect_flt_eq(val->as<f64>(), -1.23);
-  }
-}
-
-SFC_TEST(parse_str) {
-  {
-    auto val = Node::from_json(R"("abc")");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<String>());
-    panicking::expect_eq(val->as<String>(), "abc");
-  }
-}
-
-SFC_TEST(parse_list) {
-  {
-    auto opt = Node::from_json("[]");
-    panicking::expect_true(opt);
-
-    const auto& val = *opt;
-    panicking::expect_true(val.is<List>());
-    panicking::expect_eq(val.as<List>().len(), 0U);
+    Str s[] = {"true", "false"};
+    panicking::expect_eq(Deserializer{s[0]}.deserialize_bool().ok(), Option{true});
+    panicking::expect_eq(Deserializer{s[1]}.deserialize_bool().ok(), Option{false});
   }
 
+  // int
   {
-    auto val = Node::from_json("[ ]");
-    panicking::expect_true(val);
-
-    panicking::expect_true(val->is<List>());
-    panicking::expect_eq(val->as<List>().len(), 0U);
+    Str s[] = {"0", "123", "-123"};
+    panicking::expect_eq(Deserializer{s[0]}.deserialize_int<int>().ok(), Option{0});
+    panicking::expect_eq(Deserializer{s[1]}.deserialize_int<int>().ok(), Option{123});
+    panicking::expect_eq(Deserializer{s[2]}.deserialize_int<int>().ok(), Option{-123});
   }
 
+  // float
   {
-    auto val = Node::from_json("[\n]");
-    panicking::expect_true(val);
-
-    panicking::expect_true(val->is<List>());
-    panicking::expect_eq(val->as<List>().len(), 0U);
+    Str s[] = {"0.0", "1.23", "-1.23"};
+    panicking::expect_eq(Deserializer{s[0]}.deserialize_flt<double>().ok(), Option{0.0});
+    panicking::expect_eq(Deserializer{s[1]}.deserialize_flt<double>().ok(), Option{1.23});
+    panicking::expect_eq(Deserializer{s[2]}.deserialize_flt<double>().ok(), Option{-1.23});
   }
 
+  // str
   {
-    auto val = Node::from_json("[ [] , [] ]");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<List>());
-    panicking::expect_true((*val)[0].is<List>());
-    panicking::expect_true((*val)[1].is<List>());
-  }
-
-  {
-    auto val = Node::from_json("[ [\n] , [\t[ ]\n] ]");
-    panicking::expect_true(val);
-
-    panicking::expect_true(val->is<List>());
-    panicking::expect_true((*val)[0].is<List>());
-    panicking::expect_true((*val)[1].is<List>());
-    panicking::expect_true((*val)[1][0].is<List>());
-  }
-
-  {
-    auto val = Node::from_json("[ 1 ]");
-    panicking::expect_true(val);
-
-    panicking::expect_true(val->is<List>());
-    panicking::expect_eq(val->as<List>().len(), 1U);
-  }
-
-  {
-    auto val = Node::from_json("[ \n1 \n ]");
-    panicking::expect_true(val);
-
-    panicking::expect_true(val->is<List>());
-    panicking::expect_eq(val->as<List>().len(), 1U);
-  }
-
-  {
-    auto val = Node::from_json("\n[ \n1, \n 2 \n ]");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<List>());
-    panicking::expect_eq(val->as<List>().len(), 2U);
+    Str s[] = {"\"\"", "\"abc\""};
+    panicking::expect_eq(Deserializer{s[0]}.deserialize_str().ok(), Option<Str>{""});
+    panicking::expect_eq(Deserializer{s[1]}.deserialize_str().ok(), Option<Str>{"abc"});
   }
 }
 
-SFC_TEST(parse_dict) {
-  {
-    auto val = Node::from_json("{}");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<Dict>());
-    auto& dict = val->as<Dict>();
-    panicking::expect_eq(dict.len(), 0U);
-  }
+SFC_TEST(deserialize_seq) {
+  Str s[] = {R"([0,1,2])"};
+  auto des = Deserializer{s[0]};
+  auto seq = des.deserialize_seq();
 
-  {
-    auto val = Node::from_json("{  }");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<Dict>());
-    auto& dict = val->as<Dict>();
-    panicking::expect_eq(dict.len(), 0U);
-  }
+  for (auto i = 0; i < 4; i++) {
+    const auto element = seq.next_element(int{});
+    panicking::expect(element.is_ok());
 
-  {
-    auto val = Node::from_json("{ \n }");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<Dict>());
-    auto& dict = val->as<Dict>();
-    panicking::expect_eq(dict.len(), 0U);
-  }
-
-  {
-    auto val = Node::from_json(R"({ "a": 1 })");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<Dict>());
-    auto& dict = val->as<Dict>();
-    panicking::expect_eq(dict.len(), 1U);
-    panicking::expect_eq(dict["a"].as<i64>(), 1);
-  }
-
-  {
-    auto val = Node::from_json(R"({"a":1, "b" : 2})");
-    panicking::expect_true(val);
-    panicking::expect_true(val->is<Dict>());
-    auto& dict = val->as<Dict>();
-    panicking::expect_eq(dict["a"].as<i64>(), 1);
-    panicking::expect_eq(dict["b"].as<i64>(), 2);
+    const auto item = element.unwrap();
+    if (i < 3) {
+      panicking::expect(item);
+      panicking::expect_eq(item.unwrap(), i);
+    } else {
+      panicking::expect(!item);
+    }
   }
 }
 
-}  // namespace sfc::serde
+SFC_TEST(deserialize_map) {
+  Str s[] = {R"({"a":1,"b":2})"};
+  auto des = Deserializer{s[0]};
+  auto map = des.deserialize_map();
+
+  Str keys[] = {"a", "b"};
+  int vals[] = {1, 2};
+
+  for (auto i = 0; i < 3; i++) {
+    const auto entry = map.next_key();
+    panicking::expect(entry.is_ok());
+
+    auto key = entry.unwrap();
+    if (i < 2) {
+      panicking::expect(key);
+      panicking::expect_eq(key.unwrap(), keys[i]);
+
+      auto val = map.next_val(int{0});
+      panicking::expect(val.is_ok());
+      panicking::expect_eq(val.unwrap(), vals[i]);
+    } else {
+      panicking::expect(!key);
+    }
+  }
+}
+
+}  // namespace sfc::serde::json::test

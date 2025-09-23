@@ -1,39 +1,33 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/thread.h"
+#include "sfc/sync.h"
+#include "sfc/collections.h"
 
 namespace sfc::task {
 
+using Task = Box<void()>;
+
 class Worker {
+  static constexpr auto CAPACITY = 256U;
   using Task = Box<void()>;
 
-  class Inn;
-  Box<Inn> _inn{};
+  sync::Mutex _mutex{};
+  sync::Condvar _condvar{};
+  sync::Atomic<bool> _running{true};
+  VecDeque<Task> _task_queue;
 
  public:
-  Worker();
+  explicit Worker();
   ~Worker() noexcept;
 
   Worker(Worker&&) noexcept;
   Worker& operator=(Worker&&) noexcept;
 
-  auto is_running() const -> bool;
-
-  auto is_full() const -> bool;
-
-  void stop();
-
+  void run();
   void wait();
-
+  void stop();
   auto post(Task task) -> bool;
-
-  auto submit(auto task) -> bool {
-    if (!this->is_running() || this->is_full()) {
-      return false;
-    }
-    auto box_task = Task::xnew(static_cast<decltype(task)&&>(task));
-    return this->post(mem::move(box_task));
-  }
 };
 
 }  // namespace sfc::task

@@ -1,6 +1,7 @@
 #include "sfc/io/stdio.h"
 
 #include "sfc/io/file.h"
+#include "sfc/io/buf.h"
 #include "sfc/sync/mutex.h"
 #include "sfc/sys/io.h"
 
@@ -11,11 +12,9 @@ namespace sys_imp = sys::io;
 class Stdout::Inn {
   friend class Stdout;
   friend class Stdout::Lock;
-  static constexpr usize BUF_SIZE = 4096U;
 
   sync::ReentrantLock _mtx{};
-  File _imp{File::from_fd(sys::io::stdout())};
-  Vec<u8> _buf{Vec<u8>::with_capacity(2 * BUF_SIZE)};
+  BufWriter<File> _inn = BufWriter{File::from_fd(sys::io::stdout())};
 
  public:
   static inline auto instance() -> Inn& {
@@ -24,39 +23,26 @@ class Stdout::Inn {
   }
 
   auto is_tty() const noexcept -> bool {
-    const auto fd = _imp.as_fd();
+    const auto fd = sys::io::stdout();
     const auto res = sys_imp::is_tty(fd);
     return res;
   }
 
   void flush() noexcept {
-    if (_buf.is_empty()) {
-      return;
-    }
-
-    _imp.write_all(_buf.as_slice());
-    _buf.clear();
+    _inn.flush();
   }
 
-  void write(Slice<const u8> s) {
-    if (s.len() > BUF_SIZE) {
-      this->flush();
-      _imp.write_all(s);
-      return;
+  auto write(Slice<const u8> s) -> Result<usize> {
+    const auto p = s.iter().rposition([](char c) { return c == '\n'; });
+    if (!p) {
+      return _inn.write(s);
     }
 
-    if (const auto pos = s.rfind('\n')) {
-      const auto [a, b] = s.split_at(*pos);
-      _buf.extend_from_slice(a);
-      this->flush();
-      _buf.extend_from_slice(b);
-    } else {
-      _buf.extend_from_slice(s);
-    }
-
-    if (_buf.len() > BUF_SIZE) {
-      this->flush();
-    }
+    const auto [a, b] = s.split_at(p.unwrap() + 1);
+    _TRY(_inn.write(a));
+    _TRY(_inn.flush());
+    _TRY(_inn.write(b));
+    return s.len();
   }
 };
 
@@ -102,7 +88,7 @@ void Stdout::Lock::flush() {
 }
 
 void Stdout::Lock::write_str(Str s) {
-  return _inn.write(s.as_bytes());
+  _inn.write(s.as_bytes());
 }
 
 Stderr::Lock::Lock() : _inn{Inn::instance()}, _lock{_inn._mtx.lock()} {}

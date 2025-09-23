@@ -18,7 +18,7 @@ class JoinHandle {
 
  public:
   explicit JoinHandle(Thread thrd) noexcept;
-  ~JoinHandle()noexcept;
+  ~JoinHandle() noexcept;
 
   JoinHandle(JoinHandle&&) = delete;
   JoinHandle& operator=(JoinHandle&&) = delete;
