@@ -69,9 +69,17 @@ struct Tuple {
     _inn.map_mut(f);
   }
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     auto x = f.debug_tuple();
     _inn.map([&](const auto& e) { x.entry(e); });
+  }
+
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_tuple();
+    this->map([&](const auto& e) { imp.serialize_element(e); });
   }
 };
 

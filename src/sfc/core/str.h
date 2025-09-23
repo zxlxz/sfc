@@ -134,6 +134,8 @@ struct Str {
   template <class T>
   auto parse() const noexcept -> option::Option<T>;
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     const auto& s = f._style;
     s._type == '?' ? f.write_char('"') : (void)0;
@@ -141,8 +143,18 @@ struct Str {
     s._type == '?' ? f.write_char('"') : (void)0;
   }
 
-  auto serialize(auto& s) const {
-    return s.ser_str(*this);
+  // trait:: io::Read
+  auto read(slice::Slice<u8> buf) -> usize {
+    const auto amt = _len < buf._len ? _len : buf._len;
+    __builtin_memcpy(buf._ptr, _ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return amt;
+  }
+
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    ser.serialize_str(*this);
   }
 };
 
@@ -473,8 +485,3 @@ static auto type_name() -> Str {
 }
 
 }  // namespace sfc::str
-
-namespace sfc::option {
-template <usize N>
-Option(const char (&s)[N]) -> Option<str::Str>;
-}
