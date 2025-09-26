@@ -58,53 +58,53 @@ class Serializer {
 
 template <class W>
 class Serializer<W>::SerSeq {
-  Serializer& _ser;
+  Serializer& _inn;
   u32 _cnt = 0;
 
  public:
-  explicit SerSeq(Serializer& ser) noexcept : _ser{ser} {
-    _ser._write.write_char('[');
+  explicit SerSeq(Serializer& ser) noexcept : _inn{ser} {
+    _inn._write.write_char('[');
   }
 
   ~SerSeq() noexcept {
-    _ser._write.write_char(']');
+    _inn._write.write_char(']');
   }
 
   SerSeq(const SerSeq&) noexcept = delete;
 
   void serialize_element(const auto& item) {
     if (_cnt++ != 0) {
-      _ser._write.write_char(',');
+      _inn._write.write_char(',');
     }
-    Serialize::serialize(item, _ser);
+    Serialize::serialize(item, _inn);
   }
 };
 
 template <class W>
 class Serializer<W>::SerMap {
-  Serializer& _ser;
+  Serializer& _inn;
   u32 _cnt = 0;
 
  public:
-  explicit SerMap(Serializer& ser) noexcept : _ser{ser} {
-    _ser._write.write_char('{');
+  explicit SerMap(Serializer& ser) noexcept : _inn{ser} {
+    _inn._write.write_char('{');
   }
 
   ~SerMap() noexcept {
-    _ser._write.write_char('}');
+    _inn._write.write_char('}');
   }
 
   SerMap(const SerMap&) noexcept = delete;
 
   void serialize_entry(str::Str key, const auto& value) {
     if (_cnt++ != 0) {
-      _ser._write.write_char(',');
+      _inn._write.write_char(',');
     }
-    _ser._write.write_char('"');
-    _ser._write.write_str(key);
-    _ser._write.write_char('"');
-    _ser._write.write_char(':');
-    Serialize::serialize(value, _ser);
+    _inn._write.write_char('"');
+    _inn._write.write_str(key);
+    _inn._write.write_char('"');
+    _inn._write.write_char(':');
+    Serialize::serialize(value, _inn);
   }
 };
 
@@ -232,103 +232,108 @@ class Deserializer {
 
 template <class R>
 class Deserializer<R>::DesSeq {
-  Deserializer& _des;
+  Deserializer& _inn;
   usize _count = 0;
   bool _ended = false;
 
  public:
-  explicit DesSeq(Deserializer& des) noexcept : _des{des} {}
+  explicit DesSeq(Deserializer& des) noexcept : _inn{des} {}
   ~DesSeq() noexcept = default;
   DesSeq(const DesSeq&) noexcept = delete;
 
-  template <class T>
-  auto next_element(T val = {}) -> io::Result<Option<T>> {
+  struct Item {
+    Deserializer& _inn;
+    auto visit(auto& val) -> io::Result<> {
+      return Deserialize::deserialize(val, _inn);
+    }
+  };
+
+  auto next() -> io::Result<Option<Item>> {
     if (_ended) {
       return io::Error{io::ErrorKind::InvalidData};
     }
 
     if (_count == 0) {
-      const auto c = _TRY(_des.peak());
+      const auto c = _TRY(_inn.peak());
       if (c != '[') {
         return io::Error{io::ErrorKind::InvalidData};
       }
-      _des._read.consume(1);
+      _inn._read.consume(1);
     }
 
-    const auto c = _TRY(_des.peak());
+    const auto c = _TRY(_inn.peak());
     if (c == ']') {
       _ended = true;
-      return Option<T>{};
+      return Option<Item>{};
     }
 
     if (_count++ != 0) {
       if (c != ',') {
         return io::Error{io::ErrorKind::InvalidData};
       }
-      _des._read.consume(1);
+      _inn._read.consume(1);
     }
-    _TRY(Deserialize::deserialize(val, _des));
-    return Option<T>{static_cast<T&&>(val)};
+
+    return Option<Item>{{_inn}};
   }
 };
 
 template <class R>
 class Deserializer<R>::DesMap {
-  Deserializer& _des;
+  Deserializer& _inn;
   usize _count = 0;
   bool _ended = false;
 
  public:
-  explicit DesMap(Deserializer& des) noexcept : _des{des} {}
+  explicit DesMap(Deserializer& des) noexcept : _inn{des} {}
   ~DesMap() noexcept = default;
   DesMap(const DesMap&) noexcept = delete;
 
-  template <class T>
-  struct Entry {
-    Str key;
-    T value;
+  struct Item {
+    Deserializer& _inn;
+
+    auto visit_key(auto& key) -> io::Result<> {
+      const auto k = _TRY(_inn.deserialize_str());
+      key = k;
+      return {};
+    }
+
+    auto visit_val(auto& val) -> io::Result<> {
+      const auto c = _TRY(_inn.peak());
+      if (c != ':') {
+        return io::Error{io::ErrorKind::InvalidData};
+      }
+      _inn._read.consume(1);
+      return Deserialize::deserialize(val, _inn);
+    }
   };
 
-  auto next_key() -> io::Result<Option<Str>> {
+  auto next() -> io::Result<Option<Item>> {
     if (_ended) {
       return io::Error{io::ErrorKind::InvalidData};
     }
 
     if (_count == 0) {
-      const auto c = _TRY(_des.peak());
+      const auto c = _TRY(_inn.peak());
       if (c != '{') {
         return io::Error{io::ErrorKind::InvalidData};
       }
-      _des._read.consume(1);
+      _inn._read.consume(1);
     }
 
-    const auto c = _TRY(_des.peak());
+    const auto c = _TRY(_inn.peak());
     if (c == '}') {
       _ended = true;
-      return Option<Str>{};
+      return Option<Item>{};
     }
 
     if (_count++ != 0) {
       if (c != ',') {
         return io::Error{io::ErrorKind::InvalidData};
       }
-      _des._read.consume(1);
+      _inn._read.consume(1);
     }
-
-    const auto key = _TRY(_des.deserialize_str());
-    return Option{key};
-  }
-
-  template <class T>
-  auto next_val(T val = {}) -> io::Result<T> {
-    const auto c = _TRY(_des.peak());
-    if (c != ':') {
-      return io::Error{io::ErrorKind::InvalidData};
-    }
-    _des._read.consume(1);
-
-    _TRY(Deserialize::deserialize(val, _des));
-    return static_cast<T&&>(val);
+    return Option<Item>{Item{_inn}};
   }
 };
 

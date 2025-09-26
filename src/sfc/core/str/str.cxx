@@ -204,4 +204,16 @@ SFC_TEST(trim_matches) {
   }
 }
 
+SFC_TEST(format) {
+  panicking::expect_eq(string::format("{}", ""), "");
+  panicking::expect_eq(string::format("{#}", ""), "");
+  panicking::expect_eq(string::format("{?}", ""), "\"\"");
+  panicking::expect_eq(string::format("{#?}", ""), "\"\"");
+
+  panicking::expect_eq(string::format("{}", "abc"), "abc");
+  panicking::expect_eq(string::format("{#}", "abc"), "abc");
+  panicking::expect_eq(string::format("{?}", "abc"), "\"abc\"");
+  panicking::expect_eq(string::format("{#?}", "abc"), "\"abc\"");
+}
+
 }  // namespace sfc::str

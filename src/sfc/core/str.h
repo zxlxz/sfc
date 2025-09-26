@@ -137,10 +137,13 @@ struct Str {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    const auto& s = f._style;
-    s._type == '?' ? f.write_char('"') : (void)0;
-    f.pad(*this);
-    s._type == '?' ? f.write_char('"') : (void)0;
+    if (f._style._type == '?' || f._style._type == 's') {
+      f.write_char('"');
+      f.pad(*this);
+      f.write_char('"');
+    } else {
+      f.pad(*this);
+    }
   }
 
   // trait:: io::Read

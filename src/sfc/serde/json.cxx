@@ -41,7 +41,7 @@ SFC_TEST(serialize_map) {
 SFC_TEST(deserialize_simple) {
   // null
   {
-    Str s[] = {"null"};
+    Str s[] = {{"null"}};
     panicking::expect(Deserializer{s[0]}.deserialize_null().is_ok());
   }
 
@@ -81,18 +81,21 @@ SFC_TEST(deserialize_seq) {
   auto des = Deserializer{s[0]};
   auto seq = des.deserialize_seq();
 
-  for (auto i = 0; i < 4; i++) {
-    const auto element = seq.next_element(int{});
-    panicking::expect(element.is_ok());
+  for (auto i = 0; i < 3; i++) {
+    auto item_res = seq.next();
+    panicking::expect(item_res.is_ok());
 
-    const auto item = element.unwrap();
-    if (i < 3) {
-      panicking::expect(item);
-      panicking::expect_eq(item.unwrap(), i);
-    } else {
-      panicking::expect(!item);
-    }
+    auto item_opt = mem::move(item_res).unwrap();
+    panicking::expect_eq(item_opt.is_some(), true);
+
+    auto val = int{};
+    panicking::expect(item_opt->visit(val).is_ok());
+    panicking::expect_eq(val, i);
   }
+
+  const auto item_end = seq.next();
+  panicking::expect(item_end.is_ok());
+  panicking::expect(item_end.unwrap().is_none());
 }
 
 SFC_TEST(deserialize_map) {
@@ -103,22 +106,24 @@ SFC_TEST(deserialize_map) {
   Str keys[] = {"a", "b"};
   int vals[] = {1, 2};
 
-  for (auto i = 0; i < 3; i++) {
-    const auto entry = map.next_key();
-    panicking::expect(entry.is_ok());
+  for (auto i = 0; i < 2; i++) {
+    auto item_res = map.next();
+    panicking::expect(item_res.is_ok());
 
-    auto key = entry.unwrap();
-    if (i < 2) {
-      panicking::expect(key);
-      panicking::expect_eq(key.unwrap(), keys[i]);
+    auto item_opt = mem::move(item_res).unwrap();
 
-      auto val = map.next_val(int{0});
-      panicking::expect(val.is_ok());
-      panicking::expect_eq(val.unwrap(), vals[i]);
-    } else {
-      panicking::expect(!key);
-    }
+    auto key = Str{};
+    panicking::expect(item_opt->visit_key(key).is_ok());
+    panicking::expect_eq(key, keys[i]);
+
+    auto val = int{};
+    panicking::expect(item_opt->visit_val(val).is_ok());
+    panicking::expect_eq(val, vals[i]);
   }
+
+  const auto status = map.next();
+  panicking::expect(status.is_ok());
+  panicking::expect(status.unwrap().is_none());
 }
 
 }  // namespace sfc::serde::json::test

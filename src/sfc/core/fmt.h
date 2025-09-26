@@ -80,8 +80,10 @@ struct Display {
   static void fmt(const auto& self, auto& f) {
     if constexpr (requires { self.fmt(f); }) {
       return self.fmt(f);
-    } else {
+    } else if constexpr (requires { Display::fmt_imp(self, f); }) {
       Display::fmt_imp(self, f);
+    } else {
+      static_assert(false, "Type does not implement fmt::Display");
     }
   }
 
@@ -134,7 +136,7 @@ struct Display {
   template <class T, usize N>
   static void fmt_imp(const T (&val)[N], auto& f) {
     if constexpr (trait::same_<const T, const char>) {
-      f.pad(val);
+      str::Str{val}.fmt(f);
     } else {
       auto imp = f.debug_list();
       for (auto& x : val) {
@@ -143,7 +145,6 @@ struct Display {
     }
   }
 };
-
 
 template <class... T>
 struct Args {
@@ -307,7 +308,7 @@ struct Fmter {
   }
 
  private:
-  static constexpr auto INDENT_SIZE = 2U;
+  static constexpr auto INDENT_SIZE = 4U;
   static constexpr auto MAX_DEPTH = 20U;
 
   void debug_begin(str::Str s) noexcept {
@@ -326,15 +327,15 @@ struct Fmter {
     this->write_str(s);
   }
 
-  void debug_val(u32 idx, const auto& val, const auto&... keys) {
+  void debug_next(u32 idx, const auto& val, const auto&... keys) {
     if (_style._prefix != '#') {
-      const auto s = ", ";
-      const auto i = idx == 0 ? 0U : 1U;
-      this->write_str({s + i, 2 - i});
+      if (idx != 0) {
+        this->write_str(", ");
+      }
     } else {
       const auto s = ",\n                                                               ";
-      const auto n = 1U + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
-      const auto i = idx == 0 ? 0U : 1U;
+      const auto n = 2U + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
+      const auto i = idx == 0 ? 1U : 0U;
       this->write_str({s + i, n - i});
     }
 
@@ -370,7 +371,7 @@ class Fmter<W>::DebugTuple {
   DebugTuple(const DebugTuple&) = delete;
 
   auto entry(const auto& value) -> DebugTuple& {
-    _fmt.debug_val(_cnt++, value);
+    _fmt.debug_next(_cnt++, value);
     return *this;
   }
 
@@ -396,7 +397,7 @@ class Fmter<W>::DebugList {
   DebugList(const DebugList&) noexcept = delete;
 
   auto entry(const auto& value) -> DebugList& {
-    _fmt.debug_val(_cnt++, value);
+    _fmt.debug_next(_cnt++, value);
     return *this;
   }
 
@@ -422,7 +423,7 @@ class Fmter<W>::DebugSet {
   DebugSet(const DebugSet&) noexcept = delete;
 
   auto entry(const auto& value) -> DebugSet& {
-    _fmt.debug_val(_cnt++, value);
+    _fmt.debug_next(_cnt++, value);
     return *this;
   }
 
@@ -448,7 +449,7 @@ class Fmter<W>::DebugMap {
   DebugMap(const DebugMap&) noexcept = delete;
 
   auto entry(str::Str name, const auto& value) -> DebugMap& {
-    _fmt.debug_val(_cnt++, value, "\"", name, "\": ");
+    _fmt.debug_next(_cnt++, value, "\"", name, "\": ");
     return *this;
   }
 
@@ -477,7 +478,7 @@ class Fmter<W>::DebugStruct {
   DebugStruct(DebugStruct&&) noexcept = delete;
 
   auto field(str::Str name, const auto& value) -> DebugStruct& {
-    _fmt.debug_val(_cnt++, value, name, ": ");
+    _fmt.debug_next(_cnt++, value, name, ": ");
     return *this;
   }
 
@@ -488,7 +489,6 @@ class Fmter<W>::DebugStruct {
     });
   }
 };
-
 
 void write(auto& out, str::Str fmts, const auto&... args) {
   Fmter{out}.write_fmt(fmts, args...);
