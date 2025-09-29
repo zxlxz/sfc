@@ -209,7 +209,7 @@ class Deserializer {
       return io::Error{io::ErrorKind::InvalidData};
     }
     _read.consume(n);
-    return Str::from_u8(b.slice(0, n));
+    return Str::from_u8(b[{0, n}]);
   }
 
   auto pop_str() -> io::Result<Str> {
@@ -226,7 +226,7 @@ class Deserializer {
     }
     const auto n = pos.unwrap();
     _read.consume(n + 1);
-    return Str::from_u8(buf.slice(0, n));
+    return Str::from_u8(buf[{0, n}]);
   }
 };
 

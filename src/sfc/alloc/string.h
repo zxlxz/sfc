@@ -25,7 +25,7 @@ class [[nodiscard]] String {
 
   template <class F>
   static auto from(F&& f) -> String {
-    if constexpr (requires { String{static_cast<F &&>(f)}; }) {
+    if constexpr (requires { String{static_cast<F&&>(f)}; }) {
       return String{static_cast<F&&>(f)};
     } else if constexpr (requires { f.to_string(); }) {
       return f.to_string();
@@ -85,8 +85,8 @@ class [[nodiscard]] String {
     return _vec[idx];
   }
 
-  auto slice(usize start, usize end = static_cast<usize>(-1)) const -> Str {
-    return Str::from_u8(_vec.slice(start, end));
+  auto operator[](ops::Range ids) const -> Str {
+    return Str::from_u8(_vec[ids]);
   }
 
   auto iter() const {
@@ -136,8 +136,8 @@ class [[nodiscard]] String {
     return _vec.remove(idx);
   }
 
-  void drain(usize start, usize end) {
-    _vec.drain(start, end);
+  void drain(ops::Range ids) {
+    _vec.drain(ids);
   }
 
   void insert_str(usize idx, Str str) {

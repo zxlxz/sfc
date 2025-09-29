@@ -63,14 +63,6 @@ class [[nodiscard]] Buf {
     return _ptr[idx];
   }
 
-  auto slice(usize start, usize end) const -> Slice<const T> {
-    return {_ptr + start, end - start};
-  }
-
-  auto slice_mut(usize start, usize end) -> Slice<T> {
-    return {_ptr + start, end - start};
-  }
-
   void reserve(usize used, usize additional) {
     const auto req_cap = used + additional;
     if (req_cap <= _cap) {
@@ -216,16 +208,16 @@ class [[nodiscard]] Vec {
     return _buf._ptr[idx];
   }
 
-  auto slice(usize start, usize end = static_cast<usize>(-1)) const -> slice::Slice<const T> {
-    return Slice<const T>{_buf._ptr, _len}.slice(start, end);
+  auto operator[](ops::Range ids) const -> slice::Slice<const T> {
+    return slice::Slice<const T>{_buf._ptr, _len}[ids];
   }
 
-  auto slice_mut(usize start, usize end = static_cast<usize>(-1)) -> slice::Slice<T> {
-    return Slice{_buf._ptr, _len}.slice(start, end);
+  auto operator[](ops::Range ids) -> slice::Slice<T> {
+    return slice::Slice<T>{_buf._ptr, _len}[ids];
   }
 
   auto spare_capacity_mut() -> slice::Slice<T> {
-    return Slice{_buf._ptr + _len, _buf._cap - _len};
+    return slice::Slice{_buf._ptr + _len, _buf._cap - _len};
   }
 
   auto first() const -> option::Option<const T&> {
@@ -354,8 +346,8 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  void drain(usize start, usize end) {
-    auto tmp = this->slice_mut(start, end);
+  void drain(ops::Range ids) {
+    auto tmp = (*this)[ids];
     if (tmp._len == 0) {
       return;
     }

@@ -29,7 +29,7 @@ class BufReader : Read {
       _pos = 0;
       _buf.set_len(cnt);
     }
-    return _buf.as_slice().slice(_pos);
+    return const_cast<const Vec<u8>&>(_buf)[{_pos, _buf.len()}];
   }
 
   void consume(usize amt) {
@@ -38,13 +38,13 @@ class BufReader : Read {
 
   auto peak(usize n) -> Result<Slice<const u8>> {
     if (_buf.len() - _pos < n) {
-      _buf.drain(0, _pos);
+      _buf.drain({0, _pos});
       _pos = 0;
 
       const auto cnt = _TRY(Result{_inn.read(_buf.spare_capacity_mut())});
       _buf.set_len(_buf.len() + cnt);
     }
-    return _buf.slice(_pos, _pos + n);
+    return const_cast<const Vec<u8>&>(_buf)[{_pos, _pos + n}];
   }
 
   auto read(Slice<u8> buf) -> Result<usize> {
@@ -141,7 +141,7 @@ class BufWriter : Write {
     auto buf = _buf.as_slice();
     while (!buf.is_empty()) {
       const auto n = _TRY(_inn.write(buf));
-      buf = buf.slice(n);
+      buf = buf[{n, $}];
     }
     _buf.clear();
     return {};

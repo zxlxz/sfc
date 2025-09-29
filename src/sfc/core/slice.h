@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/result.h"
@@ -73,14 +74,16 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto slice_mut(usize start, usize end = static_cast<usize>(-1)) noexcept -> Slice<const T> {
-    end = end < _len ? end : _len;
-    return {_ptr + start, start < end ? end - start : 0U};
+  auto operator[](ops::Range ids) const -> Slice<const T> {
+    const auto start = ids.start < _len ? ids.start : _len;
+    const auto end = ids.end < _len ? ids.end : _len;
+    return Slice<const T>{_ptr + start, start < end ? end - start : 0U};
   }
 
-  auto slice(usize start, usize end = static_cast<usize>(-1)) const noexcept -> Slice<T> {
-    end = end < _len ? end : _len;
-    return {_ptr + start, start < end ? end - start : 0U};
+  auto operator[](ops::Range ids) -> Slice<T> {
+    const auto start = ids.start < _len ? ids.start : _len;
+    const auto end = ids.end < _len ? ids.end : _len;
+    return Slice<T>{_ptr + start, start < end ? end - start : 0U};
   }
 
   auto split_at(usize mid) const noexcept -> tuple::Tuple<Slice<const T>, Slice<const T>> {

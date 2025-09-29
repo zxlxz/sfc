@@ -31,7 +31,7 @@ struct Cmd::Item {
     }
 
     if (_long.ends_with('*')) {
-      return key == _long.slice(0, key.len() - 1);
+      return key == _long[{0, key.len() - 1}];
     }
 
     return key == _long;

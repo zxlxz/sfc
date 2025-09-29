@@ -24,14 +24,14 @@ SFC_TEST(index) {
 SFC_TEST(index_range) {
   const auto s = String::from("abc");
 
-  panicking::expect_eq((s.slice(0)), "abc");
-  panicking::expect_eq((s.slice(0, 2)), "ab");
-  panicking::expect_eq((s.slice(0, 8)), "abc");
+  panicking::expect_eq((s[{0, $}]), "abc");
+  panicking::expect_eq((s[{0, 2}]), "ab");
+  panicking::expect_eq((s[{0, 8}]), "abc");
 
-  panicking::expect_eq((s.slice(1)), "bc");
-  panicking::expect_eq((s.slice(1, 2)), "b");
+  panicking::expect_eq((s[{1, $}]), "bc");
+  panicking::expect_eq((s[{1, 2}]), "b");
 
-  panicking::expect_eq((s.slice(8, 9)), "");
+  panicking::expect_eq((s[{8, 9}]), "");
 }
 
 SFC_TEST(cmp) {

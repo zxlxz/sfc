@@ -52,7 +52,7 @@ struct Read {
       if (cnt == 0) {
         return Error{ErrorKind::UnexpectedEof, 0};
       }
-      buf = buf.slice(cnt);
+      buf = buf[{cnt, $}];
     }
 
     return {};
@@ -87,7 +87,7 @@ struct Write {
       if (cnt == 0) {
         return Error{ErrorKind::WriteZero, 0};
       }
-      buf = buf.slice(cnt);
+      buf = buf[{cnt, $}];
     }
     return {};
   }
