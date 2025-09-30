@@ -32,37 +32,37 @@ template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class>
-struct __fn;
+struct Fn;
 
 template <class R, class... T>
-struct __fn<R(T...)> {
+struct Fn<R(T...)> {
   using Ret = R;
 };
 
 template <class X>
-struct __invoke;
+struct Invoke;
 
 template <class F, class... T>
-struct __invoke<F(T...)> {
+struct Invoke<F(T...)> {
   static auto operator()(F f, T... t) -> decltype(auto) {
     return f((T&&)t...);
   }
 
-  using type = typename __fn<decltype(__invoke::operator())>::Ret;
+  using type = typename Fn<decltype(Invoke::operator())>::Ret;
 };
 
 template <class X>
-using invoke_t = typename __invoke<X>::type;
+using invoke_t = typename Invoke<X>::type;
 
 template <class I, class X>
-struct Impl : X, I {
+struct Impl : I, X {
   Impl() = delete;
   ~Impl() = delete;
 };
 
 template <class I, class X>
 auto as(const X& x) -> decltype(auto) {
-  if constexpr (__is_base_of(I, X)) {
+  if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
   } else {
     return static_cast<const Impl<I, X>&>(x);
@@ -71,7 +71,7 @@ auto as(const X& x) -> decltype(auto) {
 
 template <class I, class X>
 auto as_mut(X& x) -> decltype(auto) {
-  if constexpr (__is_base_of(I, X)) {
+  if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);
   } else {
     return static_cast<Impl<I, X>&>(x);
