@@ -29,6 +29,7 @@ BinPackParameters: false
 # break
 BreakBeforeBinaryOperators: None
 BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: CurrentLine
 
 # Penalties
 PenaltyBreakOpenParenthesis: 21
