@@ -48,11 +48,11 @@ struct Invoke<F(T...)> {
     return f((T&&)t...);
   }
 
-  using type = typename Fn<decltype(Invoke::operator())>::Ret;
+  using Type = typename Fn<decltype(Invoke::operator())>::Ret;
 };
 
 template <class X>
-using invoke_t = typename Invoke<X>::type;
+using invoke_t = typename Invoke<X>::Type;
 
 template <class I, class X>
 struct Impl : I, X {
