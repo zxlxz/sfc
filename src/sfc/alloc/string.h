@@ -116,6 +116,10 @@ class [[nodiscard]] String {
     return _vec.extend_from_slice(s.as_bytes());
   }
 
+  void write_str(Str s) {
+    return _vec.extend_from_slice(s.as_bytes());
+  }
+
   void reserve(usize amt) {
     _vec.reserve(amt);
   }

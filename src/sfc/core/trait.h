@@ -61,7 +61,7 @@ struct Impl : I, X {
 };
 
 template <class I, class X>
-auto as(const X& x) -> decltype(auto) {
+auto as(const X& x) -> auto& {
   if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
   } else {
@@ -70,7 +70,7 @@ auto as(const X& x) -> decltype(auto) {
 }
 
 template <class I, class X>
-auto as_mut(X& x) -> decltype(auto) {
+auto as_mut(X& x) -> auto& {
   if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);
   } else {

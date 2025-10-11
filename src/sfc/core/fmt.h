@@ -195,11 +195,7 @@ struct Fmter {
     if (s.is_empty()) {
       return;
     }
-    if constexpr (requires { _out.push_str(s); }) {
-      _out.push_str(s);
-    } else {
-      _out.write_str(s);
-    }
+    _out.write_str(s);
   }
 
   void fill(usize n) {
