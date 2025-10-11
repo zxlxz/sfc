@@ -23,15 +23,27 @@ struct Frame {
   void* _addr = nullptr;
 
  public:
-  auto done() const noexcept -> bool;
-  void resume() const noexcept;
-  void destroy() const noexcept;
+  auto done() const noexcept -> bool {
+    return __builtin_coro_done(_addr);
+  }
+
+  void resume() const noexcept {
+    return __builtin_coro_resume(_addr);
+  }
+
+  void destroy() const noexcept {
+    return __builtin_coro_destroy(_addr);
+  }
 
   template <usize ALIGN>
-  auto promise() const noexcept -> void*;
+  auto promise() const noexcept -> void* {
+    return __builtin_coro_promise(_addr, ALIGN, false);
+  }
 
   template <usize ALIGN>
-  static auto from_promise(void* promise) noexcept -> Frame;
+  static auto from_promise(void* promise) noexcept -> Frame {
+    return Frame{__builtin_coro_promise(promise, ALIGN, true)};
+  }
 };
 
 template <class T>
