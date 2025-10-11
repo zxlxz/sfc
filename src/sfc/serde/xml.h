@@ -2,35 +2,97 @@
 
 #include "sfc/alloc.h"
 
-namespace sfc::serde {
+namespace sfc::serde::xml {
 
-struct XmlAttr {
-  String name;
-  String value;
+template <class W>
+class Serializer {
+  W& _write;
 
  public:
-  static auto from(const auto& name, const auto& value) -> XmlAttr {
-    return XmlAttr{string::to_string(name), string::to_string(value)};
+  explicit Serializer(W& write) noexcept : _write{write} {}
+  ~Serializer() noexcept = default;
+  Serializer(const Serializer&) noexcept = delete;
+
+ public:
+  void serialize_null() {}
+
+  void serialize_bool(const bool& val) {
+    _write.write_str(val ? Str{"true"} : Str{"false"});
+  }
+
+  void serialize_char(const char& val) {
+    _write.write_str({&val, 1});
+  }
+
+  void serialize_int(const auto& val) {
+    auto f = fmt::Fmter{_write};
+    fmt::Display::fmt(val, f);
+  }
+
+  void serialize_flt(const auto& val) {
+    auto f = fmt::Fmter{_write};
+    fmt::Display::fmt(val, f);
+  }
+
+  void serialize_str(Str val) {
+    _write.write_str(val);
+  }
+
+  class Node;
+  auto serialize_node(Str name) -> Node {
+    return Node{*this, name};
+  }
+
+ private:
+  void indent(u32 depth) {
+    for (auto i = 0U; i < depth; ++i) {
+      _write.write_str("    ");
+    }
   }
 };
 
-class XmlNode {
-  String _type{};
-  String _value{};
-  Vec<XmlAttr> _attrs{};
-  Vec<XmlNode> _children{};
+template <class W>
+class Serializer<W>::Node {
+  Serializer& _inn;
+  Str _name;
+  u32 _depth = 0;
+  u32 _cnt = 0;
 
  public:
-  explicit XmlNode(Str type, Str value = {});
-  ~XmlNode() noexcept;
+  explicit Node(Serializer& ser, Str name, u32 depth = 0) noexcept : _inn{ser}, _name{name}, _depth{depth} {
+    _inn.indent(_depth);
+    _inn._write.write_str("<");
+    _inn._write.write_str(name);
+  }
 
-  XmlNode(XmlNode&&) noexcept;
-  XmlNode& operator=(XmlNode&&) noexcept;
+  ~Node() noexcept {
+    if (_cnt == 0) {
+      _inn._write.write_str("/>\n");
+      return;
+    }
+    _inn.indent(_depth);
+    _inn._write.write_str("</");
+    _inn._write.write_str(_name);
+    _inn._write.write_str(">\n");
+  }
 
-  auto add_attr(XmlAttr attr) -> XmlAttr&;
-  auto add_node(XmlNode child) -> XmlNode&;
+  Node(const Node&) noexcept = delete;
 
-  auto to_string(u32 depth = 0) const -> String;
+  void attr(Str name, const auto& value) {
+    auto f = fmt::Fmter{_inn._write};
+    f.write_str(" ");
+    f.write_str(name);
+    f.write_str("=\"");
+    fmt::Display::fmt(value, f);
+    f.write_str("\"");
+  }
+
+  auto serialize_node(Str name) -> Node {
+    if (_cnt++ == 0) {
+      _inn._write.write_str(">\n");
+    }
+    return Node{_inn, name, _depth + 1};
+  }
 };
 
-}  // namespace sfc::serde
+}  // namespace sfc::serde::xml

@@ -18,32 +18,30 @@ class Serializer {
     _write.write_str("null");
   }
 
-  void serialize_bool(bool val) {
+  void serialize_bool(const bool& val) {
     _write.write_str(val ? Str{"true"} : Str{"false"});
   }
 
-  void serialize_char(char val) {
+  void serialize_char(const char& val) {
     const char s[] = {'"', val, '"'};
     _write.write_str({s, 3});
   }
 
-  void serialize_int(auto val) {
+  void serialize_int(const auto& val) {
     auto f = fmt::Fmter{_write};
     fmt::Display::fmt(val, f);
   }
 
-  void serialize_flt(auto val) {
+  void serialize_flt(const auto& val) {
     auto f = fmt::Fmter{_write};
     fmt::Display::fmt(val, f);
   }
 
   void serialize_str(Str val) {
-    _write.write_char('"');
+    _write.write_str("\"");
     _write.write_str(val);
-    _write.write_char('"');
+    _write.write_str("\"");
   }
-
-  auto serialize_bin(Slice<const u8> val) = delete;
 
   struct SerSeq;
   auto serialize_seq() -> SerSeq {
@@ -63,18 +61,18 @@ class Serializer<W>::SerSeq {
 
  public:
   explicit SerSeq(Serializer& ser) noexcept : _inn{ser} {
-    _inn._write.write_char('[');
+    _inn._write.write_str("[");
   }
 
   ~SerSeq() noexcept {
-    _inn._write.write_char(']');
+    _inn._write.write_str("]");
   }
 
   SerSeq(const SerSeq&) noexcept = delete;
 
   void serialize_element(const auto& item) {
     if (_cnt++ != 0) {
-      _inn._write.write_char(',');
+      _inn._write.write_str(",");
     }
     Serialize::serialize(item, _inn);
   }
@@ -87,23 +85,22 @@ class Serializer<W>::SerMap {
 
  public:
   explicit SerMap(Serializer& ser) noexcept : _inn{ser} {
-    _inn._write.write_char('{');
+    _inn._write.write_str("{");
   }
 
   ~SerMap() noexcept {
-    _inn._write.write_char('}');
+    _inn._write.write_str("}");
   }
 
   SerMap(const SerMap&) noexcept = delete;
 
   void serialize_entry(str::Str key, const auto& value) {
     if (_cnt++ != 0) {
-      _inn._write.write_char(',');
+      _inn._write.write_str(",");
     }
-    _inn._write.write_char('"');
+    _inn._write.write_str("\"");
     _inn._write.write_str(key);
-    _inn._write.write_char('"');
-    _inn._write.write_char(':');
+    _inn._write.write_str("\":");
     Serialize::serialize(value, _inn);
   }
 };
@@ -337,16 +334,16 @@ class Deserializer<R>::DesMap {
   }
 };
 
-auto to_writer(auto& writer, const auto& val) {
+void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};
-  return Serialize::serialize(val, ser);
+  Serialize::serialize(val, ser);
 }
 
 auto to_string(const auto& val) -> String {
-  auto s = String{};
-  auto& w = trait::as_mut<io::Write>(s);
-  json::to_writer(w, val);
-  return s;
+  auto buf = String{};
+  auto ser = Serializer{buf};
+  Serialize::serialize(val, ser);
+  return buf;
 }
 
 }  // namespace sfc::serde::json

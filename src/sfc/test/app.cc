@@ -32,31 +32,31 @@ static auto parse_filter(Str filter) -> Vec<Str> {
 }
 
 static auto format_xml(Slice<const Suite> suites) -> String {
-  using serde::XmlNode, serde::XmlAttr;
+  auto buf = String{};
+  auto ser = serde::xml::Serializer{buf};
 
   auto all_cnt = usize{0};
   for (const auto& suite : suites) {
     all_cnt += suite.tests().len();
   }
 
-  auto testsuites = XmlNode{"testsuites"};
-  testsuites.add_attr(XmlAttr::from("tests", all_cnt));
-  testsuites.add_attr(XmlAttr::from("name", "AllTests"));
+  auto testsuites = ser.serialize_node("testsuites");
+  testsuites.attr("tests", all_cnt);
+  testsuites.attr("name", "AllTests");
 
   for (auto& suite : suites) {
-    auto& testsuite = testsuites.add_node(XmlNode{"testsuite"});
-    testsuite.add_attr(XmlAttr::from("name", suite.name()));
-    testsuite.add_attr(XmlAttr::from("tests", suite.tests().len()));
+    auto testsuite = testsuites.serialize_node("testsuite");
+    testsuite.attr("name", suite.name());
+    testsuite.attr("tests", suite.tests().len());
     for (auto& test : suite.tests()) {
-      auto& testcase = testsuite.add_node(XmlNode{"testcase"});
-      testcase.add_attr(XmlAttr::from("name", test.name()));
-      testcase.add_attr(XmlAttr::from("file", Str::from_cstr(test._loc.file)));
-      testcase.add_attr(XmlAttr::from("line", test._loc.line));
+      auto testcase = testsuite.serialize_node("testcase");
+      testcase.attr("name", test.name());
+      testcase.attr("file", Str::from_cstr(test._loc.file));
+      testcase.attr("line", test._loc.line);
     }
   }
 
-  auto xml_str = testsuites.to_string();
-  return xml_str;
+  return buf;
 }
 
 auto suites() -> Slice<Suite>;
