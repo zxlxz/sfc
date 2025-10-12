@@ -26,12 +26,12 @@ class Serializer {
 
   void serialize_int(const auto& val) {
     auto f = fmt::Fmter{_write};
-    fmt::Display::fmt(val, f);
+    f.write_val(val);
   }
 
   void serialize_flt(const auto& val) {
     auto f = fmt::Fmter{_write};
-    fmt::Display::fmt(val, f);
+    f.write_val(val);
   }
 
   void serialize_str(Str val) {
@@ -83,7 +83,7 @@ class Serializer<W>::Node {
     f.write_str(" ");
     f.write_str(name);
     f.write_str("=\"");
-    fmt::Display::fmt(value, f);
+    f.write_val(value);
     f.write_str("\"");
   }
 

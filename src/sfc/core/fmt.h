@@ -76,54 +76,44 @@ struct alignas(8) Style {
   }
 };
 
-struct Display {
-  static void fmt(const auto& self, auto& f) {
-    if constexpr (requires { self.fmt(f); }) {
-      return self.fmt(f);
-    } else if constexpr (requires { Display::fmt_imp(self, f); }) {
-      Display::fmt_imp(self, f);
-    } else {
-      static_assert(false, "Type does not implement fmt::Display");
-    }
-  }
-
- private:
+struct Debug {
   static auto fill_int(slice::Slice<char> buf, Style style, auto val) -> str::Str;
   static auto fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str;
 
-  static void fmt_imp(bool val, auto& f) {
+ public:
+  static void fmt(bool val, auto& f) {
     f.pad(val ? str::Str{"true"} : str::Str{"false"});
   }
 
-  static void fmt_imp(char val, auto& f) {
-    f.write_str(str::Str{&val, 1});
+  static void fmt(char val, auto& f) {
+    f.write_char(val);
   }
 
-  static void fmt_imp(const trait::uint_ auto val, auto& f) {
+  static void fmt(const trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Display::fill_int(buf, f._style, val);
+    const auto s = fill_int(buf, f._style, val);
     f.pad_num(false, s);
   }
 
-  static void fmt_imp(const trait::sint_ auto val, auto& f) {
+  static void fmt(const trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Display::fill_int(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto s = fill_int(buf, f._style, val >= 0 ? val : 0 - val);
     f.pad_num(val < 0, s);
   }
 
-  static void fmt_imp(const trait::float_ auto val, auto& f) {
+  static void fmt(const trait::float_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Display::fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto s = fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
     f.pad_num(val < 0, s);
   }
 
-  static void fmt_imp(const void* val, auto& f) {
+  static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto s = Display::fill_int(buf, f._style, static_cast<const void*>(val));
+    const auto s = fill_int(buf, f._style, static_cast<const void*>(val));
     f.pad_num(false, s);
   }
 
-  static void fmt_imp(trait::enum_ auto val, auto& f) {
+  static void fmt(trait::enum_ auto val, auto& f) {
     if constexpr (requires { to_str(val); }) {
       const auto s = to_str(val);
       f.pad(s);
@@ -134,15 +124,13 @@ struct Display {
   }
 
   template <class T, usize N>
-  static void fmt_imp(const T (&val)[N], auto& f) {
-    if constexpr (trait::same_<const T, const char>) {
-      str::Str{val}.fmt(f);
-    } else {
-      auto imp = f.debug_list();
-      for (auto& x : val) {
-        imp.entry(x);
-      }
-    }
+  static void fmt(const T (&val)[N], auto& f) {
+    slice::Slice{val}.fmt(f);
+  }
+
+  template <usize N>
+  static void fmt(const char (&val)[N], auto& f) {
+    str::Str{val}.fmt(f);
   }
 };
 
@@ -156,7 +144,7 @@ struct Args {
 
   void fmt(auto& f) const {
     auto pats = _pats;
-    _args.map([&](auto ptr) {
+    _args.map([&](const auto* ptr) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
       f.write_str(pats.slice(0, i0));
       pats = pats.slice(i0 + 1, pats.len());
@@ -169,7 +157,7 @@ struct Args {
       if constexpr (requires { ptr->fmt(f); }) {
         ptr->fmt(f);
       } else {
-        Display::fmt(*ptr, f);
+        Debug::fmt(*ptr, f);
       }
     });
     f.write_str(pats);
@@ -183,11 +171,10 @@ struct Fmter {
   int _depth = 0;
 
  public:
-  void write_char(char c) {
-    if constexpr (requires { _out.push(c); }) {
-      _out.push(c);
-    } else {
-      _out.write_str({&c, 1});
+  void write_char(char c, usize n = 1) {
+    const char v[] = {c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += sizeof(v)) {
+      this->write_str({v, n < sizeof(v) ? n : sizeof(v)});
     }
   }
 
@@ -269,6 +256,14 @@ struct Fmter {
     }
   }
 
+  void write_val(const auto& val) {
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
+    } else {
+      Debug::fmt(val, *this);
+    }
+  }
+
   void write_fmt(str::Str fmts, const auto&... args) {
     if constexpr (sizeof...(args) == 0) {
       this->write_str(fmts);
@@ -344,7 +339,7 @@ struct Fmter {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
-      Display::fmt(val, *this);
+      Debug::fmt(val, *this);
     }
     _style = old_style;
   }

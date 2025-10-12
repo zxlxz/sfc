@@ -25,7 +25,7 @@ class [[nodiscard]] String {
 
   template <class F>
   static auto from(F&& f) -> String {
-    if constexpr (requires { String{static_cast<F&&>(f)}; }) {
+    if constexpr (requires { String{static_cast<F &&>(f)}; }) {
       return String{static_cast<F&&>(f)};
     } else if constexpr (requires { f.to_string(); }) {
       return f.to_string();
@@ -108,16 +108,16 @@ class [[nodiscard]] String {
     return _vec.pop();
   }
 
-  auto push(u8 c) -> u8& {
-    return _vec.push(c);
+  void push(u8 c) {
+    _vec.push(c);
   }
 
   void push_str(Str s) {
-    return _vec.extend_from_slice(s.as_bytes());
+    _vec.extend_from_slice(s.as_bytes());
   }
 
   void write_str(Str s) {
-    return _vec.extend_from_slice(s.as_bytes());
+    _vec.extend_from_slice(s.as_bytes());
   }
 
   void reserve(usize amt) {

@@ -1,6 +1,7 @@
 #include "sfc/core/fmt.h"
 
 namespace sfc::fmt {
+
 struct FltBuf {
   char* _start;
   char* _end;
@@ -126,14 +127,14 @@ struct FltBuf {
   }
 };
 
-auto Display::fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str {
+auto Debug::fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str {
   const auto prec = style.precision(sizeof(val) < sizeof(double) ? 4 : 6);
   auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(val, prec, style.type());
   return ss.as_str();
 }
 
-template auto Display::fill_flt(slice::Slice<char>, Style, float) -> str::Str;
-template auto Display::fill_flt(slice::Slice<char>, Style, double) -> str::Str;
+template auto Debug::fill_flt(slice::Slice<char>, Style, float) -> str::Str;
+template auto Debug::fill_flt(slice::Slice<char>, Style, double) -> str::Str;
 
 }  // namespace sfc::fmt

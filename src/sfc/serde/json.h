@@ -27,14 +27,14 @@ class Serializer {
     _write.write_str({s, 3});
   }
 
-  void serialize_int(const auto& val) {
+  void serialize_int(const trait::int_ auto& val) {
     auto f = fmt::Fmter{_write};
-    fmt::Display::fmt(val, f);
+    f.write_val(val);
   }
 
-  void serialize_flt(const auto& val) {
+  void serialize_flt(const trait::float_ auto& val) {
     auto f = fmt::Fmter{_write};
-    fmt::Display::fmt(val, f);
+    f.write_val(val);
   }
 
   void serialize_str(Str val) {
