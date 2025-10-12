@@ -392,8 +392,6 @@ class [[nodiscard]] Vec {
   }
 
   void extend_from_slice(Slice<const T> other) {
-    static_assert(__is_constructible(T, const T&));
-
     this->reserve(other._len);
     ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
     _len += other._len;
@@ -401,18 +399,19 @@ class [[nodiscard]] Vec {
 
   void retain(auto&& f) {
     auto pdst = _buf._ptr;
-    for (auto psrc = _buf._ptr; psrc != _buf._ptr + _len; ++psrc) {
-      if (!f(*psrc)) {
-        mem::drop(*psrc);
-        continue;
-      }
-      if (psrc != pdst) {
-        *pdst = static_cast<T&&>(*psrc);
-      }
+    auto pend = _buf._ptr + _len;
+    while (pdst != pend && f(*pdst)) {
       ++pdst;
     }
-
-    this->truncate(pdst - _buf._ptr);
+    if (pdst == pend) {
+      return;
+    }
+    for (auto psrc = pdst + 1; psrc != pend; ++psrc) {
+      if (f(*psrc)) {
+        *pdst++ = static_cast<T&&>(*psrc);
+      }
+    }
+    this->truncate(static_cast<usize>(pdst - _buf._ptr));
   }
 
  public:

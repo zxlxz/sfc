@@ -26,7 +26,7 @@ template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept float_ = any_<T, float, double>;
+concept flt_ = any_<T, float, double>;
 
 template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});

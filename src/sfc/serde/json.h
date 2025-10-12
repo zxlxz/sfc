@@ -14,33 +14,56 @@ class Serializer {
   Serializer(const Serializer&) noexcept = delete;
 
  public:
-  void serialize_null() {
-    _write.write_str("null");
+  template <class T>
+  auto serialize(const T& val) {
+    if constexpr (requires { val.serialize(*this); }) {
+      return val.serialize(*this);
+    } else if constexpr (trait::same_<T, bool>) {
+      return this->serialize_bool(val);
+    } else if constexpr (trait::same_<T, char>) {
+      return this->serialize_char(val);
+    } else if constexpr (trait::int_<T>) {
+      return this->serialize_int(val);
+    } else if constexpr (trait::flt_<T>) {
+      return this->serialize_flt(val);
+    } else if constexpr (requires { Str{val}; }) {
+      return this->serialize_str(val);
+    } else if constexpr (requires { Slice{val}; }) {
+      return Slice{val}.serialize(*this);
+    } else {
+      static_assert(false, "Serializer::serialize: not serializable");
+    }
   }
 
-  void serialize_bool(const bool& val) {
-    _write.write_str(val ? Str{"true"} : Str{"false"});
+  auto serialize_null() {
+    return _write.write_str("null");
   }
 
-  void serialize_char(const char& val) {
+  auto serialize_bool(const bool& val) {
+    return _write.write_str(val ? Str{"true"} : Str{"false"});
+  }
+
+  auto serialize_char(const char& val) {
     const char s[] = {'"', val, '"'};
-    _write.write_str({s, 3});
+    return _write.write_str({s, 3});
   }
 
-  void serialize_int(const trait::int_ auto& val) {
-    auto f = fmt::Fmter{_write};
-    f.write_val(val);
+  auto serialize_int(const trait::int_ auto& val) {
+    char buf[32] = {};
+    const auto s = fmt::Debug::fmt_int(buf, val);
+    return _write.write_str(s);
   }
 
-  void serialize_flt(const trait::float_ auto& val) {
-    auto f = fmt::Fmter{_write};
-    f.write_val(val);
+  auto serialize_flt(const trait::flt_ auto& val) {
+    char buf[32] = {};
+    const auto s = fmt::Debug::fmt_flt(buf, val);
+    return _write.write_str(s);
   }
 
-  void serialize_str(Str val) {
+  auto serialize_str(Str val) {
     _write.write_str("\"");
     _write.write_str(val);
-    _write.write_str("\"");
+    return _write.write_str("\"");
   }
 
   struct SerSeq;
@@ -60,7 +83,7 @@ class Serializer<W>::SerSeq {
   u32 _cnt = 0;
 
  public:
-  explicit SerSeq(Serializer& ser) noexcept : _inn{ser} {
+  explicit SerSeq(Serializer& inn) noexcept : _inn{inn} {
     _inn._write.write_str("[");
   }
 
@@ -74,7 +97,7 @@ class Serializer<W>::SerSeq {
     if (_cnt++ != 0) {
       _inn._write.write_str(",");
     }
-    Serialize::serialize(item, _inn);
+    _inn.serialize(item);
   }
 };
 
@@ -84,7 +107,7 @@ class Serializer<W>::SerMap {
   u32 _cnt = 0;
 
  public:
-  explicit SerMap(Serializer& ser) noexcept : _inn{ser} {
+  explicit SerMap(Serializer& inn) noexcept : _inn{inn} {
     _inn._write.write_str("{");
   }
 
@@ -94,22 +117,20 @@ class Serializer<W>::SerMap {
 
   SerMap(const SerMap&) noexcept = delete;
 
-  void serialize_entry(str::Str key, const auto& value) {
+  void serialize_entry(str::Str key, const auto& val) {
     if (_cnt++ != 0) {
       _inn._write.write_str(",");
     }
     _inn._write.write_str("\"");
     _inn._write.write_str(key);
     _inn._write.write_str("\":");
-    Serialize::serialize(value, _inn);
+    return _inn.serialize(val);
   }
 };
 
 template <class R>
 class Deserializer {
   static_assert(!trait::same_<R, const R>);
-  using Error = io::Error;
-
   io::BufReader<R&> _read;
 
  public:

@@ -127,14 +127,14 @@ struct FltBuf {
   }
 };
 
-auto Debug::fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str {
-  const auto prec = style.precision(sizeof(val) < sizeof(double) ? 4 : 6);
+auto Debug::fmt_flt(slice::Slice<char> buf, auto val, Style style) -> str::Str {
+  const auto prec = style.precision(sizeof(val) <= sizeof(f32) ? 4 : 6);
   auto ss = FltBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(val, prec, style.type());
   return ss.as_str();
 }
 
-template auto Debug::fill_flt(slice::Slice<char>, Style, float) -> str::Str;
-template auto Debug::fill_flt(slice::Slice<char>, Style, double) -> str::Str;
+template auto Debug::fmt_flt(slice::Slice<char>, f32, Style) -> str::Str;
+template auto Debug::fmt_flt(slice::Slice<char>, f64, Style) -> str::Str;
 
 }  // namespace sfc::fmt

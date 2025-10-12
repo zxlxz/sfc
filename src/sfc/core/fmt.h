@@ -77,8 +77,9 @@ struct alignas(8) Style {
 };
 
 struct Debug {
-  static auto fill_int(slice::Slice<char> buf, Style style, auto val) -> str::Str;
-  static auto fill_flt(slice::Slice<char> buf, Style style, auto val) -> str::Str;
+  static auto fmt_int(slice::Slice<char> buf, auto val, Style style = {}) -> str::Str;
+  static auto fmt_flt(slice::Slice<char> buf, auto val, Style style = {}) -> str::Str;
+  static auto fmt_ptr(slice::Slice<char> buf, const void* val, Style style = {}) -> str::Str;
 
  public:
   static void fmt(bool val, auto& f) {
@@ -91,25 +92,25 @@ struct Debug {
 
   static void fmt(const trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = fill_int(buf, f._style, val);
+    const auto s = fmt_int(buf, val, f._style);
     f.pad_num(false, s);
   }
 
   static void fmt(const trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = fill_int(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto s = fmt_int(buf, val >= 0 ? val : 0 - val, f._style);
     f.pad_num(val < 0, s);
   }
 
-  static void fmt(const trait::float_ auto val, auto& f) {
+  static void fmt(const trait::flt_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto s = fmt_flt(buf, val >= 0 ? val : 0 - val, f._style);
     f.pad_num(val < 0, s);
   }
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto s = fill_int(buf, f._style, static_cast<const void*>(val));
+    const auto s = fmt_ptr(buf, val, f._style);
     f.pad_num(false, s);
   }
 

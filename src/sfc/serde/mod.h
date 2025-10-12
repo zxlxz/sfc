@@ -11,7 +11,7 @@ struct Serializer {
   auto serialize_bool(bool val) = delete;
   auto serialize_char(char val) = delete;
   auto serialize_int(trait::int_ auto val) = delete;
-  auto serialize_flt(trait::float_ auto val) = delete;
+  auto serialize_flt(trait::flt_ auto val) = delete;
   auto serialize_str(Str val) = delete;
   auto serialize_bin(Slice<const u8> val) = delete;
 
@@ -47,7 +47,7 @@ struct Serialize {
       return ser.serialize_char(self);
     } else if constexpr (trait::int_<T>) {
       return ser.serialize_int(self);
-    } else if constexpr (trait::float_<T>) {
+    } else if constexpr (trait::flt_<T>) {
       return ser.serialize_flt(self);
     } else if constexpr (requires { Str{self}; }) {
       return ser.serialize_str(self);
@@ -70,7 +70,7 @@ struct Deserialize {
       self = _TRY(des.deserialize_char());
     } else if constexpr (trait::int_<T>) {
       self = _TRY(des.template deserialize_int<T>());
-    } else if constexpr (trait::float_<T>) {
+    } else if constexpr (trait::flt_<T>) {
       self = _TRY(des.template deserialize_flt<T>());
     } else if constexpr (requires { self = Str{}; }) {
       self = _TRY(des.deserialize_str());

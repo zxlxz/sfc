@@ -3,7 +3,6 @@
 #include "sfc/core/mem.h"
 #include "sfc/core/panicking.h"
 
-
 namespace sfc::ptr {
 
 using nullptr_t = decltype(nullptr);
@@ -156,6 +155,7 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
 
 template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) {
+  static_assert(__is_constructible(T, const T&));
   if (cnt == 0 || !src || !dst) {
     return;
   }
