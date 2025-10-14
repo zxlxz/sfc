@@ -121,6 +121,10 @@ struct Instant {
   auto operator-(const Duration& dur) const -> Instant {
     return Instant{_nanos - dur._nanos};
   }
+
+  void fmt(auto& f) const {
+    f.write_fmt("{}ns", _nanos);
+  }
 };
 
 struct System {
@@ -161,6 +165,10 @@ struct System {
   auto operator-(const Duration& dur) const -> System {
     return System{_nanos - dur._nanos};
   }
+
+  void fmt(auto& f) const {
+    f.write_fmt("{}ns", _nanos);
+  }
 };
 
 struct DateTime {
@@ -170,6 +178,7 @@ struct DateTime {
   u16 hour;
   u16 minute;
   u16 second;
+  u32 nanos;
 
  public:
   static auto from_utc(const time::System& utc_time) -> DateTime;
@@ -177,7 +186,8 @@ struct DateTime {
   static auto from_local(const time::System& local_time) -> DateTime;
 
   void fmt(auto& f) const {
-    f.write_fmt("{04}-{02}-{02}T{02}:{02}:{02}.{03}", year, month, day, hour, minute, second);
+    const auto millis = nanos / NANOS_PER_MILLI;
+    f.write_fmt("{04}-{02}-{02}T{02}:{02}:{02}.{03}", year, month, day, hour, minute, second, millis);
   }
 };
 

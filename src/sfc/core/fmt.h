@@ -201,16 +201,15 @@ struct Fmter {
     }
 
     const auto npad = usize{_style._width} - s._len;
-
     switch (_style._align) {
       default:
-      case '>':
-        this->fill(npad);
-        this->write_str(s);
-        break;
       case '<':
         this->write_str(s);
         this->fill(npad);
+        break;
+      case '>':
+        this->fill(npad);
+        this->write_str(s);
         break;
       case '=':
       case '^':

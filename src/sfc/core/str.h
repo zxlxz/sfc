@@ -27,7 +27,7 @@ struct Str {
     return Str{s, n};
   }
 
-  static auto from(auto&& f) noexcept -> Str {
+  static auto from(const auto& f) noexcept -> Str {
     if constexpr (requires { Str{f}; }) {
       return Str{static_cast<decltype(f)&&>(f)};
     } else if constexpr (requires { f.as_str(); }) {

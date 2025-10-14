@@ -18,12 +18,19 @@ auto System::now() -> System {
 
 auto DateTime::from_utc(const System& sys_time) -> DateTime {
   const auto secs = sys_time._nanos / time::NANOS_PER_SEC;
-  return sys_imp::make_utc<DateTime>(secs);
+  const auto nanos = sys_time._nanos % time::NANOS_PER_SEC;
+
+  auto res = sys_imp::make_utc<DateTime>(secs);
+  res.nanos = nanos;
+  return res;
 }
 
 auto DateTime::from_local(const System& sys_time) -> DateTime {
   const auto secs = sys_time._nanos / time::NANOS_PER_SEC;
-  return sys_imp::make_local<DateTime>(secs);
+  const auto nanos = sys_time._nanos % time::NANOS_PER_SEC;
+  auto res = sys_imp::make_local<DateTime>(secs);
+  res.nanos = nanos;
+  return res;
 }
 
 }  // namespace sfc::time

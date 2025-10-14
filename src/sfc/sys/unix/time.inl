@@ -39,6 +39,7 @@ static inline auto make_utc(time_t secs) -> T {
       static_cast<unsigned short>(tm.tm_hour),
       static_cast<unsigned short>(tm.tm_min),
       static_cast<unsigned short>(tm.tm_sec),
+      0,
   };
 }
 
@@ -54,6 +55,7 @@ static inline auto make_local(time_t secs) -> T {
       static_cast<unsigned short>(tm.tm_hour),
       static_cast<unsigned short>(tm.tm_min),
       static_cast<unsigned short>(tm.tm_sec),
+      0,
   };
 }
 

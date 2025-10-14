@@ -45,7 +45,7 @@ static inline auto make_utc(ULONG64 secs) -> T {
   utc_time.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
 
   auto date_time = SYSTEMTIME{};
-  FileTimeToSystemTime(&utc_time, &date_time);
+  ::FileTimeToSystemTime(&utc_time, &date_time);
 
   return T{
       static_cast<unsigned short>(date_time.wYear),
@@ -54,6 +54,7 @@ static inline auto make_utc(ULONG64 secs) -> T {
       static_cast<unsigned short>(date_time.wHour),
       static_cast<unsigned short>(date_time.wMinute),
       static_cast<unsigned short>(date_time.wSecond),
+      0,
   };
 }
 
@@ -66,10 +67,10 @@ static inline auto make_local(ULONG64 secs) -> T {
   utc_time.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
 
   auto local_time = FILETIME{};
-  FileTimeToLocalFileTime(&utc_time, &local_time);
+  ::FileTimeToLocalFileTime(&utc_time, &local_time);
 
   auto date_time = SYSTEMTIME{};
-  FileTimeToSystemTime(&local_time, &date_time);
+  ::FileTimeToSystemTime(&local_time, &date_time);
 
   return T{
       static_cast<unsigned short>(date_time.wYear),
@@ -78,6 +79,7 @@ static inline auto make_local(ULONG64 secs) -> T {
       static_cast<unsigned short>(date_time.wHour),
       static_cast<unsigned short>(date_time.wMinute),
       static_cast<unsigned short>(date_time.wSecond),
+      0,
   };
 }
 
