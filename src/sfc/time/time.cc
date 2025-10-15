@@ -11,25 +11,21 @@ auto Instant::now() -> Instant {
   return Instant{nanos};
 }
 
-auto System::now() -> System {
+auto SystemTime::now() -> SystemTime {
   const auto nanos = sys_imp::system_now();
-  return System{nanos};
+  return SystemTime{nanos};
 }
 
-auto DateTime::from_utc(const System& sys_time) -> DateTime {
-  const auto secs = sys_time._nanos / time::NANOS_PER_SEC;
-  const auto nanos = sys_time._nanos % time::NANOS_PER_SEC;
-
-  auto res = sys_imp::make_utc<DateTime>(secs);
-  res.nanos = nanos;
+auto DateTime::from_utc(SystemTime sys_time) -> DateTime {
+  auto res = DateTime{};
+  sys_imp::make_utc(sys_time._nanos, res);
   return res;
 }
 
-auto DateTime::from_local(const System& sys_time) -> DateTime {
-  const auto secs = sys_time._nanos / time::NANOS_PER_SEC;
-  const auto nanos = sys_time._nanos % time::NANOS_PER_SEC;
-  auto res = sys_imp::make_local<DateTime>(secs);
-  res.nanos = nanos;
+auto DateTime::from_local(SystemTime sys_time) -> DateTime {
+  auto res = DateTime{};
+  sys_imp::make_local(sys_time._nanos, res);
+  res.nanos = sys_time._nanos % NANOS_PER_SEC;
   return res;
 }
 

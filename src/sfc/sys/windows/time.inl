@@ -5,8 +5,9 @@
 namespace sfc::sys::time {
 
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
+static constexpr auto TICKS_PER_SECS = 10000000UL;  // 1 tick = 100ns
 
-inline auto instant_freq() -> ULONG64 {
+static inline auto instant_freq() -> ULONG64 {
   auto val = ::LARGE_INTEGER{};
   if (!::QueryPerformanceFrequency(&val)) {
     return 1;
@@ -14,7 +15,7 @@ inline auto instant_freq() -> ULONG64 {
   return val.QuadPart;
 }
 
-inline auto instant_now() -> ULONG64 {
+static inline auto instant_now() -> ULONG64 {
   static auto freq = instant_freq();
 
   auto cnt = ::LARGE_INTEGER{};
@@ -25,62 +26,47 @@ inline auto instant_now() -> ULONG64 {
   return nanos;
 }
 
-inline auto system_now() -> ULONG64 {
+static inline auto system_now() -> ULONG64 {
   auto file_time = FILETIME{};
   ::GetSystemTimeAsFileTime(&file_time);
 
-  const auto cnt = static_cast<ULONG64>(file_time.dwHighDateTime) << 32 |
-                   static_cast<ULONG64>(file_time.dwLowDateTime);
+  const auto cnt = static_cast<ULONG64>(file_time.dwHighDateTime) << 32 | static_cast<ULONG64>(file_time.dwLowDateTime);
 
   const auto nanos = cnt * 100UL;
   return nanos;
 }
 
-template <class T>
-static inline auto make_utc(ULONG64 secs) -> T {
-  // Convert from seconds to 100-nanosecond intervals for FILETIME
-  const auto cnts = secs * 10000000UL;
-  auto utc_time = FILETIME{};
-  utc_time.dwLowDateTime = static_cast<DWORD>(cnts & 0xFFFFFFFFU);
-  utc_time.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
+static inline auto make_filetime(ULONG64 secs) -> FILETIME {
+  const auto cnts = secs * TICKS_PER_SECS;
 
-  auto date_time = SYSTEMTIME{};
-  ::FileTimeToSystemTime(&utc_time, &date_time);
-
-  return T{
-      static_cast<unsigned short>(date_time.wYear),
-      static_cast<unsigned short>(date_time.wMonth),
-      static_cast<unsigned short>(date_time.wDay),
-      static_cast<unsigned short>(date_time.wHour),
-      static_cast<unsigned short>(date_time.wMinute),
-      static_cast<unsigned short>(date_time.wSecond),
-      0,
-  };
+  auto res = FILETIME{};
+  res.dwLowDateTime = static_cast<DWORD>(cnts & 0xFFFFFFFFULL);
+  res.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
+  return res;
 }
 
-template <class T>
-static inline auto make_local(ULONG64 secs) -> T {
-  // Convert from seconds to 100-nanosecond intervals for FILETIME
-  const auto cnts = secs * 10000000UL;
-  auto utc_time = FILETIME{};
-  utc_time.dwLowDateTime = static_cast<DWORD>(cnts & 0xFFFFFFFFU);
-  utc_time.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
+static inline void make_datetime(const FILETIME& file_time, auto& dst) {
+  auto sys_time = SYSTEMTIME{};
+  ::FileTimeToSystemTime(&file_time, &sys_time);
 
+  dst.year = static_cast<unsigned short>(sys_time.wYear);
+  dst.month = static_cast<unsigned short>(sys_time.wMonth);
+  dst.day = static_cast<unsigned short>(sys_time.wDay);
+  dst.hour = static_cast<unsigned short>(sys_time.wHour);
+  dst.minute = static_cast<unsigned short>(sys_time.wMinute);
+  dst.second = static_cast<unsigned short>(sys_time.wSecond);
+}
+
+static inline void make_utc(ULONG64 secs, auto& dst) {
+  const auto utc_time = make_filetime(secs);
+  make_datetime(utc_time, dst);
+}
+
+static inline void make_local(ULONG64 secs, auto& dst) {
+  const auto utc_time = make_filetime(secs);
   auto local_time = FILETIME{};
   ::FileTimeToLocalFileTime(&utc_time, &local_time);
-
-  auto date_time = SYSTEMTIME{};
-  ::FileTimeToSystemTime(&local_time, &date_time);
-
-  return T{
-      static_cast<unsigned short>(date_time.wYear),
-      static_cast<unsigned short>(date_time.wMonth),
-      static_cast<unsigned short>(date_time.wDay),
-      static_cast<unsigned short>(date_time.wHour),
-      static_cast<unsigned short>(date_time.wMinute),
-      static_cast<unsigned short>(date_time.wSecond),
-      0,
-  };
+  make_datetime(local_time, dst);
 }
 
 }  // namespace sfc::sys::time

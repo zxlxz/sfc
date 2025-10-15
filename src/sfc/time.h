@@ -127,14 +127,14 @@ struct Instant {
   }
 };
 
-struct System {
+struct SystemTime {
   u64 _nanos;
 
  public:
-  static auto now() -> System;
+  static auto now() -> SystemTime;
 
   auto elapsed() const -> Duration {
-    const auto now = System::now();
+    const auto now = SystemTime::now();
     return Duration{now._nanos - _nanos};
   }
 
@@ -146,24 +146,24 @@ struct System {
     return _nanos % NANOS_PER_SEC;
   }
 
-  auto operator==(const System& other) const -> bool {
+  auto operator==(const SystemTime& other) const -> bool {
     return _nanos == other._nanos;
   }
 
-  auto operator<(const System& other) const -> bool {
+  auto operator<(const SystemTime& other) const -> bool {
     return _nanos < other._nanos;
   }
 
-  auto operator<=(const System& other) const -> bool {
+  auto operator<=(const SystemTime& other) const -> bool {
     return _nanos <= other._nanos;
   }
 
-  auto operator+(const Duration& dur) const -> System {
-    return System{_nanos + dur._nanos};
+  auto operator+(const Duration& dur) const -> SystemTime {
+    return SystemTime{_nanos + dur._nanos};
   }
 
-  auto operator-(const Duration& dur) const -> System {
-    return System{_nanos - dur._nanos};
+  auto operator-(const Duration& dur) const -> SystemTime {
+    return SystemTime{_nanos - dur._nanos};
   }
 
   void fmt(auto& f) const {
@@ -181,9 +181,8 @@ struct DateTime {
   u32 nanos;
 
  public:
-  static auto from_utc(const time::System& utc_time) -> DateTime;
-
-  static auto from_local(const time::System& local_time) -> DateTime;
+  static auto from_utc(SystemTime utc_time) -> DateTime;
+  static auto from_local(SystemTime local_time) -> DateTime;
 
   void fmt(auto& f) const {
     const auto millis = nanos / NANOS_PER_MILLI;

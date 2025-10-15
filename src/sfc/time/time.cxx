@@ -5,7 +5,7 @@
 namespace sfc::time::test {
 
 SFC_TEST(datetime_utc) {
-  auto sys_time = time::System::now();
+  auto sys_time = time::SystemTime::now();
   auto dt_utc = DateTime::from_utc(sys_time);
 
   panicking::expect_true(dt_utc.year >= 2025);
@@ -14,7 +14,7 @@ SFC_TEST(datetime_utc) {
 }
 
 SFC_TEST(datetime_local) {
-  auto sys_time = time::System::now();
+  auto sys_time = time::SystemTime::now();
   auto dt_local = DateTime::from_local(sys_time);
 
   panicking::expect_true(dt_local.year >= 2025);
