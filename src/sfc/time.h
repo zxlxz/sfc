@@ -56,16 +56,16 @@ struct Duration {
     return _nanos / NANOS_PER_MICRO;
   }
 
-  auto subsec_nanos() const -> u64 {
-    return _nanos % NANOS_PER_SEC;
+  auto subsec_nanos() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC);
   }
 
-  auto subsec_millis() const -> u64 {
-    return _nanos % NANOS_PER_SEC / NANOS_PER_MILLI;
+  auto subsec_millis() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MILLI);
   }
 
-  auto subsec_micros() const -> u64 {
-    return _nanos % NANOS_PER_SEC / NANOS_PER_MICRO;
+  auto subsec_micros() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MICRO);
   }
 
   auto as_secs_f32() const -> f32 {
@@ -128,7 +128,7 @@ struct Instant {
 };
 
 struct SystemTime {
-  u64 _nanos;
+  u64 _nanos = 0;
 
  public:
   static auto now() -> SystemTime;
@@ -142,8 +142,16 @@ struct SystemTime {
     return _nanos / NANOS_PER_SEC;
   }
 
-  auto sub_nanos() const -> u64 {
-    return _nanos % NANOS_PER_SEC;
+  auto subsec_nanos() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC);
+  }
+
+  auto subsec_micros() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MICRO);
+  }
+
+  auto subsec_millis() const -> u32 {
+    return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MILLI);
   }
 
   auto operator==(const SystemTime& other) const -> bool {
@@ -172,13 +180,13 @@ struct SystemTime {
 };
 
 struct DateTime {
-  u16 year;
-  u16 month;
-  u16 day;
-  u16 hour;
-  u16 minute;
-  u16 second;
-  u32 nanos;
+  u16 year = 0;
+  u16 month = 0;
+  u16 day = 0;
+  u16 hour = 0;
+  u16 minute = 0;
+  u16 second = 0;
+  u32 nanos = 0;
 
  public:
   static auto from_utc(SystemTime utc_time) -> DateTime;

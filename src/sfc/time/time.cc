@@ -17,15 +17,20 @@ auto SystemTime::now() -> SystemTime {
 }
 
 auto DateTime::from_utc(SystemTime sys_time) -> DateTime {
-  auto res = DateTime{};
-  sys_imp::make_utc(sys_time._nanos, res);
+  const auto secs = sys_time.secs();
+  const auto nanos = sys_time.subsec_nanos();
+
+  auto res = DateTime{.nanos = nanos};
+  sys_imp::make_utc(secs, res);
   return res;
 }
 
 auto DateTime::from_local(SystemTime sys_time) -> DateTime {
-  auto res = DateTime{};
-  sys_imp::make_local(sys_time._nanos, res);
-  res.nanos = sys_time._nanos % NANOS_PER_SEC;
+  const auto secs = sys_time.secs();
+  const auto nanos = sys_time.subsec_nanos();
+
+  auto res = DateTime{.nanos = nanos};
+  sys_imp::make_local(secs, res);
   return res;
 }
 

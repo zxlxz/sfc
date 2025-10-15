@@ -25,8 +25,7 @@ class LogTime {
       this->fill_time();
     }
 
-    const auto sub_millis = cur_time.sub_nanos() / time::NANOS_PER_MILLI;
-    this->fill_millis(static_cast<u32>(sub_millis));
+    this->fill_millis(cur_time.subsec_millis());
   }
 
  private:
