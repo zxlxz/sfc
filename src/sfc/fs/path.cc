@@ -19,8 +19,8 @@ struct Components {
       _str = _str.trim_end_matches('/');
 
       if (const auto p = _str.rfind('/')) {
-        const auto b = _str.slice(*p + 1, _str.len());
-        _str = _str.slice(0, *p);
+        const auto b = _str[{*p + 1, $}];
+        _str = _str[{0, *p}];
         if (b != ".") {
           return b;
         }
@@ -44,13 +44,13 @@ auto Path::file_name() const noexcept -> Str {
 auto Path::extension() const noexcept -> Str {
   const auto file_name = this->file_name();
   const auto dot_pos = file_name.rfind('.').unwrap_or(file_name.len());
-  return file_name.slice(dot_pos + 1);
+  return file_name[{dot_pos + 1,$}];
 }
 
 auto Path::file_stem() const noexcept -> Str {
   const auto file_name = this->file_name();
   const auto dot_pos = file_name.rfind('.').unwrap_or(file_name.len());
-  return file_name.slice(0, dot_pos);
+  return file_name[{0, dot_pos}];
 }
 
 auto Path::parent() const noexcept -> Path {

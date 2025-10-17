@@ -42,17 +42,17 @@ SFC_TEST(cmp) {
 SFC_TEST(range) {
   {
     const auto s = Str{"abc"};
-    panicking::expect_eq(s.slice(0, 3), Str{"abc"});
-    panicking::expect_eq(s.slice(1, 3), Str{"bc"});
-    panicking::expect_eq(s.slice(0, 2), Str{"ab"});
-    panicking::expect_eq(s.slice(1, 2), Str{"b"});
-    panicking::expect_eq(s.slice(3, 3), Str{""});
-    panicking::expect_eq(s.slice(4, 5), Str{""});
+    panicking::expect_eq(s[{0, 3}], Str{"abc"});
+    panicking::expect_eq(s[{1, 3}], Str{"bc"});
+    panicking::expect_eq(s[{0, 2}], Str{"ab"});
+    panicking::expect_eq(s[{1, 2}], Str{"b"});
+    panicking::expect_eq(s[{3, 3}], Str{""});
+    panicking::expect_eq(s[{4, 5}], Str{""});
 
-    panicking::expect_eq(s.slice(0), Str{"abc"});
-    panicking::expect_eq(s.slice(1), Str{"bc"});
-    panicking::expect_eq(s.slice(2), Str{"c"});
-    panicking::expect_eq(s.slice(3), Str{""});
+    panicking::expect_eq(s[{0, $}], Str{"abc"});
+    panicking::expect_eq(s[{1, $}], Str{"bc"});
+    panicking::expect_eq(s[{2, $}], Str{"c"});
+    panicking::expect_eq(s[{3, $}], Str{""});
   }
 }
 

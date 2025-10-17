@@ -25,8 +25,8 @@ static auto parse_filter(Str filter) -> Vec<Str> {
   auto v = Vec<Str>{};
   while (filter) {
     const auto pos = find_pos(filter);
-    v.push(filter.slice(0, pos));
-    filter = filter.slice(pos + 1, filter.len());
+    v.push(filter[{0, pos}]);
+    filter = filter[{pos + 1, $}];
   }
   return v;
 }
@@ -105,7 +105,7 @@ void App::list_xml(Str path) const {
   }
 
   const auto pos = path.find(':');
-  const auto xml_path = pos ? path.slice(*pos + 1) : path;
+  const auto xml_path = pos ? path[{*pos + 1, $}] : path;
   auto xml_file = fs::File::create(fs::Path{xml_path}).ok();
   if (!xml_file) {
     io::println("Failed to create file '{}'", xml_path);
@@ -116,12 +116,12 @@ void App::list_xml(Str path) const {
 
 void App::main(int argc, const char* argv[]) {
   auto cmd = app::Cmd{"sfc_test"};
-  cmd.add_arg({'h', "help", "Show this help message"});
-  cmd.add_arg({'l', "list", "List all tests"});
-  cmd.add_arg({0, "gtest_list_tests", "List all tests instead of running them"});
-  cmd.add_arg({0, "gtest_filter", "Run only tests matching the given pattern"});
-  cmd.add_arg({0, "gtest_color", "Enable or disable colored output", "auto"});
-  cmd.add_arg({0, "gtest_output", "Output file for test results", "stdout"});
+  cmd.add_opt("h:help", "Show this help message");
+  cmd.add_opt("l:list", "List all tests");
+  cmd.add_opt("gtest_list_tests", "List all tests instead of running them");
+  cmd.add_opt("gtest_filter", "Run only tests matching the given pattern");
+  cmd.add_opt("gtest_color", "Enable or disable colored output");
+  cmd.add_opt("gtest_output", "Output file for test results");
 
   cmd.parse_cmdline(argc, argv);
 
@@ -141,7 +141,7 @@ void App::main(int argc, const char* argv[]) {
     return;
   }
 
-  const auto gtest_color = cmd.get_opt("gtest_color");
+  const auto gtest_color = cmd.get_flag("gtest_color");
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   this->exec(gtest_filter, gtest_color);
 }

@@ -147,12 +147,12 @@ struct Args {
     auto pats = _pats;
     _args.map([&](const auto* ptr) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
-      f.write_str(pats.slice(0, i0));
-      pats = pats.slice(i0 + 1, pats.len());
+      f.write_str(pats[{0, i0}]);
+      pats = pats[{i0 + 1, ops::$}];
 
       const auto i1 = pats.find('}').unwrap_or(pats.len());
-      const auto ss = pats.slice(0, i1);
-      pats = pats.slice(i1 + 1, pats.len());
+      const auto ss = pats[{0, i1}];
+      pats = pats[{i1 + 1, pats.len()}];
 
       f._style = Style::from_str(ss).unwrap_or({});
       if constexpr (requires { ptr->fmt(f); }) {

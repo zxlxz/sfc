@@ -7,24 +7,21 @@ namespace sfc::app::test {
 // add test for Cmd
 SFC_TEST(cmd) {
   auto cmd = Cmd{"cmd_test"};
-  cmd.add_arg({'c', "config", "Configuration file", "config.yaml"});
-  cmd.add_arg({'o', "output", "Output file", "output.txt"});
-  cmd.add_opt({'v', "verbose", "Enable verbose output"});
+  cmd.add_opt("c:config", "Configuration file");
+  cmd.add_opt("v:verbose", "Enable verbose output");
+  cmd.add_arg("+i:input", "Input file");
+  cmd.add_arg("+o:output", "Output file");
 
-  const Str args[] = {
-      "--verbose=true",
-      "--output",
-      "output.txt",
-      "-c",
-      "config.yaml",
-  };
+  const Str args[] = {"--verbose", "input.txt", "--output", "output.txt", "-c=config.yaml"};
   cmd.parse(args);
+  cmd.print_help();
 
-  panicking::expect_eq(cmd.get("verbose"), Option<Str>{"true"});
-  panicking::expect_eq(cmd.get_opt("verbose"), Option{true});
+  panicking::expect(!cmd.get("help"));
+  panicking::expect(cmd.get("verbose"));
 
-  panicking::expect_eq(cmd.get("output"), Option<Str>{"output.txt"});
-  panicking::expect_eq(cmd.get("config"), Option<Str>{"config.yaml"});
+  panicking::expect_eq(cmd.get("input"), Option{"input.txt"});
+  panicking::expect_eq(cmd.get("output"), Option{"output.txt"});
+  panicking::expect_eq(cmd.get("config"), Option{"config.yaml"});
 }
 
 }  // namespace sfc::app::test

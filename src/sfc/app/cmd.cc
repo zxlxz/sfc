@@ -4,74 +4,71 @@
 namespace sfc::app {
 
 struct Cmd::Item {
-  enum class Type : u8 {
-    Arg,
+  enum Type {
     Opt,
+    Arg,
   };
 
   Type _type;
-  char _short;
-  String _long;
-  String _help;
-  String _default = {};
-  Vec<String> _values = {};
+  char _short = 0;
+  String _long = {};
+  String _help = {};
+  bool _has_value = false;
+  String _value = {};
 
  public:
-  static auto from(const Opt& t) -> Item {
-    return {Type::Opt, t._short, String::from(t._long), String::from(t._help)};
-  }
-
-  static auto from(const Arg& t) -> Item {
-    return {Type::Arg, t._short, String::from(t._long), String::from(t._help), String::from(t._default)};
-  }
-
-  auto match(Str key) const -> bool {
-    if (key.len() == 1) {
-      return key[0] == _short;
+  Item(Type type, Str name, Str help) : _type{type}, _help{String::from(help)} {
+    const auto p = name.find(':');
+    if (!p) {
+      _long = String::from(name);
+    } else {
+      const auto [a, b] = name.split_at(*p);
+      _short = a[0];
+      _long = String::from(b[{1, $}]);
     }
-
-    if (_long.ends_with('*')) {
-      return key == _long[{0, key.len() - 1}];
-    }
-
-    return key == _long;
   }
 
   auto is_complete() const -> bool {
-    if (_values.is_empty() || _values[0].is_empty()) {
+    if (_value.is_empty()) {
       return false;
     }
-    if (!_long.ends_with('*')) {
-      return true;
+    return true;
+  }
+
+  auto match(Str key) const -> bool {
+    if (key.is_empty()) {
+      return false;
     }
-    return false;
+    if (key.len() == 1) {
+      return key[0] == _short;
+    }
+    return key == _long;
   }
 
   void update(Str key) {
-    if (!_values.is_empty() && _values.last()->is_empty()) {
-      _values.pop();
+    _has_value = true;
+    if (key.is_empty()) {
+      return;
     }
-    _values.push(String::from(key));
+    if (!_value.is_empty()) {
+      _value.push_str(";");
+    }
+    _value.push_str(key);
   }
 
   auto var() const -> Option<Str> {
-    if (_values.is_empty()) {
+    if (!_has_value) {
       return {};
     }
-    const auto& res = _values[0];
-    return res.as_str();
+    return _value.as_str();
   }
 
   auto flag() const -> Option<bool> {
-    if (_values.is_empty()) {
+    if (!_has_value) {
       return {};
     }
 
-    const auto& val = _values[0];
-    if (val.is_empty() && _default.is_empty()) {
-      return true;
-    }
-
+    const auto val = _value.as_str();
     if (val == "1" || val == "true" || val == "yes" || val == "on") {
       return true;
     }
@@ -88,9 +85,6 @@ struct Cmd::Item {
       f.write_fmt("-{}, ", _short);
     }
     f.write_fmt("--{:<32}", _long);
-    if (!_default.is_empty()) {
-      f.write_fmt("[default: {}]", _default);
-    }
   }
 };
 
@@ -110,36 +104,27 @@ void Cmd::set_about(Str s) {
   _about = String::from(s);
 }
 
-void Cmd::add_arg(Arg arg) {
-  _items.push(Item::from(arg));
+void Cmd::add_opt(Str name, Str help) {
+  _items.push({Item::Opt, name, help});
 }
 
-void Cmd::add_opt(Opt opt) {
-  _items.push(Item::from(opt));
+void Cmd::add_arg(Str name, Str help) {
+  _items.push({Item::Arg, name, help});
 }
 
 auto Cmd::get(Str s) const -> Option<Str> {
   for (auto& item : _items) {
-    if (item.match(s)) {
-      return item.var();
+    if (item._has_value && item.match(s)) {
+      return item._value.as_str();
     }
   }
   return {};
 }
 
-auto Cmd::get_opt(Str s) const -> Option<bool> {
+auto Cmd::get_flag(Str s) const -> Option<bool> {
   for (auto& item : _items) {
-    if (item.match(s)) {
+    if (item._has_value && item.match(s)) {
       return item.flag();
-    }
-  }
-  return {};
-}
-
-auto Cmd::get_args(Str s) const -> Slice<const String> {
-  for (auto& item : _items) {
-    if (item.match(s)) {
-      return item._values.as_slice();
     }
   }
   return {};
@@ -152,19 +137,11 @@ void Cmd::parse(Slice<const Str> args) {
     if (!p) {
       return Tuple{s, Str{}};
     }
-    return Tuple{s.slice(0, *p), s.slice(*p + 1, s.len())};
+    const auto [a, b] = s.split_at(*p);
+    return Tuple{a, b[{1, $}]};
   };
 
-  auto find_args = [this]() -> Item* {
-    for (auto& item : _items) {
-      if (item._type == Item::Type::Arg && !item.is_complete()) {
-        return &item;
-      }
-    }
-    return nullptr;
-  };
-
-  auto find_item = [this](Str s) -> Item* {
+  auto find_opt = [this](Str s) -> Item* {
     for (auto& item : _items) {
       if (item.match(s)) {
         return &item;
@@ -173,27 +150,46 @@ void Cmd::parse(Slice<const Str> args) {
     return nullptr;
   };
 
+  auto find_arg = [this]() -> Item* {
+    auto res = static_cast<Item*>(nullptr);
+    for (auto& item : _items) {
+      if (item._type != Item::Arg) {
+        continue;
+      }
+      res = &item;
+      if (!item.is_complete()) {
+        break;
+      }
+    }
+    return res;
+  };
+
   auto prev_item = static_cast<Item*>(nullptr);
+
   for (auto arg : args) {
     if (!arg) {
       continue;
     }
 
+    // --key=value
     if (arg[0] == '-') {
       const auto [key, val] = parse_kv(arg);
-      if ((prev_item = find_item(key))) {
-        prev_item->update(val);
+      auto item = find_opt(key);
+      if (item) {
+        item->update(val);
       }
+      prev_item = item;
       continue;
     }
 
-    if (prev_item) {
+    // arg
+    if (prev_item && prev_item->_type == Item::Arg) {
       prev_item->update(arg);
-      prev_item = prev_item->is_complete() ? nullptr : prev_item;
       continue;
     }
 
-    if (auto item = find_args()) {
+    // arg
+    if (auto item = find_arg()) {
       item->update(arg);
       continue;
     }

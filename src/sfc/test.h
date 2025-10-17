@@ -38,7 +38,7 @@ auto regist(Case) -> bool;
 template <class T>
 static auto auto_regist(panicking::Location loc = {}) -> bool {
   const auto full_name = str::type_name<T>();
-  const auto test_name = full_name.slice(0, full_name.len() - 4);
+  const auto test_name = full_name[{0, full_name.len() - 4}];
 
   static const auto test_case = Case{test_name, &T::test, loc};
   static const auto regist_val = test::regist(test_case);
