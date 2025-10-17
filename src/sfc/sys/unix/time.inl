@@ -43,7 +43,7 @@ static inline void make_utc(time_t secs, auto& dst) {
 }
 
 static inline void make_local(time_t secs, auto& dst) {
-  auto tm = tim_t{};
+  auto tm = tm_t{};
   ::localtime_r(&secs, &tm);
   make_datetime(tm, dst);
 }
