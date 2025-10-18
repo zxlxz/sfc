@@ -3,7 +3,6 @@
 using namespace sfc;
 
 int main(int argc, const char* argv[]) {
-  auto app = test::App{};
-  app.main(argc, argv);
+  test::main(argc, argv);
   return 0;
 }

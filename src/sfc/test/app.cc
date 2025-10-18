@@ -1,8 +1,8 @@
 #include "sfc/fs.h"
 #include "sfc/io.h"
 #include "sfc/serde/xml.h"
-#include "sfc/test.h"
 #include "sfc/test/app.h"
+#include "sfc/app/clap.h"
 
 namespace sfc::test {
 
@@ -10,8 +10,7 @@ static auto parse_filter(Str filter) -> Vec<Str> {
   auto find_pos = [](Str s) -> usize {
     for (auto p = 0U; p < s._len; p++) {
       switch (s[p]) {
-        case ';':
-          return p;
+        case ';': return p;
         case ':':
           if (s[p + 1] != ':') {
             return p;
@@ -59,8 +58,6 @@ static auto format_xml(Slice<const Suite> suites) -> String {
   return buf;
 }
 
-auto suites() -> Slice<Suite>;
-
 void App::help() {
   static const char msg[] =
       "This program contains tests written using SFC Test. You can use the\n"
@@ -75,20 +72,19 @@ void App::help() {
 }
 
 void App::exec(Str filter, Option<bool> color_opt) {
+  auto& all_test = AllTest::instance();
+
   const auto pats = parse_filter(filter);
   const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
 
-  auto suites = test::suites();
-  for (auto& suite : suites) {
-    suite.run(pats.as_slice(), color);
-  }
+  all_test.run(pats.as_slice(), color);
 }
 
 void App::list() const {
-  auto suites = test::suites();
+  auto& all_test = AllTest::instance();
 
   auto outs = io::Stdout::lock();
-  for (auto& suite : suites) {
+  for (auto& suite : all_test.suites()) {
     outs.write_fmt("{}\n", suite.name());
     for (auto& test : suite.tests()) {
       outs.write_fmt("    {}\n", test.name());
@@ -97,8 +93,9 @@ void App::list() const {
 }
 
 void App::list_xml(Str path) const {
-  auto suites = test::suites();
-  const auto xml_str = format_xml(suites);
+  auto& all_test = AllTest::instance();
+
+  const auto xml_str = format_xml(all_test.suites());
   if (!path || path == "stdout") {
     io::println(xml_str);
     return;
@@ -114,36 +111,36 @@ void App::list_xml(Str path) const {
   xml_file->write_str(xml_str);
 }
 
-void App::main(int argc, const char* argv[]) {
-  auto cmd = app::Cmd{"sfc_test"};
-  cmd.add_opt("h:help", "Show this help message");
-  cmd.add_opt("l:list", "List all tests");
-  cmd.add_opt("gtest_list_tests", "List all tests instead of running them");
-  cmd.add_opt("gtest_filter", "Run only tests matching the given pattern");
-  cmd.add_opt("gtest_color", "Enable or disable colored output");
-  cmd.add_opt("gtest_output", "Output file for test results");
-
+void main(int argc, const char* argv[]) {
+  auto cmd = app::Clap{"sfc_test"};
+  cmd.opt("h:help", "Show this help message");
+  cmd.opt("l:list", "List all tests");
+  cmd.opt("gtest_list_tests", "List all tests instead of running them");
+  cmd.opt("gtest_filter", "Run only tests matching the given pattern");
+  cmd.opt("gtest_color", "Enable or disable colored output");
+  cmd.opt("gtest_output", "Output file for test results");
   cmd.parse_cmdline(argc, argv);
 
+  auto app = App{};
   if (cmd.get("help")) {
-    this->help();
+    app.help();
     return;
   }
 
   if (cmd.get("list")) {
-    this->list();
+    app.list();
     return;
   }
 
   if (cmd.get("gtest_list_tests")) {
     const auto output = cmd.get("gtest_output").unwrap_or("stdout");
-    this->list_xml(output);
+    app.list_xml(output);
     return;
   }
 
   const auto gtest_color = cmd.get_flag("gtest_color");
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
-  this->exec(gtest_filter, gtest_color);
+  app.exec(gtest_filter, gtest_color);
 }
 
 }  // namespace sfc::test
