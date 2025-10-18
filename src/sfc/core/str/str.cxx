@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::str {
+namespace sfc::str::test {
 
 SFC_TEST(simple) {
   {

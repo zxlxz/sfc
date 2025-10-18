@@ -3,7 +3,7 @@
 #include "sfc/io.h"
 #include "sfc/test.h"
 
-namespace sfc::thread {
+namespace sfc::thread::test {
 
 SFC_TEST(spawn) {
   auto n1 = 0;

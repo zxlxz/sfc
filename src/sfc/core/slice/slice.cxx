@@ -1,6 +1,6 @@
 #include "sfc/test.h"
 
-namespace sfc::slice {
+namespace sfc::slice::test {
 
 SFC_TEST(simple) {
   {

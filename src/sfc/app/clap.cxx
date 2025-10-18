@@ -14,7 +14,6 @@ SFC_TEST(clap) {
 
   const Str args[] = {"--verbose", "input.txt", "--output", "output.txt", "-c=config.yaml"};
   clap.parse(args);
-  clap.print_help();
 
   panicking::expect(!clap.get("help"));
   panicking::expect(clap.get("verbose"));
