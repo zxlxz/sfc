@@ -242,3 +242,7 @@ struct coroutine_handle<sfc::future::Promise<T>> {
 };
 
 }  // namespace SFC_STD
+
+namespace sfc {
+using future::Future;
+}  // namespace sfc

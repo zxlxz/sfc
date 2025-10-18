@@ -188,9 +188,10 @@ struct Fmter {
 
   void fill(usize n) {
     const auto c = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
-    const char v[] = {c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c};
+    const char v[] = {c, c, c, c, c, c, c, c};
     for (auto i = 0U; i < n; i += sizeof(v)) {
-      this->write_str({v, n < sizeof(v) ? n : sizeof(v)});
+      const auto w = n - i < sizeof(v) ? n - i : sizeof(v);
+      this->write_str({v, w});
     }
   }
 

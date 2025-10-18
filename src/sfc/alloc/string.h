@@ -237,3 +237,8 @@ namespace sfc::panicking {
 }
 
 }  // namespace sfc::panicking
+
+namespace sfc {
+using string::String;
+using string::CString;
+}  // namespace sfc

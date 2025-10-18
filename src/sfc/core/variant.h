@@ -136,14 +136,12 @@ class Variant {
 
  public:
   template <u32 I, class... U>
-  Variant(tag_t<I>, U&&... u) : _tag{I}
-                              , _inn{tag_t<I>{}, static_cast<U&&>(u)...} {
+  Variant(tag_t<I>, U&&... u) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(u)...} {
     static_assert(I < sizeof...(T), "variant::Variant: invalid tag");
   }
 
   template <class U, u32 I = Inn::template tag<U>()>
-  Variant(U val) : _tag{I}
-                 , _inn{tag_t<I>{}, static_cast<U&&>(val)} {
+  Variant(U val) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(val)} {
     static_assert(I < sizeof...(T), "variant::Variant: invalid type");
   }
 
@@ -212,3 +210,7 @@ class Variant {
 };
 
 }  // namespace sfc::variant
+
+namespace sfc {
+using variant::Variant;
+}  // namespace sfc

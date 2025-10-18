@@ -1,7 +1,7 @@
 #include "sfc/test.h"
+#include "sfc/core/future.h"
 
 namespace sfc::future::test {
-
 SFC_TEST(await) {
   auto val = 0;
 

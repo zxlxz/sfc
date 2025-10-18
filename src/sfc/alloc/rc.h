@@ -108,3 +108,7 @@ class [[nodiscard]] Rc {
 };
 
 }  // namespace sfc::rc
+
+namespace sfc {
+using rc::Rc;
+}  // namespace sfc

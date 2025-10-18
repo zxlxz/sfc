@@ -205,6 +205,12 @@ class Result {
   }
 };
 
+}  // namespace sfc::result
+
+namespace sfc {
+using result::Result;
+}  // namespace sfc
+
 #ifdef __INTELLISENSE__
 #define _TRY(expr) expr.unwrap()
 #else
@@ -217,5 +223,3 @@ class Result {
     _res.unwrap_unchecked();              \
   })
 #endif
-
-}  // namespace sfc::result

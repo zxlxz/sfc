@@ -23,3 +23,7 @@ struct Range {
 };
 
 }  // namespace sfc::ops
+
+namespace sfc {
+using ops::$;
+}

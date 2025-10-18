@@ -487,3 +487,7 @@ auto end(Vec<T>& v) -> T* {
 }
 
 }  // namespace sfc::vec
+
+namespace sfc {
+using vec::Vec;
+}  // namespace sfc

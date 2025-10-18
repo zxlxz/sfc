@@ -305,3 +305,7 @@ class Inner<boxed::Box<T...>> {
 };
 
 }  // namespace sfc::option
+
+namespace sfc {
+using boxed::Box;
+}  // namespace sfc

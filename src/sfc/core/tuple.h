@@ -119,4 +119,8 @@ struct tuple_element<I, const sfc::tuple::Tuple<T...>> {
   using type = const sfc::tuple::Tuple<T...>::template element_t<I>;
 };
 
-}  // namespace SFC_STD
+}  // namespace sfc::SFC_STD
+
+namespace sfc {
+using tuple::Tuple;
+}  // namespace sfc

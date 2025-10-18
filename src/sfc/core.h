@@ -14,22 +14,3 @@
 #include "sfc/core/option.h"
 #include "sfc/core/result.h"
 #include "sfc/core/variant.h"
-
-#include "sfc/core/future.h"
-
-namespace sfc {
-
-using ops::$;
-
-using str::Str;
-
-using slice::Slice;
-
-using option::Option;
-using result::Result;
-
-using tuple::Tuple;
-using variant::Variant;
-
-using future::Future;
-}  // namespace sfc

@@ -350,3 +350,7 @@ struct Chunks : iter::Iterator<Slice<T>> {
 };
 
 }  // namespace sfc::slice
+
+namespace sfc {
+using slice::Slice;
+}  // namespace sfc

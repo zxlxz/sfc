@@ -230,3 +230,7 @@ template <class T>
 Option(T) -> Option<T>;
 
 }  // namespace sfc::option
+
+namespace sfc {
+using option::Option;
+}  // namespace sfc

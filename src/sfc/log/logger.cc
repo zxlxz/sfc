@@ -1,6 +1,6 @@
 #include "sfc/log.h"
 
-#include "sfc/log/backend/console.h"
+#include "sfc/log/console_backend.h"
 #include "sfc/time.h"
 
 namespace sfc::log {
@@ -8,7 +8,7 @@ namespace sfc::log {
 class LogTime {
   char _buf[24] = "0000-00-00T00:00:00.000";
 
-  time::SystemTime _sys_time{};
+  time::SysTime _sys_time{};
   time::DateTime _day_time{};
 
  public:
@@ -17,7 +17,7 @@ class LogTime {
   }
 
   void update() {
-    const auto cur_time = time::SystemTime::now();
+    const auto cur_time = time::SysTime::now();
 
     if (cur_time.secs() != _sys_time.secs()) {
       _day_time = time::DateTime::from_local(cur_time);
@@ -69,11 +69,12 @@ Logger& global() {
   static auto console_backend = ConsoleBackend{};
   static auto global_logger = Logger{};
 
-  [[maybe_unused]] static auto static_init = [] {
+  static auto static_init = [] {
     global_logger.set_level(Level::Info);
     global_logger.set_backend(console_backend);
     return true;
   }();
+  (void)static_init;
 
   return global_logger;
 }

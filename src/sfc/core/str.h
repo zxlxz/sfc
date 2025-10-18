@@ -492,3 +492,7 @@ namespace sfc::option {
 template <usize N>
 Option(const char (&)[N]) -> Option<str::Str>;
 }  // namespace sfc::option
+
+namespace sfc {
+using str::Str;
+}  // namespace sfc
