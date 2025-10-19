@@ -11,27 +11,31 @@ struct Clap::Item {
 
   Type _type;
   char _short_name = 0;
-  String _long_name = {};
-  String _help_msg = {};
+  Str _name = {};
+  Str _help_msg = {};
+  Str _val_name = {};
 
   u32 _max_cnt = 1;
   u32 _val_cnt = 0;
+  bool _has_set = false;
   String _value = {};
 
  public:
-  Item(Type type, Str name, Str help) : _type{type}, _help_msg{String::from(help)} {
-    if (const auto p = name.find(':')) {
-      const auto [a, b] = name.split_at(*p);
+  Item(Type type, Str desc, Str help, Str val) : _type{type}, _name{desc}, _help_msg{help}, _val_name{val} {
+    if (_type == Type::Opt && _val_name.is_empty()) {
+      _max_cnt = 0;
+    }
+
+    if (const auto p = _name.find(':')) {
+      const auto [a, b] = _name.split_at(*p);
       _short_name = a[0];
-      name = b[{1, $}];
+      _name = b[{1, $}];
     }
 
-    if (name.ends_with("...")) {
+    if (_name.ends_with("...")) {
       _max_cnt = static_cast<u32>(-1);
-      name = name[{0, name.len() - 3}];
+      _name = _name[{0, _name.len() - 3}];
     }
-
-    _long_name = String::from(name);
   }
 
   auto match(Str key) const -> bool {
@@ -41,33 +45,27 @@ struct Clap::Item {
     if (key.len() == 1) {
       return key[0] == _short_name;
     }
-    return key == _long_name;
+    return key == _name;
   }
 
   auto is_complete() const -> bool {
-    if (_value.is_empty()) {
+    if (!_has_set) {
       return false;
     }
     return _val_cnt >= _max_cnt;
   }
 
   auto value() const -> Option<Str> {
-    if (_val_cnt == 0) {
+    if (!_has_set) {
       return {};
     }
     return _value.as_str();
   }
 
   void push_val(Str val) {
+    _has_set = true;
     if (val.is_empty()) {
-      if (_value.is_empty()) {
-        _val_cnt = 1;
-      }
       return;
-    }
-
-    if (_value.is_empty()) {
-      _val_cnt = 0;
     }
 
     _val_cnt += 1;
@@ -77,12 +75,16 @@ struct Clap::Item {
     _value.push_str(val);
   }
 
-  auto flag() const -> Option<bool> {
-    if (_val_cnt == 0) {
-      return {};
+  auto flag() const -> bool {
+    if (!_has_set) {
+      return false;
     }
 
     const auto val = _value.as_str();
+    if (val.is_empty()) {
+      return true;
+    }
+
     if (val == "1" || val == "true" || val == "yes" || val == "on") {
       return true;
     }
@@ -91,60 +93,167 @@ struct Clap::Item {
       return false;
     }
 
-    return {};
+    return false;
   }
 
   void show_usage(auto& f) const {
-    if (_type != Item::Arg) {
+    if (_type != Type::Arg) {
       return;
     }
-    f.write_fmt(" [{}]", _long_name);
+    f.write_fmt(" [{}]", _name);
     if (_max_cnt > 1) {
       f.write_str("...");
     }
   }
 
   void show_help(auto& f) const {
-    f.write_str("  ");
-    if (_short_name != 0) {
-      f.write_fmt("-{}, ", _short_name);
+    if (_short_name == 0) {
+      f.write_str("      --");
+    } else {
+      char buf[] = "  - , --";
+      buf[3] = _short_name;
+      f.write_str(buf);
     }
-    f.write_fmt("--{:<30} {}", _long_name, _help_msg);
+
+    f.write_str(_name);
+    if (_val_name.is_empty()) {
+      f.write_str("   ");
+    } else {
+      f.write_str(" <");
+      f.write_str(_val_name);
+      f.write_str(">");
+    }
+
+    const auto nwrite = 8 + _name.len() + 3 + _val_name.len();
+    if (nwrite < 32) {
+      const char pad[] = "                                ";
+      f.write_str({pad, 32 - nwrite});
+    }
+
+    f.write_str(_help_msg);
   }
 };
 
-static inline auto parse_kv(Str s) -> Tuple<Str, Str> {
-  s = s.trim_start_matches('-');
-  const auto p = s.find('=');
-  if (!p) {
-    return Tuple{s, Str{}};
+struct Clap::Parser {
+  Slice<Item> _items;
+  Item* _prev_item = nullptr;
+
+ public:
+  void parse(Slice<const Str> args) {
+    auto pos_vals = Vec<Str>{};
+    pos_vals.reserve(args.len());
+
+    _prev_item = nullptr;
+    for (auto s : args) {
+      if (!s) {
+        continue;
+      }
+      if (!this->parse_opt(s)) {
+        pos_vals.push(s);
+      }
+    }
+
+    this->parse_position_args(pos_vals.as_slice());
   }
-  const auto [a, b] = s.split_at(*p);
-  return Tuple{a, b[{1, $}]};
-}
+
+ private:
+  static auto parse_kv(Str s) -> Tuple<Str, Str> {
+    s = s.trim_start_matches('-');
+
+    if (auto p = s.find('=')) {
+      const auto [a, b] = s.split_at(*p);
+      return {a, b[{1, $}]};
+    }
+    return {s, {}};
+  }
+
+  auto get_item(Str s) -> Item* {
+    for (auto& item : _items) {
+      if (item.match(s)) {
+        return &item;
+      }
+    }
+    return nullptr;
+  }
+
+  auto parse_opt(Str s) -> bool {
+    // --key=value
+    if (s[0] == '-') {
+      const auto [key, val] = parse_kv(s);
+      if (auto item = this->get_item(key)) {
+        item->push_val(val);
+        _prev_item = item;
+      }
+      return true;
+    }
+
+    // named arg
+    if (_prev_item && !_prev_item->is_complete()) {
+      _prev_item->push_val(s);
+      return true;
+    }
+
+    return false;
+  }
+
+  auto position_args_cnt() const -> u32 {
+    auto cnt = 0U;
+    for (const auto& item : _items) {
+      if (item._type == Item::Type::Arg && item._has_set == false) {
+        cnt += 1;
+      }
+    }
+    return cnt;
+  }
+
+  void parse_position_args(Slice<const Str> pos_vals) {
+    if (pos_vals.is_empty()) {
+      return;
+    }
+    const auto args_cnt = this->position_args_cnt();
+    const auto vals_cnt = static_cast<u32>(pos_vals.len());
+
+    auto extra_num = vals_cnt > args_cnt ? vals_cnt - args_cnt : 0U;
+    auto val_idx = 0U;
+    for (auto& item : _items) {
+      if (val_idx >= vals_cnt) {
+        break;
+      }
+      if (item._type != Item::Type::Arg || item._has_set) {
+        continue;
+      }
+
+      item.push_val(pos_vals[val_idx++]);
+      while (extra_num > 0 && !item.is_complete()) {
+        item.push_val(pos_vals[val_idx++]);
+        extra_num--;
+      }
+    }
+  }
+};
 
 Clap::Clap(Str name) noexcept : _name{String::from(name)} {}
 
 Clap::~Clap() noexcept {}
 
-void Clap::author(Str s) {
+void Clap::set_author(Str s) {
   _author = String::from(s);
 }
 
-void Clap::version(Str s) {
+void Clap::set_version(Str s) {
   _version = String::from(s);
 }
 
-void Clap::about(Str s) {
+void Clap::set_about(Str s) {
   _about = String::from(s);
 }
 
-void Clap::opt(Str name, Str help) {
-  _items.push({Item::Opt, name, help});
+void Clap::add_opt(Str name, Str help, Str val) {
+  _items.push({Item::Type::Opt, name, help, val});
 }
 
-void Clap::arg(Str name, Str help) {
-  _items.push({Item::Arg, name, help});
+void Clap::add_arg(Str name, Str help) {
+  _items.push({Item::Type::Arg, name, help, {}});
 }
 
 auto Clap::get(Str s) const -> Option<Str> {
@@ -156,81 +265,13 @@ auto Clap::get(Str s) const -> Option<Str> {
   return {};
 }
 
-auto Clap::get_flag(Str s) const -> Option<bool> {
+auto Clap::get_flag(Str s) const -> bool {
   for (auto& item : _items) {
     if (item.match(s)) {
       return item.flag();
     }
   }
-  return {};
-}
-
-void Clap::parse(Slice<const Str> args) {
-  auto find_opt = [this](Str s) -> Item* {
-    for (auto& item : _items) {
-      if (item.match(s)) {
-        return &item;
-      }
-    }
-    return nullptr;
-  };
-
-  auto next_arg = [this]() -> Item* {
-    auto res = static_cast<Item*>(nullptr);
-    for (auto& item : _items) {
-      if (item._type != Item::Arg) {
-        continue;
-      }
-      res = &item;
-      if (!item.is_complete()) {
-        break;
-      }
-    }
-    return res;
-  };
-
-  auto prev_arg = static_cast<Item*>(nullptr);
-  for (auto s : args) {
-    if (!s) {
-      continue;
-    }
-
-    // --key=value
-    if (s[0] == '-') {
-      const auto [key, val] = parse_kv(s);
-      auto item = find_opt(key);
-      if (item) {
-        item->push_val(val);
-      }
-      if (item && item->_type == Item::Arg) {
-        prev_arg = item;
-      }
-      continue;
-    }
-
-    // named arg
-    if (prev_arg && !prev_arg->is_complete()) {
-      prev_arg->push_val(s);
-      continue;
-    }
-
-    // positional arg
-    if (auto position_arg = next_arg()) {
-      position_arg->push_val(s);
-      prev_arg = position_arg;
-      continue;
-    }
-  }
-}
-
-void Clap::parse_cmdline(int argc, const char* argv[]) {
-  static constexpr auto MAX_ARGS = 64;
-
-  Str args[MAX_ARGS] = {};
-  for (auto i = 1; i < argc && i < MAX_ARGS; i++) {
-    args[i - 1] = Str::from_cstr(argv[i]);
-  }
-  this->parse({args, static_cast<usize>(argc - 1)});
+  return false;
 }
 
 void Clap::print_help() const {
@@ -251,6 +292,21 @@ void Clap::print_help() const {
     item.show_help(out);
     out.write_str("\n");
   }
+}
+
+void Clap::parse(Slice<const Str> args) {
+  auto parser = Parser{_items.as_mut_slice()};
+  parser.parse(args);
+}
+
+void Clap::parse_cmdline(int argc, const char* argv[]) {
+  static constexpr auto MAX_ARGS = 64;
+
+  Str args[MAX_ARGS] = {};
+  for (auto i = 1; i < argc && i < MAX_ARGS; i++) {
+    args[i - 1] = Str::from_cstr(argv[i]);
+  }
+  this->parse({args, static_cast<usize>(argc - 1)});
 }
 
 }  // namespace sfc::app

@@ -6,6 +6,7 @@ namespace sfc::app {
 
 class Clap {
   struct Item;
+  struct Parser;
   String _name;
   String _version;
   String _author;
@@ -16,20 +17,19 @@ class Clap {
   Clap(Str name) noexcept;
   ~Clap() noexcept;
 
-  void author(Str s);
-  void version(Str s);
-  void about(Str s);
+  void set_author(Str s);
+  void set_version(Str s);
+  void set_about(Str s);
 
-  void opt(Str name, Str help);
-  void arg(Str name, Str help);
+  void add_opt(Str name, Str help, Str val = {});
+  void add_arg(Str name, Str help);
 
   auto get(Str name) const -> Option<Str>;
-  auto get_flag(Str name) const -> Option<bool>;
+  auto get_flag(Str name) const -> bool;
+  void print_help() const;
 
   void parse(Slice<const Str> args);
   void parse_cmdline(int argc, const char* argv[]);
-
-  void print_help() const;
 };
 
 }  // namespace sfc::app
