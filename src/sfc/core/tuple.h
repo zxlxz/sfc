@@ -91,18 +91,22 @@ Tuple(T...) -> Tuple<T...>;
 
 }  // namespace sfc::tuple
 
+namespace sfc {
+using tuple::Tuple;
+}  // namespace sfc
+
 namespace SFC_STD {
 
 template <class>
 struct tuple_size;
 
 template <class... T>
-struct tuple_size<sfc::tuple::Tuple<T...>> {
+struct tuple_size<sfc::Tuple<T...>> {
   static constexpr auto value = sizeof...(T);
 };
 
 template <class... T>
-struct tuple_size<const sfc::tuple::Tuple<T...>> {
+struct tuple_size<const sfc::Tuple<T...>> {
   static constexpr auto value = sizeof...(T);
 };
 
@@ -110,17 +114,13 @@ template <sfc::usize, class>
 struct tuple_element;
 
 template <sfc::usize I, class... T>
-struct tuple_element<I, sfc::tuple::Tuple<T...>> {
-  using type = sfc::tuple::Tuple<T...>::template element_t<I>;
+struct tuple_element<I, sfc::Tuple<T...>> {
+  using type = sfc::Tuple<T...>::template element_t<I>;
 };
 
 template <sfc::usize I, class... T>
-struct tuple_element<I, const sfc::tuple::Tuple<T...>> {
-  using type = const sfc::tuple::Tuple<T...>::template element_t<I>;
+struct tuple_element<I, const sfc::Tuple<T...>> {
+  using type = const sfc::Tuple<T...>::template element_t<I>;
 };
 
-}  // namespace sfc::SFC_STD
-
-namespace sfc {
-using tuple::Tuple;
-}  // namespace sfc
+}  // namespace SFC_STD

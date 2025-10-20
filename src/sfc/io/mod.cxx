@@ -9,13 +9,13 @@ SFC_TEST(read) {
 
   u8 tmp[4] = {};
   panicking::expect_eq(r.read(tmp), 4U);
-  panicking::expect_eq(Str::from_u8(tmp), "0123");
+  panicking::expect_eq(Str::from_utf8(tmp), "0123");
 
   panicking::expect_eq(r.read(tmp), 4U);
-  panicking::expect_eq(Str::from_u8(tmp), "4567");
+  panicking::expect_eq(Str::from_utf8(tmp), "4567");
 
   panicking::expect_eq(r.read(tmp), 2U);
-  panicking::expect_eq(Str::from_u8({tmp, 2}), "89");
+  panicking::expect_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
 SFC_TEST(read_exact) {
@@ -24,13 +24,13 @@ SFC_TEST(read_exact) {
 
   u8 tmp[4] = {};
   panicking::expect(r.read_exact(tmp).is_ok());
-  panicking::expect_eq(Str::from_u8(tmp), "0123");
+  panicking::expect_eq(Str::from_utf8(tmp), "0123");
 
   panicking::expect(r.read_exact(tmp).is_ok());
-  panicking::expect_eq(Str::from_u8(tmp), "4567");
+  panicking::expect_eq(Str::from_utf8(tmp), "4567");
 
   panicking::expect(r.read_exact(tmp).is_err());
-  panicking::expect_eq(Str::from_u8({tmp, 2}), "89");
+  panicking::expect_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
 SFC_TEST(read_to_end) {
@@ -39,7 +39,7 @@ SFC_TEST(read_to_end) {
 
   auto v = Vec<u8>{};
   panicking::expect(r.read_to_end(v).is_ok());
-  panicking::expect_eq(Str::from_u8(v.as_slice()), "0123456789");
+  panicking::expect_eq(Str::from_utf8(v.as_slice()), "0123456789");
 }
 
 SFC_TEST(read_to_string) {

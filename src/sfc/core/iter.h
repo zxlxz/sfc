@@ -20,7 +20,7 @@ template <class T>
 struct Iterator {
   using Item = T;
 
-  auto find(this auto&& self, auto&& pred) -> option::Option<Item> {
+  auto find(this auto&& self, auto&& pred) -> Option<Item> {
     for (; auto x = self.next();) {
       if (pred(*x)) {
         return x;
@@ -29,7 +29,7 @@ struct Iterator {
     return {};
   }
 
-  auto rfind(this auto&& self, auto&& pred) -> option::Option<Item> {
+  auto rfind(this auto&& self, auto&& pred) -> Option<Item> {
     for (; auto x = self.next_back();) {
       if (pred(*x)) {
         return x;
@@ -38,7 +38,7 @@ struct Iterator {
     return {};
   }
 
-  auto position(this auto&& self, auto&& pred) -> option::Option<usize> {
+  auto position(this auto&& self, auto&& pred) -> Option<usize> {
     for (usize idx = 0UL; auto x = self.next(); ++idx) {
       if (pred(*x)) {
         return idx;
@@ -48,7 +48,7 @@ struct Iterator {
     return {};
   }
 
-  auto rposition(this auto&& self, auto&& pred) -> option::Option<usize> {
+  auto rposition(this auto&& self, auto&& pred) -> Option<usize> {
     for (auto idx = self.len() - 1; auto x = self.next_back(); --idx) {
       if (pred(*x)) {
         return idx;
@@ -79,7 +79,7 @@ struct Iterator {
   }
 
   template <class F, class B = trait::invoke_t<F(Item, Item)>>
-  auto reduce(this auto self, F&& f) -> option::Option<B> {
+  auto reduce(this auto self, F&& f) -> Option<B> {
     auto first = self.next();
     if (!first) {
       return {};
@@ -118,19 +118,19 @@ struct Iterator {
     return accum;
   }
 
-  auto min(this auto self) -> option::Option<Item> {
+  auto min(this auto self) -> Option<Item> {
     return self.reduce([](auto&& a, auto&& b) -> auto& { return a < b ? a : b; });
   }
 
-  auto max(this auto self) -> option::Option<Item> {
+  auto max(this auto self) -> Option<Item> {
     return self.reduce([](auto&& a, auto&& b) -> auto& { return a > b ? a : b; });
   }
 
-  auto min_by_key(this auto self, auto&& f) -> option::Option<Item> {
+  auto min_by_key(this auto self, auto&& f) -> Option<Item> {
     return self.reduce([&](auto&& a, auto&& b) -> auto& { return f(a) < f(b) ? a : b; });
   }
 
-  auto max_by_key(this auto self, auto&& f) -> option::Option<Item> {
+  auto max_by_key(this auto self, auto&& f) -> Option<Item> {
     return self.reduce([&](auto&& a, auto&& b) -> auto& { return f(a) > f(b) ? a : b; });
   }
 
@@ -171,11 +171,11 @@ struct Rev : Iterator<typename I::Item> {
     return _iter.len();
   }
 
-  auto next() -> option::Option<Item> {
+  auto next() -> Option<Item> {
     return _iter.next_back();
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> Option<Item> {
     return _iter.next();
   }
 };
@@ -191,24 +191,24 @@ struct Map : Iterator<trait::invoke_t<F(typename I::Item)>> {
     return _iter.len();
   }
 
-  auto next() -> option::Option<Item> {
+  auto next() -> Option<Item> {
     return _iter.next().map(_func);
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> Option<Item> {
     return _iter.next_back().map(_func);
   }
 };
 
 template <class A, class B>
 struct Zip : Iterator<typename A::Item> {
-  using Item = tuple::Tuple<typename A::Item, typename B::Item>;
+  using Item = Tuple<typename A::Item, typename B::Item>;
 
   A _a;
   B _b;
 
  public:
-  auto next() -> option::Option<Item> {
+  auto next() -> Option<Item> {
     auto a = _a.next();
     if (!a) {
       return {};
@@ -220,7 +220,7 @@ struct Zip : Iterator<typename A::Item> {
     return Item{mem::move(a).unwrap(), mem::move(b).unwrap()};
   }
 
-  auto next_back() -> option::Option<Item> {
+  auto next_back() -> Option<Item> {
     auto a = _a.next_back();
     if (!a) {
       return {};

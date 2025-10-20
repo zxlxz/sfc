@@ -3,6 +3,10 @@
 #include "sfc/core/panicking.h"
 #include "sfc/core/trait.h"
 
+namespace sfc::str {
+struct Str;
+}
+
 namespace sfc::option {
 
 enum class Tag : u8 { None, Some };
@@ -228,6 +232,9 @@ class Option {
 
 template <class T>
 Option(T) -> Option<T>;
+
+template <usize N>
+Option(const char (&)[N]) -> Option<str::Str>;
 
 }  // namespace sfc::option
 

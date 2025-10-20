@@ -86,14 +86,14 @@ struct Slice {
     return Slice<T>{_ptr + start, start < end ? end - start : 0U};
   }
 
-  auto split_at(usize mid) const noexcept -> tuple::Tuple<Slice<const T>, Slice<const T>> {
+  auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
     const auto x = mid < _len ? mid : _len;
-    return tuple::Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
+    return Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
   }
 
-  auto split_at_mut(usize mid) noexcept -> tuple::Tuple<Slice, Slice> {
+  auto split_at_mut(usize mid) noexcept -> Tuple<Slice, Slice> {
     const auto x = mid < _len ? mid : _len;
-    return tuple::Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
+    return Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
   }
 
  public:
@@ -168,7 +168,7 @@ struct Slice {
     return needle == Slice<const T>{_ptr + _len - needle._len, needle._len};
   }
 
-  auto find(const T& x) const noexcept -> option::Option<usize> {
+  auto find(const T& x) const noexcept -> Option<usize> {
     if (_len == 0) {
       return {};
     }
@@ -278,14 +278,14 @@ struct Iter : iter::Iterator<T&> {
     return _ptr < _end ? static_cast<usize>(_end - _ptr) : 0U;
   }
 
-  auto next() -> option::Option<T&> {
+  auto next() -> Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
     return *_ptr++;
   }
 
-  auto next_back() -> option::Option<T&> {
+  auto next_back() -> Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
@@ -305,7 +305,7 @@ struct Windows : iter::Iterator<Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() -> option::Option<Slice<T>> {
+  auto next() -> Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
@@ -316,7 +316,7 @@ struct Windows : iter::Iterator<Slice<T>> {
     return res;
   }
 
-  auto next_back() -> option::Option<Slice<T>> {
+  auto next_back() -> Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
@@ -337,7 +337,7 @@ struct Chunks : iter::Iterator<Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() -> option::Option<Slice<T>> {
+  auto next() -> Option<Slice<T>> {
     if (_buf._len == 0) {
       return {};
     }

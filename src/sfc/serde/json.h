@@ -117,7 +117,7 @@ class Serializer<W>::SerMap {
 
   SerMap(const SerMap&) noexcept = delete;
 
-  void serialize_entry(str::Str key, const auto& val) {
+  void serialize_entry(Str key, const auto& val) {
     if (_cnt++ != 0) {
       _inn._write.write_str(",");
     }
@@ -227,7 +227,7 @@ class Deserializer {
       return io::Error{io::ErrorKind::InvalidData};
     }
     _read.consume(n);
-    return Str::from_u8(b[{0, n}]);
+    return Str::from_utf8(b[{0, n}]);
   }
 
   auto pop_str() -> io::Result<Str> {
@@ -244,7 +244,7 @@ class Deserializer {
     }
     const auto n = pos.unwrap();
     _read.consume(n + 1);
-    return Str::from_u8(buf[{0, n}]);
+    return Str::from_utf8(buf[{0, n}]);
   }
 };
 

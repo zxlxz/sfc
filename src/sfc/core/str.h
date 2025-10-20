@@ -13,13 +13,14 @@ struct Str {
 
   constexpr Str(const char* p, usize n) noexcept : _ptr{p}, _len{n} {}
 
-  template <u32 N>
+  constexpr Str(const u8* p, usize n) noexcept : _ptr{static_cast<const char*>(static_cast<const void*>(p))}, _len{n} {}
+
+  template <usize N>
   constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
-  static auto from_u8(slice::Slice<const u8> s) noexcept -> Str {
-    const auto p = reinterpret_cast<const char*>(s._ptr);
-    const auto n = (s._len == 0 || p[s._len - 1]) ? s._len : __builtin_strlen(p);
-    return Str{p, n};
+  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+    const auto p = static_cast<const char*>(static_cast<const void*>(s._ptr));
+    return {p, s._len};
   }
 
   static auto from_cstr(const char* s) noexcept -> Str {
@@ -28,12 +29,14 @@ struct Str {
   }
 
   static auto from(const auto& f) noexcept -> Str {
-    if constexpr (requires { Str{f}; }) {
-      return Str{static_cast<decltype(f)&&>(f)};
-    } else if constexpr (requires { f.as_str(); }) {
+    if constexpr (requires { f.as_str(); }) {
       return f.as_str();
+    } else if constexpr (requires { Str{f}; }) {
+      return Str{f};
+    } else if constexpr (requires { static_cast<const char*>(f); }) {
+      return Str::from_cstr(f);
     } else {
-      return f;
+      static_assert(false, "Str::from: unsupported type");
     }
   }
 
@@ -53,11 +56,11 @@ struct Str {
     return _len != 0;
   }
 
-  auto as_chars() const noexcept -> slice::Slice<const char> {
+  auto as_chars() const noexcept -> Slice<const char> {
     return {_ptr, _len};
   }
 
-  auto as_bytes() const noexcept -> slice::Slice<const u8> {
+  auto as_bytes() const noexcept -> Slice<const u8> {
     return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
@@ -76,9 +79,9 @@ struct Str {
     return Str{_ptr + start, start < end ? end - start : 0U};
   }
 
-  auto split_at(usize mid) const noexcept -> tuple::Tuple<Str, Str> {
+  auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
     const auto x = mid < _len ? mid : _len;
-    return tuple::Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
+    return Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
   }
 
   auto iter() const noexcept -> slice::Iter<const char> {
@@ -97,8 +100,8 @@ struct Str {
 
  public:
   auto search(auto&& p) const noexcept;
-  auto find(auto&& p) const noexcept -> option::Option<usize>;
-  auto rfind(auto&& p) const noexcept -> option::Option<usize>;
+  auto find(auto&& p) const noexcept -> Option<usize>;
+  auto rfind(auto&& p) const noexcept -> Option<usize>;
 
   auto contains(auto&& p) const noexcept -> bool;
   auto starts_with(auto&& p) const noexcept -> bool;
@@ -131,7 +134,7 @@ struct Str {
   }
 
   template <class T>
-  auto parse() const noexcept -> option::Option<T>;
+  auto parse() const noexcept -> Option<T>;
 
  public:
   // trait: fmt::Display
@@ -146,7 +149,7 @@ struct Str {
   }
 
   // trait:: io::Read
-  auto read(slice::Slice<u8> buf) -> usize {
+  auto read(Slice<u8> buf) -> usize {
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
     _ptr += amt;
@@ -162,11 +165,11 @@ struct Str {
 
 template <class T>
 struct FromStr {
-  static auto from_str(Str) -> option::Option<T>;
+  static auto from_str(Str) -> Option<T>;
 };
 
 template <class T>
-auto Str::parse() const noexcept -> option::Option<T> {
+auto Str::parse() const noexcept -> Option<T> {
   if constexpr (requires { T::from_str(*this); }) {
     return T::from_str(*this);
   } else {
@@ -185,7 +188,7 @@ struct CharSearcher {
     return 1;
   }
 
-  auto next() noexcept -> option::Option<usize> {
+  auto next() noexcept -> Option<usize> {
     if (_idx >= _end) {
       return {};
     }
@@ -195,7 +198,7 @@ struct CharSearcher {
     return _idx - 1;
   }
 
-  auto next_back() noexcept -> option::Option<usize> {
+  auto next_back() noexcept -> Option<usize> {
     if (_idx >= _end) {
       return {};
     }
@@ -205,7 +208,7 @@ struct CharSearcher {
     return _end;
   }
 
-  auto next_match() noexcept -> option::Option<usize> {
+  auto next_match() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (_str[_idx++] == _pat) {
         return _idx - 1;
@@ -214,7 +217,7 @@ struct CharSearcher {
     return {};
   }
 
-  auto next_match_back() -> option::Option<usize> {
+  auto next_match_back() -> Option<usize> {
     while (_idx < _end) {
       if (_str[--_end] == _pat) {
         return _end;
@@ -223,7 +226,7 @@ struct CharSearcher {
     return {};
   }
 
-  auto next_reject() noexcept -> option::Option<usize> {
+  auto next_reject() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (_str[_idx++] != _pat) {
         return _idx - 1;
@@ -232,7 +235,7 @@ struct CharSearcher {
     return {};
   }
 
-  auto next_reject_back() noexcept -> option::Option<usize> {
+  auto next_reject_back() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (_str[--_end] != _pat) {
         return _end;
@@ -254,7 +257,7 @@ struct PredSearcher {
     return 1;
   }
 
-  auto next() noexcept -> option::Option<usize> {
+  auto next() noexcept -> Option<usize> {
     if (_idx >= _end) {
       return {};
     }
@@ -264,7 +267,7 @@ struct PredSearcher {
     return _idx - 1;
   }
 
-  auto next_back() noexcept -> option::Option<usize> {
+  auto next_back() noexcept -> Option<usize> {
     if (_idx >= _end) {
       return {};
     }
@@ -274,7 +277,7 @@ struct PredSearcher {
     return _end;
   }
 
-  auto next_match() noexcept -> option::Option<usize> {
+  auto next_match() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (_pat(_str[_idx++])) {
         return _idx - 1;
@@ -283,7 +286,7 @@ struct PredSearcher {
     return {};
   }
 
-  auto next_match_back() noexcept -> option::Option<usize> {
+  auto next_match_back() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (_pat(_str[--_end])) {
         return _end;
@@ -292,7 +295,7 @@ struct PredSearcher {
     return {};
   }
 
-  auto next_reject() noexcept -> option::Option<usize> {
+  auto next_reject() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (!_pat(_str[_idx++])) {
         return _idx - 1;
@@ -301,7 +304,7 @@ struct PredSearcher {
     return {};
   }
 
-  auto next_reject_back() noexcept -> option::Option<usize> {
+  auto next_reject_back() noexcept -> Option<usize> {
     while (_idx < _end) {
       if (!_pat(_str[--_end])) {
         return _end;
@@ -322,7 +325,7 @@ struct StrSearcher {
     return _pat._len;
   }
 
-  auto next() noexcept -> option::Option<usize> {
+  auto next() noexcept -> Option<usize> {
     if (_idx + _pat._len > _end) {
       return {};
     }
@@ -334,7 +337,7 @@ struct StrSearcher {
     return _idx - _pat._len;
   }
 
-  auto next_back() -> option::Option<usize> {
+  auto next_back() -> Option<usize> {
     if (_idx + _pat._len > _end) {
       return {};
     }
@@ -347,7 +350,7 @@ struct StrSearcher {
     return _end;
   }
 
-  auto next_match() noexcept -> option::Option<usize> {
+  auto next_match() noexcept -> Option<usize> {
     while (_idx + _pat._len <= _end) {
       if (_pat == Str{_str._ptr + _idx, _pat._len}) {
         _idx += _pat._len;
@@ -358,7 +361,7 @@ struct StrSearcher {
     return {};
   }
 
-  auto next_match_back() -> option::Option<usize> {
+  auto next_match_back() -> Option<usize> {
     while (_idx + _pat._len <= _end) {
       if (_pat == Str{_str._ptr + _end - _pat._len, _pat._len}) {
         _end -= _pat._len;
@@ -426,12 +429,12 @@ auto Str::search(auto&& p) const noexcept {
   return Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
 }
 
-auto Str::find(auto&& p) const noexcept -> option::Option<usize> {
+auto Str::find(auto&& p) const noexcept -> Option<usize> {
   auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
   return s.next_match();
 }
 
-auto Str::rfind(auto&& p) const noexcept -> option::Option<usize> {
+auto Str::rfind(auto&& p) const noexcept -> Option<usize> {
   auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
   return s.next_match_back();
 }
@@ -487,11 +490,6 @@ static auto type_name() -> Str {
 }
 
 }  // namespace sfc::str
-
-namespace sfc::option {
-template <usize N>
-Option(const char (&)[N]) -> Option<str::Str>;
-}  // namespace sfc::option
 
 namespace sfc {
 using str::Str;

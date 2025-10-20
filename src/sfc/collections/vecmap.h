@@ -38,7 +38,7 @@ class VecMap {
     return _items.is_empty();
   }
 
-  auto as_slice() const -> slice::Slice<const Item> {
+  auto as_slice() const -> Slice<const Item> {
     return _items.as_slice();
   }
 

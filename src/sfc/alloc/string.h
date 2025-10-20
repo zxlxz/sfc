@@ -5,7 +5,7 @@
 namespace sfc::string {
 
 class [[nodiscard]] String {
-  vec::Vec<u8> _vec = {};
+  Vec<u8> _vec = {};
 
  public:
   String() noexcept = default;
@@ -29,8 +29,8 @@ class [[nodiscard]] String {
     return res;
   }
 
-  operator str::Str() const noexcept {
-    return Str::from_u8(_vec.as_slice());
+  operator Str() const noexcept {
+    return Str{_vec.as_ptr(), _vec.len()};
   }
 
   auto as_ptr() const -> const u8* {
@@ -46,7 +46,7 @@ class [[nodiscard]] String {
   }
 
   auto as_str() const -> Str {
-    return Str::from_u8(_vec.as_slice());
+    return Str{_vec.as_ptr(), _vec.len()};
   }
 
   auto is_empty() const -> bool {
@@ -57,15 +57,15 @@ class [[nodiscard]] String {
     return String::from(this->as_str());
   }
 
-  auto as_slice() const -> slice::Slice<const u8> {
+  auto as_slice() const -> Slice<const u8> {
     return {_vec.as_ptr(), _vec.len()};
   }
 
-  auto as_mut_slice() -> slice::Slice<u8> {
+  auto as_mut_slice() -> Slice<u8> {
     return {_vec.as_mut_ptr(), _vec.len()};
   }
 
-  auto as_mut_vec() -> vec::Vec<u8>& {
+  auto as_mut_vec() -> Vec<u8>& {
     return _vec;
   }
 
@@ -79,7 +79,8 @@ class [[nodiscard]] String {
   }
 
   auto operator[](ops::Range ids) const -> Str {
-    return Str::from_u8(_vec[ids]);
+    const auto v = _vec[ids];
+    return Str{v._ptr, v._len};
   }
 
   auto iter() const {
@@ -92,8 +93,7 @@ class [[nodiscard]] String {
 
  public:
   auto operator==(const auto& other) const -> bool {
-    const auto s = this->as_str();
-    return s.operator==(other);
+    return this->as_str() == other;
   }
 
  public:
@@ -184,7 +184,7 @@ class [[nodiscard]] String {
 };
 
 class [[nodiscard]] CString {
-  vec::Vec<char> _vec = {};
+  Vec<char> _vec = {};
 
  public:
   CString() = default;

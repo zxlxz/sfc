@@ -107,14 +107,14 @@ class Result {
     return _inn.is_err();
   }
 
-  auto ok(this auto self) -> option::Option<T> {
+  auto ok(this auto self) -> Option<T> {
     if (self._inn.is_err()) {
       return {};
     }
-    return option::Option<T>{static_cast<T&&>(*self._inn)};
+    return Option<T>{static_cast<T&&>(*self._inn)};
   }
 
-  auto err(this auto self) -> option::Option<E> {
+  auto err(this auto self) -> Option<E> {
     if (self._inn.is_ok()) {
       return {};
     }

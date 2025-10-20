@@ -18,7 +18,7 @@ struct alignas(8) Style {
 
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  static auto from_str(str::Str s) -> option::Option<Style>;
+  static auto from_str(Str s) -> Option<Style>;
 
   auto fill(char default_val = ' ') const -> char {
     return _fill ? _fill : default_val;
@@ -45,7 +45,7 @@ struct alignas(8) Style {
     return _prefix == '#';
   }
 
-  auto sign(bool is_neg) const -> str::Str {
+  auto sign(bool is_neg) const -> Str {
     if (is_neg) {
       return "-";
     }
@@ -60,7 +60,7 @@ struct alignas(8) Style {
     return _point ? _precision : default_val;
   }
 
-  auto prefix() const -> str::Str {
+  auto prefix() const -> Str {
     if (_prefix != '#') {
       return "";
     }
@@ -77,13 +77,13 @@ struct alignas(8) Style {
 };
 
 struct Debug {
-  static auto fmt_int(slice::Slice<char> buf, auto val, Style style = {}) -> str::Str;
-  static auto fmt_flt(slice::Slice<char> buf, auto val, Style style = {}) -> str::Str;
-  static auto fmt_ptr(slice::Slice<char> buf, const void* val, Style style = {}) -> str::Str;
+  static auto fmt_int(Slice<char> buf, auto val, Style style = {}) -> Str;
+  static auto fmt_flt(Slice<char> buf, auto val, Style style = {}) -> Str;
+  static auto fmt_ptr(Slice<char> buf, const void* val, Style style = {}) -> Str;
 
  public:
   static void fmt(bool val, auto& f) {
-    f.pad(val ? str::Str{"true"} : str::Str{"false"});
+    f.pad(val ? Str{"true"} : Str{"false"});
   }
 
   static void fmt(char val, auto& f) {
@@ -126,19 +126,19 @@ struct Debug {
 
   template <class T, usize N>
   static void fmt(const T (&val)[N], auto& f) {
-    slice::Slice{val}.fmt(f);
+    Slice{val}.fmt(f);
   }
 
   template <usize N>
   static void fmt(const char (&val)[N], auto& f) {
-    str::Str{val}.fmt(f);
+    Str{val}.fmt(f);
   }
 };
 
 template <class... T>
 struct Args {
-  str::Str _pats = {};
-  tuple::Tuple<const T*...> _args = {};
+  Str _pats = {};
+  Tuple<const T*...> _args = {};
 
  public:
   explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
@@ -179,7 +179,7 @@ struct Fmter {
     }
   }
 
-  void write_str(str::Str s) {
+  void write_str(Str s) {
     if (s.is_empty()) {
       return;
     }
@@ -195,7 +195,7 @@ struct Fmter {
     }
   }
 
-  void pad(str::Str s) {
+  void pad(Str s) {
     if (_style._width <= s._len) {
       this->write_str(s);
       return;
@@ -221,7 +221,7 @@ struct Fmter {
     }
   }
 
-  void pad_num(bool is_neg, str::Str body) {
+  void pad_num(bool is_neg, Str body) {
     const auto sign = _style.sign(is_neg);
     const auto prefix = _style.prefix();
     const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
@@ -265,7 +265,7 @@ struct Fmter {
     }
   }
 
-  void write_fmt(str::Str fmts, const auto&... args) {
+  void write_fmt(Str fmts, const auto&... args) {
     if constexpr (sizeof...(args) == 0) {
       this->write_str(fmts);
     } else {
@@ -303,12 +303,12 @@ struct Fmter {
   static constexpr auto INDENT_SIZE = 4U;
   static constexpr auto MAX_DEPTH = 20U;
 
-  void debug_begin(str::Str s) noexcept {
+  void debug_begin(Str s) noexcept {
     this->write_str(s);
     _depth += 1;
   }
 
-  void debug_end(str::Str s, u32 cnt) noexcept {
+  void debug_end(Str s, u32 cnt) noexcept {
     _depth -= 1;
 
     if (cnt && _style._prefix == '#') {
@@ -440,7 +440,7 @@ class Fmter<W>::DebugMap {
 
   DebugMap(const DebugMap&) noexcept = delete;
 
-  auto entry(str::Str name, const auto& value) -> DebugMap& {
+  auto entry(Str name, const auto& value) -> DebugMap& {
     _fmt.debug_next(_cnt++, value, "\"", name, "\": ");
     return *this;
   }
@@ -469,7 +469,7 @@ class Fmter<W>::DebugStruct {
 
   DebugStruct(DebugStruct&&) noexcept = delete;
 
-  auto field(str::Str name, const auto& value) -> DebugStruct& {
+  auto field(Str name, const auto& value) -> DebugStruct& {
     _fmt.debug_next(_cnt++, value, name, ": ");
     return *this;
   }
@@ -482,7 +482,7 @@ class Fmter<W>::DebugStruct {
   }
 };
 
-void write(auto& out, str::Str fmts, const auto&... args) {
+void write(auto& out, Str fmts, const auto&... args) {
   Fmter{out}.write_fmt(fmts, args...);
 }
 

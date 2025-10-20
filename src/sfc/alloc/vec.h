@@ -169,11 +169,11 @@ class [[nodiscard]] Vec {
     return _len != 0;
   }
 
-  auto as_slice() const -> slice::Slice<const T> {
+  auto as_slice() const -> Slice<const T> {
     return {_buf._ptr, _len};
   }
 
-  auto as_mut_slice() -> slice::Slice<T> {
+  auto as_mut_slice() -> Slice<T> {
     return {_buf._ptr, _len};
   }
 
@@ -208,40 +208,40 @@ class [[nodiscard]] Vec {
     return _buf._ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const -> slice::Slice<const T> {
-    return slice::Slice<const T>{_buf._ptr, _len}[ids];
+  auto operator[](ops::Range ids) const -> Slice<const T> {
+    return Slice<const T>{_buf._ptr, _len}[ids];
   }
 
-  auto operator[](ops::Range ids) -> slice::Slice<T> {
-    return slice::Slice<T>{_buf._ptr, _len}[ids];
+  auto operator[](ops::Range ids) -> Slice<T> {
+    return Slice<T>{_buf._ptr, _len}[ids];
   }
 
-  auto spare_capacity_mut() -> slice::Slice<T> {
-    return slice::Slice{_buf._ptr + _len, _buf._cap - _len};
+  auto spare_capacity_mut() -> Slice<T> {
+    return Slice{_buf._ptr + _len, _buf._cap - _len};
   }
 
-  auto first() const -> option::Option<const T&> {
+  auto first() const -> Option<const T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[0];
   }
 
-  auto first_mut() -> option::Option<T&> {
+  auto first_mut() -> Option<T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[0];
   }
 
-  auto last() const -> option::Option<const T&> {
+  auto last() const -> Option<const T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[_len - 1];
   }
 
-  auto last_mut() -> option::Option<T&> {
+  auto last_mut() -> Option<T&> {
     if (_len == 0) {
       return {};
     }
