@@ -138,7 +138,8 @@ void main(int argc, const char* argv[]) {
     return;
   }
 
-  const auto gtest_color = cmd.get_flag("gtest_color");
+  const auto is_tty = io::Stdout::is_tty();
+  const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_tty);
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   app.exec(gtest_filter, gtest_color);
 }

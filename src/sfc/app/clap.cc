@@ -9,41 +9,27 @@ struct Clap::Item {
     Arg,
   };
 
-  Type _type;
-  char _short_name = 0;
+  Type _type = Type::Opt;
+  char _key = 0;
   Str _name = {};
-  Str _help_msg = {};
+  Str _help = {};
   Str _val_name = {};
-
   u32 _max_cnt = 1;
-  u32 _val_cnt = 0;
+
   bool _has_set = false;
+  u32 _val_cnt = 0;
   String _value = {};
 
  public:
-  Item(Type type, Str desc, Str help, Str val) : _type{type}, _name{desc}, _help_msg{help}, _val_name{val} {
-    if (_type == Type::Opt && _val_name.is_empty()) {
-      _max_cnt = 0;
-    }
-
-    if (const auto p = _name.find(':')) {
-      const auto [a, b] = _name.split_at(*p);
-      _short_name = a[0];
-      _name = b[{1, $}];
-    }
-
-    if (_name.ends_with("...")) {
-      _max_cnt = static_cast<u32>(-1);
-      _name = _name[{0, _name.len() - 3}];
-    }
-  }
+  Item(Type type, char key, Str name, Str help, Str val, u32 val_cnt)
+      : _type{type}, _key{key}, _name{name}, _help{help}, _val_name{val}, _max_cnt{val_cnt} {}
 
   auto match(Str key) const -> bool {
     if (key.is_empty()) {
       return false;
     }
     if (key.len() == 1) {
-      return key[0] == _short_name;
+      return key[0] == _key;
     }
     return key == _name;
   }
@@ -75,9 +61,9 @@ struct Clap::Item {
     _value.push_str(val);
   }
 
-  auto flag() const -> bool {
+  auto flag() const -> Option<bool> {
     if (!_has_set) {
-      return false;
+      return {};
     }
 
     const auto val = _value.as_str();
@@ -93,44 +79,43 @@ struct Clap::Item {
       return false;
     }
 
-    return false;
+    return {};
   }
 
   void show_usage(auto& f) const {
     if (_type != Type::Arg) {
       return;
     }
-    f.write_fmt(" [{}]", _name);
+    f.write_fmt(" [{}]", _val_name);
     if (_max_cnt > 1) {
       f.write_str("...");
     }
   }
 
   void show_help(auto& f) const {
-    if (_short_name == 0) {
+    if (_key == 0) {
       f.write_str("      --");
     } else {
       char buf[] = "  - , --";
-      buf[3] = _short_name;
+      buf[3] = _key;
       f.write_str(buf);
     }
 
     f.write_str(_name);
     if (_val_name.is_empty()) {
-      f.write_str("   ");
+      f.write_str("      ");
     } else {
       f.write_str(" <");
       f.write_str(_val_name);
-      f.write_str(">");
+      f.write_str(_max_cnt <= 1 ? Str{">   "} : Str{">..."});
     }
 
-    const auto nwrite = 8 + _name.len() + 3 + _val_name.len();
-    if (nwrite < 32) {
-      const char pad[] = "                                ";
-      f.write_str({pad, 32 - nwrite});
+    const char pad[] = "                                ";
+    const auto nwrite = 8 + _name.len() + 6 + _val_name.len();
+    if (nwrite < sizeof(pad)) {
+      f.write_str({pad, sizeof(pad) - nwrite});
     }
-
-    f.write_str(_help_msg);
+    f.write_str(_help);
   }
 };
 
@@ -248,12 +233,25 @@ void Clap::set_about(Str s) {
   _about = String::from(s);
 }
 
-void Clap::add_opt(Str name, Str help, Str val) {
-  _items.push({Item::Type::Opt, name, help, val});
+void Clap::add_opt(Str desc, Str help, Str sval) {
+  const auto skey = desc[1] == ':' ? desc[0] : char(0);
+  const auto name = skey ? desc[{2, $}] : desc;
+  if (sval.is_empty()) {
+    _items.push({Item::Type::Opt, skey, name, help, {}, 0});
+    return;
+  }
+
+  const auto max_cnt = sval.ends_with("...") ? 1000U : 1U;
+  const auto val_name = max_cnt == 1 ? sval : sval[{0, sval.len() - 3}];
+  _items.push({Item::Type::Opt, skey, name, help, val_name, max_cnt});
 }
 
-void Clap::add_arg(Str name, Str help) {
-  _items.push({Item::Type::Arg, name, help, {}});
+void Clap::add_arg(Str desc, Str help, Str sval) {
+  const auto skey = desc[1] == ':' ? desc[0] : char(0);
+  const auto name = skey ? desc[{2, $}] : desc;
+  const auto max_cnt = sval.ends_with("...") ? 1000U : 1U;
+  const auto val_name = max_cnt == 1 ? sval : sval[{0, sval.len() - 3}];
+  _items.push({Item::Type::Arg, skey, name, help, val_name, max_cnt});
 }
 
 auto Clap::get(Str s) const -> Option<Str> {
@@ -265,13 +263,13 @@ auto Clap::get(Str s) const -> Option<Str> {
   return {};
 }
 
-auto Clap::get_flag(Str s) const -> bool {
+auto Clap::get_flag(Str s) const -> Option<bool> {
   for (auto& item : _items) {
     if (item.match(s)) {
       return item.flag();
     }
   }
-  return false;
+  return {};
 }
 
 void Clap::print_help() const {

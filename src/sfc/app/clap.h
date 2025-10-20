@@ -22,10 +22,10 @@ class Clap {
   void set_about(Str s);
 
   void add_opt(Str name, Str help, Str val = {});
-  void add_arg(Str name, Str help);
+  void add_arg(Str name, Str help, Str val);
 
   auto get(Str name) const -> Option<Str>;
-  auto get_flag(Str name) const -> bool;
+  auto get_flag(Str name) const -> Option<bool>;
   void print_help() const;
 
   void parse(Slice<const Str> args);
