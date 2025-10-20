@@ -124,7 +124,7 @@ struct Clap::Parser {
   Item* _prev_item = nullptr;
 
  public:
-  void parse(Slice<const Str> args) {
+  auto parse(Slice<const Str> args) -> bool {
     auto pos_vals = Vec<Str>{};
     pos_vals.reserve(args.len());
 
@@ -138,7 +138,7 @@ struct Clap::Parser {
       }
     }
 
-    this->parse_position_args(pos_vals.as_slice());
+    return this->parse_position_args(pos_vals.as_slice());
   }
 
  private:
@@ -191,12 +191,13 @@ struct Clap::Parser {
     return cnt;
   }
 
-  void parse_position_args(Slice<const Str> pos_vals) {
-    if (pos_vals.is_empty()) {
-      return;
-    }
+  auto parse_position_args(Slice<const Str> pos_vals) -> bool {
     const auto args_cnt = this->position_args_cnt();
     const auto vals_cnt = static_cast<u32>(pos_vals.len());
+
+    if (vals_cnt < args_cnt) {
+      return false;
+    }
 
     auto extra_num = vals_cnt > args_cnt ? vals_cnt - args_cnt : 0U;
     auto val_idx = 0U;
@@ -214,6 +215,8 @@ struct Clap::Parser {
         extra_num--;
       }
     }
+
+    return extra_num == 0;
   }
 };
 
@@ -276,10 +279,12 @@ void Clap::print_help() const {
   auto out = io::Stdout::lock();
 
   if (!_about.is_empty()) {
-    out.write_fmt("{}\n", _about);
+    out.write_str(_about);
+    out.write_str("\n\n");
   }
 
-  out.write_fmt("Usage: {}", _name);
+  out.write_str("Usage: ");
+  out.write_str(_name);
   for (auto& item : _items) {
     item.show_usage(out);
   }
@@ -292,19 +297,19 @@ void Clap::print_help() const {
   }
 }
 
-void Clap::parse(Slice<const Str> args) {
+auto Clap::parse(Slice<const Str> args) -> bool {
   auto parser = Parser{_items.as_mut_slice()};
-  parser.parse(args);
+  return parser.parse(args);
 }
 
-void Clap::parse_cmdline(int argc, const char* argv[]) {
+auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
   static constexpr auto MAX_ARGS = 64;
 
   Str args[MAX_ARGS] = {};
   for (auto i = 1; i < argc && i < MAX_ARGS; i++) {
     args[i - 1] = Str::from_cstr(argv[i]);
   }
-  this->parse({args, static_cast<usize>(argc - 1)});
+  return this->parse({args, static_cast<usize>(argc - 1)});
 }
 
 }  // namespace sfc::app
