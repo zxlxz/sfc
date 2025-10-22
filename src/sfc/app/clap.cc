@@ -191,32 +191,28 @@ struct Clap::Parser {
     return cnt;
   }
 
-  auto parse_position_args(Slice<const Str> pos_vals) -> bool {
-    const auto args_cnt = this->position_args_cnt();
-    const auto vals_cnt = static_cast<u32>(pos_vals.len());
+  auto parse_position_args(Slice<const Str> vals) -> int {
+    const auto args_cnt = static_cast<u32>(this->position_args_cnt());
+    const auto vals_cnt = static_cast<u32>(vals.len());
 
     if (vals_cnt < args_cnt) {
-      return false;
+      return -static_cast<int>(args_cnt - vals_cnt);
     }
 
-    auto extra_num = vals_cnt > args_cnt ? vals_cnt - args_cnt : 0U;
-    auto val_idx = 0U;
+    auto iter = vals.iter();
     for (auto& item : _items) {
-      if (val_idx >= vals_cnt) {
-        break;
-      }
       if (item._type != Item::Type::Arg || item._has_set) {
         continue;
       }
-
-      item.push_val(pos_vals[val_idx++]);
-      while (extra_num > 0 && !item.is_complete()) {
-        item.push_val(pos_vals[val_idx++]);
-        extra_num--;
+      while(!item.is_complete()) {
+        if (auto val = iter.next()) {
+          item.push_val(*val);
+        }
       }
     }
 
-    return extra_num == 0;
+    const auto rem_cnt = iter.count();
+    return static_cast<int>(rem_cnt);
   }
 };
 
@@ -297,13 +293,13 @@ void Clap::print_help() const {
   }
 }
 
-auto Clap::parse(Slice<const Str> args) -> bool {
+auto Clap::parse(Slice<const Str> args) -> int {
   auto parser = Parser{_items.as_mut_slice()};
   return parser.parse(args);
 }
 
-auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
-  static constexpr auto MAX_ARGS = 64;
+auto Clap::parse_cmdline(int argc, const char* argv[]) -> int {
+  static constexpr auto MAX_ARGS = 256;
 
   Str args[MAX_ARGS] = {};
   for (auto i = 1; i < argc && i < MAX_ARGS; i++) {

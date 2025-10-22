@@ -21,7 +21,7 @@ struct Iterator {
   using Item = T;
 
   auto find(this auto&& self, auto&& pred) -> Option<Item> {
-    for (; auto x = self.next();) {
+    while (auto x = self.next()) {
       if (pred(*x)) {
         return x;
       }
@@ -30,7 +30,7 @@ struct Iterator {
   }
 
   auto rfind(this auto&& self, auto&& pred) -> Option<Item> {
-    for (; auto x = self.next_back();) {
+    while (auto x = self.next_back()) {
       if (pred(*x)) {
         return x;
       }
@@ -58,7 +58,7 @@ struct Iterator {
   }
 
   void for_each(this auto&& self, auto&& f) {
-    for (; auto x = self.next();) {
+    while (auto x = self.next()) {
       f(*x);
     }
   }
@@ -72,7 +72,7 @@ struct Iterator {
   template <class B>
   auto fold(this auto&& self, B init, auto&& f) -> B {
     auto accum = static_cast<B&&>(init);
-    for (; auto x = self.next();) {
+    while (auto x = self.next()) {
       accum = f(accum, *x);
     }
     return accum;
@@ -87,13 +87,13 @@ struct Iterator {
 
     if constexpr (!__is_same(B, B&)) {
       auto res_val = mem::move(first).unwrap();
-      for (; auto x = self.next();) {
+      while (auto x = self.next()) {
         res_val = f(res_val, *x);
       }
       return res_val;
     } else {
       auto res_ptr = &mem::move(first).unwrap();
-      for (; auto x = self.next();) {
+      while (auto x = self.next()) {
         res_ptr = &f(*res_ptr, *x);
       }
       return *res_ptr;
@@ -108,14 +108,16 @@ struct Iterator {
     return self.position(f).is_some();
   }
 
-  auto count(this auto self, auto&& f) -> usize {
-    auto accum = usize{0};
-    self.for_each([&](auto& x) mutable {
-      if (f(x)) {
-        accum += 1;
+  auto count(this auto self) -> usize {
+    if constexpr (requires { self.len(); }) {
+      return self.len();
+    } else {
+      auto cnt = 0UL;
+      while (auto x = self.next()) {
+        ++cnt;
       }
-    });
-    return accum;
+      return cnt;
+    }
   }
 
   auto min(this auto self) -> Option<Item> {

@@ -28,8 +28,8 @@ class Clap {
   auto get_flag(Str name) const -> Option<bool>;
   void print_help() const;
 
-  auto parse(Slice<const Str> args) -> bool;
-  auto parse_cmdline(int argc, const char* argv[]) -> bool;
+  auto parse(Slice<const Str> args) -> int;
+  auto parse_cmdline(int argc, const char* argv[]) -> int;
 };
 
 }  // namespace sfc::app
