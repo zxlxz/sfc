@@ -31,9 +31,12 @@ using cstr_t = const char*;
 }  // namespace sfc
 
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
-inline void* operator new(sfc::usize, void* ptr) noexcept {
+#define __PLACEMENT_NEW_INLINE
+#define _LIBCPP_NEW
+[[nodiscard]] inline void* operator new(sfc::usize, void* ptr) noexcept {
   return ptr;
 }
+
 inline void operator delete(void*, void*) noexcept {
   return;
 }
