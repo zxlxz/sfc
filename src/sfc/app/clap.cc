@@ -204,9 +204,11 @@ struct Clap::Parser {
       if (item._type != Item::Type::Arg || item._has_set) {
         continue;
       }
-      while(!item.is_complete()) {
+      while (!item.is_complete()) {
         if (auto val = iter.next()) {
           item.push_val(*val);
+        } else {
+          break;
         }
       }
     }
