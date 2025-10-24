@@ -12,47 +12,28 @@ struct Path {
  public:
   Path() noexcept = default;
 
-  Path(Str s) noexcept : _inn{s} {}
+  Path(Str s) noexcept;
+  Path(const char* s) noexcept;
 
-  auto as_str() const noexcept -> Str {
-    return _inn;
-  }
+  auto as_str() const noexcept -> Str;
 
-  auto operator==(const Path& other) const noexcept -> bool {
-    return _inn == other._inn;
-  }
-
-  // a/b.txt -> b.txt
   auto file_name() const noexcept -> Str;
-
-  // a/b.txt -> b
   auto file_stem() const noexcept -> Str;
-
-  // a/b.txt -> .txt
   auto extension() const noexcept -> Str;
-
-  // a/b.txt -> a
   auto parent() const noexcept -> Path;
-
-  // 'a'.join('b) -> 'a/b'
-  auto join(Str path) const noexcept -> PathBuf;
-
-  // abs path
-  auto is_absolute() const noexcept -> bool;
-
-  // not absolute
-  auto is_relative() const noexcept -> bool;
+  auto join(Path path) const noexcept -> PathBuf;
 
  public:
   auto exists() const noexcept -> bool;
-
   auto is_file() const noexcept -> bool;
-
   auto is_dir() const noexcept -> bool;
+
+  auto is_absolute() const noexcept -> bool;
+  auto is_relative() const noexcept -> bool;
 
  public:
   void fmt(auto& f) const {
-    f.pad(_inn);
+    _inn.fmt(f);
   }
 };
 
@@ -68,27 +49,22 @@ class PathBuf {
 
   static auto from(Str s) -> PathBuf;
 
-  auto as_path() const -> Path;
+  auto as_path() const noexcept -> Path;
+  auto as_str() const noexcept -> Str;
+  operator Path() const noexcept;
 
   void clear();
-
   void reserve(usize additional);
 
-  // 'a'.push('b') -> 'a/b'
   void push(Str path) noexcept;
-
-  // 'a/b'.pop() -> 'a'
   auto pop() noexcept -> bool;
 
-  // 'a/b.txt'.set_file_name('c.txt') -> 'a/c.txt'
   void set_file_name(Str file_name) noexcept;
-
-  // 'a/b.txt'.set_extension('dat') -> 'a/b.dat'
   void set_extension(Str extension) noexcept;
 
  public:
   void fmt(auto& f) const {
-    f.pad(_inn.as_str());
+    _inn.fmt(f);
   }
 };
 

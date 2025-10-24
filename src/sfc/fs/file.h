@@ -15,8 +15,8 @@ class [[nodiscard]] File : public io::Read, public io::Write {
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
 
-  static auto open(const Path& path) -> io::Result<File>;
-  static auto create(const Path& path) -> io::Result<File>;
+  static auto open(Path path) -> io::Result<File>;
+  static auto create(Path path) -> io::Result<File>;
 
   auto read(Slice<u8> buf) -> io::Result<usize>;
   auto write(Slice<const u8> buf) -> io::Result<usize>;
@@ -31,7 +31,9 @@ struct OpenOptions {
   bool truncate = false;
 
  public:
-  auto open(const Path& path) const -> io::Result<File>;
+  auto open(Path path) const -> io::Result<File>;
 };
+
+auto write(Path path, Slice<const u8> buf) -> io::Result<>;
 
 }  // namespace sfc::fs

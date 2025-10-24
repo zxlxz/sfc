@@ -33,6 +33,14 @@ struct Components {
   }
 };
 
+Path::Path(Str s) noexcept : _inn{s} {}
+
+Path::Path(const char* s) noexcept : _inn{Str::from_cstr(s)} {}
+
+auto Path::as_str() const noexcept -> Str {
+  return _inn;
+}
+
 auto Path::file_name() const noexcept -> Str {
   const auto s = Components{_inn.as_str()}.next_back();
   if (s == "." || s == ".." || s == "/") {
@@ -44,7 +52,7 @@ auto Path::file_name() const noexcept -> Str {
 auto Path::extension() const noexcept -> Str {
   const auto file_name = this->file_name();
   const auto dot_pos = file_name.rfind('.').unwrap_or(file_name.len());
-  return file_name[{dot_pos + 1,$}];
+  return file_name[{dot_pos + 1, $}];
 }
 
 auto Path::file_stem() const noexcept -> Str {
@@ -60,9 +68,9 @@ auto Path::parent() const noexcept -> Path {
   return Path{cmpts.as_str()};
 }
 
-auto Path::join(Str path) const noexcept -> PathBuf {
+auto Path::join(Path path) const noexcept -> PathBuf {
   auto res = PathBuf::from(_inn);
-  res.push(path);
+  res.push(path.as_str());
   return res;
 }
 
@@ -101,7 +109,15 @@ auto PathBuf::from(Str s) -> PathBuf {
   return res;
 }
 
-auto PathBuf::as_path() const -> Path {
+auto PathBuf::as_path() const noexcept -> Path {
+  return Path{_inn.as_str()};
+}
+
+auto PathBuf::as_str() const noexcept -> Str {
+  return _inn.as_str();
+}
+
+PathBuf::operator Path() const noexcept {
   return Path{_inn.as_str()};
 }
 
@@ -186,10 +202,14 @@ auto meta(Path path) -> io::Result<Meta> {
 
 auto create_dir(Path path) -> io::Result<> {
   const auto c_path = CString::from(path.as_str());
-  const auto ret = sys_imp::mkdir(c_path);
 
+  const auto ret = sys_imp::mkdir(c_path);
   if (!ret) {
-    return io::Error::last_os_error();
+    const auto err = io::Error::last_os_error();
+    if (err.kind == io::ErrorKind::AlreadyExists) {
+      return {};
+    }
+    return err;
   }
 
   return {};
