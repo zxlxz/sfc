@@ -99,22 +99,42 @@ class Result {
     return *this;
   }
 
-  auto is_ok() const noexcept -> bool {
+  [[nodiscard]] auto operator*() const -> const T& {
+    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
+    return *_inn;
+  }
+
+  [[nodiscard]] auto operator*() -> T& {
+    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
+    return *_inn;
+  }
+
+  [[nodiscard]] auto operator->() const {
+    panicking::expect(_inn.is_ok(), "Result::operator->: deref Err");
+    return &*_inn;
+  }
+
+  [[nodiscard]] auto operator->() {
+    panicking::expect(_inn.is_ok(), "Result::operator->: deref Err");
+    return &*_inn;
+  }
+
+  [[nodiscard]] auto is_ok() const noexcept -> bool {
     return _inn.is_ok();
   }
 
-  auto is_err() const noexcept -> bool {
+  [[nodiscard]] auto is_err() const noexcept -> bool {
     return _inn.is_err();
   }
 
-  auto ok(this auto self) -> Option<T> {
+  [[nodiscard]] auto ok(this auto self) -> Option<T> {
     if (self._inn.is_err()) {
       return {};
     }
     return Option<T>{static_cast<T&&>(*self._inn)};
   }
 
-  auto err(this auto self) -> Option<E> {
+  [[nodiscard]] auto err(this auto self) -> Option<E> {
     if (self._inn.is_ok()) {
       return {};
     }

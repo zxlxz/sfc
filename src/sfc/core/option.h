@@ -117,24 +117,16 @@ class Option {
     return *this;
   }
 
-  auto is_some() const noexcept -> bool {
-    return _inn.is_some();
-  }
-
-  auto is_none() const noexcept -> bool {
-    return _inn.is_none();
-  }
-
-  explicit operator bool() const noexcept {
-    return _inn.is_some();
-  }
-
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) {
       return other.is_none();
     }
     return other.is_some() && *_inn == *other;
+  }
+
+  explicit operator bool() const noexcept {
+    return _inn.is_some();
   }
 
   [[nodiscard]] auto operator*() const -> const T& {
@@ -155,6 +147,14 @@ class Option {
   [[nodiscard]] auto operator->() {
     panicking::expect(_inn.is_some(), "Option::operator->: deref None");
     return &*_inn;
+  }
+
+  [[nodiscard]] auto is_some() const noexcept -> bool {
+    return _inn.is_some();
+  }
+
+  [[nodiscard]] auto is_none() const noexcept -> bool {
+    return _inn.is_none();
   }
 
   [[nodiscard]] auto unwrap(this auto self) -> T {
