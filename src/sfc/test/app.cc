@@ -111,7 +111,7 @@ void App::list_xml(Str path) const {
   xml_file->write_str(xml_str);
 }
 
-void main(int argc, const char* argv[]) {
+auto main(int argc, const char* argv[]) -> int {
   auto cmd = app::Clap{"sfc_test"};
   cmd.add_opt("h:help", "Show this help message");
   cmd.add_opt("l:list", "List all tests");
@@ -119,29 +119,33 @@ void main(int argc, const char* argv[]) {
   cmd.add_opt("gtest_filter", "Run only tests matching the given pattern");
   cmd.add_opt("gtest_color", "Enable or disable colored output");
   cmd.add_opt("gtest_output", "Output file for test results");
-  cmd.parse_cmdline(argc, argv);
+
+  if (auto ret = cmd.parse_cmdline(argc, argv); ret != 0) {
+    return -1;
+  }
 
   auto app = App{};
   if (cmd.get("help")) {
     app.help();
-    return;
+    return 0;
   }
 
   if (cmd.get("list")) {
     app.list();
-    return;
+    return 0;
   }
 
   if (cmd.get("gtest_list_tests")) {
     const auto output = cmd.get("gtest_output").unwrap_or("stdout");
     app.list_xml(output);
-    return;
+    return 0;
   }
 
   const auto is_tty = io::Stdout::is_tty();
   const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_tty);
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   app.exec(gtest_filter, gtest_color);
+  return 0;
 }
 
 }  // namespace sfc::test

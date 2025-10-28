@@ -195,8 +195,8 @@ struct Clap::Parser {
     const auto args_cnt = static_cast<u32>(this->position_args_cnt());
     const auto vals_cnt = static_cast<u32>(vals.len());
 
-    if (vals_cnt < args_cnt) {
-      return -static_cast<int>(args_cnt - vals_cnt);
+    if (vals_cnt > args_cnt) {
+      return static_cast<int>(vals_cnt - args_cnt);
     }
 
     auto iter = vals.iter();
@@ -214,7 +214,7 @@ struct Clap::Parser {
     }
 
     const auto rem_cnt = iter.count();
-    return static_cast<int>(rem_cnt);
+    return -static_cast<int>(rem_cnt);
   }
 };
 

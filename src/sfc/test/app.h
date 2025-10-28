@@ -12,6 +12,6 @@ class App {
   void exec(Str filters, Option<bool> color = {});
 };
 
-void main(int argc, const char* argv[]);
+auto main(int argc, const char* argv[]) -> int;
 
 }  // namespace sfc::test
