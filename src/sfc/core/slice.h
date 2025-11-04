@@ -172,16 +172,9 @@ struct Slice {
     if (_len == 0) {
       return {};
     }
-    if constexpr (sizeof(T) == 1) {
-      const auto p = static_cast<const T*>(__builtin_memchr(_ptr, x, _len));
-      if (p) {
-        return static_cast<usize>(p - _ptr);
-      }
-    } else {
-      for (auto i = 0UL; i < _len; ++i) {
-        if (_ptr[i] == x) {
-          return i;
-        }
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return i;
       }
     }
     return {};
@@ -239,7 +232,7 @@ struct Slice {
 
   // trait: io::Read
   auto read(Slice<u8> buf) -> usize {
-    static_assert(sizeof(T) == 1);
+    static_assert(__is_same(const T, const u8));
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
     _ptr += amt;

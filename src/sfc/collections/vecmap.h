@@ -8,11 +8,7 @@ template <class K, class V>
 class VecMap {
   struct Item {
     K key;
-    V value;
-
-    auto operator==(const auto& key) const -> bool {
-      return this->key == key;
-    }
+    V val;
   };
 
   Vec<Item> _items = {};
@@ -43,19 +39,23 @@ class VecMap {
   }
 
   auto get(const auto& key) const -> Option<const V&> {
-    const auto idx = _items.iter().position(key);
-    if (!idx) {
-      return {};
+    auto v = _items.as_slice();
+    for (auto i = 0; i < v._len; ++i) {
+      if (v._ptr[i].key == key) {
+        return v._ptr[i].val;
+      }
     }
-    return _items[*idx].value;
+    return {};
   }
 
   auto get_mut(const auto& key) -> Option<V&> {
-    const auto idx = _items.iter().position(key);
-    if (!idx) {
-      return {};
+    auto v = _items.as_mut_slice();
+    for (auto i = 0; i < v._len; ++i) {
+      if (v._ptr[i].key == key) {
+        return v._ptr[i].val;
+      }
     }
-    return _items[*idx].value;
+    return {};
   }
 
   auto operator[](const auto& key) const -> const V& {
@@ -123,3 +123,7 @@ class VecMap {
 };
 
 }  // namespace sfc::collections
+
+namespace sfc {
+using collections::VecMap;
+}

@@ -17,8 +17,7 @@ struct Range {
   usize end;
 
  public:
-  Range(usize idx, End) noexcept : start{idx}, end{static_cast<usize>(-1)} {}
-
+  Range(usize start, End) noexcept : start{start}, end{static_cast<usize>(-1)} {}
   Range(usize start, usize end) noexcept : start{start}, end{end} {}
 };
 
