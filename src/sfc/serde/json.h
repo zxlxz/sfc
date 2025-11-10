@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/serde/mod.h"
+#include "sfc/serde/base64.h"
 
 namespace sfc::serde::json {
 
@@ -22,7 +22,16 @@ class Serializer {
     _write.write_str(val ? Str{"true"} : Str{"false"});
   }
 
+<<<<<<< Updated upstream
   void serialize_char(char val) {
+=======
+  auto serialize_bool(const bool& val) {
+    const auto s = val ? Str{"true"} : Str{"false"};
+    return _write.write_str(s);
+  }
+
+  auto serialize_char(const char& val) {
+>>>>>>> Stashed changes
     const char s[] = {'"', val, '"'};
     _write.write_str({s, 3});
   }
@@ -43,7 +52,14 @@ class Serializer {
     _write.write_char('"');
   }
 
+<<<<<<< Updated upstream
   auto serialize_bin(Slice<const u8> val) = delete;
+=======
+  auto serialize_bin(Slice<const u8> val) {
+    const auto s = base64::encode(val);
+    return this->serialize_str(s);
+  }
+>>>>>>> Stashed changes
 
   struct SerSeq;
   auto serialize_seq() -> SerSeq {

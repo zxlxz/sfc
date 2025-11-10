@@ -209,7 +209,31 @@ struct Fmter {
     }
   }
 
+<<<<<<< Updated upstream
   void pad(str::Str s) {
+=======
+  void write_str(Str s) {
+    if (s.is_empty()) {
+      return;
+    }
+    if constexpr (requires { _out.write_str(s); }) {
+      _out.write_str(s);
+    } else {
+      _out.write(s.as_bytes());
+    }
+  }
+
+  void fill(usize n) {
+    const auto c = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
+    const char v[] = {c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += sizeof(v)) {
+      const auto w = n - i < sizeof(v) ? n - i : sizeof(v);
+      this->write_str({v, w});
+    }
+  }
+
+  void pad(Str s) {
+>>>>>>> Stashed changes
     if (_style._width <= s._len) {
       this->write_str(s);
       return;
