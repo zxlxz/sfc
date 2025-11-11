@@ -1,19 +1,54 @@
 #pragma once
 
 #include "sfc/io/mod.h"
+#include "sfc/alloc/vec.h"
+#include "sfc/alloc/string.h"
 
 namespace sfc::io {
 
-static constexpr usize DEFAULT_BUF_SIZE = 4096U;
+struct Read {
+  auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
+    while (!buf.is_empty()) {
+      const auto cnt = _TRY(Result{self.read(buf)});
+      if (cnt == 0) {
+        return Error{ErrorKind::UnexpectedEof, 0};
+      }
+      buf = buf[{cnt, $}];
+    }
+
+    return {};
+  }
+
+  auto read_to_end(this auto& self, Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
+    const auto old_len = buf.len();
+    while (true) {
+      buf.reserve(buf_len);
+
+      auto tmp = Slice{buf.as_mut_ptr() + buf.len(), buf_len};
+      const auto cnt = _TRY(Result{self.read(tmp)});
+      if (cnt == 0) {
+        break;
+      }
+      buf.set_len(buf.len() + cnt);
+    }
+    return buf.len() - old_len;
+  }
+
+  auto read_to_string(this auto& self, String& buf) -> Result<usize> {
+    return self.read_to_end(buf.as_mut_vec());
+  }
+};
 
 template <class R>
 class BufReader : Read {
+  static constexpr usize BUFF_SIZE = 256U;
+
   R _inn;
   Vec<u8> _buf = {};
   usize _pos = 0;
 
  public:
-  explicit BufReader(R&& inn) noexcept : _inn{static_cast<R&&>(inn)}, _buf{Vec<u8>::with_capacity(DEFAULT_BUF_SIZE)} {}
+  explicit BufReader(R&& inn) noexcept : _inn{static_cast<R&&>(inn)}, _buf{Vec<u8>::with_capacity(BUFF_SIZE)} {}
   ~BufReader() noexcept = default;
 
   BufReader(BufReader&&) noexcept = default;
@@ -86,65 +121,6 @@ class BufReader : Read {
       }
     }
     return buf.len() - old_len;
-  }
-};
-
-template <class W>
-class BufWriter : Write {
-  W _inn;
-  Vec<u8> _buf;
-
- public:
-  explicit BufWriter(W&& inn) noexcept : _inn{mem::move(inn)}, _buf{Vec<u8>::with_capacity(DEFAULT_BUF_SIZE)} {}
-  ~BufWriter() noexcept = default;
-
-  BufWriter(BufWriter&&) noexcept = default;
-  BufWriter& operator=(BufWriter&&) noexcept = default;
-
-  BufWriter(const BufWriter&) = delete;
-  BufWriter& operator=(const BufWriter&) = delete;
-
- public:
-  auto inner() -> W& {
-    return _inn;
-  }
-
-  auto buffer() const -> Slice<const u8> {
-    return _buf.as_slice();
-  }
-
-  auto capacity() const -> usize {
-    return _buf.capacity();
-  }
-
-  auto spare_capacity() const -> usize {
-    return _buf.capacity() - _buf.len();
-  }
-
-  auto write(Slice<const u8> buf) -> Result<usize> {
-    if (buf.len() < _buf.capacity() - _buf.len()) {
-      _buf.extend_from_slice(buf);
-      return buf.len();
-    }
-    _TRY(this->flush());
-    if (buf.len() < _buf.capacity()) {
-      _buf.extend_from_slice(buf);
-      return buf.len();
-    }
-    return _inn.write(buf);
-  }
-
-  auto flush() -> Result<> {
-    if (_buf.len() == 0) {
-      return {};
-    }
-    auto buf = _buf.as_slice();
-    while (!buf.is_empty()) {
-      const auto n = _TRY(_inn.write(buf));
-      buf = buf[{n, $}];
-    }
-    _buf.clear();
-    return {};
   }
 };
 

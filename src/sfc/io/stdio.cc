@@ -1,7 +1,6 @@
 #include "sfc/io/stdio.h"
 
 #include "sfc/io/file.h"
-#include "sfc/io/buf.h"
 #include "sfc/sync/mutex.h"
 #include "sfc/sys/io.h"
 

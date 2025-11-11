@@ -17,11 +17,12 @@ class Serializer {
   void serialize_null() {}
 
   void serialize_bool(const bool& val) {
-    _write.write_str(val ? Str{"true"} : Str{"false"});
+    const auto s = val ? Str{"true"} : Str{"false"};
+    this->write_str(s);
   }
 
   void serialize_char(const char& val) {
-    _write.write_str({&val, 1});
+    this->write_str({&val, 1});
   }
 
   void serialize_int(const auto& val) {
@@ -35,7 +36,7 @@ class Serializer {
   }
 
   void serialize_str(Str val) {
-    _write.write_str(val);
+    this->write_str(val);
   }
 
   class Node;
@@ -44,9 +45,17 @@ class Serializer {
   }
 
  private:
+  void write_str(Str s) {
+    if constexpr (requires { _write.write_str(s); }) {
+      _write.write_str(s);
+    } else {
+      _write.push_str(s);
+    }
+  }
+
   void indent(u32 depth) {
     for (auto i = 0U; i < depth; ++i) {
-      _write.write_str("    ");
+      this->write_str("    ");
     }
   }
 };
@@ -61,19 +70,19 @@ class Serializer<W>::Node {
  public:
   explicit Node(Serializer& ser, Str name, u32 depth = 0) noexcept : _inn{ser}, _name{name}, _depth{depth} {
     _inn.indent(_depth);
-    _inn._write.write_str("<");
-    _inn._write.write_str(name);
+    _inn.write_str("<");
+    _inn.write_str(name);
   }
 
   ~Node() noexcept {
     if (_cnt == 0) {
-      _inn._write.write_str("/>\n");
+      _inn.write_str("/>\n");
       return;
     }
     _inn.indent(_depth);
-    _inn._write.write_str("</");
-    _inn._write.write_str(_name);
-    _inn._write.write_str(">\n");
+    _inn.write_str("</");
+    _inn.write_str(_name);
+    _inn.write_str(">\n");
   }
 
   Node(const Node&) noexcept = delete;
@@ -89,7 +98,7 @@ class Serializer<W>::Node {
 
   auto serialize_node(Str name) -> Node {
     if (_cnt++ == 0) {
-      _inn._write.write_str(">\n");
+      _inn.write_str(">\n");
     }
     return Node{_inn, name, _depth + 1};
   }

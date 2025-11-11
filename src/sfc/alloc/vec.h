@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/alloc/alloc.h"
+#include "sfc/io/mod.h"
 
 namespace sfc::vec {
 
@@ -443,6 +444,14 @@ class [[nodiscard]] Vec {
   // trait: fmt::Display
   void fmt(auto& f) const {
     return Slice{_buf._ptr, _len}.fmt(f);
+  }
+
+  // trait: io::Write
+  auto write(Slice<const u8> buf) -> io::Result<usize>
+    requires(__is_same(T, u8))
+  {
+    this->extend_from_slice(buf);
+    return buf.len();
   }
 
   // trait: serde::Serialize

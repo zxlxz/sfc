@@ -40,37 +40,37 @@ class Serializer {
     _write.write_str(s);
   }
 
-  auto serialize_bool(const bool& val) {
+  void serialize_bool(const bool& val) {
     const auto s = val ? Str{"true"} : Str{"false"};
-    return _write.write_str(s);
+    this->write_str(s);
   }
 
-  auto serialize_char(const char& val) {
+  void serialize_char(const char& val) {
     const char s[] = {'"', val, '"'};
-    return _write.write_str({s, 3});
+    _write.write_str({s, 3});
   }
 
-  auto serialize_int(const trait::int_ auto& val) {
+  void serialize_int(const trait::int_ auto& val) {
     char buf[32] = {};
     const auto s = fmt::Debug::fmt_int(buf, val);
-    return _write.write_str(s);
+    this->write_str(s);
   }
 
-  auto serialize_flt(const trait::flt_ auto& val) {
+  void serialize_flt(const trait::flt_ auto& val) {
     char buf[32] = {};
     const auto s = fmt::Debug::fmt_flt(buf, val);
-    return _write.write_str(s);
+    this->write_str(s);
   }
 
-  auto serialize_str(Str val) {
-    _write.write_str("\"");
-    _write.write_str(val);
-    return _write.write_str("\"");
+  void serialize_str(Str val) {
+    this->write_str("\"");
+    this->write_str(val);
+    this->write_str("\"");
   }
 
-  auto serialize_bin(Slice<const u8> val) {
+  void serialize_bin(Slice<const u8> val) {
     const auto s = base64::encode(val);
-    return this->serialize_str(s);
+    this->serialize_str(s);
   }
 
   struct SerSeq;
@@ -82,6 +82,17 @@ class Serializer {
   auto serialize_map() -> SerMap {
     return SerMap{*this};
   }
+
+ private:
+  void write_str(Str s) {
+    if constexpr (requires { _write.write_str(s); }) {
+      _write.write_str(s);
+    } else if constexpr (requires { _write.push_str(s); }) {
+      _write.push_str(s);
+    } else {
+      _write.write(s.as_bytes());
+    }
+  }
 };
 
 template <class W>
@@ -91,18 +102,18 @@ class Serializer<W>::SerSeq {
 
  public:
   explicit SerSeq(Serializer& inn) noexcept : _inn{inn} {
-    _inn._write.write_str("[");
+    _inn.write_str("[");
   }
 
   ~SerSeq() noexcept {
-    _inn._write.write_str("]");
+    _inn.write_str("]");
   }
 
   SerSeq(const SerSeq&) noexcept = delete;
 
   void serialize_element(const auto& item) {
     if (_cnt++ != 0) {
-      _inn._write.write_str(",");
+      _inn.write_str(",");
     }
     _inn.serialize(item);
   }
@@ -115,22 +126,22 @@ class Serializer<W>::SerMap {
 
  public:
   explicit SerMap(Serializer& inn) noexcept : _inn{inn} {
-    _inn._write.write_str("{");
+    _inn.write_str("{");
   }
 
   ~SerMap() noexcept {
-    _inn._write.write_str("}");
+    _inn.write_str("}");
   }
 
   SerMap(const SerMap&) noexcept = delete;
 
   void serialize_entry(Str key, const auto& val) {
     if (_cnt++ != 0) {
-      _inn._write.write_str(",");
+      _inn.write_str(",");
     }
-    _inn._write.write_str("\"");
-    _inn._write.write_str(key);
-    _inn._write.write_str("\":");
+    _inn.write_str("\"");
+    _inn.write_str(key);
+    _inn.write_str("\":");
     return _inn.serialize(val);
   }
 };
