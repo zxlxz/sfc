@@ -124,9 +124,8 @@ struct Clap::Parser {
   Item* _prev_item = nullptr;
 
  public:
-  auto parse(Slice<const Str> args) -> bool {
+  auto parse(Slice<const Str> args) -> int {
     auto pos_vals = Vec<Str>{};
-    pos_vals.reserve(args.len());
 
     _prev_item = nullptr;
     for (auto s : args) {
@@ -136,6 +135,10 @@ struct Clap::Parser {
       if (!this->parse_opt(s)) {
         pos_vals.push(s);
       }
+    }
+
+    if (pos_vals.is_empty()) {
+      return 0;
     }
 
     return this->parse_position_args(pos_vals.as_slice());
@@ -181,23 +184,8 @@ struct Clap::Parser {
     return false;
   }
 
-  auto position_args_cnt() const -> u32 {
-    auto cnt = 0U;
-    for (const auto& item : _items) {
-      if (item._type == Item::Type::Arg && item._has_set == false) {
-        cnt += 1;
-      }
-    }
-    return cnt;
-  }
-
   auto parse_position_args(Slice<const Str> vals) -> int {
-    const auto args_cnt = static_cast<u32>(this->position_args_cnt());
-    const auto vals_cnt = static_cast<u32>(vals.len());
-
-    if (vals_cnt > args_cnt) {
-      return static_cast<int>(vals_cnt - args_cnt);
-    }
+    auto unset_cnt = 0;
 
     auto iter = vals.iter();
     for (auto& item : _items) {
@@ -205,12 +193,17 @@ struct Clap::Parser {
         continue;
       }
       while (!item.is_complete()) {
-        if (auto val = iter.next()) {
-          item.push_val(*val);
-        } else {
+        auto val = iter.next();
+        if (!val) {
+          unset_cnt += 1;
           break;
         }
+        item.push_val(*val);
       }
+    }
+
+    if (unset_cnt != 0) {
+      return -unset_cnt;
     }
 
     const auto rem_cnt = iter.count();

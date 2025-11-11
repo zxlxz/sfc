@@ -172,18 +172,23 @@ struct Fmter {
   int _depth = 0;
 
  public:
-  void write_char(char c, usize n = 1) {
-    const char v[] = {c, c, c, c, c, c, c, c};
-    for (auto i = 0U; i < n; i += sizeof(v)) {
-      this->write_str({v, n < sizeof(v) ? n : sizeof(v)});
+  void write_char(char c) {
+    if constexpr (requires { _out.push(c); }) {
+      _out.push(c);
+    } else {
+      _out.write_str({&c, 1});
     }
   }
 
-  void write_str(Str s) {
+  void write_str(str::Str s) {
     if (s.is_empty()) {
       return;
     }
-    _out.write_str(s);
+    if constexpr (requires { _out.push_str(s); }) {
+      _out.push_str(s);
+    } else {
+      _out.write_str(s);
+    }
   }
 
   void fill(usize n) {

@@ -23,10 +23,17 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from(Str s) -> String {
-    auto res = String{};
-    res.push_str(s);
-    return res;
+  template <class F>
+  static auto from(F&& f) -> String {
+    if constexpr (requires { String{static_cast<F&&>(f)}; }) {
+      return String{static_cast<F&&>(f)};
+    } else if constexpr (requires { f.to_string(); }) {
+      return f.to_string();
+    } else if constexpr (requires { Str::from(f); }) {
+      auto s = String{};
+      s.push_str(Str::from(f));
+      return s;
+    }
   }
 
   operator Str() const noexcept {
@@ -218,6 +225,10 @@ auto to_string(const auto& val) -> String {
 }
 
 }  // namespace sfc::string
+
+namespace sfc {
+using string::String;
+}  // namespace sfc
 
 namespace sfc::panicking {
 
