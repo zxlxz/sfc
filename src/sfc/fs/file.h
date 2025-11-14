@@ -34,6 +34,7 @@ struct OpenOptions {
   auto open(Path path) const -> io::Result<File>;
 };
 
+auto read(Path path) -> io::Result<Vec<u8>>;
 auto write(Path path, Slice<const u8> buf) -> io::Result<>;
 
 }  // namespace sfc::fs

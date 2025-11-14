@@ -45,6 +45,13 @@ auto OpenOptions::open(Path path) const -> io::Result<File> {
   return res;
 }
 
+auto read(Path path) -> io::Result<Vec<u8>> {
+  auto file = _TRY(File::open(path));
+  auto buf = Vec<u8>{};
+  _TRY(file.read_to_end(buf));
+  return buf;
+}
+
 auto write(Path path, Slice<const u8> buf) -> io::Result<> {
   auto file = _TRY(File::create(path));
   _TRY(file.write_all(buf));
