@@ -117,6 +117,23 @@ struct Clap::Item {
     }
     f.write_str(_help);
   }
+
+  auto push_vals(Slice<const Str> args) -> Slice<const Str> {
+    if (_type != Type::Arg || _has_set) {
+      return args;
+    }
+
+    auto cnt = 0U;
+    for (auto arg : args) {
+      this->push_val(arg);
+      cnt += 1;
+      if (this->is_complete()) {
+        break;
+      }
+    }
+
+    return args[{cnt, $}];
+  }
 };
 
 struct Clap::Parser {
@@ -135,10 +152,6 @@ struct Clap::Parser {
       if (!this->parse_opt(s)) {
         pos_vals.push(s);
       }
-    }
-
-    if (pos_vals.is_empty()) {
-      return 0;
     }
 
     return this->parse_position_args(pos_vals.as_slice());
@@ -187,27 +200,26 @@ struct Clap::Parser {
   auto parse_position_args(Slice<const Str> vals) -> int {
     auto unset_cnt = 0;
 
-    auto iter = vals.iter();
     for (auto& item : _items) {
       if (item._type != Item::Type::Arg || item._has_set) {
         continue;
       }
-      while (!item.is_complete()) {
-        auto val = iter.next();
-        if (!val) {
-          unset_cnt += 1;
-          break;
-        }
-        item.push_val(*val);
+      if (vals.is_empty()) {
+        unset_cnt += 1;
+        continue;
       }
+      vals = item.push_vals(vals);
     }
 
     if (unset_cnt != 0) {
       return -unset_cnt;
     }
 
-    const auto rem_cnt = iter.count();
-    return -static_cast<int>(rem_cnt);
+    if (auto vals_cnt = vals.len()) {
+      return -static_cast<int>(vals_cnt);
+    }
+
+    return 0;
   }
 };
 
