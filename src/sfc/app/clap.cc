@@ -25,7 +25,7 @@ struct Clap::Item {
     if (desc.len() == 1) {
       _short_name = desc[0];
       _long_name = {};
-    } else if (desc.len() > 1 && desc[1] == ':') {
+    } else if (desc[1] == ':') {
       _short_name = desc[0];
       _long_name = desc[{2, $}];
     }
@@ -159,38 +159,47 @@ struct Clap::Item {
 
 struct Clap::Parser {
   Slice<Item> _items;
-  Item* _prev_item = nullptr;
 
  public:
   auto parse(Slice<const Str> args) -> int {
     auto pos_vals = Vec<Str>{};
+    auto end_of_opts = false;
 
-    _prev_item = nullptr;
+    auto prev_item = static_cast<Item*>(nullptr);
     for (auto s : args) {
       if (!s) {
         continue;
       }
 
-      // --key=val
+      if (end_of_opts) {
+        pos_vals.push(s);
+        continue;
+      }
+
+      // --
+      if (s == "--") {
+        prev_item = nullptr;
+        end_of_opts = true;
+        continue;
+      }
+
+      // -k, --key, --key=val
       if (s[0] == '-') {
-        const auto [key, val] = parse_kv(s);
-        if (auto item = this->get_item(key)) {
-          item->push_val(val);
-          _prev_item = item;
-        }
+        prev_item = this->parse_opt(s);
         continue;
       }
 
       // val
-      if (_prev_item && !_prev_item->is_complete()) {
-        _prev_item->push_val(s);
+      if (prev_item && !prev_item->is_complete()) {
+        prev_item->push_val(s);
         continue;
       }
 
       pos_vals.push(s);
     }
 
-    return this->parse_arg(pos_vals.as_slice());
+    const auto rem_cnt = this->parse_post_args(pos_vals.as_slice());
+    return rem_cnt;
   }
 
  private:
@@ -204,20 +213,29 @@ struct Clap::Parser {
     return {s, {}};
   }
 
-  auto get_item(Str s) -> Item* {
+  auto find_item(Str key) -> Item* {
     for (auto& item : _items) {
-      if (item.match(s)) {
+      if (item.match(key)) {
         return &item;
       }
     }
     return nullptr;
   }
 
-  auto parse_arg(Slice<const Str> vals) -> int {
+  auto parse_opt(Str s) -> Item* {
+    const auto [key, val] = parse_kv(s);
+    if (auto item = this->find_item(key)) {
+      item->push_val(val);
+      return val.is_empty() ? item : nullptr;
+    }
+    return nullptr;
+  }
+
+  auto parse_post_args(Slice<const Str> vals) -> int {
     auto unset_cnt = 0;
 
     for (auto& item : _items) {
-      if (item._type != Item::Type::Arg || item._is_set) {
+      if (item._type != Item::Type::Arg || item.value()) {
         continue;
       }
       if (vals.is_empty()) {
@@ -313,13 +331,11 @@ auto Clap::parse(Slice<const Str> args) -> int {
 }
 
 auto Clap::parse_cmdline(int argc, const char* argv[]) -> int {
-  static constexpr auto MAX_ARGS = 256;
-
-  Str args[MAX_ARGS] = {};
-  for (auto i = 1; i < argc && i < MAX_ARGS; i++) {
-    args[i - 1] = Str::from_cstr(argv[i]);
+  auto args = Vec<Str>::with_capacity(static_cast<usize>(argc - 1));
+  for (auto i = 1; i < argc; i++) {
+    args.push(Str::from_cstr(argv[i]));
   }
-  return this->parse({args, static_cast<usize>(argc - 1)});
+  return this->parse(args.as_slice());
 }
 
 }  // namespace sfc::app
