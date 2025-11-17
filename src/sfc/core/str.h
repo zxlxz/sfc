@@ -177,6 +177,8 @@ auto Str::parse() const noexcept -> Option<T> {
   }
 }
 
+namespace pattern {
+
 struct CharSearcher {
   Str _str;
   char _pat;
@@ -374,83 +376,46 @@ struct StrSearcher {
 };
 
 template <class P>
-struct Pattern {
-  P _val;
-
- public:
-  auto len() const noexcept -> usize {
-    return 1U;
+auto into_searcher(P&& p, Str s) {
+  if constexpr (requires { Str(p); }) {
+    return StrSearcher{s, Str{p}};
+  } else if constexpr (requires { static_cast<char>(p); }) {
+    return CharSearcher{s, static_cast<char>(p)};
+  } else if constexpr (requires { p(' '); }) {
+    return PredSearcher<P>{s, static_cast<P&&>(p)};
+  } else {
+    static_assert(false, "into_searcher: unsupported pattern type");
   }
+}
 
-  auto into_searcher(Str s) && noexcept -> PredSearcher<P> {
-    return {s, static_cast<P&&>(_val)};
-  }
-};
-
-template <>
-struct Pattern<char> {
-  char _val;
-
- public:
-  auto len() const noexcept -> usize {
-    return 1U;
-  }
-
-  auto into_searcher(Str s) const noexcept -> CharSearcher {
-    return {s, _val};
-  }
-};
-
-template <>
-struct Pattern<Str> {
-  Str _val;
-
- public:
-  auto len() const -> usize {
-    return _val.len();
-  }
-
-  auto into_searcher(Str s) const -> StrSearcher {
-    return {s, _val};
-  }
-};
-
-template <class P>
-Pattern(P) -> Pattern<P>;
-
-Pattern(char) -> Pattern<char>;
-
-Pattern(Str) -> Pattern<Str>;
-
-template <usize N>
-Pattern(const char (&)[N]) -> Pattern<Str>;
+}  // namespace pattern
 
 auto Str::search(auto&& p) const noexcept {
-  return Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  return pattern::into_searcher(p, *this);
 }
 
 auto Str::find(auto&& p) const noexcept -> Option<usize> {
-  auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  auto s = pattern::into_searcher(p, *this);
   return s.next_match();
 }
 
 auto Str::rfind(auto&& p) const noexcept -> Option<usize> {
-  auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  auto s = pattern::into_searcher(p, *this);
   return s.next_match_back();
 }
 
 auto Str::contains(auto&& p) const noexcept -> bool {
-  auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  auto s = pattern::into_searcher(p, *this);
   return s.next_match().is_some();
 }
 
 auto Str::starts_with(auto&& p) const noexcept -> bool {
-  auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  auto s = pattern::into_searcher(p, *this);
   return s.next().is_some();
 }
 
 auto Str::ends_with(auto&& p) const noexcept -> bool {
-  auto s = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
+  auto s = pattern::into_searcher(p, *this);
   return s.next_back().is_some();
 }
 
@@ -458,8 +423,8 @@ auto Str::trim_start_matches(auto&& p) const noexcept -> Str {
   if (_len == 0) {
     return {};
   }
-  auto ser = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
-  const auto idx = ser.next_reject().unwrap_or(0);
+  auto s = pattern::into_searcher(p, *this);
+  const auto idx = s.next_reject().unwrap_or(0);
   return Str{_ptr + idx, _len - idx};
 }
 
@@ -467,8 +432,8 @@ auto Str::trim_end_matches(auto&& p) const noexcept -> Str {
   if (_len == 0) {
     return {};
   }
-  auto ser = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
-  const auto idx = ser.next_reject_back().unwrap_or(_len - 1);
+  auto s = pattern::into_searcher(p, *this);
+  const auto idx = s.next_reject_back().unwrap_or(_len - 1);
   return Str{_ptr, idx + 1};
 }
 
@@ -476,9 +441,9 @@ auto Str::trim_matches(auto&& p) const noexcept -> Str {
   if (_len == 0) {
     return {};
   }
-  auto ser = Pattern{static_cast<decltype(p)&&>(p)}.into_searcher(*this);
-  const auto i1 = ser.next_reject_back().unwrap_or(_len - 1);
-  const auto i0 = ser.next_reject().unwrap_or(0);
+  auto s = pattern::into_searcher(p, *this);
+  const auto i1 = s.next_reject_back().unwrap_or(_len - 1);
+  const auto i0 = s.next_reject().unwrap_or(0);
   return Str{_ptr + i0, i1 + 1 - i0};
 }
 
