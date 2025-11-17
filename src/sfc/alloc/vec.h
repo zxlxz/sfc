@@ -70,8 +70,7 @@ class [[nodiscard]] Buf {
       return;
     }
 
-    const auto min_cap = _cap < 8U ? 8U : _cap * 2;
-    const auto new_cap = req_cap < min_cap ? min_cap : req_cap;
+    const auto new_cap = num::max(_cap * 2, req_cap);
     this->realloc(used, new_cap);
   }
 
