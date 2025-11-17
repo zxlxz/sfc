@@ -5,70 +5,78 @@ namespace sfc::app {
 
 struct Clap::Item {
   enum Type {
+    Flag,
     Opt,
     Arg,
   };
 
   Type _type = Type::Opt;
-  char _key = 0;
-  Str _name = {};
+  char _short_name = 0;
+  Str _long_name = {};
   Str _help = {};
-  Str _val_name = {};
-  u32 _max_cnt = 1;
+  Str _hint = {};
+  bool _variadic = false;
 
-  bool _has_set = false;
-  u32 _val_cnt = 0;
-  String _value = {};
+  String _vals = {};
+  bool _is_set = false;
 
  public:
-  Item(Type type, char key, Str name, Str help, Str val, u32 val_cnt)
-      : _type{type}, _key{key}, _name{name}, _help{help}, _val_name{val}, _max_cnt{val_cnt} {}
+  Item(Type type, Str desc, Str help, Str hint) : _type{type}, _long_name{desc}, _help{help}, _hint{hint} {
+    if (desc.len() == 1) {
+      _short_name = desc[0];
+      _long_name = {};
+    } else if (desc.len() > 1 && desc[1] == ':') {
+      _short_name = desc[0];
+      _long_name = desc[{2, $}];
+    }
+
+    if (hint.ends_with("...")) {
+      _hint = hint[{0, hint.len() - 3}];
+      _variadic = true;
+    }
+  }
 
   auto match(Str key) const -> bool {
     if (key.is_empty()) {
       return false;
     }
     if (key.len() == 1) {
-      return key[0] == _key;
+      return _short_name == key[0];
     }
-    return key == _name;
+    return _long_name == key;
   }
 
   auto is_complete() const -> bool {
-    if (!_has_set) {
+    if (!_is_set) {
       return false;
     }
-    return _val_cnt >= _max_cnt;
+    if (_type == Type::Flag) {
+      return true;
+    }
+    if (_vals.is_empty()) {
+      return false;
+    }
+    return !_variadic;
   }
 
   auto value() const -> Option<Str> {
-    if (!_has_set) {
+    if (!_is_set) {
       return {};
     }
-    return _value.as_str();
-  }
-
-  void push_val(Str val) {
-    _has_set = true;
-    if (val.is_empty()) {
-      return;
-    }
-
-    _val_cnt += 1;
-    if (!_value.is_empty()) {
-      _value.push_str(";");
-    }
-    _value.push_str(val);
+    return _vals.as_str();
   }
 
   auto flag() const -> Option<bool> {
-    if (!_has_set) {
+    if (!_is_set) {
       return {};
     }
 
-    const auto val = _value.as_str();
+    const auto val = _vals.as_str();
     if (val.is_empty()) {
-      return true;
+      if (_type == Type::Flag) {
+        return true;
+      }
+      return {};
     }
 
     if (val == "1" || val == "true" || val == "yes" || val == "on") {
@@ -83,43 +91,56 @@ struct Clap::Item {
   }
 
   void show_usage(auto& f) const {
-    if (_type != Type::Arg) {
-      return;
-    }
-    f.write_fmt(" [{}]", _val_name);
-    if (_max_cnt > 1) {
-      f.write_str("...");
+    if (_type == Type::Arg) {
+      f.write_fmt(" [{}]{}", _hint, _variadic ? Str{"..."} : Str{""});
     }
   }
 
   void show_help(auto& f) const {
-    if (_key == 0) {
-      f.write_str("      --");
+    static constexpr auto NAME_LEN = 32;
+    auto line_buf = String::with_capacity(128);
+
+    line_buf.push_str("  ");
+    if (_short_name == 0) {
+      line_buf.push_str("   ");
     } else {
-      char buf[] = "  - , --";
-      buf[3] = _key;
-      f.write_str(buf);
+      char sbuf[] = {'-', _short_name, ','};
+      line_buf.push_str({sbuf, sizeof(sbuf)});
+    }
+    line_buf.push_str(" --");
+    line_buf.push_str(_long_name);
+
+    if (!_hint.is_empty()) {
+      line_buf.push_str(" <");
+      line_buf.push_str(_hint);
+      line_buf.push_str(">");
+      if (_variadic) {
+        line_buf.push_str("...");
+      }
     }
 
-    f.write_str(_name);
-    if (_val_name.is_empty()) {
-      f.write_str("      ");
-    } else {
-      f.write_str(" <");
-      f.write_str(_val_name);
-      f.write_str(_max_cnt <= 1 ? Str{">   "} : Str{">..."});
+    while (line_buf.len() < NAME_LEN) {
+      line_buf.push(' ');
     }
 
-    const char pad[] = "                                ";
-    const auto nwrite = 8 + _name.len() + 6 + _val_name.len();
-    if (nwrite < sizeof(pad)) {
-      f.write_str({pad, sizeof(pad) - nwrite});
-    }
+    f.write_str(line_buf);
     f.write_str(_help);
   }
 
+  void push_val(Str val) {
+    _is_set = true;
+    if (val.is_empty()) {
+      return;
+    }
+
+    if (!_vals.is_empty()) {
+      _vals.push_str(";");
+    }
+    _vals.push_str(val);
+  }
+
   auto push_vals(Slice<const Str> args) -> Slice<const Str> {
-    if (_type != Type::Arg || _has_set) {
+    if (_type != Type::Arg || _is_set) {
       return args;
     }
 
@@ -149,12 +170,27 @@ struct Clap::Parser {
       if (!s) {
         continue;
       }
-      if (!this->parse_opt(s)) {
-        pos_vals.push(s);
+
+      // --key=val
+      if (s[0] == '-') {
+        const auto [key, val] = parse_kv(s);
+        if (auto item = this->get_item(key)) {
+          item->push_val(val);
+          _prev_item = item;
+        }
+        continue;
       }
+
+      // val
+      if (_prev_item && !_prev_item->is_complete()) {
+        _prev_item->push_val(s);
+        continue;
+      }
+
+      pos_vals.push(s);
     }
 
-    return this->parse_position_args(pos_vals.as_slice());
+    return this->parse_arg(pos_vals.as_slice());
   }
 
  private:
@@ -177,31 +213,11 @@ struct Clap::Parser {
     return nullptr;
   }
 
-  auto parse_opt(Str s) -> bool {
-    // --key=value
-    if (s[0] == '-') {
-      const auto [key, val] = parse_kv(s);
-      if (auto item = this->get_item(key)) {
-        item->push_val(val);
-        _prev_item = item;
-      }
-      return true;
-    }
-
-    // named arg
-    if (_prev_item && !_prev_item->is_complete()) {
-      _prev_item->push_val(s);
-      return true;
-    }
-
-    return false;
-  }
-
-  auto parse_position_args(Slice<const Str> vals) -> int {
+  auto parse_arg(Slice<const Str> vals) -> int {
     auto unset_cnt = 0;
 
     for (auto& item : _items) {
-      if (item._type != Item::Type::Arg || item._has_set) {
+      if (item._type != Item::Type::Arg || item._is_set) {
         continue;
       }
       if (vals.is_empty()) {
@@ -239,25 +255,16 @@ void Clap::set_about(Str s) {
   _about = String::from(s);
 }
 
-void Clap::add_opt(Str desc, Str help, Str sval) {
-  const auto skey = desc[1] == ':' ? desc[0] : char(0);
-  const auto name = skey ? desc[{2, $}] : desc;
-  if (sval.is_empty()) {
-    _items.push({Item::Type::Opt, skey, name, help, {}, 0});
-    return;
-  }
+void Clap::add_flag(Str desc, Str help) {
+  _items.push({Item::Flag, desc, help, {}});
+}
 
-  const auto max_cnt = sval.ends_with("...") ? 1000U : 1U;
-  const auto val_name = max_cnt == 1 ? sval : sval[{0, sval.len() - 3}];
-  _items.push({Item::Type::Opt, skey, name, help, val_name, max_cnt});
+void Clap::add_opt(Str desc, Str help, Str sval) {
+  _items.push({Item::Opt, desc, help, sval});
 }
 
 void Clap::add_arg(Str desc, Str help, Str sval) {
-  const auto skey = desc[1] == ':' ? desc[0] : char(0);
-  const auto name = skey ? desc[{2, $}] : desc;
-  const auto max_cnt = sval.ends_with("...") ? 1000U : 1U;
-  const auto val_name = max_cnt == 1 ? sval : sval[{0, sval.len() - 3}];
-  _items.push({Item::Type::Arg, skey, name, help, val_name, max_cnt});
+  _items.push({Item::Arg, desc, help, sval});
 }
 
 auto Clap::get(Str s) const -> Option<Str> {

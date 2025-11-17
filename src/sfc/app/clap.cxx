@@ -7,12 +7,12 @@ namespace sfc::app::test {
 // add test for Clap
 SFC_TEST(clap) {
   auto clap = Clap{"clap_test"};
-  clap.add_opt("help", "Show help message");
-  clap.add_opt("verbose", "Enable verbose output");
+  clap.add_flag("help", "Show help message");
+  clap.add_flag("verbose", "Enable verbose output");
   clap.add_opt("c:config", "Configuration file", "CONFIG");
   clap.add_arg("i:input", "Input file", "INPUT...");
   clap.add_arg("o:output", "Output file", "OUTPUT");
-
+  clap.print_help();
   const Str args[] = {"--verbose", "--output", "output.txt", "-c=config.yaml", "a.txt", "b.txt"};
   clap.parse(args);
 
