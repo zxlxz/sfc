@@ -127,18 +127,18 @@ class Result {
     return _inn.is_err();
   }
 
-  [[nodiscard]] auto ok(this auto self) -> Option<T> {
-    if (self._inn.is_err()) {
+  [[nodiscard]] auto ok() && -> Option<T> {
+    if (_inn.is_err()) {
       return {};
     }
-    return Option<T>{static_cast<T&&>(*self._inn)};
+    return Option<T>{static_cast<T&&>(*_inn)};
   }
 
-  [[nodiscard]] auto err(this auto self) -> Option<E> {
-    if (self._inn.is_ok()) {
+  [[nodiscard]] auto err() && -> Option<E> {
+    if (_inn.is_ok()) {
       return {};
     }
-    return static_cast<E&&>(~self._inn);
+    return static_cast<E&&>(~_inn);
   }
 
   auto unwrap_unchecked() -> T {
@@ -149,21 +149,21 @@ class Result {
     return static_cast<E&&>(~_inn);
   }
 
-  auto unwrap(this auto self) -> T {
-    panicking::expect(self._inn.is_ok(), "Result::unwrap: Err({})", ~self._inn);
-    return static_cast<T&&>(*self._inn);
+  auto unwrap() && -> T {
+    panicking::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
+    return static_cast<T&&>(*_inn);
   }
 
-  auto unwrap_or(this auto self, T def) -> T {
-    if (self._inn.is_ok()) {
-      return static_cast<T&&>(*self._inn);
+  auto unwrap_or(T def) && -> T {
+    if (_inn.is_ok()) {
+      return static_cast<T&&>(*_inn);
     }
     return static_cast<T&&>(def);
   }
 
-  auto unwrap_err(this auto self) -> E {
-    panicking::expect(self._inn.is_err(), "Result::unwrap_err: Ok({})", *self._inn);
-    return static_cast<E&&>(~self._inn);
+  auto unwrap_err() && -> E {
+    panicking::expect(_inn.is_err(), "Result::unwrap_err: Ok({})", *_inn);
+    return static_cast<E&&>(~_inn);
   }
 
   template <class U>

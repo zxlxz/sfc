@@ -8,7 +8,7 @@ struct IntBuf {
   char* _ptr = _end;
 
  public:
-  auto as_str() const -> str::Str {
+  auto as_str() const -> Str {
     return {_ptr, static_cast<usize>(_end - _ptr)};
   }
 
@@ -85,29 +85,31 @@ struct IntBuf {
   }
 };
 
-auto Debug::fmt_int(slice::Slice<char> buf, auto val, Style style) -> str::Str {
+auto Debug::fill_int(Slice<char> buf, Style style, auto val) -> Str {
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(val, style.type());
   return ss.as_str();
 }
 
-auto Debug::fmt_ptr(slice::Slice<char> buf, const void* ptr, Style style) -> str::Str {
+auto Debug::fill_ptr(Slice<char> buf, Style style, auto ptr) -> Str {
   const auto val = __builtin_bit_cast(usize, ptr);
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(val, style.type() ? style.type() : 'p');
   return ss.as_str();
 }
 
-template auto Debug::fmt_int(slice::Slice<char>, signed char, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, short, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, int, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, long, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, long long, Style) -> str::Str;
+template auto Debug::fill_int(Slice<char>, Style, signed char) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, short) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, int) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, long) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, long long) -> Str;
 
-template auto Debug::fmt_int(slice::Slice<char>, unsigned char, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, unsigned short, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, unsigned int, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, unsigned long, Style) -> str::Str;
-template auto Debug::fmt_int(slice::Slice<char>, unsigned long long, Style) -> str::Str;
+template auto Debug::fill_int(Slice<char>, Style, unsigned char) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, unsigned short) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, unsigned int) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, unsigned long) -> Str;
+template auto Debug::fill_int(Slice<char>, Style, unsigned long long) -> Str;
+
+template auto Debug::fill_ptr(Slice<char>, Style, const void*) -> Str;
 
 }  // namespace sfc::fmt

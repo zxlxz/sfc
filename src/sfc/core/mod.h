@@ -28,6 +28,8 @@ using f64 = double;
 
 using cstr_t = const char*;
 
+struct Nil {};
+
 }  // namespace sfc
 
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)

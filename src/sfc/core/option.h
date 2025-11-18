@@ -157,21 +157,21 @@ class Option {
     return _inn.is_none();
   }
 
-  [[nodiscard]] auto unwrap(this auto self) -> T {
-    panicking::expect(self._inn.is_some(), "Option::unwrap: None");
-    return static_cast<T&&>(*self._inn);
+  [[nodiscard]] auto unwrap() && -> T {
+    panicking::expect(_inn.is_some(), "Option::unwrap: None");
+    return static_cast<T&&>(*_inn);
   }
 
-  [[nodiscard]] auto unwrap_or(this auto self, T default_val) -> T {
-    if (self._inn.is_some()) {
-      return static_cast<T&&>(*self._inn);
+  [[nodiscard]] auto unwrap_or(T default_val) && -> T {
+    if (_inn.is_some()) {
+      return static_cast<T&&>(*_inn);
     }
     return static_cast<T&&>(default_val);
   }
 
-  [[nodiscard]] auto expect(this auto self, const auto&... msg) -> T {
-    panicking::expect(self._inn.is_some(), msg...);
-    return static_cast<T&&>(*self._inn);
+  [[nodiscard]] auto expect(const auto& msg) && -> T {
+    panicking::expect(_inn.is_some(), "Option::expect: {}", msg);
+    return static_cast<T&&>(*_inn);
   }
 
   template <class U>

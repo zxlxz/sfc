@@ -32,9 +32,6 @@ struct Slice {
   template <usize N>
   constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  template <class U>
-  constexpr Slice(const Slice<U>& v) noexcept : _ptr{v._ptr}, _len{v._len} {}
-
   auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
@@ -53,6 +50,10 @@ struct Slice {
 
   explicit operator bool() const noexcept {
     return _len != 0;
+  }
+
+  operator Slice<const T>() const {
+    return {_ptr, _len};
   }
 
  public:

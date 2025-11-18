@@ -37,7 +37,7 @@ class Stdout::Inn {
       return _inn.write(s);
     }
 
-    const auto [a, b] = s.split_at(p.unwrap() + 1);
+    const auto [a, b] = s.split_at(*p + 1);
     _TRY(_inn.write(a));
     _TRY(_inn.flush());
     _TRY(_inn.write(b));

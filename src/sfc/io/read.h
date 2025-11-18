@@ -41,7 +41,7 @@ struct Read {
 
 template <class R>
 class BufReader : Read {
-  static constexpr usize BUFF_SIZE = 256U;
+  static constexpr usize BUFF_SIZE = 4096U;
 
   R _inn;
   Vec<u8> _buf = {};
@@ -54,9 +54,6 @@ class BufReader : Read {
   BufReader(BufReader&&) noexcept = default;
   BufReader& operator=(BufReader&&) noexcept = default;
 
-  BufReader(const BufReader&) = delete;
-  BufReader& operator=(const BufReader&) = delete;
-
  public:
   auto fill_buf() -> Result<Slice<const u8>> {
     if (_pos == _buf.len()) {
@@ -64,7 +61,7 @@ class BufReader : Read {
       _pos = 0;
       _buf.set_len(cnt);
     }
-    return const_cast<const Vec<u8>&>(_buf)[{_pos, _buf.len()}];
+    return Slice<const u8>{_buf[{_pos, _buf.len()}]};
   }
 
   void consume(usize amt) {
@@ -79,7 +76,7 @@ class BufReader : Read {
       const auto cnt = _TRY(Result{_inn.read(_buf.spare_capacity_mut())});
       _buf.set_len(_buf.len() + cnt);
     }
-    return const_cast<const Vec<u8>&>(_buf)[{_pos, _pos + n}];
+    return Slice<const u8>{_buf[{_pos, _pos + n}]};
   }
 
   auto read(Slice<u8> buf) -> Result<usize> {
@@ -97,11 +94,10 @@ class BufReader : Read {
     auto res = usize{0UL};
     while (true) {
       const auto rem = _TRY(this->fill_buf());
-      const auto pos = rem.iter().position([&](auto c) { return !p(c); });
-      const auto cnt = pos.unwrap_or(rem.len());
+      const auto cnt = rem.iter().position([&](auto c) { return !p(c); }).unwrap_or(rem.len());
       this->consume(cnt);
       res += cnt;
-      if (pos) {
+      if (cnt != rem.len()) {
         break;
       }
     }

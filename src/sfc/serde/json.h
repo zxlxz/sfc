@@ -52,13 +52,13 @@ class Serializer {
 
   void serialize_int(const trait::int_ auto& val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fmt_int(buf, val);
+    const auto s = fmt::Debug::fill_int(buf, {}, val);
     this->write_str(s);
   }
 
   void serialize_flt(const trait::flt_ auto& val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fmt_flt(buf, val);
+    const auto s = fmt::Debug::fill_flt(buf, {}, val);
     this->write_str(s);
   }
 
@@ -180,22 +180,20 @@ class Deserializer {
   auto deserialize_int() -> io::Result<T> {
     _TRY(this->peak());
     const auto s = _TRY(this->pop_num());
-    const auto n = s.template parse<T>();
-    if (!n) {
-      return io::Error{io::ErrorKind::InvalidData};
+    if (auto n = s.template parse<T>()) {
+      return *n;
     }
-    return n.unwrap();
+    return io::Error{io::ErrorKind::InvalidData};
   }
 
   template <class T>
   auto deserialize_flt() -> io::Result<T> {
     _TRY(this->peak());
     const auto s = _TRY(this->pop_num());
-    const auto n = s.template parse<T>();
-    if (!n) {
-      return io::Error{io::ErrorKind::InvalidData};
+    if (auto n = s.template parse<T>()) {
+      return *n;
     }
-    return n.unwrap();
+    return io::Error{io::ErrorKind::InvalidData};
   }
 
   auto deserialize_str() -> io::Result<Str> {
@@ -254,13 +252,13 @@ class Deserializer {
     auto buf = _TRY(_read.fill_buf());
     auto pos = buf.find('"');
     if (!pos) {
-      buf = _TRY(_read.peak(buf.len() + 2048));
+      buf = _TRY(_read.peak(buf.len() + 1024));
       pos = buf.find('"');
     }
     if (!pos) {
       return io::Error{io::ErrorKind::InvalidData};
     }
-    const auto n = pos.unwrap();
+    const auto n = *pos;
     _read.consume(n + 1);
     return Str::from_utf8(buf[{0, n}]);
   }

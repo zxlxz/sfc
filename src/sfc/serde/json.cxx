@@ -95,7 +95,7 @@ SFC_TEST(deserialize_seq) {
 
   const auto item_end = seq.next();
   panicking::expect(item_end.is_ok());
-  panicking::expect(item_end.unwrap().is_none());
+  panicking::expect(item_end->is_none());
 }
 
 SFC_TEST(deserialize_map) {
@@ -123,7 +123,7 @@ SFC_TEST(deserialize_map) {
 
   const auto status = map.next();
   panicking::expect(status.is_ok());
-  panicking::expect(status.unwrap().is_none());
+  panicking::expect(status->is_none());
 }
 
 }  // namespace sfc::serde::json::test

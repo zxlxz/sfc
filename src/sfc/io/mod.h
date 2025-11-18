@@ -1,6 +1,7 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/core/tuple.h"
+#include "sfc/core/result.h"
 
 namespace sfc::io {
 
@@ -25,8 +26,6 @@ enum class ErrorKind {
   Other,
 };
 
-auto to_str(ErrorKind kind) -> Str;
-
 struct Error {
   ErrorKind kind = ErrorKind::Other;
   int code = 0;
@@ -37,8 +36,7 @@ struct Error {
   static auto from_os_error(int code) -> Error;
 
   void fmt(auto& f) const {
-    const auto s = to_str(kind);
-    f.write_str(s);
+    f.write_val(kind);
   }
 };
 
