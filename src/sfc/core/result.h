@@ -225,6 +225,10 @@ class [[nodiscard]] Result {
   Result& operator=(Result&& other) noexcept = default;
   Result& operator=(const Result& other) noexcept = default;
 
+  explicit operator bool() const noexcept {
+    return _inn.is_ok();
+  }
+
   auto operator->() const -> const T* {
     panicking::expect(_inn.is_ok(), "Result::operator->: deref Err");
     return &*_inn;

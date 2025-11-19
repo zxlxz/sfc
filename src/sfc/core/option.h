@@ -129,17 +129,17 @@ class Option {
     return _inn.is_some();
   }
 
-  [[nodiscard]] auto operator*() const -> const T& {
+  auto operator*() const -> const T& {
     panicking::expect(_inn.is_some(), "Option::operator*: deref None");
     return *_inn;
   }
 
-  [[nodiscard]] auto operator*() -> T& {
+  auto operator*() -> T& {
     panicking::expect(_inn.is_some(), "Option::operator*: deref None");
     return *_inn;
   }
 
-  [[nodiscard]] auto operator->() const {
+  auto operator->() const {
     panicking::expect(_inn.is_some(), "Option::operator->: deref None");
     return &*_inn;
   }
