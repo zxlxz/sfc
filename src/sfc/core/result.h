@@ -20,23 +20,70 @@ class Inner {
   explicit Inner(E&& err) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(err)} {}
 
   ~Inner() noexcept {
-    _tag == Tag::Ok ? _ok.~T() : _err.~E();
-  }
-
-  Inner(const Inner& other) noexcept : _tag{other._tag} {
-    if (_tag == Tag::Ok) {
-      new (&_ok) T{other._ok};
-    } else {
-      new (&_err) E{other._err};
+    switch (_tag) {
+      case Tag::Ok:  _ok.~T(); break;
+      case Tag::Err: _err.~E(); break;
     }
   }
 
   Inner(Inner&& other) noexcept : _tag{other._tag} {
-    if (_tag == Tag::Ok) {
-      new (&_ok) T{static_cast<T&&>(other._ok)};
-    } else {
-      new (&_err) E{static_cast<E&&>(other._err)};
+    switch (_tag) {
+      case Tag::Ok:  new (&_ok) T{static_cast<T&&>(other._ok)}; break;
+      case Tag::Err: new (&_err) E{static_cast<E&&>(other._err)}; break;
     }
+  }
+
+  Inner(const Inner& other) noexcept : _tag{other._tag} {
+    switch (_tag) {
+      case Tag::Ok:  new (&_ok) T{other._ok}; break;
+      case Tag::Err: new (&_err) E{other._err}; break;
+    }
+  }
+
+  Inner& operator=(Inner&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    if (_tag == other._tag) {
+      switch (_tag) {
+        case Tag::Ok:  _ok = static_cast<T&&>(other._ok); break;
+        case Tag::Err: _err = static_cast<E&&>(other._err); break;
+      }
+    } else {
+      switch (_tag) {
+        case Tag::Ok:  _ok.~T(); break;
+        case Tag::Err: _err.~E(); break;
+      }
+      _tag = other._tag;
+      switch (_tag) {
+        case Tag::Ok:  new (&_ok) T{static_cast<T&&>(other._ok)}; break;
+        case Tag::Err: new (&_err) E{static_cast<E&&>(other._err)}; break;
+      }
+    }
+    return *this;
+  }
+
+  Inner& operator=(const Inner& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    if (_tag == other._tag) {
+      switch (_tag) {
+        case Tag::Ok:  _ok = other._ok; break;
+        case Tag::Err: _err = other._err; break;
+      }
+    } else {
+      switch (_tag) {
+        case Tag::Ok:  _ok.~T(); break;
+        case Tag::Err: _err.~E(); break;
+      }
+      _tag = other._tag;
+      switch (_tag) {
+        case Tag::Ok:  new (&_ok) T{other._ok}; break;
+        case Tag::Err: new (&_err) E{other._err}; break;
+      }
+    }
+    return *this;
   }
 
   auto is_ok() const noexcept -> bool {
@@ -64,88 +111,169 @@ class Inner {
   }
 };
 
+template <class E>
+class Inner<void, E> {
+  Tag _tag;
+  union {
+    E _err;
+  };
+
+ public:
+  explicit Inner() noexcept : _tag{Tag::Ok} {}
+
+  explicit Inner(E&& err) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(err)} {}
+
+  ~Inner() noexcept {
+    switch (_tag) {
+      case Tag::Ok:  break;
+      case Tag::Err: _err.~E(); break;
+    }
+  }
+
+  Inner(Inner&& other) noexcept : _tag{other._tag} {
+    switch (_tag) {
+      case Tag::Ok:  break;
+      case Tag::Err: new (&_err) E{static_cast<E&&>(other._err)}; break;
+    }
+  }
+
+  Inner(const Inner& other) noexcept : _tag{other._tag} {
+    switch (_tag) {
+      case Tag::Ok:  break;
+      case Tag::Err: new (&_err) E{other._err}; break;
+    }
+  }
+
+  Inner& operator=(Inner&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    if (_tag == other._tag) {
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: _err = static_cast<E&&>(other._err); break;
+      }
+    } else {
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: _err.~E(); break;
+      }
+      _tag = other._tag;
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: new (&_err) E{static_cast<E&&>(other._err)}; break;
+      }
+    }
+    return *this;
+  }
+
+  Inner& operator=(const Inner& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    if (_tag == other._tag) {
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: _err = other._err; break;
+      }
+    } else {
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: _err.~E(); break;
+      }
+      _tag = other._tag;
+      switch (_tag) {
+        case Tag::Ok:  break;
+        case Tag::Err: new (&_err) E{other._err}; break;
+      }
+    }
+    return *this;
+  }
+
+  auto is_ok() const noexcept -> bool {
+    return _tag == Tag::Ok;
+  }
+
+  auto is_err() const noexcept -> bool {
+    return _tag == Tag::Err;
+  }
+
+  auto operator~() const noexcept -> const E& {
+    return _err;
+  }
+
+  auto operator~() noexcept -> E& {
+    return _err;
+  }
+};
+
 template <class T, class E>
-class Result {
+class [[nodiscard]] Result {
   static_assert(!__is_same(T, E));
-  using Ok = T;
-  using Err = E;
   using Inn = Inner<T, E>;
 
   Inn _inn;
 
  public:
-  Result(T val = {}) noexcept : _inn{static_cast<T&&>(val)} {}
+  Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
   Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
   ~Result() noexcept = default;
 
-  Result(const Result&) noexcept = default;
   Result(Result&&) noexcept = default;
+  Result(const Result&) noexcept = default;
 
-  Result& operator=(const Result& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    _inn.~Inn();
-    new (&_inn) Inn{other._inn};
-    return *this;
-  }
+  Result& operator=(Result&& other) noexcept = default;
+  Result& operator=(const Result& other) noexcept = default;
 
-  Result& operator=(Result&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    _inn.~Inn();
-    new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
-    return *this;
-  }
-
-  [[nodiscard]] auto operator*() const -> const T& {
-    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
-    return *_inn;
-  }
-
-  [[nodiscard]] auto operator*() -> T& {
-    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
-    return *_inn;
-  }
-
-  [[nodiscard]] auto operator->() const {
+  auto operator->() const -> const T* {
     panicking::expect(_inn.is_ok(), "Result::operator->: deref Err");
     return &*_inn;
   }
 
-  [[nodiscard]] auto operator->() {
+  auto operator->() -> T* {
     panicking::expect(_inn.is_ok(), "Result::operator->: deref Err");
     return &*_inn;
   }
 
-  [[nodiscard]] auto is_ok() const noexcept -> bool {
+  auto operator*() const -> const T& {
+    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
+    return *_inn;
+  }
+
+  auto operator*() -> T& {
+    panicking::expect(_inn.is_ok(), "Result::operator*: deref Err");
+    return *_inn;
+  }
+
+  auto operator~() const -> const E& {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+    return ~_inn;
+  }
+
+  auto operator~() -> E& {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+    return ~_inn;
+  }
+
+  auto is_ok() const noexcept -> bool {
     return _inn.is_ok();
   }
 
-  [[nodiscard]] auto is_err() const noexcept -> bool {
+  auto is_err() const noexcept -> bool {
     return _inn.is_err();
   }
 
-  [[nodiscard]] auto ok() && -> Option<T> {
+  auto ok() && -> Option<T> {
     if (_inn.is_err()) {
       return {};
     }
     return Option<T>{static_cast<T&&>(*_inn)};
   }
 
-  [[nodiscard]] auto err() && -> Option<E> {
+  auto err() && -> Option<E> {
     if (_inn.is_ok()) {
       return {};
     }
-    return static_cast<E&&>(~_inn);
-  }
-
-  auto unwrap_unchecked() -> T {
-    return static_cast<T&&>(*_inn);
-  }
-
-  auto unwrap_err_unchecked() -> E {
     return static_cast<E&&>(~_inn);
   }
 
@@ -225,6 +353,78 @@ class Result {
   }
 };
 
+template <class E>
+class [[nodiscard]] Result<void, E> {
+  static_assert(!__is_same(void, E));
+  using Inn = Inner<void, E>;
+
+  Inn _inn;
+
+ public:
+  Result() noexcept : _inn{} {}
+  Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+  ~Result() noexcept = default;
+
+  Result(Result&&) noexcept = default;
+  Result(const Result&) noexcept = default;
+
+  Result& operator=(Result&& other) noexcept = default;
+  Result& operator=(const Result& other) noexcept = default;
+
+  void operator*() const {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+  }
+
+  auto operator*() -> E& {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+    return ~_inn;
+  }
+
+  auto operator~() const -> const E& {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+    return ~_inn;
+  }
+
+  auto operator~() -> E& {
+    panicking::expect(_inn.is_err(), "Result::operator~: deref Ok");
+    return ~_inn;
+  }
+
+  auto is_ok() const noexcept -> bool {
+    return _inn.is_ok();
+  }
+
+  auto is_err() const noexcept -> bool {
+    return _inn.is_err();
+  }
+
+  auto err() && -> Option<E> {
+    if (_inn.is_ok()) {
+      return {};
+    }
+    return static_cast<E&&>(~_inn);
+  }
+
+  auto unwrap() const -> void {
+    panicking::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
+  }
+
+  auto unwrap_err() && -> E {
+    panicking::expect(_inn.is_err(), "Result::unwrap_err: Ok({})", *_inn);
+    return static_cast<E&&>(~_inn);
+  }
+
+ public:
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    if (_inn.is_ok()) {
+      f.write_fmt("Ok()");
+    } else {
+      f.write_fmt("Err({})", ~_inn);
+    }
+  }
+};
+
 }  // namespace sfc::result
 
 namespace sfc {
@@ -234,12 +434,12 @@ using result::Result;
 #ifdef __INTELLISENSE__
 #define _TRY(expr) expr.unwrap()
 #else
-#define _TRY(expr)                        \
-  ({                                      \
-    auto _res = (expr);                   \
-    if (_res.is_err()) {                  \
-      return _res.unwrap_err_unchecked(); \
-    }                                     \
-    _res.unwrap_unchecked();              \
+#define _TRY(expr)                                \
+  ({                                              \
+    auto _res = (expr);                           \
+    if (_res.is_err()) {                          \
+      return ~_res;                               \
+    }                                             \
+    static_cast<decltype(_res)&&>(_res).unwrap(); \
   })
 #endif

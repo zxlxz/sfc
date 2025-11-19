@@ -40,7 +40,7 @@ struct Error {
   }
 };
 
-template <class T = Tuple<>>
+template <class T = void>
 using Result = result::Result<T, Error>;
 
 }  // namespace sfc::io

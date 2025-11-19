@@ -21,6 +21,10 @@ struct Range {
   Range(usize start, usize end) noexcept : start{start}, end{end} {}
 };
 
+auto add(auto val) {
+  return [val](auto x) { return x + val; };
+}
+
 }  // namespace sfc::ops
 
 namespace sfc {

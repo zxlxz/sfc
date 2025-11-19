@@ -28,7 +28,7 @@ class Stdout::Inn {
   }
 
   void flush() noexcept {
-    _inn.flush();
+    (void)_inn.flush();
   }
 
   auto write(Slice<const u8> s) -> Result<usize> {
@@ -67,7 +67,7 @@ class Stderr::Inn {
   void flush() noexcept {}
 
   void write(Slice<const u8> s) noexcept {
-    _imp.write_all(s);
+    (void)_imp.write_all(s);
   }
 };
 
@@ -87,7 +87,7 @@ void Stdout::Lock::flush() {
 }
 
 void Stdout::Lock::write_str(Str s) {
-  _inn.write(s.as_bytes());
+  (void)_inn.write(s.as_bytes());
 }
 
 Stderr::Lock::Lock() : _inn{Inn::instance()}, _lock{_inn._mtx.lock()} {}

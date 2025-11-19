@@ -12,7 +12,7 @@ SFC_TEST(read_write) {
     auto file_res = File::create(path_buf.as_path());
     panicking::expect_true(file_res.is_ok());
     auto file = mem::move(file_res).unwrap();
-    file.write_str("hello world");
+    (void)file.write_str("hello world");
   }
 
   // open, read

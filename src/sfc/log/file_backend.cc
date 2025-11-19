@@ -42,8 +42,7 @@ void FileBackend::write(Record entry) {
   buf.push_str(log::level_str(entry.level));
   buf.push_str(entry.msg);
   buf.push_str("\n");
-
-  _file.write_str(buf.as_str());
+  _file.write_str(buf.as_str()).unwrap();
 }
 
 }  // namespace sfc::log
