@@ -3,6 +3,22 @@
 
 namespace sfc::app {
 
+static auto yes_or_no(Str s) -> Option<bool> {
+  if (s.is_empty()) {
+    return {};
+  }
+
+  if (s == "1" || s == "true" || s == "yes" || s == "on") {
+    return true;
+  }
+
+  if (s == "0" || s == "false" || s == "no" || s == "off") {
+    return false;
+  }
+
+  return {};
+}
+
 struct Clap::Item {
   enum Type {
     Flag,
@@ -60,31 +76,10 @@ struct Clap::Item {
     if (!_is_set) {
       return {};
     }
+    if (_vals.is_empty() && _type == Type::Flag) {
+      return Str{"1"};
+    }
     return _vals.as_str();
-  }
-
-  auto flag() const -> Option<bool> {
-    if (!_is_set) {
-      return {};
-    }
-
-    const auto val = _vals.as_str();
-    if (val.is_empty()) {
-      if (_type == Type::Flag) {
-        return true;
-      }
-      return {};
-    }
-
-    if (val == "1" || val == "true" || val == "yes" || val == "on") {
-      return true;
-    }
-
-    if (val == "0" || val == "false" || val == "no" || val == "off") {
-      return false;
-    }
-
-    return {};
   }
 
   void show_usage(auto& f) const {
@@ -298,7 +293,9 @@ auto Clap::get(Str s) const -> Option<Str> {
 auto Clap::get_flag(Str s) const -> Option<bool> {
   for (auto& item : _items) {
     if (item.match(s)) {
-      return item.flag();
+      const auto s = item.value().unwrap_or({});
+      const auto b = yes_or_no(s);
+      return b;
     }
   }
   return {};
