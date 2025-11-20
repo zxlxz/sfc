@@ -31,12 +31,14 @@ concept flt_ = any_<T, float, double>;
 template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
-template <class>
-struct Fn;
+template <class X>
+struct Fn {
+  using Output = typename Fn<decltype(X::operator())>::Output;
+};
 
 template <class R, class... T>
 struct Fn<R(T...)> {
-  using Ret = R;
+  using Output = R;
 };
 
 template <class X>
@@ -44,15 +46,13 @@ struct Invoke;
 
 template <class F, class... T>
 struct Invoke<F(T...)> {
-  static auto operator()(F f, T... t) -> decltype(auto) {
+  static auto operator()(F f, T... t) -> decltype(f((T&&)t...)) {
     return f((T&&)t...);
   }
-
-  using Type = typename Fn<decltype(Invoke::operator())>::Ret;
 };
 
 template <class X>
-using invoke_t = typename Invoke<X>::Type;
+using invoke_t = typename Fn<Invoke<X>>::Output;
 
 template <class I, class X>
 struct Impl : I, X {
@@ -62,6 +62,7 @@ struct Impl : I, X {
 
 template <class I, class X>
 auto as(const X& x) -> auto& {
+  static_assert(sizeof(I) == 0);
   if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
   } else {

@@ -120,7 +120,8 @@ auto main(int argc, const char* argv[]) -> int {
   cmd.add_opt("gtest_color", "Enable or disable colored output", "BOOL");
   cmd.add_opt("gtest_output", "Output file for test results", "FILE");
 
-  if (cmd.parse_cmdline(argc, argv) != 0) {
+  if (!cmd.parse_cmdline(argc, argv)) {
+    cmd.print_help();
     return -1;
   }
 

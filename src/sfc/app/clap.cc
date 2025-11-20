@@ -47,13 +47,10 @@ struct Clap::Item {
   }
 
   auto is_complete() const -> bool {
-    if (!_is_set) {
-      return false;
-    }
     if (_type == Type::Flag) {
       return true;
     }
-    if (_vals.is_empty()) {
+    if (!_is_set || _vals.is_empty()) {
       return false;
     }
     return !_variadic;
@@ -97,7 +94,7 @@ struct Clap::Item {
   }
 
   void show_help(auto& f) const {
-    static constexpr auto NAME_LEN = 32;
+    static constexpr auto NAME_LEN = 48U;
     auto line_buf = String::with_capacity(128);
 
     line_buf.push_str("  ");
@@ -161,45 +158,21 @@ struct Clap::Parser {
   Slice<Item> _items;
 
  public:
-  auto parse(Slice<const Str> args) -> int {
-    auto pos_vals = Vec<Str>{};
-    auto end_of_opts = false;
+  auto parse(Slice<const Str> ss) -> bool {
+    const auto v1 = this->parse_opts(ss);
+    const auto v2 = this->parse_args(v1.as_slice());
+    return v2.is_empty();
+  }
 
-    auto prev_item = static_cast<Item*>(nullptr);
-    for (auto s : args) {
-      if (!s) {
+  auto unuset_args_cnt() const -> usize {
+    auto accum = 0U;
+    for (auto& item : _items) {
+      if (item._type != Item::Arg) {
         continue;
       }
-
-      if (end_of_opts) {
-        pos_vals.push(s);
-        continue;
-      }
-
-      // --
-      if (s == "--") {
-        prev_item = nullptr;
-        end_of_opts = true;
-        continue;
-      }
-
-      // -k, --key, --key=val
-      if (s[0] == '-') {
-        prev_item = this->parse_opt(s);
-        continue;
-      }
-
-      // val
-      if (prev_item && !prev_item->is_complete()) {
-        prev_item->push_val(s);
-        continue;
-      }
-
-      pos_vals.push(s);
+      accum += item.value() ? 0 : 1;
     }
-
-    const auto rem_cnt = this->parse_post_args(pos_vals.as_slice());
-    return rem_cnt;
+    return accum;
   }
 
  private:
@@ -231,29 +204,57 @@ struct Clap::Parser {
     return nullptr;
   }
 
-  auto parse_post_args(Slice<const Str> vals) -> int {
-    auto unset_cnt = 0;
+  auto parse_opts(Slice<const Str> vals) -> Vec<Str> {
+    auto pos_args = Vec<Str>{};
+    auto end_of_opts = false;
 
+    auto prev_item = static_cast<Item*>(nullptr);
+    for (auto s : vals) {
+      if (!s) {
+        continue;
+      }
+
+      if (end_of_opts) {
+        pos_args.push(s);
+        continue;
+      }
+
+      // --
+      if (s == "--") {
+        prev_item = nullptr;
+        end_of_opts = true;
+        continue;
+      }
+
+      // -k, --key, --key=val
+      if (s[0] == '-') {
+        prev_item = this->parse_opt(s);
+        continue;
+      }
+
+      // val
+      if (prev_item && !prev_item->is_complete()) {
+        prev_item->push_val(s);
+        continue;
+      }
+
+      pos_args.push(s);
+    }
+
+    return pos_args;
+  }
+
+  auto parse_args(Slice<const Str> vals) -> Slice<const Str> {
     for (auto& item : _items) {
       if (item._type != Item::Type::Arg || item.value()) {
         continue;
       }
       if (vals.is_empty()) {
-        unset_cnt += 1;
-        continue;
+        break;
       }
       vals = item.push_vals(vals);
     }
-
-    if (unset_cnt != 0) {
-      return -unset_cnt;
-    }
-
-    if (auto vals_cnt = vals.len()) {
-      return -static_cast<int>(vals_cnt);
-    }
-
-    return 0;
+    return vals;
   }
 };
 
@@ -325,12 +326,16 @@ void Clap::print_help() const {
   }
 }
 
-auto Clap::parse(Slice<const Str> args) -> int {
+auto Clap::parse(Slice<const Str> args) -> bool {
   auto parser = Parser{_items.as_mut_slice()};
-  return parser.parse(args);
+  if (!parser.parse(args)) {
+    return false;
+  }
+  const auto unset_args_cnt = parser.unuset_args_cnt();
+  return unset_args_cnt == 0;
 }
 
-auto Clap::parse_cmdline(int argc, const char* argv[]) -> int {
+auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
   auto args = Vec<Str>::with_capacity(static_cast<usize>(argc - 1));
   for (auto i = 1; i < argc; i++) {
     args.push(Str::from_cstr(argv[i]));

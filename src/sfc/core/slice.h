@@ -242,6 +242,12 @@ struct Slice {
   }
 
   // trait: serde::Serialize
+  auto as_bytes() const -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
+  }
+
+  // trait: serde::Serialize
   void serialize(auto& ser) const {
     auto imp = ser.serialize_seq();
     for (auto i = 0; i < _len; ++i) {

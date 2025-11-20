@@ -19,41 +19,41 @@ class Inner {
   };
 
  public:
-  explicit Inner() noexcept {}
+  [[gnu::always_inline]] explicit Inner() noexcept {}
 
-  explicit Inner(T&& val) noexcept : _tag{Tag::Some}, _val{static_cast<T&&>(val)} {}
+  [[gnu::always_inline]] explicit Inner(T&& val) noexcept : _tag{Tag::Some}, _val{static_cast<T&&>(val)} {}
 
-  ~Inner() noexcept {
+  [[gnu::always_inline]] ~Inner() noexcept {
     if (_tag == Tag::Some) {
       _val.~T();
     }
   }
 
-  Inner(const Inner& other) noexcept : _tag{other._tag} {
+  [[gnu::always_inline]] Inner(const Inner& other) noexcept : _tag{other._tag} {
     if (_tag == Tag::Some) {
       new (&_val) T{other._val};
     }
   }
 
-  Inner(Inner&& other) noexcept : _tag{other._tag} {
+  [[gnu::always_inline]] Inner(Inner&& other) noexcept : _tag{other._tag} {
     if (_tag == Tag::Some) {
       new (&_val) T{static_cast<T&&>(other._val)};
     }
   }
 
-  auto is_some() const noexcept -> bool {
+  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
     return _tag == Tag::Some;
   }
 
-  auto is_none() const noexcept -> bool {
+  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
     return _tag == Tag::None;
   }
 
-  auto operator*() const noexcept -> const T& {
+  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
     return _val;
   }
 
-  auto operator*() noexcept -> T& {
+  [[gnu::always_inline]] auto operator*() noexcept -> T& {
     return _val;
   }
 };
@@ -63,23 +63,23 @@ class Inner<T&> {
   T* _ptr{nullptr};
 
  public:
-  Inner() noexcept = default;
+  [[gnu::always_inline]] Inner() noexcept = default;
 
-  explicit Inner(T& val) noexcept : _ptr{&val} {}
+  [[gnu::always_inline]] explicit Inner(T& val) noexcept : _ptr{&val} {}
 
-  auto is_some() const noexcept -> bool {
+  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
     return _ptr != nullptr;
   }
 
-  auto is_none() const noexcept -> bool {
+  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
     return _ptr == nullptr;
   }
 
-  auto operator*() const noexcept -> const T& {
+  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
     return *_ptr;
   }
 
-  auto operator*() noexcept -> T& {
+  [[gnu::always_inline]] auto operator*() noexcept -> T& {
     return *_ptr;
   }
 };
@@ -100,20 +100,18 @@ class Option {
   Option(Option&&) noexcept = default;
 
   Option& operator=(const Option& other) {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      _inn.~Inn();
+      new (&_inn) Inn{other._inn};
     }
-    _inn.~Inn();
-    new (&_inn) Inn{other._inn};
     return *this;
   }
 
   Option& operator=(Option&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      _inn.~Inn();
+      new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
     }
-    _inn.~Inn();
-    new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
     return *this;
   }
 
@@ -130,97 +128,98 @@ class Option {
   }
 
   auto operator*() const -> const T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
     return *_inn;
   }
 
   auto operator*() -> T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
     return *_inn;
   }
 
   auto operator->() const {
-    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
+    panicking::expect(_inn.is_some(), "Option::operator->: not Some()");
     return &*_inn;
   }
 
-  [[nodiscard]] auto operator->() {
-    panicking::expect(_inn.is_some(), "Option::operator->: deref None");
+  auto operator->() {
+    panicking::expect(_inn.is_some(), "Option::operator->: not Some()");
     return &*_inn;
   }
 
-  [[nodiscard]] auto is_some() const noexcept -> bool {
+  auto is_some() const noexcept -> bool {
     return _inn.is_some();
   }
 
-  [[nodiscard]] auto is_none() const noexcept -> bool {
+  auto is_none() const noexcept -> bool {
     return _inn.is_none();
   }
 
-  [[nodiscard]] auto unwrap() && -> T {
-    panicking::expect(_inn.is_some(), "Option::unwrap: None");
+  auto unwrap() && -> T {
+    panicking::expect(_inn.is_some(), "Option::unwrap: not Some()");
     return static_cast<T&&>(*_inn);
   }
 
-  [[nodiscard]] auto unwrap_or(T default_val) && -> T {
+  auto unwrap_or(T default_val) && -> T {
     if (_inn.is_some()) {
       return static_cast<T&&>(*_inn);
     }
     return static_cast<T&&>(default_val);
   }
 
-  [[nodiscard]] auto expect(const auto& msg) && -> T {
+  auto expect(const auto& msg) && -> T {
     panicking::expect(_inn.is_some(), "Option::expect: {}", msg);
     return static_cast<T&&>(*_inn);
   }
 
   template <class U>
-  [[nodiscard]] auto operator&&(Option<U> optb) const -> Option<U> {
-    if (_inn.is_some()) {
+  auto operator&(this const auto& self, Option<U> optb) -> Option<U> {
+    if (self._inn.is_some()) {
       return static_cast<Option<U>&&>(optb);
     }
     return {};
   }
 
-  [[nodiscard]] auto operator||(this auto self, Option<T> optb) -> Option<T> {
+  auto operator|(this auto self, Option<T> optb) -> Option<T> {
     if (self._inn.is_some()) {
       return static_cast<Option&&>(self);
     }
     return static_cast<Option&&>(optb);
   }
 
-  template <class F, class U = typename trait::invoke_t<F(T)>::Some>
-  [[nodiscard]] auto and_then(this auto self, F&& op) -> Option<U> {
-    if (self._inn.is_none()) {
+  template <class F>
+  auto and_then(F&& op) && -> trait::invoke_t<F(T)> {
+    if (_inn.is_none()) {
       return {};
     }
-    return op(static_cast<T&&>(*self._inn));
+    return op(static_cast<T&&>(*_inn));
   }
 
-  template <class F>
-  [[nodiscard]] auto or_else(this auto self, F&& f) -> Option {
-    if (self._inn.is_some()) {
-      return static_cast<T&&>(*self._inn);
+  auto or_else(auto&& f) && -> Option<T> {
+    if (_inn.is_some()) {
+      return static_cast<T&&>(*_inn);
     }
     return f();
   }
 
-  template <class F, class U = trait::invoke_t<F(T)>>
-  [[nodiscard]] auto map(this auto self, F&& op) -> Option<U> {
-    if (self._inn.is_none()) {
+  template <class F>
+  auto map(F&& f) -> Option<trait::invoke_t<F(T)>> {
+    if (_inn.is_none()) {
       return {};
     }
-    return {op(static_cast<T&&>(*self._inn))};
+    return {f(static_cast<T&&>(*_inn))};
   }
 
   template <class U>
-  [[nodiscard]] auto map_or(this auto self, U default_val, auto&& f) -> U {
-    if (self._inn.is_none()) {
+  auto map_or(U default_val, auto&& f) -> U {
+    if (_inn.is_none()) {
       return static_cast<U&&>(default_val);
     }
-    return f(static_cast<T&&>(*self._inn));
+    return f(static_cast<T&&>(*_inn));
   }
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     if (_inn.is_none()) {
       f.write_str("None()");

@@ -155,11 +155,7 @@ struct Args {
       pats = pats[{i1 + 1, pats.len()}];
 
       f._style = Style::from_str(ss).unwrap_or({});
-      if constexpr (requires { ptr->fmt(f); }) {
-        ptr->fmt(f);
-      } else {
-        Debug::fmt(*ptr, f);
-      }
+      f.write_val(*ptr);
     });
     f.write_str(pats);
   }
@@ -265,8 +261,10 @@ struct Fmter {
   void write_val(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
-    } else {
+    } else if constexpr (requires { Debug::fmt(val, *this); }) {
       Debug::fmt(val, *this);
+    } else {
+      static_assert(false, "Fmter::write_val: unsupported type");
     }
   }
 

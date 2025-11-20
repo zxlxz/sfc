@@ -2,6 +2,14 @@
 
 namespace sfc::str::test {
 
+enum class E1 { A, B };
+
+SFC_TEST(type_name) {
+  panicking::expect_eq(str::type_name<int>(), "int");
+  panicking::expect_eq(str::type_name<Str>(), "sfc::str::Str");
+  panicking::expect_eq(str::type_name<E1>(), "sfc::str::test::E1");
+}
+
 SFC_TEST(simple) {
   {
     const auto s = Str{};
@@ -216,4 +224,4 @@ SFC_TEST(format) {
   panicking::expect_eq(string::format("{#?}", "abc"), "\"abc\"");
 }
 
-}  // namespace sfc::str
+}  // namespace sfc::str::test

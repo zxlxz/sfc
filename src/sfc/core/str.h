@@ -454,7 +454,17 @@ template <class T>
 static auto type_name() -> Str {
   static const auto S1 = sizeof("Str sfc::str::type_name() [T = ") - 1;
   static const auto S2 = sizeof("]");
-  return {__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+  static const auto ss = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+  return ss;
+}
+
+template <auto E>
+static auto enum_name() -> Str {
+  static_assert(trait::enum_<decltype(E)>);
+  static const auto S1 = sizeof("Str sfc::str::enum_name() [E = ") - 1;
+  static const auto S2 = sizeof("]");
+  static const auto ss = {__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+  return ss;
 }
 
 }  // namespace sfc::str

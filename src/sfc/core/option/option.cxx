@@ -42,51 +42,38 @@ SFC_TEST(unwrap) {
 }
 
 SFC_TEST(and) {
-  const auto a = Option<int>{};
-  const auto b = Option<int>{10};
-
-  panicking::expect_eq(a and Option{1}, Option<int>{});
-  panicking::expect_eq(b and Option{1}, Option<int>{1});
+  panicking::expect_eq(Option<int>{} & Option{1}, Option<int>{});
+  panicking::expect_eq(Option<int>{10} & Option{1}, Option<int>{1});
 }
 
 SFC_TEST(or) {
-  auto a = Option<int>{};
-  auto b = Option<int>{10};
-
-  panicking::expect_eq(a or Option{1}, Option{1});
-  panicking::expect_eq(b or Option{1}, Option{10});
+  panicking::expect_eq(Option<int>{} | Option{1}, Option{1});
+  panicking::expect_eq(Option<int>{10} | Option{1}, Option{10});
 }
 
 SFC_TEST(and_then) {
-  auto a = Option<int>{10};
-  auto b = Option<int>{};
+  auto add = [](auto val) { return [val](auto x) { return Option{x + val}; }; };
 
-  panicking::expect_eq(a.and_then([](int x) { return Option{x + 1}; }), Option{11});
-  panicking::expect_eq(b.and_then([](int x) { return Option{x + 1}; }), Option<int>{});
+  panicking::expect_eq(Option<int>{10}.and_then(add(1)), Option{11});
+  panicking::expect_eq(Option<int>{}.and_then(add(1)), Option<int>{});
 }
 
 SFC_TEST(or_else) {
-  auto a = Option<int>{};
-  auto b = Option<int>{10};
-
-  panicking::expect_eq(a.or_else([] { return Option{1}; }), Option{1});
-  panicking::expect_eq(b.or_else([] { return Option{1}; }), Option{10});
+  auto make_opt = [](auto val) { return [val]() { return Option{val}; }; };
+  panicking::expect_eq(Option<int>{}.or_else(make_opt(1)), Option{1});
+  panicking::expect_eq(Option<int>{10}.or_else(make_opt(1)), Option{10});
 }
 
 SFC_TEST(map) {
-  auto a = Option<int>{};
-  auto b = Option<int>{10};
-
-  panicking::expect_eq(a.map([](int x) { return x + 1; }), Option<int>{});
-  panicking::expect_eq(b.map([](int x) { return x + 1; }), Option{11});
+  auto add = [](auto val) { return [val](auto x) { return x + val; }; };
+  panicking::expect_eq(Option<int>{}.map(add(1)), Option<int>{});
+  panicking::expect_eq(Option<int>{10}.map(add(1)), Option{11});
 }
 
 SFC_TEST(map_or) {
-  auto a = Option<int>{};
-  auto b = Option<int>{10};
-
-  panicking::expect_eq(a.map_or(5, [](int x) { return x + 1; }), 5);
-  panicking::expect_eq(b.map_or(5, [](int x) { return x + 1; }), 11);
+  auto add = [](auto val) { return [val](auto x) { return x + val; }; };
+  panicking::expect_eq(Option<int>{}.map_or(5, add(1)), 5);
+  panicking::expect_eq(Option<int>{10}.map_or(5, add(1)), 11);
 }
 
 }  // namespace sfc::option::test
