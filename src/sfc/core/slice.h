@@ -5,6 +5,7 @@
 #include "sfc/core/iter.h"
 #include "sfc/core/result.h"
 #include "sfc/core/tuple.h"
+#include "sfc/io/mod.h"
 
 namespace sfc::slice {
 
@@ -76,13 +77,13 @@ struct Slice {
   }
 
   auto operator[](ops::Range ids) const -> Slice<const T> {
-    const auto start = ids.start < _len ? ids.start : _len;
+    const auto start = ids.start;
     const auto end = ids.end < _len ? ids.end : _len;
     return Slice<const T>{_ptr + start, start < end ? end - start : 0U};
   }
 
   auto operator[](ops::Range ids) -> Slice<T> {
-    const auto start = ids.start < _len ? ids.start : _len;
+    const auto start = ids.start;
     const auto end = ids.end < _len ? ids.end : _len;
     return Slice<T>{_ptr + start, start < end ? end - start : 0U};
   }
@@ -232,7 +233,7 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) -> usize {
+  auto read(Slice<u8> buf) -> io::Result<usize> {
     static_assert(__is_same(const T, const u8));
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);

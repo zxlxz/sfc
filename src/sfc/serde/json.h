@@ -157,51 +157,61 @@ class Deserializer {
   Deserializer(const Deserializer&) noexcept = delete;
 
  public:
-  auto deserialize_null() -> io::Result<> {
+  auto deserialize_null(auto&& visit) -> io::Result<> {
     const auto c = _TRY(this->peak());
-    if (c != 'n') {
-      return io::Error{io::ErrorKind::InvalidData};
+    if (c == 'n') {
+      _TRY(this->extract_keyword("null"));
+      visit();
+      return {};
     }
-    return this->pop_match("null");
+    return io::Error{io::ErrorKind::InvalidData};
   }
 
-  auto deserialize_bool() -> io::Result<bool> {
+  auto deserialize_bool(auto&& visit) -> io::Result<> {
     const auto c = _TRY(this->peak());
-    if (c == 't' && this->pop_match("true").is_ok()) {
-      return true;
-    }
-    if (c == 'f' && this->pop_match("false").is_ok()) {
-      return false;
+    if (c != 't' && c != 'f') {
+      const auto b = c == 't';
+      _TRY(this->extract_keyword(b ? Str{"true"} : Str{"false"}));
+      visit(b);
+      return {};
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
   template <class T>
-  auto deserialize_int() -> io::Result<T> {
-    _TRY(this->peak());
-    const auto s = _TRY(this->pop_num());
-    if (auto n = s.template parse<T>()) {
-      return *n;
+  auto deserialize_int(auto&& visit) -> io::Result<> {
+    const auto c = _TRY(this->peak());
+    if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
+      const auto n = _TRY(this->extract_num<T>());
+      visit(n);
+      return {};
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
   template <class T>
-  auto deserialize_flt() -> io::Result<T> {
-    _TRY(this->peak());
-    const auto s = _TRY(this->pop_num());
-    if (auto n = s.template parse<T>()) {
-      return *n;
+  auto deserialize_flt(auto&& visit) -> io::Result<> {
+    const auto c = _TRY(this->peak());
+    if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
+      const auto n = _TRY(this->extract_num<T>());
+      visit(n);
+      return {};
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
-  auto deserialize_str() -> io::Result<Str> {
+  auto deserialize_str(auto&& visit) -> io::Result<> {
     const auto c = _TRY(this->peak());
-    if (c != '"') {
-      return io::Error{io::ErrorKind::InvalidData};
+    if (c == '"') {
+      auto s = _TRY(this->extract_str());
+      if constexpr(requires { visit(Str{}); }) {
+        visit(s.as_str());
+      } else {
+        visit(mem::move(s));
+      }
+      return {};
     }
-    return this->pop_str();
+    return io::Error{io::ErrorKind::InvalidData};
   }
 
   class DesSeq;
@@ -226,7 +236,7 @@ class Deserializer {
     return char(b[0]);
   }
 
-  auto pop_match(Str s) -> io::Result<> {
+  auto extract_keyword(Str s) -> io::Result<> {
     const auto b = _TRY(_read.peak(s.len()));
     if (b != s.as_bytes()) {
       return io::Error{io::ErrorKind::InvalidData};
@@ -234,10 +244,13 @@ class Deserializer {
     return {};
   }
 
-  auto pop_num() -> io::Result<Str> {
+  template<class T>
+  auto extract_int() -> io::Result<T> {
     static const auto not_digits = +[](char c) { return !('0' <= c && c <= '9' || c == '.' || c == '+' || c == '-'); };
 
     const auto b = _TRY(_read.peak(32));
+    const auto s = b.as_str();
+
     const auto n = b.iter().position(not_digits).unwrap_or(b.len());
     if (n == 0) {
       return io::Error{io::ErrorKind::InvalidData};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/slice.h"
+#include "sfc/io/mod.h"
 
 namespace sfc::str {
 
@@ -152,7 +153,7 @@ struct Str {
   }
 
   // trait:: io::Read
-  auto read(Slice<u8> buf) -> usize {
+  auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
     _ptr += amt;

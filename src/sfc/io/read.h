@@ -41,53 +41,87 @@ struct Read {
 
 template <class R>
 class BufReader : Read {
-  static constexpr usize BUFF_SIZE = 4096U;
+  static constexpr usize DEFAULT_BUFF_SIZE = 4096U;
+  using Buf = Vec<u8>;
 
   R _inn;
-  Vec<u8> _buf = {};
+  Buf _buf = Buf::with_capacity(DEFAULT_BUFF_SIZE);
   usize _pos = 0;
 
  public:
-  explicit BufReader(R&& inn) noexcept : _inn{static_cast<R&&>(inn)}, _buf{Vec<u8>::with_capacity(BUFF_SIZE)} {}
+  explicit BufReader(R&& inn) noexcept : _inn{static_cast<R&&>(inn)} {}
   ~BufReader() noexcept = default;
 
   BufReader(BufReader&&) noexcept = default;
   BufReader& operator=(BufReader&&) noexcept = default;
 
  public:
-  auto fill_buf() -> Result<Slice<const u8>> {
-    if (_pos == _buf.len()) {
-      const auto cnt = _TRY(Result{_inn.read(_buf.spare_capacity_mut())});
-      _pos = 0;
-      _buf.set_len(cnt);
-    }
-    return Slice<const u8>{_buf[{_pos, _buf.len()}]};
+  auto buffer() const -> Slice<const u8> {
+    return _buf[{_pos, $}];
   }
 
-  void consume(usize amt) {
-    _pos = num::min(_pos + amt, _buf.len());
+  auto capacity() const -> usize {
+    return _buf.capacity();
   }
 
   auto peak(usize n) -> Result<Slice<const u8>> {
-    if (_buf.len() - _pos < n) {
-      _buf.drain({0, _pos});
-      _pos = 0;
-
-      const auto cnt = _TRY(Result{_inn.read(_buf.spare_capacity_mut())});
-      _buf.set_len(_buf.len() + cnt);
+    if (_pos + n > _buf.len()) {
+      this->backshift();
+      this->read_more();
     }
-    return Slice<const u8>{_buf[{_pos, _pos + n}]};
+    return static_cast<const Buf&>(_buf)[{_pos, _pos + n}];
   }
 
+  void backshift() {
+    if (_pos == 0) {
+      return;
+    }
+    _buf.drain({0, _pos});
+    _pos = 0;
+  }
+
+  void discard_buffer() {
+    _buf.set_len(0);
+    _pos = 0;
+  }
+
+  auto read_more() -> Result<usize> {
+    const auto cnt = _TRY(_inn.read(_buf.spare_capacity_mut()));
+    _buf.set_len(_buf.len() + cnt);
+    return cnt;
+  }
+
+ public:
+  // trait:: io::Read
   auto read(Slice<u8> buf) -> Result<usize> {
-    if (_buf.is_empty() && buf.len() > _buf.capacity()) {
+    // if we dont't have any buffered data
+    // read directly into the user's buffer
+    if (_pos >= _buf.len() && buf.len() >= _buf.capacity()) {
+      this->discard_buffer();
       return _inn.read(buf);
     }
+    auto rem = _TRY(this->fill_buf());
+    const auto nread = rem.read(buf).unwrap_or(0);
+    this->consume(nread);
+    return nread;
+  }
 
-    const auto rem = this->fill_buf();
-    const auto cnt = rem.read(buf);
-    this->consume(cnt);
-    return cnt;
+ public:
+  // trait: io::BufRead
+  auto fill_buf() -> Result<Slice<const u8>> {
+    if (_pos >= _buf.len()) {
+      this->backshift();
+      _TRY(this->read_more());
+    }
+    return this->buffer();
+  }
+
+  // trait: io::BufRead
+  void consume(usize amt) {
+    if (amt > _buf.len() - _pos) {
+      amt = _buf.len() - _pos;
+    }
+    _pos += amt;
   }
 
   auto skip(auto&& p) -> Result<usize> {
