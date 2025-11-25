@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="sfc::str::Str">
+        <DisplayString>{_ptr, sb}</DisplayString>
+    </Type>
+    <Type Name="sfc::string::String">
+        <DisplayString>{_vec._buf._ptr, s8}</DisplayString>
+    </Type>
+    <Type Name="sfc::slice::Slice&lt;*&gt;">
+        <DisplayString>{{size = {_len}}}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_len</Size>
+                <ValuePointer>_ptr</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="sfc::vec::Vec&lt;*&gt;">
+        <DisplayString>{{size = {_len}}}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_len</Size>
+                <ValuePointer>_buf._ptr</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="sfc::collections::Queue&lt;*&gt;">
+        <DisplayString>{{size = {_vec._len-_pos}}}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_vec._len-_pos</Size>
+                <ValuePointer>_vec._buf._ptr+_pos</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+    <Type Name="sfc::tuple::Tuple&lt;T1,T2&gt;">
+        <DisplayString>{first={_first}, second={_second}}</DisplayString>
+        <Expand>
+            <Item Name="First">_first</Item>
+            <Item Name="Second">_second</Item>
+        </Expand>
+    </Type>
+    <Type Name="sfc::alloc::Box&lt;*&gt;">
+        <DisplayString>{ptr={_ptr}}</DisplayString>
+        <Expand>
+            <Item Name="Value">*_ptr</Item>
+        </Expand>
+    </Type>
+</AutoVisualizer>
