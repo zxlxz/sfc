@@ -29,6 +29,9 @@ template <class T>
 concept flt_ = any_<T, float, double>;
 
 template <class T>
+concept default_ = requires { T{}; };
+
+template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class X>

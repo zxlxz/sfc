@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/io/mod.h"
 #include "sfc/alloc/vec.h"
 
 namespace sfc::io {
@@ -12,7 +11,7 @@ struct Write {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(Result{self.write(buf)});
       if (cnt == 0) {
-        return Error{ErrorKind::WriteZero, 0};
+        return io::Error{ErrorKind::WriteZero};
       }
       buf = buf[{cnt, $}];
     }

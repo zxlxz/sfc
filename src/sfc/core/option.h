@@ -160,7 +160,7 @@ class Option {
     return static_cast<T&&>(*_inn);
   }
 
-  auto unwrap_or(T default_val) && -> T {
+  T unwrap_or(T default_val) && noexcept {
     if (_inn.is_some()) {
       return static_cast<T&&>(*_inn);
     }

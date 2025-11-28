@@ -4,6 +4,28 @@
 
 namespace sfc::serde::json {
 
+enum class ErrorCode {
+  IoError = 1,
+  EofWhileParsingString,  // EOF while parsing string
+  EofWhileParsingList,    // EOF while parsing list
+  EofWhileParsingObject,  // EOF while parsing object
+  ExpectedColon,          // expected ':'
+  ExpectedComma,          // expected ','
+  ExcectedDoubleQuote,    // expected '"'
+  ExpectedEndOfList,      // expected ']'
+  ExpectedEndOfObject,    // expected '}'
+  InvalidKeyword,         // invalid keyword (true, false, null)
+  InvalidNumber,          // invalid number format
+  InvalidString,          // invalid string format (e.g. invalid escape sequence)
+};
+
+struct Error {
+  ErrorCode code = {};
+};
+
+template <class T>
+using Result = result::Result<T, Error>;
+
 template <class W>
 class Serializer {
   W& _write;
@@ -14,27 +36,6 @@ class Serializer {
   Serializer(const Serializer&) noexcept = delete;
 
  public:
-  template <class T>
-  auto serialize(const T& val) {
-    if constexpr (requires { val.serialize(*this); }) {
-      return val.serialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
-      return this->serialize_bool(val);
-    } else if constexpr (trait::same_<T, char>) {
-      return this->serialize_char(val);
-    } else if constexpr (trait::int_<T>) {
-      return this->serialize_int(val);
-    } else if constexpr (trait::flt_<T>) {
-      return this->serialize_flt(val);
-    } else if constexpr (requires { Str{val}; }) {
-      return this->serialize_str(val);
-    } else if constexpr (requires { Slice{val}; }) {
-      return Slice{val}.serialize(*this);
-    } else {
-      static_assert(false, "Serializer::serialize: not serializable");
-    }
-  }
-
   void serialize_null() {
     const auto s = "null";
     _write.write_str(s);
@@ -75,74 +76,69 @@ class Serializer {
 
   struct SerSeq;
   auto serialize_seq() -> SerSeq {
-    return SerSeq{*this};
+    this->write_str("[");
+    return SerSeq{this};
   }
 
   struct SerMap;
   auto serialize_map() -> SerMap {
-    return SerMap{*this};
+    return SerMap{this};
   }
 
  private:
   void write_str(Str s) {
-    if constexpr (requires { _write.write_str(s); }) {
-      _write.write_str(s);
-    } else if constexpr (requires { _write.push_str(s); }) {
-      _write.push_str(s);
-    } else {
-      _write.write(s.as_bytes());
-    }
+    _write.write(s.as_bytes()).unwrap();
   }
 };
 
 template <class W>
-class Serializer<W>::SerSeq {
-  Serializer& _inn;
+struct Serializer<W>::SerSeq {
+  Serializer* _ser;
   u32 _cnt = 0;
 
  public:
-  explicit SerSeq(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_str("[");
-  }
+  SerSeq(Serializer& ser) noexcept : _ser{&ser} {}
+  ~SerSeq() noexcept = default;
 
-  ~SerSeq() noexcept {
-    _inn.write_str("]");
-  }
-
-  SerSeq(const SerSeq&) noexcept = delete;
+  SerSeq(const SerSeq&) = delete;
+  SerSeq& operator=(const SerSeq&) = delete;
 
   void serialize_element(const auto& item) {
-    if (_cnt++ != 0) {
-      _inn.write_str(",");
+    if (_ser == nullptr) {
+      return;
     }
-    _inn.serialize(item);
+    if (_cnt++ != 0) {
+      _ser->write_str(",");
+    }
+    Serialize::serialize(item, *_ser);
+  }
+
+  void end() {
+    if (_ser == nullptr) {
+      return;
+    }
+    _ser->write_str("]");
+    _ser = nullptr;
   }
 };
 
 template <class W>
-class Serializer<W>::SerMap {
-  Serializer& _inn;
+struct Serializer<W>::SerMap {
+  Serializer* _inn = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit SerMap(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_str("{");
-  }
-
-  ~SerMap() noexcept {
-    _inn.write_str("}");
-  }
-
-  SerMap(const SerMap&) noexcept = delete;
-
   void serialize_entry(Str key, const auto& val) {
-    if (_cnt++ != 0) {
-      _inn.write_str(",");
+    if (_inn == nullptr) {
+      return;
     }
-    _inn.write_str("\"");
-    _inn.write_str(key);
-    _inn.write_str("\":");
-    return _inn.serialize(val);
+    if (_cnt++ != 0) {
+      _inn->write_str(",");
+    }
+    _inn->write_str("\"");
+    _inn->write_str(key);
+    _inn->write_str("\":");
+    Serialize::serialize(val, *_inn);
   }
 };
 
@@ -156,79 +152,55 @@ class Deserializer {
   Deserializer(const Deserializer&) noexcept = delete;
 
  public:
-  template <class T>
-  auto deserialize() -> io::Result<T> {
-    if constexpr (requires { T::deserialize(*this); }) {
-      return _TRY(T::deserialize(*this));
-    } else if constexpr (trait::same_<T, bool>) {
-      return _TRY(this->deserialize_bool());
-    } else if constexpr (trait::int_<T>) {
-      return _TRY(this->template deserialize_int<T>());
-    } else if constexpr (trait::flt_<T>) {
-      return _TRY(this->template deserialize_flt<T>());
-    } else if constexpr (trait::same_<T, String>) {
-      return _TRY(this->deserialize_string());
-    } else {
-      static_assert(false, "Deserialize::deserialize: not deserializable");
+  auto deserialize_null() -> Result<> {
+    const auto c = this->peak();
+    switch(c) {
+      case 0: return Error{ErrCode::UnexpectedEof};
     }
-  }
-
-  auto deserialize_null() -> io::Result<> {
-    const auto c = _TRY(this->peak());
     if (c == 'n') {
-      _TRY(this->extract_keyword("null"));
-      return {};
+      return this->extract_keyword("null");
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
   auto deserialize_bool() -> io::Result<bool> {
-    const auto c = _TRY(this->peak());
-    if (c == 't' || c == 'f') {
-      const auto b = c == 't';
-      _TRY(this->extract_keyword(b ? Str{"true"} : Str{"false"}));
-      return b;
+    const auto c = this->peak();
+    if (c == 't') {
+      return this->extract_keyword("true", true);
+    } else if (c == 'f') {
+      return this->extract_keyword("false", false);
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
-  template <class T>
+  template <trait::int_ T>
   auto deserialize_int() -> io::Result<T> {
-    static_assert(trait::int_<T>);
-    const auto c = _TRY(this->peak());
+    const auto c = this->peak();
     if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
-      const auto s = _TRY(this->extract_num());
-      if (const auto opt = s.template parse<T>()) {
-        return *opt;
-      }
+      return this->extract_num<T>();
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
-  template <class T>
+  template <trait::flt_ T>
   auto deserialize_flt() -> io::Result<T> {
-    static_assert(trait::flt_<T>);
-    const auto c = _TRY(this->peak());
+    const auto c = this->peak();
     if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
-      const auto s = _TRY(this->extract_num());
-      if (const auto opt = s.template parse<T>()) {
-        return *opt;
-      }
+      return this->extract_num<T>();
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
   auto deserialize_string() -> io::Result<String> {
-    const auto c = _TRY(this->peak());
+    const auto c = this->peak();
     if (c == '"') {
-      auto b = _TRY(this->extract_string());
-      return b;
+      return this->extract_string();
     }
     return io::Error{io::ErrorKind::InvalidData};
   }
 
   class DesSeq;
-  auto deserialize_seq() -> DesSeq {
+  auto deserialize_seq() -> io::Result<DesSeq> {
     return DesSeq{*this};
   }
 
@@ -238,10 +210,9 @@ class Deserializer {
   }
 
  private:
-  auto skip_blanks() -> io::Result<> {
+  void skip_blanks() {
     const auto not_blank = +[](char c) { return !(c == ' ' || ('\x09' <= c && c <= '\x0d')); };
-    while (true) {
-      const auto buf = _TRY(_read.fill_buf());
+    while (auto buf = _read.fill_buf()) {
       const auto pos = buf.iter().position(not_blank);
       const auto cnt = pos ? *pos : buf.len();
       _read.consume(cnt);
@@ -252,12 +223,12 @@ class Deserializer {
     return {};
   }
 
-  auto peak() -> io::Result<char> {
-    _TRY(this->skip_blanks());
+  auto peak() -> char {
+    this->skip_blanks();
 
     const auto bytes = _TRY(_read.peak(1));
     if (bytes.is_empty()) {
-      return io::Error{io::ErrorKind::UnexpectedEof};
+      return 0;
     }
     return char(bytes[0]);
   }

@@ -5,7 +5,6 @@
 #include "sfc/core/iter.h"
 #include "sfc/core/result.h"
 #include "sfc/core/tuple.h"
-#include "sfc/io/mod.h"
 
 namespace sfc::slice {
 
@@ -233,7 +232,7 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) -> io::Result<usize> {
+  auto read(Slice<u8> buf) -> usize {
     static_assert(__is_same(const T, const u8));
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);

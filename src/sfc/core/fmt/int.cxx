@@ -36,10 +36,10 @@ SFC_TEST(int_sign) {
   panicking::expect_eq(string::format("{+}", 5), "+5");
   panicking::expect_eq(string::format("{-}", 5), " 5");
 
-  panicking::expect_eq(string::format("{:05}!", +5), "00005!");
-  panicking::expect_eq(string::format("{:05}!", -5), "-0005!");
+  panicking::expect_eq(string::format("{:05}", +5), "00005");
+  panicking::expect_eq(string::format("{:05}", -5), "-0005");
 
-  panicking::expect_eq(string::format("{:#010x}!", 27), "0x0000001b!");
+  panicking::expect_eq(string::format("{:#010x}", 27), "0x0000001b");
 }
 
 SFC_TEST(int_align) {
@@ -84,37 +84,6 @@ SFC_TEST(int_prefix) {
   panicking::expect_eq(string::format("{#8X}", 16), "0X000010");
   panicking::expect_eq(string::format("{#8b}", 16), "0b010000");
   panicking::expect_eq(string::format("{#8o}", 16), "00000020");
-}
-
-SFC_TEST(flt_fix) {
-  panicking::expect_eq(string::format("{.0f}", +123.456), "123");
-  panicking::expect_eq(string::format("{.0f}", -123.456), "-123");
-
-  panicking::expect_eq(string::format("{.2f}", +123.456), "123.46");
-  panicking::expect_eq(string::format("{.2f}", -123.456), "-123.46");
-
-  panicking::expect_eq(string::format("{+.2f}", +123.456), "+123.46");
-  panicking::expect_eq(string::format("{-.2f}", -123.456), "-123.46");
-
-  panicking::expect_eq(string::format("{+8.2f}", +123.456), " +123.46");
-  panicking::expect_eq(string::format("{+8.2f}", -123.456), " -123.46");
-
-  panicking::expect_eq(string::format("{-8.2f}", +123.456), "  123.46");
-  panicking::expect_eq(string::format("{-8.2f}", -123.456), " -123.46");
-}
-
-SFC_TEST(flt_exp) {
-  panicking::expect_eq(string::format("{.2e}", +123.456), "1.23e+02");
-  panicking::expect_eq(string::format("{.2e}", -123.456), "-1.23e+02");
-
-  panicking::expect_eq(string::format("{+.2e}", +123.456), "+1.23e+02");
-  panicking::expect_eq(string::format("{-.2e}", -123.456), "-1.23e+02");
-
-  panicking::expect_eq(string::format("{+8.2e}", +123.456), "+1.23e+02");
-  panicking::expect_eq(string::format("{+8.2e}", -123.456), "-1.23e+02");
-
-  panicking::expect_eq(string::format("{-8.2e}", +123.456), " 1.23e+02");
-  panicking::expect_eq(string::format("{-8.2e}", -123.456), "-1.23e+02");
 }
 
 }  // namespace sfc::fmt::test

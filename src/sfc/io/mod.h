@@ -1,41 +1,72 @@
+
 #pragma once
 
-#include "sfc/core/result.h"
+#include "sfc/core.h"
 
 namespace sfc::io {
 
-enum class ErrorKind {
-  NotFound,
+enum class ErrorKind : i32 {
+  Other = -1,
+  NotFound = 1,
   PermissionDenied,
   ConnectionRefused,
   ConnectionReset,
+  HostUnreachable,
+  NetworkUnreachable,
   ConnectionAborted,
   NotConnected,
   AddrInUse,
   AddrNotAvailable,
+  NetworkDown,
   BrokenPipe,
   AlreadyExists,
   WouldBlock,
+  NotADirectory,
+  IsADirectory,
+  DirectoryNotEmpty,
+  ReadOnlyFilesystem,
+  FilesystemLoop,
+  StaleNetworkFileHandle,
   InvalidInput,
   InvalidData,
   TimedOut,
   WriteZero,
-  UnexpectedEof,
+  StorageFull,
+  NotSeekable,
+  QuotaExceeded,
+  FileTooLarge,
+  ResourceBusy,
+  ExecutableFileBusy,
+  Deadlock,
+  CrossesDevices,
+  TooManyLinks,
+  InvalidFilename,
+  ArgumentListTooLong,
   Interrupted,
-  Other,
+  Unsupported,
+  UnexpectedEof,
+  OutOfMemory,
+  InProgress,
 };
 
 struct Error {
-  ErrorKind kind = ErrorKind::Other;
-  int code = 0;
+  ErrorKind kind = {};
 
  public:
   static auto last_os_error() -> Error;
 
   static auto from_os_error(int code) -> Error;
 
+  auto as_str() const noexcept -> Str;
+
   void fmt(auto& f) const {
-    f.write_val(kind);
+    const auto s = this->as_str();
+    f.write_str(s);
+  }
+
+ public:
+  auto operator==(decltype(nullptr)) const noexcept -> bool {
+    return kind != ErrorKind{};
   }
 };
 

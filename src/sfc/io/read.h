@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/io/mod.h"
 #include "sfc/alloc/vec.h"
 #include "sfc/alloc/string.h"
 
@@ -11,7 +10,7 @@ struct Read {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(Result{self.read(buf)});
       if (cnt == 0) {
-        return Error{ErrorKind::UnexpectedEof, 0};
+        return Error{ErrorKind::UnexpectedEof};
       }
       buf = buf[{cnt, $}];
     }
@@ -88,14 +87,14 @@ class BufReader : Read {
   }
 
   auto read_more() -> Result<usize> {
-    const auto cnt = _TRY(_inn.read(_buf.spare_capacity_mut()));
+    const auto cnt = _TRY(Result{_inn.read(_buf.spare_capacity_mut())});
     _buf.set_len(_buf.len() + cnt);
     return cnt;
   }
 
  public:
   // trait:: io::Read
-  auto read(Slice<u8> buf) -> Result<usize> {
+  auto read(Slice<u8> buf) -> io::Result<usize> {
     // if we dont't have any buffered data
     // read directly into the user's buffer
     if (_pos >= _buf.len() && buf.len() >= _buf.capacity()) {
@@ -110,7 +109,7 @@ class BufReader : Read {
 
  public:
   // trait: io::BufRead
-  auto fill_buf() -> Result<Slice<const u8>> {
+  auto fill_buf() -> io::Result<Slice<const u8>> {
     if (_pos >= _buf.len()) {
       this->backshift();
       _TRY(this->read_more());
