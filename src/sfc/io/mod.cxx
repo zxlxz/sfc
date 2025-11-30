@@ -5,7 +5,7 @@ namespace sfc::io::test {
 
 SFC_TEST(read) {
   auto buf = Str{"0123456789"}.as_bytes();
-  auto& r = trait::as_mut<io::Read>(buf);
+  auto& r = trait::as_mut<Read>(buf);
 
   u8 tmp[4] = {};
   panicking::expect_eq(r.read(tmp).ok(), Option{4U});
@@ -20,7 +20,7 @@ SFC_TEST(read) {
 
 SFC_TEST(read_exact) {
   auto buf = Str{"0123456789"}.as_bytes();
-  auto& r = trait::as_mut<io::Read>(buf);
+  auto& r = trait::as_mut<Read>(buf);
 
   u8 tmp[4] = {};
   panicking::expect(r.read_exact(tmp).is_ok());

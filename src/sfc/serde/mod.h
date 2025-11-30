@@ -4,8 +4,6 @@
 
 namespace sfc::serde {
 
-using io::Result;
-
 struct Serializer {
   auto serialize_null() = delete;
   auto serialize_bool(bool val) = delete;

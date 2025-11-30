@@ -109,6 +109,10 @@ auto PathBuf::from(Str s) -> PathBuf {
   return res;
 }
 
+auto PathBuf::operator*() const noexcept -> Path {
+  return Path{_inn.as_str()};
+}
+
 auto PathBuf::as_path() const noexcept -> Path {
   return Path{_inn.as_str()};
 }
@@ -117,15 +121,11 @@ auto PathBuf::as_str() const noexcept -> Str {
   return _inn.as_str();
 }
 
-PathBuf::operator Path() const noexcept {
-  return Path{_inn.as_str()};
-}
-
-void PathBuf::clear() {
+void PathBuf::clear() noexcept {
   _inn.clear();
 }
 
-void PathBuf::reserve(usize additional) {
+void PathBuf::reserve(usize additional) noexcept {
   _inn.reserve(additional);
 }
 
@@ -195,7 +195,7 @@ auto meta(Path path) -> io::Result<Meta> {
 
   auto res = Meta{};
   if (!sys_imp::lstat(c_path, res)) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
   return res;
 }
@@ -205,11 +205,10 @@ auto create_dir(Path path) -> io::Result<> {
 
   const auto ret = sys_imp::mkdir(c_path);
   if (!ret) {
-    const auto err = io::Error::last_os_error();
-    if (err.kind == io::ErrorKind::AlreadyExists) {
-      return {};
+    const auto err = io::last_os_error();
+    if (err != io::Error::AlreadyExists) {
+      return err;
     }
-    return err;
   }
 
   return {};
@@ -220,7 +219,7 @@ auto remove_dir(Path path) -> io::Result<> {
 
   const auto ret = sys_imp::rmdir(c_path);
   if (!ret) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
 
   return {};
@@ -231,7 +230,7 @@ auto remove_file(Path path) -> io::Result<> {
 
   const auto ret = sys_imp::unlink(c_path);
   if (!ret) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
 
   return {};
@@ -243,7 +242,7 @@ auto rename(Path old_path, Path new_path) -> io::Result<> {
 
   const auto ret = sys_imp::rename(c_old, c_new);
   if (!ret) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
 
   return {};

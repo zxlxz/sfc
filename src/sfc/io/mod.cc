@@ -1,65 +1,64 @@
+#include "sfc/core.h"
 #include "sfc/io/mod.h"
-
 #include "sfc/sys/io.h"
 
 namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-auto Error::as_str() const -> str::Str {
-  switch (kind) {
-    case ErrorKind::NotFound:               return "entity not found";
-    case ErrorKind::PermissionDenied:       return "permission denied";
-    case ErrorKind::ConnectionRefused:      return "connection refused";
-    case ErrorKind::ConnectionReset:        return "connection reset";
-    case ErrorKind::HostUnreachable:        return "host unreachable";
-    case ErrorKind::NetworkUnreachable:     return "network unreachable";
-    case ErrorKind::ConnectionAborted:      return "connection aborted";
-    case ErrorKind::NotConnected:           return "not connected";
-    case ErrorKind::AddrInUse:              return "address in use";
-    case ErrorKind::AddrNotAvailable:       return "address not available";
-    case ErrorKind::NetworkDown:            return "network down";
-    case ErrorKind::BrokenPipe:             return "broken pipe";
-    case ErrorKind::AlreadyExists:          return "entity already exists";
-    case ErrorKind::WouldBlock:             return "operation would block";
-    case ErrorKind::NotADirectory:          return "not a directory";
-    case ErrorKind::IsADirectory:           return "is a directory";
-    case ErrorKind::DirectoryNotEmpty:      return "directory not empty";
-    case ErrorKind::ReadOnlyFilesystem:     return "read-only filesystem";
-    case ErrorKind::FilesystemLoop:         return "filesystem loop";
-    case ErrorKind::StaleNetworkFileHandle: return "stale network file handle";
-    case ErrorKind::InvalidInput:           return "invalid input";
-    case ErrorKind::InvalidData:            return "invalid data";
-    case ErrorKind::TimedOut:               return "operation timed out";
-    case ErrorKind::WriteZero:              return "write zero";
-    case ErrorKind::StorageFull:            return "storage full";
-    case ErrorKind::NotSeekable:            return "not seekable";
-    case ErrorKind::QuotaExceeded:          return "quota exceeded";
-    case ErrorKind::FileTooLarge:           return "file too large";
-    case ErrorKind::ResourceBusy:           return "resource busy";
-    case ErrorKind::ExecutableFileBusy:     return "executable file busy";
-    case ErrorKind::Deadlock:               return "deadlock";
-    case ErrorKind::CrossesDevices:         return "crosses devices";
-    case ErrorKind::TooManyLinks:           return "too many links";
-    case ErrorKind::InvalidFilename:        return "invalid filename";
-    case ErrorKind::ArgumentListTooLong:    return "argument list too long";
-    case ErrorKind::Interrupted:            return "operation interrupted";
-    case ErrorKind::Unsupported:            return "operation unsupported";
-    case ErrorKind::UnexpectedEof:          return "unexpected end of file";
-    case ErrorKind::OutOfMemory:            return "out of memory";
-    case ErrorKind::InProgress:             return "operation in progress";
-    default:                                return "unknown error";
+auto to_str(Error val) noexcept -> Str {
+  using enum Error;
+  switch (val) {
+    case Success:                return "Success";
+    case NotFound:               return "NotFound";
+    case PermissionDenied:       return "PermissionDenied";
+    case ConnectionRefused:      return "ConnectionRefused";
+    case ConnectionReset:        return "ConnectionReset";
+    case HostUnreachable:        return "HostUnreachable";
+    case NetworkUnreachable:     return "NetworkUnreachable";
+    case ConnectionAborted:      return "ConnectionAborted";
+    case NotConnected:           return "NotConnected";
+    case AddrInUse:              return "AddrInUse";
+    case AddrNotAvailable:       return "AddrNotAvailable";
+    case NetworkDown:            return "NetworkDown";
+    case BrokenPipe:             return "BrokenPipe";
+    case AlreadyExists:          return "AlreadyExists";
+    case WouldBlock:             return "WouldBlock";
+    case NotADirectory:          return "NotADirectory";
+    case IsADirectory:           return "IsADirectory";
+    case DirectoryNotEmpty:      return "DirectoryNotEmpty";
+    case ReadOnlyFilesystem:     return "ReadOnlyFilesystem";
+    case FilesystemLoop:         return "FilesystemLoop";
+    case StaleNetworkFileHandle: return "StaleNetworkFileHandle";
+    case InvalidInput:           return "InvalidInput";
+    case InvalidData:            return "InvalidData";
+    case TimedOut:               return "TimedOut";
+    case WriteZero:              return "WriteZero";
+    case StorageFull:            return "StorageFull";
+    case NotSeekable:            return "NotSeekable";
+    case QuotaExceeded:          return "QuotaExceeded";
+    case FileTooLarge:           return "FileTooLarge";
+    case ResourceBusy:           return "ResourceBusy";
+    case ExecutableFileBusy:     return "ExecutableFileBusy";
+    case Deadlock:               return "Deadlock";
+    case CrossesDevices:         return "CrossesDevices";
+    case TooManyLinks:           return "TooManyLinks";
+    case InvalidFilename:        return "InvalidFilename";
+    case ArgumentListTooLong:    return "ArgumentListTooLong";
+    case Interrupted:            return "Interrupted";
+    case Unsupported:            return "Unsupported";
+    case UnexpectedEof:          return "UnexpectedEof";
+    case OutOfMemory:            return "OutOfMemory";
+    case InProgress:             return "InProgress";
+    case Other:                  return "Other";
+    default:                     return "Unknown";
   }
 }
 
-auto Error::from_os_error(int code) -> Error {
-  const auto kind = sys_imp::kind_of<ErrorKind>(code);
-  return {kind};
-}
-
-auto Error::last_os_error() -> Error {
+auto last_os_error() noexcept -> Error {
   const auto os_err = sys_imp::get_err();
-  return Error::from_os_error(os_err);
+  const auto io_err = sys_imp::map_err<Error>(os_err);
+  return io_err;
 }
 
 }  // namespace sfc::io

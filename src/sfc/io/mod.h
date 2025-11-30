@@ -3,11 +3,15 @@
 
 #include "sfc/core.h"
 
+namespace sfc::str {
+struct Str;
+}
+
 namespace sfc::io {
 
-enum class ErrorKind : i32 {
-  Other = -1,
-  NotFound = 1,
+enum class Error : i8 {
+  Success,
+  NotFound,
   PermissionDenied,
   ConnectionRefused,
   ConnectionReset,
@@ -47,28 +51,12 @@ enum class ErrorKind : i32 {
   UnexpectedEof,
   OutOfMemory,
   InProgress,
+  Other,
 };
 
-struct Error {
-  ErrorKind kind = {};
+auto to_str(Error val) noexcept -> str::Str;
 
- public:
-  static auto last_os_error() -> Error;
-
-  static auto from_os_error(int code) -> Error;
-
-  auto as_str() const noexcept -> Str;
-
-  void fmt(auto& f) const {
-    const auto s = this->as_str();
-    f.write_str(s);
-  }
-
- public:
-  auto operator==(decltype(nullptr)) const noexcept -> bool {
-    return kind != ErrorKind{};
-  }
-};
+auto last_os_error() noexcept -> Error;
 
 template <class T = void>
 using Result = result::Result<T, Error>;

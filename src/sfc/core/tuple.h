@@ -29,22 +29,17 @@ struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
 template <class... T>
 struct Tuple {
   using Inn = Inner<__make_integer_seq<IntSeq, int, sizeof...(T)>, T...>;
+
+  template <usize I>
+  using element_t = T...[I];
+
+  template <usize I>
+  using entry_t = Entry<I, element_t<I>>;
+
   Inn _inn;
 
  public:
   Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
-  ~Tuple() = default;
-
-#ifdef __clang__
-  template <usize I>
-  using element_t = __type_pack_element<I, T...>;
-#else
-  template <usize I>
-  using element_t = T...[I];
-#endif
-
-  template <usize I>
-  using entry_t = Entry<I, element_t<I>>;
 
   template <usize I>
   auto get() const -> const element_t<I>& {

@@ -20,23 +20,56 @@ static inline auto get_err() -> int {
 }
 
 template <class T>
-static inline auto kind_of(int code) -> T {
+static inline auto map_err(int code) -> T {
   switch (code) {
-    case EACCES:        return T::PermissionDenied;
+    case 0:             return T::Success;
+    case ENOENT:        return T::NotFound;
+    case EACCES:
     case EPERM:         return T::PermissionDenied;
-    case EADDRINUSE:    return T::AddrInUse;
-    case EADDRNOTAVAIL: return T::AddrNotAvailable;
-    case ECONNABORTED:  return T::ConnectionAborted;
     case ECONNREFUSED:  return T::ConnectionRefused;
     case ECONNRESET:    return T::ConnectionReset;
-    case EEXIST:        return T::AlreadyExists;
-    case EINTR:         return T::Interrupted;
-    case EINVAL:        return T::InvalidInput;
-    case ENOENT:        return T::NotFound;
+    case EHOSTUNREACH:
+    case EHOSTDOWN:     return T::HostUnreachable;
+    case ENETUNREACH:
+    case ENETRESET:     return T::NetworkUnreachable;
+    case ECONNABORTED:  return T::ConnectionAborted;
     case ENOTCONN:      return T::NotConnected;
+    case EADDRINUSE:    return T::AddrInUse;
+    case EADDRNOTAVAIL: return T::AddrNotAvailable;
+    case ENETDOWN:      return T::NetworkDown;
     case EPIPE:         return T::BrokenPipe;
-    case ETIMEDOUT:     return T::TimedOut;
+    case EEXIST:        return T::AlreadyExists;
     case EWOULDBLOCK:   return T::WouldBlock;
+    case ENOTDIR:       return T::NotADirectory;
+    case EISDIR:        return T::IsADirectory;
+    case ENOTEMPTY:     return T::DirectoryNotEmpty;
+    case EROFS:         return T::ReadOnlyFilesystem;
+    case ELOOP:         return T::FilesystemLoop;
+    case ESTALE:        return T::StaleNetworkFileHandle;
+    case EINVAL:
+    case EBADF:
+    case EFAULT:        return T::InvalidInput;
+    case EILSEQ:        return T::InvalidData;
+    case ETIMEDOUT:     return T::TimedOut;
+    case EIO:           return T::WriteZero;
+    case ENOSPC:        return T::StorageFull;
+    case ESPIPE:        return T::NotSeekable;
+    case EDQUOT:        return T::QuotaExceeded;
+    case EFBIG:         return T::FileTooLarge;
+    case EBUSY:         return T::ResourceBusy;
+    case ETXTBSY:       return T::ExecutableFileBusy;
+    case EDEADLK:       return T::Deadlock;
+    case EXDEV:         return T::CrossesDevices;
+    case EMLINK:        return T::TooManyLinks;
+    case ENAMETOOLONG:  return T::InvalidFilename;
+    case E2BIG:         return T::ArgumentListTooLong;
+    case EINTR:         return T::Interrupted;
+    case ENOSYS:
+    case ENOTSUP:
+    case EOPNOTSUPP:    return T::Unsupported;
+    case ENODATA:       return T::UnexpectedEof;
+    case ENOMEM:        return T::OutOfMemory;
+    case EINPROGRESS:   return T::InProgress;
     default:            return T::Other;
   }
 }

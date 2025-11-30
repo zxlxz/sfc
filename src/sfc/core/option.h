@@ -3,17 +3,11 @@
 #include "sfc/core/panicking.h"
 #include "sfc/core/trait.h"
 
-namespace sfc::str {
-struct Str;
-}
-
 namespace sfc::option {
 
-enum class Tag : u8 { None, Some };
-
 template <class T>
-class Inner {
-  Tag _tag = Tag::None;
+struct Inner {
+  bool _tag = false;
   union {
     T _val;
   };
@@ -21,32 +15,80 @@ class Inner {
  public:
   [[gnu::always_inline]] explicit Inner() noexcept {}
 
-  [[gnu::always_inline]] explicit Inner(T&& val) noexcept : _tag{Tag::Some}, _val{static_cast<T&&>(val)} {}
+  [[gnu::always_inline]] explicit Inner(T&& val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
 
   [[gnu::always_inline]] ~Inner() noexcept {
-    if (_tag == Tag::Some) {
+    if (_tag) {
       _val.~T();
     }
   }
 
   [[gnu::always_inline]] Inner(const Inner& other) noexcept : _tag{other._tag} {
-    if (_tag == Tag::Some) {
+    if (_tag) {
       new (&_val) T{other._val};
     }
   }
 
   [[gnu::always_inline]] Inner(Inner&& other) noexcept : _tag{other._tag} {
-    if (_tag == Tag::Some) {
+    if (_tag) {
       new (&_val) T{static_cast<T&&>(other._val)};
     }
   }
 
+  [[gnu::always_inline]] Inner& operator=(const Inner& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+
+    _tag ? _val.~T() : void();
+    _tag = other._tag;
+    _tag ? new (&_val) T{other._val} : void();
+    return *this;
+  }
+
+  [[gnu::always_inline]] Inner& operator=(Inner&& other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    _tag ? _val.~T() : void();
+    _tag = other._tag;
+    _tag ? new (&_val) T{static_cast<T&&>(other._val)} : void();
+    return *this;
+  }
+
   [[gnu::always_inline]] auto is_some() const noexcept -> bool {
-    return _tag == Tag::Some;
+    return _tag;
   }
 
   [[gnu::always_inline]] auto is_none() const noexcept -> bool {
-    return _tag == Tag::None;
+    return !_tag;
+  }
+
+  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+    return _val;
+  }
+
+  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+    return _val;
+  }
+};
+
+template <trait::tv_copy T>
+struct Inner<T> {
+  bool _tag = false;
+  T _val;
+
+ public:
+  [[gnu::always_inline]] explicit Inner() noexcept : _val{} {}
+
+  [[gnu::always_inline]] explicit Inner(T&& val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
+
+  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+    return _tag;
+  }
+
+  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+    return !_tag;
   }
 
   [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
@@ -59,13 +101,13 @@ class Inner {
 };
 
 template <class T>
-class Inner<T&> {
+struct Inner<T&> {
   T* _ptr{nullptr};
 
  public:
   [[gnu::always_inline]] Inner() noexcept = default;
 
-  [[gnu::always_inline]] explicit Inner(T& val) noexcept : _ptr{&val} {}
+  [[gnu::always_inline]] Inner(T& val) noexcept : _ptr{&val} {}
 
   [[gnu::always_inline]] auto is_some() const noexcept -> bool {
     return _ptr != nullptr;
@@ -95,25 +137,6 @@ class Option {
   Option() noexcept = default;
   Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
   ~Option() noexcept = default;
-
-  Option(const Option&) noexcept = default;
-  Option(Option&&) noexcept = default;
-
-  Option& operator=(const Option& other) {
-    if (this != &other) {
-      _inn.~Inn();
-      new (&_inn) Inn{other._inn};
-    }
-    return *this;
-  }
-
-  Option& operator=(Option&& other) noexcept {
-    if (this != &other) {
-      _inn.~Inn();
-      new (&_inn) Inn{static_cast<Inn&&>(other._inn)};
-    }
-    return *this;
-  }
 
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
@@ -173,16 +196,16 @@ class Option {
   }
 
   template <class U>
-  auto operator&(this const auto& self, Option<U> optb) -> Option<U> {
-    if (self._inn.is_some()) {
+  auto operator and(Option<U> optb) && -> Option<U> {
+    if (_inn.is_some()) {
       return static_cast<Option<U>&&>(optb);
     }
     return {};
   }
 
-  auto operator|(this auto self, Option<T> optb) -> Option<T> {
-    if (self._inn.is_some()) {
-      return static_cast<Option&&>(self);
+  auto operator or(Option<T> optb) && -> Option<T> {
+    if (_inn.is_some()) {
+      return static_cast<Option&&>(*this);
     }
     return static_cast<Option&&>(optb);
   }
@@ -203,7 +226,7 @@ class Option {
   }
 
   template <class F>
-  auto map(F&& f) -> Option<trait::invoke_t<F(T)>> {
+  auto map(F&& f) && -> Option<trait::invoke_t<F(T)>> {
     if (_inn.is_none()) {
       return {};
     }
@@ -211,7 +234,7 @@ class Option {
   }
 
   template <class U>
-  auto map_or(U default_val, auto&& f) -> U {
+  auto map_or(U default_val, auto&& f) && -> U {
     if (_inn.is_none()) {
       return static_cast<U&&>(default_val);
     }
@@ -231,9 +254,6 @@ class Option {
 
 template <class T>
 Option(T) -> Option<T>;
-
-template <usize N>
-Option(const char (&)[N]) -> Option<str::Str>;
 
 }  // namespace sfc::option
 

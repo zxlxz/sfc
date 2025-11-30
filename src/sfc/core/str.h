@@ -459,6 +459,11 @@ static auto enum_name() -> Str {
 
 }  // namespace sfc::str
 
+namespace sfc::option {
+template <usize N>
+Option(const char (&)[N]) -> Option<str::Str>;
+}
+
 namespace sfc {
 using str::Str;
 }  // namespace sfc

@@ -4,30 +4,30 @@
 
 namespace sfc::serde::json {
 
-enum class ErrorCode {
-  IoError = 1,
-  EofWhileParsingString,  // EOF while parsing string
-  EofWhileParsingList,    // EOF while parsing list
-  EofWhileParsingObject,  // EOF while parsing object
-  ExpectedColon,          // expected ':'
+enum class Error : i8 {
+  Success,
+  IoError,                // I/O error
+  EofWhileParsing,        // EOF while parsing keyword
   ExpectedComma,          // expected ','
-  ExcectedDoubleQuote,    // expected '"'
+  ExpectedDoubleQuote,    // expected '"'
+  ExpectedColon,          // expected ':'
+  ExpectedBeginOfList,    // expected '['
   ExpectedEndOfList,      // expected ']'
+  ExpectedBeginOfObject,  // expected '{'
   ExpectedEndOfObject,    // expected '}'
   InvalidKeyword,         // invalid keyword (true, false, null)
   InvalidNumber,          // invalid number format
   InvalidString,          // invalid string format (e.g. invalid escape sequence)
 };
 
-struct Error {
-  ErrorCode code = {};
-};
-
-template <class T>
+template <class T = void>
 using Result = result::Result<T, Error>;
 
 template <class W>
 class Serializer {
+  template <class T>
+  using Result = result::Result<T, Error>;
+
   W& _write;
 
  public:
@@ -41,25 +41,25 @@ class Serializer {
     _write.write_str(s);
   }
 
-  void serialize_bool(const bool& val) {
+  void serialize_bool(bool val) {
     const auto s = val ? Str{"true"} : Str{"false"};
-    this->write_str(s);
+    return this->write_str(s);
   }
 
-  void serialize_char(const char& val) {
+  void serialize_char(char val) {
     const char s[] = {'"', val, '"'};
     _write.write_str({s, 3});
   }
 
-  void serialize_int(const trait::int_ auto& val) {
+  void serialize_int(trait::int_ auto val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fill_int(buf, {}, val);
+    const auto s = fmt::Debug::to_str(buf, val);
     this->write_str(s);
   }
 
-  void serialize_flt(const trait::flt_ auto& val) {
+  void serialize_flt(trait::flt_ auto val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fill_flt(buf, {}, val);
+    const auto s = fmt::Debug::to_str(buf, val);
     this->write_str(s);
   }
 
@@ -77,7 +77,7 @@ class Serializer {
   struct SerSeq;
   auto serialize_seq() -> SerSeq {
     this->write_str("[");
-    return SerSeq{this};
+    return SerSeq{*this};
   }
 
   struct SerMap;
@@ -87,12 +87,12 @@ class Serializer {
 
  private:
   void write_str(Str s) {
-    _write.write(s.as_bytes()).unwrap();
+    _write.write_str(s).unwrap();
   }
 };
 
 template <class W>
-struct Serializer<W>::SerSeq {
+class Serializer<W>::SerSeq {
   Serializer* _ser;
   u32 _cnt = 0;
 
@@ -123,7 +123,7 @@ struct Serializer<W>::SerSeq {
 };
 
 template <class W>
-struct Serializer<W>::SerMap {
+class Serializer<W>::SerMap {
   Serializer* _inn = nullptr;
   u32 _cnt = 0;
 
@@ -154,108 +154,111 @@ class Deserializer {
  public:
   auto deserialize_null() -> Result<> {
     const auto c = this->peak();
-    switch(c) {
-      case 0: return Error{ErrCode::UnexpectedEof};
-    }
     if (c == 'n') {
       return this->extract_keyword("null");
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return c ? Error::InvalidKeyword : Error::EofWhileParsing;
   }
 
-  auto deserialize_bool() -> io::Result<bool> {
+  auto deserialize_bool() -> Result<bool> {
     const auto c = this->peak();
     if (c == 't') {
-      return this->extract_keyword("true", true);
+      return this->extract_keyword("true") & Result<bool>{true};
     } else if (c == 'f') {
-      return this->extract_keyword("false", false);
+      return this->extract_keyword("false") & Result<bool>{false};
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return c ? Error::InvalidKeyword : Error::EofWhileParsing;
   }
 
   template <trait::int_ T>
-  auto deserialize_int() -> io::Result<T> {
+  auto deserialize_int() -> Result<T> {
     const auto c = this->peak();
     if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
       return this->extract_num<T>();
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return c ? Error::InvalidNumber : Error::EofWhileParsing;
   }
 
   template <trait::flt_ T>
-  auto deserialize_flt() -> io::Result<T> {
+  auto deserialize_flt() -> Result<T> {
     const auto c = this->peak();
     if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
       return this->extract_num<T>();
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return c ? Error::InvalidNumber : Error::EofWhileParsing;
   }
 
-  auto deserialize_string() -> io::Result<String> {
+  auto deserialize_string() -> Result<String> {
     const auto c = this->peak();
     if (c == '"') {
       return this->extract_string();
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return c ? Error::ExpectedDoubleQuote : Error::EofWhileParsing;
   }
 
   class DesSeq;
-  auto deserialize_seq() -> io::Result<DesSeq> {
-    return DesSeq{*this};
+  auto deserialize_seq() -> Result<DesSeq> {
+    const auto c = this->peak();
+    if (c == '[') {
+      return DesSeq{*this};
+    }
+    return c ? Error::ExpectedBeginOfList : Error::EofWhileParsing;
   }
 
   class DesMap;
-  auto deserialize_map() -> DesMap {
-    return DesMap{*this};
+  auto deserialize_map() -> Result<DesMap> {
+    const auto c = this->peak();
+    if (c == '{') {
+      return DesMap{*this};
+    }
+    return c ? Error::ExpectedBeginOfObject : Error::EofWhileParsing;
   }
 
  private:
   void skip_blanks() {
     const auto not_blank = +[](char c) { return !(c == ' ' || ('\x09' <= c && c <= '\x0d')); };
-    while (auto buf = _read.fill_buf()) {
-      const auto pos = buf.iter().position(not_blank);
-      const auto cnt = pos ? *pos : buf.len();
-      _read.consume(cnt);
-      if (pos) {
-        break;
-      }
-    }
-    return {};
+    _read.skip_until(not_blank);
   }
 
   auto peak() -> char {
     this->skip_blanks();
-
-    const auto bytes = _TRY(_read.peak(1));
-    if (bytes.is_empty()) {
-      return 0;
+    if (auto bytes = _read.peak(1)) {
+      return bytes[0];
     }
-    return char(bytes[0]);
+    return 0;
   }
 
-  auto extract_keyword(Str s) -> io::Result<> {
-    const auto bytes = _TRY(_read.peak(s.len()));
-    if (bytes != s.as_bytes()) {
-      return io::Error{io::ErrorKind::InvalidData};
+  auto extract_keyword(Str s) -> Result<> {
+    const auto bytes = _read.peak(s.len());
+    if (bytes == s.as_bytes()) {
+      _read.consume(s.len());
+      return {};
     }
-    return {};
+    return bytes.is_empty() ? Error::EofWhileParsing : Error::InvalidKeyword;
   }
 
-  auto extract_num() -> io::Result<Str> {
+  template <class T>
+  auto extract_num() -> Result<T> {
     static const auto not_digits = +[](char c) { return !('0' <= c && c <= '9' || c == '.' || c == '+' || c == '-'); };
 
-    const auto bytes = _TRY(_read.peak(64U));
+    const auto bytes = _read.peak(64U);
     const auto position = bytes.iter().position(not_digits).unwrap_or(bytes.len());
     const auto digits = Str::from_utf8(bytes[{0, position}]);
+    const auto number = digits.template parse<T>();
+    if (!number) {
+      return Error::InvalidNumber;
+    }
     _read.consume(digits.len());
-    return digits;
+    return *number;
   }
 
-  auto extract_string() -> io::Result<String> {
+  auto extract_string() -> Result<String> {
     _read.consume(1);
 
     auto res = String{};
-    _TRY(_read.read_until('"', res.as_mut_vec()));
+    if (auto x = _read.read_until('"', res.as_mut_vec()); x.is_err()) {
+      return Error::EofWhileParsing;
+    }
     res.pop();
     return res;
   }

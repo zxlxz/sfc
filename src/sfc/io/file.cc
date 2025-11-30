@@ -54,12 +54,12 @@ auto File::read(Slice<u8> buf) -> Result<usize> {
     return 0UL;
   }
   if (!this->is_open()) {
-    return io::Error{ErrorKind::InvalidInput, 0};
+    return Error::InvalidInput;
   }
 
   const auto res = sys_imp::read(_fd, buf.as_mut_ptr(), buf.len());
   if (res == -1) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
   return static_cast<usize>(res);
 }
@@ -69,12 +69,12 @@ auto File::write(Slice<const u8> buf) -> Result<usize> {
     return 0UL;
   }
   if (!this->is_open()) {
-    return io::Error{ErrorKind::InvalidInput, 0};
+    return Error::InvalidInput;
   }
 
   const auto res = sys_imp::write(_fd, buf.as_ptr(), buf.len());
   if (res == -1) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
   return static_cast<usize>(res);
 }

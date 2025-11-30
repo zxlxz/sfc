@@ -18,34 +18,34 @@ struct alignas(8) Style {
 
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  static auto from_str(Str s) -> Option<Style>;
+  static auto from_str(Str s) noexcept -> Option<Style>;
 
-  auto fill(char default_val = ' ') const -> char {
+  auto fill(char default_val = ' ') const noexcept -> char {
     return _fill ? _fill : default_val;
   }
 
-  auto align() const -> char {
+  auto align() const noexcept -> char {
     return _align;
   }
 
-  auto type() const -> char {
+  auto type() const noexcept -> char {
     return _type;
   }
 
-  auto width() const -> u32 {
+  auto width() const noexcept -> u32 {
     return _width;
   }
 
-  auto radix() const -> u32 {
+  auto radix() const noexcept -> u32 {
     const auto t = _type | 32;
     return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
   }
 
-  auto verbose() const -> bool {
+  auto verbose() const noexcept -> bool {
     return _prefix == '#';
   }
 
-  auto sign(bool is_neg) const -> Str {
+  auto sign(bool is_neg) const noexcept -> Str {
     if (is_neg) {
       return "-";
     }
@@ -56,11 +56,11 @@ struct alignas(8) Style {
     }
   }
 
-  auto precision(u32 default_val) const -> u32 {
+  auto precision(u32 default_val) const noexcept -> u32 {
     return _point ? _precision : default_val;
   }
 
-  auto prefix() const -> Str {
+  auto prefix() const noexcept -> Str {
     if (_prefix != '#') {
       return "";
     }
@@ -77,9 +77,10 @@ struct alignas(8) Style {
 };
 
 struct Debug {
-  static auto fill_int(Slice<char> buf, Style style, auto val) -> Str;
-  static auto fill_flt(Slice<char> buf, Style style, auto val) -> Str;
-  static auto fill_ptr(Slice<char> buf, Style style, auto val) -> Str;
+ public:
+  static auto to_str(Slice<char> buf, trait::int_ auto val, Style style = {}) noexcept -> Str;
+  static auto to_str(Slice<char> buf, trait::flt_ auto val, Style style = {}) noexcept -> Str;
+  static auto to_str(Slice<char> buf, const void* val, Style style = {}) noexcept -> Str;
 
  public:
   static void fmt(bool val, auto& f) {
@@ -92,25 +93,27 @@ struct Debug {
 
   static void fmt(const trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_int(buf, f._style, val);
+    const auto s = Debug::to_str(buf, val, f._style);
     f.pad_num(false, s);
   }
 
   static void fmt(const trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_int(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto u = val >= 0 ? val : -val;
+    const auto s = Debug::to_str(buf, u, f._style);
     f.pad_num(val < 0, s);
   }
 
   static void fmt(const trait::flt_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
+    const auto u = val >= 0 ? val : -val;
+    const auto s = Debug::to_str(buf, u, f._style);
     f.pad_num(val < 0, s);
   }
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto s = Debug::fill_ptr(buf, f._style, val);
+    const auto s = Debug::to_str(buf, val, f._style);
     f.pad_num(false, s);
   }
 

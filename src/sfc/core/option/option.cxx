@@ -42,13 +42,13 @@ SFC_TEST(unwrap) {
 }
 
 SFC_TEST(and) {
-  panicking::expect_eq(Option<int>{} & Option{1}, Option<int>{});
-  panicking::expect_eq(Option<int>{10} & Option{1}, Option<int>{1});
+  panicking::expect_eq(Option<int>{} and Option{1}, Option<int>{});
+  panicking::expect_eq(Option<int>{10} and Option{1}, Option<int>{1});
 }
 
 SFC_TEST(or) {
-  panicking::expect_eq(Option<int>{} | Option{1}, Option{1});
-  panicking::expect_eq(Option<int>{10} | Option{1}, Option{10});
+  panicking::expect_eq(Option<int>{} or Option{1}, Option{1});
+  panicking::expect_eq(Option<int>{10} or Option{1}, Option{10});
 }
 
 SFC_TEST(and_then) {

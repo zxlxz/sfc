@@ -37,7 +37,7 @@ auto OpenOptions::open(Path path) const -> io::Result<File> {
 
   auto file = io::File::from_fd(sys_imp::open(c_path, *this));
   if (!file.is_open()) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
 
   auto res = File{};
@@ -54,8 +54,7 @@ auto read(Path path) -> io::Result<Vec<u8>> {
 
 auto write(Path path, Slice<const u8> buf) -> io::Result<> {
   auto file = _TRY(File::create(path));
-  _TRY(file.write_all(buf));
-  return {};
+  return file.write_all(buf);
 }
 
 }  // namespace sfc::fs

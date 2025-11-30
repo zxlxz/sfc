@@ -1,5 +1,5 @@
 #include "sfc/core/panicking.h"
-#include "sfc/core/str.h"
+#include "sfc/core/fmt.h"
 #include "sfc/sys/backtrace.h"
 #include "sfc/sys/io.h"
 
@@ -17,15 +17,15 @@ struct Frame {
       return;
     }
 
-    auto info = sys::backtrace::frame_info(_ptr);
+    const auto sym_info = sys::backtrace::frame_info(_ptr);
+    const auto raw_func = sym_info.func;
 
     char func[256] = {};
-    const auto len = sys::backtrace::cxx_demangle(info.func, func, sizeof(func));
-
+    const auto len = sys::backtrace::cxx_demangle(raw_func, func, sizeof(func));
     if (len >= 0) {
       f.write_str(Str{func, len});
     } else {
-      f.write_str(Str::from_cstr(info.func));
+      f.write_str(Str::from_cstr(raw_func));
     }
   }
 };

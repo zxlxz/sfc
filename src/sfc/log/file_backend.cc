@@ -21,15 +21,13 @@ static inline auto level_str(Level level) -> Str {
   }
 }
 
-FileBackend::FileBackend(fs::File&& file) : _file{mem::move(file)} {}
-
-FileBackend::~FileBackend() noexcept {}
-
 auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
   const auto opts = fs::OpenOptions{.append = true, .create = true, .write = true};
-  return opts.open(path).map([](fs::File file) {
-    return FileBackend{mem::move(file)};
-  });
+  auto file = _TRY(opts.open(path));
+
+  auto res = FileBackend{};
+  res._file = mem::move(file);
+  return res;
 }
 
 void FileBackend::flush() {}

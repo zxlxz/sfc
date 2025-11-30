@@ -32,6 +32,9 @@ template <class T>
 concept default_ = requires { T{}; };
 
 template <class T>
+concept tv_copy = __is_trivially_copyable(T);
+
+template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class X>
@@ -58,16 +61,13 @@ template <class X>
 using invoke_t = typename Fn<Invoke<X>>::Output;
 
 template <class I, class X>
-struct Impl : I, X {
-  Impl() = delete;
-  ~Impl() = delete;
-};
+struct Impl : I, X {};
 
 template <class I, class X>
 auto as(const X& x) -> auto& {
   static_assert(sizeof(I) == 0);
   if constexpr (requires { static_cast<const I&>(x); }) {
-    return static_cast<const I&>(x);
+    return x;
   } else {
     return static_cast<const Impl<I, X>&>(x);
   }
@@ -76,7 +76,7 @@ auto as(const X& x) -> auto& {
 template <class I, class X>
 auto as_mut(X& x) -> auto& {
   if constexpr (requires { static_cast<I&>(x); }) {
-    return static_cast<I&>(x);
+    return x;
   } else {
     return static_cast<Impl<I, X>&>(x);
   }

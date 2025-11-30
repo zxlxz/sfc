@@ -49,12 +49,12 @@ class PathBuf {
 
   static auto from(Str s) -> PathBuf;
 
+  auto operator*() const noexcept -> Path;
   auto as_path() const noexcept -> Path;
   auto as_str() const noexcept -> Str;
-  operator Path() const noexcept;
 
-  void clear();
-  void reserve(usize additional);
+  void clear() noexcept;
+  void reserve(usize additional) noexcept;
 
   void push(Str path) noexcept;
   auto pop() noexcept -> bool;
@@ -63,6 +63,7 @@ class PathBuf {
   void set_extension(Str extension) noexcept;
 
  public:
+  // trait fmt::Display
   void fmt(auto& f) const {
     _inn.fmt(f);
   }

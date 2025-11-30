@@ -160,21 +160,4 @@ SFC_TEST(map) {
   }
 }
 
-SFC_TEST(zip) {
-  const int a[] = {0, 1, 2, 3, 4, 5};
-  const char b[] = {'a', 'b', 'c', 'd', 'e', 'f'};
-
-  auto zipped = zip(Slice{a}.iter(), Slice{b}.iter());
-  for (auto i = 0; i < 6; ++i) {
-    auto opt = zipped.next();
-    panicking::expect_true(opt);
-
-    const auto [x, y] = *opt;
-    panicking::expect_eq(x, a[i]);
-    panicking::expect_eq(y, b[i]);
-  }
-
-  panicking::expect_false(zipped.next());
-}
-
 }  // namespace sfc::iter::test

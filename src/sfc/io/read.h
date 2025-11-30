@@ -8,9 +8,9 @@ namespace sfc::io {
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
     while (!buf.is_empty()) {
-      const auto cnt = _TRY(Result{self.read(buf)});
+      const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
-        return Error{ErrorKind::UnexpectedEof};
+        return Error::UnexpectedEof;
       }
       buf = buf[{cnt, $}];
     }
@@ -19,18 +19,16 @@ struct Read {
   }
 
   auto read_to_end(this auto& self, Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
-    const auto old_len = buf.len();
+    auto total_read = 0UL;
     while (true) {
       buf.reserve(buf_len);
-
-      auto tmp = Slice{buf.as_mut_ptr() + buf.len(), buf_len};
-      const auto cnt = _TRY(Result{self.read(tmp)});
+      const auto cnt = _TRY(self.read(buf.spare_capacity_mut()));
       if (cnt == 0) {
-        break;
+        return total_read;
       }
+      total_read += cnt;
       buf.set_len(buf.len() + cnt);
     }
-    return buf.len() - old_len;
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
@@ -63,12 +61,12 @@ class BufReader : Read {
     return _buf.capacity();
   }
 
-  auto peak(usize n) -> Result<Slice<const u8>> {
+  auto peak(usize n) -> Slice<const u8> {
     if (n > _buf.len() - _pos) {
       if (_pos + n > _buf.capacity()) {
         this->backshift();
       }
-      _TRY(this->read_more());
+      (void)this->read_more();
     }
     return static_cast<const Buf&>(_buf)[{_pos, _pos + n}];
   }
@@ -109,10 +107,10 @@ class BufReader : Read {
 
  public:
   // trait: io::BufRead
-  auto fill_buf() -> io::Result<Slice<const u8>> {
+  auto fill_buf() -> Slice<const u8> {
     if (_pos >= _buf.len()) {
       this->backshift();
-      _TRY(this->read_more());
+      (void)this->read_more();
     }
     return this->buffer();
   }
@@ -125,26 +123,24 @@ class BufReader : Read {
     _pos += amt;
   }
 
-  auto skip(auto&& p) -> Result<usize> {
-    auto res = usize{0UL};
-    while (true) {
-      const auto rem = _TRY(this->fill_buf());
-      const auto pos = rem.iter().position([&](auto c) { return !p(c); });
-      const auto cnt = pos ? *pos : rem.len();
-      res += cnt;
+  auto skip_until(auto&& p) -> usize {
+    auto total_cnt = usize{0UL};
+    while (auto available = this->fill_buf()) {
+      const auto pos = available.iter().position(p);
+      const auto cnt = pos ? *pos : available.len();
+      total_cnt += cnt;
       this->consume(cnt);
       if (pos) {
         break;
       }
     }
-    return res;
+    return total_cnt;
   }
 
-  auto read_until(u8 delim, Vec<u8>& buf) -> Result<usize> {
+  auto read_until(auto&& p, Vec<u8>& buf) -> Result<usize> {
     const auto old_len = buf.len();
-    while (true) {
-      const auto available = _TRY(this->fill_buf());
-      const auto position = available.find(delim);
+    while (auto available = this->fill_buf()) {
+      const auto position = available.iter().position(p);
       const auto used = position ? *position + 1 : available.len();
       buf.extend_from_slice(available[{0, used}]);
       this->consume(used);
