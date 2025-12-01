@@ -3,22 +3,40 @@
 
 namespace sfc::str {
 
-struct IntStr {
+struct ParseInt {
   const char* _ptr;
   const char* _end;
 
  public:
-  template <class T>
-  auto parse() -> option::Option<T> {
+  template <trait::sint_ T>
+  auto parse() noexcept -> Option<T> {
     if (_ptr == _end) {
       return {};
     }
 
-    const auto sign = this->extract_sign();
-    if constexpr (T{0} - T{1} > 0) {
-      if (sign == '-') {
-        return {};
-      }
+    const auto is_neg = this->extract_sign();
+    const auto radix = this->extract_radix();
+    if (_ptr == _end) {
+      return {};
+    }
+
+    const auto uval = this->extract_int<T>(radix);
+    if (_ptr != _end) {
+      return {};
+    }
+
+    return is_neg ? -uval : uval;
+  }
+
+  template <trait::uint_ T>
+  auto parse() noexcept -> Option<T> {
+    if (_ptr == _end) {
+      return {};
+    }
+
+    const auto is_neg = this->extract_sign();
+    if (is_neg) {
+      return {};
     }
 
     const auto radix = this->extract_radix();
@@ -31,26 +49,20 @@ struct IntStr {
       return {};
     }
 
-    if constexpr (T{0} - T{1} < 0) {
-      if (sign == '-') {
-        return -uval;
-      }
-    }
-
     return uval;
   }
 
  private:
-  auto extract_sign() -> char {
+  auto extract_sign() noexcept -> bool {
     if (_ptr + 1 >= _end) {
-      return 0;
+      return false;
     }
 
     const auto c = *_ptr;
     if (c == '+' || c == '-') {
       ++_ptr;
     }
-    return c;
+    return c == '-';
   }
 
   auto extract_radix() -> u32 {
@@ -67,15 +79,10 @@ struct IntStr {
 
     switch (d) {
       case 'b':
-      case 'B':
-        ++_ptr;
-        return 2;
+      case 'B': ++_ptr; return 2;
       case 'x':
-      case 'X':
-        ++_ptr;
-        return 16;
-      default:
-        return 8;
+      case 'X': ++_ptr; return 16;
+      default:  return 8;
     }
   }
 
@@ -101,8 +108,8 @@ struct IntStr {
 };
 
 template <class T>
-auto FromStr<T>::from_str(Str s) -> option::Option<T> {
-  auto imp = IntStr{s._ptr, s._ptr + s._len};
+auto FromStr<T>::from_str(Str s) -> Option<T> {
+  auto imp = ParseInt{s._ptr, s._ptr + s._len};
   return imp.parse<T>();
 }
 

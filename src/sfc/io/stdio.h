@@ -90,25 +90,25 @@ class Stderr {
   }
 };
 
-void print(const auto&... args) {
+void print(Str fmt, const auto&... args) {
   auto out = Stdout::lock();
-  out.write_fmt(args...);
+  out.write_fmt(fmt, args...);
 }
 
-void println(const auto&... args) {
+void println(Str fmt, const auto&... args) {
   auto out = Stdout::lock();
-  out.write_fmt(args...);
+  out.write_fmt(fmt, args...);
   out.write_str("\n");
 }
 
-void eprint(const auto&... args) {
+void eprint(Str fmt, const auto&... args) {
   auto out = Stderr::lock();
-  out.write_fmt(args...);
+  out.write_fmt(fmt, args...);
 }
 
-void eprintln(const auto&... args) {
+void eprintln(Str fmt, const auto&... args) {
   auto out = Stderr::lock();
-  out.write_fmt(args...);
+  out.write_fmt(fmt, args...);
   out.write_str("\n");
 }
 

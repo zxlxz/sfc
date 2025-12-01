@@ -36,13 +36,13 @@ inline auto take(T& dst) noexcept -> T {
 }
 
 template <class T>
-inline auto as_bytes(const T& x) -> const u8 (&)[sizeof(T)] {
+inline auto as_bytes(const T& x) noexcept -> const u8 (&)[sizeof(T)] {
   static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
 }
 
 template <class T>
-inline auto as_bytes_mut(T& x) -> u8 (&)[sizeof(T)] {
+inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
   static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<u8(&)[sizeof(T)]>(x);
 }

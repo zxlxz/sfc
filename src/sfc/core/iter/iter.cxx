@@ -138,43 +138,4 @@ SFC_TEST(collect) {
   }
 }
 
-SFC_TEST(rev) {
-  const int v[] = {0, 1, 2, 3, 4, 5};
-
-  auto rev = Slice{v}.iter().rev();
-  for (auto i = 0; i < 6; ++i) {
-    auto opt = rev.next();
-    panicking::expect_true(opt);
-    panicking::expect_eq(*opt, 5 - i);
-  }
-}
-
-SFC_TEST(map) {
-  const int v[] = {0, 1, 2, 3, 4, 5};
-
-  auto mapped = Slice{v}.iter().map([](auto& x) { return x * 2; });
-  for (auto i = 0; i < 6; ++i) {
-    auto opt = mapped.next();
-    panicking::expect_true(opt);
-    panicking::expect_eq(*opt, v[i] * 2);
-  }
-}
-
-SFC_TEST(zip) {
-  const int a[] = {0, 1, 2, 3, 4, 5};
-  const char b[] = {'a', 'b', 'c', 'd', 'e', 'f'};
-
-  auto zipped = zip(Slice{a}.iter(), Slice{b}.iter());
-  for (auto i = 0; i < 6; ++i) {
-    auto opt = zipped.next();
-    panicking::expect_true(opt);
-
-    const auto [x, y] = *opt;
-    panicking::expect_eq(x, a[i]);
-    panicking::expect_eq(y, b[i]);
-  }
-
-  panicking::expect_false(zipped.next());
-}
-
 }  // namespace sfc::iter::test

@@ -8,11 +8,12 @@ struct IntBuf {
   char* _ptr = _end;
 
  public:
-  auto as_str() const -> Str {
-    return {_ptr, static_cast<usize>(_end - _ptr)};
+  auto as_str() const noexcept -> Str {
+    const auto len = static_cast<usize>(_end - _ptr);
+    return {_ptr, len};
   }
 
-  void fill(auto val, char type) {
+  void fill(auto val, char type) noexcept {
     const auto uval = val > 0 ? val : 0 - val;
 
     switch (type) {
@@ -33,14 +34,14 @@ struct IntBuf {
   }
 
  private:
-  void push(char c) {
+  void push(char c) noexcept {
     if (_ptr == _start) {
       return;
     }
     *--_ptr = c;
   }
 
-  void write_dec(auto val) {
+  void write_dec(auto val) noexcept {
     static const char DIGITS[] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
@@ -63,7 +64,7 @@ struct IntBuf {
   }
 
   template <u32 RADIX, char TYPE = 0>
-  void write_bin(auto val) {
+  void write_bin(auto val) noexcept {
     const auto MASK = RADIX - 1;
     const auto DIGITS = TYPE < 'a' ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" : "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -85,31 +86,29 @@ struct IntBuf {
   }
 };
 
-auto Debug::fill_int(Slice<char> buf, Style style, auto val) -> Str {
+auto Debug::to_str(Slice<char> buf, trait::int_ auto val, Style style) noexcept -> Str {
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
-  ss.fill(val, style.type());
+  ss.fill(val + 0, style.type());
   return ss.as_str();
 }
 
-auto Debug::fill_ptr(Slice<char> buf, Style style, auto ptr) -> Str {
+auto Debug::to_str(Slice<char> buf, const void* ptr, Style style) noexcept -> Str {
   const auto val = __builtin_bit_cast(usize, ptr);
   auto ss = IntBuf{buf._ptr, buf._ptr + buf._len};
   ss.fill(val, style.type() ? style.type() : 'p');
   return ss.as_str();
 }
 
-template auto Debug::fill_int(Slice<char>, Style, signed char) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, short) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, int) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, long) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, long long) -> Str;
+template auto Debug::to_str(Slice<char>, signed char, Style) -> Str;
+template auto Debug::to_str(Slice<char>, short, Style) -> Str;
+template auto Debug::to_str(Slice<char>, int, Style) -> Str;
+template auto Debug::to_str(Slice<char>, long, Style) -> Str;
+template auto Debug::to_str(Slice<char>, long long, Style) -> Str;
 
-template auto Debug::fill_int(Slice<char>, Style, unsigned char) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, unsigned short) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, unsigned int) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, unsigned long) -> Str;
-template auto Debug::fill_int(Slice<char>, Style, unsigned long long) -> Str;
-
-template auto Debug::fill_ptr(Slice<char>, Style, const void*) -> Str;
+template auto Debug::to_str(Slice<char>, unsigned char, Style) -> Str;
+template auto Debug::to_str(Slice<char>, unsigned short, Style) -> Str;
+template auto Debug::to_str(Slice<char>, unsigned int, Style) -> Str;
+template auto Debug::to_str(Slice<char>, unsigned long, Style) -> Str;
+template auto Debug::to_str(Slice<char>, unsigned long long, Style) -> Str;
 
 }  // namespace sfc::fmt

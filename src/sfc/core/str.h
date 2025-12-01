@@ -460,6 +460,34 @@ static auto enum_name() -> Str {
 
 }  // namespace sfc::str
 
+namespace sfc::option {
+
+template <>
+struct Inner<str::Str> {
+  str::Str _val;
+
+ public:
+  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+    return _val._ptr != nullptr;
+  }
+
+  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+    return _val._ptr == nullptr;
+  }
+
+  [[gnu::always_inline]] auto operator*() const noexcept -> const str::Str& {
+    return _val;
+  }
+
+  [[gnu::always_inline]] auto operator*() noexcept -> str::Str& {
+    return _val;
+  }
+};
+
+template <usize N>
+Option(const char (&)[N]) -> Option<str::Str>;
+}  // namespace sfc::option
+
 namespace sfc {
 using str::Str;
 }  // namespace sfc

@@ -77,9 +77,9 @@ struct alignas(8) Style {
 };
 
 struct Debug {
-  static auto fill_int(Slice<char> buf, Style style, auto val) -> Str;
-  static auto fill_flt(Slice<char> buf, Style style, auto val) -> Str;
-  static auto fill_ptr(Slice<char> buf, Style style, auto val) -> Str;
+  static auto to_str(Slice<char> buf, trait::int_ auto val, Style style = {}) noexcept -> Str;
+  static auto to_str(Slice<char> buf, trait::flt_ auto val, Style style = {}) noexcept -> Str;
+  static auto to_str(Slice<char> buf, const void* val, Style style = {}) noexcept -> Str;
 
  public:
   static void fmt(bool val, auto& f) {
@@ -90,37 +90,36 @@ struct Debug {
     f.write_char(val);
   }
 
-  static void fmt(const trait::uint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_int(buf, f._style, val);
-    f.pad_num(false, s);
-  }
-
-  static void fmt(const trait::sint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_int(buf, f._style, val >= 0 ? val : 0 - val);
-    f.pad_num(val < 0, s);
-  }
-
-  static void fmt(const trait::flt_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::fill_flt(buf, f._style, val >= 0 ? val : 0 - val);
-    f.pad_num(val < 0, s);
-  }
-
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto s = Debug::fill_ptr(buf, f._style, val);
+    const auto s = Debug::to_str(buf, val, f._style);
     f.pad_num(false, s);
+  }
+
+  static void fmt(trait::uint_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Debug::to_str(buf, val, f._style);
+    f.pad_num(false, s);
+  }
+
+  static void fmt(trait::sint_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Debug::to_str(buf, val >= 0 ? val : 0 - val, f._style);
+    f.pad_num(val < 0, s);
+  }
+
+  static void fmt(trait::flt_ auto val, auto& f) {
+    char buf[8 * sizeof(val) + 16];
+    const auto s = Debug::to_str(buf, val >= 0 ? val : 0 - val, f._style);
+    f.pad_num(val < 0, s);
   }
 
   static void fmt(trait::enum_ auto val, auto& f) {
+    using E = decltype(val);
     if constexpr (requires { to_str(val); }) {
-      const auto s = to_str(val);
-      f.pad(s);
+      f.pad(to_str(val));
     } else {
-      using U = __underlying_type(decltype(val));
-      f.write_fmt("{}({})", str::type_name<decltype(val)>(), static_cast<U>(val));
+      f.write_fmt("{}({})", str::type_name<E>(), static_cast<int>(val));
     }
   }
 

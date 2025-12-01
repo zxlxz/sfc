@@ -53,7 +53,7 @@ struct Slice {
     return _len != 0;
   }
 
-  operator Slice<const T>() const {
+  operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 
@@ -66,23 +66,23 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto operator[](usize idx) const -> const T& {
+  auto operator[](usize idx) const noexcept -> const T& {
     panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
-  auto operator[](usize idx) -> T& {
+  auto operator[](usize idx) noexcept -> T& {
     panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const -> Slice<const T> {
+  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
     const auto start = ids.start;
     const auto end = ids.end < _len ? ids.end : _len;
     return Slice<const T>{_ptr + start, start < end ? end - start : 0U};
   }
 
-  auto operator[](ops::Range ids) -> Slice<T> {
+  auto operator[](ops::Range ids) noexcept -> Slice<T> {
     const auto start = ids.start;
     const auto end = ids.end < _len ? ids.end : _len;
     return Slice<T>{_ptr + start, start < end ? end - start : 0U};
@@ -99,7 +99,7 @@ struct Slice {
   }
 
  public:
-  void swap(usize i, usize j) {
+  void swap(usize i, usize j) noexcept {
     panicking::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
     panicking::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
@@ -108,19 +108,17 @@ struct Slice {
     }
   }
 
-  void fill(T val) {
-    for (auto ptr = _ptr, end = ptr + _len; ptr != end; ++ptr) {
-      *ptr = val;
+  void fill(T val) noexcept {
+    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
+      __builtin_memset(_ptr, val, _len);
+    } else {
+      for (auto p = _ptr, e = p + _len; p != e; ++p) {
+        *p = val;
+      }
     }
   }
 
-  void fill_with(auto&& f) {
-    for (auto p = _ptr, e = p + _len; p != e; ++p) {
-      *p = f();
-    }
-  }
-
-  void copy_from_slice(Slice<const T> src) {
+  void copy_from_slice(Slice<const T> src) noexcept {
     static_assert(__is_trivially_copyable(T));
 
     if (_len != src._len) {
@@ -131,26 +129,36 @@ struct Slice {
   }
 
  public:
-  template <class U>
-  auto operator==(const Slice<U>& other) const noexcept -> bool {
+  auto operator==(Slice<const T> other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
     }
     if (_ptr == other._ptr) {
       return true;
     }
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != other._ptr[i]) {
-        return false;
+    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
+      return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (_ptr[i] != other._ptr[i]) {
+          return false;
+        }
       }
+      return true;
     }
-    return true;
   }
 
   auto contains(const T& x) const noexcept -> bool {
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] == x) {
-        return true;
+    if (_len == 0) {
+      return {};
+    }
+    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
+      return __builtin_memchr(_ptr, x, _len) != nullptr;
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (_ptr[i] == x) {
+          return true;
+        }
       }
     }
     return false;
@@ -160,9 +168,16 @@ struct Slice {
     if (_len == 0) {
       return {};
     }
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] == x) {
-        return i;
+    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
+      const auto p = __builtin_memchr(_ptr, x, _len);
+      if (p != nullptr) {
+        return static_cast<usize>(static_cast<const T*>(p) - _ptr);
+      }
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (_ptr[i] == x) {
+          return i;
+        }
       }
     }
     return {};
@@ -172,14 +187,14 @@ struct Slice {
     if (_len < needle._len) {
       return false;
     }
-    return needle == Slice<const T>{_ptr, needle._len};
+    return needle == Slice{_ptr, needle._len};
   }
 
   auto ends_with(Slice<const T> needle) const -> bool {
     if (_len < needle._len) {
       return false;
     }
-    return needle == Slice<const T>{_ptr + _len - needle._len, needle._len};
+    return needle == Slice{_ptr + _len - needle._len, needle._len};
   }
 
  public:
@@ -200,27 +215,27 @@ struct Slice {
   }
 
   auto iter() const noexcept -> Iter<const T> {
-    return Iter<const T>{{}, _ptr, _ptr + _len};
+    return {{}, _ptr, _ptr + _len};
   }
 
   auto iter_mut() noexcept -> Iter<T> {
-    return Iter<T>{{}, _ptr, _ptr + _len};
+    return {{}, _ptr, _ptr + _len};
   }
 
   auto windows(usize n) const noexcept -> Windows<const T> {
-    return Windows{{}, *this, n};
+    return {{}, *this, n};
   }
 
   auto windows_mut(usize n) noexcept -> Windows<T> {
-    return Windows{{}, *this, n};
+    return {{}, *this, n};
   }
 
   auto chunks(usize n) const noexcept -> Chunks<const T> {
-    return Chunks{{}, *this, n};
+    return {{}, *this, n};
   }
 
   auto chunks_mut(usize n) noexcept -> Chunks<T> {
-    return Chunks{{}, *this, n};
+    return {{}, *this, n};
   }
 
  public:
@@ -233,8 +248,11 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) -> io::Result<usize> {
-    static_assert(__is_same(const T, const u8));
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize> {
+    static_assert(trait::same_<const T, const u8>);
+    if (_len == 0 || buf._len == 0) {
+      return 0;
+    }
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
     _ptr += amt;
@@ -243,8 +261,8 @@ struct Slice {
   }
 
   // trait: serde::Serialize
-  auto as_bytes() const -> Slice<const u8> {
-    static_assert(__is_trivially_copyable(T));
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(trait::tv_copy_<T>);
     return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
   }
 
@@ -266,7 +284,6 @@ Slice(T*, auto) -> Slice<T>;
 template <class T>
 struct Iter : iter::Iterator<T&> {
   using Item = T&;
-
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -275,18 +292,18 @@ struct Iter : iter::Iterator<T&> {
     return _ptr < _end;
   }
 
-  auto len() const -> usize {
+  auto len() const noexcept -> usize {
     return _ptr < _end ? static_cast<usize>(_end - _ptr) : 0U;
   }
 
-  auto next() -> Option<T&> {
+  auto next() noexcept -> Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
     return *_ptr++;
   }
 
-  auto next_back() -> Option<T&> {
+  auto next_back() noexcept -> Option<T&> {
     if (_ptr >= _end) {
       return {};
     }
@@ -302,11 +319,11 @@ struct Windows : iter::Iterator<Slice<T>> {
   usize _len = 0;
 
  public:
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _buf._len >= _len;
   }
 
-  auto next() -> Option<Item> {
+  auto next() noexcept -> Option<Item> {
     if (_buf._len < _len) {
       return {};
     }
@@ -317,7 +334,7 @@ struct Windows : iter::Iterator<Slice<T>> {
     return res;
   }
 
-  auto next_back() -> Option<Item> {
+  auto next_back() noexcept -> Option<Item> {
     if (_buf._len < _len) {
       return {};
     }
@@ -336,11 +353,11 @@ struct Chunks : iter::Iterator<Slice<T>> {
   usize _len = 0;
 
  public:
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _buf._len >= _len;
   }
 
-  auto next() -> Option<Item> {
+  auto next() noexcept -> Option<Item> {
     if (_buf._len == 0) {
       return {};
     }
@@ -353,6 +370,31 @@ struct Chunks : iter::Iterator<Slice<T>> {
 };
 
 }  // namespace sfc::slice
+
+namespace sfc::option {
+template <class T>
+struct Inner<slice::Slice<T>> {
+  slice::Slice<T> _val;
+
+ public:
+  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+    return _val._ptr != nullptr;
+  }
+
+  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+    return _val._ptr == nullptr;
+  }
+
+  [[gnu::always_inline]] auto operator*() const noexcept -> const slice::Slice<T>& {
+    return _val;
+  }
+
+  [[gnu::always_inline]] auto operator*() noexcept -> slice::Slice<T>& {
+    return _val;
+  }
+};
+
+}  // namespace sfc::option
 
 namespace sfc {
 using slice::Slice;

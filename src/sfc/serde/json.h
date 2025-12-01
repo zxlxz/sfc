@@ -52,13 +52,13 @@ class Serializer {
 
   void serialize_int(const trait::int_ auto& val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fill_int(buf, {}, val);
+    const auto s = fmt::Debug::to_str(buf, val);
     this->write_str(s);
   }
 
   void serialize_flt(const trait::flt_ auto& val) {
     char buf[32] = {};
-    const auto s = fmt::Debug::fill_flt(buf, {}, val);
+    const auto s = fmt::Debug::to_str(buf, val);
     this->write_str(s);
   }
 

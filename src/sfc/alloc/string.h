@@ -216,25 +216,19 @@ auto to_string(const auto& val) -> String {
 
 }  // namespace sfc::string
 
-namespace sfc {
-using string::String;
-}  // namespace sfc
-
 namespace sfc::panicking {
 
-[[noreturn]] void panic_str(Str msg);
+[[noreturn]] void panic_str(Location loc, Str msg) noexcept;
 
-[[noreturn]] void panic_imp(Location loc, const auto&... args) {
-  auto s = string::String{};
-  if constexpr (sizeof...(args)) {
-    fmt::write(s, args...);
+[[noreturn]] void panic_fmt(Location loc, const auto&... args) noexcept {
+  if constexpr (sizeof...(args) == 0) {
+    panicking::panic_str(loc, "panic occurred");
+  } else if constexpr (sizeof...(args) == 1) {
+    panicking::panic_str(loc, args...);
+  } else {
+    const auto msg = string::format(args...);
+    panicking::panic_str(loc, msg.as_str());
   }
-  fmt::write(s, "\n >: {}:{}", Str::from_cstr(loc.file), loc.line);
-  panicking::panic_str(s.as_str());
-}
-
-[[noreturn]] void panic(PanicInfo info, const auto&... args) {
-  panicking::panic_imp(info.loc, Str::from_cstr(info.val), args...);
 }
 
 }  // namespace sfc::panicking

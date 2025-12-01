@@ -29,6 +29,12 @@ template <class T>
 concept flt_ = any_<T, float, double>;
 
 template <class T>
+concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
+
+template <class T>
+concept tv_copy_ = __is_trivially_copyable(T);
+
+template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class X>
@@ -46,9 +52,7 @@ struct Invoke;
 
 template <class F, class... T>
 struct Invoke<F(T...)> {
-  static auto operator()(F f, T... t) -> decltype(f((T&&)t...)) {
-    return f((T&&)t...);
-  }
+  static auto operator()(F f, T... t) -> decltype(f((T&&)t...));
 };
 
 template <class X>

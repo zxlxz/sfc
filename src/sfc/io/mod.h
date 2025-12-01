@@ -34,6 +34,10 @@ struct Error {
 
   static auto from_os_error(int code) -> Error;
 
+  auto operator==(const Error& other) const -> bool {
+    return kind == other.kind && code == other.code;
+  }
+
   void fmt(auto& f) const {
     f.write_val(kind);
   }

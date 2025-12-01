@@ -107,15 +107,6 @@ SFC_TEST(fill) {
   panicking::expect_eq(a[2], 0);
 }
 
-SFC_TEST(fill_with) {
-  int v[] = {1, 2, 3};
-  auto a = Slice{v};
-  a.fill_with([x = 0]() mutable { return x++; });
-  panicking::expect_eq(a[0], 0);
-  panicking::expect_eq(a[1], 1);
-  panicking::expect_eq(a[2], 2);
-}
-
 SFC_TEST(eq) {
   const int v1[] = {1, 2, 3};
   const int v2[] = {1, 2, 3};

@@ -252,10 +252,6 @@ class [[nodiscard]] Vec {
     Slice{_buf._ptr, _len}.fill(val);
   }
 
-  void fill_with(auto&& f) {
-    Slice{_buf._ptr, _len}.fill_with(f);
-  }
-
  public:
   auto push(T val) -> T& {
     this->reserve(1);
