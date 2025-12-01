@@ -37,6 +37,37 @@ struct Inner {
   }
 };
 
+template <class T, class E>
+struct Inner<T&, E> {
+  T* _ok = {};
+  E _err = {};
+
+ public:
+  [[gnu::always_inline]] auto is_ok() const -> bool {
+    return _ok != nullptr;
+  }
+
+  [[gnu::always_inline]] auto is_err() const -> bool {
+    return _ok == nullptr;
+  }
+
+  [[gnu::always_inline]] auto operator*() const -> const T& {
+    return *_ok;
+  }
+
+  [[gnu::always_inline]] auto operator*() -> T& {
+    return *_ok;
+  }
+
+  [[gnu::always_inline]] auto operator~() const -> const E& {
+    return _err;
+  }
+
+  [[gnu::always_inline]] auto operator~() -> E& {
+    return _err;
+  }
+};
+
 template <class E>
 struct Inner<void, E> {
   E _err;
@@ -107,15 +138,15 @@ struct [[nodiscard]] Result {
     return _inn.is_err();
   }
 
-  auto ok(this auto self) -> Option<T> {
-    if (self._inn.is_err()) {
+  auto ok() && -> Option<T> {
+    if (_inn.is_err()) {
       return {};
     }
     return {static_cast<T&&>(*_inn)};
   }
 
-  auto err(this auto self) -> Option<E> {
-    if (self._inn.is_ok()) {
+  auto err() && -> Option<E> {
+    if (_inn.is_ok()) {
       return {};
     }
     return {static_cast<E&&>(~_inn)};

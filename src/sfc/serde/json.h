@@ -24,16 +24,8 @@ template <class T = void>
 using Result = result::Result<T, Error>;
 
 template <class W>
-class Serializer {
-  template <class T>
-  using Result = result::Result<T, Error>;
-
+struct Serializer {
   W& _write;
-
- public:
-  explicit Serializer(W& write) noexcept : _write{write} {}
-  ~Serializer() noexcept = default;
-  Serializer(const Serializer&) noexcept = delete;
 
  public:
   void serialize_null() {
@@ -77,11 +69,12 @@ class Serializer {
   struct SerSeq;
   auto serialize_seq() -> SerSeq {
     this->write_str("[");
-    return SerSeq{*this};
+    return SerSeq{this};
   }
 
   struct SerMap;
   auto serialize_map() -> SerMap {
+    this->write_str("{");
     return SerMap{this};
   }
 
@@ -92,17 +85,11 @@ class Serializer {
 };
 
 template <class W>
-class Serializer<W>::SerSeq {
+struct Serializer<W>::SerSeq {
   Serializer* _ser;
   u32 _cnt = 0;
 
  public:
-  SerSeq(Serializer& ser) noexcept : _ser{&ser} {}
-  ~SerSeq() noexcept = default;
-
-  SerSeq(const SerSeq&) = delete;
-  SerSeq& operator=(const SerSeq&) = delete;
-
   void serialize_element(const auto& item) {
     if (_ser == nullptr) {
       return;
@@ -123,12 +110,12 @@ class Serializer<W>::SerSeq {
 };
 
 template <class W>
-class Serializer<W>::SerMap {
-  Serializer* _inn = nullptr;
+struct Serializer<W>::SerMap {
+  Serializer* _inn;
   u32 _cnt = 0;
 
  public:
-  void serialize_entry(Str key, const auto& val) {
+  void serialize_key(Str key) {
     if (_inn == nullptr) {
       return;
     }
@@ -138,7 +125,26 @@ class Serializer<W>::SerMap {
     _inn->write_str("\"");
     _inn->write_str(key);
     _inn->write_str("\":");
+  }
+
+  void serialize_val(const auto& val) {
+    if (_inn == nullptr) {
+      return;
+    }
     Serialize::serialize(val, *_inn);
+  }
+
+  void serialize_entry(Str key, const auto& val) {
+    this->serialize_key(key);
+    this->serialize_val(val);
+  }
+
+  void end() {
+    if (_inn == nullptr) {
+      return;
+    }
+    _inn->write_str("}");
+    _inn = nullptr;
   }
 };
 

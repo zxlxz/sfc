@@ -105,14 +105,14 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
 }
 
 template <class T>
-inline void drop_in_place(T* ptr, usize cnt) {
+inline void drop_in_place(T* ptr, usize cnt) noexcept {
   for (auto i = 0UL; i < cnt; ++i) {
     ptr[i].~T();
   }
 }
 
 template <class T>
-inline void copy(const T* src, T* dst, usize cnt) {
+inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -133,7 +133,7 @@ inline void copy(const T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
+inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -141,20 +141,14 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    if (dst < src) {
-      for (auto idx = 0UL; idx < cnt; ++idx) {
-        dst[idx] = src[idx];
-      }
-    } else {
-      for (const auto end = src; cnt > 0; --cnt) {
-        dst[cnt - 1] = src[cnt - 1];
-      }
+    for (auto idx = 0UL; idx < cnt; ++idx) {
+      dst[idx] = src[idx];
     }
   }
 }
 
 template <class T>
-inline void uninit_copy(const T* src, T* dst, usize cnt) {
+inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
   static_assert(__is_constructible(T, const T&));
   if (cnt == 0 || !src || !dst) {
     return;
@@ -170,7 +164,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) {
+inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -186,7 +180,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void shift_elements_left(T* src, usize len, usize offset) {
+inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) {
     return;
   }
@@ -208,7 +202,7 @@ inline void shift_elements_left(T* src, usize len, usize offset) {
 }
 
 template <class T>
-inline void shift_elements_right(T* src, usize len, usize offset) {
+inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) {
     return;
   }

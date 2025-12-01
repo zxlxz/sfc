@@ -65,10 +65,6 @@ struct Str {
     return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
-  auto as_str() const noexcept -> Str {
-    return *this;
-  }
-
  public:
   auto operator[](usize idx) const noexcept -> char {
     return _ptr && idx < _len ? _ptr[idx] : '\0';
@@ -82,14 +78,14 @@ struct Str {
 
   auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
     const auto x = mid < _len ? mid : _len;
-    return Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
+    return {Str{_ptr, x}, Str{_ptr + x, _len - x}};
   }
 
   auto iter() const noexcept -> slice::Iter<const char> {
     return this->as_chars().iter();
   }
 
-  auto operator==(Str other) const noexcept -> bool {
+  auto operator==(const Str& other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
     }

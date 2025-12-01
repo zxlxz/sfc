@@ -98,49 +98,49 @@ struct Slice {
   }
 
  public:
-  void swap(usize i, usize j) {
-    panicking::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    panicking::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+  void swap(usize i, usize j) noexcept {
+    panicking::expect(i < _len, "Slice::swap: i(={}), out of range(={})", i, _len);
+    panicking::expect(j < _len, "Slice::swap: j(={}), out of range(={})", j, _len);
 
     if (i != j) {
       mem::swap(_ptr[i], _ptr[j]);
     }
   }
 
-  void fill(T val) {
-    for (auto ptr = _ptr, end = ptr + _len; ptr != end; ++ptr) {
-      *ptr = val;
+  void fill(T val) noexcept {
+    for (auto p = _ptr, e = p + _len; p != e; ++p) {
+      *p = val;
     }
   }
 
-  void fill_with(auto&& f) {
+  void fill_with(auto&& f) noexcept {
     for (auto p = _ptr, e = p + _len; p != e; ++p) {
       *p = f();
     }
   }
 
-  void copy_from_slice(Slice<const T> src) {
+  void copy_from_slice(Slice<const T> src) noexcept {
     static_assert(__is_trivially_copyable(T));
-
-    if (_len != src._len) {
-      panicking::panic("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
-    }
-
+    panicking::expect(_len == src._len, "Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }
 
  public:
-  template <class U>
-  auto operator==(const Slice<U>& other) const noexcept -> bool {
+  auto operator==(Slice<const T> other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
     }
     if (_ptr == other._ptr) {
       return true;
     }
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != other._ptr[i]) {
-        return false;
+    if constexpr (trait::int_<T>) {
+      auto p = __builtin_memcmp(_ptr, other._ptr, _len * sizeof(T));
+      return p == 0;
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (!(_ptr[i] == other._ptr[i])) {
+          return false;
+        }
       }
     }
     return true;
@@ -156,12 +156,18 @@ struct Slice {
   }
 
   auto find(const T& x) const noexcept -> Option<usize> {
-    if (_len == 0) {
+    if (_ptr == nullptr || _len == 0) {
       return {};
     }
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] == x) {
-        return i;
+    if constexpr (trait::same_<T, i8> || trait::same_<T, u8>) {
+      if (auto p = __builtin_memchr(_ptr, x, _len)) {
+        return static_cast<usize>(static_cast<const T*>(p) - _ptr);
+      }
+    } else {
+      for (auto i = 0UL; i < _len; ++i) {
+        if (_ptr[i] == x) {
+          return i;
+        }
       }
     }
     return {};
