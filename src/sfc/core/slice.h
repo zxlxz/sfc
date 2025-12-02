@@ -120,10 +120,7 @@ struct Slice {
 
   void copy_from_slice(Slice<const T> src) noexcept {
     static_assert(__is_trivially_copyable(T));
-
-    if (_len != src._len) {
-      panicking::panic("Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
-    }
+    panicking::expect(src._ptr != nullptr, "Slice::copy_from_slice: src.ptr == nullptr");
 
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }

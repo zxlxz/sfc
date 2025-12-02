@@ -3,77 +3,163 @@
 
 namespace sfc::option::test {
 
-SFC_TEST(simple) {
-  {
-    const auto opt = Option<int>{};
-    panicking::expect_false(opt.is_some());
-    panicking::expect_true(opt.is_none());
+struct T {
+  int _val = 0;
+
+ public:
+  T() : _val{1} {
+    count() += _val;
   }
 
-  {
-    const auto opt = Option<int>{10};
-    panicking::expect_true(opt.is_some());
-    panicking::expect_false(opt.is_none());
-
-    panicking::expect_eq(*opt, 10);
+  T(T&& other) : _val{other._val} {
+    other._val = 0;
   }
+
+  ~T() {
+    count() -= _val;
+  }
+
+  static auto count() -> i32& {
+    static i32 cnt = 0;
+    return cnt;
+  }
+};
+
+SFC_TEST(basic) {
+  using Option = option::Option<int>;
+
+  const auto none = Option{};
+  panicking::expect(none.is_none());
+  panicking::expect(!none.is_some());
+
+  const auto some = Option{10};
+  panicking::expect(some.is_some());
+  panicking::expect(!some.is_none());
+  panicking::expect_eq(*some, 10);
+}
+
+SFC_TEST(copy) {
+  using Option = option::Option<int>;
+  const auto none = Option{};
+  const auto some = Option{10};
+
+  // copy-ctor
+  {
+    const auto a = none;
+    const auto b = some;
+    panicking::expect(a.is_none());
+    panicking::expect(b.is_some());
+    panicking::expect_eq(*b, 10);
+  }
+
+  // assign
+  {
+    auto x = Option{};
+    x = none;
+    panicking::expect(x.is_none());
+
+    x = some;
+    panicking::expect(x.is_some());
+    panicking::expect_eq(*x, 10);
+  }
+}
+
+SFC_TEST(move) {
+  using Option = option::Option<T>;
+
+  auto a = Option{};
+  auto b = Option{T{}};
+  panicking::expect_eq(T::count(), 1);
+
+  // move
+  {
+    auto x = mem::move(a);
+    panicking::expect_eq(T::count(), 1);
+
+    auto y = mem::move(b);
+    panicking::expect_eq(T::count(), 1);
+  }
+  panicking::expect_eq(T::count(), 0);
+
+  // assign
+  {
+    auto x = Option{};
+    auto y = Option{T{}};
+    panicking::expect_eq(T::count(), 1);
+
+    x = mem::move(a);
+    panicking::expect_eq(T::count(), 1);
+
+    x = mem::move(b);
+    panicking::expect_eq(T::count(), 1);
+
+    y = mem::move(a);
+    panicking::expect_eq(T::count(), 0);
+
+    y = mem::move(b);
+    panicking::expect_eq(T::count(), 0);
+  }
+  panicking::expect_eq(T::count(), 0);
 }
 
 SFC_TEST(eq) {
-  const auto o0 = Option<int>{};
-  const auto o1 = Option<int>{1};
-  const auto o2 = Option<int>{2};
+  using Option = option::Option<int>;
 
-  panicking::expect_eq(o0, o0);
-  panicking::expect_eq(o1, o1);
+  panicking::expect_eq(Option{}, Option{});
+  panicking::expect_eq(Option{1}, Option{1});
 
-  panicking::expect_ne(o0, o1);
-  panicking::expect_ne(o1, o2);
-
-  panicking::expect_eq(*o1, 1);
-  panicking::expect_eq(*o2, 2);
+  panicking::expect_ne(Option{}, Option{1});
+  panicking::expect_ne(Option{1}, Option{2});
 }
 
 SFC_TEST(unwrap) {
-  panicking::expect_eq(Option<int>{}.unwrap_or(1), 1);
+  using Option = option::Option<int>;
 
-  panicking::expect_eq(Option<int>{10}.unwrap(), 10);
-  panicking::expect_eq(Option<int>{10}.unwrap_or(5), 10);
+  panicking::expect_eq(Option{}.unwrap_or(1), 1);
+  panicking::expect_eq(Option{10}.unwrap(), 10);
+  panicking::expect_eq(Option{10}.unwrap_or(5), 10);
 }
 
-SFC_TEST(and) {
-  panicking::expect_eq(Option<int>{} & Option{1}, Option<int>{});
-  panicking::expect_eq(Option<int>{10} & Option{1}, Option<int>{1});
-}
+SFC_TEST(and_or) {
+  using Option = option::Option<int>;
 
-SFC_TEST(or) {
-  panicking::expect_eq(Option<int>{} | Option{1}, Option{1});
-  panicking::expect_eq(Option<int>{10} | Option{1}, Option{10});
+  panicking::expect_eq(Option{} & Option{1}, Option{});
+  panicking::expect_eq(Option{10} & Option{1}, Option{1});
+
+  panicking::expect_eq(Option{} | Option{1}, Option{1});
+  panicking::expect_eq(Option{10} | Option{1}, Option{10});
 }
 
 SFC_TEST(and_then) {
-  auto add = [](auto val) { return [val](auto x) { return Option{x + val}; }; };
+  using Option = option::Option<int>;
+  auto add1 = [](auto x) { return Option{x + 1}; };
 
-  panicking::expect_eq(Option<int>{10}.and_then(add(1)), Option{11});
-  panicking::expect_eq(Option<int>{}.and_then(add(1)), Option<int>{});
+  panicking::expect_eq(Option{10}.and_then(add1), Option{11});
+  panicking::expect_eq(Option{}.and_then(add1), Option{});
 }
 
 SFC_TEST(or_else) {
-  auto make_opt = [](auto val) { return [val]() { return Option{val}; }; };
-  panicking::expect_eq(Option<int>{}.or_else(make_opt(1)), Option{1});
-  panicking::expect_eq(Option<int>{10}.or_else(make_opt(1)), Option{10});
+  using Option = option::Option<int>;
+  auto make_opt = [] { return Option{1}; };
+
+  panicking::expect_eq(Option{}.or_else(make_opt), Option{1});
+  panicking::expect_eq(Option{10}.or_else(make_opt), Option{10});
 }
 
 SFC_TEST(map) {
-  auto add = [](auto val) { return [val](auto x) { return x + val; }; };
-  panicking::expect_eq(Option<int>{}.map(add(1)), Option<int>{});
-  panicking::expect_eq(Option<int>{10}.map(add(1)), Option{11});
+  using Option = option::Option<int>;
+  auto add1 = [](auto x) { return x + 1; };
+
+  panicking::expect_eq(Option{}.map(add1), Option{});
+  panicking::expect_eq(Option{10}.map(add1), Option{11});
 }
 
 SFC_TEST(map_or) {
-  auto add = [](auto val) { return [val](auto x) { return x + val; }; };
-  panicking::expect_eq(Option<int>{}.map_or(5, add(1)), 5);
-  panicking::expect_eq(Option<int>{10}.map_or(5, add(1)), 11);
+  using Option = option::Option<int>;
+  auto add1 = [](auto x) { return x + 1; };
+
+  panicking::expect_eq(Option{}.map_or(5, add1), 5);
+  panicking::expect_eq(Option{10}.map_or(5, add1), 11);
 }
 
 }  // namespace sfc::option::test

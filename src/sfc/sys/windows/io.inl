@@ -1,6 +1,7 @@
 #pragma once
 #ifdef _WIN32
 #include <Windows.h>
+#include <winerror.h>
 
 namespace sfc::sys::io {
 
@@ -11,30 +12,39 @@ static inline auto get_err() -> int {
 }
 
 template <class T>
-static inline auto kind_of(int code) -> T {
+static inline auto map_err(int code) -> T {
   switch (code) {
-    case ERROR_ACCESS_DENIED:              return T::PermissionDenied;
-    case ERROR_ALREADY_EXISTS:             return T::AlreadyExists;
-    case ERROR_FILE_EXISTS:                return T::AlreadyExists;
-    case ERROR_FILE_NOT_FOUND:             return T::NotFound;
-    case ERROR_PATH_NOT_FOUND:             return T::NotFound;
-    case ERROR_INVALID_HANDLE:             return T::InvalidInput;
-    case ERROR_NOT_ENOUGH_MEMORY:          return T::BrokenPipe;
-    case ERROR_BROKEN_PIPE:                return T::BrokenPipe;
-    case ERROR_DISK_FULL:                  return T::Other;
-    case ERROR_IO_PENDING:                 return T::WouldBlock;
-    case ERROR_OPERATION_ABORTED:          return T::Interrupted;
-    case ERROR_TIMEOUT:                    return T::TimedOut;
-    case ERROR_INVALID_DATA:               return T::InvalidData;
-    case ERROR_INVALID_PARAMETER:          return T::InvalidInput;
-    case ERROR_NOT_CONNECTED:              return T::NotConnected;
-    case ERROR_CONNECTION_REFUSED:         return T::ConnectionRefused;
-    case ERROR_CONNECTION_ABORTED:         return T::ConnectionAborted;
-    case ERROR_ADDRESS_ALREADY_ASSOCIATED: return T::AddrInUse;
-    case ERROR_ADDRESS_NOT_ASSOCIATED:     return T::AddrNotAvailable;
-    case ERROR_NO_DATA:                    return T::UnexpectedEof;
-    case ERROR_NOACCESS:                   return T::InvalidInput;
-    default:                               return T::Other;
+    case ERROR_FILE_NOT_FOUND:
+    case ERROR_PATH_NOT_FOUND:    return T::NotFound;
+    case ERROR_ACCESS_DENIED:     return T::PermissionDenied;
+    case WSAECONNREFUSED:         return T::ConnectionRefused;
+    case WSAECONNRESET:           return T::ConnectionReset;
+    case WSAECONNABORTED:         return T::ConnectionAborted;
+    case WSAENOTCONN:             return T::NotConnected;
+    case WSAEADDRINUSE:           return T::AddrInUse;
+    case WSAEADDRNOTAVAIL:        return T::AddrNotAvailable;
+    case WSAENETUNREACH:          return T::NetworkUnreachable;
+    case WSAEHOSTUNREACH:         return T::HostUnreachable;
+    case WSAENETDOWN:             return T::NetworkDown;
+    case ERROR_IO_DEVICE:         return T::BrokenPipe;
+    case ERROR_FILE_EXISTS:
+    case ERROR_ALREADY_EXISTS:    return T::AlreadyExists;
+    case WSAEWOULDBLOCK:          return T::WouldBlock;
+    case ERROR_INVALID_PARAMETER: return T::InvalidInput;
+    case ERROR_INVALID_FUNCTION:  return T::InvalidOperation;
+    case ERROR_OPERATION_ABORTED: return T::Interrupted;
+    case ERROR_NOT_SUPPORTED:     return T::Unsupported;
+    case ERROR_HANDLE_EOF:        return T::UnexpectedEof;
+    case ERROR_DISK_FULL:         return T::StorageFull;
+    case ERROR_DIRECTORY:         return T::NotADirectory;
+    case ERROR_DIR_NOT_EMPTY:     return T::DirectoryNotEmpty;
+    case ERROR_DEVICE_IN_USE:     return T::ResourceBusy;
+    case ERROR_POSSIBLE_DEADLOCK: return T::Deadlock;
+    case ERROR_NOT_ENOUGH_MEMORY:
+    case ERROR_OUTOFMEMORY:       return T::StorageFull;
+    case ERROR_IO_INCOMPLETE:     return T::InProgress;
+    case WSAETIMEDOUT:            return T::TimedOut;
+    default:                      return T::Other;
   }
 }
 

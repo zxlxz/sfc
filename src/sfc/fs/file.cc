@@ -37,7 +37,7 @@ auto OpenOptions::open(Path path) const -> io::Result<File> {
 
   auto file = io::File::from_fd(sys_imp::open(c_path, *this));
   if (!file.is_open()) {
-    return io::Error::last_os_error();
+    return io::last_os_error();
   }
 
   auto res = File{};

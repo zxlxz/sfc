@@ -9,43 +9,27 @@ struct Location {
   int line = __builtin_LINE();
 };
 
-struct PanicInfo {
-  const char* val;
-  Location loc;
-  PanicInfo(const char* s) noexcept : val{s}, loc{} {}
-};
-
 struct ExpectInfo {
   bool val;
   Location loc;
+
   ExpectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
 [[noreturn]] void panic_fmt(Location loc, const auto&... args) noexcept;
 
-[[noreturn]] void panic(PanicInfo info, const auto&... args) noexcept {
-  panic_fmt(info.loc, info.val, args...);
-}
-
-void expect(ExpectInfo info, const auto&... args) noexcept {
+void expect(ExpectInfo info, const auto& fmts, const auto&... args) noexcept {
   if (info.val) {
     return;
   }
-  panicking::panic_fmt(info.loc, args...);
+  panicking::panic_fmt(info.loc, "panicking::expect(`{}`) failed", fmts, args...);
 }
 
-void expect_true(const auto& val, Location loc = {}) noexcept {
-  if (val) {
+void expect(const auto& a, Location loc = {}) noexcept {
+  if (a) {
     return;
   }
-  panicking::panic_fmt(loc, "panicking::expect_true(`{}`) failed", val);
-}
-
-void expect_false(const auto& val, Location loc = {}) noexcept {
-  if (!val) {
-    return;
-  }
-  panicking::panic_fmt(loc, "panicking::expect_false(`{}`) failed", val);
+  panicking::panic_fmt(loc, "panicking::expect(`{}`) failed", a);
 }
 
 void expect_eq(const auto& a, const auto& b, Location loc = {}) noexcept {

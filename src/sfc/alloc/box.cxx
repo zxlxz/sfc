@@ -65,7 +65,7 @@ SFC_TEST(box_fn_copy) {
     panicking::expect_eq(a1(1), 11);
 
     auto b2 = mem::move(a1);
-    panicking::expect_false(bool(a1));
+    panicking::expect(!bool(a1));
   }
   panicking::expect_eq(Allocator::alloc_cnt(), 0);
   panicking::expect_eq(Allocator::dealloc_cnt(), 0);
@@ -85,7 +85,7 @@ SFC_TEST(box_fn_copy) {
     panicking::expect_eq(a3(1), 13);
 
     auto b3 = mem::move(a3);
-    panicking::expect_false(bool(a3));
+    panicking::expect(!bool(a3));
     panicking::expect_eq(b3(1), 13);
   }
   panicking::expect_eq(Allocator::alloc_cnt(), 1);
@@ -124,7 +124,7 @@ SFC_TEST(box_ref) {
 
   auto b2 = mem::move(b1);
   panicking::expect_eq(b2->add(3, 4), 7);
-  panicking::expect_false(bool(b1));
+  panicking::expect(!bool(b1));
 }
 
 }  // namespace sfc::boxed::test

@@ -39,7 +39,7 @@ SFC_TEST(slice) {
 
   auto v = Vec<int>::from({tmp});
   auto s = v.as_slice();
-  panicking::expect_true(s.as_ptr() == v.as_ptr());
+  panicking::expect(s.as_ptr() == v.as_ptr());
   panicking::expect_eq(s.len(), v.len());
 }
 

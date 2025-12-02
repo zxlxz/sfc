@@ -8,27 +8,27 @@ namespace sfc::serde::test {
 SFC_TEST(ser_bool) {
   {
     auto node = serde::serialize(true);
-    panicking::expect_true(node.is<bool>());
-    panicking::expect_true(node.as<bool>());
+    panicking::expect(node.is<bool>());
+    panicking::expect(node.as<bool>());
   }
 
   {
     auto node = serde::serialize(false);
-    panicking::expect_true(node.is<bool>());
-    panicking::expect_false(node.as<bool>());
+    panicking::expect(node.is<bool>());
+    panicking::expect(!node.as<bool>());
   }
 }
 
 SFC_TEST(ser_int) {
   {
     auto node = serde::serialize(-123);
-    panicking::expect_true(node.is<i64>());
+    panicking::expect(node.is<i64>());
     panicking::expect_eq(node.as<i64>(), -123);
   }
 
   {
     auto node = serde::serialize(12345678910U);
-    panicking::expect_true(node.is<i64>());
+    panicking::expect(node.is<i64>());
     panicking::expect_eq(node.as<i64>(), static_cast<i64>(12345678910U));
   }
 }
@@ -36,13 +36,13 @@ SFC_TEST(ser_int) {
 SFC_TEST(ser_flt) {
   {
     auto node = serde::serialize(-1.23);
-    panicking::expect_true(node.is<f64>());
+    panicking::expect(node.is<f64>());
     panicking::expect_flt_eq(node.as<f64>(), -1.23);
   }
 
   {
     auto node = serde::serialize(+1.23);
-    panicking::expect_true(node.is<f64>());
+    panicking::expect(node.is<f64>());
     panicking::expect_flt_eq(node.as<f64>(), +1.23);
   }
 }
@@ -50,13 +50,13 @@ SFC_TEST(ser_flt) {
 SFC_TEST(ser_str) {
   {
     auto node = serde::serialize(Str{""});
-    panicking::expect_true(node.is<String>());
+    panicking::expect(node.is<String>());
     panicking::expect_eq(node.as<String>(), Str{""});
   }
 
   {
     auto node = serde::serialize(Str{"abc"});
-    panicking::expect_true(node.is<String>());
+    panicking::expect(node.is<String>());
     panicking::expect_eq(node.as<String>(), Str{"abc"});
   }
 }
@@ -65,12 +65,12 @@ SFC_TEST(ser_array) {
   {
     const int v[] = {1, 2, 3};
     auto node = serde::serialize(Slice{v});
-    panicking::expect_true(node.is<List>());
+    panicking::expect(node.is<List>());
 
     const auto& list = node.as<List>();
     panicking::expect_eq(list.len(), 3U);
 
-    panicking::expect_true(list[0].is<i64>());
+    panicking::expect(list[0].is<i64>());
 
     panicking::expect_eq(list[0].as<i64>(), 1);
     panicking::expect_eq(list[1].as<i64>(), 2);
@@ -86,12 +86,12 @@ SFC_TEST(ser_vector) {
     v.push(3);
 
     auto node = serde::serialize(v);
-    panicking::expect_true(node.is<List>());
+    panicking::expect(node.is<List>());
 
     const auto& list = node.as<List>();
     panicking::expect_eq(list.len(), 3U);
 
-    panicking::expect_true(list[0].is<i64>());
+    panicking::expect(list[0].is<i64>());
 
     panicking::expect_eq(list[0].as<i64>(), 1);
     panicking::expect_eq(list[1].as<i64>(), 2);
@@ -106,7 +106,7 @@ SFC_TEST(ser_dict) {
     v.insert(String::from("b"), 2);
 
     auto node = serde::serialize(v);
-    panicking::expect_true(node.is<Dict>());
+    panicking::expect(node.is<Dict>());
 
     auto& dict = node.as<Dict>();
     panicking::expect_eq(dict.len(), 2U);
@@ -137,7 +137,7 @@ SFC_TEST(ser_struct) {
       {2, 3},
   };
   const auto node = serialize(val);
-  panicking::expect_true(node.is<Dict>());
+  panicking::expect(node.is<Dict>());
 }
 #endif
 

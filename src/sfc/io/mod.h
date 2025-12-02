@@ -2,9 +2,14 @@
 
 #include "sfc/core/result.h"
 
+namespace sfc::str {
+struct Str;
+}
+
 namespace sfc::io {
 
-enum class ErrorKind {
+enum class Error : i8 {
+  Success,
   NotFound,
   PermissionDenied,
   ConnectionRefused,
@@ -13,35 +18,36 @@ enum class ErrorKind {
   NotConnected,
   AddrInUse,
   AddrNotAvailable,
+  NetworkUnreachable,
+  HostUnreachable,
+  NetworkDown,
   BrokenPipe,
   AlreadyExists,
   WouldBlock,
   InvalidInput,
   InvalidData,
-  TimedOut,
-  WriteZero,
-  UnexpectedEof,
+  InvalidOperation,
   Interrupted,
+  Unsupported,
+  UnexpectedEof,
+  WriteZero,
+  TimedOut,
+  IsADirectory,
+  NotADirectory,
+  DirectoryNotEmpty,
+  NotSeekable,
+  FileTooLarge,
+  ResourceBusy,
+  Deadlock,
+  StorageFull,
+  OutOfMemory,
+  InProgress,
   Other,
 };
 
-struct Error {
-  ErrorKind kind = ErrorKind::Other;
-  int code = 0;
+auto to_str(Error val) noexcept -> str::Str;
 
- public:
-  static auto last_os_error() -> Error;
-
-  static auto from_os_error(int code) -> Error;
-
-  auto operator==(const Error& other) const -> bool {
-    return kind == other.kind && code == other.code;
-  }
-
-  void fmt(auto& f) const {
-    f.write_val(kind);
-  }
-};
+auto last_os_error() noexcept -> Error;
 
 template <class T = void>
 using Result = result::Result<T, Error>;

@@ -126,14 +126,6 @@ class Option {
   Option() noexcept = default;
   Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
 
-  template <class U>
-  auto operator==(const Option<U>& other) const -> bool {
-    if (this->is_none()) {
-      return other.is_none();
-    }
-    return other.is_some() && *_inn == *other._inn;
-  }
-
   explicit operator bool() const noexcept {
     return _inn.is_some();
   }
@@ -230,6 +222,14 @@ class Option {
   }
 
  public:
+  template <class U>
+  auto operator==(const Option<U>& other) const -> bool {
+    if (this->is_none()) {
+      return other.is_none();
+    }
+    return other.is_some() && (*_inn == *other._inn);
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (_inn.is_none()) {

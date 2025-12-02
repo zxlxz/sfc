@@ -12,7 +12,7 @@ struct Write {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(Result{self.write(buf)});
       if (cnt == 0) {
-        return Error{ErrorKind::WriteZero, 0};
+        return Error::WriteZero;
       }
       buf = buf[{cnt, $}];
     }

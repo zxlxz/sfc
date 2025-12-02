@@ -41,41 +41,6 @@ struct Inner {
   }
 };
 
-template <trait::tv_copy_ T, class E>
-struct Inner<T, E> {
-  T _ok = {};
-  E _err = {};
-
- public:
-  [[gnu::always_inline]] explicit Inner(T&& ok) noexcept : _ok{static_cast<T&&>(ok)} {}
-
-  [[gnu::always_inline]] explicit Inner(E&& err) noexcept : _err{static_cast<E&&>(err)} {}
-
-  [[gnu::always_inline]] auto is_ok() const -> bool {
-    return _err == E{};
-  }
-
-  [[gnu::always_inline]] auto is_err() const -> bool {
-    return _err != E{};
-  }
-
-  [[gnu::always_inline]] auto operator*() const -> const T& {
-    return _ok;
-  }
-
-  [[gnu::always_inline]] auto operator*() -> T& {
-    return _ok;
-  }
-
-  [[gnu::always_inline]] auto operator~() const -> const E& {
-    return _err;
-  }
-
-  [[gnu::always_inline]] auto operator~() -> E& {
-    return _err;
-  }
-};
-
 template <class E>
 struct Inner<void, E> {
   static_assert(trait::tv_copy_<E>);
@@ -187,9 +152,9 @@ class [[nodiscard]] Result {
   template <class U>
   auto operator&(Result<U, E> res) && noexcept -> Result<U, E> {
     if (_inn.is_ok()) {
-      return static_cast<T&&>(*_inn);
+      return static_cast<Result<U, E>&&>(res);
     }
-    return static_cast<Result<U, E>&&>(res);
+    return ~_inn;
   }
 
   template <class F>
@@ -208,10 +173,10 @@ class [[nodiscard]] Result {
     return static_cast<E&&>(~_inn);
   }
 
-  template <class O, class F = trait::invoke_t<O(E)>::Err>
-  auto or_else(O&& op) && -> Result<T, F> {
+  template <class O>
+  auto or_else(O&& op) && -> trait::invoke_t<O()> {
     if (_inn.is_err()) {
-      return op(static_cast<E&&>(~_inn));
+      return op();
     }
     return static_cast<T&&>(*_inn);
   }
@@ -233,6 +198,14 @@ class [[nodiscard]] Result {
   }
 
  public:
+  template <class U>
+  auto operator==(const Result<U, E>& other) const -> bool {
+    if (this->is_ok()) {
+      return other.is_ok() && *_inn == *other._inn;
+    }
+    return other.is_err() && ~_inn == ~other._inn;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (_inn.is_ok()) {

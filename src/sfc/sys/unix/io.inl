@@ -20,24 +20,43 @@ static inline auto get_err() -> int {
 }
 
 template <class T>
-static inline auto kind_of(int code) -> T {
+static inline auto map_err(int code) -> T {
   switch (code) {
-    case EACCES:        return T::PermissionDenied;
-    case EPERM:         return T::PermissionDenied;
-    case EADDRINUSE:    return T::AddrInUse;
-    case EADDRNOTAVAIL: return T::AddrNotAvailable;
-    case ECONNABORTED:  return T::ConnectionAborted;
-    case ECONNREFUSED:  return T::ConnectionRefused;
-    case ECONNRESET:    return T::ConnectionReset;
-    case EEXIST:        return T::AlreadyExists;
-    case EINTR:         return T::Interrupted;
-    case EINVAL:        return T::InvalidInput;
-    case ENOENT:        return T::NotFound;
-    case ENOTCONN:      return T::NotConnected;
-    case EPIPE:         return T::BrokenPipe;
-    case ETIMEDOUT:     return T::TimedOut;
-    case EWOULDBLOCK:   return T::WouldBlock;
-    default:            return T::Other;
+    case 0:                    return T::Success;
+    case ENOENT:               return T::NotFound;
+    case EACCES:
+    case EPERM:                return T::PermissionDenied;
+    case ECONNREFUSED:         return T::ConnectionRefused;
+    case ECONNRESET:           return T::ConnectionReset;
+    case ECONNABORTED:         return T::ConnectionAborted;
+    case ENOTCONN:             return T::NotConnected;
+    case EADDRINUSE:           return T::AddrInUse;
+    case EADDRNOTAVAIL:        return T::AddrNotAvailable;
+    case ENETUNREACH:          return T::NetworkUnreachable;
+    case EHOSTUNREACH:         return T::HostUnreachable;
+    case ENETDOWN:             return T::NetworkDown;
+    case EPIPE:                return T::BrokenPipe;
+    case EEXIST:               return T::AlreadyExists;
+    case EAGAIN:
+    case EWOULDBLOCK:          return T::WouldBlock;
+    case EINVAL:               return T::InvalidInput;
+    case EBADMSG:              return T::InvalidData;
+    case ENOTSUP:              return T::InvalidOperation;
+    case EINTR:                return T::Interrupted;
+    case ENOSYS:               return T::Unsupported;
+    case ENOSPC:               return T::WriteZero;
+    case ETIMEDOUT:            return T::TimedOut;
+    case EISDIR:               return T::IsADirectory;
+    case ENOTDIR:              return T::NotADirectory;
+    case ENOTEMPTY:            return T::DirectoryNotEmpty;
+    case ESPIPE:               return T::NotSeekable;
+    case EFBIG:                return T::FileTooLarge;
+    case EBUSY:                return T::ResourceBusy;
+    case EDEADLK:              return T::Deadlock;
+    case ENOSPC:               return T::StorageFull;
+    case ENOMEM:               return T::OutOfMemory;
+    case EINPROGRESS:          return T::InProgress;
+    default:                   return T::Other;
   }
 }
 

@@ -7,10 +7,10 @@ SFC_TEST(property) {
   const auto null_str = String::from("");
 
   panicking::expect_eq(test_str.len(), 3U);
-  panicking::expect_false(test_str.is_empty());
+  panicking::expect(!test_str.is_empty());
 
   panicking::expect_eq(null_str.len(), 0U);
-  panicking::expect_true(null_str.is_empty());
+  panicking::expect(null_str.is_empty());
 }
 
 SFC_TEST(index) {
@@ -36,9 +36,8 @@ SFC_TEST(index_range) {
 
 SFC_TEST(cmp) {
   const auto s = String::from("abcd");
-
-  panicking::expect_true(s == "abcd");
-  panicking::expect_false(s == "abc");
+  panicking::expect_eq(s, "abcd");
+  panicking::expect_ne(s, "abc");
 }
 
 SFC_TEST(find) {

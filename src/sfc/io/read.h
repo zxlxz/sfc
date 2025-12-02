@@ -9,9 +9,9 @@ namespace sfc::io {
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
     while (!buf.is_empty()) {
-      const auto cnt = _TRY(Result{self.read(buf)});
+      const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
-        return Error{ErrorKind::UnexpectedEof, 0};
+        return Error::UnexpectedEof;
       }
       buf = buf[{cnt, $}];
     }
@@ -25,7 +25,7 @@ struct Read {
       buf.reserve(buf_len);
 
       auto tmp = Slice{buf.as_mut_ptr() + buf.len(), buf_len};
-      const auto cnt = _TRY(Result{self.read(tmp)});
+      const auto cnt = _TRY(self.read(tmp));
       if (cnt == 0) {
         break;
       }

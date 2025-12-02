@@ -23,7 +23,7 @@ SFC_TEST(read_exact) {
   auto& r = trait::as_mut<io::Read>(buf);
 
   u8 tmp[4] = {};
-  panicking::expect_true(r.read_exact(tmp).is_ok());
+  panicking::expect(r.read_exact(tmp).is_ok());
   panicking::expect_eq(Str::from_utf8(tmp), "0123");
 
   panicking::expect(r.read_exact(tmp).is_ok());

@@ -40,7 +40,7 @@ SFC_TEST(queue_pop_front) {
   panicking::expect_eq(q.pop_front(), Option{3});
   panicking::expect_eq(q.pop_front(), Option{2});
   panicking::expect_eq(q.pop_front(), Option{1});
-  panicking::expect_false(q.pop_front());
+  panicking::expect(!q.pop_front());
 }
 
 SFC_TEST(queue_pop_back) {
@@ -52,7 +52,7 @@ SFC_TEST(queue_pop_back) {
   panicking::expect_eq(q.pop_back(), Option{3});
   panicking::expect_eq(q.pop_back(), Option{2});
   panicking::expect_eq(q.pop_back(), Option{1});
-  panicking::expect_false(q.pop_back());
+  panicking::expect(!q.pop_back());
 }
 
 }  // namespace sfc::collections::test

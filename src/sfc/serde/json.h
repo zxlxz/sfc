@@ -179,7 +179,7 @@ class Deserializer {
       _TRY(this->extract_keyword("null"));
       return {};
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return io::Error::InvalidData;
   }
 
   auto deserialize_bool() -> io::Result<bool> {
@@ -189,7 +189,7 @@ class Deserializer {
       _TRY(this->extract_keyword(b ? Str{"true"} : Str{"false"}));
       return b;
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return io::Error::InvalidData;
   }
 
   template <class T>
@@ -202,7 +202,7 @@ class Deserializer {
         return *opt;
       }
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return io::Error::InvalidData;
   }
 
   template <class T>
@@ -215,7 +215,7 @@ class Deserializer {
         return *opt;
       }
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return io::Error::InvalidData;
   }
 
   auto deserialize_string() -> io::Result<String> {
@@ -224,7 +224,7 @@ class Deserializer {
       auto b = _TRY(this->extract_string());
       return b;
     }
-    return io::Error{io::ErrorKind::InvalidData};
+    return io::Error::InvalidData;
   }
 
   class DesSeq;
@@ -257,7 +257,7 @@ class Deserializer {
 
     const auto bytes = _TRY(_read.peak(1));
     if (bytes.is_empty()) {
-      return io::Error{io::ErrorKind::UnexpectedEof};
+      return io::Error::UnexpectedEof;
     }
     return char(bytes[0]);
   }
@@ -265,7 +265,7 @@ class Deserializer {
   auto extract_keyword(Str s) -> io::Result<> {
     const auto bytes = _TRY(_read.peak(s.len()));
     if (bytes != s.as_bytes()) {
-      return io::Error{io::ErrorKind::InvalidData};
+      return io::Error::InvalidData;
     }
     return {};
   }
@@ -312,13 +312,13 @@ class Deserializer<R>::DesSeq {
 
   auto next() -> io::Result<Option<Item>> {
     if (_ended) {
-      return io::Error{io::ErrorKind::InvalidData};
+      return io::Error::InvalidData;
     }
 
     if (_count == 0) {
       const auto c = _TRY(_inn.peak());
       if (c != '[') {
-        return io::Error{io::ErrorKind::InvalidData};
+        return io::Error::InvalidData;
       }
       _inn._read.consume(1);
     }
@@ -331,7 +331,7 @@ class Deserializer<R>::DesSeq {
 
     if (_count++ != 0) {
       if (c != ',') {
-        return io::Error{io::ErrorKind::InvalidData};
+        return io::Error::InvalidData;
       }
       _inn._read.consume(1);
     }
@@ -363,7 +363,7 @@ class Deserializer<R>::DesMap {
     auto extract_val() -> io::Result<T> {
       const auto c = _TRY(_inn.peak());
       if (c != ':') {
-        return io::Error{io::ErrorKind::InvalidData};
+        return io::Error::InvalidData;
       }
       _inn._read.consume(1);
       return _inn.template deserialize<T>();
@@ -372,13 +372,13 @@ class Deserializer<R>::DesMap {
 
   auto next() -> io::Result<Option<Item>> {
     if (_ended) {
-      return io::Error{io::ErrorKind::InvalidData};
+      return io::Error::InvalidData;
     }
 
     if (_count == 0) {
       const auto c = _TRY(_inn.peak());
       if (c != '{') {
-        return io::Error{io::ErrorKind::InvalidData};
+        return io::Error::InvalidData;
       }
       _inn._read.consume(1);
     }
@@ -391,7 +391,7 @@ class Deserializer<R>::DesMap {
 
     if (_count++ != 0) {
       if (c != ',') {
-        return io::Error{io::ErrorKind::InvalidData};
+        return io::Error::InvalidData;
       }
       _inn._read.consume(1);
     }

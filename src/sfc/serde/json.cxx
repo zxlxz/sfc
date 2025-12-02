@@ -40,7 +40,7 @@ SFC_TEST(serialize_map) {
 
 SFC_TEST(deserialize_simple) {
   // null
-  { panicking::expect_true(Deserializer{"null"}.deserialize_null().is_ok()); }
+  { panicking::expect(Deserializer{"null"}.deserialize_null().is_ok()); }
 
   // bool
   {
