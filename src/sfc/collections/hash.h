@@ -369,7 +369,7 @@ class HashSet {
  public:
   HashSet() = default;
 
-  ~HashSet() {}
+  ~HashSet() = default;
 
   HashSet(HashSet&& other) noexcept = default;
 

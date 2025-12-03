@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sfc/core/panicking.h"
-#include "sfc/core/trait.h"
+#include "sfc/core/ops.h"
 
 namespace sfc::option {
 
@@ -191,14 +191,14 @@ class Option {
   }
 
   template <class F>
-  auto and_then(F&& op) && -> trait::invoke_t<F(T)> {
+  auto and_then(F&& op) && noexcept -> ops::invoke_t<F(T)> {
     if (_inn.is_none()) {
       return {};
     }
     return op(static_cast<T&&>(*_inn));
   }
 
-  auto or_else(auto&& f) && -> Option<T> {
+  auto or_else(auto&& f) && noexcept -> Option<T> {
     if (_inn.is_some()) {
       return static_cast<T&&>(*_inn);
     }
@@ -206,7 +206,7 @@ class Option {
   }
 
   template <class F>
-  auto map(F&& f) -> Option<trait::invoke_t<F(T)>> {
+  auto map(F&& f) -> Option<ops::invoke_t<F(T)>> {
     if (_inn.is_none()) {
       return {};
     }
@@ -220,6 +220,10 @@ class Option {
     }
     return f(static_cast<T&&>(*_inn));
   }
+
+ public:
+  // to result
+  auto ok_or(auto err);
 
  public:
   template <class U>

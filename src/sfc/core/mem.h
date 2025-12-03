@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::mem {
 
@@ -21,11 +21,26 @@ inline void swap(T& x, T& y) noexcept {
   y = static_cast<T&&>(z);
 }
 
-template <class T>
-inline auto replace(T& dst, T val) noexcept -> T {
-  auto res = static_cast<T&&>(dst);
-  dst = static_cast<T&&>(val);
-  return res;
+template <class T, class U>
+inline void assign(T& dst, U&& src) noexcept {
+  if constexpr (requires { dst = static_cast<U&&>(src); }) {
+    dst = static_cast<U&&>(src);
+  } else {
+    dst.~T();
+    new (&dst) T{static_cast<U&&>(src)};
+  }
+}
+
+template <class T, class U>
+inline auto replace(T& dst, U&& src) noexcept -> T {
+  auto tmp = static_cast<T&&>(dst);
+  if constexpr (requires { dst = static_cast<U&&>(src); }) {
+    dst = static_cast<U&&>(src);
+  } else {
+    dst.~T();
+    new (&dst) T{static_cast<U&&>(src)};
+  }
+  return tmp;
 }
 
 template <class T>
@@ -35,15 +50,13 @@ inline auto take(T& dst) noexcept -> T {
   return res;
 }
 
-template <class T>
+template <trait::tv_copy_ T>
 inline auto as_bytes(const T& x) noexcept -> const u8 (&)[sizeof(T)] {
-  static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
 }
 
-template <class T>
+template <trait::tv_copy_ T>
 inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
-  static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<u8(&)[sizeof(T)]>(x);
 }
 

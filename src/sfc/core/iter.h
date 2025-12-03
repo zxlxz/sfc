@@ -84,7 +84,7 @@ struct Iterator {
     return accum;
   }
 
-  template <class F, class B = trait::invoke_t<F(Item, Item)>>
+  template <class F, class B = ops::invoke_t<F(Item, Item)>>
   auto reduce(this auto&& self, F&& f) -> Option<B> {
     if (!self) {
       return {};

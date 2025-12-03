@@ -37,7 +37,7 @@ class [[nodiscard]] String {
   }
 
   operator Str() const noexcept {
-    return Str{_vec.as_ptr(), _vec.len()};
+    return Str::from_utf8(_vec.as_slice());
   }
 
   auto as_ptr() const -> const u8* {
@@ -53,7 +53,7 @@ class [[nodiscard]] String {
   }
 
   auto as_str() const -> Str {
-    return Str{_vec.as_ptr(), _vec.len()};
+    return Str::from_utf8(_vec.as_slice());
   }
 
   auto is_empty() const -> bool {
@@ -87,7 +87,7 @@ class [[nodiscard]] String {
 
   auto operator[](ops::Range ids) const -> Str {
     const auto v = _vec[ids];
-    return Str{v._ptr, v._len};
+    return Str::from_utf8(v);
   }
 
   auto iter() const {

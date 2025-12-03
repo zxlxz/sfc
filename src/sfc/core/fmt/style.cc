@@ -81,7 +81,7 @@ struct StyleStr {
   }
 };
 
-auto Style::from_str(str::Str s) -> option::Option<Style> {
+auto Style::from_str(str::Str s) noexcept -> Option<Style> {
   if (s[0] == ':') {
     s = s[{1, ops::$}];
   }

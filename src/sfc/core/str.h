@@ -14,20 +14,20 @@ struct Str {
 
   constexpr Str(const char* pat, usize n) noexcept : _ptr{pat}, _len{n} {}
 
-  constexpr Str(const u8* pat, usize n) noexcept
-      : _ptr{static_cast<const char*>(static_cast<const void*>(pat))}, _len{n} {}
-
   template <usize N>
   constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+
+  static constexpr auto from_cstr(const char* s) noexcept -> Str {
+    auto n = 0UZ;
+    while (s[n] != '\0') {
+      ++n;
+    }
+    return Str{s, n};
+  }
 
   static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto pat = static_cast<const char*>(static_cast<const void*>(s._ptr));
     return {pat, s._len};
-  }
-
-  static auto from_cstr(const char* s) noexcept -> Str {
-    const auto n = s == nullptr ? 0 : __builtin_strlen(s);
-    return Str{s, n};
   }
 
   static auto from(const auto& f) noexcept -> Str {
@@ -35,8 +35,10 @@ struct Str {
       return f.as_str();
     } else if constexpr (requires { Str{f}; }) {
       return Str{f};
-    } else if constexpr (requires { static_cast<const char*>(f); }) {
+    } else if constexpr (requires { Str::from_cstr(f); }) {
       return Str::from_cstr(f);
+    } else if constexpr (requires { Str::from_utf8(f); }) {
+      return Str::from_utf8(f);
     } else {
       static_assert(false, "Str::from: unsupported type");
     }
@@ -115,16 +117,26 @@ struct Str {
   auto trim_end_matches(auto&& pat) const -> Str;
   auto trim_matches(auto&& pat) const -> Str;
 
-  auto trim_start() const -> Str {
-    return this->trim_start_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
+  auto trim_start() const noexcept -> Str {
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    auto i = 0U;
+    while (i < _len && is_space(_ptr[i])) {
+      ++i;
+    }
+    return Str{_ptr + i, _len - i};
   }
 
-  auto trim_end() const -> Str {
-    return this->trim_end_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
+  auto trim_end() const noexcept -> Str {
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    auto i = _len;
+    while (i > 0 && is_space(_ptr[i - 1])) {
+      --i;
+    }
+    return Str{_ptr, i};
   }
 
-  auto trim() const -> Str {
-    return this->trim_matches([](char c) -> bool { return c == ' ' || ('\x09' <= c && c <= '\x0d'); });
+  auto trim() const noexcept -> Str {
+    return this->trim_start().trim_end();
   }
 
  public:
@@ -385,7 +397,7 @@ struct StrSearcher {
 template <class P>
 auto into_searcher(P&& pattern, Str haystack) {
   if constexpr (requires { Str{pattern}; }) {
-    return StrSearcher{haystack, Str{pattern}};
+    return StrSearcher{haystack, pattern};
   } else if constexpr (requires { static_cast<char>(pattern); }) {
     return CharSearcher{haystack, static_cast<char>(pattern)};
   } else if constexpr (requires { pattern(' '); }) {

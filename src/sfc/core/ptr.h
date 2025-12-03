@@ -12,7 +12,8 @@ struct Unique {
   T* _ptr = nullptr;
 
  public:
-  Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
+  Unique() noexcept = default;
+  Unique(T* ptr) noexcept : _ptr{ptr} {}
   ~Unique() noexcept = default;
 
   Unique(const Unique&) noexcept = default;
@@ -59,7 +60,7 @@ struct Unique {
 
 template <class T>
 inline auto read(T* src) noexcept -> T {
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (trait::tv_copy_<T>) {
     return *src;
   } else {
     auto val = static_cast<T&&>(*src);
@@ -69,27 +70,19 @@ inline auto read(T* src) noexcept -> T {
 }
 
 template <class T>
-inline auto read(const T* src) noexcept -> T {
-  static_assert(__is_trivially_copyable(T));
-  return *src;
-}
-
-template <class T>
 inline void write(T* dst, auto&& val) noexcept {
   new (dst) T{static_cast<decltype(val)&&>(val)};
 }
 
-template <class T>
+template <trait::tv_copy_ T>
 inline auto read_unaligned(const void* src) noexcept -> T {
-  static_assert(__is_trivially_copyable(T));
   auto res = T{};
   __builtin_memcpy(&res, src, sizeof(T));
   return res;
 }
 
-template <class T>
+template <trait::tv_copy_ T>
 inline void write_unaligned(void* dst, const T& val) noexcept {
-  static_assert(__is_trivially_copyable(T));
   __builtin_memcpy(dst, &val, sizeof(T));
 }
 
@@ -105,14 +98,14 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
 }
 
 template <class T>
-inline void drop_in_place(T* ptr, usize cnt) {
+inline void drop_in_place(T* ptr, usize cnt) noexcept {
   for (auto i = 0UL; i < cnt; ++i) {
     ptr[i].~T();
   }
 }
 
 template <class T>
-inline void copy(const T* src, T* dst, usize cnt) {
+inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -133,7 +126,7 @@ inline void copy(const T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
+inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -141,21 +134,14 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) {
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    if (dst < src) {
-      for (auto idx = 0UL; idx < cnt; ++idx) {
-        dst[idx] = src[idx];
-      }
-    } else {
-      for (const auto end = src; cnt > 0; --cnt) {
-        dst[cnt - 1] = src[cnt - 1];
-      }
+    for (auto idx = 0UL; idx < cnt; ++idx) {
+      dst[idx] = src[idx];
     }
   }
 }
 
-template <class T>
-inline void uninit_copy(const T* src, T* dst, usize cnt) {
-  static_assert(__is_constructible(T, const T&));
+template <trait::copy_ T>
+inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0 || !src || !dst) {
     return;
   }
@@ -170,7 +156,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) {
+inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
@@ -186,7 +172,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) {
 }
 
 template <class T>
-inline void shift_elements_left(T* src, usize len, usize offset) {
+inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) {
     return;
   }
@@ -208,7 +194,7 @@ inline void shift_elements_left(T* src, usize len, usize offset) {
 }
 
 template <class T>
-inline void shift_elements_right(T* src, usize len, usize offset) {
+inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) {
     return;
   }
@@ -227,40 +213,6 @@ inline void shift_elements_right(T* src, usize len, usize offset) {
       src[idx].~T();
     }
   }
-}
-
-template <class T>
-inline auto pop_front(T* ptr, usize len) -> T {
-  auto res = static_cast<T&&>(ptr[0]);
-  if constexpr (__is_trivially_copyable(T)) {
-    if (len > 1) {
-      __builtin_memmove(ptr, ptr + 1, (len - 1) * sizeof(T));
-    }
-  } else {
-    for (auto idx = 1UL; idx < len; ++idx) {
-      ptr[idx - 1] = static_cast<T&&>(ptr[idx]);
-    }
-  }
-  ptr[len - 1].~T();
-  return res;
-}
-
-template <class T>
-inline void push_front(T* ptr, usize len, auto&& val) {
-  if (len == 0) {
-    new (ptr) T{static_cast<decltype(val)&&>(val)};
-    return;
-  }
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(ptr + 1, ptr, len * sizeof(T));
-  } else {
-    new (&ptr[len]) T{static_cast<T&&>(ptr[len - 1])};
-    for (auto idx = len - 1; idx > 0; --idx) {
-      ptr[idx] = static_cast<T&&>(ptr[idx - 1]);
-    }
-  }
-  ptr[0] = static_cast<decltype(val)&&>(val);
 }
 
 }  // namespace sfc::ptr

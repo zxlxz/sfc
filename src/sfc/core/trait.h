@@ -32,31 +32,13 @@ template <class T>
 concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
 
 template <class T>
+concept copy_ = __is_constructible(T, const T&);
+
+template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
 
 template <class T>
 using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
-
-template <class X>
-struct Fn {
-  using Output = typename Fn<decltype(X::operator())>::Output;
-};
-
-template <class R, class... T>
-struct Fn<R(T...)> {
-  using Output = R;
-};
-
-template <class X>
-struct Invoke;
-
-template <class F, class... T>
-struct Invoke<F(T...)> {
-  static auto operator()(F f, T... t) -> decltype(f((T&&)t...));
-};
-
-template <class X>
-using invoke_t = typename Fn<Invoke<X>>::Output;
 
 template <class I, class X>
 struct Impl : I, X {

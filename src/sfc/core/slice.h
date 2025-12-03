@@ -26,46 +26,38 @@ struct Slice {
   usize _len = 0;
 
  public:
-  constexpr Slice() noexcept = default;
+  [[gnu::always_inline]] constexpr Slice() noexcept = default;
 
-  constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+  [[gnu::always_inline]] constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+  [[gnu::always_inline]] constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  auto as_ptr() const noexcept -> const T* {
+  [[gnu::always_inline]] auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
 
-  auto as_mut_ptr() noexcept -> T* {
+  [[gnu::always_inline]] auto as_mut_ptr() noexcept -> T* {
     return _ptr;
   }
 
-  auto len() const noexcept -> usize {
+  [[gnu::always_inline]] auto len() const noexcept -> usize {
     return _len;
   }
 
-  auto is_empty() const noexcept -> bool {
+  [[gnu::always_inline]] auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  explicit operator bool() const noexcept {
+  [[gnu::always_inline]] explicit operator bool() const noexcept {
     return _len != 0;
   }
 
-  operator Slice<const T>() const noexcept {
+  [[gnu::always_inline]] operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 
  public:
-  auto get_unchecked(usize idx) const noexcept -> const T& {
-    return _ptr[idx];
-  }
-
-  auto get_unchecked_mut(usize idx) noexcept -> T& {
-    return _ptr[idx];
-  }
-
   auto operator[](usize idx) const noexcept -> const T& {
     panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
@@ -90,12 +82,12 @@ struct Slice {
 
   auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
     const auto x = mid < _len ? mid : _len;
-    return Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
+    return {Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
   }
 
   auto split_at_mut(usize mid) noexcept -> Tuple<Slice, Slice> {
     const auto x = mid < _len ? mid : _len;
-    return Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
+    return {Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
   }
 
  public:

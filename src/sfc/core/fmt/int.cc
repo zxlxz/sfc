@@ -99,16 +99,15 @@ auto Debug::to_str(Slice<char> buf, const void* ptr, Style style) noexcept -> St
   return ss.as_str();
 }
 
-template auto Debug::to_str(Slice<char>, signed char, Style) -> Str;
-template auto Debug::to_str(Slice<char>, short, Style) -> Str;
-template auto Debug::to_str(Slice<char>, int, Style) -> Str;
-template auto Debug::to_str(Slice<char>, long, Style) -> Str;
-template auto Debug::to_str(Slice<char>, long long, Style) -> Str;
-
-template auto Debug::to_str(Slice<char>, unsigned char, Style) -> Str;
-template auto Debug::to_str(Slice<char>, unsigned short, Style) -> Str;
-template auto Debug::to_str(Slice<char>, unsigned int, Style) -> Str;
-template auto Debug::to_str(Slice<char>, unsigned long, Style) -> Str;
-template auto Debug::to_str(Slice<char>, unsigned long long, Style) -> Str;
+template auto Debug::to_str(Slice<char>, signed char, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, short, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, int, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, long, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, long long, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, unsigned char, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, unsigned short, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, unsigned int, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, unsigned long, Style) noexcept-> Str;
+template auto Debug::to_str(Slice<char>, unsigned long long, Style) noexcept-> Str;
 
 }  // namespace sfc::fmt

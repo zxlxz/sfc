@@ -4,406 +4,269 @@
 
 namespace sfc::serde::json {
 
-template <class W>
-class Serializer {
-  W& _write;
+enum class Token {
+  Eof,
+  Comma,        // ','
+  Colon,        // ':'
+  DoubleQuote,  // '"'
+  ArrayBegin,   // '['
+  ArrayEnd,     // ']'
+  ObjectBegin,  // '{'
+  ObjectEnd,    // '}'
+  Null,         // 'null'
+  True,         // 'true'
+  False,        // 'false'
+  Other,        // number, etc.
+};
+
+enum class Error : i8 {
+  Success,
+  IoError,              // I/O error
+  EofWhileParsing,      // EOF while parsing keyword
+  ExpectedComma,        // expected ','
+  ExpectedDoubleQuote,  // expected '"'
+  ExpectedColon,        // expected ':'
+  ExpectedArrayBegin,   // expected '['
+  ExpectedArrayEnd,     // expected ']'
+  ExpectedObjectBegin,  // expected '{'
+  ExpectedObjectEnd,    // expected '}'
+  InvalidKeyword,       // invalid keyword (true, false, null)
+  InvalidNumber,        // invalid number format
+  InvalidString,        // invalid string format (e.g. invalid escape sequence)
+};
+
+template <class T = void>
+using Result = result::Result<T, Error>;
+
+struct Serializer {
+  String& _buf;
 
  public:
-  explicit Serializer(W& write) noexcept : _write{write} {}
-  ~Serializer() noexcept = default;
-  Serializer(const Serializer&) noexcept = delete;
-
- public:
-  template <class T>
-  auto serialize(const T& val) {
-    if constexpr (requires { val.serialize(*this); }) {
-      return val.serialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
-      return this->serialize_bool(val);
-    } else if constexpr (trait::same_<T, char>) {
-      return this->serialize_char(val);
-    } else if constexpr (trait::int_<T>) {
-      return this->serialize_int(val);
-    } else if constexpr (trait::flt_<T>) {
-      return this->serialize_flt(val);
-    } else if constexpr (requires { Str{val}; }) {
-      return this->serialize_str(val);
-    } else if constexpr (requires { Slice{val}; }) {
-      return Slice{val}.serialize(*this);
-    } else {
-      static_assert(false, "Serializer::serialize: not serializable");
-    }
+  void serialize_null() noexcept {
+    this->write_str("null");
   }
 
-  void serialize_null() {
-    const auto s = "null";
-    _write.write_str(s);
+  void serialize_bool(bool val) noexcept {
+    this->write_tok(val ? Token::True : Token::False);
   }
 
-  void serialize_bool(const bool& val) {
-    const auto s = val ? Str{"true"} : Str{"false"};
-    this->write_str(s);
-  }
-
-  void serialize_char(const char& val) {
+  void serialize_char(char val) noexcept {
     const char s[] = {'"', val, '"'};
-    _write.write_str({s, 3});
+    this->write_str({s, 3});
   }
 
-  void serialize_int(const trait::int_ auto& val) {
-    char buf[32] = {};
+  void serialize_int(trait::int_ auto val) noexcept {
+    char buf[32];
     const auto s = fmt::Debug::to_str(buf, val);
-    this->write_str(s);
+    this->write_num(s);
   }
 
-  void serialize_flt(const trait::flt_ auto& val) {
-    char buf[32] = {};
+  void serialize_flt(trait::flt_ auto val) noexcept {
+    char buf[32];
     const auto s = fmt::Debug::to_str(buf, val);
-    this->write_str(s);
+    this->write_num(s);
   }
 
-  void serialize_str(Str val) {
-    this->write_str("\"");
+  void serialize_str(Str val) noexcept {
     this->write_str(val);
-    this->write_str("\"");
   }
 
-  void serialize_bin(Slice<const u8> val) {
+  void serialize_bin(Slice<const u8> val) noexcept {
     const auto s = base64::encode(val);
     this->serialize_str(s);
   }
 
-  struct SerSeq;
-  auto serialize_seq() -> SerSeq {
-    return SerSeq{*this};
-  }
+  class SerArray;
+  auto serialize_seq() noexcept -> SerArray;
 
-  struct SerMap;
-  auto serialize_map() -> SerMap {
-    return SerMap{*this};
-  }
+  class SerObject;
+  auto serialize_map() noexcept -> SerObject;
 
  private:
-  void write_str(Str s) {
-    if constexpr (requires { _write.write_str(s); }) {
-      _write.write_str(s);
-    } else if constexpr (requires { _write.push_str(s); }) {
-      _write.push_str(s);
-    } else {
-      _write.write(s.as_bytes());
-    }
-  }
+  void write_tok(Token tok) noexcept;
+  void write_str(Str s) noexcept;
+  void write_key(Str s) noexcept;
+  void write_num(Str s) noexcept;
 };
 
-template <class W>
-class Serializer<W>::SerSeq {
+class Serializer::SerArray {
   Serializer& _inn;
   u32 _cnt = 0;
 
  public:
-  explicit SerSeq(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_str("[");
+  explicit SerArray(Serializer& inn) noexcept : _inn{inn} {
+    _inn.write_tok(Token::ArrayBegin);
   }
 
-  ~SerSeq() noexcept {
-    _inn.write_str("]");
+  ~SerArray() noexcept {
+    _inn.write_tok(Token::ArrayEnd);
   }
 
-  SerSeq(const SerSeq&) noexcept = delete;
+  SerArray(const SerArray&) = delete;
 
-  void serialize_element(const auto& item) {
+  void serialize_element(const auto& item) noexcept {
     if (_cnt++ != 0) {
-      _inn.write_str(",");
+      _inn.write_tok(Token::Comma);
     }
-    _inn.serialize(item);
+    Serialize::serialize(item, _inn);
   }
 };
 
-template <class W>
-class Serializer<W>::SerMap {
+class Serializer::SerObject {
   Serializer& _inn;
   u32 _cnt = 0;
 
  public:
-  explicit SerMap(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_str("{");
+  SerObject(Serializer& inn) noexcept : _inn{inn} {
+    _inn.write_tok(Token::ObjectBegin);
   }
 
-  ~SerMap() noexcept {
-    _inn.write_str("}");
+  ~SerObject() noexcept {
+    _inn.write_tok(Token::ObjectEnd);
   }
 
-  SerMap(const SerMap&) noexcept = delete;
+  SerObject(const SerObject&) = delete;
 
-  void serialize_entry(Str key, const auto& val) {
+  void serialize_entry(Str key, const auto& val) noexcept {
     if (_cnt++ != 0) {
-      _inn.write_str(",");
+      _inn.write_tok(Token::Comma);
     }
-    _inn.write_str("\"");
-    _inn.write_str(key);
-    _inn.write_str("\":");
-    return _inn.serialize(val);
+    _inn.write_key(key);
+    Serialize::serialize(val, _inn);
   }
 };
 
-template <class R>
-class Deserializer {
-  io::BufReader<R> _read;
+struct Deserializer {
+  Str _buf;
 
  public:
-  explicit Deserializer(R&& read) noexcept : _read{static_cast<R&&>(read)} {}
-  ~Deserializer() noexcept = default;
-  Deserializer(const Deserializer&) noexcept = delete;
+  auto deserialize_null() noexcept -> Result<> {
+    return this->extract_tok(Token::Null);
+  }
 
- public:
-  template <class T>
-  auto deserialize() -> io::Result<T> {
-    if constexpr (requires { T::deserialize(*this); }) {
-      return _TRY(T::deserialize(*this));
-    } else if constexpr (trait::same_<T, bool>) {
-      return _TRY(this->deserialize_bool());
-    } else if constexpr (trait::int_<T>) {
-      return _TRY(this->template deserialize_int<T>());
-    } else if constexpr (trait::flt_<T>) {
-      return _TRY(this->template deserialize_flt<T>());
-    } else if constexpr (trait::same_<T, String>) {
-      return _TRY(this->deserialize_string());
-    } else {
-      static_assert(false, "Deserialize::deserialize: not deserializable");
+  auto deserialize_bool() noexcept -> Result<bool> {
+    const auto next_tok = this->next_token();
+    switch (next_tok) {
+      case Token::True:  this->consume(4); return true;
+      case Token::False: this->consume(5); return false;
+      case Token::Eof:   return Error::EofWhileParsing;
+      default:           return Error::InvalidKeyword;
     }
   }
 
-  auto deserialize_null() -> io::Result<> {
-    const auto c = _TRY(this->peak());
-    if (c == 'n') {
-      _TRY(this->extract_keyword("null"));
-      return {};
+  template <trait::int_ T>
+  auto deserialize_int() noexcept -> Result<T> {
+    const auto num_str = this->extract_num();
+    if (num_str.is_err()) {
+      return ~num_str;
     }
-    return io::Error::InvalidData;
-  }
-
-  auto deserialize_bool() -> io::Result<bool> {
-    const auto c = _TRY(this->peak());
-    if (c == 't' || c == 'f') {
-      const auto b = c == 't';
-      _TRY(this->extract_keyword(b ? Str{"true"} : Str{"false"}));
-      return b;
+    const auto num_val = num_str->template parse<T>();
+    if (num_val.is_err()) {
+      return Error::InvalidNumber;
     }
-    return io::Error::InvalidData;
+    return *num_val;
   }
 
-  template <class T>
-  auto deserialize_int() -> io::Result<T> {
-    static_assert(trait::int_<T>);
-    const auto c = _TRY(this->peak());
-    if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
-      const auto s = _TRY(this->extract_num());
-      if (const auto opt = s.template parse<T>()) {
-        return *opt;
-      }
+  template <trait::flt_ T>
+  auto deserialize_flt() -> Result<T> {
+    const auto num_str = this->extract_num();
+    if (num_str.is_err()) {
+      return ~num_str;
     }
-    return io::Error::InvalidData;
-  }
-
-  template <class T>
-  auto deserialize_flt() -> io::Result<T> {
-    static_assert(trait::flt_<T>);
-    const auto c = _TRY(this->peak());
-    if (c == '+' || c == '-' || ('0' <= c && c <= '9')) {
-      const auto s = _TRY(this->extract_num());
-      if (const auto opt = s.template parse<T>()) {
-        return *opt;
-      }
+    const auto num_val = num_str->template parse<T>();
+    if (num_val.is_err()) {
+      return Error::InvalidNumber;
     }
-    return io::Error::InvalidData;
+    return *num_val;
   }
 
-  auto deserialize_string() -> io::Result<String> {
-    const auto c = _TRY(this->peak());
-    if (c == '"') {
-      auto b = _TRY(this->extract_string());
-      return b;
-    }
-    return io::Error::InvalidData;
+  auto deserialize_str() noexcept -> Result<Str> {
+    return this->extract_str();
   }
 
-  class DesSeq;
-  auto deserialize_seq() -> DesSeq {
-    return DesSeq{*this};
-  }
+  struct DesArray;
+  auto deserialize_seq(auto&& f) -> Result<>;
 
-  class DesMap;
-  auto deserialize_map() -> DesMap {
-    return DesMap{*this};
-  }
+  struct DesObject;
+  auto deserialize_map(auto&& f) -> Result<>;
 
  private:
-  auto skip_blanks() -> io::Result<> {
-    const auto not_blank = +[](char c) { return !(c == ' ' || ('\x09' <= c && c <= '\x0d')); };
-    while (true) {
-      const auto buf = _TRY(_read.fill_buf());
-      const auto pos = buf.iter().position(not_blank);
-      const auto cnt = pos ? *pos : buf.len();
-      _read.consume(cnt);
-      if (pos) {
-        break;
-      }
-    }
-    return {};
-  }
+  void consume(usize n) noexcept;
+  auto next_token() noexcept -> Token;
 
-  auto peak() -> io::Result<char> {
-    _TRY(this->skip_blanks());
-
-    const auto bytes = _TRY(_read.peak(1));
-    if (bytes.is_empty()) {
-      return io::Error::UnexpectedEof;
-    }
-    return char(bytes[0]);
-  }
-
-  auto extract_keyword(Str s) -> io::Result<> {
-    const auto bytes = _TRY(_read.peak(s.len()));
-    if (bytes != s.as_bytes()) {
-      return io::Error::InvalidData;
-    }
-    return {};
-  }
-
-  auto extract_num() -> io::Result<Str> {
-    static const auto not_digits = +[](char c) { return !('0' <= c && c <= '9' || c == '.' || c == '+' || c == '-'); };
-
-    const auto bytes = _TRY(_read.peak(64U));
-    const auto position = bytes.iter().position(not_digits).unwrap_or(bytes.len());
-    const auto digits = Str::from_utf8(bytes[{0, position}]);
-    _read.consume(digits.len());
-    return digits;
-  }
-
-  auto extract_string() -> io::Result<String> {
-    _read.consume(1);
-
-    auto res = String{};
-    _TRY(_read.read_until('"', res.as_mut_vec()));
-    res.pop();
-    return res;
-  }
+  auto extract_tok(Token tok) noexcept -> Result<>;
+  auto extract_num() noexcept -> Result<Str>;
+  auto extract_str() noexcept -> Result<Str>;
+  auto extract_key() noexcept -> Result<Str>;
+  auto extract_next(usize n) noexcept -> Result<bool>;
 };
 
-template <class R>
-class Deserializer<R>::DesSeq {
+struct Deserializer::DesArray {
   Deserializer& _inn;
-  usize _count = 0;
-  bool _ended = false;
 
  public:
-  explicit DesSeq(Deserializer& des) noexcept : _inn{des} {}
-  ~DesSeq() noexcept = default;
-  DesSeq(const DesSeq&) noexcept = delete;
-
-  struct Item {
-    Deserializer& _inn;
-
-    template <class T>
-    auto extract_item() -> io::Result<T> {
-      return _inn.template deserialize<T>();
-    }
-  };
-
-  auto next() -> io::Result<Option<Item>> {
-    if (_ended) {
-      return io::Error::InvalidData;
-    }
-
-    if (_count == 0) {
-      const auto c = _TRY(_inn.peak());
-      if (c != '[') {
-        return io::Error::InvalidData;
-      }
-      _inn._read.consume(1);
-    }
-
-    const auto c = _TRY(_inn.peak());
-    if (c == ']') {
-      _ended = true;
-      return Option<Item>{};
-    }
-
-    if (_count++ != 0) {
-      if (c != ',') {
-        return io::Error::InvalidData;
-      }
-      _inn._read.consume(1);
-    }
-
-    return Option<Item>{{_inn}};
-  }
+  template <class T>
+  auto next_element() noexcept -> Result<T>;
 };
 
-template <class R>
-class Deserializer<R>::DesMap {
+auto Deserializer::deserialize_seq(auto&& f) -> Result<> {
+  if (!this->extract_tok(Token::ArrayBegin).is_err()) {
+    return Error::ExpectedArrayBegin;
+  }
+  auto imp = DesArray{*this};
+  for (auto i = 0U;; ++i) {
+    const auto has_next = this->extract_next(i);
+    if (has_next.is_err()) {
+      return ~has_next;
+    } else if (!*has_next) {
+      break;
+    }
+    const auto elmt = f(imp);
+    if (elmt.is_err()) {
+      return ~elmt;
+    }
+  }
+  if (!this->extract_tok(Token::ArrayEnd).is_err()) {
+    return Error::ExpectedArrayEnd;
+  }
+}
+
+struct Deserializer::DesObject {
   Deserializer& _inn;
-  usize _count = 0;
-  bool _ended = false;
 
  public:
-  explicit DesMap(Deserializer& des) noexcept : _inn{des} {}
-  ~DesMap() noexcept = default;
-  DesMap(const DesMap&) noexcept = delete;
-
-  struct Item {
-    Deserializer& _inn;
-
-    auto extract_key() -> io::Result<String> {
-      auto s = _TRY(_inn.deserialize_string());
-      return static_cast<String&&>(s);
-    }
-
-    template <class T>
-    auto extract_val() -> io::Result<T> {
-      const auto c = _TRY(_inn.peak());
-      if (c != ':') {
-        return io::Error::InvalidData;
-      }
-      _inn._read.consume(1);
-      return _inn.template deserialize<T>();
-    }
-  };
-
-  auto next() -> io::Result<Option<Item>> {
-    if (_ended) {
-      return io::Error::InvalidData;
-    }
-
-    if (_count == 0) {
-      const auto c = _TRY(_inn.peak());
-      if (c != '{') {
-        return io::Error::InvalidData;
-      }
-      _inn._read.consume(1);
-    }
-
-    const auto c = _TRY(_inn.peak());
-    if (c == '}') {
-      _ended = true;
-      return Option<Item>{};
-    }
-
-    if (_count++ != 0) {
-      if (c != ',') {
-        return io::Error::InvalidData;
-      }
-      _inn._read.consume(1);
-    }
-    return Option<Item>{Item{_inn}};
-  }
+  template <class T>
+  auto next_value() noexcept -> Result<T>;
 };
 
-template <class R>
-Deserializer(R&) -> Deserializer<R&>;
+auto Deserializer::deserialize_map(auto&& f) -> Result<> {
+  if (!this->extract_tok(Token::ObjectBegin).is_err()) {
+    return Error::ExpectedObjectBegin;
+  }
 
-template <usize N>
-Deserializer(const char (&)[N]) -> Deserializer<Str>;
+  auto imp = DesObject{*this};
+  for (auto i = 0U;; ++i) {
+    const auto has_next = this->extract_next(i);
+    if (has_next.is_err()) {
+      return ~has_next;
+    } else if (!*has_next) {
+      break;
+    }
+    const auto key = this->extract_key();
+    if (key.is_err()) {
+      return ~key;
+    }
+    const auto val = f(*key, imp);
+    if (val.is_err()) {
+      return ~val;
+    }
+  }
+
+  if (!this->extract_tok(Token::ObjectEnd).is_err()) {
+    return Error::ExpectedObjectEnd;
+  }
+  return {};
+}
 
 void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};

@@ -13,29 +13,20 @@ class [[nodiscard]] Buf {
   [[no_unique_address]] A _alloc{};
 
  public:
-  Buf() noexcept {}
+  Buf() noexcept = default;
 
   ~Buf() noexcept {
-    if (_ptr) {
-      _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
-    }
+    this->dealloc();
   }
 
-  Buf(Buf&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _alloc{other._alloc} {
-    other._ptr = {};
-    other._cap = {};
-    other._alloc = {};
-  }
+  Buf(Buf&& other) noexcept
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
 
-  auto operator=(Buf&& other) noexcept -> Buf& {
+  Buf& operator=(Buf&& other) noexcept {
     if (this == &other) {
       return *this;
     }
-
-    if (_ptr) {
-      _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
-    }
-
+    this->dealloc();
     _ptr = mem::take(other._ptr);
     _cap = mem::take(other._cap);
     _alloc = mem::move(other._alloc);
@@ -64,7 +55,7 @@ class [[nodiscard]] Buf {
     return _ptr[idx];
   }
 
-  void reserve(usize used, usize additional) {
+  void reserve(usize used, usize additional) noexcept {
     const auto req_cap = used + additional;
     if (req_cap <= _cap) {
       return;
@@ -74,7 +65,7 @@ class [[nodiscard]] Buf {
     this->realloc(used, new_cap);
   }
 
-  void reserve_extract(usize used, usize additional) {
+  void reserve_extract(usize used, usize additional) noexcept {
     const auto new_cap = used + additional;
     if (new_cap == _cap) {
       return;
@@ -83,19 +74,30 @@ class [[nodiscard]] Buf {
     this->realloc(used, new_cap);
   }
 
-  void realloc(usize used, usize new_cap) {
+ private:
+  void dealloc() noexcept {
+    if (!_ptr) {
+      return;
+    }
+    _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
+    _ptr = nullptr;
+    _cap = 0;
+  }
+
+  void realloc(usize used, usize new_cap) noexcept {
+    using alloc::Layout;
+
     if (new_cap == _cap) {
       return;
     }
 
-    const auto new_ptr = static_cast<T*>(_alloc.alloc(alloc::Layout::array<T>(new_cap)));
-    if (_ptr) {
-      ptr::uninit_move(_ptr, new_ptr, used);
-      _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
+    const auto new_ptr = static_cast<T*>(_alloc.alloc(Layout::array<T>(new_cap)));
+    const auto old_cap = mem::replace(_cap, new_cap);
+    const auto old_ptr = mem::replace(_ptr, new_ptr);
+    if (old_ptr) {
+      ptr::uninit_move(old_ptr, new_ptr, used);
+      _alloc.dealloc(old_ptr, Layout::array<T>(old_cap));
     }
-
-    _ptr = new_ptr;
-    _cap = new_cap;
   }
 };
 
@@ -145,35 +147,35 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  auto as_ptr() const -> const T* {
+  auto as_ptr() const noexcept -> const T* {
     return _buf._ptr;
   }
 
-  auto as_mut_ptr() -> T* {
+  auto as_mut_ptr() noexcept -> T* {
     return _buf._ptr;
   }
 
-  auto len() const -> usize {
+  auto len() const noexcept -> usize {
     return _len;
   }
 
-  auto capacity() const -> usize {
+  auto capacity() const noexcept -> usize {
     return _buf._cap;
   }
 
-  auto is_empty() const -> bool {
+  auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _len != 0;
   }
 
-  auto as_slice() const -> Slice<const T> {
+  auto as_slice() const noexcept -> Slice<const T> {
     return {_buf._ptr, _len};
   }
 
-  auto as_mut_slice() -> Slice<T> {
+  auto as_mut_slice() noexcept -> Slice<T> {
     return {_buf._ptr, _len};
   }
 
@@ -183,73 +185,69 @@ class [[nodiscard]] Vec {
     }
   }
 
-  auto clone() const -> Vec {
+  auto clone() const noexcept -> Vec {
     auto res = Vec{};
     res.extend_from_slice({_buf._ptr, _len});
     return res;
   }
 
  public:
-  auto get_unchecked(usize idx) const -> const T& {
+  auto get_unchecked(usize idx) const noexcept -> const T& {
     return _buf._ptr[idx];
   }
 
-  auto get_unchecked_mut(usize idx) -> T& {
+  auto get_unchecked_mut(usize idx) noexcept -> T& {
     return _buf._ptr[idx];
   }
 
-  auto operator[](usize idx) const -> const T& {
+  auto operator[](usize idx) const noexcept -> const T& {
     panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
-  auto operator[](usize idx) -> T& {
+  auto operator[](usize idx) noexcept -> T& {
     panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const -> Slice<const T> {
+  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
     return Slice<const T>{_buf._ptr, _len}[ids];
   }
 
-  auto operator[](ops::Range ids) -> Slice<T> {
+  auto operator[](ops::Range ids) noexcept -> Slice<T> {
     return Slice<T>{_buf._ptr, _len}[ids];
   }
 
-  auto spare_capacity_mut() -> Slice<T> {
+  auto spare_capacity_mut() noexcept -> Slice<T> {
     return Slice{_buf._ptr + _len, _buf._cap - _len};
   }
 
-  auto first() const -> Option<const T&> {
+  auto first() const noexcept -> Option<const T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[0];
   }
 
-  auto first_mut() -> Option<T&> {
+  auto first_mut() noexcept -> Option<T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[0];
   }
 
-  auto last() const -> Option<const T&> {
+  auto last() const noexcept -> Option<const T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[_len - 1];
   }
 
-  auto last_mut() -> Option<T&> {
+  auto last_mut() noexcept -> Option<T&> {
     if (_len == 0) {
       return {};
     }
     return _buf._ptr[_len - 1];
-  }
-
-  void fill(const T& val) {
-    Slice{_buf._ptr, _len}.fill(val);
   }
 
  public:
@@ -264,6 +262,15 @@ class [[nodiscard]] Vec {
 
   auto pop() -> Option<T> {
     if (_len == 0) {
+      return {};
+    }
+
+    _len -= 1;
+    return ptr::read(&_buf._ptr[_len]);
+  }
+
+  auto pop_if(auto&& f) -> Option<T> {
+    if (_len == 0 || !f(_buf._ptr[_len - 1])) {
       return {};
     }
 
@@ -327,32 +334,36 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T val) {
-    panicking::expect(idx <= _len, "Vec::insert: idx({}) out of ids([0,{}))", idx, _len);
+    panicking::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
-    ptr::push_front(_buf._ptr + idx, _len - idx, static_cast<T&&>(val));
+    ptr::shift_elements_right(_buf._ptr + idx, _len - idx, 1);
+    new (_buf._ptr + idx) T{static_cast<T&&>(val)};
     _len += 1;
   }
 
-  auto remove(usize idx) -> T {
-    panicking::expect(idx < _len, "Vec::remove: idx({}) out of ids([0,{}))", idx, _len);
+  auto remove(usize idx) noexcept -> T {
+    panicking::expect(idx < _len, "Vec::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
-    auto res = ptr::pop_front(_buf._ptr + idx, _len - idx);
+    auto dst = _buf._ptr + idx;
+    auto res = ptr::read(dst);
+    ptr::shift_elements_left(dst + 1, _len - idx - 1, 1);
     _len -= 1;
     return res;
   }
 
-  void drain(ops::Range ids) {
+  void drain(ops::Range ids) noexcept {
     auto tmp = (*this)[ids];
     if (tmp._len == 0) {
       return;
     }
-    const auto tail_len = _len - static_cast<usize>(tmp._ptr + tmp._len - _buf._ptr);
-    ptr::shift_elements_left(tmp._ptr + tmp._len, tail_len, tmp._len);
+    const auto tmp_tail = tmp._ptr + tmp._len;
+    const auto tail_len = _buf._ptr + _len - tmp_tail;
+    ptr::shift_elements_left(tmp_tail, tail_len, tmp._len);
     _len -= tmp._len;
   }
 
-  void resize(usize new_len, T value) {
+  void resize(usize new_len, T value) noexcept {
     if (new_len <= _len) {
       return this->truncate(new_len);
     }
@@ -360,7 +371,7 @@ class [[nodiscard]] Vec {
     this->extend_with(new_len - _len, value);
   }
 
-  void append(Vec& other) {
+  void append(Vec& other) noexcept {
     if (other._len == 0) {
       return;
     }
@@ -371,15 +382,14 @@ class [[nodiscard]] Vec {
     other._len = 0;
   }
 
-  void extend(auto iter) {
+  void extend(auto&& iter) {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
-
     iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
   }
 
-  void extend_with(usize cnt, T value) {
+  void extend_with(usize cnt, T value) noexcept {
     this->reserve(cnt);
 
     for (auto idx = 0UL; idx < cnt; ++idx) {
@@ -387,13 +397,15 @@ class [[nodiscard]] Vec {
     }
   }
 
-  void extend_from_slice(Slice<const T> other) {
+  void extend_from_slice(Slice<const T> other) noexcept
+    requires(trait::copy_<T>)
+  {
     this->reserve(other._len);
     ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
     _len += other._len;
   }
 
-  void retain(auto&& f) {
+  void retain(auto&& f) noexcept {
     auto pdst = _buf._ptr;
     auto pend = _buf._ptr + _len;
     while (pdst != pend && f(*pdst)) {
@@ -442,9 +454,8 @@ class [[nodiscard]] Vec {
   }
 
   // trait: io::Write
-  auto write(Slice<const u8> buf) -> io::Result<usize>
-    requires(__is_same(T, u8))
-  {
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    static_assert(__is_same(T, u8));
     this->extend_from_slice(buf);
     return buf.len();
   }

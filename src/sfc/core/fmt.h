@@ -18,34 +18,34 @@ struct alignas(8) Style {
 
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  static auto from_str(Str s) -> Option<Style>;
+  static auto from_str(Str s) noexcept -> Option<Style>;
 
-  auto fill(char default_val = ' ') const -> char {
+  auto fill(char default_val = ' ') const noexcept -> char {
     return _fill ? _fill : default_val;
   }
 
-  auto align() const -> char {
+  auto align() const noexcept -> char {
     return _align;
   }
 
-  auto type() const -> char {
+  auto type() const noexcept -> char {
     return _type;
   }
 
-  auto width() const -> u32 {
+  auto width() const noexcept -> u32 {
     return _width;
   }
 
-  auto radix() const -> u32 {
+  auto radix() const noexcept -> u32 {
     const auto t = _type | 32;
     return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
   }
 
-  auto verbose() const -> bool {
+  auto verbose() const noexcept -> bool {
     return _prefix == '#';
   }
 
-  auto sign(bool is_neg) const -> Str {
+  auto sign(bool is_neg) const noexcept -> Str {
     if (is_neg) {
       return "-";
     }
@@ -56,11 +56,11 @@ struct alignas(8) Style {
     }
   }
 
-  auto precision(u32 default_val) const -> u32 {
+  auto precision(u32 default_val) const noexcept -> u32 {
     return _point ? _precision : default_val;
   }
 
-  auto prefix() const -> Str {
+  auto prefix() const noexcept -> Str {
     if (_prefix != '#') {
       return "";
     }
@@ -136,14 +136,14 @@ struct Debug {
 
 template <class... T>
 struct Args {
-  Str _pats = {};
+  Str _fmts = {};
   Tuple<const T*...> _args = {};
 
  public:
-  explicit Args(const auto& pats, const T&... args) noexcept : _pats{pats}, _args{&args...} {}
+  Args(Str fmts, const T&... args) noexcept : _fmts{fmts}, _args{&args...} {}
 
-  void fmt(auto& f) const {
-    auto pats = _pats;
+  void fmt(auto& f) const noexcept {
+    auto pats = _fmts;
     _args.map([&](const auto* ptr) {
       const auto i0 = pats.find('{').unwrap_or(pats.len());
       f.write_str(pats[{0, i0}]);

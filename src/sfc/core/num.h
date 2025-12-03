@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::num {
 

@@ -64,7 +64,7 @@ struct Inner<void, E> {
   }
 
   [[gnu::always_inline]] auto operator~() -> E& {
-    return _err;
+    return static_cast<E&>(_err);
   }
 };
 
@@ -166,7 +166,7 @@ class [[nodiscard]] Result {
   }
 
   template <class F>
-  auto and_then(F&& op) && -> trait::invoke_t<F(T)> {
+  auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
     if (_inn.is_ok()) {
       return op(static_cast<T&&>(*_inn));
     }
@@ -174,23 +174,28 @@ class [[nodiscard]] Result {
   }
 
   template <class O>
-  auto or_else(O&& op) && -> trait::invoke_t<O()> {
+  auto or_else(O&& op) && -> ops::invoke_t<O()> {
     if (_inn.is_err()) {
       return op();
     }
     return static_cast<T&&>(*_inn);
   }
 
-  template <class F>
-  auto map(F&& op) && -> Result<trait::invoke_t<F(T)>, E> {
+  template <class F, class U = ops::invoke_t<F(T)>>
+  auto map(F&& op) && -> Result<U, E> {
     if (_inn.is_ok()) {
-      return op(static_cast<T&&>(*_inn));
+      if constexpr (trait::same_<U, void>) {
+        op(static_cast<T&&>(*_inn));
+        return Result<U, E>{};
+      } else {
+        return Result<U, E>{op(static_cast<T&&>(*_inn))};
+      }
     }
-    return static_cast<E&&>(~_inn);
+    return Result<U, E>{static_cast<E&&>(~_inn)};
   }
 
   template <class O>
-  auto map_err(O&& op) && -> Result<T, trait::invoke_t<O(E)>> {
+  auto map_err(O&& op) && -> Result<T, ops::invoke_t<O(E)>> {
     if (_inn.is_err()) {
       return op(static_cast<E&&>(~_inn));
     }
@@ -262,6 +267,14 @@ class [[nodiscard]] Result<void, E> {
     return static_cast<E&&>(~_inn);
   }
 
+  template <class F>
+  auto map(F&& op) const -> Result<ops::invoke_t<F()>, E> {
+    if (_inn.is_ok()) {
+      return op();
+    }
+    return {};
+  }
+
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
@@ -274,6 +287,19 @@ class [[nodiscard]] Result<void, E> {
 };
 
 }  // namespace sfc::result
+
+namespace sfc::option {
+
+template <class T>
+template <class E>
+auto Option<T>::ok_or(E err) {
+  if (_inn.is_some()) {
+    return result::Result<T, E>{static_cast<T&&>(*_inn)};
+  }
+  return result::Result<T, E>{static_cast<E&&>(err)};
+}
+
+}  // namespace sfc::option
 
 namespace sfc {
 using result::Result;
