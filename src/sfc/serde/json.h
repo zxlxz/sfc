@@ -21,7 +21,6 @@ enum class Token {
 
 enum class Error : i8 {
   Success,
-  IoError,              // I/O error
   EofWhileParsing,      // EOF while parsing keyword
   ExpectedComma,        // expected ','
   ExpectedDoubleQuote,  // expected '"'
@@ -161,7 +160,7 @@ struct Deserializer {
       return ~num_str;
     }
     const auto num_val = num_str->template parse<T>();
-    if (num_val.is_err()) {
+    if (!num_val) {
       return Error::InvalidNumber;
     }
     return *num_val;
@@ -174,7 +173,7 @@ struct Deserializer {
       return ~num_str;
     }
     const auto num_val = num_str->template parse<T>();
-    if (num_val.is_err()) {
+    if (!num_val) {
       return Error::InvalidNumber;
     }
     return *num_val;
@@ -197,75 +196,77 @@ struct Deserializer {
   auto extract_tok(Token tok) noexcept -> Result<>;
   auto extract_num() noexcept -> Result<Str>;
   auto extract_str() noexcept -> Result<Str>;
-  auto extract_key() noexcept -> Result<Str>;
-  auto extract_next(usize n) noexcept -> Result<bool>;
 };
 
 struct Deserializer::DesArray {
   Deserializer& _inn;
+  usize _idx = 0;
 
  public:
+  auto has_next() noexcept -> bool {
+    const auto next_tok = _inn.next_token();
+    return next_tok != Token::ArrayEnd;
+  }
+
   template <class T>
-  auto next_element() noexcept -> Result<T>;
+  auto next_element() noexcept -> Result<T> {
+    if (_idx++ != 0) {
+      if (auto res = _inn.extract_tok(Token::Comma); res.is_err()) {
+        return ~res;
+      }
+    }
+    return Deserialize::deserialize<T>(_inn);
+  }
 };
 
-auto Deserializer::deserialize_seq(auto&& f) -> Result<> {
-  if (!this->extract_tok(Token::ArrayBegin).is_err()) {
-    return Error::ExpectedArrayBegin;
+auto Deserializer::deserialize_seq(auto&& visit) -> Result<> {
+  if (auto x = this->extract_tok(Token::ArrayBegin); x.is_err()) {
+    return ~x;
   }
   auto imp = DesArray{*this};
-  for (auto i = 0U;; ++i) {
-    const auto has_next = this->extract_next(i);
-    if (has_next.is_err()) {
-      return ~has_next;
-    } else if (!*has_next) {
-      break;
-    }
-    const auto elmt = f(imp);
-    if (elmt.is_err()) {
-      return ~elmt;
-    }
+  if (auto x = visit(imp); x.is_err()) {
+    return ~x;
   }
-  if (!this->extract_tok(Token::ArrayEnd).is_err()) {
-    return Error::ExpectedArrayEnd;
-  }
+  return this->extract_tok(Token::ArrayEnd);
 }
 
 struct Deserializer::DesObject {
   Deserializer& _inn;
+  usize _idx = 0;
 
  public:
+  auto has_next() noexcept -> bool {
+    const auto next_tok = _inn.next_token();
+    return next_tok != Token::ObjectEnd;
+  }
+
+  auto next_key() noexcept -> Result<Str> {
+    if (_idx++ != 0) {
+      if (auto x = _inn.extract_tok(Token::Comma); x.is_err()) {
+        return ~x;
+      }
+    }
+    return _inn.extract_str();
+  }
+
   template <class T>
-  auto next_value() noexcept -> Result<T>;
+  auto next_value() noexcept -> Result<T> {
+    if (auto x = _inn.extract_tok(Token::Colon); x.is_err()) {
+      return Error::ExpectedColon;
+    }
+    return Deserialize::deserialize<T>(_inn);
+  }
 };
 
-auto Deserializer::deserialize_map(auto&& f) -> Result<> {
-  if (!this->extract_tok(Token::ObjectBegin).is_err()) {
-    return Error::ExpectedObjectBegin;
+auto Deserializer::deserialize_map(auto&& visit) -> Result<> {
+  if (auto x = this->extract_tok(Token::ObjectBegin); x.is_err()) {
+    return ~x;
   }
-
   auto imp = DesObject{*this};
-  for (auto i = 0U;; ++i) {
-    const auto has_next = this->extract_next(i);
-    if (has_next.is_err()) {
-      return ~has_next;
-    } else if (!*has_next) {
-      break;
-    }
-    const auto key = this->extract_key();
-    if (key.is_err()) {
-      return ~key;
-    }
-    const auto val = f(*key, imp);
-    if (val.is_err()) {
-      return ~val;
-    }
+  if (auto x = visit(imp); x.is_err()) {
+    return ~x;
   }
-
-  if (!this->extract_tok(Token::ObjectEnd).is_err()) {
-    return Error::ExpectedObjectEnd;
-  }
-  return {};
+  return this->extract_tok(Token::ObjectEnd);
 }
 
 void to_writer(auto& writer, const auto& val) {

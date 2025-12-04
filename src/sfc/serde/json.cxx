@@ -35,7 +35,7 @@ SFC_TEST(serialize_map) {
   auto map = collections::HashMap<Str, int>{};
   map.insert(Str{"a"}, 1);
   map.insert(Str{"b"}, 2);
-  panicking::expect_eq(json::to_string(map), "{\"a\":1,\"b\":2}");
+  panicking::expect_eq(json::to_string(map), R"({"a":1,"b":2})");
 }
 
 SFC_TEST(deserialize_simple) {
@@ -44,44 +44,42 @@ SFC_TEST(deserialize_simple) {
 
   // bool
   {
-    Str s[] = {"true", "false"};
-    panicking::expect_eq(Deserializer{s[0]}.deserialize_bool().ok(), Option{true});
-    panicking::expect_eq(Deserializer{s[1]}.deserialize_bool().ok(), Option{false});
+    panicking::expect_eq(Deserializer{"true"}.deserialize_bool().ok(), Option{true});
+    panicking::expect_eq(Deserializer{"false"}.deserialize_bool().ok(), Option{false});
   }
 
   // int
   {
-    Str s[] = {"0", "123", "-123"};
-    panicking::expect_eq(Deserializer{s[0]}.deserialize_int<int>().ok(), Option{0});
-    panicking::expect_eq(Deserializer{s[1]}.deserialize_int<int>().ok(), Option{123});
-    panicking::expect_eq(Deserializer{s[2]}.deserialize_int<int>().ok(), Option{-123});
+    panicking::expect_eq(Deserializer{"0"}.deserialize_int<int>().ok(), Option{0});
+    panicking::expect_eq(Deserializer{"123"}.deserialize_int<int>().ok(), Option{123});
+    panicking::expect_eq(Deserializer{"-123"}.deserialize_int<int>().ok(), Option{-123});
   }
 
   // float
   {
-    Str s[] = {"0.0", "1.23", "-1.23"};
-    panicking::expect_eq(Deserializer{s[0]}.deserialize_flt<double>().ok(), Option{0.0});
-    panicking::expect_eq(Deserializer{s[1]}.deserialize_flt<double>().ok(), Option{1.23});
-    panicking::expect_eq(Deserializer{s[2]}.deserialize_flt<double>().ok(), Option{-1.23});
+    panicking::expect_eq(Deserializer{"0.0"}.deserialize_flt<double>().ok(), Option{0.0});
+    panicking::expect_eq(Deserializer{"1.23"}.deserialize_flt<double>().ok(), Option{1.23});
+    panicking::expect_eq(Deserializer{"-1.23"}.deserialize_flt<double>().ok(), Option{-1.23});
   }
 
   // str
   {
-    Str s[] = {"\"\"", "\"abc\""};
-    panicking::expect_eq(Deserializer{s[0]}.deserialize_str().ok(), Option<Str>{""});
-    panicking::expect_eq(Deserializer{s[1]}.deserialize_str().ok(), Option<Str>{"abc"});
+    panicking::expect_eq(Deserializer{R"("")"}.deserialize_str().ok(), Option{""});
+    panicking::expect_eq(Deserializer{R"("abc")"}.deserialize_str().ok(), Option{"abc"});
   }
 }
 
 SFC_TEST(deserialize_seq) {
   const Str s = "[0,1,2]";
-  auto visit = [i = 0](auto& imp) mutable {
-    auto val = imp.template next_element<int>();
-    panicking::expect(val.is_ok());
-    panicking::expect(i < 3);
-    panicking::expect_eq(*val, i);
-    i += 1;
-    return val;
+  const int vals[] = {0, 1, 2};
+  auto visit = [&](auto& des) mutable {
+    for (auto i = 0U; i < 3; ++i) {
+      const auto val = des.template next_element<int>();
+      panicking::expect(val.is_ok());
+      panicking::expect_eq(*val, vals[i]);
+    }
+    panicking::expect(!des.has_next());
+    return Result<>{};
   };
 
   auto des = Deserializer{s};
@@ -90,48 +88,25 @@ SFC_TEST(deserialize_seq) {
 
 SFC_TEST(deserialize_map) {
   const auto s = Str{R"({"a":1,"b":2})"};
-  auto visit = [i = 0](Str key, auto& imp) mutable -> Result<> {
-    if (i == 0) {
-      panicking::expect_eq(key, "a");
-      const auto val = imp.template next_value<int>();
+  const Str keys[] = {"a", "b"};
+  const int vals[] = {1, 2};
+
+  auto visit = [&](auto& des) mutable -> Result<> {
+    for (auto i = 0U; i < 2; ++i) {
+      const auto key = des.next_key();
+      panicking::expect(key.is_ok());
+      panicking::expect_eq(*key, keys[i]);
+
+      const auto val = des.template next_value<int>();
       panicking::expect(val.is_ok());
-      panicking::expect_eq(*val, 1);
-    } else if (i == 1) {
-      panicking::expect_eq(key, "b");
-      const auto val = imp.template next_value<int>();
-      panicking::expect(val.is_ok());
-      panicking::expect_eq(*val, 2);
-    } else {
-      panicking::expect(false, "too many elements in map");
+      panicking::expect_eq(*val, vals[i]);
     }
-    i += 1;
+    panicking::expect(!des.has_next());
     return {};
   };
 
-  auto des = Deserializer{s[0]};
-  auto map = des.deserialize_map();
-
-  Str keys[] = {"a", "b"};
-  int vals[] = {1, 2};
-
-  for (auto i = 0; i < 2; i++) {
-    auto x_res = map.next();
-    panicking::expect(x_res.is_ok());
-
-    auto& x = *x_res;
-
-    const auto key = x->extract_key();
-    panicking::expect(key.is_ok());
-    panicking::expect_eq(*key, keys[i]);
-
-    const auto val = x->extract_val<int>();
-    panicking::expect(val.is_ok());
-    panicking::expect_eq(*val, vals[i]);
-  }
-
-  const auto status = map.next();
-  panicking::expect(status.is_ok());
-  panicking::expect(status->is_none());
+  auto des = Deserializer{s};
+  panicking::expect(des.deserialize_map(visit).is_ok());
 }
 
 }  // namespace sfc::serde::json::test

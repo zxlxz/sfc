@@ -70,10 +70,23 @@ auto Deserializer::next_token() noexcept -> Token {
   }
 }
 
-auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<Token> {
+auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<> {
   const auto next_tok = this->next_token();
   if (next_tok == expect_tok) {
-    return next_tok;
+    switch (expect_tok) {
+      case Token::Comma:       this->consume(1); break;
+      case Token::Colon:       this->consume(1); break;
+      case Token::DoubleQuote: this->consume(1); break;
+      case Token::ArrayBegin:  this->consume(1); break;
+      case Token::ArrayEnd:    this->consume(1); break;
+      case Token::ObjectBegin: this->consume(1); break;
+      case Token::ObjectEnd:   this->consume(1); break;
+      case Token::Null:        this->consume(4); break;
+      case Token::True:        this->consume(4); break;
+      case Token::False:       this->consume(5); break;
+      default:                 break;
+    }
+    return {};
   }
 
   switch (expect_tok) {
@@ -92,23 +105,6 @@ auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<Token> {
   }
 }
 
-auto Deserializer::extract_str() noexcept -> Result<Str> {
-  const auto next_tok = this->extract_tok(Token::DoubleQuote);
-  if (next_tok.is_err()) {
-    return Error::ExpectedDoubleQuote;
-  }
-
-  const auto not_double_quote = [](char c) { return c != '"'; };
-  const auto pos = _buf.find(not_double_quote);
-  if (!pos) {
-    return Error::EofWhileParsing;
-  }
-
-  const auto str = _buf[{0, *pos}];
-  this->consume(*pos + 1);
-  return str;
-}
-
 auto Deserializer::extract_num() noexcept -> Result<Str> {
   _buf = _buf.trim_start();
 
@@ -123,6 +119,22 @@ auto Deserializer::extract_num() noexcept -> Result<Str> {
   const auto num = _buf[{0, pos}];
   this->consume(pos);
   return num;
+}
+
+auto Deserializer::extract_str() noexcept -> Result<Str> {
+  const auto next_tok = this->next_token();
+  if (next_tok != Token::DoubleQuote) {
+    return Error::ExpectedDoubleQuote;
+  }
+
+  const auto s = _buf[{1, _buf._len}];
+  const auto p = s.find('"').unwrap_or(s._len);
+  if (p == s._len) {
+    return Error::InvalidString;
+  }
+
+  this->consume(p + 2);
+  return s[{0, p}];
 }
 
 }  // namespace sfc::serde::json

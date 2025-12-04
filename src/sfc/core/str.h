@@ -18,6 +18,10 @@ struct Str {
   constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
   static constexpr auto from_cstr(const char* s) noexcept -> Str {
+    if (s == nullptr) {
+      return Str{};
+    }
+    
     auto n = 0UZ;
     while (s[n] != '\0') {
       ++n;

@@ -37,7 +37,6 @@ static inline auto map_err(int code) -> T {
     case ENETDOWN:             return T::NetworkDown;
     case EPIPE:                return T::BrokenPipe;
     case EEXIST:               return T::AlreadyExists;
-    case EAGAIN:
     case EWOULDBLOCK:          return T::WouldBlock;
     case EINVAL:               return T::InvalidInput;
     case EBADMSG:              return T::InvalidData;
@@ -53,7 +52,6 @@ static inline auto map_err(int code) -> T {
     case EFBIG:                return T::FileTooLarge;
     case EBUSY:                return T::ResourceBusy;
     case EDEADLK:              return T::Deadlock;
-    case ENOSPC:               return T::StorageFull;
     case ENOMEM:               return T::OutOfMemory;
     case EINPROGRESS:          return T::InProgress;
     default:                   return T::Other;
