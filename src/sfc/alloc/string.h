@@ -8,130 +8,133 @@ class [[nodiscard]] String {
   Vec<u8> _vec = {};
 
  public:
-  static auto with_capacity(usize capacity) -> String {
+  static auto with_capacity(usize capacity) noexcept -> String {
     auto res = String{};
     res.reserve(capacity);
     return res;
   }
 
-  template <class F>
-  static auto from(F&& f) -> String {
-    if constexpr (requires { String{static_cast<F&&>(f)}; }) {
-      return String{static_cast<F&&>(f)};
-    } else if constexpr (requires { f.to_string(); }) {
+  static auto from(auto&& f) noexcept -> String {
+    if constexpr (requires { f.to_string(); }) {
       return f.to_string();
     } else if constexpr (requires { Str::from(f); }) {
       auto s = String{};
       s.push_str(Str::from(f));
       return s;
+    } else {
+      static_assert(false, "String::from: unsupported type");
     }
   }
 
-  operator Str() const noexcept {
-    return Str::from_utf8(_vec.as_slice());
-  }
-
-  auto as_ptr() const -> const u8* {
+  auto as_ptr() const noexcept -> const u8* {
     return _vec.as_ptr();
   }
 
-  auto capacity() const -> usize {
+  auto capacity() const noexcept -> usize {
     return _vec.capacity();
   }
 
-  auto len() const -> usize {
+  auto len() const noexcept -> usize {
     return _vec.len();
   }
 
-  auto as_str() const -> Str {
+  auto as_str() const noexcept -> Str {
     return Str::from_utf8(_vec.as_slice());
   }
 
-  auto is_empty() const -> bool {
+  auto is_empty() const noexcept -> bool {
     return _vec.is_empty();
   }
 
-  auto clone() const -> String {
+  auto clone() const noexcept -> String {
     return String::from(this->as_str());
   }
 
-  auto as_slice() const -> Slice<const u8> {
+  auto as_slice() const noexcept -> Slice<const u8> {
     return {_vec.as_ptr(), _vec.len()};
   }
 
-  auto as_mut_slice() -> Slice<u8> {
+  auto as_mut_slice() noexcept -> Slice<u8> {
     return {_vec.as_mut_ptr(), _vec.len()};
   }
 
-  auto as_mut_vec() -> Vec<u8>& {
+  auto as_mut_vec() noexcept -> Vec<u8>& {
     return _vec;
   }
 
  public:
-  auto operator[](usize idx) const -> u8 {
+  auto operator*() const noexcept -> Str {
+    return this->as_str();
+  }
+
+  auto operator[](usize idx) const noexcept -> u8 {
     return _vec[idx];
   }
 
-  auto operator[](usize idx) -> u8& {
+  auto operator[](usize idx) noexcept -> u8& {
     return _vec[idx];
   }
 
-  auto operator[](ops::Range ids) const -> Str {
+  auto operator[](ops::Range ids) const noexcept -> Str {
     const auto v = _vec[ids];
     return Str::from_utf8(v);
   }
 
-  auto iter() const {
+  auto iter() const noexcept {
     return _vec.iter();
   }
 
-  auto iter_mut() {
+  auto iter_mut() noexcept {
     return _vec.iter_mut();
   }
 
  public:
-  auto operator==(const auto& other) const -> bool {
+  auto operator==(const String& other) const noexcept -> bool {
+    return this->as_str() == other.as_str();
+  }
+
+  auto operator==(Str other) const noexcept -> bool {
     return this->as_str() == other;
   }
 
  public:
-  auto pop() -> Option<u8> {
+  auto pop() noexcept -> Option<u8> {
     return _vec.pop();
   }
 
-  void push(u8 c) {
+  void push(u8 c) noexcept {
     _vec.push(c);
   }
 
-  void push_str(Str s) {
+  void push_str(Str s) noexcept {
     _vec.extend_from_slice(s.as_bytes());
   }
 
-  void reserve(usize amt) {
+  void reserve(usize amt) noexcept {
     _vec.reserve(amt);
   }
 
-  void truncate(usize len) {
+  void truncate(usize len) noexcept {
     _vec.truncate(len);
   }
 
-  void clear() {
+  void clear() noexcept {
     _vec.clear();
   }
 
-  void insert(usize idx, u8 ch) {
+  void insert(usize idx, u8 ch) noexcept {
     _vec.insert(idx, ch);
   }
 
-  auto remove(usize idx) -> u8 {
+  auto remove(usize idx) noexcept -> u8 {
     return _vec.remove(idx);
   }
 
-  void drain(ops::Range ids) {
+  void drain(ops::Range ids) noexcept {
     _vec.drain(ids);
   }
 
-  void insert_str(usize idx, Str str) {
+  void insert_str(usize idx, Str str) noexcept {
     _vec.reserve(str._len);
     ptr::shift_elements_right(_vec.as_mut_ptr() + idx, _vec.len() - idx, str._len);
     ptr::copy_nonoverlapping(str.as_bytes().as_ptr(), _vec.as_mut_ptr() + idx, str._len);

@@ -32,7 +32,7 @@ class [[nodiscard]] Buf {
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> Buf {
+  static auto with_capacity(usize capacity) noexcept -> Buf {
     auto res = Buf{};
     res.reserve(0, capacity);
     return res;
@@ -84,18 +84,17 @@ class [[nodiscard]] Buf {
   }
 
   void realloc(usize used, usize new_cap) noexcept {
-    using alloc::Layout;
-
     if (new_cap == _cap) {
       return;
     }
 
-    const auto new_ptr = static_cast<T*>(_alloc.alloc(Layout::array<T>(new_cap)));
+    const auto new_layout = alloc::Layout::array<T>(new_cap);
+    const auto new_ptr = static_cast<T*>(_alloc.alloc(new_layout));
     const auto old_cap = mem::replace(_cap, new_cap);
     const auto old_ptr = mem::replace(_ptr, new_ptr);
     if (old_ptr) {
       ptr::uninit_move(old_ptr, new_ptr, used);
-      _alloc.dealloc(old_ptr, Layout::array<T>(old_cap));
+      _alloc.dealloc(old_ptr, alloc::Layout::array<T>(old_cap));
     }
   }
 };
@@ -127,7 +126,7 @@ class [[nodiscard]] Vec {
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> Vec {
+  static auto with_capacity(usize capacity) noexcept -> Vec {
     auto res = Vec{};
     res.reserve(capacity);
     return res;
@@ -163,10 +162,6 @@ class [[nodiscard]] Vec {
 
   auto is_empty() const noexcept -> bool {
     return _len == 0;
-  }
-
-  explicit operator bool() const noexcept {
-    return _len != 0;
   }
 
   auto as_slice() const noexcept -> Slice<const T> {
@@ -277,7 +272,7 @@ class [[nodiscard]] Vec {
     return ptr::read(&_buf._ptr[_len]);
   }
 
-  auto swap_remove(usize idx) -> T {
+  auto swap_remove(usize idx) noexcept -> T {
     panicking::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     auto res = mem::move(_buf._ptr[idx]);
@@ -290,7 +285,7 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  void truncate(usize len) {
+  void truncate(usize len) noexcept {
     if (len >= _len) {
       return;
     }
@@ -299,40 +294,40 @@ class [[nodiscard]] Vec {
     _len = len;
   }
 
-  void reserve(usize additional) {
+  void reserve(usize additional) noexcept {
     if (_len + additional <= _buf._cap) {
       return;
     }
     _buf.reserve(_len, additional);
   }
 
-  void reserve_extract(usize additional) {
+  void reserve_extract(usize additional) noexcept {
     if (_len + additional <= _buf._cap) {
       return;
     }
     _buf.reserve_extract(_len, additional);
   }
 
-  void shrink_to(usize min_cap) {
+  void shrink_to(usize min_cap) noexcept {
     if (min_cap < _len || min_cap >= _buf._cap) {
       return;
     }
     _buf.realloc(_len, min_cap);
   }
 
-  void shrink_to_fit() {
+  void shrink_to_fit() noexcept {
     if (_len == _buf._cap) {
       return;
     }
     _buf.realloc(_len, _len);
   }
 
-  void clear() {
+  void clear() noexcept {
     ptr::drop_in_place(_buf._ptr, _len);
     _len = 0;
   }
 
-  void insert(usize idx, T val) {
+  void insert(usize idx, T val) noexcept {
     panicking::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
@@ -381,7 +376,7 @@ class [[nodiscard]] Vec {
     other._len = 0;
   }
 
-  void extend(auto&& iter) {
+  void extend(auto&& iter) noexcept {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
@@ -390,15 +385,13 @@ class [[nodiscard]] Vec {
 
   void extend_with(usize cnt, T value) noexcept {
     this->reserve(cnt);
-
     for (auto idx = 0UL; idx < cnt; ++idx) {
       this->push(static_cast<T&&>(value));
     }
   }
 
-  void extend_from_slice(Slice<const T> other) noexcept
-    requires(trait::copy_<T>)
-  {
+  void extend_from_slice(Slice<const T> other) noexcept {
+    static_assert(trait::copy_<T>);
     this->reserve(other._len);
     ptr::uninit_copy(other._ptr, _buf._ptr + _len, other._len);
     _len += other._len;
@@ -422,27 +415,43 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  auto iter() const -> slice::Iter<const T> {
+  auto begin() const noexcept -> const T* {
+    return _buf._ptr;
+  }
+
+  auto end() const noexcept -> const T* {
+    return _buf._ptr + _len;
+  }
+
+  auto begin() noexcept -> T* {
+    return _buf._ptr;
+  }
+
+  auto end() noexcept -> T* {
+    return _buf._ptr + _len;
+  }
+
+  auto iter() const noexcept -> slice::Iter<const T> {
     return Slice{_buf._ptr, _len}.iter();
   }
 
-  auto iter_mut() -> slice::Iter<T> {
+  auto iter_mut() noexcept -> slice::Iter<T> {
     return Slice{_buf._ptr, _len}.iter_mut();
   }
 
-  auto windows(usize n) const -> slice::Windows<const T> {
+  auto windows(usize n) const noexcept -> slice::Windows<const T> {
     return Slice{_buf._ptr, _len}.windows(n);
   }
 
-  auto windows_mut(usize n) -> slice::Windows<T> {
+  auto windows_mut(usize n) noexcept -> slice::Windows<T> {
     return Slice{_buf._ptr, _len}.windows_mut(n);
   }
 
-  auto chunks(usize n) const -> slice::Chunks<const T> {
+  auto chunks(usize n) const noexcept -> slice::Chunks<const T> {
     return Slice{_buf._ptr, _len}.chunks(n);
   }
 
-  auto chunks_mut(usize n) -> slice::Chunks<T> {
+  auto chunks_mut(usize n) noexcept -> slice::Chunks<T> {
     return Slice{_buf._ptr, _len}.chunks_mut(n);
   }
 
@@ -466,41 +475,20 @@ class [[nodiscard]] Vec {
   }
 
   // trait:: serde::Deserialize
-  static auto deserialize(auto& des) -> io::Result<Vec> {
+  template <class Des, class E = typename Des::Error>
+  static auto deserialize(Des& des) -> Result<void, E> {
     auto res = Vec{};
 
-    auto seq = des.deserialize_seq();
-    while (true) {
-      auto x = _TRY(seq.next());
-      if (!x) {
-        break;
+    auto visit = [&](auto&& seq) -> Result<void, E> {
+      while (seq.has_next()) {
+        auto item = _TRY(seq.template next_element<T>());
+        res.push(mem::move(item));
       }
-      auto item = x->template extract_item<T>();
-      res.push(static_cast<T&&>(item));
-    }
-    return res;
+      return {};
+    };
+    return des.deserialize_seq(visit);
   }
 };
-
-template <class T>
-auto begin(const Vec<T>& v) -> const T* {
-  return v.as_ptr();
-}
-
-template <class T>
-auto end(const Vec<T>& v) -> const T* {
-  return v.as_ptr() + v.len();
-}
-
-template <class T>
-auto begin(Vec<T>& v) -> T* {
-  return v.as_mut_ptr();
-}
-
-template <class T>
-auto end(Vec<T>& v) -> T* {
-  return v.as_mut_ptr() + v.len();
-}
 
 }  // namespace sfc::vec
 

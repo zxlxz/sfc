@@ -72,7 +72,7 @@ struct Serializer {
 
   void serialize_bin(Slice<const u8> val) noexcept {
     const auto s = base64::encode(val);
-    this->serialize_str(s);
+    this->serialize_str(s.as_str());
   }
 
   class SerArray;
@@ -136,6 +136,7 @@ class Serializer::SerObject {
 };
 
 struct Deserializer {
+  using Error = json::Error;
   Str _buf;
 
  public:

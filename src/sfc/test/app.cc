@@ -97,7 +97,7 @@ void App::list_xml(Str path) const {
 
   const auto xml_str = format_xml(all_test.suites());
   if (!path || path == "stdout") {
-    io::println(xml_str);
+    io::println(xml_str.as_str());
     return;
   }
 
@@ -108,7 +108,7 @@ void App::list_xml(Str path) const {
     io::println("Failed to create file '{}'", xml_path);
     return;
   }
-  (void)xml_file->write_str(xml_str);
+  (void)xml_file->write_str(xml_str.as_str());
 }
 
 auto main(int argc, const char* argv[]) -> int {

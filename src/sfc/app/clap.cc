@@ -115,8 +115,8 @@ struct Clap::Item {
       line_buf.push(' ');
     }
 
-    f.write_str(line_buf);
-    f.write_str(_help);
+    f.write_str(line_buf.as_str());
+    f.write_str(_help.as_str());
   }
 
   void push_val(Str val) {
@@ -305,12 +305,12 @@ void Clap::print_help() const {
   auto out = io::Stdout::lock();
 
   if (!_about.is_empty()) {
-    out.write_str(_about);
+    out.write_str(_about.as_str());
     out.write_str("\n\n");
   }
 
   out.write_str("Usage: ");
-  out.write_str(_name);
+  out.write_str(_name.as_str());
   for (auto& item : _items) {
     item.show_usage(out);
   }

@@ -44,10 +44,7 @@ template <class T>
 concept tv_dtor_ = __is_trivially_destructible(T);
 
 template <class I, class X>
-struct Impl : I, X {
-  Impl() = delete;
-  ~Impl() = delete;
-};
+struct Impl : I, X {};
 
 template <class I, class X>
 auto as(const X& x) -> auto& {

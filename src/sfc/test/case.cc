@@ -60,7 +60,7 @@ Suite::~Suite() {
 }
 
 auto Suite::name() const -> Str {
-  return _name;
+  return _name.as_str();
 }
 
 auto Suite::tests() const -> Slice<const Case> {
