@@ -8,15 +8,6 @@ class [[nodiscard]] String {
   Vec<u8> _vec = {};
 
  public:
-  String() noexcept = default;
-  ~String() = default;
-
-  String(String&&) noexcept = default;
-  String& operator=(String&&) noexcept = default;
-
-  String(const String&) = delete;
-  String& operator=(const String&) = delete;
-
   static auto with_capacity(usize capacity) -> String {
     auto res = String{};
     res.reserve(capacity);
@@ -184,12 +175,6 @@ class [[nodiscard]] CString {
   Vec<char> _vec = {};
 
  public:
-  CString() = default;
-  ~CString() = default;
-
-  CString(CString&&) noexcept = default;
-  CString& operator=(CString&&) noexcept = default;
-
   static auto from(Str s) -> CString {
     auto res = CString{};
     res._vec.extend_from_slice(s.as_chars());

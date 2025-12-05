@@ -72,7 +72,7 @@ auto Suite::push(Case unit) -> Case& {
 }
 
 void Suite::run(Slice<const Str> pats, bool color) {
-  if (!pats) {
+  if (pats.is_empty()) {
     for (auto& test : _cases.as_mut_slice()) {
       test.run(color);
     }

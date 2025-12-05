@@ -33,10 +33,6 @@ struct Components {
   }
 };
 
-Path::Path(Str s) noexcept : _inn{s} {}
-
-Path::Path(const char* s) noexcept : _inn{Str::from_cstr(s)} {}
-
 auto Path::as_str() const noexcept -> Str {
   return _inn;
 }
@@ -68,9 +64,9 @@ auto Path::parent() const noexcept -> Path {
   return Path{cmpts.as_str()};
 }
 
-auto Path::join(Path path) const noexcept -> PathBuf {
+auto Path::join(Str path) const noexcept -> PathBuf {
   auto res = PathBuf::from(_inn);
-  res.push(path.as_str());
+  res.push(path);
   return res;
 }
 
@@ -97,12 +93,6 @@ auto Path::is_dir() const noexcept -> bool {
   return t && (*t).is_dir();
 }
 
-PathBuf::PathBuf() noexcept = default;
-PathBuf::~PathBuf() noexcept = default;
-
-PathBuf::PathBuf(PathBuf&&) noexcept = default;
-PathBuf& PathBuf::operator=(PathBuf&&) noexcept = default;
-
 auto PathBuf::from(Str s) -> PathBuf {
   auto res = PathBuf{};
   res._inn.push_str(s);
@@ -115,10 +105,6 @@ auto PathBuf::as_path() const noexcept -> Path {
 
 auto PathBuf::as_str() const noexcept -> Str {
   return _inn.as_str();
-}
-
-PathBuf::operator Path() const noexcept {
-  return Path{_inn.as_str()};
 }
 
 void PathBuf::clear() {

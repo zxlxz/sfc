@@ -4,24 +4,17 @@
 
 namespace sfc::fs {
 
-class PathBuf;
-
 struct Path {
   Str _inn = {};
 
  public:
-  Path() noexcept = default;
-
-  Path(Str s) noexcept;
-  Path(const char* s) noexcept;
-
   auto as_str() const noexcept -> Str;
 
   auto file_name() const noexcept -> Str;
   auto file_stem() const noexcept -> Str;
   auto extension() const noexcept -> Str;
   auto parent() const noexcept -> Path;
-  auto join(Path path) const noexcept -> PathBuf;
+  auto join(Str path) const noexcept -> class PathBuf;
 
  public:
   auto exists() const noexcept -> bool;
@@ -41,17 +34,10 @@ class PathBuf {
   String _inn = {};
 
  public:
-  PathBuf() noexcept;
-  ~PathBuf() noexcept;
-
-  PathBuf(PathBuf&&) noexcept;
-  PathBuf& operator=(PathBuf&&) noexcept;
-
   static auto from(Str s) -> PathBuf;
 
   auto as_path() const noexcept -> Path;
   auto as_str() const noexcept -> Str;
-  operator Path() const noexcept;
 
   void clear();
   void reserve(usize additional);

@@ -9,7 +9,7 @@ namespace sys_imp = sys::os;
 auto var(Str key) -> String {
   const auto c_key = CString::from(key);
   const auto c_val = sys_imp::getenv(c_key);
-  return String::from(Str::from_cstr(c_val));
+  return String::from(Str{c_val});
 }
 
 auto set_var(Str key, Str val) -> bool {
@@ -29,22 +29,22 @@ auto remove_var(Str key) -> bool {
 
 auto home_dir() -> fs::Path {
   const auto res = sys_imp::home_dir();
-  return fs::Path{Str::from_cstr(res)};
+  return fs::Path{Str{res}};
 }
 
 auto temp_dir() -> fs::Path {
   const auto res = sys_imp::temp_dir();
-  return fs::Path{Str::from_cstr(res)};
+  return fs::Path{Str{res}};
 }
 
 auto current_exe() -> fs::Path {
   const auto res = sys_imp::current_exe();
-  return fs::Path{Str::from_cstr(res)};
+  return fs::Path{Str{res}};
 }
 
 auto current_dir() -> fs::Path {
   const auto res = sys_imp::getcwd();
-  return fs::Path{Str::from_cstr(res)};
+  return fs::Path{Str{res}};
 }
 
 auto set_current_dir(const fs::Path& path) -> bool {

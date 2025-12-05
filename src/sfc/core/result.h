@@ -12,31 +12,31 @@ struct Inner {
   E _err = {};
 
  public:
-  [[gnu::always_inline]] explicit Inner(T&& ok) noexcept : _ok{static_cast<T&&>(ok)} {}
+  constexpr Inner(T&& ok) noexcept : _ok{static_cast<T&&>(ok)} {}
 
-  [[gnu::always_inline]] explicit Inner(E&& err) noexcept : _err{static_cast<E&&>(err)} {}
+  constexpr Inner(E&& err) noexcept : _err{static_cast<E&&>(err)} {}
 
-  [[gnu::always_inline]] auto is_ok() const -> bool {
+  constexpr auto is_ok() const -> bool {
     return _err == E{};
   }
 
-  [[gnu::always_inline]] auto is_err() const -> bool {
+  constexpr auto is_err() const -> bool {
     return _err != E{};
   }
 
-  [[gnu::always_inline]] auto operator*() const -> const T& {
+  constexpr auto operator*() const -> const T& {
     return _ok;
   }
 
-  [[gnu::always_inline]] auto operator*() -> T& {
+  constexpr auto operator*() -> T& {
     return _ok;
   }
 
-  [[gnu::always_inline]] auto operator~() const -> const E& {
+  constexpr auto operator~() const -> const E& {
     return _err;
   }
 
-  [[gnu::always_inline]] auto operator~() -> E& {
+  constexpr auto operator~() -> E& {
     return _err;
   }
 };
@@ -47,23 +47,23 @@ struct Inner<void, E> {
   E _err;
 
  public:
-  [[gnu::always_inline]] explicit Inner() noexcept : _err{} {}
+  constexpr Inner() noexcept : _err{} {}
 
-  [[gnu::always_inline]] explicit Inner(E err) noexcept : _err{err} {}
+  constexpr Inner(E err) noexcept : _err{err} {}
 
-  [[gnu::always_inline]] auto is_ok() const -> bool {
+  constexpr auto is_ok() const -> bool {
     return _err == E{};
   }
 
-  [[gnu::always_inline]] auto is_err() const -> bool {
+  constexpr auto is_err() const -> bool {
     return _err != E{};
   }
 
-  [[gnu::always_inline]] auto operator~() const -> const E& {
+  constexpr auto operator~() const -> const E& {
     return _err;
   }
 
-  [[gnu::always_inline]] auto operator~() -> E& {
+  constexpr auto operator~() -> E& {
     return static_cast<E&>(_err);
   }
 };
@@ -73,11 +73,15 @@ class [[nodiscard]] Result {
   Inner<T, E> _inn;
 
  public:
-  Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
-  Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+  constexpr Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+  constexpr Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
 
-  explicit operator bool() const noexcept {
+  constexpr auto is_ok() const noexcept -> bool {
     return _inn.is_ok();
+  }
+
+  constexpr auto is_err() const noexcept -> bool {
+    return _inn.is_err();
   }
 
   auto operator->() const noexcept -> const T* {
@@ -108,14 +112,6 @@ class [[nodiscard]] Result {
   auto operator~() noexcept -> E& {
     panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
-  }
-
-  auto is_ok() const noexcept -> bool {
-    return _inn.is_ok();
-  }
-
-  auto is_err() const noexcept -> bool {
-    return _inn.is_err();
   }
 
   auto ok() && noexcept -> Option<T> {
@@ -203,6 +199,7 @@ class [[nodiscard]] Result {
   }
 
  public:
+  // trait: ops::Eq
   template <class U>
   auto operator==(const Result<U, E>& other) const -> bool {
     if (this->is_ok()) {
@@ -226,8 +223,17 @@ class [[nodiscard]] Result<void, E> {
   Inner<void, E> _inn;
 
  public:
-  Result() noexcept : _inn{} {}
-  Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+  constexpr Result() noexcept : _inn{} {}
+
+  constexpr Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+
+  constexpr auto is_ok() const noexcept -> bool {
+    return _inn.is_ok();
+  }
+
+  constexpr auto is_err() const noexcept -> bool {
+    return _inn.is_err();
+  }
 
   void operator*() const noexcept {
     panicking::expect(_inn.is_ok(), "Result::operator~: not Ok()");
@@ -241,14 +247,6 @@ class [[nodiscard]] Result<void, E> {
   auto operator~() noexcept -> E& {
     panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
-  }
-
-  auto is_ok() const noexcept -> bool {
-    return _inn.is_ok();
-  }
-
-  auto is_err() const noexcept -> bool {
-    return _inn.is_err();
   }
 
   auto err() && noexcept -> Option<E> {

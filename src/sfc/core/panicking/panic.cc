@@ -59,8 +59,8 @@ static void dump_frame(u32 idx, void* ptr) noexcept {
   const auto info = sys::backtrace::frame_info(ptr);
   const auto idx_str = idx2str(idx);
   const auto fun_len = sys::backtrace::cxx_demangle(info.func, fun_buf, sizeof(fun_buf));
-  const auto fun_str = fun_len == 0 ? Str::from_cstr(info.func) : Str{fun_buf, fun_len};
-  println(" ", idx_str, " ", fun_str);
+  const auto fun_str = fun_len == 0 ? Str{info.func} : Str{fun_buf, fun_len};
+  println(Str{" "}, idx_str, Str{" "}, fun_str);
 }
 
 void dump_frames() {
@@ -77,7 +77,7 @@ void panic_str(Location loc, Str msg) noexcept {
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
   println(msg);
-  println(" > ", Str::from_cstr(loc.file), ":", line_str);
+  println(Str{" > "}, Str{loc.file}, Str{":"}, line_str);
   dump_frames();
 
   __builtin_trap();

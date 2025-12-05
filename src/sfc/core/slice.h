@@ -26,34 +26,30 @@ struct Slice {
   usize _len = 0;
 
  public:
-  [[gnu::always_inline]] constexpr Slice() noexcept = default;
+  constexpr Slice() noexcept = default;
 
-  [[gnu::always_inline]] constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+  constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  [[gnu::always_inline]] constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+  constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const T* {
+  constexpr auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto as_mut_ptr() noexcept -> T* {
+  constexpr auto as_mut_ptr() noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
+  constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
+  constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  [[gnu::always_inline]] explicit operator bool() const noexcept {
-    return _len != 0;
-  }
-
-  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
+  constexpr operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 
@@ -366,19 +362,19 @@ struct Inner<slice::Slice<T>> {
   slice::Slice<T> _val;
 
  public:
-  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+  auto is_some() const noexcept -> bool {
     return _val._ptr != nullptr;
   }
 
-  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+  auto is_none() const noexcept -> bool {
     return _val._ptr == nullptr;
   }
 
-  [[gnu::always_inline]] auto operator*() const noexcept -> const slice::Slice<T>& {
+  auto operator*() const noexcept -> const slice::Slice<T>& {
     return _val;
   }
 
-  [[gnu::always_inline]] auto operator*() noexcept -> slice::Slice<T>& {
+  auto operator*() noexcept -> slice::Slice<T>& {
     return _val;
   }
 };

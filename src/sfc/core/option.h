@@ -13,49 +13,44 @@ struct Inner {
   };
 
  public:
-  [[gnu::always_inline]] explicit Inner() noexcept {}
+  constexpr Inner() noexcept {}
 
-  [[gnu::always_inline]] explicit Inner(T&& val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
+  constexpr Inner(T&& val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
 
-  [[gnu::always_inline]] ~Inner() noexcept {
+  constexpr ~Inner() noexcept {
     if (_tag) {
       _val.~T();
     }
   }
 
-  [[gnu::always_inline]] Inner(Inner&& other) noexcept : _tag{other._tag} {
+  constexpr Inner(Inner&& other) noexcept : _tag{other._tag} {
     if (_tag) {
       new (&_val) T{static_cast<T&&>(other._val)};
     }
   }
 
-  [[gnu::always_inline]] Inner& operator=(Inner&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    if (_tag) {
-      _val.~T();
-    }
-    _tag = other._tag;
-    if (_tag) {
-      new (&_val) T{static_cast<T&&>(other._val)};
+  constexpr Inner& operator=(Inner&& other) noexcept {
+    if (this != &other) {
+      _tag ? _val.~T() : void();
+      _tag = other._tag;
+      _tag ? new (&_val) T{static_cast<T&&>(other._val)} : &_val;
     }
     return *this;
   }
 
-  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+  constexpr auto is_some() const noexcept -> bool {
     return _tag;
   }
 
-  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+  constexpr auto is_none() const noexcept -> bool {
     return !_tag;
   }
 
-  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+  constexpr auto operator*() const noexcept -> const T& {
     return _val;
   }
 
-  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+  constexpr auto operator*() noexcept -> T& {
     return _val;
   }
 };
@@ -65,23 +60,23 @@ struct Inner<T&> {
   T* _ptr{nullptr};
 
  public:
-  [[gnu::always_inline]] Inner() noexcept = default;
+  constexpr Inner() noexcept = default;
 
-  [[gnu::always_inline]] Inner(T& val) noexcept : _ptr{&val} {}
+  constexpr Inner(T& val) noexcept : _ptr{&val} {}
 
-  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+  constexpr auto is_some() const noexcept -> bool {
     return _ptr != nullptr;
   }
 
-  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+  constexpr auto is_none() const noexcept -> bool {
     return _ptr == nullptr;
   }
 
-  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+  constexpr auto operator*() const noexcept -> const T& {
     return *_ptr;
   }
 
-  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+  constexpr auto operator*() noexcept -> T& {
     return *_ptr;
   }
 };
@@ -94,23 +89,23 @@ struct Inner<T> {
   };
 
  public:
-  [[gnu::always_inline]] explicit Inner() noexcept {}
+  constexpr Inner() noexcept {}
 
-  [[gnu::always_inline]] explicit Inner(T val) noexcept : _tag{true}, _val{val} {}
+  constexpr Inner(T val) noexcept : _tag{true}, _val{val} {}
 
-  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+  constexpr auto is_some() const noexcept -> bool {
     return _tag;
   }
 
-  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+  constexpr auto is_none() const noexcept -> bool {
     return !_tag;
   }
 
-  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+  constexpr auto operator*() const noexcept -> const T& {
     return _val;
   }
 
-  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+  constexpr auto operator*() noexcept -> T& {
     return _val;
   }
 };
@@ -123,10 +118,18 @@ class Option {
   Inner<T> _inn{};
 
  public:
-  Option() noexcept = default;
-  Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+  constexpr Option() noexcept = default;
+  constexpr Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
 
-  explicit operator bool() const noexcept {
+  constexpr auto is_some() const noexcept -> bool {
+    return _inn.is_some();
+  }
+
+  constexpr auto is_none() const noexcept -> bool {
+    return _inn.is_none();
+  }
+
+  constexpr explicit operator bool() const noexcept {
     return _inn.is_some();
   }
 
@@ -148,14 +151,6 @@ class Option {
   auto operator->() {
     panicking::expect(_inn.is_some(), "Option::operator->: not Some()");
     return &*_inn;
-  }
-
-  auto is_some() const noexcept -> bool {
-    return _inn.is_some();
-  }
-
-  auto is_none() const noexcept -> bool {
-    return _inn.is_none();
   }
 
   auto unwrap() && noexcept -> T {

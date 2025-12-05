@@ -5,7 +5,7 @@
 namespace sfc::fs::test {
 
 SFC_TEST(read_write) {
-  const auto path_buf = env::temp_dir().join("test_file.txt");
+  const auto path_buf = env::temp_dir().join(Str{"test_file.txt"});
 
   // create, write
   {

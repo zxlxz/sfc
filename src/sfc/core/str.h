@@ -10,35 +10,29 @@ struct Str {
   usize _len = 0;
 
  public:
-  [[gnu::always_inline]] constexpr Str() noexcept = default;
+  constexpr Str() noexcept = default;
 
-  [[gnu::always_inline]] constexpr Str(const char* pat, usize n) noexcept : _ptr{pat}, _len{n} {}
+  constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  template <usize N>
-  [[gnu::always_inline]] constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
-
-  [[gnu::always_inline]] static constexpr auto from_cstr(const char* s) noexcept -> Str {
-    auto n = 0UL;
-    if (s != nullptr) {
-      while (s[n] != '\0') {
-        ++n;
-      }
+  constexpr Str(const char* s) noexcept : _ptr{s} {
+    while (s != nullptr && s[_len] != '\0') {
+      ++_len;
     }
-    return Str{s, n};
   }
 
-  [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+  template <usize N>
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+
+  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto pat = static_cast<const char*>(static_cast<const void*>(s._ptr));
     return {pat, s._len};
   }
 
-  [[gnu::always_inline]] static auto from(const auto& f) noexcept -> Str {
+  static auto from(const auto& f) noexcept -> Str {
     if constexpr (requires { f.as_str(); }) {
       return f.as_str();
     } else if constexpr (requires { Str{f}; }) {
       return Str{f};
-    } else if constexpr (requires { Str::from_cstr(f); }) {
-      return Str::from_cstr(f);
     } else if constexpr (requires { Str::from_utf8(f); }) {
       return Str::from_utf8(f);
     } else {
@@ -46,31 +40,31 @@ struct Str {
     }
   }
 
-  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const char* {
+  constexpr auto as_ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
+  constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
+  constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] constexpr explicit operator bool() const noexcept {
+  constexpr explicit operator bool() const noexcept {
     return _len != 0;
   }
 
-  [[gnu::always_inline]] constexpr auto as_chars() const noexcept -> Slice<const char> {
+  constexpr auto as_chars() const noexcept -> Slice<const char> {
     return {_ptr, _len};
   }
 
-  [[gnu::always_inline]] constexpr auto as_bytes() const noexcept -> Slice<const u8> {
+  constexpr auto as_bytes() const noexcept -> Slice<const u8> {
     return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
   }
 
-  [[gnu::always_inline]] constexpr auto as_str() const noexcept -> Str {
+  constexpr auto as_str() const noexcept -> Str {
     return *this;
   }
 
@@ -167,15 +161,18 @@ struct Str {
 
   // trait: str::FromStr
   template <class T>
-  auto parse() const -> Option<T>;
-
-  // trait: io::Read
-  auto read(Slice<u8> buf) -> io::Result<usize> {
-    const auto amt = _len < buf._len ? _len : buf._len;
-    __builtin_memcpy(buf._ptr, _ptr, amt);
-    _ptr += amt;
-    _len -= amt;
-    return amt;
+  auto parse() const -> Option<T> {
+    if constexpr (requires { T::from_str(*this); }) {
+      return T::from_str(*this);
+    } else if constexpr (trait::int_<T>) {
+      auto dst = T{};
+      return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
+    } else if constexpr (trait::flt_<T>) {
+      auto dst = T{};
+      return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
+    } else {
+      static_assert(false, "Str::parse: unsupported type");
+    }
   }
 
   // trait: serde::Serialize
@@ -183,21 +180,6 @@ struct Str {
     ser.serialize_str(*this);
   }
 };
-
-template <class T>
-auto Str::parse() const -> Option<T> {
-  if constexpr (requires { T::from_str(*this); }) {
-    return T::from_str(*this);
-  } else if constexpr (trait::int_<T>) {
-    auto dst = T{};
-    return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
-  } else if constexpr (trait::flt_<T>) {
-    auto dst = T{};
-    return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
-  } else {
-    static_assert(false, "Str::parse: unsupported type");
-  }
-}
 
 namespace pattern {
 
@@ -485,19 +467,19 @@ struct Inner<str::Str> {
   str::Str _val;
 
  public:
-  [[gnu::always_inline]] auto is_some() const noexcept -> bool {
+  auto is_some() const noexcept -> bool {
     return _val._ptr != nullptr;
   }
 
-  [[gnu::always_inline]] auto is_none() const noexcept -> bool {
+  auto is_none() const noexcept -> bool {
     return _val._ptr == nullptr;
   }
 
-  [[gnu::always_inline]] auto operator*() const noexcept -> const str::Str& {
+  auto operator*() const noexcept -> const str::Str& {
     return _val;
   }
 
-  [[gnu::always_inline]] auto operator*() noexcept -> str::Str& {
+  auto operator*() noexcept -> str::Str& {
     return _val;
   }
 };

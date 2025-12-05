@@ -72,12 +72,11 @@ struct Debug {
 
   template <class T, usize N>
   static void fmt(const T (&val)[N], auto& f) {
-    Slice{val}.fmt(f);
-  }
-
-  template <usize N>
-  static void fmt(const char (&val)[N], auto& f) {
-    Str{val}.fmt(f);
+    if constexpr (trait::same_<T, char>) {
+      Str{val}.fmt(f);
+    } else {
+      Slice{val, N}.fmt(f);
+    }
   }
 };
 

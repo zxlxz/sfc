@@ -23,13 +23,12 @@ class [[nodiscard]] Buf {
       : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
 
   Buf& operator=(Buf&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->dealloc();
+      _ptr = mem::take(other._ptr);
+      _cap = mem::take(other._cap);
+      _alloc = mem::move(other._alloc);
     }
-    this->dealloc();
-    _ptr = mem::take(other._ptr);
-    _cap = mem::take(other._cap);
-    _alloc = mem::move(other._alloc);
     return *this;
   }
 
@@ -120,12 +119,11 @@ class [[nodiscard]] Vec {
   }
 
   Vec& operator=(Vec&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->clear();
+      _buf = mem::move(other._buf);
+      _len = mem::take(other._len);
     }
-    this->clear();
-    _buf = mem::move(other._buf);
-    _len = mem::take(other._len);
     return *this;
   }
 

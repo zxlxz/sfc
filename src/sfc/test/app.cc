@@ -50,7 +50,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
     for (auto& test : suite.tests()) {
       auto testcase = testsuite.serialize_node("testcase");
       testcase.attr("name", test.name());
-      testcase.attr("file", Str::from_cstr(test._loc.file));
+      testcase.attr("file", Str{test._loc.file});
       testcase.attr("line", test._loc.line);
     }
   }
