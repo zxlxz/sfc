@@ -35,6 +35,9 @@ template <class T>
 concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
 
 template <class T>
+concept empty_ = __is_empty(T);
+
+template <class T>
 concept copy_ = __is_constructible(T, const T&);
 
 template <class T>
@@ -43,12 +46,11 @@ concept tv_copy_ = __is_trivially_copyable(T);
 template <class T>
 concept tv_dtor_ = __is_trivially_destructible(T);
 
-template <class I, class X>
+template <trait::empty_ I, class X>
 struct Impl : I, X {};
 
-template <class I, class X>
+template <trait::empty_ I, class X>
 auto as(const X& x) -> auto& {
-  static_assert(sizeof(I) == 0);
   if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
   } else {
@@ -56,7 +58,7 @@ auto as(const X& x) -> auto& {
   }
 }
 
-template <class I, class X>
+template <trait::empty_ I, class X>
 auto as_mut(X& x) -> auto& {
   if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);
