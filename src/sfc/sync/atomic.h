@@ -14,12 +14,11 @@ enum class Ordering {
 };
 
 template <class T>
-class Atomic {
+struct Atomic {
+  static_assert(trait::int_<T> || trait::enum_<T> || trait::ptr_<T>);
   T _val;
 
  public:
-  explicit Atomic(T val) noexcept : _val{val} {}
-
   template <Ordering order = Ordering::SeqCst>
   auto load() const noexcept -> T {
     return __atomic_load_n(const_cast<T*>(&_val), static_cast<int>(order));
@@ -37,11 +36,13 @@ class Atomic {
 
   template <Ordering order = Ordering::SeqCst>
   auto fetch_add(T val) noexcept -> T {
+    static_assert(trait::int_<T>);
     return __atomic_fetch_add(&_val, val, static_cast<int>(order));
   }
 
   template <Ordering order = Ordering::SeqCst>
   auto fetch_sub(T val) noexcept -> T {
+    static_assert(trait::int_<T>);
     return __atomic_fetch_sub(&_val, val, static_cast<int>(order));
   }
 };

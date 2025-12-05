@@ -19,56 +19,6 @@ struct alignas(8) Style {
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
   static auto from_str(Str s) noexcept -> Option<Style>;
-
-  auto fill(char default_val = ' ') const noexcept -> char {
-    return _fill ? _fill : default_val;
-  }
-
-  auto align() const noexcept -> char {
-    return _align;
-  }
-
-  auto width() const noexcept -> u32 {
-    return _width;
-  }
-
-  auto type(char default_type = 0) const noexcept -> char {
-    return _type ? _type : default_type;
-  }
-
-  auto verbose() const noexcept -> bool {
-    return _prefix == '#';
-  }
-
-  auto sign(bool is_neg) const noexcept -> Str {
-    if (is_neg) {
-      return "-";
-    }
-    switch (_sign) {
-      case '+': return "+";
-      case '-': return " ";
-      default:  return "";
-    }
-  }
-
-  auto precision(u32 default_val) const noexcept -> u32 {
-    return _point ? _precision : default_val;
-  }
-
-  auto prefix() const noexcept -> Str {
-    if (_prefix != '#') {
-      return "";
-    }
-    switch (_type) {
-      case 'X': return "0X";
-      case 'x': return "0x";
-      case 'O': return "0";
-      case 'o': return "0";
-      case 'B': return "0B";
-      case 'b': return "0b";
-      default:  return "";
-    }
-  }
 };
 
 struct Debug {
@@ -172,6 +122,14 @@ struct Fmter {
     }
   }
 
+  void write_chars(char c, usize n) {
+    const char v[] = {c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += sizeof(v)) {
+      const auto w = n - i < sizeof(v) ? n - i : sizeof(v);
+      this->write_str({v, w});
+    }
+  }
+
   void write_str(str::Str s) {
     if (s.is_empty()) {
       return;
@@ -183,51 +141,67 @@ struct Fmter {
     }
   }
 
-  void fill(usize n) {
-    const auto c = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
-    const char v[] = {c, c, c, c, c, c, c, c};
-    for (auto i = 0U; i < n; i += sizeof(v)) {
-      const auto w = n - i < sizeof(v) ? n - i : sizeof(v);
-      this->write_str({v, w});
-    }
-  }
-
   void pad(Str s) {
     if (_style._width <= s._len) {
       this->write_str(s);
       return;
     }
 
+    const auto fill = _style._fill ? _style._fill : ' ';
     const auto npad = usize{_style._width} - s._len;
+
     switch (_style._align) {
       default:
       case '<':
         this->write_str(s);
-        this->fill(npad);
+        this->write_chars(fill, npad);
         break;
       case '>':
-        this->fill(npad);
+        this->write_chars(fill, npad);
         this->write_str(s);
         break;
       case '=':
       case '^':
-        this->fill((npad + 0) / 2);
+        this->write_chars(fill, (npad + 0) / 2);
         this->write_str(s);
-        this->fill((npad + 1) / 2);
+        this->write_chars(fill, (npad + 1) / 2);
         break;
     }
   }
 
   void pad_num(bool is_neg, Str body) {
-    const auto sign = _style.sign(is_neg);
-    const auto prefix = _style.prefix();
+    auto make_sign = [](char sign) -> Str {
+      switch (sign) {
+        case '+': return Str{"+"};
+        case '-': return Str{" "};
+        case ' ': return Str{" "};
+        default:  return Str{""};
+      }
+    };
+
+    auto make_prefix = [](char type) -> Str {
+      switch (type) {
+        case 'X': return "0X";
+        case 'x': return "0x";
+        case 'O': return "0";
+        case 'o': return "0";
+        case 'B': return "0B";
+        case 'b': return "0b";
+        default:  return "";
+      }
+    };
+
+    const auto sign = is_neg ? Str{"-"} : make_sign(_style._sign);
+    const auto prefix = _style._prefix ? make_prefix(_style._type) : Str{""};
     const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
-    const auto npad = _style._width > body._len ? _style._width - body._len : 0U;
+    const auto nfill = sign._len + prefix._len + body._len;
+    const auto npad = _style._width > nfill ? _style._width - nfill : 0U;
+    const auto fill = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
 
     switch (align) {
       default:
       case '>':
-        this->fill(npad);
+        this->write_chars(fill, npad);
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
@@ -236,20 +210,20 @@ struct Fmter {
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
-        this->fill(npad);
+        this->write_chars(fill, npad);
         break;
       case '=':
         this->write_str(sign);
         this->write_str(prefix);
-        this->fill(npad);
+        this->write_chars(fill, npad);
         this->write_str(body);
         break;
       case '^':
-        this->fill((npad + 0) / 2);
+        this->write_chars(fill, (npad + 0) / 2);
         this->write_str(sign);
         this->write_str(prefix);
         this->write_str(body);
-        this->fill((npad + 1) / 2);
+        this->write_chars(fill, (npad + 1) / 2);
     }
   }
 

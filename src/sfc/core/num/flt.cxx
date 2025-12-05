@@ -12,11 +12,11 @@ SFC_TEST(fmt_fix) {
   panicking::expect_eq(string::format("{+.2f}", +123.456), "+123.46");
   panicking::expect_eq(string::format("{-.2f}", -123.456), "-123.46");
 
-  panicking::expect_eq(string::format("{+7.2f}", +123.456), " +123.46");
-  panicking::expect_eq(string::format("{+7.2f}", -123.456), " -123.46");
+  panicking::expect_eq(string::format("{+7.2f}", +123.456), "+123.46");
+  panicking::expect_eq(string::format("{+7.2f}", -123.456), "-123.46");
 
-  panicking::expect_eq(string::format("{-7.2f}", +123.456), "  123.46");
-  panicking::expect_eq(string::format("{-7.2f}", -123.456), " -123.46");
+  panicking::expect_eq(string::format("{-7.2f}", +123.456), " 123.46");
+  panicking::expect_eq(string::format("{-7.2f}", -123.456), "-123.46");
 }
 
 SFC_TEST(fmt_exp) {

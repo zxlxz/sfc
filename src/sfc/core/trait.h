@@ -8,7 +8,7 @@ template <class T, class U>
 concept same_ = __is_same(T, U);
 
 template <class T, class... U>
-concept any_ = (... || trait::same_<T, U>);
+concept any_ = (... || __is_same(T, U));
 
 template <class T>
 concept enum_ = __is_enum(T);
@@ -17,16 +17,19 @@ template <class T>
 concept class_ = __is_class(T);
 
 template <class T>
-concept sint_ = any_<T, signed char, short, int, long, long long>;
+concept int_ = __is_integral(T);
 
 template <class T>
-concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
+concept flt_ = __is_floating_point(T);
 
 template <class T>
-concept int_ = sint_<T> || uint_<T> || same_<T, char>;
+concept sint_ = __is_integral(T) && __is_signed(T);
 
 template <class T>
-concept flt_ = any_<T, float, double>;
+concept uint_ = __is_integral(T) && __is_unsigned(T);
+
+template <class T>
+concept ptr_ = __is_pointer(T);
 
 template <class T>
 concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
@@ -36,6 +39,9 @@ concept copy_ = __is_constructible(T, const T&);
 
 template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
+
+template <class T>
+concept tv_dtor_ = __is_trivially_destructible(T);
 
 template <class I, class X>
 struct Impl : I, X {
