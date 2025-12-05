@@ -23,7 +23,7 @@ template <class T>
 concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
 
 template <class T>
-concept int_ = sint_<T> || uint_<T>;
+concept int_ = sint_<T> || uint_<T> || same_<T, char>;
 
 template <class T>
 concept flt_ = any_<T, float, double>;
@@ -36,9 +36,6 @@ concept copy_ = __is_constructible(T, const T&);
 
 template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
-
-template <class T>
-using decay_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 template <class I, class X>
 struct Impl : I, X {

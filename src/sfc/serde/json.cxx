@@ -72,14 +72,14 @@ SFC_TEST(deserialize_simple) {
 SFC_TEST(deserialize_seq) {
   const Str s = "[0,1,2]";
   const int vals[] = {0, 1, 2};
-  auto visit = [&](auto& des) mutable {
+  auto visit = [&](auto& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
-      const auto val = des.template next_element<int>();
+      const auto val = seq.template next_element<int>();
       panicking::expect(val.is_ok());
       panicking::expect_eq(*val, vals[i]);
     }
-    panicking::expect(!des.has_next());
-    return Result<>{};
+    panicking::expect(!seq.has_next());
+    return {};
   };
 
   auto des = Deserializer{s};
@@ -91,17 +91,17 @@ SFC_TEST(deserialize_map) {
   const Str keys[] = {"a", "b"};
   const int vals[] = {1, 2};
 
-  auto visit = [&](auto& des) mutable -> Result<> {
+  auto visit = [&](auto& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
-      const auto key = des.next_key();
+      const auto key = map.next_key();
       panicking::expect(key.is_ok());
       panicking::expect_eq(*key, keys[i]);
 
-      const auto val = des.template next_value<int>();
+      const auto val = map.template next_value<int>();
       panicking::expect(val.is_ok());
       panicking::expect_eq(*val, vals[i]);
     }
-    panicking::expect(!des.has_next());
+    panicking::expect(!map.has_next());
     return {};
   };
 

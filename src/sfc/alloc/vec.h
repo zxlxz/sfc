@@ -252,8 +252,9 @@ class [[nodiscard]] Vec {
 
  public:
   auto push(T val) -> T& {
-    this->reserve(1);
-
+    if (_len == _buf._cap) {
+      this->reserve(1);
+    }
     auto dst = _buf._ptr + _len;
     new (dst) T{static_cast<T&&>(val)};
     _len += 1;

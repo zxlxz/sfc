@@ -28,17 +28,12 @@ struct alignas(8) Style {
     return _align;
   }
 
-  auto type() const noexcept -> char {
-    return _type;
-  }
-
   auto width() const noexcept -> u32 {
     return _width;
   }
 
-  auto radix() const noexcept -> u32 {
-    const auto t = _type | 32;
-    return t == 'b' ? 2 : t == 'o' ? 8 : t == 'x' ? 16 : 10;
+  auto type(char default_type = 0) const noexcept -> char {
+    return _type ? _type : default_type;
   }
 
   auto verbose() const noexcept -> bool {
@@ -77,10 +72,6 @@ struct alignas(8) Style {
 };
 
 struct Debug {
-  static auto to_str(Slice<char> buf, trait::int_ auto val, Style style = {}) noexcept -> Str;
-  static auto to_str(Slice<char> buf, trait::flt_ auto val, Style style = {}) noexcept -> Str;
-  static auto to_str(Slice<char> buf, const void* val, Style style = {}) noexcept -> Str;
-
  public:
   static void fmt(bool val, auto& f) {
     f.pad(val ? Str{"true"} : Str{"false"});
@@ -92,26 +83,32 @@ struct Debug {
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto s = Debug::to_str(buf, val, f._style);
-    f.pad_num(false, s);
+    const auto uval = reinterpret_cast<usize>(val);
+    const auto type = f._style._type ? f._style._type : 'x';
+    const auto sval = num::to_str(buf, uval, type);
+    f.pad_num(false, sval);
   }
 
   static void fmt(trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::to_str(buf, val, f._style);
-    f.pad_num(false, s);
+    const auto sval = num::to_str(buf, val, f._style._type);
+    f.pad_num(false, sval);
   }
 
   static void fmt(trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::to_str(buf, val >= 0 ? val : 0 - val, f._style);
-    f.pad_num(val < 0, s);
+    const auto uval = val >= 0 ? val : 0 - val;
+    const auto sval = num::to_str(buf, uval, f._style._type);
+    f.pad_num(val < 0, sval);
   }
 
   static void fmt(trait::flt_ auto val, auto& f) {
+    static constexpr auto DEFAULT_PREC = sizeof(val) == 4 ? 4U : 6U;
     char buf[8 * sizeof(val) + 16];
-    const auto s = Debug::to_str(buf, val >= 0 ? val : 0 - val, f._style);
-    f.pad_num(val < 0, s);
+    const auto prec = f._style._point ? f._style._precision : DEFAULT_PREC;
+    const auto uval = val >= 0 ? val : 0 - val;
+    const auto sval = num::to_str(buf, uval, prec, f._style._type);
+    f.pad_num(val < 0, sval);
   }
 
   static void fmt(trait::enum_ auto val, auto& f) {
@@ -225,8 +222,7 @@ struct Fmter {
     const auto sign = _style.sign(is_neg);
     const auto prefix = _style.prefix();
     const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
-    const auto len = prefix.len() + sign.len() + body.len();
-    const auto npad = _style._width > len ? _style._width - len : 0U;
+    const auto npad = _style._width > body._len ? _style._width - body._len : 0U;
 
     switch (align) {
       default:

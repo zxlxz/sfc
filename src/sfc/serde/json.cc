@@ -21,6 +21,7 @@ void Serializer::write_tok(Token tok) noexcept {
 }
 
 void Serializer::write_str(Str s) noexcept {
+  _buf.reserve(s._len + 2);
   _buf.push('"');
   _buf.push_str(s);
   _buf.push('"');
@@ -54,6 +55,9 @@ void Deserializer::consume(usize n) noexcept {
 
 auto Deserializer::next_token() noexcept -> Token {
   _buf = _buf.trim_start();
+  if (_buf.is_empty()) {
+    return Token::Eof;
+  }
   switch (_buf[0]) {
     case 0:   return Token::Eof;
     case ',': return Token::Comma;

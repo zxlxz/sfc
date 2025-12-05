@@ -34,16 +34,19 @@ using f64 = double;
 
 using cstr_t = const char*;
 
+template <class T>
+using auto_t = decltype(auto{static_cast<T (*)()>(0)()});
+
 }  // namespace sfc
 
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
 #define __PLACEMENT_NEW_INLINE
 #define _LIBCPP_NEW
-[[nodiscard]] inline void* operator new(sfc::usize, void* ptr) noexcept {
+[[gnu::always_inline]] inline void* operator new(sfc::usize, void* ptr) noexcept {
   return ptr;
 }
 
-inline void operator delete(void*, void*) noexcept {
+[[gnu::always_inline]] inline void operator delete(void*, void*) noexcept {
   return;
 }
 #endif

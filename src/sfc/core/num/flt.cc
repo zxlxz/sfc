@@ -3,22 +3,137 @@
 
 namespace sfc::num {
 
-struct ParseFlt {
+struct FltFmter {
+  char* _buf;
+  char* _ptr;
+
+ public:
+  auto write(auto val, u32 precision, char type) noexcept -> Str {
+    const auto tail = _ptr;
+    const auto uval = val >= 0 ? val : -val;
+    switch (type | 32) {
+      default:
+      case 'f': this->write_fix(uval, precision); break;
+      case 'e': this->write_exp(uval, precision); break;
+    }
+    if (val < 0) {
+      this->push('-');
+    }
+
+    const auto len = static_cast<usize>(tail - _ptr);
+    return {_ptr, len};
+  }
+
+ private:
+  static auto make_exp(u32 val) noexcept -> u64 {
+    auto res = u64{1U};
+    for (; val >= 2; val -= 2) {
+      res *= 100;
+    }
+    for (; val >= 1; val -= 1) {
+      res *= 10;
+    }
+    return res;
+  }
+
+  void push(char c) noexcept {
+    if (_ptr == _buf) {
+      return;
+    }
+    *--_ptr = c;
+  }
+
+  void write_dec(auto uval) noexcept {
+    static const char DIGITS[] =
+        "0001020304050607080910111213141516171819"
+        "2021222324252627282930313233343536373839"
+        "4041424344454647484950515253545556575859"
+        "6061626364656667686970717273747576777879"
+        "8081828384858687888990919293949596979899";
+
+    for (; uval >= 100; uval /= 100) {
+      const auto n = uval % 100 * 2;
+      this->push(DIGITS[n + 1]);
+      this->push(DIGITS[n + 0]);
+    }
+    if (uval >= 10) {
+      const auto n = uval % 100 * 2;
+      this->push(DIGITS[n + 1]);
+      this->push(DIGITS[n + 0]);
+    } else {
+      this->push(static_cast<char>(uval + '0'));
+    }
+  }
+
+  void write_fix(f64 uval, u32 precision) noexcept {
+    auto int_part = static_cast<u64>(uval);
+
+    if (precision != 0) {
+      const auto frac_exp = make_exp(precision);
+      const auto flt_temp = (uval - static_cast<f64>(int_part)) * frac_exp;
+
+      auto flt_part = static_cast<u64>(flt_temp + 0.5);
+      if (flt_part >= frac_exp) {
+        int_part += 1;
+        flt_part -= frac_exp;
+      }
+      this->write_dec(frac_exp + flt_part);
+      ++_ptr;
+
+      this->push('.');
+    }
+
+    this->write_dec(int_part);
+  }
+
+  void write_exp(f64 uval, u32 precision) noexcept {
+    auto exp = 0;
+    auto norm = uval;
+
+    if (uval != 0.0) {
+      for (; norm >= 10.0; ++exp) {
+        norm /= 10.0;
+      }
+      for (; norm < 1.0; --exp) {
+        norm *= 10.0;
+      }
+    }
+
+    // write exp
+    const auto uexp = static_cast<u32>(exp < 0 ? -exp : exp);
+    this->write_dec(uexp);
+    if (uexp < 10) {
+      this->push('0');
+    }
+    this->push(exp < 0 ? '-' : '+');
+    this->push('e');
+
+    // Write mantissa
+    this->write_fix(norm, precision);
+  }
+};
+
+struct FltParser {
   const char* _ptr;
   const char* _end;
 
  public:
-  template <class T>
-  auto parse() noexcept -> Option<T> {
+  template <trait::flt_ T>
+  auto read(T& dst) noexcept -> bool {
     const auto is_neg = this->extract_sign();
     const auto int_part = this->extract_int_part();
     const auto flt_part = this->extract_flt_part();
     if (_ptr != _end) {
-      return {};
+      return false;
     }
 
-    const auto val = static_cast<T>(int_part + flt_part);
-    return is_neg ? -val : val;
+    const auto val = int_part + flt_part;
+    if (_ptr != _end) {
+      return false;
+    }
+
+    dst = static_cast<T>(is_neg ? -val : val);
+    return true;
   }
 
  private:
@@ -53,8 +168,8 @@ struct ParseFlt {
     }
     ++_ptr;
 
-    i64 val = 0;
-    i64 exp = 1;
+    i64 uval = 0;
+    i64 base = 1;
     for (; _ptr != _end; ++_ptr) {
       const auto c = *_ptr;
       const auto n = static_cast<u8>(c - '0');
@@ -62,10 +177,10 @@ struct ParseFlt {
         break;
       }
 
-      exp *= 10;
-      val = 10 * val + n;
+      base *= 10;
+      uval = 10 * uval + n;
     }
-    return static_cast<f64>(val) / exp;
+    return static_cast<f64>(uval) / static_cast<f64>(base);
   }
 };
 
@@ -88,17 +203,28 @@ auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
   return diff <= ulp;
 }
 
-}  // namespace sfc::num
+auto to_str(Slice<char> buf, trait::flt_ auto val, u32 precision, char type) noexcept -> Str {
+  if (__builtin_isnan(val)) {
+    return "nan";
+  }
 
-namespace sfc::str {
+  if (__builtin_isinf(val)) {
+    return val > 0.0f ? Str{"inf"} : Str{"-inf"};
+  }
 
-template <class T>
-auto FromStr<T>::from_str(Str s) -> Option<T> {
-  auto imp = num::ParseFlt{s._ptr, s._ptr + s._len};
-  return imp.parse<T>();
+  auto imp = FltFmter{buf._ptr, buf._ptr + buf._len};
+  return imp.write(val, precision, type);
 }
 
-template struct FromStr<f32>;
-template struct FromStr<f64>;
+auto from_str(str::Str buf, trait::flt_ auto& val) noexcept -> bool {
+  auto imp = FltParser{buf._ptr, buf._ptr + buf._len};
+  return imp.read(val);
+}
 
-}  // namespace sfc::str
+template auto to_str(Slice<char>, f32, u32, char) noexcept -> Str;
+template auto to_str(Slice<char>, f64, u32, char) noexcept -> Str;
+
+template auto from_str(str::Str, f32&) noexcept -> bool;
+template auto from_str(str::Str, f64&) noexcept -> bool;
+
+}  // namespace sfc::num

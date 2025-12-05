@@ -33,19 +33,19 @@ struct Slice {
   template <usize N>
   [[gnu::always_inline]] constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  [[gnu::always_inline]] auto as_ptr() const noexcept -> const T* {
+  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto as_mut_ptr() noexcept -> T* {
+  [[gnu::always_inline]] constexpr auto as_mut_ptr() noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto len() const noexcept -> usize {
+  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] auto is_empty() const noexcept -> bool {
+  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
@@ -53,7 +53,7 @@ struct Slice {
     return _len != 0;
   }
 
-  [[gnu::always_inline]] operator Slice<const T>() const noexcept {
+  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 

@@ -56,13 +56,13 @@ struct Serializer {
 
   void serialize_int(trait::int_ auto val) noexcept {
     char buf[32];
-    const auto s = fmt::Debug::to_str(buf, val);
+    const auto s = num::to_str(buf, val);
     this->write_num(s);
   }
 
   void serialize_flt(trait::flt_ auto val) noexcept {
     char buf[32];
-    const auto s = fmt::Debug::to_str(buf, val);
+    const auto s = num::to_str(buf, val);
     this->write_num(s);
   }
 
@@ -199,6 +199,7 @@ struct Deserializer {
 };
 
 struct Deserializer::DesArray {
+  using Error = json::Error;
   Deserializer& _inn;
   usize _idx = 0;
 
@@ -210,18 +211,17 @@ struct Deserializer::DesArray {
 
   template <class T>
   auto next_element() noexcept -> Result<T> {
-    if (_idx++ != 0) {
-      if (auto res = _inn.extract_tok(Token::Comma); res.is_err()) {
-        return ~res;
-      }
+    if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
+      return Error::ExpectedComma;
     }
+    _idx += 1;
     return Deserialize::deserialize<T>(_inn);
   }
 };
 
 auto Deserializer::deserialize_seq(auto&& visit) -> Result<> {
-  if (auto x = this->extract_tok(Token::ArrayBegin); x.is_err()) {
-    return ~x;
+  if (this->extract_tok(Token::ArrayBegin).is_err()) {
+    return Error::ExpectedArrayBegin;
   }
   auto imp = DesArray{*this};
   if (auto x = visit(imp); x.is_err()) {
@@ -231,6 +231,7 @@ auto Deserializer::deserialize_seq(auto&& visit) -> Result<> {
 }
 
 struct Deserializer::DesObject {
+  using Error = json::Error;
   Deserializer& _inn;
   usize _idx = 0;
 
@@ -241,17 +242,16 @@ struct Deserializer::DesObject {
   }
 
   auto next_key() noexcept -> Result<Str> {
-    if (_idx++ != 0) {
-      if (auto x = _inn.extract_tok(Token::Comma); x.is_err()) {
-        return ~x;
-      }
+    if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
+      return Error::ExpectedComma;
     }
+    _idx += 1;
     return _inn.extract_str();
   }
 
   template <class T>
   auto next_value() noexcept -> Result<T> {
-    if (auto x = _inn.extract_tok(Token::Colon); x.is_err()) {
+    if (_inn.extract_tok(Token::Colon).is_err()) {
       return Error::ExpectedColon;
     }
     return Deserialize::deserialize<T>(_inn);
@@ -259,8 +259,8 @@ struct Deserializer::DesObject {
 };
 
 auto Deserializer::deserialize_map(auto&& visit) -> Result<> {
-  if (auto x = this->extract_tok(Token::ObjectBegin); x.is_err()) {
-    return ~x;
+  if (this->extract_tok(Token::ObjectBegin).is_err()) {
+    return Error::ExpectedObjectBegin;
   }
   auto imp = DesObject{*this};
   if (auto x = visit(imp); x.is_err()) {

@@ -10,31 +10,29 @@ struct Str {
   usize _len = 0;
 
  public:
-  constexpr Str() noexcept = default;
+  [[gnu::always_inline]] constexpr Str() noexcept = default;
 
-  constexpr Str(const char* pat, usize n) noexcept : _ptr{pat}, _len{n} {}
+  [[gnu::always_inline]] constexpr Str(const char* pat, usize n) noexcept : _ptr{pat}, _len{n} {}
 
   template <usize N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+  [[gnu::always_inline]] constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
-  static constexpr auto from_cstr(const char* s) noexcept -> Str {
-    if (s == nullptr) {
-      return Str{};
-    }
-    
-    auto n = 0UZ;
-    while (s[n] != '\0') {
-      ++n;
+  [[gnu::always_inline]] static constexpr auto from_cstr(const char* s) noexcept -> Str {
+    auto n = 0UL;
+    if (s != nullptr) {
+      while (s[n] != '\0') {
+        ++n;
+      }
     }
     return Str{s, n};
   }
 
-  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+  [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto pat = static_cast<const char*>(static_cast<const void*>(s._ptr));
     return {pat, s._len};
   }
 
-  static auto from(const auto& f) noexcept -> Str {
+  [[gnu::always_inline]] static auto from(const auto& f) noexcept -> Str {
     if constexpr (requires { f.as_str(); }) {
       return f.as_str();
     } else if constexpr (requires { Str{f}; }) {
@@ -48,31 +46,31 @@ struct Str {
     }
   }
 
-  auto as_ptr() const noexcept -> const char* {
+  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  auto is_empty() const noexcept -> bool {
+  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  auto len() const noexcept -> usize {
+  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  explicit operator bool() const noexcept {
+  [[gnu::always_inline]] constexpr explicit operator bool() const noexcept {
     return _len != 0;
   }
 
-  auto as_chars() const noexcept -> Slice<const char> {
+  [[gnu::always_inline]] constexpr auto as_chars() const noexcept -> Slice<const char> {
     return {_ptr, _len};
   }
 
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    return {reinterpret_cast<const u8*>(_ptr), _len};
+  [[gnu::always_inline]] constexpr auto as_bytes() const noexcept -> Slice<const u8> {
+    return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
   }
 
-  auto as_str() const noexcept -> Str {
+  [[gnu::always_inline]] constexpr auto as_str() const noexcept -> Str {
     return *this;
   }
 
@@ -92,21 +90,9 @@ struct Str {
     return Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
   }
 
+ public:
   auto iter() const noexcept -> slice::Iter<const char> {
     return this->as_chars().iter();
-  }
-
-  auto operator==(Str other) const noexcept -> bool {
-    if (_len != other._len) {
-      return false;
-    }
-    if (_len == 0 || _ptr == other._ptr) {
-      return true;
-    }
-    if (_ptr && other._ptr) {
-      return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
-    }
-    return false;
   }
 
  public:
@@ -153,10 +139,21 @@ struct Str {
     return res;
   }
 
-  template <class T>
-  auto parse() const -> Option<T>;
-
  public:
+  // trait: ops::Eq
+  auto operator==(Str other) const noexcept -> bool {
+    if (_len != other._len) {
+      return false;
+    }
+    if (_len == 0 || _ptr == other._ptr) {
+      return true;
+    }
+    if (_ptr && other._ptr) {
+      return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
+    }
+    return false;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (f._style._type == '?' || f._style._type == 's') {
@@ -168,7 +165,11 @@ struct Str {
     }
   }
 
-  // trait:: io::Read
+  // trait: str::FromStr
+  template <class T>
+  auto parse() const -> Option<T>;
+
+  // trait: io::Read
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
@@ -184,16 +185,17 @@ struct Str {
 };
 
 template <class T>
-struct FromStr {
-  static auto from_str(Str) -> Option<T>;
-};
-
-template <class T>
 auto Str::parse() const -> Option<T> {
   if constexpr (requires { T::from_str(*this); }) {
     return T::from_str(*this);
+  } else if constexpr (trait::int_<T>) {
+    auto dst = T{};
+    return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
+  } else if constexpr (trait::flt_<T>) {
+    auto dst = T{};
+    return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
   } else {
-    return FromStr<T>::from_str(*this);
+    static_assert(false, "Str::parse: unsupported type");
   }
 }
 
@@ -239,7 +241,7 @@ struct CharSearcher {
     return {};
   }
 
-  auto next_match_back() -> Option<usize> {
+  auto next_match_back() noexcept -> Option<usize> {
     while (_finger < _finger_back) {
       if (_haystack[--_finger_back] == _needle) {
         return _finger_back;

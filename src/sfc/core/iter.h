@@ -141,12 +141,12 @@ struct Iterator {
     return self.reduce([&](auto& a, auto& b) -> Item { return f(a) > f(b) ? a : b; });
   }
 
-  template <class S = trait::decay_t<Item>>
+  template <class S = auto_t<Item>>
   auto sum(this auto&& self, S init = 0) -> S {
     return self.fold(init, [](auto a, auto b) { return a + b; });
   }
 
-  template <class S = trait::decay_t<Item>>
+  template <class S = auto_t<Item>>
   auto product(this auto&& self, S init = 1) -> S {
     return self.fold(init, [](auto a, auto b) { return a * b; });
   }
