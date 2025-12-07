@@ -14,7 +14,7 @@ struct Str;
 namespace sfc::num {
 
 template <trait::int_ T>
-constexpr auto max_value() -> T {
+consteval auto max_value() -> T {
   if constexpr (trait::uint_<T>) {
     return static_cast<T>(~T{0});
   } else {
@@ -23,7 +23,7 @@ constexpr auto max_value() -> T {
 }
 
 template <trait::int_ T>
-constexpr auto min_value() -> T {
+consteval auto min_value() -> T {
   if constexpr (trait::uint_<T>) {
     return T{0};
   } else {

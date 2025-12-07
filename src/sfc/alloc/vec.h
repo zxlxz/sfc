@@ -132,12 +132,6 @@ class [[nodiscard]] Vec {
     return res;
   }
 
-  static auto from(Slice<const T> v) -> Vec {
-    auto res = Vec{};
-    res.extend_from_slice(v);
-    return res;
-  }
-
   static auto from_iter(auto&& iter) -> Vec {
     auto res = Vec{};
     res.extend(iter);
@@ -248,8 +242,8 @@ class [[nodiscard]] Vec {
     if (_len == _buf._cap) {
       this->reserve(1);
     }
-    auto dst = _buf._ptr + _len;
-    new (dst) T{static_cast<T&&>(val)};
+    const auto dst = _buf._ptr + _len;
+    ptr::write(dst, static_cast<T&&>(val));
     _len += 1;
     return *dst;
   }
@@ -275,14 +269,12 @@ class [[nodiscard]] Vec {
   auto swap_remove(usize idx) noexcept -> T {
     panicking::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
-    auto res = mem::move(_buf._ptr[idx]);
-    if (idx != _len - 1) {
-      _buf._ptr[idx] = mem::move(_buf._ptr[_len - 1]);
-    }
-    mem::drop(_buf._ptr[_len - 1]);
     _len -= 1;
-
-    return res;
+    auto tmp = ptr::read(_buf._ptr + _len);
+    if (idx == _len) {
+      return tmp;
+    }
+    return mem::replace(_buf._ptr[idx], static_cast<T&&>(tmp));
   }
 
   void truncate(usize len) noexcept {
@@ -332,7 +324,7 @@ class [[nodiscard]] Vec {
 
     this->reserve(1);
     ptr::shift_elements_right(_buf._ptr + idx, _len - idx, 1);
-    new (_buf._ptr + idx) T{static_cast<T&&>(val)};
+    ptr::write(_buf._ptr + idx, static_cast<T&&>(val));
     _len += 1;
   }
 
@@ -431,28 +423,14 @@ class [[nodiscard]] Vec {
     return _buf._ptr + _len;
   }
 
-  auto iter() const noexcept -> slice::Iter<const T> {
+  using Iter = slice::Iter<const T>;
+  auto iter() const noexcept -> Iter {
     return Slice{_buf._ptr, _len}.iter();
   }
 
-  auto iter_mut() noexcept -> slice::Iter<T> {
+  using IterMut = slice::Iter<T>;
+  auto iter_mut() noexcept -> IterMut {
     return Slice{_buf._ptr, _len}.iter_mut();
-  }
-
-  auto windows(usize n) const noexcept -> slice::Windows<const T> {
-    return Slice{_buf._ptr, _len}.windows(n);
-  }
-
-  auto windows_mut(usize n) noexcept -> slice::Windows<T> {
-    return Slice{_buf._ptr, _len}.windows_mut(n);
-  }
-
-  auto chunks(usize n) const noexcept -> slice::Chunks<const T> {
-    return Slice{_buf._ptr, _len}.chunks(n);
-  }
-
-  auto chunks_mut(usize n) noexcept -> slice::Chunks<T> {
-    return Slice{_buf._ptr, _len}.chunks_mut(n);
   }
 
  public:
@@ -475,8 +453,8 @@ class [[nodiscard]] Vec {
   }
 
   // trait:: serde::Deserialize
-  template <class Des, class E = typename Des::Error>
-  static auto deserialize(Des& des) -> Result<void, E> {
+  template <class D, class E = typename D::Error>
+  static auto deserialize(D& des) -> Result<void, E> {
     auto res = Vec{};
 
     auto visit = [&](auto&& seq) -> Result<void, E> {
@@ -491,6 +469,16 @@ class [[nodiscard]] Vec {
 };
 
 }  // namespace sfc::vec
+
+namespace sfc::slice {
+template <class T>
+auto Slice<T>::to_vec() const {
+  auto res = vec::Vec<T>{};
+  res.extend_from_slice(*this);
+  return res;
+}
+
+}  // namespace sfc::slice
 
 namespace sfc {
 using vec::Vec;

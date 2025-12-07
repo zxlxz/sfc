@@ -1,6 +1,6 @@
 #include "sfc/app/clap.h"
 
-#include "sfc/test.h"
+#include "sfc/test/ut.h"
 
 namespace sfc::app::test {
 

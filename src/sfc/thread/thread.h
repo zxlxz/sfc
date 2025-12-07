@@ -20,9 +20,6 @@ class JoinHandle {
   explicit JoinHandle(Thread thrd) noexcept;
   ~JoinHandle() noexcept;
 
-  JoinHandle(JoinHandle&&) = delete;
-  JoinHandle& operator=(JoinHandle&&) = delete;
-
   JoinHandle(const JoinHandle&) = delete;
   JoinHandle& operator=(const JoinHandle&) = delete;
 };

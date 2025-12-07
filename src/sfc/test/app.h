@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/test/case.h"
+#include "sfc/core.h"
 
 namespace sfc::test {
 

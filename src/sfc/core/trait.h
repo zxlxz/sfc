@@ -35,9 +35,6 @@ template <class T>
 concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
 
 template <class T>
-concept empty_ = __is_empty(T);
-
-template <class T>
 concept copy_ = __is_constructible(T, const T&);
 
 template <class T>
@@ -46,10 +43,12 @@ concept tv_copy_ = __is_trivially_copyable(T);
 template <class T>
 concept tv_dtor_ = __is_trivially_destructible(T);
 
-template <trait::empty_ I, class X>
-struct Impl : I, X {};
+template <class I, class X>
+struct Impl : I, X {
+  static_assert(__is_empty(I), "Trait interface must be empty");
+};
 
-template <trait::empty_ I, class X>
+template <class I, class X>
 auto as(const X& x) -> auto& {
   if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
@@ -58,7 +57,7 @@ auto as(const X& x) -> auto& {
   }
 }
 
-template <trait::empty_ I, class X>
+template <class I, class X>
 auto as_mut(X& x) -> auto& {
   if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);

@@ -110,7 +110,7 @@ template <class W>
 struct Fmter {
   W& _out;
   Style _style = {};
-  int _depth = 0;
+  u32 _depth = 0;
 
  public:
   void write_char(char c) {
@@ -129,7 +129,7 @@ struct Fmter {
     }
   }
 
-  void write_str(str::Str s) {
+  void write_str(Str s) {
     if (s.is_empty()) {
       return;
     }
@@ -245,204 +245,198 @@ struct Fmter {
   }
 
  public:
-  class DebugTuple;
+  struct DebugTuple;
   auto debug_tuple() -> DebugTuple {
+    this->write_str("(");
     return DebugTuple{*this};
   }
 
-  class DebugList;
+  struct DebugList;
   auto debug_list() -> DebugList {
-    return DebugList{*this};
+    this->write_str("[");
+    return DebugList{this};
   }
 
-  class DebugSet;
+  struct DebugSet;
   auto debug_set() -> DebugSet {
-    return DebugSet{*this};
+    this->write_str("{");
+    return DebugSet{this};
   }
 
-  class DebugMap;
+  struct DebugMap;
   auto debug_map() -> DebugMap {
-    return DebugMap{*this};
+    this->write_str("{");
+    return DebugMap{this};
   }
 
-  class DebugStruct;
+  struct DebugStruct;
   auto debug_struct() -> DebugStruct {
-    return DebugStruct{*this};
+    this->write_str("{");
+    return DebugStruct{this};
   }
 
  private:
   static constexpr auto INDENT_SIZE = 4U;
   static constexpr auto MAX_DEPTH = 20U;
+  static constexpr auto PRETTY_STR =
+      "\n"
+      "                                                            "
+      "                                                            ";
 
-  void debug_begin(Str s) noexcept {
+  void node_begin(Str s) noexcept {
     this->write_str(s);
     _depth += 1;
   }
 
-  void debug_end(Str s, u32 cnt) noexcept {
+  void node_end(Str s, u32 cnt) noexcept {
     _depth -= 1;
-
-    if (cnt && _style._prefix == '#') {
-      const auto s = "\n                                                               ";
-      const auto n = 1 + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
-      this->write_str({s, n});
+    if (cnt != 0) {
+      this->node_item(0);
     }
     this->write_str(s);
   }
 
-  void debug_next(u32 idx, const auto& val, const auto&... keys) {
-    if (_style._prefix != '#') {
-      if (idx != 0) {
-        this->write_str(", ");
-      }
-    } else {
-      const auto s = ",\n                                                               ";
-      const auto n = 2U + INDENT_SIZE * num::min<u32>(_depth, MAX_DEPTH);
-      const auto i = idx == 0 ? 1U : 0U;
-      this->write_str({s + i, n - i});
+  void node_item(u32 idx) {
+    const auto pretty = _style._prefix == '#';
+    if (idx != 0) {
+      this->write_str(pretty ? Str{","} : Str{", "});
     }
-
-    if constexpr (sizeof...(keys) > 0) {
-      (this->write_str(keys), ...);
+    if (pretty) {
+      this->write_str({PRETTY_STR, 1 + INDENT_SIZE * _depth});
     }
-
-    const auto old_style = _style;
-    _style = Style{._type = _style._type};
-    if constexpr (requires { val.fmt(*this); }) {
-      val.fmt(*this);
-    } else {
-      Debug::fmt(val, *this);
-    }
-    _style = old_style;
   }
 };
 
 template <class W>
-class Fmter<W>::DebugTuple {
-  Fmter& _fmt;
+struct Fmter<W>::DebugTuple {
+  Fmter* _fmt = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit DebugTuple(Fmter& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("(");
-  }
-
-  ~DebugTuple() noexcept {
-    _fmt.debug_end(")", _cnt);
-  }
-
-  DebugTuple(const DebugTuple&) = delete;
-
   auto entry(const auto& value) -> DebugTuple& {
-    _fmt.debug_next(_cnt++, value);
+    if (_fmt) {
+      _fmt->node_item(_cnt++);
+      _fmt->write_val(value);
+    }
     return *this;
   }
 
-  void entries(auto&& iter) {
+  void finish() {
+    if (_fmt) {
+      _fmt->node_end(")", _cnt);
+    }
+  }
+
+  auto entries(auto&& iter) -> DebugTuple& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
   }
 };
 
 template <class W>
-class Fmter<W>::DebugList {
-  Fmter& _fmt;
+struct Fmter<W>::DebugList {
+  Fmter* _fmt = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit DebugList(Fmter& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("[");
-  }
-
-  ~DebugList() noexcept {
-    _fmt.debug_end("]", _cnt);
-  }
-
-  DebugList(const DebugList&) noexcept = delete;
-
   auto entry(const auto& value) -> DebugList& {
-    _fmt.debug_next(_cnt++, value);
+    if (_fmt) {
+      _fmt->node_item(_cnt++);
+      _fmt->write_val(value);
+    }
     return *this;
   }
 
-  void entries(auto&& iter) {
+  void finish() {
+    if (_fmt) {
+      _fmt->node_end("]", _cnt);
+    }
+  }
+
+  auto entries(auto&& iter) -> DebugList& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
   }
 };
 
 template <class W>
-class Fmter<W>::DebugSet {
-  Fmter& _fmt;
+struct Fmter<W>::DebugSet {
+  Fmter* _fmt = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit DebugSet(Fmter& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugSet() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugSet(const DebugSet&) noexcept = delete;
-
   auto entry(const auto& value) -> DebugSet& {
-    _fmt.debug_next(_cnt++, value);
+    if (_fmt) {
+      _fmt->node_item(_cnt++);
+      _fmt->write_val(value);
+    }
     return *this;
   }
 
-  void entries(auto&& iter) {
+  auto entries(auto&& iter) -> DebugSet& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
+  }
+
+  void finish() {
+    if (_fmt) {
+      _fmt->node_end("}", _cnt);
+    }
   }
 };
 
 template <class W>
-class Fmter<W>::DebugMap {
-  Fmter& _fmt;
+struct Fmter<W>::DebugMap {
+  Fmter* _fmt = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit DebugMap(Fmter& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugMap() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugMap(const DebugMap&) noexcept = delete;
-
-  auto entry(Str name, const auto& value) -> DebugMap& {
-    _fmt.debug_next(_cnt++, value, "\"", name, "\": ");
+  auto entry(Str key, const auto& value) -> DebugMap& {
+    if (_fmt) {
+      _fmt->node_item(_cnt++);
+      _fmt->write_str('"');
+      _fmt->write_str(key);
+      _fmt->write_str("\": ");
+      _fmt->write_val(value);
+    }
     return *this;
   }
 
-  void entries(auto&& iter) {
+  void finish() {
+    if (_fmt) {
+      _fmt->node_end("}", _cnt);
+    }
+  }
+
+  auto entries(auto&& iter) -> DebugMap& {
     iter.for_each([&](const auto& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
     });
+    return *this;
   }
 };
 
 template <class W>
-class Fmter<W>::DebugStruct {
-  Fmter& _fmt;
+struct Fmter<W>::DebugStruct {
+  Fmter* _fmt = nullptr;
   u32 _cnt = 0;
 
  public:
-  explicit DebugStruct(Fmter& fmt) noexcept : _fmt{fmt} {
-    _fmt.debug_begin("{");
-  }
-
-  ~DebugStruct() noexcept {
-    _fmt.debug_end("}", _cnt);
-  }
-
-  DebugStruct(DebugStruct&&) noexcept = delete;
-
-  auto field(Str name, const auto& value) -> DebugStruct& {
-    _fmt.debug_next(_cnt++, value, name, ": ");
+  auto field(Str key, const auto& value) -> DebugStruct& {
+    if (_fmt) {
+      _fmt->node_item(_cnt++);
+      _fmt->write_str(key);
+      _fmt->write_str(": ");
+      _fmt->write_val(value);
+    }
     return *this;
+  }
+
+  void finish() {
+    if (_fmt) {
+      _fmt->node_end("}", _cnt);
+    }
   }
 
   void fields(auto&& iter) {

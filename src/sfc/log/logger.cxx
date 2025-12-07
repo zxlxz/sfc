@@ -1,6 +1,6 @@
 #include "sfc/log.h"
 
-#include "sfc/test.h"
+#include "sfc/test/ut.h"
 
 namespace sfc::log::test {
 

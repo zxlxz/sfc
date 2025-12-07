@@ -14,37 +14,32 @@ class HashTable {
   static constexpr auto kMaxLoadFactor = 0.75;
 
   u8* _ptr = nullptr;
-  usize _mask = 0;
+  usize _msk = 0;
   usize _len = 0;
   usize _rem = 0;
 
  public:
-  constexpr HashTable() noexcept = default;
+  HashTable() noexcept = default;
 
   ~HashTable() {
-    this->clear();
     this->dealloc();
   }
 
-  HashTable(HashTable&& other) noexcept : _ptr{other._ptr}, _mask{other._mask}, _len{other._len}, _rem{other._rem} {
+  HashTable(HashTable&& other) noexcept : _ptr{other._ptr}, _msk{other._msk}, _len{other._len}, _rem{other._rem} {
     other._ptr = nullptr;
-    other._mask = 0;
+    other._msk = 0;
     other._len = 0;
     other._rem = 0;
   }
 
   HashTable& operator=(HashTable&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->dealloc();
+      _ptr = mem::take(other._ptr);
+      _msk = mem::take(other._msk);
+      _rem = mem::take(other._rem);
+      _len = mem::take(other._len);
     }
-
-    this->clear();
-    this->dealloc();
-
-    _ptr = mem::take(other._ptr);
-    _mask = mem::take(other._mask);
-    _rem = mem::take(other._rem);
-    _len = mem::take(other._len);
     return *this;
   }
 
@@ -53,7 +48,7 @@ class HashTable {
   }
 
   auto capacity() const -> usize {
-    return _mask == 0 ? 0 : _mask + 1;
+    return _msk == 0 ? 0 : _msk + 1;
   }
 
   auto search(const auto& key) const -> T* {
@@ -62,12 +57,11 @@ class HashTable {
     }
 
     const auto hx = this->hash(key);
-    const auto h1 = hx & _mask;
+    const auto h1 = hx & _msk;
     const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
 
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto data = reinterpret_cast<T*>(_ptr + offs);
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+    const auto data = this->data();
+    for (auto idx = h1;; idx = (idx + 1) & _msk) {
       if (_ptr[idx] == kEmpty) {
         return nullptr;
       } else if (_ptr[idx] == h2 && data[idx].key == key) {
@@ -83,19 +77,18 @@ class HashTable {
     }
 
     const auto hx = this->hash(entry.key);
-    const auto h1 = hx & _mask;
+    const auto h1 = hx & _msk;
     const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
 
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto data = reinterpret_cast<T*>(_ptr + offs);
-    auto del = _mask + 1;
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+    const auto data = this->data();
+    auto del = _msk + 1;
+    for (auto idx = h1;; idx = (idx + 1) & _msk) {
       if (_ptr[idx] == kEmpty) {
-        const auto pos = del == _mask + 1 ? idx : del;
+        const auto pos = del == _msk + 1 ? idx : del;
         this->insert_at(data, pos, h2, static_cast<T&&>(entry));
         break;
       } else if (_ptr[idx] == kDeleted) {
-        (void)(del == _mask + 1 ? del = idx : del);
+        (void)(del == _msk + 1 ? del = idx : del);
       } else if (_ptr[idx] == h2 && data[idx].key == entry.key) {
         return &data[idx];
       }
@@ -109,12 +102,12 @@ class HashTable {
     }
 
     const auto hx = this->hash(key);
-    const auto h1 = hx & _mask;
+    const auto h1 = hx & _msk;
     const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
 
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
+    const auto offs = (_msk + kAlign) & ~(kAlign - 1);
     const auto data = reinterpret_cast<T*>(_ptr + offs);
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+    for (auto idx = h1;; idx = (idx + 1) & _msk) {
       if (_ptr[idx] == kEmpty) {
         return false;
       } else if (_ptr[idx] == h2 && data[idx].key == key) {
@@ -131,10 +124,10 @@ class HashTable {
       return;
     }
 
-    const auto off = (_mask + kAlign) & ~(kAlign - 1);
+    const auto off = (_msk + kAlign) & ~(kAlign - 1);
     const auto data = reinterpret_cast<T*>(_ptr + off);
 
-    const auto cap = _mask + 1;
+    const auto cap = _msk + 1;
     for (auto i = 0UL; i < cap; ++i) {
       if (_ptr[i] < kEmpty) {
         data[i].~T();
@@ -150,28 +143,22 @@ class HashTable {
       return;
     }
 
-    const auto old_cap = _mask + 1;
-    const auto old_offs = (old_cap - 1 + kAlign) & ~(kAlign - 1);
-    const auto old_ctrl = _ptr;
-    const auto old_data = reinterpret_cast<T*>(old_ctrl + old_offs);
-
-    this->alloc(old_cap + additional);
-    if (old_ctrl == nullptr) {
+    auto old_tbl = mem::move(*this);
+    this->alloc(old_tbl.capacity() + additional);
+    if (old_tbl._ptr == nullptr) {
       return;
     }
 
-    const auto new_offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto new_data = reinterpret_cast<T*>(_ptr + new_offs);
-    for (auto i = 0UL; i < old_cap; ++i) {
+    const auto old_ctrl = old_tbl._ptr;
+    const auto old_data = old_tbl.data();
+    const auto new_data = this->data();
+    for (auto i = 0UL; i < old_tbl._msk + 1; ++i) {
       if (old_ctrl[i] >= kEmpty) {
         continue;
       }
       auto& tmp = old_data[i];
       this->insert_new(new_data, tmp.key, static_cast<T&&>(tmp));
-      tmp.~T();
     }
-
-    A::dealloc(old_ctrl, {old_offs + old_cap * sizeof(T), kAlign});
   }
 
   void for_each(this auto& self, auto&& f) {
@@ -179,10 +166,10 @@ class HashTable {
       return;
     }
 
-    const auto offs = (self._mask + kAlign) & ~(kAlign - 1);
-    const auto data = reinterpret_cast<T*>(self._ptr + offs);
-    for (auto i = 0UL; i < self._mask + 1; ++i) {
-      if (self._ptr[i] < kEmpty) {
+    const auto ctrl = self._ptr;
+    const auto data = self.data();
+    for (auto i = 0UL; i < self._msk + 1; ++i) {
+      if (ctrl[i] < kEmpty) {
         f(data[i]);
       }
     }
@@ -204,17 +191,26 @@ class HashTable {
     }
   }
 
+  auto data() const -> T* {
+    const auto offs = (_msk + kAlign) & ~(kAlign - 1);
+    return reinterpret_cast<T*>(_ptr + offs);
+  }
+
+  auto layout() const -> alloc::Layout {
+    const auto cap = _msk + 1;
+    const auto offs = (cap - 1 + kAlign) & ~(kAlign - 1);
+    const auto size = offs + (cap * sizeof(T));
+    return {size, kAlign};
+  }
+
   void alloc(usize min_cap) {
     auto cap = 16U;
     while (cap < min_cap) {
       cap *= 2;
     }
 
-    const auto offs = (cap - 1 + kAlign) & ~(kAlign - 1);
-    const auto size = offs + (cap * sizeof(T));
-
-    _mask = cap - 1;
-    _ptr = static_cast<u8*>(A::alloc({size, kAlign}));
+    _msk = cap - 1;
+    _ptr = static_cast<u8*>(A::alloc(this->layout()));
     _rem = static_cast<usize>(static_cast<f64>(cap) * kMaxLoadFactor);
     _len = 0;
 
@@ -222,17 +218,16 @@ class HashTable {
   }
 
   void dealloc() {
-    const auto offs = (_mask + kAlign) & ~(kAlign - 1);
-    const auto size = offs + (_mask + 1) * sizeof(T);
-    A::dealloc(_ptr, {size, kAlign});
+    this->clear();
+    A::dealloc(_ptr, this->layout());
   }
 
   auto insert_new(T* data, const auto& key, T&& val) -> bool {
     const auto hx = this->hash(key);
-    const auto h1 = hx & _mask;
+    const auto h1 = hx & _msk;
     const auto h2 = static_cast<u8>(hx >> 57) & 0x7f;
 
-    for (auto idx = h1;; idx = (idx + 1) & _mask) {
+    for (auto idx = h1;; idx = (idx + 1) & _msk) {
       if (_ptr[idx] == kEmpty) {
         this->insert_at(data, idx, h2, static_cast<T&&>(val));
         return true;

@@ -21,13 +21,12 @@ class [[nodiscard]] VecDeque {
       : _pos{mem::take(other._pos)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
 
   VecDeque& operator=(VecDeque&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->clear();
+      _pos = mem::take(other._pos);
+      _len = mem::take(other._len);
+      _buf = mem::move(other._buf);
     }
-    this->clear();
-    _pos = mem::take(other._pos);
-    _len = mem::take(other._len);
-    _buf = mem::move(other._buf);
     return *this;
   }
 

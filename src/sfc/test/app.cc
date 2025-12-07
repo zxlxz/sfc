@@ -1,8 +1,9 @@
 #include "sfc/fs.h"
 #include "sfc/io.h"
 #include "sfc/serde/xml.h"
-#include "sfc/test/app.h"
 #include "sfc/app/clap.h"
+#include "sfc/test/app.h"
+#include "sfc/test/ut.h"
 
 namespace sfc::test {
 

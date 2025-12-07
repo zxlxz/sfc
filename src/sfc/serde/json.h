@@ -188,6 +188,7 @@ struct Deserializer {
   auto deserialize_seq(auto&& f) -> Result<>;
 
   struct DesObject;
+  auto deserialize_obj(auto&& f) -> Result<>;
   auto deserialize_map(auto&& f) -> Result<>;
 
  private:
@@ -258,6 +259,17 @@ struct Deserializer::DesObject {
     return Deserialize::deserialize<T>(_inn);
   }
 };
+
+auto Deserializer::deserialize_obj(auto&& visit) -> Result<> {
+  if (this->extract_tok(Token::ObjectBegin).is_err()) {
+    return Error::ExpectedObjectBegin;
+  }
+  auto imp = DesObject{*this};
+  if (auto x = visit(imp); x.is_err()) {
+    return ~x;
+  }
+  return this->extract_tok(Token::ObjectEnd);
+}
 
 auto Deserializer::deserialize_map(auto&& visit) -> Result<> {
   if (this->extract_tok(Token::ObjectBegin).is_err()) {

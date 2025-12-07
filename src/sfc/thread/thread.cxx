@@ -1,7 +1,7 @@
 #include "sfc/thread.h"
 
 #include "sfc/io.h"
-#include "sfc/test.h"
+#include "sfc/test/ut.h"
 
 namespace sfc::thread::test {
 

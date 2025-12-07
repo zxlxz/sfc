@@ -22,15 +22,16 @@ struct ThreadData {
   }
 };
 
-static auto start_routine(void* data) -> sys_imp::ret_t {
-  auto obj = Box<ThreadData>::from_raw(static_cast<ThreadData*>(data));
-  obj->run();
-  return {};
-};
-
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+  const auto call_back = [](void* ptr) -> sys_imp::ret_t {
+    auto dat = static_cast<ThreadData*>(ptr);
+    auto obj = Box<ThreadData>::from_raw(dat);
+    obj->run();
+    return {};
+  };
+
   auto data = Box<ThreadData>::xnew(mem::move(fun), CString::from(name));
-  auto thrd = sys_imp::start(stack_size, start_routine, &*data);
+  auto thrd = sys_imp::start(stack_size, call_back, &*data);
   if (thrd) {
     mem::move(data).into_raw();
   }
@@ -40,7 +41,7 @@ auto Builder::spawn(Box<void()> fun) -> JoinHandle {
 
 JoinHandle::JoinHandle(Thread thrd) noexcept : _thrd{thrd} {}
 
-JoinHandle::~JoinHandle() noexcept{
+JoinHandle::~JoinHandle() noexcept {
   if (!_thrd._raw) {
     return;
   }

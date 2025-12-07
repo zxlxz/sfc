@@ -78,12 +78,12 @@ struct Slice {
 
   auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
     const auto x = mid < _len ? mid : _len;
-    return {Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
+    return Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
   }
 
   auto split_at_mut(usize mid) noexcept -> Tuple<Slice, Slice> {
     const auto x = mid < _len ? mid : _len;
-    return {Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
+    return Tuple{Slice{_ptr, x}, Slice{_ptr + x, _len - x}};
   }
 
  public:
@@ -97,21 +97,17 @@ struct Slice {
   }
 
   void fill(T val) noexcept {
-    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
-      __builtin_memset(_ptr, val, _len);
-    } else {
-      for (auto p = _ptr, e = p + _len; p != e; ++p) {
-        *p = val;
-      }
+    for (auto p = _ptr, e = p + _len; p != e; ++p) {
+      *p = val;
     }
   }
 
   void copy_from_slice(Slice<const T> src) noexcept {
     static_assert(__is_trivially_copyable(T));
-    panicking::expect(src._ptr != nullptr, "Slice::copy_from_slice: src.ptr == nullptr");
-
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }
+
+  auto to_vec() const;
 
  public:
   auto operator==(Slice<const T> other) const noexcept -> bool {
@@ -121,29 +117,18 @@ struct Slice {
     if (_ptr == other._ptr) {
       return true;
     }
-    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
-      return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
-    } else {
-      for (auto i = 0UL; i < _len; ++i) {
-        if (_ptr[i] != other._ptr[i]) {
-          return false;
-        }
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] != other._ptr[i]) {
+        return false;
       }
-      return true;
     }
+    return true;
   }
 
   auto contains(const T& x) const noexcept -> bool {
-    if (_len == 0) {
-      return {};
-    }
-    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
-      return __builtin_memchr(_ptr, x, _len) != nullptr;
-    } else {
-      for (auto i = 0UL; i < _len; ++i) {
-        if (_ptr[i] == x) {
-          return true;
-        }
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return true;
       }
     }
     return false;
@@ -153,16 +138,9 @@ struct Slice {
     if (_len == 0) {
       return {};
     }
-    if constexpr (trait::tv_copy_<T> && sizeof(T) == 1) {
-      const auto p = __builtin_memchr(_ptr, x, _len);
-      if (p != nullptr) {
-        return static_cast<usize>(static_cast<const T*>(p) - _ptr);
-      }
-    } else {
-      for (auto i = 0UL; i < _len; ++i) {
-        if (_ptr[i] == x) {
-          return i;
-        }
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return i;
       }
     }
     return {};
@@ -226,10 +204,7 @@ struct Slice {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    auto imp = f.debug_list();
-    for (auto& x : *this) {
-      imp.entry(x);
-    }
+    f.debug_list().entries(this->iter()).finish();
   }
 
   // trait: io::Read
@@ -273,7 +248,7 @@ struct Iter : iter::Iterator<T&> {
   T* _end = nullptr;
 
  public:
-  operator bool() const noexcept {
+  explicit operator bool() const noexcept {
     return _ptr < _end;
   }
 
