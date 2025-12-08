@@ -93,7 +93,7 @@ SFC_TEST(deserialize_map) {
 
   auto visit = [&](auto& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
-      const auto key = map.next_key();
+      const auto key = map.template next_key<Str>();
       panicking::expect(key.is_ok());
       panicking::expect_eq(*key, keys[i]);
 

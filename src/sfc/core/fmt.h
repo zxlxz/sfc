@@ -33,9 +33,7 @@ struct Debug {
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto uval = reinterpret_cast<usize>(val);
-    const auto type = f._style._type ? f._style._type : 'x';
-    const auto sval = num::to_str(buf, uval, type);
+    const auto sval = num::to_str(buf, val, f._style._type);
     f.pad_num(false, sval);
   }
 
@@ -180,12 +178,14 @@ struct Fmter {
 
     auto make_prefix = [](char type) -> Str {
       switch (type) {
-        case 'X': return "0X";
-        case 'x': return "0x";
         case 'O': return "0";
         case 'o': return "0";
         case 'B': return "0B";
         case 'b': return "0b";
+        case 'X': return "0X";
+        case 'x': return "0x";
+        case 'P': return "0X";
+        case 'p': return "0x";
         default:  return "";
       }
     };
@@ -247,25 +247,25 @@ struct Fmter {
  public:
   struct DebugTuple;
   auto debug_tuple() -> DebugTuple {
-    this->write_str("(");
+    this->node_begin("(");
     return DebugTuple{*this};
   }
 
   struct DebugList;
   auto debug_list() -> DebugList {
-    this->write_str("[");
+    this->node_begin("[");
     return DebugList{this};
   }
 
   struct DebugSet;
   auto debug_set() -> DebugSet {
-    this->write_str("{");
+    this->node_begin("{");
     return DebugSet{this};
   }
 
   struct DebugMap;
   auto debug_map() -> DebugMap {
-    this->write_str("{");
+    this->node_begin("{");
     return DebugMap{this};
   }
 
@@ -405,6 +405,7 @@ struct Fmter<W>::DebugMap {
   void finish() {
     if (_fmt) {
       _fmt->node_end("}", _cnt);
+      _fmt = nullptr;
     }
   }
 

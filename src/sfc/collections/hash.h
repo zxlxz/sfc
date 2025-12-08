@@ -332,24 +332,24 @@ class HashMap {
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
-    auto imp = ser.serialize_map();
-    _inn.for_each([&](const auto& entry) { imp.serialize_entry(entry.key, entry.val); });
+    auto map = ser.serialize_map();
+    _inn.for_each([&](const auto& entry) { map.serialize_entry(entry.key, entry.val); });
+    map.end();
   }
 
   // trait: serde::Deserialize
-  static auto deserialize(auto& des) -> io::Result<HashMap> {
+  template <class D, class E = typename D::Error>
+  static auto deserialize(D& des) -> Result<HashMap, E> {
     auto res = HashMap{};
-
-    auto map = des.deserialize_map();
-    while (true) {
-      auto x = _TRY(map.next());
-      if (!x) {
-        break;
+    auto visit = [&](auto& map) -> Result<void, E> {
+      while (map.has_next()) {
+        auto key = _TRY(map.template next_key<K>());
+        auto val = _TRY(map.template next_value<V>());
+        res.insert(key, static_cast<V&&>(val));
       }
-      auto key = _TRY(x->extract_key());
-      auto val = _TRY(x->template extract_val<V>());
-      res.insert(static_cast<K&&>(key), static_cast<V&&>(val));
-    }
+      return {};
+    };
+    _TRY(des.deserialize_map(visit));
     return res;
   }
 };

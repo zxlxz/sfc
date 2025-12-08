@@ -42,96 +42,109 @@ struct Serializer {
 
  public:
   void serialize_null() noexcept {
-    this->write_str("null");
+    _buf.push_str("null");
   }
 
   void serialize_bool(bool val) noexcept {
-    this->write_tok(val ? Token::True : Token::False);
+    _buf.push_str(val ? Str{"true"} : Str{"false"});
   }
 
   void serialize_char(char val) noexcept {
     const char s[] = {'"', val, '"'};
-    this->write_str({s, 3});
+    _buf.push_str({s, 3});
   }
 
   void serialize_int(trait::int_ auto val) noexcept {
     char buf[32];
     const auto s = num::to_str(buf, val);
-    this->write_num(s);
+    _buf.push_str(s);
   }
 
   void serialize_flt(trait::flt_ auto val) noexcept {
     char buf[32];
     const auto s = num::to_str(buf, val);
-    this->write_num(s);
+    _buf.push_str(s);
   }
 
   void serialize_str(Str val) noexcept {
-    this->write_str(val);
+    _buf.push('"');
+    _buf.push_str(val);
+    _buf.push('"');
   }
 
   void serialize_bin(Slice<const u8> val) noexcept {
     const auto s = base64::encode(val);
-    this->serialize_str(s.as_str());
+    _buf.push('"');
+    _buf.push_str(s.as_str());
+    _buf.push('"');
   }
 
-  class SerArray;
-  auto serialize_seq() noexcept -> SerArray;
+ public:
+  struct SerArray {
+    Serializer* _ser = nullptr;
+    u32 _cnt = 0;
 
-  class SerObject;
-  auto serialize_map() noexcept -> SerObject;
+   public:
+    void serialize_element(const auto& item) noexcept {
+      if (_ser) {
+        _ser->node_item(_cnt++);
+        Serialize::serialize(item, *_ser);
+      }
+    }
+
+    void end() noexcept {
+      if (_ser) {
+        _ser->node_end(']', _cnt);
+        _ser = nullptr;
+      }
+    }
+  };
+
+  struct SerObject {
+    Serializer* _ser = nullptr;
+    u32 _cnt = 0;
+
+   public:
+    void serialize_entry(Str key, const auto& val) noexcept {
+      if (_ser) {
+        _ser->node_item(_cnt++);
+        _ser->serialize_key(key);
+        Serialize::serialize(val, *_ser);
+      }
+    }
+
+    void end() noexcept {
+      if (_ser) {
+        _ser->node_end('}', _cnt);
+        _ser = nullptr;
+      }
+    }
+  };
+
+  auto serialize_seq() noexcept -> SerArray {
+    this->node_begin('[');
+    return SerArray{this};
+  }
+
+  auto serialize_obj() noexcept -> SerObject {
+    this->node_begin('{');
+    return SerObject{this};
+  }
+
+  auto serialize_map() noexcept -> SerObject {
+    this->node_begin('{');
+    return SerObject{this};
+  }
 
  private:
-  void write_tok(Token tok) noexcept;
-  void write_str(Str s) noexcept;
-  void write_key(Str s) noexcept;
-  void write_num(Str s) noexcept;
-};
+  void node_begin(char c) noexcept;
+  void node_end(char c, u32 cnt) noexcept;
+  void node_item(u32 idx) noexcept;
 
-class Serializer::SerArray {
-  Serializer& _inn;
-  u32 _cnt = 0;
-
- public:
-  explicit SerArray(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_tok(Token::ArrayBegin);
-  }
-
-  ~SerArray() noexcept {
-    _inn.write_tok(Token::ArrayEnd);
-  }
-
-  SerArray(const SerArray&) = delete;
-
-  void serialize_element(const auto& item) noexcept {
-    if (_cnt++ != 0) {
-      _inn.write_tok(Token::Comma);
-    }
-    Serialize::serialize(item, _inn);
-  }
-};
-
-class Serializer::SerObject {
-  Serializer& _inn;
-  u32 _cnt = 0;
-
- public:
-  SerObject(Serializer& inn) noexcept : _inn{inn} {
-    _inn.write_tok(Token::ObjectBegin);
-  }
-
-  ~SerObject() noexcept {
-    _inn.write_tok(Token::ObjectEnd);
-  }
-
-  SerObject(const SerObject&) = delete;
-
-  void serialize_entry(Str key, const auto& val) noexcept {
-    if (_cnt++ != 0) {
-      _inn.write_tok(Token::Comma);
-    }
-    _inn.write_key(key);
-    Serialize::serialize(val, _inn);
+  void serialize_key(Str s) noexcept {
+    _buf.push_str("\"");
+    _buf.push_str(s);
+    _buf.push_str("\":");
   }
 };
 
@@ -184,12 +197,91 @@ struct Deserializer {
     return this->extract_str();
   }
 
-  struct DesArray;
-  auto deserialize_seq(auto&& f) -> Result<>;
+ public:
+  struct DesArray {
+    using Error = json::Error;
+    Deserializer& _inn;
+    usize _idx = 0;
 
-  struct DesObject;
-  auto deserialize_obj(auto&& f) -> Result<>;
-  auto deserialize_map(auto&& f) -> Result<>;
+   public:
+    auto has_next() noexcept -> bool {
+      const auto next_tok = _inn.next_token();
+      return next_tok != Token::ArrayEnd;
+    }
+
+    template <class T>
+    auto next_element() noexcept -> Result<T> {
+      if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
+        return Error::ExpectedComma;
+      }
+      _idx += 1;
+      return Deserialize::deserialize<T>(_inn);
+    }
+  };
+
+  struct DesObject {
+    using Error = json::Error;
+    Deserializer& _inn;
+    usize _idx = 0;
+
+   public:
+    auto has_next() noexcept -> bool {
+      const auto next_tok = _inn.next_token();
+      return next_tok != Token::ObjectEnd;
+    }
+
+    template <class K>
+    auto next_key() noexcept -> Result<K> {
+      static_assert(trait::same_<K, Str>, "DesObject::next_key: key type must be Str");
+
+      if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
+        return Error::ExpectedComma;
+      }
+      _idx += 1;
+      return _inn.extract_str();
+    }
+
+    template <class T>
+    auto next_value() noexcept -> Result<T> {
+      if (_inn.extract_tok(Token::Colon).is_err()) {
+        return Error::ExpectedColon;
+      }
+      return Deserialize::deserialize<T>(_inn);
+    }
+  };
+
+  auto deserialize_seq(auto&& visit) -> Result<> {
+    if (this->extract_tok(Token::ArrayBegin).is_err()) {
+      return Error::ExpectedArrayBegin;
+    }
+    auto imp = DesArray{*this};
+    if (auto x = visit(imp); x.is_err()) {
+      return ~x;
+    }
+    return this->extract_tok(Token::ArrayEnd);
+  }
+
+  auto deserialize_obj(auto&& visit) -> Result<> {
+    if (this->extract_tok(Token::ObjectBegin).is_err()) {
+      return Error::ExpectedObjectBegin;
+    }
+    auto imp = DesObject{*this};
+    if (auto x = visit(imp); x.is_err()) {
+      return ~x;
+    }
+    return this->extract_tok(Token::ObjectEnd);
+  }
+
+  auto deserialize_map(auto&& visit) -> Result<> {
+    if (this->extract_tok(Token::ObjectBegin).is_err()) {
+      return Error::ExpectedObjectBegin;
+    }
+    auto imp = DesObject{*this};
+    if (auto x = visit(imp); x.is_err()) {
+      return ~x;
+    }
+    return this->extract_tok(Token::ObjectEnd);
+  }
 
  private:
   void consume(usize n) noexcept;
@@ -199,88 +291,6 @@ struct Deserializer {
   auto extract_num() noexcept -> Result<Str>;
   auto extract_str() noexcept -> Result<Str>;
 };
-
-struct Deserializer::DesArray {
-  using Error = json::Error;
-  Deserializer& _inn;
-  usize _idx = 0;
-
- public:
-  auto has_next() noexcept -> bool {
-    const auto next_tok = _inn.next_token();
-    return next_tok != Token::ArrayEnd;
-  }
-
-  template <class T>
-  auto next_element() noexcept -> Result<T> {
-    if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-      return Error::ExpectedComma;
-    }
-    _idx += 1;
-    return Deserialize::deserialize<T>(_inn);
-  }
-};
-
-auto Deserializer::deserialize_seq(auto&& visit) -> Result<> {
-  if (this->extract_tok(Token::ArrayBegin).is_err()) {
-    return Error::ExpectedArrayBegin;
-  }
-  auto imp = DesArray{*this};
-  if (auto x = visit(imp); x.is_err()) {
-    return ~x;
-  }
-  return this->extract_tok(Token::ArrayEnd);
-}
-
-struct Deserializer::DesObject {
-  using Error = json::Error;
-  Deserializer& _inn;
-  usize _idx = 0;
-
- public:
-  auto has_next() noexcept -> bool {
-    const auto next_tok = _inn.next_token();
-    return next_tok != Token::ObjectEnd;
-  }
-
-  auto next_key() noexcept -> Result<Str> {
-    if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-      return Error::ExpectedComma;
-    }
-    _idx += 1;
-    return _inn.extract_str();
-  }
-
-  template <class T>
-  auto next_value() noexcept -> Result<T> {
-    if (_inn.extract_tok(Token::Colon).is_err()) {
-      return Error::ExpectedColon;
-    }
-    return Deserialize::deserialize<T>(_inn);
-  }
-};
-
-auto Deserializer::deserialize_obj(auto&& visit) -> Result<> {
-  if (this->extract_tok(Token::ObjectBegin).is_err()) {
-    return Error::ExpectedObjectBegin;
-  }
-  auto imp = DesObject{*this};
-  if (auto x = visit(imp); x.is_err()) {
-    return ~x;
-  }
-  return this->extract_tok(Token::ObjectEnd);
-}
-
-auto Deserializer::deserialize_map(auto&& visit) -> Result<> {
-  if (this->extract_tok(Token::ObjectBegin).is_err()) {
-    return Error::ExpectedObjectBegin;
-  }
-  auto imp = DesObject{*this};
-  if (auto x = visit(imp); x.is_err()) {
-    return ~x;
-  }
-  return this->extract_tok(Token::ObjectEnd);
-}
 
 void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};

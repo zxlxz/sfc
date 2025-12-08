@@ -37,6 +37,25 @@ using cstr_t = const char*;
 template <class T>
 using auto_t = decltype(auto{static_cast<T (*)()>(0)()});
 
+namespace str {
+struct Str;
+}
+
+namespace slice {
+template <class T>
+struct Slice;
+}
+
+namespace option {
+template <class T>
+class Option;
+}
+
+namespace result {
+template <class T, class E>
+class Result;
+}
+
 }  // namespace sfc
 
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/num.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::panicking {
 
@@ -44,20 +44,6 @@ void expect_ne(const auto& a, const auto& b, Location loc = {}) noexcept {
     return;
   }
   panicking::panic_fmt(loc, "panicking::expect(`{}`!=`{}`) failed", a, b);
-}
-
-void expect_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) noexcept {
-  if (num::flt_eq_ulp(a, b, ulp)) {
-    return;
-  }
-  panicking::panic_fmt(loc, "panicking::expect.flt(`{}`==`{}`) failed", a, b);
-}
-
-void expect_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) noexcept {
-  if (num::flt_eq_ulp(a, b, ulp)) {
-    return;
-  }
-  panicking::panic_fmt(loc, "panicking::expect.flt(`{}`!=`{}`) failed", a, b);
 }
 
 }  // namespace sfc::panicking

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/slice.h"
+#include "sfc/core/num.h"
 
 namespace sfc::str {
 
@@ -164,11 +165,9 @@ struct Str {
     if constexpr (requires { T::from_str(*this); }) {
       return T::from_str(*this);
     } else if constexpr (trait::int_<T>) {
-      auto dst = T{};
-      return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
+      return num::from_str<T>(*this);
     } else if constexpr (trait::flt_<T>) {
-      auto dst = T{};
-      return num::from_str(*this, dst) ? Option<T>{dst} : Option<T>{};
+      return num::from_str<T>(*this);
     } else {
       static_assert(false, "Str::parse: unsupported type");
     }

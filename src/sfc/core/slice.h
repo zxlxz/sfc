@@ -211,7 +211,7 @@ struct Slice {
   auto read(Slice<u8> buf) noexcept -> io::Result<usize> {
     static_assert(trait::same_<const T, const u8>);
     if (_len == 0 || buf._len == 0) {
-      return 0;
+      return 0uz;
     }
     const auto amt = _len < buf._len ? _len : buf._len;
     __builtin_memcpy(buf._ptr, _ptr, amt);
@@ -221,17 +221,12 @@ struct Slice {
   }
 
   // trait: serde::Serialize
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    static_assert(trait::tv_copy_<T>);
-    return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
-  }
-
-  // trait: serde::Serialize
   void serialize(auto& ser) const {
     auto imp = ser.serialize_seq();
-    for (auto i = 0; i < _len; ++i) {
-      imp.serialize_element(_ptr[i]);
+    for (const auto& t : *this) {
+      imp.serialize_element(t);
     }
+    imp.end();
   }
 };
 
@@ -239,7 +234,7 @@ template <class T, usize N>
 Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
-Slice(T*, auto) -> Slice<T>;
+Slice(T*, usize) -> Slice<T>;
 
 template <class T>
 struct Iter : iter::Iterator<T&> {

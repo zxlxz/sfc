@@ -2,82 +2,77 @@
 
 namespace sfc::num::test {
 
-SFC_TEST(fmt_dec) {
-  panicking::expect_eq(string::format("{}", 0), "0");
-  panicking::expect_eq(string::format("{}", +123), "123");
-  panicking::expect_eq(string::format("{}", -123), "-123");
+SFC_TEST(int_to_str) {
+  char buf[32] = {};
 
-  panicking::expect_eq(string::format("{d}", 0), "0");
-  panicking::expect_eq(string::format("{d}", +123), "123");
-  panicking::expect_eq(string::format("{d}", -123), "-123");
+  // dec
+  panicking::expect_eq(to_str(buf, 0), "0");
+  panicking::expect_eq(to_str(buf, +123), "123");
+  panicking::expect_eq(to_str(buf, -123), "-123");
 
-  panicking::expect_eq(string::format("{b}", 0), "0");
-  panicking::expect_eq(string::format("{b}", 123), "1111011");
-  panicking::expect_eq(string::format("{b}", -123), "-1111011");
+  // bin
+  panicking::expect_eq(to_str(buf, 0, 'b'), "0");
+
+  panicking::expect_eq(to_str(buf, +5, 'b'), "101");
+  panicking::expect_eq(to_str(buf, +5, 'B'), "101");
+  panicking::expect_eq(to_str(buf, -5, 'b'), "-101");
+  panicking::expect_eq(to_str(buf, -5, 'B'), "-101");
+
+  // oct
+  panicking::expect_eq(to_str(buf, 0, 'o'), "0");
+  panicking::expect_eq(to_str(buf, +8, 'o'), "10");
+  panicking::expect_eq(to_str(buf, -8, 'o'), "-10");
+
+  // hex
+  panicking::expect_eq(to_str(buf, 0, 'x'), "0");
+  panicking::expect_eq(to_str(buf, 255, 'x'), "ff");
+  panicking::expect_eq(to_str(buf, 255, 'X'), "FF");
+  panicking::expect_eq(to_str(buf, -255, 'x'), "-ff");
+  panicking::expect_eq(to_str(buf, -255, 'X'), "-FF");
 }
 
-SFC_TEST(fmt_bin) {
-  panicking::expect_eq(string::format("{b}", 0), "0");
+SFC_TEST(int_from_str) {
+  // dec
+  panicking::expect(from_str<int>("0"), Option{0});
+  panicking::expect(from_str<int>("+123"), Option{123});
+  panicking::expect(from_str<int>("-123"), Option{-123});
 
-  panicking::expect_eq(string::format("{b}", 5), "101");
-  panicking::expect_eq(string::format("{b}", -5), "-101");
-}
+  // bin
+  panicking::expect(from_str<int>("0", 2), Option{0b0});
+  panicking::expect(from_str<int>("10", 2), Option{0b10});
+  panicking::expect(from_str<int>("-10", 2), Option{-0b10});
 
-SFC_TEST(fmt_oct) {
-  panicking::expect_eq(string::format("{o}", 0), "0");
-  panicking::expect_eq(string::format("{o}", 8), "10");
-  panicking::expect_eq(string::format("{o}", -8), "-10");
-}
+  // oct
+  panicking::expect(from_str<int>("0", 8), Option{0});
+  panicking::expect(from_str<int>("10", 8), Option{010});
+  panicking::expect(from_str<int>("-10", 8), Option{-010});
 
-SFC_TEST(fmt_hex) {
-  panicking::expect_eq(string::format("{x}", 0), "0");
-  panicking::expect_eq(string::format("{x}", 255), "ff");
-  panicking::expect_eq(string::format("{x}", -255), "-ff");
+  // hex
+  panicking::expect(from_str<int>("0", 16), Option{0x0});
+  panicking::expect(from_str<int>("ff", 16), Option{0xff});
+  panicking::expect(from_str<int>("FF", 16), Option{0xFF});
+  panicking::expect(from_str<int>("-ff", 16), Option{-0xff});
 
-  panicking::expect_eq(string::format("{X}", 0), "0");
-  panicking::expect_eq(string::format("{X}", 255), "FF");
-  panicking::expect_eq(string::format("{X}", -255), "-FF");
-}
+  // neg
+  panicking::expect_eq(from_str<i8>("-128"), Option<i8>{-128});
+  panicking::expect_eq(from_str<i16>("-32768"), Option<i16>{-32768});
 
-SFC_TEST(parse_dec) {
-  panicking::expect_eq(Str{"0"}.parse<i32>(), Option{0});
-  panicking::expect_eq(Str{"123"}.parse<i32>(), Option{123});
-  panicking::expect_eq(Str{"-123"}.parse<i32>(), Option{-123});
-  panicking::expect_eq(Str{"+123"}.parse<i32>(), Option{123});
+  // uint
+  panicking::expect_eq(from_str<u8>("-1"), Option<u8>{});
+  panicking::expect_eq(from_str<u32>("-1"), Option<u32>{});
+  panicking::expect_eq(from_str<u32>("+1"), Option<u32>{1});
 
-  panicking::expect(!Str{}.parse<i32>());
-  panicking::expect(!Str{"abc"}.parse<i32>());
-  panicking::expect(!Str{"123 "}.parse<i32>());
-  panicking::expect(!Str{" 123 "}.parse<i32>());
-  panicking::expect(!Str{"123.456"}.parse<i32>());
+  // auto-radix
+  panicking::expect_eq(from_str<int>("+0b101"), Option{+0b101});
+  panicking::expect_eq(from_str<int>("-0b101"), Option{-0b101});
+  panicking::expect_eq(from_str<int>("+010"), Option{+010});
+  panicking::expect_eq(from_str<int>("-010"), Option{-010});
+  panicking::expect_eq(from_str<int>("+0xFF"), Option{+0xFF});
+  panicking::expect_eq(from_str<int>("-0xFF"), Option{-0xFF});
 
-  panicking::expect(!Str{"++123"}.parse<i32>());
-  panicking::expect(!Str{"-+123"}.parse<i32>());
-  panicking::expect(!Str{"123+"}.parse<i32>());
-  panicking::expect(!Str{"123-"}.parse<i32>());
-}
-
-SFC_TEST(parse_bin) {
-  panicking::expect_eq(Str{"0b0"}.parse<i32>(), Option{0b0});
-  panicking::expect_eq(Str{"-0b0"}.parse<i32>(), Option{-0b0});
-
-  panicking::expect_eq(Str{"0b101"}.parse<i32>(), Option{0b101});
-  panicking::expect_eq(Str{"+0b101"}.parse<i32>(), Option{+0b101});
-  panicking::expect_eq(Str{"-0b101"}.parse<i32>(), Option{-0b101});
-}
-
-SFC_TEST(parse_oct) {
-  panicking::expect_eq(Str{"0"}.parse<i32>(), Option{0});
-
-  panicking::expect_eq(Str{"010"}.parse<i32>(), Option{010});
-  panicking::expect_eq(Str{"+010"}.parse<i32>(), Option{+010});
-  panicking::expect_eq(Str{"-010"}.parse<i32>(), Option{-010});
-}
-
-SFC_TEST(parse_hex) {
-  panicking::expect_eq(Str{"0x0"}.parse<i32>(), Option{0x0});
-  panicking::expect_eq(Str{"0xff"}.parse<i32>(), Option{0xff});
-  panicking::expect_eq(Str{"0xFF"}.parse<i32>(), Option{0xFF});
+  // overflow
+  panicking::expect_eq(from_str<u8>("256"), Option<u8>{});
+  panicking::expect_eq(from_str<i8>("128"), Option<i8>{});
 }
 
 }  // namespace sfc::num::test

@@ -2,47 +2,19 @@
 
 namespace sfc::serde::json {
 
-void Serializer::write_tok(Token tok) noexcept {
-  switch (tok) {
-    case Token::Eof:         break;
-    case Token::Comma:       _buf.push(','); break;
-    case Token::Colon:       _buf.push(':'); break;
-    case Token::DoubleQuote: _buf.push('"'); break;
-    case Token::ArrayBegin:  _buf.push('['); break;
-    case Token::ArrayEnd:    _buf.push(']'); break;
-    case Token::ObjectBegin: _buf.push('{'); break;
-    case Token::ObjectEnd:   _buf.push('}'); break;
-    case Token::Null:        _buf.push_str("null"); break;
-    case Token::True:        _buf.push_str("true"); break;
-    case Token::False:       _buf.push_str("false"); break;
-    case Token::Other:       break;
-    default:                 break;
+void Serializer::node_begin(char c) noexcept {
+  _buf.push(c);
+}
+
+void Serializer::node_end(char c, u32 cnt) noexcept {
+  (void)cnt;
+  _buf.push(c);
+}
+
+void Serializer::node_item(u32 idx) noexcept {
+  if (idx != 0) {
+    _buf.push(',');
   }
-}
-
-void Serializer::write_str(Str s) noexcept {
-  _buf.reserve(s._len + 2);
-  _buf.push('"');
-  _buf.push_str(s);
-  _buf.push('"');
-}
-
-void Serializer::write_num(Str s) noexcept {
-  _buf.push_str(s);
-}
-
-void Serializer::write_key(Str s) noexcept {
-  _buf.push('"');
-  _buf.push_str(s);
-  _buf.push_str("\":");
-}
-
-auto Serializer::serialize_seq() noexcept -> SerArray {
-  return SerArray{*this};
-}
-
-auto Serializer::serialize_map() noexcept -> SerObject {
-  return SerObject{*this};
 }
 
 void Deserializer::consume(usize n) noexcept {
@@ -76,37 +48,37 @@ auto Deserializer::next_token() noexcept -> Token {
 
 auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<> {
   const auto next_tok = this->next_token();
-  if (next_tok == expect_tok) {
+  if (next_tok != expect_tok) {
     switch (expect_tok) {
-      case Token::Comma:       this->consume(1); break;
-      case Token::Colon:       this->consume(1); break;
-      case Token::DoubleQuote: this->consume(1); break;
-      case Token::ArrayBegin:  this->consume(1); break;
-      case Token::ArrayEnd:    this->consume(1); break;
-      case Token::ObjectBegin: this->consume(1); break;
-      case Token::ObjectEnd:   this->consume(1); break;
-      case Token::Null:        this->consume(4); break;
-      case Token::True:        this->consume(4); break;
-      case Token::False:       this->consume(5); break;
-      default:                 break;
+      case Token::Comma:       return Error::ExpectedComma;
+      case Token::DoubleQuote: return Error::ExpectedDoubleQuote;
+      case Token::Colon:       return Error::ExpectedColon;
+      case Token::ArrayBegin:  return Error::ExpectedArrayBegin;
+      case Token::ArrayEnd:    return Error::ExpectedArrayEnd;
+      case Token::ObjectBegin: return Error::ExpectedObjectBegin;
+      case Token::ObjectEnd:   return Error::ExpectedObjectEnd;
+      case Token::Null:        return Error::InvalidKeyword;
+      case Token::True:        return Error::InvalidKeyword;
+      case Token::False:       return Error::InvalidKeyword;
+      case Token::Eof:         return Error::EofWhileParsing;
+      default:                 return Error::InvalidKeyword;
     }
-    return {};
   }
 
   switch (expect_tok) {
-    case Token::Comma:       return Error::ExpectedComma;
-    case Token::DoubleQuote: return Error::ExpectedDoubleQuote;
-    case Token::Colon:       return Error::ExpectedColon;
-    case Token::ArrayBegin:  return Error::ExpectedArrayBegin;
-    case Token::ArrayEnd:    return Error::ExpectedArrayEnd;
-    case Token::ObjectBegin: return Error::ExpectedObjectBegin;
-    case Token::ObjectEnd:   return Error::ExpectedObjectEnd;
-    case Token::Null:        return Error::InvalidKeyword;
-    case Token::True:        return Error::InvalidKeyword;
-    case Token::False:       return Error::InvalidKeyword;
-    case Token::Eof:         return Error::EofWhileParsing;
-    default:                 return Error::InvalidKeyword;
+    case Token::Comma:       this->consume(1); break;
+    case Token::Colon:       this->consume(1); break;
+    case Token::DoubleQuote: this->consume(1); break;
+    case Token::ArrayBegin:  this->consume(1); break;
+    case Token::ArrayEnd:    this->consume(1); break;
+    case Token::ObjectBegin: this->consume(1); break;
+    case Token::ObjectEnd:   this->consume(1); break;
+    case Token::Null:        this->consume(4); break;
+    case Token::True:        this->consume(4); break;
+    case Token::False:       this->consume(5); break;
+    default:                 break;
   }
+  return {};
 }
 
 auto Deserializer::extract_num() noexcept -> Result<Str> {

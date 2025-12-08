@@ -218,7 +218,8 @@ class Option {
 
  public:
   // to result
-  auto ok_or(auto err);
+  template <class E>
+  auto ok_or(E err) && -> result::Result<T, E>;
 
  public:
   template <class U>

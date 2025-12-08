@@ -1,15 +1,6 @@
 #pragma once
 
-#include "sfc/core/trait.h"
-
-namespace sfc::slice {
-template <class T>
-struct Slice;
-}
-
-namespace sfc::str {
-struct Str;
-}
+#include "sfc/core/option.h"
 
 namespace sfc::num {
 
@@ -46,12 +37,34 @@ constexpr auto max(T a, T b) -> T {
   return a < b ? b : a;
 }
 
+auto to_str(slice::Slice<char> buf, const void* val, char type = 0) noexcept -> str::Str;
 auto to_str(slice::Slice<char> buf, trait::int_ auto val, char type = 0) noexcept -> str::Str;
-auto to_str(slice::Slice<char> buf, trait::flt_ auto val, u32 precision = 6, char type = 0) noexcept -> str::Str;
+auto to_str(slice::Slice<char> buf, trait::flt_ auto val, u32 prec = 6, char type = 0) noexcept -> str::Str;
 
-auto from_str(str::Str, trait::int_ auto& val) noexcept -> bool;
-auto from_str(str::Str, trait::flt_ auto& val) noexcept -> bool;
+template <trait::int_ T>
+auto from_str(str::Str buf, u32 radix = 0) noexcept -> Option<T>;
+
+template <trait::flt_ T>
+auto from_str(str::Str buf) noexcept -> Option<T>;
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
 
 }  // namespace sfc::num
+
+namespace sfc::panicking {
+
+void expect_flt_eq(auto a, auto b, u32 ulp = 4, Location loc = {}) noexcept {
+  if (num::flt_eq_ulp(a, b, ulp)) {
+    return;
+  }
+  panicking::panic_fmt(loc, "panicking::expect.flt(`{}`==`{}`) failed", a, b);
+}
+
+void expect_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = {}) noexcept {
+  if (!num::flt_eq_ulp(a, b, ulp)) {
+    return;
+  }
+  panicking::panic_fmt(loc, "panicking::expect.flt(`{}`!=`{}`) failed", a, b);
+}
+
+}  // namespace sfc::panicking
