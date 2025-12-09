@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/collections/queue.h"
+#include "sfc/collections/vec_deque.h"
 #include "sfc/sync/mutex.h"
 
 namespace sfc::sync {

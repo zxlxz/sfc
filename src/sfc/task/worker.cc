@@ -1,14 +1,10 @@
-#include "sfc/task.h"
-
-#include "sfc/collections/queue.h"
-#include "sfc/sync.h"
-#include "sfc/thread.h"
+#include "sfc/task/worker.h"
 
 namespace sfc::task {
 
 using sync::Ordering;
 
-Worker::Worker() : _task_queue{VecDeque<Task>::with_capacity(CAPACITY)} {}
+Worker::Worker() : _task_queue{TaskQueue::with_capacity(CAPACITY)} {}
 
 Worker::~Worker() noexcept {
   this->stop();

@@ -2,7 +2,7 @@
 
 #include "sfc/alloc.h"
 
-namespace sfc::collections {
+namespace sfc::collections::vec_deque {
 
 template <class T>
 class [[nodiscard]] VecDeque {
@@ -156,8 +156,8 @@ class [[nodiscard]] VecDeque {
   }
 };
 
-}  // namespace sfc::collections
+}  // namespace sfc::collections::vec_deque
 
-namespace sfc {
-using collections::VecDeque;
-}  // namespace sfc
+namespace sfc::collections {
+using vec_deque::VecDeque;
+}

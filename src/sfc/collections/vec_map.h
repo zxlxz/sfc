@@ -2,7 +2,7 @@
 
 #include "sfc/alloc.h"
 
-namespace sfc::collections {
+namespace sfc::collections::vec_map {
 
 template <class K, class V>
 class VecMap {
@@ -122,8 +122,8 @@ class VecMap {
   }
 };
 
-}  // namespace sfc::collections
+}  // namespace sfc::collections::vec_map
 
-namespace sfc {
-using collections::VecMap;
+namespace sfc::collections {
+using vec_map::VecMap;
 }

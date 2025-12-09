@@ -1,5 +1,6 @@
 #pragma once
 
-#include "sfc/collections/hash.h"
-#include "sfc/collections/queue.h"
-#include "sfc/collections/vecmap.h"
+#include "sfc/collections/vec_map.h"
+#include "sfc/collections/vec_deque.h"
+
+#include "sfc/collections/hash_map.h"

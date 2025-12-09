@@ -2,20 +2,22 @@
 
 #include "sfc/thread.h"
 #include "sfc/sync.h"
-#include "sfc/collections.h"
+#include "sfc/collections/vec_deque.h"
 
 namespace sfc::task {
 
 using Task = Box<void()>;
 
 class Worker {
-  static constexpr auto CAPACITY = 256U;
   using Task = Box<void()>;
+  using TaskQueue = collections::VecDeque<Task>;
+
+  static constexpr auto CAPACITY = 256U;
 
   sync::Mutex _mutex{};
   sync::Condvar _condvar{};
   sync::Atomic<bool> _running{true};
-  VecDeque<Task> _task_queue;
+  TaskQueue _task_queue;
 
  public:
   explicit Worker();

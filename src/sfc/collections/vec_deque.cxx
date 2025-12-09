@@ -1,9 +1,9 @@
-#include "sfc/collections.h"
+#include "sfc/collections/vec_deque.h"
 #include "sfc/test/ut.h"
 
-namespace sfc::collections::test {
+namespace sfc::collections::vec_deque::test {
 
-SFC_TEST(queue_push_front) {
+SFC_TEST(push_front) {
   auto q = VecDeque<int>{};
   q.push_front(1);
 
@@ -17,7 +17,7 @@ SFC_TEST(queue_push_front) {
   panicking::expect_eq(q.back(), 1);
 }
 
-SFC_TEST(queue_push_back) {
+SFC_TEST(push_back) {
   auto q = VecDeque<int>{};
   q.push_back(1);
 
@@ -31,7 +31,7 @@ SFC_TEST(queue_push_back) {
   panicking::expect_eq(q.back(), 2);
 }
 
-SFC_TEST(queue_pop_front) {
+SFC_TEST(pop_front) {
   auto q = VecDeque<int>{};
   q.push_front(1);
   q.push_front(2);
@@ -43,7 +43,7 @@ SFC_TEST(queue_pop_front) {
   panicking::expect(!q.pop_front());
 }
 
-SFC_TEST(queue_pop_back) {
+SFC_TEST(pop_back) {
   auto q = VecDeque<int>{};
   q.push_back(1);
   q.push_back(2);
@@ -55,4 +55,4 @@ SFC_TEST(queue_pop_back) {
   panicking::expect(!q.pop_back());
 }
 
-}  // namespace sfc::collections::test
+}  // namespace sfc::collections::vec_deque::test
