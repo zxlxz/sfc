@@ -37,6 +37,15 @@ constexpr auto max(T a, T b) -> T {
   return a < b ? b : a;
 }
 
+template <trait::uint_ T>
+constexpr auto next_power_of_two(T n) -> T {
+  auto x = T{1};
+  while (x < n) {
+    x = x << 1;
+  }
+  return x;
+}
+
 auto to_str(slice::Slice<char> buf, const void* val, char type = 0) noexcept -> str::Str;
 auto to_str(slice::Slice<char> buf, trait::int_ auto val, char type = 0) noexcept -> str::Str;
 auto to_str(slice::Slice<char> buf, trait::flt_ auto val, u32 prec = 6, char type = 0) noexcept -> str::Str;

@@ -1,24 +1,26 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/alloc/vec.h"
 
 namespace sfc::collections::vec_deque {
 
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] VecDeque {
-  usize _pos{0};
+  using Buf = vec::Buf<T, A>;
+
+  Buf _buf{};
   usize _len{0};
-  vec::Buf<T> _buf{};
+  usize _pos{0};
 
  public:
   VecDeque() = default;
 
-  ~VecDeque() {
+  ~VecDeque() noexcept {
     this->clear();
   }
 
   VecDeque(VecDeque&& other) noexcept
-      : _pos{mem::take(other._pos)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
+      : _buf{mem::move(other._buf)}, _len{mem::take(other._len)}, _pos{mem::take(other._pos)} {}
 
   VecDeque& operator=(VecDeque&& other) noexcept {
     if (this != &other) {
@@ -31,128 +33,141 @@ class [[nodiscard]] VecDeque {
   }
 
   static auto with_capacity(usize capacity) -> VecDeque {
+    const auto cap = num::next_power_of_two(capacity);
+
     auto res = VecDeque{};
-    res._buf.reserve(0, capacity);
+    res.reserve(cap);
     return res;
   }
 
-  auto capacity() const -> usize {
+  auto capacity() const noexcept -> usize {
     return _buf._cap;
   }
 
-  auto len() const -> usize {
+  auto len() const noexcept -> usize {
     return _len;
   }
 
-  auto is_empty() const -> bool {
+  auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _len != 0;
   }
 
  public:
-  auto front() const -> const T& {
+  auto front() const noexcept -> const T& {
     panicking::expect(_len != 0, "VecDeque::front: queue is empty");
-    return _buf[_pos];
+    return _buf._ptr[_pos];
   }
 
-  auto front_mut() -> T& {
+  auto front_mut() noexcept -> T& {
     panicking::expect(_len != 0, "VecDeque::front_mut: queue is empty");
-    return _buf[_pos];
+    return _buf._ptr[_pos];
   }
 
-  auto back() const -> const T& {
+  auto back() const noexcept -> const T& {
     panicking::expect(_len != 0, "VecDeque::back: queue is empty");
-    return _buf[this->wrap_idx(_pos + _len - 1)];
+    const auto off = (_pos + _len - 1) & (_buf._cap - 1);
+    return _buf._ptr[off];
   }
 
-  auto back_mut() -> T& {
+  auto back_mut() noexcept -> T& {
     panicking::expect(_len != 0, "VecDeque::back_mut: queue is empty");
-    return _buf[this->wrap_idx(_pos + _len - 1)];
+    const auto off = (_pos + _len - 1) & (_buf._cap - 1);
+    return _buf._ptr[off];
   }
 
  public:
-  void push_front(T value) {
+  void push_front(T value) noexcept {
     if (_len == _buf._cap) {
       this->reserve(1);
     }
-    _pos = this->wrap_idx(_pos + _buf._cap - 1);
+    const auto off = (_pos - 1) & (_buf._cap - 1);
+    ptr::write(_buf._ptr + off, static_cast<T&&>(value));
+    _pos = off;
     _len += 1;
-    ptr::write(&_buf[_pos], mem::move(value));
   }
 
-  auto pop_front() -> Option<T> {
+  auto pop_front() noexcept -> Option<T> {
     if (_len == 0) {
       return {};
     }
 
-    auto res = ptr::read(&_buf[_pos]);
-    _pos = this->wrap_idx(_pos + 1);
+    auto res = Option{ptr::read(_buf._ptr + _pos)};
+    _pos = (_pos + 1) & (_buf._cap - 1);
     _len -= 1;
-
     return res;
   }
 
-  void push_back(T value) {
+  void push_back(T value) noexcept {
     if (_len == _buf._cap) {
       this->reserve(1);
     }
 
-    const auto pos = this->wrap_idx(_pos + _len);
-    ptr::write(&_buf[pos], mem::move(value));
+    const auto off = (_pos + _len) & (_buf._cap - 1);
+    ptr::write(_buf._ptr + off, static_cast<T&&>(value));
     _len += 1;
   }
 
-  auto pop_back() -> Option<T> {
+  auto pop_back() noexcept -> Option<T> {
     if (_len == 0) {
       return {};
     }
 
-    const auto pos = this->wrap_idx(_pos + _len - 1);
-    auto res = ptr::read(&_buf[pos]);
+    const auto off = (_pos + _len - 1) & (_buf._cap - 1);
+    auto res = Option{ptr::read(_buf._ptr + off)};
     _len -= 1;
     return res;
   }
 
-  void clear() {
+  void clear() noexcept {
+    if (_len == 0) {
+      return;
+    }
+
     for (auto i = 0UL; i < _len; ++i) {
-      mem::drop(_buf[this->wrap_idx(_pos + i)]);
+      const auto off = (_pos + i) & (_buf._cap - 1);
+      mem::drop(_buf._ptr[off]);
     }
     _len = 0;
+    _pos = 0;
   }
 
-  void reserve(usize additional) {
+  void reserve(usize additional) noexcept {
     if (_len + additional <= _buf._cap) {
       return;
     }
 
-    const auto min_cap = num::max(_buf._cap * 2, usize{8U});
-    const auto new_cap = num::min(_len + additional, min_cap);
-    auto new_buf = _buf.with_capacity(new_cap);
+    const auto new_cap = num::next_power_of_two(_len + additional);
+    auto tmp = Buf::with_capacity(new_cap);
 
     for (auto i = 0UL; i < _len; ++i) {
-      auto tmp = ptr::read(&_buf[this->wrap_idx(_pos + i)]);
-      ptr::write(&new_buf[i], mem::move(tmp));
+      const auto off = (_pos + i) & (_buf._cap - 1);
+      auto& src = _buf._ptr[off];
+      ptr::write(tmp._ptr + i, static_cast<T&&>(src));
+      src.~T();
     }
     _pos = 0;
-    _buf = mem::move(new_buf);
+    _buf = mem::move(tmp);
   }
 
  public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    auto imp = f.debug_list();
-    for (auto i = 0UL; i < _len; ++i) {
-      auto& val = _buf[_buf.wrap_idx(_pos + i)];
-      imp.entry(val);
+  void for_each(this auto&& self, auto&& f) {
+    const auto ptr = self._buf._ptr;
+    const auto msk = self._buf._cap - 1;
+    for (auto i = 0UL; i < self._len; ++i) {
+      const auto off = (self._pos + i) & msk;
+      f(ptr[off]);
     }
   }
 
- private:
-  auto wrap_idx(usize idx) const -> usize {
-    return idx < _buf._cap ? idx : idx - _buf._cap;
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    auto imp = f.debug_list();
+    this->for_each([&](const T& val) { imp.entry(val); });
+    imp.finish();
   }
 };
 

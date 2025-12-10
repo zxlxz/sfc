@@ -10,7 +10,7 @@ class [[nodiscard]] Buf {
  public:
   T* _ptr{nullptr};
   usize _cap{0};
-  [[no_unique_address]] A _alloc{};
+  [[no_unique_address]] A _a{};
 
  public:
   Buf() noexcept = default;
@@ -19,15 +19,14 @@ class [[nodiscard]] Buf {
     this->dealloc();
   }
 
-  Buf(Buf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
+  Buf(Buf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
   Buf& operator=(Buf&& other) noexcept {
     if (this != &other) {
       this->dealloc();
       _ptr = mem::take(other._ptr);
       _cap = mem::take(other._cap);
-      _alloc = mem::move(other._alloc);
+      _a = mem::move(other._a);
     }
     return *this;
   }
@@ -44,14 +43,6 @@ class [[nodiscard]] Buf {
 
   auto capacity() const noexcept -> usize {
     return _cap;
-  }
-
-  auto operator[](usize idx) const noexcept -> const T& {
-    return _ptr[idx];
-  }
-
-  auto operator[](usize idx) noexcept -> T& {
-    return _ptr[idx];
   }
 
   void reserve(usize used, usize additional) noexcept {
@@ -78,7 +69,7 @@ class [[nodiscard]] Buf {
     if (!_ptr) {
       return;
     }
-    _alloc.dealloc(_ptr, alloc::Layout::array<T>(_cap));
+    _a.dealloc(_ptr, alloc::Layout::array<T>(_cap));
     _ptr = nullptr;
     _cap = 0;
   }
@@ -89,12 +80,12 @@ class [[nodiscard]] Buf {
     }
 
     const auto new_layout = alloc::Layout::array<T>(new_cap);
-    const auto new_ptr = static_cast<T*>(_alloc.alloc(new_layout));
+    const auto new_ptr = static_cast<T*>(_a.alloc(new_layout));
     const auto old_cap = mem::replace(_cap, new_cap);
     const auto old_ptr = mem::replace(_ptr, new_ptr);
     if (old_ptr) {
       ptr::uninit_move(old_ptr, new_ptr, used);
-      _alloc.dealloc(old_ptr, alloc::Layout::array<T>(old_cap));
+      _a.dealloc(old_ptr, alloc::Layout::array<T>(old_cap));
     }
   }
 };
@@ -113,9 +104,7 @@ class [[nodiscard]] Vec {
     this->clear();
   }
 
-  Vec(Vec&& other) noexcept : _buf{static_cast<Buf&&>(other._buf)}, _len{other._len} {
-    other._len = 0;
-  }
+  Vec(Vec&& other) noexcept : _buf{static_cast<Buf&&>(other._buf)}, _len{mem::take(other._len)} {}
 
   Vec& operator=(Vec&& other) noexcept {
     if (this != &other) {

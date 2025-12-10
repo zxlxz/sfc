@@ -44,19 +44,22 @@ class HashMap {
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
-    const auto p = _inn.search_or_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
-    if (!p) {
-      return {};
+    const auto [p, has_value] = _inn.search_for_insert(key);
+    if (has_value) {
+      return {*p};
     }
-    return p->val;
+    _inn.insert_at(p, {key, static_cast<V&&>(val)});
+    return {};
   }
 
   auto insert(K key, V val) noexcept -> Option<V> {
-    const auto p = _inn.search_or_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
-    if (!p) {
-      return {};
+    _inn.reserve(1);
+    const auto [p, has_value] = _inn.search_for_insert(key);
+    if (has_value) {
+      auto old_val = mem::replace(p->val, static_cast<V&&>(val));
+      return Option{static_cast<V&&>(old_val)};
     }
-    return mem::replace(p->val, static_cast<V&&>(val));
+    _inn.insert_at(p, {key, static_cast<V&&>(val)});
   }
 
   auto remove(const K& key) -> Option<V> {
