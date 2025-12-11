@@ -40,34 +40,31 @@ class HashMap {
     if (!p) {
       return {};
     }
-    return p->val;
+    return const_cast<V&>(p->val);
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
-    const auto [p, has_value] = _inn.search_for_insert(key);
-    if (has_value) {
-      return {*p};
-    }
-    _inn.insert_at(p, {key, static_cast<V&&>(val)});
-    return {};
-  }
-
-  auto insert(K key, V val) noexcept -> Option<V> {
-    _inn.reserve(1);
-    const auto [p, has_value] = _inn.search_for_insert(key);
-    if (has_value) {
-      auto old_val = mem::replace(p->val, static_cast<V&&>(val));
-      return Option{static_cast<V&&>(old_val)};
-    }
-    _inn.insert_at(p, {key, static_cast<V&&>(val)});
-  }
-
-  auto remove(const K& key) -> Option<V> {
-    const auto p = _inn.search(key);
+    const auto p = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
     if (!p) {
       return {};
     }
-    auto res = Option{mem::move(p->val)};
+    return p->val;
+  }
+
+  auto insert(K key, V val) noexcept -> Option<V> {
+    if (auto ptr = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)})) {
+      auto old_val = mem::replace(ptr->val, static_cast<V&&>(val));
+      return Option{mem::move(old_val)};
+    }
+    return {};
+  }
+
+  auto remove(const K& key) -> Option<V> {
+    const auto p = const_cast<Entry*>(_inn.search(key));
+    if (!p) {
+      return {};
+    }
+    auto res = Option{static_cast<V&&>(p->val)};
     _inn.erase(p);
     return res;
   }

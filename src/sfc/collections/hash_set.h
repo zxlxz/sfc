@@ -40,7 +40,7 @@ class HashSet {
   }
 
   auto insert(K val) -> bool {
-    const auto p = _inn.search_or_insert({static_cast<K&&>(val)});
+    const auto p = _inn.try_insert({static_cast<K&&>(val)});
     return p != nullptr;
   }
 

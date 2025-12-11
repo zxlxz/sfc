@@ -38,8 +38,8 @@ constexpr auto max(T a, T b) -> T {
 }
 
 template <trait::uint_ T>
-constexpr auto next_power_of_two(T n) -> T {
-  auto x = T{1};
+constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
+  auto x = init_val;
   while (x < n) {
     x = x << 1;
   }
