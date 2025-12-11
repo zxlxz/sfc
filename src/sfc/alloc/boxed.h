@@ -4,12 +4,9 @@
 
 namespace sfc::boxed {
 
-using Layout = alloc::Layout;
-
-template <class T, class A = alloc::Global>
+template <class T>
 class Box {
   T* _ptr = nullptr;
-  [[no_unique_address]] A _alloc = {};
 
  public:
   Box() noexcept = default;
@@ -19,39 +16,33 @@ class Box {
   }
 
   Box(const Box&) = delete;
+
   Box& operator=(const Box&) = delete;
 
-  Box(Box&& other) noexcept : _ptr{other._ptr}, _alloc{static_cast<A&&>(other._alloc)} {
+  Box(Box&& other) noexcept : _ptr{other._ptr} {
     other._ptr = {};
   }
 
   auto operator=(Box&& other) noexcept -> Box& {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      if (_ptr) {
+        delete _ptr;
+      }
+      _ptr = other._ptr;
+      other._ptr = {};
     }
-    this->reset();
-    _ptr = mem::take(other._ptr);
-    _alloc = mem::move(other._alloc);
     return *this;
   }
 
-  static auto from_raw(T* ptr, A alloc = {}) noexcept -> Box {
+  static auto from_raw(T* ptr) noexcept -> Box {
     auto res = Box{};
     res._ptr = ptr;
-    res._alloc = static_cast<A&&>(alloc);
     return res;
   }
 
   static auto xnew(auto&&... args) -> Box {
     auto res = Box{};
-    try {
-      res._ptr = static_cast<T*>(res._alloc.alloc(Layout::of<T>()));
-      new (res._ptr) T{static_cast<decltype(args)&&>(args)...};
-    } catch (...) {
-      res._alloc.dealloc(res._ptr, Layout::of<T>());
-      res._ptr = {};
-      throw;
-    }
+    res._ptr = new T{static_cast<decltype(args)&&>(args)...};
     return res;
   }
 
@@ -67,6 +58,13 @@ class Box {
     const auto res = _ptr;
     _ptr = nullptr;
     return res;
+  }
+
+  template <class B>
+  auto cast() && -> Box<B> {
+    static_assert(__is_polymorphic(B), "boxed::Box::cast: T must be polymorphic");
+    const auto p = static_cast<B*>(mem::take(_ptr));
+    return Box<B>::from_raw(p);
   }
 
   auto operator->() const -> const T* {
@@ -90,12 +88,10 @@ class Box {
   }
 
   void reset() noexcept {
-    if (!_ptr) {
-      return;
+    if (_ptr) {
+      delete _ptr;
+      _ptr = nullptr;
     }
-    _ptr->~T();
-    _alloc.dealloc(_ptr, Layout::of<T>());
-    _ptr = nullptr;
   }
 
   void fmt(auto& f) const {
@@ -107,69 +103,46 @@ class Box {
   }
 };
 
-template <class R, class... T, class A>
-class Box<R(T...), A> {
+template <class R, class... T>
+class Box<R(T...)> {
+  using dtor_t = void(void*);
+  using call_t = R(void*, T&&...);
   struct Meta {
-    Layout _layout = {};
-    void (*_dtor)(void*) = nullptr;  // only non-SSO have dtor
-    R (*_call)(void*, T&&...) = nullptr;
-
-    template <class X>
-    static auto from(const X&) -> Meta {
-      static constexpr auto SSO = __is_trivially_copyable(X) && sizeof(X) <= sizeof(void*);
-      const auto dtor = [](void* p) { static_cast<X*>(p)->~X(); };
-      const auto call = [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); };
-      return Meta{Layout::of<X>(), SSO ? nullptr : dtor, call};
-    }
-
-    void drop(void* p) {
-      if (!_dtor) {
-        return;
-      }
-      _dtor(p);
-    }
+    dtor_t* _dtor = nullptr;
+    call_t* _call = nullptr;
   };
 
   const Meta* _meta{nullptr};
   void* _data{nullptr};
-  [[no_unique_address]] A _alloc{};
 
  public:
   Box() noexcept = default;
 
-  ~Box() {
+  ~Box() noexcept {
     this->reset();
   }
 
-  Box(const Box&) = delete;
-  Box& operator=(const Box&) = delete;
-
-  Box(Box&& other) noexcept
-      : _meta{mem::take(other._meta)}, _data{mem::take(other._data)}, _alloc{static_cast<A&&>(other._alloc)} {}
+  Box(Box&& other) noexcept : _meta{mem::take(other._meta)}, _data{mem::take(other._data)} {}
 
   Box& operator=(Box&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->reset();
+      _meta = mem::take(other._meta);
+      _data = mem::take(other._data);
     }
-    this->reset();
-    _meta = mem::take(other._meta);
-    _data = mem::take(other._data);
-    _alloc = mem::move(other._alloc);
     return *this;
   }
 
   template <class X>
-  static auto xnew(X obj) -> Box {
-    static const auto meta = Meta::from(obj);
+  static auto xnew(X x) noexcept -> Box {
+    static const auto meta = Meta{
+        [](void* p) { delete static_cast<X*>(p); },
+        [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
+    };
 
     auto res = Box{};
     res._meta = &meta;
-    if (meta._dtor) {
-      res._data = res._alloc.alloc(meta._layout);
-      new (res._data) auto{static_cast<X&&>(obj)};
-    } else {
-      new (&res._data) auto{static_cast<X&&>(obj)};
-    }
+    res._data = new auto{static_cast<decltype(x)&&>(x)};
     return res;
   }
 
@@ -179,102 +152,26 @@ class Box<R(T...), A> {
 
   auto operator()(T... args) -> auto {
     panicking::expect(_meta != nullptr, "boxed::Box::*: deref null");
-    const auto ptr = _meta->_dtor ? _data : static_cast<void*>(&_data);
-    return (_meta->_call)(ptr, static_cast<T&&>(args)...);
+    return (_meta->_call)(_data, static_cast<T&&>(args)...);
   }
 
   void reset() {
-    if (_meta == nullptr) {
-      return;
-    }
-    if (_meta->_dtor) {
+    if (_meta != nullptr) {
       _meta->_dtor(_data);
-      _alloc.dealloc(_data, _meta->_layout);
+      _data = {};
+      _meta = nullptr;
     }
-    _data = {};
-    _meta = nullptr;
   }
 };
 
-template <class T, class A>
-class Box<T&, A> {
-  static_assert(__is_class(T));
-
-  struct Meta : T::Meta {
-    Layout _layout = {};
-    void (*_dtor)(void*) = nullptr;
-
-    template <class X>
-    static auto from(const X& _) -> Meta {
-      const auto layout = Layout::of<X>();
-      const auto dtor = [](void* p) { static_cast<X*>(p)->~X(); };
-      return {T::Meta::from(_), layout, dtor};
-    }
-  };
-
-  const Meta* _meta = nullptr;
-  void* _self = nullptr;
-  [[no_unique_address]] A _alloc = {};
-
- public:
-  Box() noexcept = default;
-
-  ~Box() noexcept {
-    this->reset();
-  }
-
-  Box(const Box&) = delete;
-
-  Box& operator=(const Box&) = delete;
-
-  Box(Box&& other) noexcept
-      : _meta{mem::take(other._meta)}, _self{mem::take(other._self)}, _alloc{mem::move(other._alloc)} {}
-
-  Box& operator=(Box&& other) noexcept {
-    if (this == &other) {
-      return *this;
-    }
-    this->reset();
-    _meta = mem::take(other._meta);
-    _self = mem::take(other._self);
-    _alloc = mem::move(other._alloc);
-    return *this;
-  }
-
-  template <class X>
-  static auto xnew(X x) -> Box {
-    static const auto meta = Meta::from(x);
-
-    auto res = Box{};
-    res._meta = &meta;
-    res._self = res._alloc.alloc(meta._layout);
-    new (res._self) X{static_cast<X&&>(x)};
-    return res;
-  }
-
-  explicit operator bool() const {
-    return _self != nullptr;
-  }
-
-  auto operator->() -> T* {
-    panicking::expect(_self != nullptr, "boxed::Box::->: deref null");
-    return reinterpret_cast<T*>(this);
-  }
-
-  void reset() noexcept {
-    if (!_self) {
-      return;
-    }
-    (_meta->_dtor)(_self);
-    _alloc.dealloc(_self, _meta->_layout);
-    _self = nullptr;
-  }
-};
+template <class B>
+auto box(B&& b) -> Box<B> {
+  return Box<B>::xnew(static_cast<B&&>(b));
+}
 
 }  // namespace sfc::boxed
 
 namespace sfc::option {
-
 template <class... T>
 class Inner<boxed::Box<T...>> {
   using Box = boxed::Box<T...>;
@@ -308,4 +205,5 @@ class Inner<boxed::Box<T...>> {
 
 namespace sfc {
 using boxed::Box;
+using boxed::box;
 }  // namespace sfc

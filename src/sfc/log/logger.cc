@@ -66,17 +66,15 @@ auto Record::tls_buf() -> String& {
 }
 
 Logger& global() {
-  static auto console_backend = ConsoleBackend{};
-  static auto global_logger = Logger{};
-
-  static auto static_init = [] {
-    global_logger.set_level(Level::Info);
-    global_logger.set_backend(console_backend);
-    return true;
-  }();
-  (void)static_init;
-
-  return global_logger;
+  auto make_logger = [] -> Logger {
+    auto logger = Logger{};
+    logger.set_level(Level::Info);
+    logger.add_backend(ConsoleBackend{});
+    return logger;
+  };
+  
+  static auto res = make_logger();
+  return res;
 }
 
 }  // namespace sfc::log

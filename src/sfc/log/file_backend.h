@@ -5,14 +5,14 @@
 
 namespace sfc::log {
 
-class FileBackend {
+class FileBackend : public IBackend {
   fs::File _file = {};
 
  public:
   static auto create(fs::Path path) -> io::Result<FileBackend>;
 
-  void flush();
-  void write(Record entry);
+  void flush() override;
+  void write(Record entry) override;
 };
 
 }  // namespace sfc::log

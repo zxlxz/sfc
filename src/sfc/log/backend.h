@@ -23,45 +23,13 @@ struct Record {
   static auto time_str() -> Str;
 };
 
-class Backend {
-  template <class T, class A>
-  friend class boxed::Box;
-
-  struct Meta {
-    void (*_flush)(void*) = nullptr;
-    void (*_write)(void*, Record) = nullptr;
-
-    template <class X>
-    static auto from(const X&) -> Meta {
-      const auto flush = [](void* p) { static_cast<X*>(p)->flush(); };
-      const auto write = [](void* p, Record r) { static_cast<X*>(p)->write(r); };
-      return {flush, write};
-    }
-  };
-
-  const Meta* _meta = nullptr;
-  void* _self = nullptr;
-
+class IBackend {
  public:
-  static auto from(auto& impl) -> Backend {
-    static const auto meta = Meta::from(impl);
-    auto res = Backend{};
-    res._meta = &meta;
-    res._self = &impl;
-    return res;
-  }
+  IBackend() = default;
+  virtual ~IBackend() = default;
 
-  explicit operator bool() const {
-    return _self != nullptr;
-  }
-
-  void flush() {
-    return (_meta->_flush)(_self);
-  }
-
-  void write(Record entry) {
-    return (_meta->_write)(_self, entry);
-  }
+  virtual void flush() = 0;
+  virtual void write(Record entry) = 0;
 };
 
 }  // namespace sfc::log

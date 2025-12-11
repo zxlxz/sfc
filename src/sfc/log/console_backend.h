@@ -4,19 +4,16 @@
 
 namespace sfc::log {
 
-class ConsoleBackend {
+class ConsoleBackend : public IBackend {
   bool _color{false};
 
  public:
   explicit ConsoleBackend();
   ~ConsoleBackend();
 
-  ConsoleBackend(ConsoleBackend&&) noexcept = default;
-  ConsoleBackend& operator=(ConsoleBackend&&) noexcept = default;
-
   void set_color(bool value);
-  void flush();
-  void write(Record entry);
+  void flush() override;
+  void write(Record entry) override;
 };
 
 }  // namespace sfc::log

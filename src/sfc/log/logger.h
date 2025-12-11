@@ -6,15 +6,9 @@ namespace sfc::log {
 
 class Logger {
   Level _level{Level::Info};
-  Backend _backend = {};
+  Vec<Box<IBackend>> _backends = {};
 
  public:
-  Logger() = default;
-  ~Logger() noexcept = default;
-
-  Logger(Logger&&) = default;
-  Logger& operator=(Logger&&) = default;
-
   auto level() const -> Level {
     return _level;
   }
@@ -23,25 +17,30 @@ class Logger {
     _level = level;
   }
 
-  void set_backend(auto& backend) {
-    _backend = Backend::from(backend);
+  template <class B>
+  void add_backend(B backend) {
+    _backends.push(box(static_cast<B&&>(backend)).template cast<IBackend>());
   }
 
   void flush() {
-    _backend ? _backend.flush() : void();
+    for (auto& backend : _backends) {
+      backend->flush();
+    }
   }
 
   void write_str(Level level, Str msg) {
-    if (!_backend || level < _level) {
+    if (_backends.is_empty() && level < _level) {
       return;
     }
 
     const auto entry = Record{level, Record::time_str(), msg};
-    _backend.write(entry);
+    for (auto& backend : _backends) {
+      backend->write(entry);
+    }
   }
 
   void write_fmt(Level level, Str fmts, const auto&... args) {
-    if (!_backend || level < _level) {
+    if (_backends.is_empty() && level < _level) {
       return;
     }
 

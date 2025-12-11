@@ -4,8 +4,6 @@
 
 namespace sfc::log {
 
-static const Str COLOR_OFF = "\033[0m";
-
 static inline auto level_str(Level level) -> Str {
   switch (level) {
     case Level::Trace: return " [--] ";
@@ -46,6 +44,8 @@ void ConsoleBackend::flush() {
 }
 
 void ConsoleBackend::write(Record entry) {
+  static const Str COLOR_OFF = "\033[0m";
+
   auto out = io::Stdout::lock();
 
   _color ? out.write_str(color_str(entry.level)) : void();
