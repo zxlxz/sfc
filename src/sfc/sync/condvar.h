@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/sync/mutex.h"
+#include "sfc/time.h"
 
 namespace sfc::sync {
 
@@ -9,17 +10,17 @@ class Condvar {
   Box<Inn> _inn;
 
  public:
-  explicit Condvar();
-  ~Condvar()noexcept;
+  explicit Condvar() noexcept;
+  ~Condvar() noexcept;
 
   Condvar(Condvar&&) noexcept;
   Condvar& operator=(Condvar&&) noexcept;
 
-  void notify_one();
-  void notify_all();
+  void notify_one() noexcept;
+  void notify_all() noexcept;
 
-  auto wait(Mutex::Guard& lock) -> bool;
-  auto wait_timeout(Mutex::Guard& lock, time::Duration dur) -> bool;
+  auto wait(Mutex::Guard& lock) noexcept -> bool;
+  auto wait_timeout(Mutex::Guard& lock, time::Duration dur) noexcept -> bool;
 
   void wait_while(Mutex::Guard& lock, auto&& cond) {
     while (auto x = cond()) {

@@ -8,38 +8,34 @@ struct Instant {
   u64 _nanos = 0;
 
  public:
-  static auto now() -> Instant;
+  static auto now() noexcept -> Instant;
 
-  auto duration_since(const Instant& earlier) const -> Duration {
-    const auto nanos = _nanos < earlier._nanos ? 0U : _nanos - earlier._nanos;
-    return Duration{nanos};
+  auto duration_since(Instant earlier) const noexcept -> Duration {
+    return {_nanos - earlier._nanos};
   }
 
-  auto elapsed() const -> Duration {
+  auto elapsed() const noexcept -> Duration {
     const auto now = Instant::now();
-    return Duration{now._nanos - _nanos};
+    return {now._nanos - _nanos};
   }
 
-  auto operator==(const Instant& other) const -> bool {
+ public:
+  // trait: ops::Eq
+  auto operator==(const Instant& other) const noexcept -> bool {
     return _nanos == other._nanos;
   }
 
-  auto operator<(const Instant& other) const -> bool {
-    return _nanos < other._nanos;
-  }
-
-  auto operator<=(const Instant& other) const -> bool {
-    return _nanos <= other._nanos;
-  }
-
-  auto operator+(const Duration& dur) const -> Instant {
+  // trait: ops::Add
+  auto operator+(const Duration& dur) const noexcept -> Instant {
     return Instant{_nanos + dur._nanos};
   }
 
-  auto operator-(const Duration& dur) const -> Instant {
+  // trait: ops::Sub
+  auto operator-(const Duration& dur) const noexcept -> Instant {
     return Instant{_nanos - dur._nanos};
   }
 
+  // trait: fmt::Display
   void fmt(auto& f) const {
     f.write_fmt("{}ns", _nanos);
   }

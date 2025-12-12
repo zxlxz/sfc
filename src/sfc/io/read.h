@@ -19,13 +19,15 @@ struct Read {
     return {};
   }
 
-  auto read_to_end(this auto& self, Vec<u8>& buf, usize buf_len = 256) -> Result<usize> {
+  auto read_to_end(this auto& self, Vec<u8>& buf) -> Result<usize> {
+    static constexpr auto PROBE_SIZE = 1024U;
+
     const auto old_len = buf.len();
     while (true) {
-      buf.reserve(buf_len);
+      buf.reserve(PROBE_SIZE);
 
-      auto tmp = Slice{buf.as_mut_ptr() + buf.len(), buf_len};
-      const auto cnt = _TRY(self.read(tmp));
+      auto spare = buf.spare_capacity_mut();
+      const auto cnt = _TRY(self.read(spare));
       if (cnt == 0) {
         break;
       }

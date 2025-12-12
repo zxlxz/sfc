@@ -9,7 +9,9 @@ namespace sys_imp = sys::io;
 File::File() noexcept : _fd{sys_imp::INVALID_FD} {}
 
 File::~File() noexcept {
-  this->close();
+  if (_fd != sys_imp::INVALID_FD) {
+    sys_imp::close(_fd);
+  }
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
@@ -17,44 +19,36 @@ File::File(File&& other) noexcept : _fd{other._fd} {
 }
 
 File& File::operator=(File&& other) noexcept {
-  if (this == &other) {
-    return *this;
+  if (this != &other) {
+    if (_fd != sys_imp::INVALID_FD) {
+      sys_imp::close(_fd);
+    }
+    _fd = other._fd;
+    other._fd = sys_imp::INVALID_FD;
   }
-
-  this->close();
-  _fd = other._fd;
-  other._fd = sys_imp::INVALID_FD;
   return *this;
 }
 
-auto File::from_fd(fd_t fd) -> File {
+auto File::from_fd(fd_t fd) noexcept -> File {
   auto res = File{};
   res._fd = fd;
   return res;
 }
 
-auto File::as_fd() const -> fd_t {
+auto File::as_fd() const noexcept -> fd_t {
   return _fd;
 }
 
-auto File::is_open() const -> bool {
+auto File::is_open() const noexcept -> bool {
   return _fd != sys_imp::INVALID_FD;
 }
 
-void File::close() {
-  if (!this->is_open()) {
-    return;
-  }
-  sys_imp::close(_fd);
-  _fd = sys_imp::INVALID_FD;
-}
-
-auto File::read(Slice<u8> buf) -> Result<usize> {
-  if (buf.is_empty()) {
-    return 0UL;
-  }
+auto File::read(Slice<u8> buf) noexcept -> Result<usize> {
   if (!this->is_open()) {
     return io::Error::InvalidInput;
+  }
+  if (buf.is_empty()) {
+    return 0UL;
   }
 
   const auto res = sys_imp::read(_fd, buf.as_mut_ptr(), buf.len());
@@ -64,12 +58,12 @@ auto File::read(Slice<u8> buf) -> Result<usize> {
   return static_cast<usize>(res);
 }
 
-auto File::write(Slice<const u8> buf) -> Result<usize> {
-  if (buf.is_empty()) {
-    return 0UL;
-  }
+auto File::write(Slice<const u8> buf) noexcept -> Result<usize> {
   if (!this->is_open()) {
     return io::Error::InvalidInput;
+  }
+  if (buf.is_empty()) {
+    return 0UL;
   }
 
   const auto res = sys_imp::write(_fd, buf.as_ptr(), buf.len());

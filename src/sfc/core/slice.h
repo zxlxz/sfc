@@ -110,21 +110,6 @@ struct Slice {
   auto to_vec() const;
 
  public:
-  auto operator==(Slice<const T> other) const noexcept -> bool {
-    if (_len != other._len) {
-      return false;
-    }
-    if (_ptr == other._ptr) {
-      return true;
-    }
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != other._ptr[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   auto contains(const T& x) const noexcept -> bool {
     for (auto i = 0UL; i < _len; ++i) {
       if (_ptr[i] == x) {
@@ -135,9 +120,6 @@ struct Slice {
   }
 
   auto find(const T& x) const noexcept -> Option<usize> {
-    if (_len == 0) {
-      return {};
-    }
     for (auto i = 0UL; i < _len; ++i) {
       if (_ptr[i] == x) {
         return i;
@@ -202,6 +184,19 @@ struct Slice {
   }
 
  public:
+  // trait: ops::Eq
+  auto operator==(Slice<const T> other) const noexcept -> bool {
+    if (_len != other._len) {
+      return false;
+    }
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] != other._ptr[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter()).finish();

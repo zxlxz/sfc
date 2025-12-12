@@ -14,7 +14,7 @@ auto var(Str key) -> String {
 
 auto set_var(Str key, Str val) -> bool {
   const auto c_key = CString::from(key);
-  if (!val) {
+  if (val.is_empty()) {
     return sys_imp::unsetenv(c_key);
   }
 

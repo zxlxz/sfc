@@ -1,7 +1,8 @@
 #pragma once
 
-#include "sfc/core/slice.h"
 #include "sfc/core/num.h"
+#include "sfc/core/hash.h"
+#include "sfc/core/slice.h"
 
 namespace sfc::str {
 
@@ -40,8 +41,8 @@ struct Str {
     }
   }
 
-  constexpr auto as_ptr() const noexcept -> const char* {
-    return _ptr;
+  constexpr auto as_ptr() const noexcept -> const u8* {
+    return reinterpret_cast<const u8*>(_ptr);
   }
 
   constexpr auto is_empty() const noexcept -> bool {
@@ -50,14 +51,6 @@ struct Str {
 
   constexpr auto len() const noexcept -> usize {
     return _len;
-  }
-
-  constexpr explicit operator bool() const noexcept {
-    return _len != 0;
-  }
-
-  constexpr auto as_chars() const noexcept -> Slice<const char> {
-    return {_ptr, _len};
   }
 
   constexpr auto as_bytes() const noexcept -> Slice<const u8> {
@@ -85,8 +78,9 @@ struct Str {
   }
 
  public:
+  using Iter = slice::Iter<const char>;
   auto iter() const noexcept -> slice::Iter<const char> {
-    return this->as_chars().iter();
+    return Iter{{}, _ptr, _ptr + _len};
   }
 
  public:
@@ -103,34 +97,16 @@ struct Str {
 
   auto trim_start() const noexcept -> Str {
     const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-    auto i = 0U;
-    while (i < _len && is_space(_ptr[i])) {
-      ++i;
-    }
-    return Str{_ptr + i, _len - i};
+    return this->trim_start_matches(is_space);
   }
 
   auto trim_end() const noexcept -> Str {
     const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-    auto i = _len;
-    while (i > 0 && is_space(_ptr[i - 1])) {
-      --i;
-    }
-    return Str{_ptr, i};
+    return this->trim_end_matches(is_space);
   }
 
   auto trim() const noexcept -> Str {
     return this->trim_start().trim_end();
-  }
-
- public:
-  auto hash() const -> usize {
-    auto res = 0xaf63bd4c8601b7dfULL;
-    for (auto i = 0UL; i < _len; ++i) {
-      res ^= static_cast<u8>(_ptr[i]);
-      res *= 0xaf63bd4c8601b7dfULL;
-    }
-    return res;
   }
 
  public:
@@ -176,6 +152,15 @@ struct Str {
   // trait: serde::Serialize
   void serialize(auto& ser) const {
     ser.serialize_str(*this);
+  }
+
+  // trait: hash::Hash
+  auto hash() const noexcept -> usize {
+    auto imp = hash::Hasher{};
+    for (auto i = 0UL; i < _len; ++i) {
+      imp.write_byte(_ptr[i]);
+    }
+    return imp.finish();
   }
 };
 

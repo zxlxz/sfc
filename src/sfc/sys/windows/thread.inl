@@ -22,10 +22,6 @@ inline auto current() -> thrd_t {
   return ::GetCurrentThread();
 }
 
-inline auto current_id() -> tid_t {
-  return ::GetCurrentThreadId();
-}
-
 inline auto start(SIZE_T stack_size, DWORD (*func)(void*), void* data) -> thrd_t {
   return ::CreateThread(nullptr, stack_size, func, data, 0, nullptr);
 }

@@ -11,18 +11,13 @@ SFC_TEST(type_name) {
 }
 
 SFC_TEST(simple) {
+  // is_empty
+  static_assert(Str{}.is_empty());
+  static_assert(!Str{"abc"}.is_empty());
+
+  // len
   static_assert(Str{}.len() == 0U);
   static_assert(Str{"abc"}.len() == 3U);
-
-  panicking::expect_eq(Str{}.len(), 0U);
-  panicking::expect(Str{}.is_empty());
-  panicking::expect(!Str{});
-
-  const auto s = Str{"abc"};
-  panicking::expect_eq(s.as_ptr(), s._ptr);
-  panicking::expect_eq(s.as_chars()._len, s._len);
-  panicking::expect_eq(s.as_chars()._ptr, s._ptr);
-  panicking::expect_eq(s.as_bytes()._len, s._len);
 }
 
 SFC_TEST(index) {

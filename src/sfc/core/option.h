@@ -222,12 +222,16 @@ class Option {
   auto ok_or(E err) && -> result::Result<T, E>;
 
  public:
+  // trait: ops::Eq
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
-    if (this->is_none()) {
-      return other.is_none();
+    if (_inn.is_none()) {
+      return other._inn.is_none();
+    } else if (other._inn.is_some()) {
+      return (*_inn == *other._inn);
+    } else {
+      return false;
     }
-    return other.is_some() && (*_inn == *other._inn);
   }
 
   // trait: fmt::Display

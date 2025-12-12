@@ -7,72 +7,67 @@ namespace sfc::sync {
 
 namespace sys_imp = sys::sync;
 
+using tid_t = sys_imp::tid_t;
+using mtx_t = sys_imp::mtx_t;
+
 struct Mutex::Inn {
-  sys_imp::mutex_t _raw;
+  mtx_t _raw;
 
  public:
-  Inn() {
-    sys_imp::init(_raw);
+  Inn() noexcept {
+    sys_imp::mtx_init(_raw);
   }
 
-  ~Inn() {
-    sys_imp::drop(_raw);
+  ~Inn() noexcept {
+    sys_imp::mtx_drop(_raw);
   }
 
-  Inn(const Inn&) = delete;
-  Inn& operator=(const Inn&) = delete;
-
-  void lock() {
-    sys_imp::lock(_raw);
+  void lock() noexcept {
+    sys_imp::mtx_lock(_raw);
   }
 
-  void unlock() {
-    sys_imp::unlock(_raw);
+  void unlock() noexcept {
+    sys_imp::mtx_unlock(_raw);
   }
 };
 
 struct ReentrantLock::Inn {
-  using tid_t = sys::thread::tid_t;
-
-  Atomic<tid_t> _owner{{}};
-  Atomic<int> _count{0};
-  sys_imp::mutex_t _mutex{};
+  mtx_t _raw = {};
+  tid_t _tid = {};
+  i32 _cnt = {0};
 
  public:
-  Inn() {
-    sys_imp::init(_mutex);
+  Inn() noexcept {
+    sys_imp::mtx_init(_raw);
   }
 
-  ~Inn() {
-    sys_imp::drop(_mutex);
+  ~Inn() noexcept {
+    sys_imp::mtx_drop(_raw);
   }
 
-  Inn(const Inn&) = delete;
-  Inn& operator=(const Inn&) = delete;
+  void lock() noexcept {
+    const auto tid = sys_imp::get_tid();
 
-  void lock() {
-    const auto cur_thrd = sys::thread::current_id();
-
-    if (cur_thrd == _owner.load()) {
-      _count.fetch_add(1);
+    if (tid == __atomic_load_n(&_tid, 0)) {
+      __atomic_fetch_add(&_cnt, 1, 0);
       return;
     }
 
-    sys::sync::lock(_mutex);
-    _owner.store(cur_thrd);
-    _count.store(1);
+    sys_imp::mtx_lock(_raw);
+    __atomic_store_n(&_tid, tid, 0);
+    __atomic_store_n(&_cnt, 1, 0);
   }
 
-  auto unlock() -> bool {
-    const auto cur_thrd = sys::thread::current_id();
+  auto unlock() noexcept -> bool {
+    const auto tid = sys_imp::get_tid();
 
-    if (cur_thrd != _owner.load()) {
+    if (tid != __atomic_load_n(&_tid, 0)) {
       return false;
     }
 
-    if (_count.fetch_sub(1) == 1) {
-      _owner.store(tid_t{});
-      sys::sync::unlock(_mutex);
+    if (__atomic_fetch_sub(&_cnt, 1, 0) == 1) {
+      __atomic_store_n(&_tid, tid_t{}, 0);
+      sys_imp::mtx_unlock(_raw);
     }
     return true;
   }
@@ -87,39 +82,35 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
 auto Mutex::lock() -> Guard {
-  panicking::expect(_inn, "Mutex::lock: on a dropped object");
+  panicking::expect(_inn, "Mutex::lock: on a null object");
+  _inn->lock();
   return Guard{*_inn};
 }
 
-Mutex::Guard::Guard(Inn& mtx) : _mtx{&mtx} {
-  _mtx->lock();
-}
+Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{mtx} {}
 
 Mutex::Guard::~Guard() noexcept {
-  if (!_mtx) {
-    return;
-  }
-  _mtx->unlock();
+  _inn.unlock();
 }
 
-ReentrantLock::ReentrantLock() : _inn{Box<Inn>::xnew()} {}
+ReentrantLock::ReentrantLock() noexcept : _inn{Box<Inn>::xnew()} {}
 
 ReentrantLock::~ReentrantLock() noexcept {}
 
+ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
+
+ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
+
 auto ReentrantLock::lock() -> Guard {
-  panicking::expect(_inn, "ReentrantLock::lock: on a dropped object");
+  panicking::expect(_inn, "ReentrantLock::lock: on a null object");
+  _inn->lock();
   return Guard{*_inn};
 }
 
-ReentrantLock::Guard::Guard(Inn& inn) : _mtx{&inn} {
-  _mtx->lock();
-}
+ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{inn} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  if (!_mtx) {
-    return;
-  }
-  _mtx->unlock();
+  _inn.unlock();
 }
 
 }  // namespace sfc::sync

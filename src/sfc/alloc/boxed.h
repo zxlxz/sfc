@@ -5,14 +5,16 @@
 namespace sfc::boxed {
 
 template <class T>
-class Box {
+class [[nodiscard]] Box {
   T* _ptr = nullptr;
 
  public:
   Box() noexcept = default;
 
   ~Box() {
-    this->reset();
+    if (_ptr) {
+      delete _ptr;
+    }
   }
 
   Box(const Box&) = delete;
@@ -23,7 +25,7 @@ class Box {
     other._ptr = {};
   }
 
-  auto operator=(Box&& other) noexcept -> Box& {
+  Box& operator=(Box&& other) noexcept {
     if (this != &other) {
       if (_ptr) {
         delete _ptr;
@@ -50,48 +52,40 @@ class Box {
     return _ptr != nullptr;
   }
 
-  auto ptr() const -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  auto into_raw() && -> T* {
+  auto into_raw() && noexcept -> T* {
     const auto res = _ptr;
     _ptr = nullptr;
     return res;
   }
 
-  template <class B>
-  auto cast() && -> Box<B> {
-    static_assert(__is_polymorphic(B), "boxed::Box::cast: T must be polymorphic");
+  template <trait::polymorphic_ B>
+  auto cast() && noexcept -> Box<B> {
     const auto p = static_cast<B*>(mem::take(_ptr));
     return Box<B>::from_raw(p);
   }
 
-  auto operator->() const -> const T* {
+  auto operator->() const noexcept -> const T* {
     panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
-  auto operator->() -> T* {
+  auto operator->() noexcept -> T* {
     panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
-  auto operator*() const -> const T& {
+  auto operator*() const noexcept -> const T& {
     panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
-  auto operator*() -> T& {
+  auto operator*() noexcept -> T& {
     panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
-  }
-
-  void reset() noexcept {
-    if (_ptr) {
-      delete _ptr;
-      _ptr = nullptr;
-    }
   }
 
   void fmt(auto& f) const {
@@ -104,12 +98,12 @@ class Box {
 };
 
 template <class R, class... T>
-class Box<R(T...)> {
-  using dtor_t = void(void*);
-  using call_t = R(void*, T&&...);
+class [[nodiscard]] Box<R(T...)> {
+  using dtor_t = void (*)(void*);
+  using call_t = R (*)(void*, T&&...);
   struct Meta {
-    dtor_t* _dtor = nullptr;
-    call_t* _call = nullptr;
+    dtor_t _dtor = nullptr;
+    call_t _call = nullptr;
   };
 
   const Meta* _meta{nullptr};
@@ -119,14 +113,18 @@ class Box<R(T...)> {
   Box() noexcept = default;
 
   ~Box() noexcept {
-    this->reset();
+    if (_data) {
+      (_meta->_dtor)(_data);
+    }
   }
 
   Box(Box&& other) noexcept : _meta{mem::take(other._meta)}, _data{mem::take(other._data)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      this->reset();
+      if (_data) {
+        (_meta->_dtor)(_data);
+      }
       _meta = mem::take(other._meta);
       _data = mem::take(other._data);
     }
@@ -142,25 +140,17 @@ class Box<R(T...)> {
 
     auto res = Box{};
     res._meta = &meta;
-    res._data = new auto{static_cast<decltype(x)&&>(x)};
+    res._data = new auto{mem::move(x)};
     return res;
   }
 
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _meta != nullptr;
   }
 
-  auto operator()(T... args) -> auto {
+  auto operator()(T... args) -> R {
     panicking::expect(_meta != nullptr, "boxed::Box::*: deref null");
     return (_meta->_call)(_data, static_cast<T&&>(args)...);
-  }
-
-  void reset() {
-    if (_meta != nullptr) {
-      _meta->_dtor(_data);
-      _data = {};
-      _meta = nullptr;
-    }
   }
 };
 

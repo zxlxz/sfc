@@ -9,14 +9,9 @@ namespace sfc::sys::thread {
 using timespec_t = struct ::timespec;
 
 using ret_t = void*;
-using tid_t = pthread_t;
 using thrd_t = pthread_t;
 
 inline auto current() -> thrd_t {
-  return ::pthread_self();
-}
-
-inline auto current_id() -> tid_t {
   return ::pthread_self();
 }
 

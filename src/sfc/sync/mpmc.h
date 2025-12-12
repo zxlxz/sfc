@@ -48,8 +48,7 @@ class Receiver {
   MsgQue _msgq{};
 
  public:
-  Receiver(Chan<T>& chan, usize capacity = 64)
-      : _chan{&chan}, _msgq{MsgQue::with_capacity(capacity)} {
+  Receiver(Chan<T>& chan, usize capacity = 64) : _chan{&chan}, _msgq{MsgQue::with_capacity(capacity)} {
     chan.add_receiver(*this);
   }
 

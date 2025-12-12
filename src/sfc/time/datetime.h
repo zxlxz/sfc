@@ -14,8 +14,8 @@ struct DateTime {
   u32 nanos = 0;
 
  public:
-  static auto from_utc(SysTime utc_time) -> DateTime;
-  static auto from_local(SysTime local_time) -> DateTime;
+  static auto from_utc(SysTime utc_time) noexcept -> DateTime;
+  static auto from_local(SysTime local_time) noexcept -> DateTime;
 
   void fmt(auto& f) const {
     const auto millis = nanos / NANOS_PER_MILLI;

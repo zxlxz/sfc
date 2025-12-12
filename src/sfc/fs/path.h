@@ -25,6 +25,7 @@ struct Path {
   auto is_relative() const noexcept -> bool;
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     _inn.fmt(f);
   }
@@ -34,13 +35,13 @@ class PathBuf {
   String _inn = {};
 
  public:
-  static auto from(Str s) -> PathBuf;
+  static auto from(Str s) noexcept -> PathBuf;
 
   auto as_path() const noexcept -> Path;
   auto as_str() const noexcept -> Str;
 
-  void clear();
-  void reserve(usize additional);
+  void clear() noexcept;
+  void reserve(usize additional) noexcept;
 
   void push(Str path) noexcept;
   auto pop() noexcept -> bool;
@@ -49,6 +50,7 @@ class PathBuf {
   void set_extension(Str extension) noexcept;
 
  public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     _inn.fmt(f);
   }

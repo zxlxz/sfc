@@ -7,47 +7,52 @@
 
 namespace sfc::sys::sync {
 
-using mutex_t = pthread_mutex_t;
-using cond_t = pthread_cond_t;
+using tid_t = pthread_t;
+using mtx_t = pthread_mutex_t;
+using cnd_t = pthread_cond_t;
 using timespec_t = struct ::timespec;
 
-inline void init(mutex_t& mtx) {
+inline auto get_tid() -> tid_t {
+  return ::pthread_self();
+}
+
+inline void mtx_init(mtx_t& mtx) {
   mtx = PTHREAD_MUTEX_INITIALIZER;
 }
 
-inline void drop(mutex_t& mtx) {
+inline void mtx_drop(mtx_t& mtx) {
   (void)mtx;
 }
 
-inline void lock(mutex_t& mtx) {
+inline void mtx_lock(mtx_t& mtx) {
   ::pthread_mutex_lock(&mtx);
 }
 
-inline void unlock(mutex_t& mtx) {
+inline void mtx_unlock(mtx_t& mtx) {
   ::pthread_mutex_unlock(&mtx);
 }
 
-inline void init(cond_t& cond) {
+inline void cnd_init(cnd_t& cond) {
   cond = PTHREAD_COND_INITIALIZER;
 }
 
-inline void drop(cond_t& cond) {
+inline void cnd_drop(cnd_t& cond) {
   (void)cond;
 }
 
-inline void notify_one(cond_t& cond) {
+inline void cnd_notify_one(cnd_t& cond) {
   ::pthread_cond_signal(&cond);
 }
 
-inline void notify_all(cond_t& cond) {
+inline void cnd_notify_all(cnd_t& cond) {
   ::pthread_cond_broadcast(&cond);
 }
 
-inline void wait(cond_t& cond, mutex_t& mtx) {
+inline void cnd_wait(cnd_t& cond, mtx_t& mtx) {
   ::pthread_cond_wait(&cond, &mtx);
 }
 
-inline auto wait_timeout_ms(cond_t& cond, mutex_t& mtx, unsigned millis) -> bool {
+inline auto cnd_wait_timeout_ms(cnd_t& cond, mtx_t& mtx, unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 

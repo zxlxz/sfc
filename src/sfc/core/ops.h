@@ -11,14 +11,6 @@ namespace sfc::ops {
 template <class T>
 auto declval() -> T&&;
 
-template <class>
-struct Fn;
-
-template <class R, class... T>
-struct Fn<R(T...)> {
-  using Output = R;
-};
-
 template <class X>
 struct Invoke;
 
@@ -31,12 +23,12 @@ template <class X>
 using invoke_t = Invoke<X>::Output;
 
 struct End {
-  template <class T>
-  [[gnu::always_inline]] operator T() const noexcept {
-    static_assert(trait::uint_<T>);
+  template <trait::uint_ T>
+  operator T() const noexcept {
     return static_cast<T>(-1);
   }
 };
+
 static constexpr auto $ = End{};
 
 struct Range {

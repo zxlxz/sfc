@@ -10,11 +10,11 @@ struct Components {
   Str _str;
 
  public:
-  auto as_str() const -> Str {
+  auto as_str() const noexcept -> Str {
     return _str;
   }
 
-  auto next_back() -> Str {
+  auto next_back() noexcept -> Str {
     while (!_str.is_empty()) {
       _str = _str.trim_end_matches('/');
 
@@ -93,7 +93,7 @@ auto Path::is_dir() const noexcept -> bool {
   return t && (*t).is_dir();
 }
 
-auto PathBuf::from(Str s) -> PathBuf {
+auto PathBuf::from(Str s) noexcept -> PathBuf {
   auto res = PathBuf{};
   res._inn.push_str(s);
   return res;
@@ -107,11 +107,11 @@ auto PathBuf::as_str() const noexcept -> Str {
   return _inn.as_str();
 }
 
-void PathBuf::clear() {
+void PathBuf::clear() noexcept {
   _inn.clear();
 }
 
-void PathBuf::reserve(usize additional) {
+void PathBuf::reserve(usize additional) noexcept {
   _inn.reserve(additional);
 }
 
@@ -137,26 +137,28 @@ auto PathBuf::pop() noexcept -> bool {
   return true;
 }
 
-void PathBuf::set_file_name(Str file_name) noexcept {
-  if (auto old_name = this->as_path().file_name()) {
-    this->pop();
+void PathBuf::set_file_name(Str new_file_name) noexcept {
+  const auto old_name = this->as_path().file_name();
+  if (!old_name.is_empty()) {
+    _inn.truncate(_inn.len() - old_name.len());
   }
-  this->push(file_name);
+  this->push(new_file_name);
 }
 
-void PathBuf::set_extension(Str extension) noexcept {
-  const auto file_stem = this->as_path().file_stem();
-  if (!file_stem) {
+void PathBuf::set_extension(Str new_ext) noexcept {
+  const auto old_path = this->as_path();
+  const auto file_stem = old_path.file_stem();
+  if (file_stem.is_empty()) {
     return;
   }
 
   const auto end_stem = file_stem.as_ptr() + file_stem.len();
-  _inn.truncate(static_cast<usize>(end_stem - _inn.as_str().as_ptr()));
+  _inn.truncate(static_cast<usize>(end_stem - _inn.as_ptr()));
 
-  if (!extension.is_empty()) {
-    _inn.reserve(extension.len() + 1);
+  if (!new_ext.is_empty()) {
+    _inn.reserve(new_ext.len() + 1);
     _inn.push('.');
-    _inn.push_str(extension);
+    _inn.push_str(new_ext);
   }
 }
 
@@ -189,15 +191,13 @@ auto meta(Path path) -> io::Result<Meta> {
 auto create_dir(Path path) -> io::Result<> {
   const auto c_path = CString::from(path.as_str());
 
-  const auto ret = sys_imp::mkdir(c_path);
-  if (!ret) {
-    const auto err = io::last_os_error();
-    if (err == io::Error::AlreadyExists) {
-      return {};
-    }
+  if (sys_imp::mkdir(c_path)) {
+    return {};
+  }
+  const auto err = io::last_os_error();
+  if (err != io::Error::AlreadyExists) {
     return err;
   }
-
   return {};
 }
 

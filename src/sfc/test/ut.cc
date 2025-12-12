@@ -1,5 +1,6 @@
 #include "sfc/test/ut.h"
 #include "sfc/io.h"
+#include "sfc/time.h"
 
 namespace sfc::test {
 

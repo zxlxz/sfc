@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/alloc.h"
-#include "sfc/time.h"
 
 namespace sfc::sync {
 
@@ -12,6 +11,7 @@ class Mutex {
  public:
   explicit Mutex();
   ~Mutex() noexcept;
+
   Mutex(Mutex&&) noexcept;
   Mutex& operator=(Mutex&&) noexcept;
 
@@ -21,11 +21,14 @@ class Mutex {
 
 class [[nodiscard]] Mutex::Guard {
   friend class Condvar;
-  ptr::Unique<Inn> _mtx = {};
+  Inn& _inn;
 
  public:
-  explicit Guard(Inn& mtx);
+  explicit Guard(Inn&) noexcept;
   ~Guard() noexcept;
+
+  Guard(const Guard&) = delete;
+  Guard& operator=(const Guard&) = delete;
 };
 
 class ReentrantLock {
@@ -33,25 +36,25 @@ class ReentrantLock {
   Box<Inn> _inn;
 
  public:
-  explicit ReentrantLock();
+  explicit ReentrantLock() noexcept;
   ~ReentrantLock() noexcept;
 
-  ReentrantLock(ReentrantLock&&) noexcept = default;
-  ReentrantLock& operator=(ReentrantLock&&) noexcept = default;
+  ReentrantLock(ReentrantLock&&) noexcept;
+  ReentrantLock& operator=(ReentrantLock&&) noexcept;
 
   class Guard;
-  [[nodiscard]] auto lock() -> Guard;
+  auto lock() -> Guard;
 };
 
 class [[nodiscard]] ReentrantLock::Guard {
-  ptr::Unique<Inn> _mtx = {};
+  Inn& _inn;
 
  public:
-  explicit Guard(Inn& mtx);
+  explicit Guard(Inn& mtx) noexcept;
   ~Guard() noexcept;
 
-  Guard(Guard&&) noexcept = default;
-  Guard& operator=(Guard&&) noexcept = default;
+  Guard(const Guard&) = delete;
+  Guard& operator=(const Guard&) = delete;
 };
 
 }  // namespace sfc::sync

@@ -14,7 +14,7 @@ struct FNVHasher {
     return _state;
   }
 
-  void write(u8 val) noexcept {
+  void write_byte(u8 val) noexcept {
     _state ^= val;
     _state *= PRIME;
   }
@@ -27,5 +27,7 @@ struct FNVHasher {
     }
   }
 };
+
+using Hasher = FNVHasher;
 
 }  // namespace sfc::hash

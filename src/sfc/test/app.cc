@@ -23,7 +23,7 @@ static auto parse_filter(Str filter) -> Vec<Str> {
   };
 
   auto v = Vec<Str>{};
-  while (filter) {
+  while (!filter.is_empty()) {
     const auto pos = find_pos(filter);
     v.push(filter[{0, pos}]);
     filter = filter[{pos + 1, $}];
@@ -97,7 +97,7 @@ void App::list_xml(Str path) const {
   auto& all_test = AllTest::instance();
 
   const auto xml_str = format_xml(all_test.suites());
-  if (!path || path == "stdout") {
+  if (path.is_empty() || path == "stdout") {
     io::println(xml_str.as_str());
     return;
   }

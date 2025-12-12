@@ -205,7 +205,7 @@ struct Clap::Parser {
 
     auto prev_item = static_cast<Item*>(nullptr);
     for (auto s : vals) {
-      if (!s) {
+      if (s.is_empty()) {
         continue;
       }
 

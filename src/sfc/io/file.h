@@ -5,13 +5,14 @@
 
 namespace sfc::io {
 
-class [[nodiscard]] File : public Read, public Write {
 #ifdef _WIN32
-  using fd_t = void*;
+using fd_t = void*;
 #else
-  using fd_t = int;
+using fd_t = int;
 #endif
-  fd_t _fd;
+
+class [[nodiscard]] File : public Read, public Write {
+  fd_t _fd = {};
 
  public:
   explicit File() noexcept;
@@ -20,17 +21,13 @@ class [[nodiscard]] File : public Read, public Write {
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
 
-  File(const File&) = delete;
-  File& operator=(const File&) = delete;
+  static auto from_fd(fd_t fd) noexcept -> File;
 
-  static auto from_fd(fd_t fd) -> File;
+  auto as_fd() const noexcept -> fd_t;
+  auto is_open() const noexcept -> bool;
 
-  auto as_fd() const -> fd_t;
-  auto is_open() const -> bool;
-  void close();
-
-  auto read(Slice<u8> buf) -> Result<usize>;
-  auto write(Slice<const u8> buf) -> Result<usize>;
+  auto read(Slice<u8> buf) noexcept -> Result<usize>;
+  auto write(Slice<const u8> buf) noexcept -> Result<usize>;
 };
 
 }  // namespace sfc::io

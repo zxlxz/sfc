@@ -1,109 +1,75 @@
 #pragma once
 
 #include "sfc/alloc/alloc.h"
-#include "sfc/sync/atomic.h"
 
 namespace sfc::rc {
 
-using Layout = alloc::Layout;
-
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] Rc {
-  struct Data {
-    sync::Atomic<int> _cnt;
+  struct Inn {
     T _val;
+    int _cnt = 1;
   };
-
-  Data* _ptr = nullptr;
-  [[no_unique_address]] A _alloc{};
+  Inn* _ptr = nullptr;
 
  public:
   Rc() noexcept = default;
 
   ~Rc() noexcept {
-    this->reset();
-  }
-
-  Rc(const Rc&) = delete;
-
-  Rc& operator=(const Rc&) = delete;
-
-  Rc(Rc&& other) noexcept : _ptr{other._ptr}, _alloc{static_cast<A&&>(other._alloc)} {
-    other._ptr = nullptr;
-  }
-
-  auto operator=(Rc&& other) noexcept -> Rc& {
-    if (this == &other) {
-      return *this;
+    if (_ptr && __atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
+      delete _ptr;
     }
-    this->reset();
-    _ptr = other._ptr, other._ptr = nullptr;
-    _alloc = static_cast<A&&>(other._alloc);
+  }
+
+  Rc(Rc&& other) noexcept : _ptr{mem::take(other._ptr)} {}
+
+  Rc& operator=(Rc&& other) noexcept {
+    if (this != &other) {
+      if (_ptr && __atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
+        delete _ptr;
+      }
+      _ptr = mem::take(other._ptr);
+    }
     return *this;
   }
 
-  static auto from_raw(Data* ptr, A alloc = {}) -> Rc {
+  static auto xnew(auto&&... args) noexcept -> Rc {
     auto res = Rc{};
-    res._ptr = ptr;
-    res._alloc = static_cast<A&&>(alloc);
+    res._ptr = new Inn{T{static_cast<decltype(args)&&>(args)...}};
     return res;
   }
 
-  static auto xnew(auto&&... args) -> Rc {
-    auto res = Rc{};
-    res._ptr = static_cast<Data*>(res._alloc.alloc(Layout::of<Data>()));
-    try {
-      new (res._ptr) Data{._cnt{1}, ._val{static_cast<decltype(args)&&>(args)...}};
-    } catch (...) {
-      res._alloc.dealloc(res._ptr, Layout::of<Data>());
-      res._ptr = nullptr;
-      throw;
+  auto clone() const noexcept -> Rc {
+    if (_ptr) {
+      __atomic_fetch_add(&_ptr->_cnt, 1, 0);
     }
+    auto res = Rc{};
+    res._ptr = _ptr;
     return res;
   }
 
-  auto clone() const -> Rc {
-    if (!_ptr) {
-      return {};
-    }
-    _ptr->_cnt.fetch_add(1);
-    return Rc::from_raw(_ptr, _alloc);
-  }
-
-  explicit operator bool() const {
+  explicit operator bool() const noexcept {
     return _ptr != nullptr;
   }
 
-  auto operator->() const -> const T* {
+  auto operator->() const noexcept -> const T* {
     panicking::expect(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
-  auto operator->() -> T* {
+  auto operator->() noexcept -> T* {
     panicking::expect(_ptr != nullptr, "Rc::operator->: deref null");
     return &_ptr->_val;
   }
 
-  auto operator*() const -> const T& {
+  auto operator*() const noexcept -> const T& {
     panicking::expect(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
   }
 
-  auto operator*() -> T& {
+  auto operator*() noexcept -> T& {
     panicking::expect(_ptr != nullptr, "Rc::operator*: deref null");
     return _ptr->_val;
-  }
-
-  void reset() noexcept {
-    if (!_ptr) {
-      return;
-    }
-
-    if (_ptr->_cnt.fetch_sub(1) == 1) {
-      _ptr->_val.~T();
-      _alloc.dealloc(_ptr, Layout::of<Data>());
-    }
-    _ptr = nullptr;
   }
 };
 

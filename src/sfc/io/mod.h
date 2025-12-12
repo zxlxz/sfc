@@ -2,10 +2,6 @@
 
 #include "sfc/core/result.h"
 
-namespace sfc::str {
-struct Str;
-}
-
 namespace sfc::io {
 
 enum class Error : i8 {

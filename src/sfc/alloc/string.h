@@ -46,10 +46,6 @@ class [[nodiscard]] String {
     return _vec.is_empty();
   }
 
-  auto clone() const noexcept -> String {
-    return String::from(this->as_str());
-  }
-
   auto as_slice() const noexcept -> Slice<const u8> {
     return {_vec.as_ptr(), _vec.len()};
   }
@@ -78,23 +74,6 @@ class [[nodiscard]] String {
   auto operator[](ops::Range ids) const noexcept -> Str {
     const auto v = _vec[ids];
     return Str::from_utf8(v);
-  }
-
-  auto iter() const noexcept {
-    return _vec.iter();
-  }
-
-  auto iter_mut() noexcept {
-    return _vec.iter_mut();
-  }
-
- public:
-  auto operator==(const String& other) const noexcept -> bool {
-    return this->as_str() == other.as_str();
-  }
-
-  auto operator==(Str other) const noexcept -> bool {
-    return this->as_str() == other;
   }
 
  public:
@@ -135,13 +114,25 @@ class [[nodiscard]] String {
   }
 
   void insert_str(usize idx, Str str) noexcept {
+    const auto len = _vec.len();
+    if (idx > len) {
+      idx = len;
+    }
     _vec.reserve(str._len);
-    ptr::shift_elements_right(_vec.as_mut_ptr() + idx, _vec.len() - idx, str._len);
-    ptr::copy_nonoverlapping(str.as_bytes().as_ptr(), _vec.as_mut_ptr() + idx, str._len);
-    _vec.set_len(_vec.len() + str._len);
+    ptr::shift_elements_right(_vec.as_mut_ptr() + idx, len - idx, str._len);
+    ptr::copy_nonoverlapping(str.as_ptr(), _vec.as_mut_ptr() + idx, str._len);
+    _vec.set_len(len + str._len);
   }
 
  public:
+  auto iter() const noexcept {
+    return _vec.iter();
+  }
+
+  auto iter_mut() noexcept {
+    return _vec.iter_mut();
+  }
+
   auto find(auto&& p) const -> Option<usize> {
     return this->as_str().find(p);
   }
@@ -163,9 +154,29 @@ class [[nodiscard]] String {
   }
 
  public:
+  // trait: ops::Eq
+  auto operator==(Str other) const noexcept -> bool {
+    return this->as_str() == other;
+  }
+
+  // trait: ops::Eq
+  auto operator==(const String& other) const noexcept -> bool {
+    return this->as_str() == other.as_str();
+  }
+
+  // trait: Clone
+  auto clone() const noexcept -> String {
+    return String::from(this->as_str());
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.pad(this->as_str());
+  }
+
+  // trait: fmt::Write
+  void write_str(Str s) {
+    _vec.extend_from_slice(s.as_bytes());
   }
 
   // trait: serde::Serialize
@@ -180,12 +191,12 @@ class [[nodiscard]] CString {
  public:
   static auto from(Str s) -> CString {
     auto res = CString{};
-    res._vec.extend_from_slice(s.as_chars());
+    res._vec.extend_from_slice({s._ptr, s._len});
     res._vec.push('\0');
     return res;
   }
 
-  operator cstr_t() const {
+  operator cstr_t() const noexcept {
     return _vec.as_ptr();
   }
 };
