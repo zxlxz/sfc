@@ -10,7 +10,7 @@ SFC_TEST(type_name) {
   panicking::expect_eq(str::type_name<E1>(), "sfc::str::test::E1");
 }
 
-SFC_TEST(simple) {
+SFC_TEST(constexpr) {
   // is_empty
   static_assert(Str{}.is_empty());
   static_assert(!Str{"abc"}.is_empty());
@@ -18,6 +18,10 @@ SFC_TEST(simple) {
   // len
   static_assert(Str{}.len() == 0U);
   static_assert(Str{"abc"}.len() == 3U);
+
+  // idx
+  static_assert(Str{"abc"}[0] == 'a');
+  static_assert(Str{"abc"}[4] == '\0');
 }
 
 SFC_TEST(index) {

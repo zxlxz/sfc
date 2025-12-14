@@ -15,18 +15,11 @@ struct Str {
 
   constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  constexpr Str(const char* s) noexcept : _ptr{s} {
-    while (s != nullptr && s[_len] != '\0') {
-      ++_len;
-    }
-  }
+  constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
 
-  template <usize N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
-
-  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
-    const auto pat = static_cast<const char*>(static_cast<const void*>(s._ptr));
-    return {pat, s._len};
+  constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+    const auto p = reinterpret_cast<const char*>(s._ptr);
+    return {p, s._len};
   }
 
   constexpr auto as_ptr() const noexcept -> const u8* {
@@ -50,11 +43,11 @@ struct Str {
   }
 
  public:
-  auto operator[](usize idx) const noexcept -> char {
+  constexpr auto operator[](usize idx) const noexcept -> char {
     return _ptr && idx < _len ? _ptr[idx] : '\0';
   }
 
-  auto operator[](ops::Range ids) const noexcept -> Str {
+  constexpr auto operator[](ops::Range ids) const noexcept -> Str {
     const auto start = ids.start < _len ? ids.start : _len;
     const auto end = ids.end < _len ? ids.end : _len;
     return Str{_ptr + start, start < end ? end - start : 0U};
