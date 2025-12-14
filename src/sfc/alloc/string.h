@@ -14,16 +14,10 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from(auto&& f) noexcept -> String {
-    if constexpr (requires { f.to_string(); }) {
-      return f.to_string();
-    } else if constexpr (requires { Str::from(f); }) {
-      auto s = String{};
-      s.push_str(Str::from(f));
-      return s;
-    } else {
-      static_assert(false, "String::from: unsupported type");
-    }
+  static auto from(Str s) noexcept -> String {
+    auto res = String{};
+    res.push_str(s);
+    return res;
   }
 
   auto as_ptr() const noexcept -> const u8* {

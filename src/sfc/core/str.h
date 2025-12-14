@@ -29,18 +29,6 @@ struct Str {
     return {pat, s._len};
   }
 
-  static auto from(const auto& f) noexcept -> Str {
-    if constexpr (requires { f.as_str(); }) {
-      return f.as_str();
-    } else if constexpr (requires { Str{f}; }) {
-      return Str{f};
-    } else if constexpr (requires { Str::from_utf8(f); }) {
-      return Str::from_utf8(f);
-    } else {
-      static_assert(false, "Str::from: unsupported type");
-    }
-  }
-
   constexpr auto as_ptr() const noexcept -> const u8* {
     return reinterpret_cast<const u8*>(_ptr);
   }

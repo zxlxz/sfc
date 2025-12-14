@@ -3,8 +3,6 @@
 
 namespace sfc::num {
 
-namespace {
-
 static auto pow10(u32 val) noexcept -> u64 {
   auto res = u64{1U};
   for (; val >= 2; val -= 2) {
@@ -260,7 +258,6 @@ struct FltParser {
     return is_neg ? -exp_val : exp_val;
   }
 };
-}  // namespace
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
   if (__builtin_isnan(a) || __builtin_isnan(b)) {

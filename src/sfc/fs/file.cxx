@@ -5,7 +5,7 @@
 namespace sfc::fs::test {
 
 SFC_TEST(read_write) {
-  const auto path_buf = env::temp_dir().join(Str{"test_file.txt"});
+  const auto path_buf = env::temp_dir().join("test_file.txt");
 
   // create, write
   {
@@ -24,7 +24,7 @@ SFC_TEST(read_write) {
     String read_content;
     auto read_res = file.read_to_string(read_content);
     panicking::expect(read_res.is_ok());
-    panicking::expect_eq(read_content.as_str(), Str::from("hello world"));
+    panicking::expect_eq(read_content.as_str(), Str{"hello world"});
   }
 }
 

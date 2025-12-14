@@ -3,7 +3,6 @@
 
 namespace sfc::num {
 
-namespace {
 struct IntFmter {
   char* const _buf;
   char* const _end;
@@ -216,7 +215,6 @@ struct IntParser {
     return val;
   }
 };
-}  // namespace
 
 auto to_str(Slice<char> buf, const void* val, char type) noexcept -> Str {
   auto imp = IntFmter{buf._ptr, buf._ptr + buf._len};
