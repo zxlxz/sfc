@@ -23,10 +23,9 @@ class [[nodiscard]] Buf {
 
   Buf& operator=(Buf&& other) noexcept {
     if (this != &other) {
-      this->dealloc();
-      _ptr = mem::take(other._ptr);
-      _cap = mem::take(other._cap);
-      _a = mem::move(other._a);
+      mem::swap(_ptr, other._ptr);
+      mem::swap(_cap, other._cap);
+      mem::swap(_a, other._a);
     }
     return *this;
   }
@@ -108,9 +107,8 @@ class [[nodiscard]] Vec {
 
   Vec& operator=(Vec&& other) noexcept {
     if (this != &other) {
-      this->clear();
-      _buf = mem::move(other._buf);
-      _len = mem::take(other._len);
+      mem::swap(_buf, other._buf);
+      mem::swap(_len, other._len);
     }
     return *this;
   }

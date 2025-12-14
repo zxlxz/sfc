@@ -16,9 +16,13 @@ inline auto move(T& x) noexcept -> T&& {
 
 template <class T>
 inline void swap(T& x, T& y) noexcept {
-  auto z = static_cast<T&&>(x);
-  x = static_cast<T&&>(y);
-  y = static_cast<T&&>(z);
+  if constexpr (requires { x.swap(y); }) {
+    x.swap(y);
+  } else {
+    auto z = static_cast<T&&>(x);
+    x = static_cast<T&&>(y);
+    y = static_cast<T&&>(z);
+  }
 }
 
 template <class T, class U>

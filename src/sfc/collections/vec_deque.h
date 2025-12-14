@@ -24,19 +24,16 @@ class [[nodiscard]] VecDeque {
 
   VecDeque& operator=(VecDeque&& other) noexcept {
     if (this != &other) {
-      this->clear();
-      _pos = mem::take(other._pos);
-      _len = mem::take(other._len);
-      _buf = mem::move(other._buf);
+      mem::swap(_buf, other._buf);
+      mem::swap(_len, other._len);
+      mem::swap(_pos, other._pos);
     }
     return *this;
   }
 
   static auto with_capacity(usize capacity) -> VecDeque {
-    const auto cap = num::next_power_of_two(capacity);
-
     auto res = VecDeque{};
-    res.reserve(cap);
+    res.reserve(capacity);
     return res;
   }
 

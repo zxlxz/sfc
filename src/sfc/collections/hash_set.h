@@ -9,17 +9,9 @@ class HashSet {
   struct Entry {
     K key;
   };
-  hash_tbl::HashTbl<Entry> _inn;
+  hash_tbl::HashTbl<Entry> _inn = {};
 
  public:
-  HashSet() = default;
-
-  ~HashSet() = default;
-
-  HashSet(HashSet&& other) noexcept = default;
-
-  HashSet& operator=(HashSet&& other) noexcept = default;
-
   static auto with_capacity(usize min_capacity) -> HashSet {
     auto res = HashSet{};
     res._inn.reserve(min_capacity);

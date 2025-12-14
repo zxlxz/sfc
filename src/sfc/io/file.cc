@@ -20,11 +20,7 @@ File::File(File&& other) noexcept : _fd{other._fd} {
 
 File& File::operator=(File&& other) noexcept {
   if (this != &other) {
-    if (_fd != sys_imp::INVALID_FD) {
-      sys_imp::close(_fd);
-    }
-    _fd = other._fd;
-    other._fd = sys_imp::INVALID_FD;
+    mem::swap(_fd, other._fd);
   }
   return *this;
 }

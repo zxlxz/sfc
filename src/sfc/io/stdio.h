@@ -8,21 +8,18 @@ namespace sfc::io {
 
 class Stdout {
   class Inn;
-  using Guard = sync::ReentrantLock::Guard;
+  using LockGuard = sync::ReentrantLock::Guard;
 
  public:
   class Lock {
     Inn& _inn;
-    Guard _lock;
+    LockGuard _lock;
 
    public:
-    explicit Lock();
+    explicit Lock(Inn&);
     ~Lock() noexcept;
 
-    Lock(const Lock&) noexcept = delete;
-    Lock& operator=(const Lock&) noexcept = delete;
-
-    static auto is_tty() -> bool;
+    auto is_tty() -> bool;
     void flush();
     void write_str(Str s);
 
@@ -31,12 +28,10 @@ class Stdout {
     }
   };
 
-  static auto lock() -> Lock {
-    return Lock{};
-  }
+  static auto lock() -> Lock;
 
   static auto is_tty() -> bool {
-    return Lock::is_tty();
+    return Stdout::lock().is_tty();
   }
 
   static void flush() {
@@ -50,19 +45,16 @@ class Stdout {
 
 class Stderr {
   class Inn;
-  using Guard = sync::ReentrantLock::Guard;
+  using LockGuard = sync::ReentrantLock::Guard;
 
  public:
   class Lock {
     Inn& _inn;
-    Guard _lock;
+    LockGuard _lock;
 
    public:
-    explicit Lock();
-    ~Lock() noexcept;
-
-    Lock(const Lock&) noexcept = delete;
-    Lock& operator=(const Lock&) noexcept = delete;
+    explicit Lock(Inn&);
+    ~Lock();
 
     static auto is_tty() -> bool;
     void flush();
@@ -73,12 +65,10 @@ class Stderr {
     }
   };
 
-  static auto lock() -> Lock {
-    return Lock{};
-  }
+  static auto lock() -> Lock;
 
   static auto is_tty() -> bool {
-    return Lock::is_tty();
+    return Stderr::lock().is_tty();
   }
 
   static void flush() {

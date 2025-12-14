@@ -20,7 +20,7 @@ class VecMap {
 
   VecMap(VecMap&&) noexcept = default;
 
-  auto operator=(VecMap&&) noexcept -> VecMap& = default;
+  VecMap& operator=(VecMap&&) noexcept = default;
 
   auto len() const -> usize {
     return _items.len();

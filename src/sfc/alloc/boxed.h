@@ -12,26 +12,14 @@ class [[nodiscard]] Box {
   Box() noexcept = default;
 
   ~Box() {
-    if (_ptr) {
-      delete _ptr;
-    }
+    _ptr ? delete _ptr : void();
   }
 
-  Box(const Box&) = delete;
-
-  Box& operator=(const Box&) = delete;
-
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = {};
-  }
+  Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      if (_ptr) {
-        delete _ptr;
-      }
-      _ptr = other._ptr;
-      other._ptr = {};
+      mem::swap(_ptr, other._ptr);
     }
     return *this;
   }
@@ -57,9 +45,7 @@ class [[nodiscard]] Box {
   }
 
   auto into_raw() && noexcept -> T* {
-    const auto res = _ptr;
-    _ptr = nullptr;
-    return res;
+    return mem::take(_ptr);
   }
 
   template <trait::polymorphic_ B>
@@ -113,20 +99,15 @@ class [[nodiscard]] Box<R(T...)> {
   Box() noexcept = default;
 
   ~Box() noexcept {
-    if (_data) {
-      (_meta->_dtor)(_data);
-    }
+    _data ? (_meta->_dtor)(_data) : void();
   }
 
   Box(Box&& other) noexcept : _meta{mem::take(other._meta)}, _data{mem::take(other._data)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      if (_data) {
-        (_meta->_dtor)(_data);
-      }
-      _meta = mem::take(other._meta);
-      _data = mem::take(other._data);
+      mem::swap(_meta, other._meta);
+      mem::swap(_data, other._data);
     }
     return *this;
   }

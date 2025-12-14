@@ -12,7 +12,7 @@ using fd_t = int;
 #endif
 
 class [[nodiscard]] File : public Read, public Write {
-  fd_t _fd = {};
+  fd_t _fd;
 
  public:
   explicit File() noexcept;

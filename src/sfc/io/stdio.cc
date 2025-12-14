@@ -71,7 +71,7 @@ class Stderr::Inn {
   }
 };
 
-Stdout::Lock::Lock() : _inn{Inn::instance()}, _lock{_inn._mtx.lock()} {}
+Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
 
 Stdout::Lock::~Lock() noexcept {
   _inn.flush();
@@ -90,9 +90,16 @@ void Stdout::Lock::write_str(Str s) {
   (void)_inn.write(s.as_bytes());
 }
 
-Stderr::Lock::Lock() : _inn{Inn::instance()}, _lock{_inn._mtx.lock()} {}
+auto Stdout::lock() -> Lock {
+  static auto& inn = Inn::instance();
+  return Lock{inn};
+}
 
-Stderr::Lock::~Lock() noexcept {}
+Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
+
+Stderr::Lock::~Lock() {
+  _inn.flush();
+}
 
 auto Stderr::Lock::is_tty() -> bool {
   static auto& inn = Inn::instance();
@@ -105,6 +112,11 @@ void Stderr::Lock::flush() {
 
 void Stderr::Lock::write_str(Str s) {
   return _inn.write(s.as_bytes());
+}
+
+auto Stderr::lock() -> Lock {
+  static auto& inn = Inn::instance();
+  return Lock{inn};
 }
 
 }  // namespace sfc::io

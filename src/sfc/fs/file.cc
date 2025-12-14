@@ -6,14 +6,6 @@ namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
 
-File::File() noexcept = default;
-
-File::~File() noexcept = default;
-
-File::File(File&&) noexcept = default;
-
-File& File::operator=(File&&) noexcept = default;
-
 auto File::open(Path path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.read = true, .write = true};
   return opts.open(path);

@@ -16,7 +16,10 @@ class [[nodiscard]] Rc {
   Rc() noexcept = default;
 
   ~Rc() noexcept {
-    if (_ptr && __atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
+    if (!_ptr) {
+      return;
+    }
+    if (__atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
       delete _ptr;
     }
   }
@@ -25,10 +28,7 @@ class [[nodiscard]] Rc {
 
   Rc& operator=(Rc&& other) noexcept {
     if (this != &other) {
-      if (_ptr && __atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
-        delete _ptr;
-      }
-      _ptr = mem::take(other._ptr);
+      mem::swap(_ptr, other._ptr);
     }
     return *this;
   }

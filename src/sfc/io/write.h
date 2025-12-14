@@ -39,13 +39,13 @@ class BufWriter : Write {
 
  public:
   explicit BufWriter(W&& inn) noexcept : _inn{static_cast<W&&>(inn)}, _buf{Vec<u8>::with_capacity(BUFF_SIZE)} {}
-  ~BufWriter() noexcept = default;
+
+  ~BufWriter() noexcept {
+    (void)this->flush();
+  }
 
   BufWriter(BufWriter&&) noexcept = default;
   BufWriter& operator=(BufWriter&&) noexcept = default;
-
-  BufWriter(const BufWriter&) = delete;
-  BufWriter& operator=(const BufWriter&) = delete;
 
  public:
   auto inner() -> W& {

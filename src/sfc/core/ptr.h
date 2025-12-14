@@ -14,10 +14,6 @@ struct Unique {
  public:
   Unique() noexcept = default;
   Unique(T* ptr) noexcept : _ptr{ptr} {}
-  ~Unique() noexcept = default;
-
-  Unique(const Unique&) noexcept = default;
-  Unique& operator=(const Unique&) noexcept = default;
 
   Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
@@ -27,6 +23,10 @@ struct Unique {
     _ptr = other._ptr;
     other._ptr = nullptr;
     return *this;
+  }
+
+  auto clone() const noexcept -> Unique {
+    return Unique{_ptr};
   }
 
   explicit operator bool() const noexcept {

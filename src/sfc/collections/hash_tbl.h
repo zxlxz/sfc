@@ -35,12 +35,10 @@ class HashTbl {
 
   HashTbl& operator=(HashTbl&& other) noexcept {
     if (this != &other) {
-      this->clear();
-      _a.dealloc(_ptr, this->layout());
-      _ptr = mem::take(other._ptr);
-      _cap = mem::take(other._cap);
-      _len = mem::take(other._len);
-      _remain = mem::take(other._remain);
+      mem::swap(_ptr, other._ptr);
+      mem::swap(_cap, other._cap);
+      mem::swap(_len, other._len);
+      mem::swap(_remain, other._remain);
     }
     return *this;
   }
