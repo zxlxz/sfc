@@ -35,10 +35,10 @@ class BufWriter : Write {
   static constexpr usize BUFF_SIZE = 1024U;
 
   W _inn;
-  Vec<u8> _buf;
+  Vec<u8> _buf{Vec<u8>::with_capacity(BUFF_SIZE)};
 
  public:
-  explicit BufWriter(W&& inn) noexcept : _inn{static_cast<W&&>(inn)}, _buf{Vec<u8>::with_capacity(BUFF_SIZE)} {}
+  explicit BufWriter(W&& inn) noexcept : _inn{static_cast<W&&>(inn)} {}
 
   ~BufWriter() noexcept {
     (void)this->flush();

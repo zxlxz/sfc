@@ -25,9 +25,6 @@ class Sender {
   Sender(const Sender& other) = delete;
   Sender& operator=(const Sender& other) = delete;
 
-  Sender(Sender&& other) = delete;
-  Sender& operator=(Sender&& other) = delete;
-
   auto send(T value) -> bool {
     if (!_chan) {
       return false;
@@ -58,9 +55,6 @@ class Receiver {
 
   Receiver(const Receiver& other) = delete;
   Receiver& operator=(const Receiver& other) = delete;
-
-  Receiver(Receiver&& other) = delete;
-  Receiver& operator=(Receiver&& other) = delete;
 
   void notify(Rc<T> msg) {
     auto lock = _mutex.lock();
@@ -94,9 +88,6 @@ class Chan {
   ~Chan() {
     this->disconnect();
   }
-
-  Chan(Chan&&) = delete;
-  Chan& operator=(Chan&&) = delete;
 
   Chan(const Chan&) = delete;
   Chan& operator=(const Chan&) = delete;

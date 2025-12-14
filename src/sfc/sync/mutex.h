@@ -12,7 +12,7 @@ class Mutex {
   explicit Mutex();
   ~Mutex() noexcept;
 
-  Mutex(Mutex&&) noexcept;
+  Mutex(Mutex&& other) noexcept;
   Mutex& operator=(Mutex&&) noexcept;
 
   class Guard;

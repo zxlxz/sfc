@@ -20,8 +20,7 @@ struct Unique {
   }
 
   Unique& operator=(Unique&& other) noexcept {
-    _ptr = other._ptr;
-    other._ptr = nullptr;
+    _ptr = mem::take(other._ptr);
     return *this;
   }
 

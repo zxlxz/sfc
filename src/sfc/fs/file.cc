@@ -31,13 +31,13 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   const auto c_path = CString::from(path.as_str());
 
-  auto file = io::File::from_fd(sys_imp::open(c_path, *this));
-  if (!file.is_open()) {
+  const auto fd = sys_imp::open(c_path, *this);
+  if (fd == sys_imp::INVALID_FD) {
     return io::last_os_error();
   }
 
   auto res = File{};
-  res._inn = mem::move(file);
+  res._inn = io::File{fd};
   return res;
 }
 

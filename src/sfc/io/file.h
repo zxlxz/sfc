@@ -16,12 +16,11 @@ class [[nodiscard]] File {
 
  public:
   explicit File() noexcept;
+  explicit File(fd_t fd) noexcept;
   ~File() noexcept;
 
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
-
-  static auto from_fd(fd_t fd) noexcept -> File;
 
   auto as_fd() const noexcept -> fd_t;
   auto is_open() const noexcept -> bool;

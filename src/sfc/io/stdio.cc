@@ -13,7 +13,7 @@ class Stdout::Inn {
   friend class Stdout::Lock;
 
   sync::ReentrantLock _mtx{};
-  BufWriter<File> _inn = BufWriter{File::from_fd(sys::io::stdout())};
+  BufWriter<File> _inn = BufWriter{File{sys::io::stdout()}};
 
  public:
   static inline auto instance() -> Inn& {
@@ -50,7 +50,7 @@ class Stderr::Inn {
   friend class Stderr::Lock;
 
   sync::ReentrantLock _mtx{};
-  File _imp{File::from_fd(sys::io::stderr())};
+  File _imp{sys::io::stderr()};
 
  public:
   static inline auto instance() -> Inn& {
@@ -59,8 +59,7 @@ class Stderr::Inn {
   }
 
   auto is_tty() const -> bool {
-    const auto fd = _imp.as_fd();
-    const auto res = sys_imp::is_tty(fd);
+    const auto res = sys_imp::is_tty(_imp.as_fd());
     return res;
   }
 
