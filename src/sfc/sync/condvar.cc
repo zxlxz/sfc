@@ -15,11 +15,11 @@ struct Condvar::Inn {
 
  public:
   Inn() noexcept {
-    sys_imp::cond_init(_raw);
+    sys_imp::cnd_init(_raw);
   }
 
   ~Inn() noexcept {
-    sys_imp::cond_drop(_raw);
+    sys_imp::cnd_destroy(_raw);
   }
 };
 
@@ -36,7 +36,7 @@ void Condvar::notify_one() noexcept{
     return;
   }
 
-  sys_imp::cond_notify_one(_inn->_raw);
+  sys_imp::cnd_signal(_inn->_raw);
 }
 
 void Condvar::notify_all()noexcept{
@@ -44,7 +44,7 @@ void Condvar::notify_all()noexcept{
     return;
   }
 
-  sys_imp::cond_notify_all(_inn->_raw);
+  sys_imp::cnd_broadcast(_inn->_raw);
 }
 
 auto Condvar::wait(Mutex::Guard& lock) noexcept-> bool {
@@ -52,7 +52,7 @@ auto Condvar::wait(Mutex::Guard& lock) noexcept-> bool {
     return false;
   }
 
-  sys_imp::cond_wait(_inn->_raw, lock._inn._raw);
+  sys_imp::cnd_wait(_inn->_raw, lock._inn._raw);
   return true;
 }
 
@@ -62,7 +62,7 @@ auto Condvar::wait_timeout(Mutex::Guard& lock, time::Duration dur) noexcept -> b
   }
 
   const auto millis = static_cast<u32>(dur.as_millis());
-  const auto ret = sys_imp::cond_wait_timeout_ms(_inn->_raw, lock._inn._raw, millis);
+  const auto ret = sys_imp::cnd_timedwait(_inn->_raw, lock._inn._raw, millis);
   return ret;
 }
 

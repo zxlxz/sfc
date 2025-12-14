@@ -11,7 +11,7 @@ using fd_t = void*;
 using fd_t = int;
 #endif
 
-class [[nodiscard]] File : public Read, public Write {
+class [[nodiscard]] File {
   fd_t _fd;
 
  public:

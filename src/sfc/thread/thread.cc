@@ -14,7 +14,7 @@ struct ThreadData {
 
  public:
   void run() noexcept {
-    sys_imp::set_name(_name);
+    sys_imp::thrd_setname(_name);
 
     try {
       _func();
@@ -31,7 +31,7 @@ auto Builder::spawn(Box<void()> fun) -> JoinHandle {
   };
 
   auto data = Box<ThreadData>::xnew(mem::move(fun), CString::from(name));
-  auto thrd = sys_imp::start(stack_size, call_back, &*data);
+  auto thrd = sys_imp::thrd_create(stack_size, call_back, &*data);
   if (thrd) {
     mem::move(data).into_raw();
   }
@@ -45,25 +45,25 @@ JoinHandle::~JoinHandle() noexcept {
   if (!_thrd._raw) {
     return;
   }
-  sys_imp::join(static_cast<thrd_t>(_thrd._raw));
+  sys_imp::thrd_join(static_cast<thrd_t>(_thrd._raw));
 }
 
 auto current() -> Thread {
-  const auto thrd = sys_imp::current();
+  const auto thrd = sys_imp::thrd_current();
   return Thread{thrd};
 }
 
 void yield_now() {
-  sys_imp::yield();
+  sys_imp::thrd_yield();
 }
 
 void sleep(time::Duration dur) {
   const auto millis = static_cast<u32>(dur.as_millis());
-  sys_imp::sleep_ms(millis);
+  sys_imp::thrd_sleep_ms(millis);
 }
 
 void sleep_ms(u32 ms) {
-  sys_imp::sleep_ms(ms);
+  sys_imp::thrd_sleep_ms(ms);
 }
 
 }  // namespace sfc::thread

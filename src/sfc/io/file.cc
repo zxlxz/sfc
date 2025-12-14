@@ -6,16 +6,18 @@ namespace sfc::io {
 
 namespace sys_imp = sys::io;
 
-File::File() noexcept : _fd{sys_imp::INVALID_FD} {}
+static constexpr auto INVALID_FD = static_cast<fd_t>(-1LL);
+
+File::File() noexcept : _fd{INVALID_FD} {}
 
 File::~File() noexcept {
-  if (_fd != sys_imp::INVALID_FD) {
+  if (_fd != INVALID_FD) {
     sys_imp::close(_fd);
   }
 }
 
 File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = sys_imp::INVALID_FD;
+  other._fd = INVALID_FD;
 }
 
 File& File::operator=(File&& other) noexcept {
@@ -36,11 +38,11 @@ auto File::as_fd() const noexcept -> fd_t {
 }
 
 auto File::is_open() const noexcept -> bool {
-  return _fd != sys_imp::INVALID_FD;
+  return _fd != INVALID_FD;
 }
 
 auto File::read(Slice<u8> buf) noexcept -> Result<usize> {
-  if (!this->is_open()) {
+  if (_fd == INVALID_FD) {
     return io::Error::InvalidInput;
   }
   if (buf.is_empty()) {
@@ -55,7 +57,7 @@ auto File::read(Slice<u8> buf) noexcept -> Result<usize> {
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> Result<usize> {
-  if (!this->is_open()) {
+  if (_fd == INVALID_FD) {
     return io::Error::InvalidInput;
   }
   if (buf.is_empty()) {

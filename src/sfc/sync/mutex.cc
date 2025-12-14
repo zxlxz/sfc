@@ -19,7 +19,7 @@ struct Mutex::Inn {
   }
 
   ~Inn() noexcept {
-    sys_imp::mtx_drop(_raw);
+    sys_imp::mtx_destroy(_raw);
   }
 
   void lock() noexcept {
@@ -42,7 +42,7 @@ struct ReentrantLock::Inn {
   }
 
   ~Inn() noexcept {
-    sys_imp::mtx_drop(_raw);
+    sys_imp::mtx_destroy(_raw);
   }
 
   void lock() noexcept {

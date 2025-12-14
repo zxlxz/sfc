@@ -16,7 +16,7 @@ inline void mtx_init(mtx_t& mtx) {
   ::InitializeCriticalSection(&mtx);
 }
 
-inline void mtx_drop(mtx_t& mtx) {
+inline void mtx_destroy(mtx_t& mtx) {
   ::DeleteCriticalSection(&mtx);
 }
 
@@ -28,27 +28,27 @@ inline void mtx_unlock(mtx_t& mtx) {
   ::LeaveCriticalSection(&mtx);
 }
 
-inline void cond_init(cnd_t& cond) {
+inline void cnd_init(cnd_t& cond) {
   ::InitializeConditionVariable(&cond);
 }
 
-inline void cond_drop(cnd_t& cond) {
+inline void cnd_destroy(cnd_t& cond) {
   (void)cond;
 }
 
-inline void cond_notify_one(cnd_t& cond) {
+inline void cnd_signal(cnd_t& cond) {
   ::WakeConditionVariable(&cond);
 }
 
-inline void cond_notify_all(cnd_t& cond) {
+inline void cnd_broadcast(cnd_t& cond) {
   ::WakeAllConditionVariable(&cond);
 }
 
-inline void cond_wait(cnd_t& cond, mtx_t& mtx) {
+inline void cnd_wait(cnd_t& cond, mtx_t& mtx) {
   ::SleepConditionVariableCS(&cond, &mtx, INFINITE);
 }
 
-inline auto cond_wait_timeout_ms(cnd_t& cond, mtx_t& mtx, DWORD millis) -> bool {
+inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, DWORD millis) -> bool {
   return ::SleepConditionVariableCS(&cond, &mtx, millis);
 }
 

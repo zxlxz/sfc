@@ -20,7 +20,7 @@ inline void mtx_init(mtx_t& mtx) {
   mtx = PTHREAD_MUTEX_INITIALIZER;
 }
 
-inline void mtx_drop(mtx_t& mtx) {
+inline void mtx_destroy(mtx_t& mtx) {
   (void)mtx;
 }
 
@@ -36,15 +36,15 @@ inline void cnd_init(cnd_t& cond) {
   cond = PTHREAD_COND_INITIALIZER;
 }
 
-inline void cnd_drop(cnd_t& cond) {
+inline void cnd_destroy(cnd_t& cond) {
   (void)cond;
 }
 
-inline void cnd_notify_one(cnd_t& cond) {
+inline void cnd_signal(cnd_t& cond) {
   ::pthread_cond_signal(&cond);
 }
 
-inline void cnd_notify_all(cnd_t& cond) {
+inline void cnd_broadcast(cnd_t& cond) {
   ::pthread_cond_broadcast(&cond);
 }
 
@@ -52,7 +52,7 @@ inline void cnd_wait(cnd_t& cond, mtx_t& mtx) {
   ::pthread_cond_wait(&cond, &mtx);
 }
 
-inline auto cnd_wait_timeout_ms(cnd_t& cond, mtx_t& mtx, unsigned millis) -> bool {
+inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 

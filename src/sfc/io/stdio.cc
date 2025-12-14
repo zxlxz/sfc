@@ -67,7 +67,7 @@ class Stderr::Inn {
   void flush() noexcept {}
 
   void write(Slice<const u8> s) noexcept {
-    (void)_imp.write_all(s);
+    (void)_imp.write(s);
   }
 };
 

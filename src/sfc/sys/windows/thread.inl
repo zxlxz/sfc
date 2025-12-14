@@ -18,29 +18,29 @@ auto u8_to_wchar(const char src[], wchar_t (&dst)[N]) -> int {
   return ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
 }
 
-inline auto current() -> thrd_t {
+inline auto thrd_current() -> thrd_t {
   return ::GetCurrentThread();
 }
 
-inline auto start(SIZE_T stack_size, DWORD (*func)(void*), void* data) -> thrd_t {
+inline auto thrd_create(SIZE_T stack_size, DWORD (*func)(void*), void* data) -> thrd_t {
   return ::CreateThread(nullptr, stack_size, func, data, 0, nullptr);
 }
 
-inline auto join(thrd_t thr) -> bool {
+inline auto thrd_join(thrd_t thr) -> bool {
   const auto ret = ::WaitForSingleObject(thr, INFINITE);
   return ret == WAIT_OBJECT_0;
 }
 
-inline auto detach(thrd_t thr) -> bool {
+inline auto thrd_detach(thrd_t thr) -> bool {
   return ::CloseHandle(thr);
 }
 
-inline void yield() {
+inline void thrd_yield() {
   ::SwitchToThread();
 }
 
 template <int N>
-inline auto get_name(thrd_t thr, char (&buf)[N]) -> const char* {
+inline auto thrd_name(thrd_t thr, char (&buf)[N]) -> const char* {
   wchar_t* wbuf = nullptr;
   if (FAILED(::GetThreadDescription(thr, &wbuf))) {
     return nullptr;
@@ -52,7 +52,7 @@ inline auto get_name(thrd_t thr, char (&buf)[N]) -> const char* {
   return buf;
 }
 
-inline auto set_name(const char* name) -> bool {
+inline auto thrd_setname(const char* name) -> bool {
   wchar_t wbuff[256];
   if (u8_to_wchar(name, wbuff) == 0) {
     return false;
@@ -63,7 +63,7 @@ inline auto set_name(const char* name) -> bool {
   return SUCCEEDED(hres);
 }
 
-inline void sleep_ms(DWORD millis) {
+inline void thrd_sleep_ms(DWORD millis) {
   ::Sleep(millis);
 }
 
