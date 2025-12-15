@@ -11,7 +11,8 @@ using fd_t = void*;
 using fd_t = int;
 #endif
 
-class [[nodiscard]] File {
+class File {
+ public:
   fd_t _fd;
 
  public:
@@ -21,9 +22,6 @@ class [[nodiscard]] File {
 
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
-
-  auto as_fd() const noexcept -> fd_t;
-  auto is_open() const noexcept -> bool;
 
   auto read(Slice<u8> buf) noexcept -> Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> Result<usize>;

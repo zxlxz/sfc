@@ -59,7 +59,7 @@ class Stderr::Inn {
   }
 
   auto is_tty() const -> bool {
-    const auto res = sys_imp::is_tty(_imp.as_fd());
+    const auto res = sys_imp::is_tty(_imp._fd);
     return res;
   }
 

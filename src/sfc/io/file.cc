@@ -27,14 +27,6 @@ File& File::operator=(File&& other) noexcept {
   return *this;
 }
 
-auto File::as_fd() const noexcept -> fd_t {
-  return _fd;
-}
-
-auto File::is_open() const noexcept -> bool {
-  return _fd != sys_imp::INVALID_FD;
-}
-
 auto File::read(Slice<u8> buf) noexcept -> Result<usize> {
   if (_fd == sys_imp::INVALID_FD) {
     return io::Error::InvalidInput;

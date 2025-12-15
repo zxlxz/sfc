@@ -8,8 +8,10 @@ struct Path {
   Str _inn = {};
 
  public:
-  auto as_str() const noexcept -> Str;
+  template <trait::AsRef<Str> S>
+  Path(const S& s) noexcept : _inn(s) {}
 
+  auto as_str() const noexcept -> Str;
   auto file_name() const noexcept -> Str;
   auto file_stem() const noexcept -> Str;
   auto extension() const noexcept -> Str;
@@ -43,7 +45,7 @@ class PathBuf {
   void clear() noexcept;
   void reserve(usize additional) noexcept;
 
-  void push(Str path) noexcept;
+  void push(Path path) noexcept;
   auto pop() noexcept -> bool;
 
   void set_file_name(Str file_name) noexcept;

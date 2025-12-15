@@ -1,10 +1,20 @@
 #include "sfc/fs/path.h"
 
 #include "sfc/sys/fs.h"
+#include "sfc/ffi/c_str.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
+using ffi::CString;
+
+static constexpr auto is_delim(char c) -> bool {
+#ifdef _WIN32
+  return c == '/' || c == '\\';
+#else
+  return c == '/';
+#endif
+};
 
 struct Components {
   Str _str;
@@ -14,21 +24,36 @@ struct Components {
     return _str;
   }
 
-  auto next_back() noexcept -> Str {
-    while (!_str.is_empty()) {
-      _str = _str.trim_end_matches('/');
+  void trim_end() {
+    while (_str._len != 0 && is_delim(_str[_str._len - 1])) {
+      _str._len -= 1;
+    }
+  }
 
-      if (const auto p = _str.rfind('/')) {
-        const auto b = _str[{*p + 1, $}];
-        _str = _str[{0, *p}];
-        if (b != ".") {
-          return b;
-        }
-      } else {
-        return mem::take(_str);
-      }
+  auto pop() noexcept -> Str {
+    this->trim_end();
+
+    const auto p = _str.rfind(is_delim);
+    if (!p) {
+      return mem::take(_str);
     }
 
+    const auto res = _str[{*p + 1, $}];
+    _str = _str[{0, *p}];
+    return res;
+  }
+
+  auto next_back() noexcept -> Str {
+    while (!_str.is_empty()) {
+      const auto s = this->pop();
+      if (s.is_empty() || s == ".") {
+        continue;
+      } else if (s == "..") {
+        this->pop();
+      } else {
+        return s;
+      }
+    }
     return {};
   }
 };
@@ -58,7 +83,7 @@ auto Path::file_stem() const noexcept -> Str {
 }
 
 auto Path::parent() const noexcept -> Path {
-  auto cmpts = Components{_inn.as_str()};
+  auto cmpts = fs::Components{_inn.as_str()};
   cmpts.next_back();
 
   return Path{cmpts.as_str()};
@@ -71,11 +96,26 @@ auto Path::join(Str path) const noexcept -> PathBuf {
 }
 
 auto Path::is_absolute() const noexcept -> bool {
-  return _inn.starts_with('/');
+  static const auto is_alpha = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); };
+  if (_inn.is_empty()) {
+    return false;
+  }
+  if (_inn.starts_with('/')) {
+    return true;
+  }
+#ifdef _WIN32
+  if (_inn.len() >= 2 && _inn[1] == ':' && is_alpha(_inn[0])) {
+    return true;
+  }
+#endif
+  return false;
 }
 
 auto Path::is_relative() const noexcept -> bool {
-  return !_inn.starts_with('/');
+  if (_inn.is_empty()) {
+    return false;
+  }
+  return !this->is_absolute();
 }
 
 auto Path::exists() const noexcept -> bool {
@@ -95,7 +135,7 @@ auto Path::is_dir() const noexcept -> bool {
 
 auto PathBuf::from(Str s) noexcept -> PathBuf {
   auto res = PathBuf{};
-  res._inn.push_str(s);
+  res.push(Path{s});
   return res;
 }
 
@@ -115,14 +155,22 @@ void PathBuf::reserve(usize additional) noexcept {
   _inn.reserve(additional);
 }
 
-void PathBuf::push(Str path) noexcept {
-  if (!_inn.ends_with('/')) {
-    _inn.push('/');
-  }
-  if (path.starts_with('/')) {
+void PathBuf::push(Path path) noexcept {
+  if (path.is_absolute()) {
     _inn.clear();
   }
-  _inn.push_str(path);
+  if (!_inn.is_empty() && !is_delim(_inn[_inn.len() - 1])) {
+    _inn.push('/');
+  }
+  _inn.push_str(path.as_str());
+
+#ifdef _WIN32
+  for (auto& c : _inn.as_mut_slice()) {
+    if (c == '\\') {
+      c = '/';
+    }
+  }
+#endif
 }
 
 auto PathBuf::pop() noexcept -> bool {
@@ -179,19 +227,19 @@ auto Meta::is_file() const noexcept -> bool {
 }
 
 auto meta(Path path) -> io::Result<Meta> {
-  const auto c_path = CString::from(path.as_str());
+  const auto c_path = CString::xnew(path.as_str());
 
   auto res = Meta{};
-  if (!sys_imp::lstat(c_path, res)) {
+  if (!sys_imp::lstat(c_path.as_ptr(), res)) {
     return io::last_os_error();
   }
   return res;
 }
 
 auto create_dir(Path path) -> io::Result<> {
-  const auto c_path = CString::from(path.as_str());
+  const auto c_path = CString::xnew(path.as_str());
 
-  if (sys_imp::mkdir(c_path)) {
+  if (sys_imp::mkdir(c_path.as_ptr())) {
     return {};
   }
   const auto err = io::last_os_error();
@@ -202,9 +250,9 @@ auto create_dir(Path path) -> io::Result<> {
 }
 
 auto remove_dir(Path path) -> io::Result<> {
-  const auto c_path = CString::from(path.as_str());
+  const auto c_path = CString::xnew(path.as_str());
 
-  const auto ret = sys_imp::rmdir(c_path);
+  const auto ret = sys_imp::rmdir(c_path.as_ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -213,9 +261,9 @@ auto remove_dir(Path path) -> io::Result<> {
 }
 
 auto remove_file(Path path) -> io::Result<> {
-  const auto c_path = CString::from(path.as_str());
+  const auto c_path = CString::xnew(path.as_str());
 
-  const auto ret = sys_imp::unlink(c_path);
+  const auto ret = sys_imp::unlink(c_path.as_ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -224,10 +272,10 @@ auto remove_file(Path path) -> io::Result<> {
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto c_old = CString::from(old_path.as_str());
-  const auto c_new = CString::from(new_path.as_str());
+  const auto c_old = CString::xnew(old_path.as_str());
+  const auto c_new = CString::xnew(new_path.as_str());
 
-  const auto ret = sys_imp::rename(c_old, c_new);
+  const auto ret = sys_imp::rename(c_old.as_ptr(), c_new.as_ptr());
   if (!ret) {
     return io::last_os_error();
   }

@@ -43,8 +43,11 @@ concept tv_copy_ = __is_trivially_copyable(T);
 template <class T>
 concept tv_dtor_ = __is_trivially_destructible(T);
 
-template<class T>
+template <class T>
 concept polymorphic_ = __is_polymorphic(T);
+
+template <class F, class T>
+concept AsRef = requires(const F& from) { T{from}; };
 
 template <class I, class X>
 struct Impl : I, X {

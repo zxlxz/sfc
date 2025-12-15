@@ -343,7 +343,6 @@ struct Inner<slice::Slice<T>> {
     return _val;
   }
 };
-
 }  // namespace sfc::option
 
 namespace sfc {

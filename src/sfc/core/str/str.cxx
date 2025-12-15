@@ -58,4 +58,102 @@ SFC_TEST(fmt) {
   panicking::expect_eq(string::format("{#?}", "abc"), R"("abc")");
 }
 
+SFC_TEST(find) {
+  const auto s = Str{"ababcd"};
+
+  // char
+  panicking::expect_eq(s.find('a'), Option{0U});
+  panicking::expect_eq(s.find('d'), Option{5U});
+  panicking::expect_eq(s.find('x'), Option<usize>{});
+
+  // str
+  panicking::expect_eq(s.find("ab"), Option{0U});
+  panicking::expect_eq(s.find("cd"), Option{4U});
+  panicking::expect_eq(s.find("xy"), Option<usize>{});
+
+  // pred
+  panicking::expect_eq(s.find([](char c) { return c == 'a'; }), Option{0U});
+  panicking::expect_eq(s.find([](char c) { return c == 'd'; }), Option{5U});
+  panicking::expect_eq(s.find([](char c) { return c == 'x'; }), Option<usize>{});
+}
+
+SFC_TEST(rfind) {
+  const auto s = Str{"abcdcd"};
+
+  // char
+  panicking::expect_eq(s.rfind('a'), Option{0U});
+  panicking::expect_eq(s.rfind('d'), Option{5U});
+  panicking::expect_eq(s.rfind('x'), Option<usize>{});
+
+  // str
+  panicking::expect_eq(s.rfind("ab"), Option{0U});
+  panicking::expect_eq(s.rfind("cd"), Option{4U});
+  panicking::expect_eq(s.rfind("xy"), Option<usize>{});
+
+  // pred
+  panicking::expect_eq(s.rfind([](char c) { return c == 'a'; }), Option{0U});
+  panicking::expect_eq(s.rfind([](char c) { return c == 'd'; }), Option{5U});
+  panicking::expect_eq(s.rfind([](char c) { return c == 'x'; }), Option<usize>{});
+}
+
+SFC_TEST(contains) {
+  const auto s = Str{"ababcd"};
+
+  // char
+  panicking::expect(s.contains('a'));
+  panicking::expect(!s.contains('x'));
+
+  // str
+  panicking::expect(s.contains("ab"));
+  panicking::expect(!s.contains("xy"));
+
+  // pred
+  panicking::expect(s.contains([](char c) { return c == 'a'; }));
+  panicking::expect(!s.contains([](char c) { return c == 'x'; }));
+}
+
+SFC_TEST(starts_with) {
+  const auto s = Str{"ababcd"};
+
+  // char
+  panicking::expect(s.starts_with('a'));
+  panicking::expect(!s.starts_with('b'));
+
+  // str
+  panicking::expect(s.starts_with("ab"));
+  panicking::expect(!s.starts_with("bc"));
+
+  // pred
+  panicking::expect(s.starts_with([](char c) { return c == 'a'; }));
+  panicking::expect(!s.starts_with([](char c) { return c == 'b'; }));
+}
+
+SFC_TEST(ends_with) {
+  const auto s = Str{"ababcd"};
+
+  // char
+  panicking::expect(s.ends_with('d'));
+  panicking::expect(!s.ends_with('c'));
+
+  // str
+  panicking::expect(s.ends_with("bcd"));
+  panicking::expect(!s.ends_with("bc"));
+
+  // pred
+  panicking::expect(s.ends_with([](char c) { return c == 'd'; }));
+  panicking::expect(!s.ends_with([](char c) { return c == 'c'; }));
+}
+
+SFC_TEST(trim) {
+  const auto s1 = Str{"  \t\nabc  \n\t "};
+  panicking::expect_eq(s1.trim_start(), "abc  \n\t ");
+  panicking::expect_eq(s1.trim_end(), "  \t\nabc");
+  panicking::expect_eq(s1.trim(), "abc");
+
+  const auto s2 = Str{"xxxyabczyxx"};
+  panicking::expect_eq(s2.trim_start_matches([](char c) { return c == 'x'; }), "yabczyxx");
+  panicking::expect_eq(s2.trim_end_matches([](char c) { return c == 'x'; }), "xxxyabczy");
+  panicking::expect_eq(s2.trim_matches([](char c) { return c == 'x' || c == 'y'; }), "abcz");
+}
+
 }  // namespace sfc::str::test

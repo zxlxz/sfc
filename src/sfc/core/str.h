@@ -87,7 +87,8 @@ struct Str {
   }
 
   auto trim() const noexcept -> Str {
-    return this->trim_start().trim_end();
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    return this->trim_matches(is_space);
   }
 
  public:
@@ -145,264 +146,159 @@ struct Str {
   }
 };
 
-namespace pattern {
+template <class>
+struct Pattern;
 
-struct CharSearcher {
-  Str _haystack;
+template <>
+struct Pattern<char> {
   char _needle;
-  usize _finger = 0U;
-  usize _finger_back = _haystack._len;
 
  public:
-  auto step() const noexcept -> usize {
+  constexpr static auto len() noexcept -> usize {
     return 1;
   }
 
-  auto next() noexcept -> Option<usize> {
-    if (_finger >= _finger_back) {
-      return {};
-    }
-    if (_haystack[_finger++] != _needle) {
-      return {};
-    }
-    return _finger - 1;
-  }
-
-  auto next_back() noexcept -> Option<usize> {
-    if (_finger >= _finger_back) {
-      return {};
-    }
-    if (_haystack[--_finger_back] != _needle) {
-      return {};
-    }
-    return _finger_back;
-  }
-
-  auto next_match() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_haystack[_finger++] == _needle) {
-        return _finger - 1;
-      }
-    }
-    return {};
-  }
-
-  auto next_match_back() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_haystack[--_finger_back] == _needle) {
-        return _finger_back;
-      }
-    }
-    return {};
-  }
-
-  auto next_reject() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_haystack[_finger++] != _needle) {
-        return _finger - 1;
-      }
-    }
-    return {};
-  }
-
-  auto next_reject_back() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_haystack[--_finger_back] != _needle) {
-        return _finger_back;
-      }
-    }
-    return {};
+  auto match(const char* s) const noexcept -> bool {
+    return *s == _needle;
   }
 };
 
-template <class P>
-struct PredSearcher {
-  Str _haystack;
-  P _pred;
-  usize _finger = 0U;
-  usize _finger_back = _haystack._len;
+template <class F>
+struct Pattern {
+  F _pred;
 
  public:
-  auto step() const noexcept -> usize {
+  constexpr static auto len() noexcept -> usize {
     return 1;
   }
 
-  auto next() noexcept -> Option<usize> {
-    if (_finger >= _finger_back) {
-      return {};
-    }
-    if (!_pred(_haystack[_finger++])) {
-      return {};
-    }
-    return _finger - 1;
-  }
-
-  auto next_back() noexcept -> Option<usize> {
-    if (_finger >= _finger_back) {
-      return {};
-    }
-    if (!_pred(_haystack[--_finger_back])) {
-      return {};
-    }
-    return _finger_back;
-  }
-
-  auto next_match() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_pred(_haystack[_finger++])) {
-        return _finger - 1;
-      }
-    }
-    return {};
-  }
-
-  auto next_match_back() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (_pred(_haystack[--_finger_back])) {
-        return _finger_back;
-      }
-    }
-    return {};
-  }
-
-  auto next_reject() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (!_pred(_haystack[_finger++])) {
-        return _finger - 1;
-      }
-    }
-    return {};
-  }
-
-  auto next_reject_back() noexcept -> Option<usize> {
-    while (_finger < _finger_back) {
-      if (!_pred(_haystack[--_finger_back])) {
-        return _finger_back;
-      }
-    }
-    return {};
+  auto match(const char* s) noexcept -> bool {
+    return _pred(*s);
   }
 };
 
-struct StrSearcher {
-  Str _haystack;
+template <>
+struct Pattern<Str> {
   Str _needle;
-  usize _finger = 0;
-  usize _finger_back = _haystack._len;
 
  public:
-  auto step() const noexcept -> usize {
+  constexpr auto len() const noexcept -> usize {
     return _needle._len;
   }
 
-  auto next() noexcept -> Option<usize> {
-    if (_finger + _needle._len > _finger_back) {
-      return {};
-    }
-    const auto tmp = Str{_haystack._ptr + _finger, _needle._len};
-    if (_needle != tmp) {
-      _finger += 1;
-      return {};
-    }
-    const auto res = _finger;
-    _finger += _needle._len;
-    return res;
-  }
-
-  auto next_back() -> Option<usize> {
-    if (_finger + _needle._len > _finger_back) {
-      return {};
-    }
-
-    const auto tmp = Str{_haystack._ptr + _finger_back - _needle._len, _needle._len};
-    if (_needle != tmp) {
-      _finger_back -= 1;
-      return {};
-    }
-    _finger_back -= _needle._len;
-    return _finger_back;
-  }
-
-  auto next_match() noexcept -> Option<usize> {
-    while (_finger + _needle._len <= _finger_back) {
-      if (_needle == Str{_haystack._ptr + _finger, _needle._len}) {
-        _finger += _needle._len;
-        return _finger - _needle._len;
+  auto match(const char* s) const noexcept -> bool {
+    for (auto i = 0U; i < _needle._len; ++i) {
+      if (s[i] != _needle._ptr[i]) {
+        return false;
       }
-      _finger += 1;
     }
-    return {};
-  }
-
-  auto next_match_back() -> Option<usize> {
-    while (_finger + _needle._len <= _finger_back) {
-      if (_needle == Str{_haystack._ptr + _finger_back - _needle._len, _needle._len}) {
-        _finger_back -= _needle._len;
-        return _finger_back;
-      }
-      _finger_back -= 1;
-    }
-    return {};
+    return true;
   }
 };
 
 template <class P>
-auto into_searcher(P&& pattern, Str haystack) {
-  if constexpr (requires { Str{pattern}; }) {
-    return StrSearcher{haystack, pattern};
-  } else if constexpr (requires { static_cast<char>(pattern); }) {
-    return CharSearcher{haystack, static_cast<char>(pattern)};
-  } else if constexpr (requires { pattern(' '); }) {
-    return PredSearcher<P>{haystack, static_cast<P&&>(pattern)};
-  } else {
-    static_assert(false, "into_searcher: unsupported pattern type");
-  }
-}
+Pattern(P) -> Pattern<P>;
 
-}  // namespace pattern
+template <trait::AsRef<char> C>
+Pattern(C) -> Pattern<char>;
+
+template <trait::AsRef<Str> S>
+Pattern(S) -> Pattern<Str>;
 
 auto Str::find(auto&& pat) const -> Option<usize> {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  return s.next_match();
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  if (n == 0 || _len < n) {
+    return {};
+  }
+  for (auto i = 0U; i + n <= _len; ++i) {
+    if (p.match(_ptr + i)) {
+      return i;
+    }
+  }
+  return {};
 }
 
 auto Str::rfind(auto&& pat) const -> Option<usize> {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  return s.next_match_back();
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  if (n == 0 || _len < n) {
+    return {};
+  }
+  for (auto i = _len; i >= n; --i) {
+    if (p.match(_ptr + i - n)) {
+      return i - n;
+    }
+  }
+  return {};
 }
 
 auto Str::contains(auto&& pat) const -> bool {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  return s.next_match().is_some();
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  if (n == 0 || _len < n) {
+    return false;
+  }
+  for (auto i = 0U; i + n <= _len; ++i) {
+    if (p.match(_ptr + i)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 auto Str::starts_with(auto&& pat) const -> bool {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  return s.next().is_some();
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  if (_len < n) {
+    return false;
+  }
+  return p.match(_ptr);
 }
 
 auto Str::ends_with(auto&& pat) const -> bool {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  return s.next_back().is_some();
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  if (_len < n) {
+    return false;
+  }
+  return p.match(_ptr + _len - n);
 }
 
 auto Str::trim_start_matches(auto&& pat) const -> Str {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  const auto idx = s.next_reject().unwrap_or(0);
-  return Str{_ptr + idx, _len - idx};
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+  auto start = 0U;
+  while (start + n <= _len && p.match(_ptr + start)) {
+    start += n;
+  }
+  return Str{_ptr + start, _len - start};
 }
 
 auto Str::trim_end_matches(auto&& pat) const -> Str {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  const auto idx = s.next_reject_back().unwrap_or(_len - 1);
-  return Str{_ptr, idx + 1};
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+
+  auto end = _len;
+  while (end >= n && p.match(_ptr + end - n)) {
+    end -= n;
+  }
+  return Str{_ptr, end};
 }
 
 auto Str::trim_matches(auto&& pat) const -> Str {
-  auto s = pattern::into_searcher(static_cast<decltype(pat)&&>(pat), *this);
-  const auto i1 = s.next_reject_back().unwrap_or(_len - 1);
-  const auto i0 = s.next_reject().unwrap_or(0);
-  return Str{_ptr + i0, i1 + 1 - i0};
+  auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
+  const auto n = p.len();
+
+  auto start = 0U;
+  auto end = _len;
+  while (start + n <= end && p.match(_ptr + start)) {
+    start += n;
+  }
+  while (end >= start + n && p.match(_ptr + end - n)) {
+    end -= n;
+  }
+  return Str{_ptr + start, end - start};
 }
 
 template <class T>

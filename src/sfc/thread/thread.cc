@@ -1,10 +1,12 @@
 #include "sfc/thread.h"
 
 #include "sfc/sys/thread.h"
+#include "sfc/ffi/c_str.h"
 
 namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
+using ffi::CString;
 
 using sys_imp::thrd_t;
 
@@ -14,7 +16,7 @@ struct ThreadData {
 
  public:
   void run() noexcept {
-    sys_imp::thrd_setname(_name);
+    sys_imp::thrd_setname(_name.as_ptr());
 
     try {
       _func();
@@ -30,7 +32,7 @@ auto Builder::spawn(Box<void()> fun) -> JoinHandle {
     return {};
   };
 
-  auto data = Box<ThreadData>::xnew(mem::move(fun), CString::from(name));
+  auto data = Box<ThreadData>::xnew(mem::move(fun), CString::xnew(name));
   auto thrd = sys_imp::thrd_create(stack_size, call_back, &*data);
   if (thrd) {
     mem::move(data).into_raw();

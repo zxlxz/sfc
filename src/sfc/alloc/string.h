@@ -179,22 +179,6 @@ class [[nodiscard]] String {
   }
 };
 
-class [[nodiscard]] CString {
-  Vec<char> _vec = {};
-
- public:
-  static auto from(Str s) -> CString {
-    auto res = CString{};
-    res._vec.extend_from_slice({s._ptr, s._len});
-    res._vec.push('\0');
-    return res;
-  }
-
-  operator cstr_t() const noexcept {
-    return _vec.as_ptr();
-  }
-};
-
 auto format(Str fmts, const auto&... args) -> String {
   auto s = String{};
   fmt::Fmter{s}.write_fmt(fmts, args...);
@@ -228,5 +212,4 @@ namespace sfc::panicking {
 
 namespace sfc {
 using string::String;
-using string::CString;
 }  // namespace sfc
