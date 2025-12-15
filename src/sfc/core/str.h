@@ -208,10 +208,11 @@ Pattern(S) -> Pattern<Str>;
 auto Str::find(auto&& pat) const -> Option<usize> {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
-  if (n == 0 || _len < n) {
+  if (_len < n) {
     return {};
   }
-  for (auto i = 0U; i + n <= _len; ++i) {
+
+  for (auto i = 0U; i <= _len - n; ++i) {
     if (p.match(_ptr + i)) {
       return i;
     }
@@ -222,9 +223,10 @@ auto Str::find(auto&& pat) const -> Option<usize> {
 auto Str::rfind(auto&& pat) const -> Option<usize> {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
-  if (n == 0 || _len < n) {
+  if (_len < n) {
     return {};
   }
+
   for (auto i = _len; i >= n; --i) {
     if (p.match(_ptr + i - n)) {
       return i - n;
@@ -236,10 +238,11 @@ auto Str::rfind(auto&& pat) const -> Option<usize> {
 auto Str::contains(auto&& pat) const -> bool {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
-  if (n == 0 || _len < n) {
+  if (_len < n) {
     return false;
   }
-  for (auto i = 0U; i + n <= _len; ++i) {
+
+  for (auto i = 0U; i <= _len - n; ++i) {
     if (p.match(_ptr + i)) {
       return true;
     }
@@ -259,17 +262,22 @@ auto Str::starts_with(auto&& pat) const -> bool {
 auto Str::ends_with(auto&& pat) const -> bool {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
-  if (_len < n) {
+  if ( _len < n) {
     return false;
   }
+
   return p.match(_ptr + _len - n);
 }
 
 auto Str::trim_start_matches(auto&& pat) const -> Str {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
+  if (n == 0 || n > _len) {
+    return *this;
+  }
+
   auto start = 0U;
-  while (start + n <= _len && p.match(_ptr + start)) {
+  while (start <= _len - n && p.match(_ptr + start)) {
     start += n;
   }
   return Str{_ptr + start, _len - start};
@@ -278,6 +286,9 @@ auto Str::trim_start_matches(auto&& pat) const -> Str {
 auto Str::trim_end_matches(auto&& pat) const -> Str {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
+  if (n == 0 || n > _len) {
+    return *this;
+  }
 
   auto end = _len;
   while (end >= n && p.match(_ptr + end - n)) {
@@ -289,12 +300,15 @@ auto Str::trim_end_matches(auto&& pat) const -> Str {
 auto Str::trim_matches(auto&& pat) const -> Str {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
+  if (n == 0 || n > _len) {
+    return *this;
+  }
 
   auto start = 0U;
-  auto end = _len;
-  while (start + n <= end && p.match(_ptr + start)) {
+  while (start <= _len - n && p.match(_ptr + start)) {
     start += n;
   }
+  auto end = _len;
   while (end >= start + n && p.match(_ptr + end - n)) {
     end -= n;
   }

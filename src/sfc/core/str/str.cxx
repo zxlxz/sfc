@@ -69,7 +69,9 @@ SFC_TEST(find) {
   // str
   panicking::expect_eq(s.find("ab"), Option{0U});
   panicking::expect_eq(s.find("cd"), Option{4U});
-  panicking::expect_eq(s.find("xy"), Option<usize>{});
+  panicking::expect_eq(s.find(""), Option{0U});
+  panicking::expect_eq(s.find("ababcd"), Option{0U});
+  panicking::expect_eq(s.find("ababcdx"), Option<usize>{});
 
   // pred
   panicking::expect_eq(s.find([](char c) { return c == 'a'; }), Option{0U});
@@ -88,7 +90,9 @@ SFC_TEST(rfind) {
   // str
   panicking::expect_eq(s.rfind("ab"), Option{0U});
   panicking::expect_eq(s.rfind("cd"), Option{4U});
-  panicking::expect_eq(s.rfind("xy"), Option<usize>{});
+  panicking::expect_eq(s.rfind(""), Option{6U});
+  panicking::expect_eq(s.rfind("abcdcd"), Option{0U});
+  panicking::expect_eq(s.rfind("xabcdcd"), Option<usize>{});
 
   // pred
   panicking::expect_eq(s.rfind([](char c) { return c == 'a'; }), Option{0U});
