@@ -24,25 +24,15 @@ struct Unique {
     return *this;
   }
 
-  auto clone() const noexcept -> Unique {
-    return Unique{_ptr};
-  }
-
-  explicit operator bool() const noexcept {
-    return _ptr != nullptr;
-  }
-
   auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
   auto operator->() const -> const T* {
-    panicking::expect(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
   auto operator->() -> T* {
-    panicking::expect(_ptr != nullptr, "ptr::Unique::->: deref null");
     return _ptr;
   }
 
@@ -54,6 +44,12 @@ struct Unique {
   auto operator*() -> T& {
     panicking::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
+  }
+
+ public:
+  // trait: Clone
+  auto clone() const noexcept -> Unique {
+    return Unique{_ptr};
   }
 };
 

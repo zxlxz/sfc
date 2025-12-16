@@ -282,7 +282,7 @@ void Clap::add_arg(Str desc, Str help, Str sval) {
 }
 
 auto Clap::get(Str s) const -> Option<Str> {
-  for (auto& item : _items) {
+  for (auto& item : _items.as_slice()) {
     if (item.match(s)) {
       return item.value();
     }
@@ -291,7 +291,7 @@ auto Clap::get(Str s) const -> Option<Str> {
 }
 
 auto Clap::get_flag(Str s) const -> Option<bool> {
-  for (auto& item : _items) {
+  for (auto& item : _items.as_slice()) {
     if (item.match(s)) {
       const auto s = item.value().unwrap_or({});
       const auto b = yes_or_no(s);
@@ -311,13 +311,13 @@ void Clap::print_help() const {
 
   out.write_str("Usage: ");
   out.write_str(_name.as_str());
-  for (auto& item : _items) {
+  for (auto& item : _items.as_slice()) {
     item.show_usage(out);
   }
   out.write_str("\n\n");
 
   out.write_str("Options:\n");
-  for (const auto& item : _items) {
+  for (const auto& item : _items.as_slice()) {
     item.show_help(out);
     out.write_str("\n");
   }

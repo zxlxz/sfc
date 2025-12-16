@@ -23,7 +23,7 @@ class Logger {
   }
 
   void flush() {
-    for (auto& backend : _backends) {
+    for (auto& backend : _backends.as_mut_slice()) {
       backend->flush();
     }
   }
@@ -34,7 +34,7 @@ class Logger {
     }
 
     const auto entry = Record{level, Record::time_str(), msg};
-    for (auto& backend : _backends) {
+    for (auto& backend : _backends.as_mut_slice()) {
       backend->write(entry);
     }
   }

@@ -32,10 +32,6 @@ class [[nodiscard]] String {
     return _vec.len();
   }
 
-  auto as_str() const noexcept -> Str {
-    return Str::from_utf8(_vec.as_slice());
-  }
-
   auto is_empty() const noexcept -> bool {
     return _vec.is_empty();
   }
@@ -52,11 +48,11 @@ class [[nodiscard]] String {
     return _vec;
   }
 
- public:
-  auto operator*() const noexcept -> Str {
-    return this->as_str();
+  auto as_str() const noexcept -> Str {
+    return Str::from_utf8(this->as_slice());
   }
 
+ public:
   auto operator[](usize idx) const noexcept -> u8 {
     return _vec[idx];
   }
@@ -148,6 +144,11 @@ class [[nodiscard]] String {
   }
 
  public:
+  // trait: Deref<Str>
+  auto operator*() const noexcept -> Str {
+    return Str::from_utf8(this->as_slice());
+  }
+
   // trait: ops::Eq
   auto operator==(Str other) const noexcept -> bool {
     return this->as_str() == other;

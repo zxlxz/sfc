@@ -36,11 +36,7 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  explicit operator bool() const noexcept {
-    return _ptr != nullptr;
-  }
-
-  auto ptr() const noexcept -> T* {
+  auto as_ptr() const noexcept -> T* {
     return _ptr;
   }
 
@@ -55,25 +51,23 @@ class [[nodiscard]] Box {
   }
 
   auto operator->() const noexcept -> const T* {
-    panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator->() noexcept -> T* {
-    panicking::expect(_ptr != nullptr, "boxed::Box::->: deref null");
     return _ptr;
   }
 
   auto operator*() const noexcept -> const T& {
-    panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
   auto operator*() noexcept -> T& {
-    panicking::expect(_ptr != nullptr, "boxed::Box::*: deref null");
     return *_ptr;
   }
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     if (_ptr == nullptr) {
       f.write_str("Box()");
@@ -125,12 +119,11 @@ class [[nodiscard]] Box<R(T...)> {
     return res;
   }
 
-  explicit operator bool() const noexcept {
-    return _meta != nullptr;
+  auto as_ptr() const noexcept -> void* {
+    return _data;
   }
 
   auto operator()(T... args) -> R {
-    panicking::expect(_meta != nullptr, "boxed::Box::*: deref null");
     return (_meta->_call)(_data, static_cast<T&&>(args)...);
   }
 };
@@ -156,11 +149,11 @@ class Inner<boxed::Box<T...>> {
   Inner(Inner&&) noexcept = default;
 
   auto is_some() const noexcept -> bool {
-    return bool(_val);
+    return _val.as_ptr() != nullptr;
   }
 
   auto is_none() const noexcept -> bool {
-    return !bool(_val);
+    return _val.as_ptr() == nullptr;
   }
 
   auto operator*() const noexcept -> const Box& {
@@ -171,7 +164,6 @@ class Inner<boxed::Box<T...>> {
     return _val;
   }
 };
-
 }  // namespace sfc::option
 
 namespace sfc {

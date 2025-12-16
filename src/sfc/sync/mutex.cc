@@ -82,7 +82,6 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
 auto Mutex::lock() -> Guard {
-  panicking::expect(_inn, "Mutex::lock: on a null object");
   _inn->lock();
   return Guard{*_inn};
 }
@@ -102,7 +101,6 @@ ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
 auto ReentrantLock::lock() -> Guard {
-  panicking::expect(_inn, "ReentrantLock::lock: on a null object");
   _inn->lock();
   return Guard{*_inn};
 }

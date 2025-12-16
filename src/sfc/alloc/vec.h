@@ -36,14 +36,6 @@ class [[nodiscard]] Buf {
     return res;
   }
 
-  auto ptr() const noexcept -> T* {
-    return _ptr;
-  }
-
-  auto capacity() const noexcept -> usize {
-    return _cap;
-  }
-
   void reserve(usize used, usize additional) noexcept {
     const auto req_cap = used + additional;
     if (req_cap <= _cap) {
@@ -146,23 +138,17 @@ class [[nodiscard]] Vec {
   }
 
   auto as_slice() const noexcept -> Slice<const T> {
-    return {_buf._ptr, _len};
+    return Slice<const T>{_buf._ptr, _len};
   }
 
   auto as_mut_slice() noexcept -> Slice<T> {
-    return {_buf._ptr, _len};
+    return Slice<T>{_buf._ptr, _len};
   }
 
   void set_len(usize new_len) noexcept {
     if (new_len <= _buf._cap) {
       _len = new_len;
     }
-  }
-
-  auto clone() const noexcept -> Vec {
-    auto res = Vec{};
-    res.extend_from_slice({_buf._ptr, _len});
-    return res;
   }
 
  public:
@@ -194,34 +180,6 @@ class [[nodiscard]] Vec {
 
   auto spare_capacity_mut() noexcept -> Slice<T> {
     return Slice{_buf._ptr + _len, _buf._cap - _len};
-  }
-
-  auto first() const noexcept -> Option<const T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf._ptr[0];
-  }
-
-  auto first_mut() noexcept -> Option<T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf._ptr[0];
-  }
-
-  auto last() const noexcept -> Option<const T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf._ptr[_len - 1];
-  }
-
-  auto last_mut() noexcept -> Option<T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf._ptr[_len - 1];
   }
 
  public:
@@ -394,33 +352,63 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  auto begin() const noexcept -> const T* {
-    return _buf._ptr;
-  }
-
-  auto end() const noexcept -> const T* {
-    return _buf._ptr + _len;
-  }
-
-  auto begin() noexcept -> T* {
-    return _buf._ptr;
-  }
-
-  auto end() noexcept -> T* {
-    return _buf._ptr + _len;
-  }
-
   using Iter = slice::Iter<const T>;
+  using IterMut = slice::Iter<T>;
+
   auto iter() const noexcept -> Iter {
     return Slice{_buf._ptr, _len}.iter();
   }
 
-  using IterMut = slice::Iter<T>;
   auto iter_mut() noexcept -> IterMut {
     return Slice{_buf._ptr, _len}.iter_mut();
   }
 
+  auto first() const noexcept -> Option<const T&> {
+    if (_len == 0) {
+      return {};
+    }
+    return _buf._ptr[0];
+  }
+
+  auto first_mut() noexcept -> Option<T&> {
+    if (_len == 0) {
+      return {};
+    }
+    return _buf._ptr[0];
+  }
+
+  auto last() const noexcept -> Option<const T&> {
+    if (_len == 0) {
+      return {};
+    }
+    return _buf._ptr[_len - 1];
+  }
+
+  auto last_mut() noexcept -> Option<T&> {
+    if (_len == 0) {
+      return {};
+    }
+    return _buf._ptr[_len - 1];
+  }
+
  public:
+  // trait: Deref<[const T]>
+  auto operator*() const noexcept -> Slice<const T> {
+    return Slice<const T>{_buf._ptr, _len};
+  }
+
+  // trait: Deref<[T]>
+  auto operator*() noexcept -> Slice<T> {
+    return Slice{_buf._ptr, _len};
+  }
+
+  // trait: Clone
+  auto clone() const noexcept -> Vec {
+    auto res = Vec{};
+    res.extend_from_slice({_buf._ptr, _len});
+    return res;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     return Slice{_buf._ptr, _len}.fmt(f);

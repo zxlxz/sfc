@@ -3,28 +3,6 @@
 
 namespace sfc::option::test {
 
-struct T {
-  int _val = 0;
-
- public:
-  T() : _val{1} {
-    count() += _val;
-  }
-
-  T(T&& other) : _val{other._val} {
-    other._val = 0;
-  }
-
-  ~T() {
-    count() -= _val;
-  }
-
-  static auto count() -> i32& {
-    static i32 cnt = 0;
-    return cnt;
-  }
-};
-
 SFC_TEST(basic) {
   using Option = option::Option<int>;
 
@@ -38,68 +16,75 @@ SFC_TEST(basic) {
   panicking::expect_eq(*some, 10);
 }
 
-SFC_TEST(copy) {
+SFC_TEST(copy_ctor) {
   using Option = option::Option<int>;
   const auto none = Option{};
   const auto some = Option{10};
 
-  // copy-ctor
-  {
-    const auto a = none;
-    const auto b = some;
-    panicking::expect(a.is_none());
-    panicking::expect(b.is_some());
-    panicking::expect_eq(*b, 10);
-  }
-
-  // assign
-  {
-    auto x = Option{};
-    x = none;
-    panicking::expect(x.is_none());
-
-    x = some;
-    panicking::expect(x.is_some());
-    panicking::expect_eq(*x, 10);
-  }
+  const auto a = none;
+  const auto b = some;
+  panicking::expect(a.is_none());
+  panicking::expect(b.is_some());
+  panicking::expect_eq(*b, 10);
 }
 
-SFC_TEST(move) {
-  using Option = option::Option<T>;
+SFC_TEST(copy_assign) {
+  using Option = option::Option<int>;
+  const auto none = Option{};
+  const auto some = Option{10};
+
+  auto x = Option{};
+  x = none;
+  panicking::expect(x.is_none());
+
+  x = some;
+  panicking::expect(x.is_some());
+  panicking::expect_eq(*x, 10);
+}
+
+SFC_TEST(move_ctor) {
+  using Option = option::Option<String>;
 
   auto a = Option{};
-  auto b = Option{T{}};
-  panicking::expect_eq(T::count(), 1);
+  auto b = Option{String::from("hello")};
 
-  // move
-  {
-    auto x = mem::move(a);
-    panicking::expect_eq(T::count(), 1);
+  auto x = mem::move(a);
+  panicking::expect(x.is_none());
+  panicking::expect(a.is_none());
 
-    auto y = mem::move(b);
-    panicking::expect_eq(T::count(), 1);
-  }
-  panicking::expect_eq(T::count(), 0);
+  auto y = mem::move(b);
+  panicking::expect(y.is_some());
+  panicking::expect(b.is_some());
+  panicking::expect_eq(*y, "hello");
+  panicking::expect_eq(*b, "");
+}
 
-  // assign
-  {
-    auto x = Option{};
-    auto y = Option{T{}};
-    panicking::expect_eq(T::count(), 1);
+SFC_TEST(move_assign) {
+  using Option = option::Option<String>;
 
-    x = mem::move(a);
-    panicking::expect_eq(T::count(), 1);
+  auto a = Option{};
+  auto b = Option{String::from("hello")};
 
-    x = mem::move(b);
-    panicking::expect_eq(T::count(), 1);
+  auto x = Option{};
+  panicking::expect(x.is_none());
 
-    y = mem::move(a);
-    panicking::expect_eq(T::count(), 0);
+  x = mem::move(a);
+  panicking::expect(x.is_none());
 
-    y = mem::move(b);
-    panicking::expect_eq(T::count(), 0);
-  }
-  panicking::expect_eq(T::count(), 0);
+  x = mem::move(b);
+  panicking::expect(x.is_some());
+  panicking::expect_eq(*x, "hello");
+  panicking::expect_eq(*b, "");
+
+  auto y = Option{String::from("world")};
+  panicking::expect_eq(*y, "world");
+
+  y = mem::move(a);
+  panicking::expect(y.is_none());
+
+  y = mem::move(x);
+  panicking::expect(y.is_some());
+  panicking::expect_eq(*y, "hello");
 }
 
 SFC_TEST(eq) {

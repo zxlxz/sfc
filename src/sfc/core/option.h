@@ -133,6 +133,14 @@ class Option {
     return _inn.is_some();
   }
 
+  auto operator->() const {
+    return &*_inn;
+  }
+
+  auto operator->() {
+    return &*_inn;
+  }
+
   auto operator*() const -> const T& {
     panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
     return *_inn;
@@ -141,16 +149,6 @@ class Option {
   auto operator*() -> T& {
     panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
     return *_inn;
-  }
-
-  auto operator->() const {
-    panicking::expect(_inn.is_some(), "Option::operator->: not Some()");
-    return &*_inn;
-  }
-
-  auto operator->() {
-    panicking::expect(_inn.is_some(), "Option::operator->: not Some()");
-    return &*_inn;
   }
 
   auto unwrap() && noexcept -> T {

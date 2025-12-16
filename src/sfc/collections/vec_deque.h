@@ -49,10 +49,6 @@ class [[nodiscard]] VecDeque {
     return _len == 0;
   }
 
-  explicit operator bool() const noexcept {
-    return _len != 0;
-  }
-
  public:
   auto front() const noexcept -> const T& {
     panicking::expect(_len != 0, "VecDeque::front: queue is empty");

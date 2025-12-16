@@ -85,12 +85,10 @@ class [[nodiscard]] Result {
   }
 
   auto operator->() const noexcept -> const T* {
-    panicking::expect(_inn.is_ok(), "Result::operator->: not Ok()");
     return &*_inn;
   }
 
   auto operator->() noexcept -> T* {
-    panicking::expect(_inn.is_ok(), "Result::operator->: not Ok()");
     return &*_inn;
   }
 
