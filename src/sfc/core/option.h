@@ -133,21 +133,19 @@ class Option {
     return _inn.is_some();
   }
 
-  auto operator->() const {
+  auto operator->() const noexcept {
     return &*_inn;
   }
 
-  auto operator->() {
+  auto operator->() noexcept {
     return &*_inn;
   }
 
-  auto operator*() const -> const T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
+  auto operator*() const noexcept -> const T& {
     return *_inn;
   }
 
-  auto operator*() -> T& {
-    panicking::expect(_inn.is_some(), "Option::operator*: not Some()");
+  auto operator*() noexcept -> T& {
     return *_inn;
   }
 
