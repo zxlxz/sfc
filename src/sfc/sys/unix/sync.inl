@@ -32,6 +32,11 @@ inline void mtx_unlock(mtx_t& mtx) {
   ::pthread_mutex_unlock(&mtx);
 }
 
+inline bool mtx_trylock(mtx_t& mtx) {
+  const auto ret = ::pthread_mutex_trylock(&mtx);
+  return ret == 0;
+}
+
 inline void cnd_init(cnd_t& cond) {
   cond = PTHREAD_COND_INITIALIZER;
 }

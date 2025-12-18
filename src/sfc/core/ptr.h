@@ -12,8 +12,7 @@ struct Unique {
   T* _ptr = nullptr;
 
  public:
-  Unique() noexcept = default;
-  Unique(T* ptr) noexcept : _ptr{ptr} {}
+  Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
 
   Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
@@ -26,6 +25,10 @@ struct Unique {
 
   auto ptr() const noexcept -> T* {
     return _ptr;
+  }
+
+  explicit operator bool() const noexcept {
+    return _ptr != nullptr;
   }
 
   auto operator->() const -> const T* {

@@ -1,4 +1,5 @@
-#include "mutex.h"
+#include "sfc/sync/mutex.h"
+#include "sfc/sync/atomic.h"
 
 #include "sfc/sys/sync.h"
 #include "sfc/sys/thread.h"
@@ -29,12 +30,16 @@ struct Mutex::Inn {
   void unlock() noexcept {
     sys_imp::mtx_unlock(_raw);
   }
+
+  bool try_lock() noexcept {
+    return sys_imp::mtx_trylock(_raw);
+  }
 };
 
 struct ReentrantLock::Inn {
   mtx_t _raw = {};
-  tid_t _tid = {};
-  i32 _cnt = {0};
+  Atomic<tid_t> _tid = {};
+  Atomic<i32> _cnt = {0};
 
  public:
   Inn() noexcept {
@@ -48,32 +53,49 @@ struct ReentrantLock::Inn {
   void lock() noexcept {
     const auto tid = sys_imp::get_tid();
 
-    if (tid == __atomic_load_n(&_tid, 0)) {
-      __atomic_fetch_add(&_cnt, 1, 0);
+    if (tid == _tid.load()) {
+      _cnt.fetch_add(1);
       return;
     }
 
     sys_imp::mtx_lock(_raw);
-    __atomic_store_n(&_tid, tid, 0);
-    __atomic_store_n(&_cnt, 1, 0);
+    _tid.store(tid);
+    _cnt.store(1);
   }
 
-  auto unlock() noexcept -> bool {
+  bool try_lock() noexcept {
     const auto tid = sys_imp::get_tid();
 
-    if (tid != __atomic_load_n(&_tid, 0)) {
+    if (tid == _tid.load()) {
+      _cnt.fetch_add(1);
+      return true;
+    }
+
+    if (!sys_imp::mtx_trylock(_raw)) {
       return false;
     }
 
-    if (__atomic_fetch_sub(&_cnt, 1, 0) == 1) {
-      __atomic_store_n(&_tid, tid_t{}, 0);
+    _tid.store(tid);
+    _cnt.store(1);
+    return true;
+  }
+
+  bool unlock() noexcept {
+    const auto tid = sys_imp::get_tid();
+
+    if (tid != _tid.load()) {
+      return false;
+    }
+
+    if (_cnt.fetch_sub(1) == 1) {
+      _tid.store(tid_t{});
       sys_imp::mtx_unlock(_raw);
     }
     return true;
   }
 };
 
-Mutex::Mutex() : _inn{Box<Inn>::xnew()} {}
+Mutex::Mutex() noexcept : _inn{Box<Inn>::xnew()} {}
 
 Mutex::~Mutex() noexcept {}
 
@@ -81,15 +103,25 @@ Mutex::Mutex(Mutex&&) noexcept = default;
 
 Mutex& Mutex::operator=(Mutex&&) noexcept = default;
 
-auto Mutex::lock() -> Guard {
+auto Mutex::lock() noexcept -> Guard {
   _inn->lock();
-  return Guard{*_inn};
+  return Guard{&*_inn};
 }
 
-Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{mtx} {}
+auto Mutex::try_lock() noexcept -> Option<Guard> {
+  const auto ret = _inn->try_lock();
+  if (!ret) {
+    return {};
+  }
+  return {option::some_t{}, &*_inn};
+}
+
+Mutex::Guard::Guard(Inn* mtx) noexcept : _inn{mtx} {}
 
 Mutex::Guard::~Guard() noexcept {
-  _inn.unlock();
+  if (_inn) {
+    _inn->unlock();
+  }
 }
 
 ReentrantLock::ReentrantLock() noexcept : _inn{Box<Inn>::xnew()} {}
@@ -100,15 +132,25 @@ ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 
 ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
-auto ReentrantLock::lock() -> Guard {
+auto ReentrantLock::lock() noexcept -> Guard {
   _inn->lock();
-  return Guard{*_inn};
+  return Guard{&*_inn};
 }
 
-ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{inn} {}
+auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
+  const auto ret = _inn->try_lock();
+  if (!ret) {
+    return {};
+  }
+  return {option::some_t{}, &*_inn};
+}
+
+ReentrantLock::Guard::Guard(Inn* mtx) noexcept : _inn{mtx} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  _inn.unlock();
+  if (_inn) {
+    _inn->unlock();
+  }
 }
 
 }  // namespace sfc::sync

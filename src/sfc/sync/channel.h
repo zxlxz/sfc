@@ -5,7 +5,7 @@
 #include "sfc/time/duration.h"
 #include "sfc/collections/vec_deque.h"
 
-namespace sfc::sync::mpsc {
+namespace sfc::sync {
 
 template <class T>
 struct Sender;
@@ -17,49 +17,22 @@ template <class T>
 class Channel {
   Mutex _mtx{};
   Condvar _cnd{};
-  collections::VecDeque<T> _msg_queue{};
+  collections::VecDeque<T> _queue{};
 
  public:
-  void send(T val) noexcept {
-    auto guard = _mtx.lock();
-    _msg_queue.push_back(static_cast<T&&>(val));
-    _cnd.notify_one();
-  }
-
-  auto try_recv() noexcept -> Option<T> {
-    auto guard = _mtx.lock();
-    return _msg_queue.pop_front();
-  }
-
-  auto recv() noexcept -> T {
-    auto guard = _mtx.lock();
-    while (true) {
-      if (auto msg_opt = _msg_queue.pop_front(); msg_opt.is_some()) {
-        return static_cast<T&&>(*msg_opt);
-      }
-      _cnd.wait(guard);
-    }
-  }
-
-  auto recv_timeout(time::Duration dur) noexcept -> Option<T> {
-    auto guard = _mtx.lock();
-    while (true) {
-      if (auto msg_opt = _msg_queue.pop_front(); msg_opt.is_some()) {
-        return msg_opt;
-      }
-      if (!_cnd.wait_timeout(guard, dur)) {
-        return {};
-      }
-    }
-  }
-
- public:
+  friend struct Sender<T>;
   auto sender() noexcept -> Sender<T> {
     return Sender<T>{*this};
   }
 
+  friend struct Receiver<T>;
   auto receiver() noexcept -> Receiver<T> {
     return Receiver<T>{*this};
+  }
+
+ private:
+  auto lock() noexcept -> Mutex::Guard {
+    return _mtx.lock();
   }
 };
 
@@ -69,7 +42,9 @@ struct Sender {
 
  public:
   void send(T val) noexcept {
-    _chan.send(static_cast<T&&>(val));
+    auto lock = _chan._mtx.lock();
+    _chan._queue.push_back(static_cast<T&&>(val));
+    _chan._cnd.notify_one();
   }
 };
 
@@ -93,8 +68,8 @@ struct Receiver {
   }
 
   auto try_recv() noexcept -> Option<T> {
-    return _chan.try_recv();
+    auto lock = _chan.lock();
   }
 };
 
-}  // namespace sfc::sync::mpsc
+}  // namespace sfc::sync

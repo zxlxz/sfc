@@ -5,6 +5,9 @@
 
 namespace sfc::option {
 
+struct none_t {};
+struct some_t {};
+
 template <class T>
 struct Inner {
   bool _tag = false;
@@ -13,9 +16,8 @@ struct Inner {
   };
 
  public:
-  constexpr Inner() noexcept {}
-
-  constexpr Inner(T&& val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
+  constexpr Inner(none_t) noexcept {}
+  constexpr Inner(some_t, auto&&... args) noexcept : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
 
   constexpr ~Inner() noexcept {
     if (_tag) {
@@ -38,12 +40,8 @@ struct Inner {
     return *this;
   }
 
-  constexpr auto is_some() const noexcept -> bool {
+  constexpr explicit operator bool() const noexcept {
     return _tag;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return !_tag;
   }
 
   constexpr auto operator*() const noexcept -> const T& {
@@ -60,16 +58,11 @@ struct Inner<T&> {
   T* _ptr{nullptr};
 
  public:
-  constexpr Inner() noexcept = default;
+  constexpr Inner(none_t) noexcept {}
+  constexpr Inner(some_t, T& val) noexcept : _ptr{&val} {}
 
-  constexpr Inner(T& val) noexcept : _ptr{&val} {}
-
-  constexpr auto is_some() const noexcept -> bool {
+  constexpr explicit operator bool() const noexcept {
     return _ptr != nullptr;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
   }
 
   constexpr auto operator*() const noexcept -> const T& {
@@ -89,16 +82,12 @@ struct Inner<T> {
   };
 
  public:
-  constexpr Inner() noexcept {}
+  constexpr Inner(none_t) noexcept {}
 
-  constexpr Inner(T val) noexcept : _tag{true}, _val{val} {}
+  constexpr Inner(some_t, auto&&... args) noexcept : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
 
-  constexpr auto is_some() const noexcept -> bool {
+  constexpr operator bool() const noexcept {
     return _tag;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return !_tag;
   }
 
   constexpr auto operator*() const noexcept -> const T& {
@@ -112,25 +101,25 @@ struct Inner<T> {
 
 template <class T>
 class Option {
-  template <class>
-  friend class Option;
-
   Inner<T> _inn{};
 
  public:
-  constexpr Option() noexcept = default;
-  constexpr Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
+  constexpr Option() noexcept : _inn{none_t{}} {}
+  constexpr Option(T val) noexcept : _inn{some_t{}, static_cast<T&&>(val)} {}
+
+  constexpr Option(none_t) noexcept : _inn{none_t{}} {}
+  constexpr Option(some_t, auto&&... args) noexcept : _inn{some_t{}, static_cast<decltype(args)&&>(args)...} {}
 
   constexpr auto is_some() const noexcept -> bool {
-    return _inn.is_some();
+    return bool(_inn);
   }
 
   constexpr auto is_none() const noexcept -> bool {
-    return _inn.is_none();
+    return !bool(_inn);
   }
 
   constexpr explicit operator bool() const noexcept {
-    return _inn.is_some();
+    return bool(_inn);
   }
 
   auto operator->() const noexcept {
@@ -150,32 +139,32 @@ class Option {
   }
 
   auto unwrap() && noexcept -> T {
-    panicking::expect(_inn.is_some(), "Option::unwrap: not Some()");
+    panicking::expect(bool(_inn), "Option::unwrap: not Some()");
     return static_cast<T&&>(*_inn);
   }
 
   auto unwrap_or(T default_val) && noexcept -> T {
-    if (_inn.is_some()) {
+    if (_inn) {
       return static_cast<T&&>(*_inn);
     }
     return static_cast<T&&>(default_val);
   }
 
   auto expect(const auto& msg) && noexcept -> T {
-    panicking::expect(_inn.is_some(), "Option::expect: {}", msg);
+    panicking::expect(bool(_inn), "Option::expect: {}", msg);
     return static_cast<T&&>(*_inn);
   }
 
   template <class U>
   auto operator&(Option<U> optb) && noexcept -> Option<U> {
-    if (_inn.is_some()) {
+    if (_inn) {
       return static_cast<Option<U>&&>(optb);
     }
     return {};
   }
 
   auto operator|(Option<T> optb) && noexcept -> Option<T> {
-    if (_inn.is_some()) {
+    if (_inn) {
       return static_cast<Option&&>(*this);
     }
     return static_cast<Option&&>(optb);
@@ -183,14 +172,14 @@ class Option {
 
   template <class F>
   auto and_then(F&& op) && noexcept -> ops::invoke_t<F(T)> {
-    if (_inn.is_none()) {
+    if (!_inn) {
       return {};
     }
     return op(static_cast<T&&>(*_inn));
   }
 
   auto or_else(auto&& f) && noexcept -> Option<T> {
-    if (_inn.is_some()) {
+    if (_inn) {
       return static_cast<T&&>(*_inn);
     }
     return f();
@@ -198,7 +187,7 @@ class Option {
 
   template <class F>
   auto map(F&& f) -> Option<ops::invoke_t<F(T)>> {
-    if (_inn.is_none()) {
+    if (!_inn) {
       return {};
     }
     return {f(static_cast<T&&>(*_inn))};
@@ -206,7 +195,7 @@ class Option {
 
   template <class U>
   auto map_or(U default_val, auto&& f) -> U {
-    if (_inn.is_none()) {
+    if (!_inn) {
       return static_cast<U&&>(default_val);
     }
     return f(static_cast<T&&>(*_inn));
@@ -221,10 +210,10 @@ class Option {
   // trait: ops::Eq
   template <class U>
   auto operator==(const Option<U>& other) const -> bool {
-    if (_inn.is_none()) {
-      return other._inn.is_none();
-    } else if (other._inn.is_some()) {
-      return (*_inn == *other._inn);
+    if (!_inn) {
+      return !other;
+    } else if (other) {
+      return (*_inn == *other);
     } else {
       return false;
     }
@@ -232,7 +221,7 @@ class Option {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (_inn.is_none()) {
+    if (!_inn) {
       f.write_str("None()");
     } else {
       f.write_fmt("Some({})", *_inn);

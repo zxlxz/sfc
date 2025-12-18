@@ -6,6 +6,7 @@ namespace sfc::boxed {
 
 template <class T>
 class [[nodiscard]] Box {
+ public:
   T* _ptr = nullptr;
 
  public:
@@ -36,18 +37,8 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  auto as_ptr() const noexcept -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
-  }
-
-  auto into_raw() && noexcept -> T* {
-    return mem::take(_ptr);
-  }
-
-  template <trait::polymorphic_ B>
-  auto cast() && noexcept -> Box<B> {
-    const auto p = static_cast<B*>(mem::take(_ptr));
-    return Box<B>::from_raw(p);
   }
 
   auto operator->() const noexcept -> const T* {
@@ -66,6 +57,16 @@ class [[nodiscard]] Box {
     return *_ptr;
   }
 
+  auto into_raw() && noexcept -> T* {
+    return mem::take(_ptr);
+  }
+
+  template <trait::polymorphic_ B>
+  auto cast() && noexcept -> Box<B> {
+    const auto p = static_cast<B*>(mem::take(_ptr));
+    return Box<B>::from_raw(p);
+  }
+
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
@@ -79,6 +80,7 @@ class [[nodiscard]] Box {
 
 template <class R, class... T>
 class [[nodiscard]] Box<R(T...)> {
+ public:
   using dtor_t = void (*)(void*);
   using call_t = R (*)(void*, T&&...);
   struct Meta {
@@ -86,8 +88,8 @@ class [[nodiscard]] Box<R(T...)> {
     call_t _call = nullptr;
   };
 
-  const Meta* _meta{nullptr};
   void* _data{nullptr};
+  const Meta* _meta{nullptr};
 
  public:
   Box() noexcept = default;
@@ -96,12 +98,12 @@ class [[nodiscard]] Box<R(T...)> {
     _data ? (_meta->_dtor)(_data) : void();
   }
 
-  Box(Box&& other) noexcept : _meta{mem::take(other._meta)}, _data{mem::take(other._data)} {}
+  Box(Box&& other) noexcept : _data{mem::take(other._data)}, _meta{mem::take(other._meta)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      mem::swap(_meta, other._meta);
       mem::swap(_data, other._data);
+      mem::swap(_meta, other._meta);
     }
     return *this;
   }
@@ -114,12 +116,12 @@ class [[nodiscard]] Box<R(T...)> {
     };
 
     auto res = Box{};
-    res._meta = &meta;
     res._data = new auto{mem::move(x)};
+    res._meta = &meta;
     return res;
   }
 
-  auto as_ptr() const noexcept -> void* {
+  auto ptr() const noexcept -> void* {
     return _data;
   }
 
@@ -136,24 +138,25 @@ auto box(B&& b) -> Box<B> {
 }  // namespace sfc::boxed
 
 namespace sfc::option {
+
 template <class... T>
 class Inner<boxed::Box<T...>> {
   using Box = boxed::Box<T...>;
   Box _val{};
 
  public:
-  Inner() noexcept = default;
-  explicit Inner(Box&& val) noexcept : _val{static_cast<Box&&>(val)} {}
-  ~Inner() noexcept = default;
+  Inner(none_t) noexcept {}
+  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
 
   Inner(Inner&&) noexcept = default;
+  Inner& operator=(Inner&&) noexcept = default;
 
-  auto is_some() const noexcept -> bool {
-    return _val.as_ptr() != nullptr;
-  }
-
-  auto is_none() const noexcept -> bool {
-    return _val.as_ptr() == nullptr;
+  explicit operator bool() const noexcept {
+    if constexpr (requires { _val._ptr; }) {
+      return _val._ptr != nullptr;
+    } else {
+      return _val._data != nullptr;
+    }
   }
 
   auto operator*() const noexcept -> const Box& {

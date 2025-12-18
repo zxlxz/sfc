@@ -28,6 +28,10 @@ inline void mtx_unlock(mtx_t& mtx) {
   ::LeaveCriticalSection(&mtx);
 }
 
+inline bool mtx_trylock(mtx_t& mtx) {
+  return ::TryEnterCriticalSection(&mtx);
+}
+
 inline void cnd_init(cnd_t& cond) {
   ::InitializeConditionVariable(&cond);
 }

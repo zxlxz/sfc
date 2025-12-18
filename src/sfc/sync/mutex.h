@@ -9,26 +9,26 @@ class Mutex {
   Box<Inn> _inn;
 
  public:
-  explicit Mutex();
+  explicit Mutex() noexcept;
   ~Mutex() noexcept;
 
   Mutex(Mutex&& other) noexcept;
   Mutex& operator=(Mutex&&) noexcept;
 
-  class Guard;
-  auto lock() -> Guard;
-};
-
-class [[nodiscard]] Mutex::Guard {
-  friend class Condvar;
-  Inn& _inn;
-
  public:
-  explicit Guard(Inn&) noexcept;
-  ~Guard() noexcept;
+  struct Guard {
+    Inn* _inn;
 
-  Guard(const Guard&) = delete;
-  Guard& operator=(const Guard&) = delete;
+   public:
+    explicit Guard(Inn* mtx) noexcept;
+    ~Guard() noexcept;
+
+    Guard(const Guard&) = delete;
+    Guard& operator=(const Guard&) = delete;
+  };
+
+  auto lock() noexcept -> Guard;
+  auto try_lock() noexcept -> Option<Guard>;
 };
 
 class ReentrantLock {
@@ -42,19 +42,46 @@ class ReentrantLock {
   ReentrantLock(ReentrantLock&&) noexcept;
   ReentrantLock& operator=(ReentrantLock&&) noexcept;
 
-  class Guard;
-  auto lock() -> Guard;
-};
-
-class [[nodiscard]] ReentrantLock::Guard {
-  Inn& _inn;
-
  public:
-  explicit Guard(Inn& mtx) noexcept;
-  ~Guard() noexcept;
+  struct Guard {
+    Inn* _inn;
 
-  Guard(const Guard&) = delete;
-  Guard& operator=(const Guard&) = delete;
+   public:
+    explicit Guard(Inn* mtx) noexcept;
+    ~Guard() noexcept;
+
+    Guard(const Guard&) = delete;
+    Guard& operator=(const Guard&) = delete;
+  };
+
+  auto lock() noexcept -> Guard;
+  auto try_lock() noexcept -> Option<Guard>;
 };
 
 }  // namespace sfc::sync
+
+namespace sfc::option {
+
+template <>
+struct Inner<sync::Mutex::Guard> {
+  union {
+    void* _nil = nullptr;
+    sync::Mutex::Guard _val;
+  };
+
+ public:
+  Inner(none_t) noexcept : _nil{nullptr} {}
+
+  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
+
+  ~Inner() noexcept {
+    if (_nil != nullptr) {
+      _val.~Guard();
+    }
+  }
+
+  operator bool() const noexcept {
+    return _nil != nullptr;
+  }
+};
+}  // namespace sfc::option

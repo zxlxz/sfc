@@ -327,12 +327,11 @@ struct Inner<slice::Slice<T>> {
   slice::Slice<T> _val;
 
  public:
-  auto is_some() const noexcept -> bool {
-    return _val._ptr != nullptr;
-  }
+  Inner(none_t) noexcept : _val{} {}
+  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
 
-  auto is_none() const noexcept -> bool {
-    return _val._ptr == nullptr;
+  explicit operator bool() const noexcept {
+    return _val._ptr != nullptr;
   }
 
   auto operator*() const noexcept -> const slice::Slice<T>& {

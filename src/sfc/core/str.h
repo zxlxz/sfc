@@ -262,7 +262,7 @@ auto Str::starts_with(auto&& pat) const -> bool {
 auto Str::ends_with(auto&& pat) const -> bool {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};
   const auto n = p.len();
-  if ( _len < n) {
+  if (_len < n) {
     return false;
   }
 
@@ -341,12 +341,12 @@ struct Inner<str::Str> {
   str::Str _val;
 
  public:
-  auto is_some() const noexcept -> bool {
-    return _val._ptr != nullptr;
-  }
+  Inner(none_t) noexcept : _val{} {}
 
-  auto is_none() const noexcept -> bool {
-    return _val._ptr == nullptr;
+  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
+
+  explicit operator bool() const noexcept {
+    return _val._ptr != nullptr;
   }
 
   auto operator*() const noexcept -> const str::Str& {
