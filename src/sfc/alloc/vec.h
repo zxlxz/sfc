@@ -5,87 +5,54 @@
 
 namespace sfc::vec {
 
-template <class T, class A = alloc::Global>
-class [[nodiscard]] Buf {
+template <class T>
+class RawVec {
  public:
   T* _ptr{nullptr};
   usize _cap{0};
-  [[no_unique_address]] A _a{};
 
  public:
-  Buf() noexcept = default;
+  RawVec() noexcept = default;
 
-  ~Buf() noexcept {
-    this->dealloc();
+  ~RawVec() noexcept {
+    if (_ptr != nullptr) {
+      __builtin_operator_delete(_ptr);
+    }
   }
 
-  Buf(Buf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+  RawVec(RawVec&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
 
-  Buf& operator=(Buf&& other) noexcept {
+  RawVec& operator=(RawVec&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
-      mem::swap(_a, other._a);
     }
     return *this;
   }
 
-  static auto with_capacity(usize capacity) noexcept -> Buf {
-    auto res = Buf{};
-    res.reserve(0, capacity);
+  static auto with_capacity(usize capacity) noexcept -> RawVec {
+    auto res = RawVec{};
+    res.realloc(0, capacity);
     return res;
   }
 
-  void reserve(usize used, usize additional) noexcept {
-    const auto req_cap = used + additional;
-    if (req_cap <= _cap) {
-      return;
-    }
-
-    const auto new_cap = num::max(_cap * 2, req_cap);
-    this->realloc(used, new_cap);
-  }
-
-  void reserve_extract(usize used, usize additional) noexcept {
-    const auto new_cap = used + additional;
-    if (new_cap == _cap) {
-      return;
-    }
-
-    this->realloc(used, new_cap);
-  }
-
- private:
-  void dealloc() noexcept {
-    if (!_ptr) {
-      return;
-    }
-    _a.dealloc(_ptr, alloc::Layout::array<T>(_cap));
-    _ptr = nullptr;
-    _cap = 0;
-  }
-
   void realloc(usize used, usize new_cap) noexcept {
-    if (new_cap == _cap) {
+    if (new_cap == _cap || used > _cap || used > new_cap) {
       return;
     }
-
-    const auto new_layout = alloc::Layout::array<T>(new_cap);
-    const auto new_ptr = static_cast<T*>(_a.alloc(new_layout));
-    const auto old_cap = mem::replace(_cap, new_cap);
-    const auto old_ptr = mem::replace(_ptr, new_ptr);
-    if (old_ptr) {
-      ptr::uninit_move(old_ptr, new_ptr, used);
-      _a.dealloc(old_ptr, alloc::Layout::array<T>(old_cap));
+    const auto new_ptr = static_cast<T*>(new_cap ? __builtin_operator_new(new_cap * sizeof(T)) : nullptr);
+    if (_ptr) {
+      ptr::uninit_move(_ptr, new_ptr, used);
+      __builtin_operator_delete(_ptr);
     }
+    _ptr = new_ptr;
+    _cap = new_cap;
   }
 };
 
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] Vec {
-  using Buf = vec::Buf<T, A>;
-
-  Buf _buf = {};
+  RawVec<T> _buf = {};
   usize _len = 0;
 
  public:
@@ -95,7 +62,7 @@ class [[nodiscard]] Vec {
     this->clear();
   }
 
-  Vec(Vec&& other) noexcept : _buf{static_cast<Buf&&>(other._buf)}, _len{mem::take(other._len)} {}
+  Vec(Vec&& other) noexcept : _buf{mem::move(other._buf)}, _len{mem::take(other._len)} {}
 
   Vec& operator=(Vec&& other) noexcept {
     if (this != &other) {
@@ -108,6 +75,12 @@ class [[nodiscard]] Vec {
   static auto with_capacity(usize capacity) noexcept -> Vec {
     auto res = Vec{};
     res.reserve(capacity);
+    return res;
+  }
+
+  static auto from(Slice<const T> s) -> Vec {
+    auto res = Vec{};
+    res.extend_from_slice(s);
     return res;
   }
 
@@ -235,14 +208,16 @@ class [[nodiscard]] Vec {
     if (_len + additional <= _buf._cap) {
       return;
     }
-    _buf.reserve(_len, additional);
+    const auto new_cap = num::max(_buf._cap * 2, _len + additional);
+    _buf.realloc(_len, new_cap);
   }
 
-  void reserve_extract(usize additional) noexcept {
+  void reserve_exact(usize additional) noexcept {
     if (_len + additional <= _buf._cap) {
       return;
     }
-    _buf.reserve_extract(_len, additional);
+    const auto new_cap = _len + additional;
+    _buf.realloc(_len, new_cap);
   }
 
   void shrink_to(usize min_cap) noexcept {
@@ -445,16 +420,7 @@ class [[nodiscard]] Vec {
 
 }  // namespace sfc::vec
 
-namespace sfc::slice {
-template <class T>
-auto Slice<T>::to_vec() const {
-  auto res = vec::Vec<T>{};
-  res.extend_from_slice(*this);
-  return res;
-}
-
-}  // namespace sfc::slice
-
 namespace sfc {
 using vec::Vec;
+using vec::RawVec;
 }  // namespace sfc

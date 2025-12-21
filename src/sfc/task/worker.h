@@ -2,7 +2,7 @@
 
 #include "sfc/thread.h"
 #include "sfc/sync.h"
-#include "sfc/collections/vec_deque.h"
+#include "sfc/collections/queue.h"
 
 namespace sfc::task {
 
@@ -10,14 +10,14 @@ using Task = Box<void()>;
 
 class Worker {
   using Task = Box<void()>;
-  using TaskQueue = collections::VecDeque<Task>;
+  using TaskList = collections::Queue<Task>;
 
   static constexpr auto CAPACITY = 256U;
 
   sync::Mutex _mutex{};
   sync::Condvar _condvar{};
   sync::Atomic<bool> _running{true};
-  TaskQueue _task_queue;
+  TaskList _tasks;
 
  public:
   explicit Worker();

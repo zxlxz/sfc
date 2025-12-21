@@ -29,7 +29,7 @@ struct Element {
 SFC_TEST(index) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   panicking::expect_eq(v[0], 0);
   panicking::expect_eq(v[1], 1);
 }
@@ -37,7 +37,7 @@ SFC_TEST(index) {
 SFC_TEST(slice) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   auto s = v.as_slice();
   panicking::expect(s.as_ptr() == v.as_ptr());
   panicking::expect_eq(s.len(), v.len());
@@ -46,7 +46,7 @@ SFC_TEST(slice) {
 SFC_TEST(clone) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto x = Slice{tmp}.to_vec();
+  auto x = Vec<int>::from(tmp);
   auto y = x.clone();
   for (auto i = 0U; i < x.len(); ++i) {
     panicking::expect_eq(x[i], i);
@@ -57,7 +57,7 @@ SFC_TEST(clone) {
 SFC_TEST(push) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   v.push(4);
   v.push(5);
   panicking::expect_eq(v.len(), 6U);
@@ -67,7 +67,7 @@ SFC_TEST(push) {
 SFC_TEST(pop) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   panicking::expect_eq(*v.pop(), 3);
   panicking::expect_eq(*v.pop(), 2);
   panicking::expect_eq(*v.pop(), 1);
@@ -77,7 +77,7 @@ SFC_TEST(pop) {
 SFC_TEST(insert) {
   int tmp[] = {0, 1, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   v.insert(2U, 2);
   v.insert(4U, 4);
   panicking::expect_eq(v.len(), 5U);
@@ -89,7 +89,7 @@ SFC_TEST(insert) {
 SFC_TEST(remove) {
   int tmp[] = {0, 1, 2, 3};
 
-  auto v = Slice{tmp}.to_vec();
+  auto v = Vec<int>::from(tmp);
   v.remove(1);
   panicking::expect_eq(v.len(), 3U);
   panicking::expect_eq(v[2], 3);

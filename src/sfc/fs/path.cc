@@ -96,7 +96,6 @@ auto Path::join(Str path) const noexcept -> PathBuf {
 }
 
 auto Path::is_absolute() const noexcept -> bool {
-  static const auto is_alpha = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); };
   if (_inn.is_empty()) {
     return false;
   }
@@ -104,8 +103,12 @@ auto Path::is_absolute() const noexcept -> bool {
     return true;
   }
 #ifdef _WIN32
-  if (_inn.len() >= 2 && _inn[1] == ':' && is_alpha(_inn[0])) {
-    return true;
+  if (_inn.len() >= 2) {
+    const auto drive = _inn[0] | 32;
+    const auto colon = _inn[1];
+    if (colon == ':' && ('a' <= drive && drive <= 'z')) {
+      return true;
+    }
   }
 #endif
   return false;

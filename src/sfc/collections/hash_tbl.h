@@ -2,18 +2,17 @@
 
 #include "sfc/alloc/alloc.h"
 
-namespace sfc::collections::hash_tbl {
+namespace sfc::collections {
 
-static constexpr u8 CTRL_NUL = 0x80U;
-static constexpr u8 CTRL_DEL = 0xFFU;
-
-template <class T, class A = alloc::Global>
+template <class T>
 class HashTbl {
+  static constexpr u8 CTRL_NUL = 0x80U;
+  static constexpr u8 CTRL_DEL = 0xFFU;
+
   u8* _ptr = nullptr;
   usize _cap = 0;
   usize _len = 0;
   usize _remain = 0;
-  [[no_unique_address]] A _a{};
 
  public:
   HashTbl() noexcept = default;
@@ -24,7 +23,7 @@ class HashTbl {
     }
 
     this->clear();
-    _a.dealloc(_ptr, this->layout());
+    __builtin_operator_delete(_ptr);
   }
 
   HashTbl(HashTbl&& other) noexcept
@@ -119,29 +118,10 @@ class HashTbl {
       return;
     }
 
-    // save old state
-    const auto old_ptr = _ptr;
-    const auto old_cap = _cap;
-    const auto old_len = _len;
-    const auto old_data = this->data();
-    const auto old_layout = this->layout();
-
     // alloc new
     const auto min_cap = (_len + additional) * 4 / 3;
-    _cap = num::next_power_of_two<usize>(min_cap, 8UL);
-    _ptr = static_cast<u8*>(_a.alloc(this->layout()));
-    _len = 0;
-    _remain = _cap * 3 / 4;
-    ptr::write_bytes(_ptr, CTRL_NUL, _cap);
-
-    // old->new
-    if (old_len != 0) {
-      this->rehash(old_ptr, old_data, old_cap);
-    }
-
-    if (old_ptr) {
-      _a.dealloc(old_ptr, old_layout);
-    }
+    const auto new_cap = num::next_power_of_two(min_cap, 8UL);
+    this->realloc(new_cap);
   }
 
   void clear() noexcept {
@@ -187,19 +167,19 @@ class HashTbl {
     return {h1, h2};
   }
 
+  auto size() const noexcept -> usize {
+    const auto ctrl_size = (_cap + CTRL_ALIGN - 1) & ~(CTRL_ALIGN - 1);
+    const auto data_size = _cap * sizeof(T);
+    return ctrl_size + data_size;
+  }
+
   auto data() const noexcept -> T* {
     const auto ctrl_size = (_cap + CTRL_ALIGN - 1) & ~(CTRL_ALIGN - 1);
     return reinterpret_cast<T*>(_ptr + ctrl_size);
   }
 
-  auto layout() const noexcept -> alloc::Layout {
-    const auto ctrl_size = (_cap + CTRL_ALIGN - 1) & ~(CTRL_ALIGN - 1);
-    const auto data_size = _cap * sizeof(T);
-    return {ctrl_size + data_size, alignof(T)};
-  }
-
   void rehash(u8* old_ctrl, T* old_data, usize old_cap) noexcept {
-    const auto new_ctrl = this->_ptr;
+    const auto new_ctrl = _ptr;
     const auto new_data = this->data();
 
     auto insert_new = [&](T& entry) {
@@ -223,6 +203,30 @@ class HashTbl {
       }
     }
   }
+
+  void realloc(usize new_cap) {
+    // save old state
+    const auto old_ptr = _ptr;
+    const auto old_cap = _cap;
+    const auto old_len = _len;
+    const auto old_data = this->data();
+
+    // init new state
+    _cap = new_cap;
+    _ptr = static_cast<u8*>(__builtin_operator_new(this->size()));
+    _len = 0;
+    _remain = _cap * 3 / 4;
+    ptr::write_bytes(_ptr, CTRL_NUL, _cap);
+
+    // old->new
+    if (old_len != 0) {
+      this->rehash(old_ptr, old_data, old_cap);
+    }
+
+    if (old_ptr) {
+      __builtin_operator_delete(old_ptr);
+    }
+  }
 };
 
-}  // namespace sfc::collections::hash_tbl
+}  // namespace sfc::collections

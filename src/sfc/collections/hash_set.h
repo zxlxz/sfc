@@ -2,14 +2,14 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections::hash_set {
+namespace sfc::collections {
 
 template <class K>
 class HashSet {
   struct Entry {
     K key;
   };
-  hash_tbl::HashTbl<Entry> _inn = {};
+  HashTbl<Entry> _inn = {};
 
  public:
   static auto with_capacity(usize min_capacity) -> HashSet {
@@ -41,8 +41,4 @@ class HashSet {
   }
 };
 
-}  // namespace sfc::collections::hash_set
-
-namespace sfc::collections {
-using hash_set::HashSet;
-}
+}  // namespace sfc::collections

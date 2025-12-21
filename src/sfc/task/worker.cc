@@ -4,7 +4,7 @@ namespace sfc::task {
 
 using sync::Ordering;
 
-Worker::Worker() : _task_queue{TaskQueue::with_capacity(CAPACITY)} {}
+Worker::Worker() : _tasks{TaskList::with_capacity(CAPACITY)} {}
 
 Worker::~Worker() noexcept {
   this->stop();
@@ -17,13 +17,13 @@ Worker& Worker::operator=(Worker&&) noexcept = default;
 void Worker::run() {
   while (_running.load<Ordering::Acquire>()) {
     auto lock = _mutex.lock();
-    _condvar.wait_while(lock, [&]() { return _task_queue.is_empty() && _running.load(); });
+    _condvar.wait_while(lock, [&]() { return _tasks.is_empty() && _running.load(); });
 
-    if (!_running.load<Ordering::Acquire>() || _task_queue.is_empty()) {
+    if (!_running.load<Ordering::Acquire>() || _tasks.is_empty()) {
       break;
     }
 
-    auto task = _task_queue.pop_front().unwrap();
+    auto task = _tasks.pop().unwrap();
     try {
       task();
     } catch (...) {
@@ -44,7 +44,7 @@ void Worker::wait() {
     }
 
     auto lock = _mutex.lock();
-    if (_task_queue.is_empty()) {
+    if (_tasks.is_empty()) {
       break;
     }
     thread::yield_now();
@@ -57,10 +57,10 @@ auto Worker::post(Task task) -> bool {
   }
 
   auto lock = _mutex.lock();
-  if (_task_queue.len() >= CAPACITY) {
+  if (_tasks.len() >= CAPACITY) {
     return false;
   }
-  _task_queue.push_back(static_cast<Task&&>(task));
+  _tasks.push(static_cast<Task&&>(task));
   _condvar.notify_one();
   return true;
 }

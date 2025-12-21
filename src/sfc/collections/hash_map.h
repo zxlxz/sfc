@@ -2,7 +2,7 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections::hash_map {
+namespace sfc::collections {
 
 template <class K, class V>
 class HashMap {
@@ -10,7 +10,7 @@ class HashMap {
     K key;
     V val;
   };
-  hash_tbl::HashTbl<Entry> _inn;
+  HashTbl<Entry> _inn;
 
  public:
   static auto with_capacity(usize min_capacity) -> HashMap {
@@ -104,8 +104,4 @@ class HashMap {
   }
 };
 
-}  // namespace sfc::collections::hash_map
-
-namespace sfc::collections {
-using hash_map::HashMap;
-}
+}  // namespace sfc::collections

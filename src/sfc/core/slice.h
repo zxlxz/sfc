@@ -107,8 +107,6 @@ struct Slice {
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }
 
-  auto to_vec() const;
-
  public:
   auto contains(const T& x) const noexcept -> bool {
     for (auto i = 0UL; i < _len; ++i) {
