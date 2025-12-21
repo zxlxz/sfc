@@ -27,6 +27,16 @@ class HashMap {
     return _inn.capacity();
   }
 
+  void reserve(usize additional) {
+    _inn.reserve(additional);
+  }
+
+ public:
+  auto contains_key(const auto& key) const noexcept -> bool {
+    const auto p = _inn.search(key);
+    return p != nullptr;
+  }
+
   auto get(const auto& key) const noexcept -> Option<const V&> {
     const auto p = _inn.search(key);
     if (!p) {
@@ -52,11 +62,11 @@ class HashMap {
   }
 
   auto insert(K key, V val) noexcept -> Option<V> {
-    if (auto ptr = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)})) {
-      auto old_val = mem::replace(ptr->val, static_cast<V&&>(val));
-      return Option{mem::move(old_val)};
+    const auto p = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    if (!p) {
+      return {};
     }
-    return {};
+    return Option<V>{mem::replace(p->val, static_cast<V&&>(val))};
   }
 
   auto remove(const K& key) -> Option<V> {
@@ -77,13 +87,14 @@ class HashMap {
   // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_map();
-    _inn.for_each([&](const auto& entry) { imp.entry(entry.key, entry.val); });
+    _inn.for_each([&](const Entry& entry) { imp.entry(entry.key, entry.val); });
+    imp.finish();
   }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
     auto map = ser.serialize_map();
-    _inn.for_each([&](const auto& entry) { map.serialize_entry(entry.key, entry.val); });
+    _inn.for_each([&](const Entry& entry) { map.serialize_entry(entry.key, entry.val); });
     map.end();
   }
 
