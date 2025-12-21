@@ -49,6 +49,15 @@ concept polymorphic_ = __is_polymorphic(T);
 template <class F, class T>
 concept AsRef = requires(const F& from) { T{from}; };
 
+template <class T, T... I>
+struct Ints {};
+
+template <usize... I>
+using idxs_t = Ints<usize, I...>;
+
+template <auto N>
+using idxs_seq_t = __make_integer_seq<Ints, decltype(N), N>;
+
 template <class I, class X>
 struct Impl : I, X {
   static_assert(__is_empty(I), "Trait interface must be empty");

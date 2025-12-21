@@ -5,7 +5,7 @@
 #include "sfc/core/iter.h"
 #include "sfc/core/result.h"
 #include "sfc/core/tuple.h"
-#include "sfc/io/mod.h"
+#include "sfc/core/io.h"
 
 namespace sfc::slice {
 

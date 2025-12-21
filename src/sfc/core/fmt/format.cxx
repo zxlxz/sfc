@@ -58,4 +58,29 @@ SFC_TEST(num_align) {
   panicking::expect_eq(string::format("{=5d}", -42), "-  42");
 }
 
+enum class E1 {
+  A,
+  B,
+  C,
+};
+
+enum class E2 {
+  X,
+  Y,
+  Z,
+  _COUNT_,
+};
+
+SFC_TEST(enum) {
+  panicking::expect_eq(str::type_name<E1>(), "sfc::fmt::test::E1");
+  panicking::expect_eq(string::format("{}", E1::A), "0");
+  panicking::expect_eq(string::format("{}", E1::B), "1");
+  panicking::expect_eq(string::format("{}", E1::C), "2");
+
+  panicking::expect_eq(str::type_name<E2>(), "sfc::fmt::test::E2");
+  panicking::expect_eq(string::format("{}", E2::X), "X");
+  panicking::expect_eq(string::format("{}", E2::Y), "Y");
+  panicking::expect_eq(string::format("{}", E2::Z), "Z");
+}
+
 }  // namespace sfc::fmt::test

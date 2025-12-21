@@ -57,4 +57,10 @@ auto File::write(Slice<const u8> buf) noexcept -> Result<usize> {
   return static_cast<usize>(res);
 }
 
+auto last_os_error() noexcept -> Error {
+  const auto os_err = sys_imp::get_err();
+  const auto io_err = sys_imp::map_err<Error>(os_err);
+  return io_err;
+}
+
 }  // namespace sfc::io

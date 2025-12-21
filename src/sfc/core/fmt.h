@@ -60,11 +60,11 @@ struct Debug {
   }
 
   static void fmt(trait::enum_ auto val, auto& f) {
-    using E = decltype(val);
-    if constexpr (requires { to_str(val); }) {
-      f.pad(to_str(val));
+    const auto s = Debug::enum_name(val);
+    if (!s.is_empty()) {
+      f.pad(s);
     } else {
-      f.write_fmt("{}({})", str::type_name<E>(), static_cast<int>(val));
+      f.write_fmt("{}", static_cast<int>(val));
     }
   }
 
@@ -75,6 +75,25 @@ struct Debug {
     } else {
       Slice{val, N}.fmt(f);
     }
+  }
+
+ private:
+  template <trait::enum_ E>
+  static auto enum_name(E val) -> Str {
+    if constexpr (requires { E::_COUNT_; }) {
+      static constexpr auto COUNT = static_cast<usize>(E::_COUNT_);
+      if constexpr (COUNT <= 64) {
+        static const auto NAMES = []<usize... I>(trait::Ints<usize, I...>) {
+          static const Str names[] = {str::enum_name<static_cast<E>(I)>()...};
+          return names;
+        }(trait::idxs_seq_t<COUNT>{});
+        const auto idx = static_cast<usize>(val);
+        if (idx < COUNT) {
+          return NAMES[idx];
+        }
+      }
+    }
+    return {};
   }
 };
 

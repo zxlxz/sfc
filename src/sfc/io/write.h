@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/io/mod.h"
 #include "sfc/alloc/vec.h"
 
 namespace sfc::io {

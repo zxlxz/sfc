@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/core.h"
 
 namespace sfc::rc {
 

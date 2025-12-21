@@ -27,4 +27,6 @@ class File {
   auto write(Slice<const u8> buf) noexcept -> Result<usize>;
 };
 
+auto last_os_error() noexcept -> Error;
+
 }  // namespace sfc::io

@@ -39,11 +39,8 @@ enum class Error : i8 {
   OutOfMemory,
   InProgress,
   Other,
+  _COUNT_,
 };
-
-auto to_str(Error val) noexcept -> str::Str;
-
-auto last_os_error() noexcept -> Error;
 
 template <class T = void>
 using Result = result::Result<T, Error>;

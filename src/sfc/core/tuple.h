@@ -1,13 +1,10 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::tuple {
 
-template <class T, T... I>
-struct IntSeq {};
-
-template <int I, class T>
+template <usize I, class T>
 struct Entry {
   T _0;
 };
@@ -15,8 +12,8 @@ struct Entry {
 template <class I, class... T>
 struct Inner;
 
-template <int... I, class... T>
-struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
+template <usize... I, class... T>
+struct Inner<trait::idxs_t<I...>, T...> : Entry<I, T>... {
   void map(auto&& f) const {
     (void)(f(Entry<I, T>::_0), ...);
   }
@@ -28,20 +25,15 @@ struct Inner<IntSeq<int, I...>, T...> : Entry<I, T>... {
 
 template <class... T>
 struct Tuple {
-  using Inn = Inner<__make_integer_seq<IntSeq, int, sizeof...(T)>, T...>;
+  using Inn = Inner<trait::idxs_seq_t<sizeof...(T)>, T...>;
   Inn _inn;
 
  public:
   Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
   ~Tuple() = default;
 
-#ifdef __clang__
-  template <usize I>
-  using element_t = __type_pack_element<I, T...>;
-#else
   template <usize I>
   using element_t = T...[I];
-#endif
 
   template <usize I>
   using entry_t = Entry<I, element_t<I>>;

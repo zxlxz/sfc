@@ -1,7 +1,8 @@
 #pragma once
 
-#include "sfc/core/panicking.h"
 #include "sfc/core/ops.h"
+#include "sfc/core/mem.h"
+#include "sfc/core/panicking.h"
 
 namespace sfc::option {
 
