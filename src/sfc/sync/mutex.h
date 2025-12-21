@@ -64,24 +64,15 @@ namespace sfc::option {
 
 template <>
 struct Inner<sync::Mutex::Guard> {
-  union {
-    void* _nil = nullptr;
-    sync::Mutex::Guard _val;
-  };
+  sync::Mutex::Guard _val;
 
  public:
-  Inner(none_t) noexcept : _nil{nullptr} {}
-
+  Inner(none_t) noexcept : _val{nullptr} {}
   Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
+  ~Inner() noexcept = default;
 
-  ~Inner() noexcept {
-    if (_nil != nullptr) {
-      _val.~Guard();
-    }
-  }
-
-  operator bool() const noexcept {
-    return _nil != nullptr;
+  explicit operator bool() const noexcept {
+    return _val._inn != nullptr;
   }
 };
 }  // namespace sfc::option

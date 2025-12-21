@@ -6,7 +6,7 @@ namespace sfc::rc {
 
 template <class T>
 class [[nodiscard]] Rc {
-  friend class option::Inner<Rc<T>>;
+ public:
   struct Inn {
     T _val;
     int _cnt = 1;
@@ -77,18 +77,15 @@ class Inner<rc::Rc<T>> {
   rc::Rc<T> _val{};
 
  public:
-  Inner() noexcept = default;
-  explicit Inner(rc::Rc<T>&& val) noexcept : _val{static_cast<rc::Rc<T>&&>(val)} {}
+  Inner(none_t) noexcept {}
+  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
   ~Inner() noexcept = default;
 
   Inner(Inner&&) noexcept = default;
+  Inner& operator=(Inner&&) noexcept = default;
 
-  auto is_some() const noexcept -> bool {
+  explicit operator bool() const noexcept {
     return _val._ptr != nullptr;
-  }
-
-  auto is_none() const noexcept -> bool {
-    return _val._ptr == nullptr;
   }
 
   auto operator*() const noexcept -> const rc::Rc<T>& {
