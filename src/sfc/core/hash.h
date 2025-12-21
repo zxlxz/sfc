@@ -7,7 +7,7 @@ namespace sfc::hash {
 struct FNVHasher {
   static constexpr u64 OFFSET = 0xcbf29ce484222325ULL;
   static constexpr u64 PRIME = 0x100000001b3ULL;
-  u64 _state = 0;
+  u64 _state = OFFSET;
 
  public:
   auto finish() const noexcept -> u64 {
