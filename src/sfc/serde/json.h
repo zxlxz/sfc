@@ -81,70 +81,66 @@ struct Serializer {
 
  public:
   struct SerArray {
-    Serializer* _ser = nullptr;
+    Serializer& _ser;
     u32 _cnt = 0;
 
    public:
-    void serialize_element(const auto& item) noexcept {
-      if (_ser) {
-        _ser->node_item(_cnt++);
-        Serialize::serialize(item, *_ser);
-      }
+    SerArray(Serializer& ser) : _ser{ser} {
+      _ser._buf.push('[');
     }
 
-    void end() noexcept {
-      if (_ser) {
-        _ser->node_end(']', _cnt);
-        _ser = nullptr;
+    ~SerArray() {
+      _ser._buf.push(']');
+    }
+
+    SerArray(const SerArray&) = delete;
+    SerArray& operator=(const SerArray&) = delete;
+
+    void serialize_element(const auto& item) noexcept {
+      if (_cnt++ != 0) {
+        _ser._buf.push(',');
       }
+      Serialize::serialize(item, _ser);
     }
   };
 
   struct SerObject {
-    Serializer* _ser = nullptr;
+    Serializer& _ser;
     u32 _cnt = 0;
 
    public:
-    void serialize_entry(Str key, const auto& val) noexcept {
-      if (_ser) {
-        _ser->node_item(_cnt++);
-        _ser->serialize_key(key);
-        Serialize::serialize(val, *_ser);
-      }
+    SerObject(Serializer& ser) : _ser{ser} {
+      _ser._buf.push('{');
     }
 
-    void end() noexcept {
-      if (_ser) {
-        _ser->node_end('}', _cnt);
-        _ser = nullptr;
+    ~SerObject() {
+      _ser._buf.push('}');
+    }
+
+    SerObject(const SerObject&) = delete;
+    SerObject& operator=(const SerObject&) = delete;
+
+    void serialize_entry(Str key, const auto& val) noexcept {
+      if (_cnt++ != 0) {
+        _ser._buf.push(',');
       }
+      _ser._buf.push('"');
+      _ser._buf.push_str(key);
+      _ser._buf.push_str("\":");
+      Serialize::serialize(val, _ser);
     }
   };
 
   auto serialize_seq() noexcept -> SerArray {
-    this->node_begin('[');
-    return SerArray{this};
+    return SerArray{*this};
   }
 
   auto serialize_obj() noexcept -> SerObject {
-    this->node_begin('{');
-    return SerObject{this};
+    return SerObject{*this};
   }
 
   auto serialize_map() noexcept -> SerObject {
-    this->node_begin('{');
-    return SerObject{this};
-  }
-
- private:
-  void node_begin(char c) noexcept;
-  void node_end(char c, u32 cnt) noexcept;
-  void node_item(u32 idx) noexcept;
-
-  void serialize_key(Str s) noexcept {
-    _buf.push_str("\"");
-    _buf.push_str(s);
-    _buf.push_str("\":");
+    return SerObject{*this};
   }
 };
 

@@ -95,7 +95,6 @@ class HashMap {
   void serialize(auto& ser) const {
     auto map = ser.serialize_map();
     _inn.for_each([&](const Entry& entry) { map.serialize_entry(entry.key, entry.val); });
-    map.end();
   }
 
   // trait: serde::Deserialize

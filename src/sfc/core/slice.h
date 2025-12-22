@@ -219,7 +219,6 @@ struct Slice {
     for (const auto& t : *this) {
       imp.serialize_element(t);
     }
-    imp.end();
   }
 };
 

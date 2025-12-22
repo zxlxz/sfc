@@ -2,21 +2,6 @@
 
 namespace sfc::serde::json {
 
-void Serializer::node_begin(char c) noexcept {
-  _buf.push(c);
-}
-
-void Serializer::node_end(char c, u32 cnt) noexcept {
-  (void)cnt;
-  _buf.push(c);
-}
-
-void Serializer::node_item(u32 idx) noexcept {
-  if (idx != 0) {
-    _buf.push(',');
-  }
-}
-
 void Deserializer::consume(usize n) noexcept {
   if (n > _buf._len) {
     return;

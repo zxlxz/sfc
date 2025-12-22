@@ -1,6 +1,5 @@
 #include "sfc/fs.h"
 #include "sfc/io.h"
-#include "sfc/serde/xml.h"
 #include "sfc/app/clap.h"
 #include "sfc/test/app.h"
 #include "sfc/test/ut.h"
@@ -32,29 +31,27 @@ static auto parse_filter(Str filter) -> Vec<Str> {
 }
 
 static auto format_xml(Slice<const Suite> suites) -> String {
-  auto buf = String{};
-  auto ser = serde::xml::Serializer{buf};
-
   auto all_cnt = usize{0};
   for (const auto& suite : suites) {
     all_cnt += suite.tests().len();
   }
 
-  auto testsuites = ser.serialize_node("testsuites");
-  testsuites.attr("tests", all_cnt);
-  testsuites.attr("name", "AllTests");
-
+  auto buf = String{};
+  auto out = fmt::Fmter{buf};
+  out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+  out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt);
   for (auto& suite : suites) {
-    auto testsuite = testsuites.serialize_node("testsuite");
-    testsuite.attr("name", suite.name());
-    testsuite.attr("tests", suite.tests().len());
-    for (auto& test : suite.tests()) {
-      auto testcase = testsuite.serialize_node("testcase");
-      testcase.attr("name", test.name());
-      testcase.attr("file", Str{test._loc.file});
-      testcase.attr("line", test._loc.line);
+    const auto tests = suite.tests();
+    out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
+    for (auto& test : tests) {
+      out.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n",
+                    test.name(),
+                    test._loc.file,
+                    test._loc.line);
     }
+    out.write_str("  </testsuite>\n");
   }
+  out.write_str("</testsuites>\n");
 
   return buf;
 }
