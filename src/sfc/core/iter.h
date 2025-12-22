@@ -90,7 +90,7 @@ struct Iterator {
       return {};
     }
 
-    if constexpr (!trait::ref_<B>) {
+    if constexpr (!trait::same_<B, B&>) {
       auto res_val = self.next().unwrap();
       while (auto x = self.next()) {
         res_val = f(res_val, *x);
@@ -139,16 +139,6 @@ struct Iterator {
 
   auto max_by_key(this auto&& self, auto&& f) -> Option<Item> {
     return self.reduce([&](auto& a, auto& b) -> Item { return f(a) > f(b) ? a : b; });
-  }
-
-  template <class S = auto_t<Item>>
-  auto sum(this auto&& self, S init = 0) -> S {
-    return self.fold(init, [](auto a, auto b) { return a + b; });
-  }
-
-  template <class S = auto_t<Item>>
-  auto product(this auto&& self, S init = 1) -> S {
-    return self.fold(init, [](auto a, auto b) { return a * b; });
   }
 
   template <class B>

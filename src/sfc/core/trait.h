@@ -17,22 +17,16 @@ template <class T>
 concept class_ = __is_class(T);
 
 template <class T>
-concept int_ = __is_integral(T);
+concept sint_ = any_<T, char, signed char, short, int, long, long long>;
 
 template <class T>
-concept flt_ = __is_floating_point(T);
+concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
 
 template <class T>
-concept sint_ = __is_integral(T) && __is_signed(T);
+concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept uint_ = __is_integral(T) && __is_unsigned(T);
-
-template <class T>
-concept ptr_ = __is_pointer(T);
-
-template <class T>
-concept ref_ = __is_lvalue_reference(T) || __is_rvalue_reference(T);
+concept flt_ = any_<T, float, double, long double>;
 
 template <class T>
 concept copy_ = __is_constructible(T, const T&);

@@ -114,20 +114,6 @@ SFC_TEST(max_by_key) {
   panicking::expect_eq(*max_val, 0);
 }
 
-SFC_TEST(sum) {
-  const int v[] = {0, 1, 2, 3, 4, 5};
-
-  auto sum = Slice{v}.iter().sum();
-  panicking::expect_eq(sum, 15);
-}
-
-SFC_TEST(product) {
-  const int v[] = {1, 2, 3, 4, 5};
-
-  auto prod = Slice{v}.iter().product();
-  panicking::expect_eq(prod, 120);
-}
-
 SFC_TEST(collect) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 

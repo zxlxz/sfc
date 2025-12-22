@@ -59,13 +59,17 @@ struct Debug {
     f.pad_num(val < 0, sval);
   }
 
-  static void fmt(trait::enum_ auto val, auto& f) {
-    const auto s = Debug::enum_name(val);
-    if (!s.is_empty()) {
-      f.pad(s);
-    } else {
-      f.write_fmt("{}", static_cast<int>(val));
+  template <trait::enum_ E>
+  static void fmt(E val, auto& f) {
+    if constexpr (requires { E::_COUNT_; }) {
+      const auto s = Debug::enum_name(val);
+      if (!s.is_empty()) {
+        return f.pad(s);
+      }
     }
+    char buf[8];
+    const auto sval = num::to_str(buf, static_cast<u32>(val));
+    f.pad(sval);
   }
 
   template <class T, usize N>
@@ -78,20 +82,37 @@ struct Debug {
   }
 
  private:
+  template <class T>
+  static constexpr Str type_name() {
+    constexpr auto S1 = sizeof("Str sfc::str::type_name() [T =");
+    constexpr auto S2 = sizeof("]");
+    return Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+  }
+
+  template <auto E>
+  static constexpr Str enum_name() {
+    static constexpr auto SN = str::type_name<decltype(E)>();
+    static constexpr auto S1 = sizeof("Str sfc::str::enum_name() [E =");
+    static constexpr auto S2 = sizeof("]");
+    static constexpr auto ss = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+    for (auto n = ss._len; n != 0; --n) {
+      if (ss._ptr[n - 1] == ':') {
+        return Str{ss._ptr + n, ss._len - n};
+      }
+    }
+    return ss;
+  }
+
   template <trait::enum_ E>
   static auto enum_name(E val) -> Str {
-    if constexpr (requires { E::_COUNT_; }) {
-      static constexpr auto COUNT = static_cast<usize>(E::_COUNT_);
-      if constexpr (COUNT <= 64) {
-        static const auto NAMES = []<usize... I>(trait::Ints<usize, I...>) {
-          static const Str names[] = {str::enum_name<static_cast<E>(I)>()...};
-          return names;
-        }(trait::idxs_seq_t<COUNT>{});
-        const auto idx = static_cast<usize>(val);
-        if (idx < COUNT) {
-          return NAMES[idx];
-        }
-      }
+    static constexpr auto COUNT = static_cast<u32>(E::_COUNT_) & 0xFFU;
+    static const auto NAMES = []<u32... I>(trait::Ints<u32, I...>) {
+      static const Str names[] = {str::enum_name<static_cast<E>(I)>()...};
+      return names;
+    }(trait::idxs_seq_t<COUNT>{});
+    const auto idx = static_cast<usize>(val);
+    if (idx < COUNT) {
+      return NAMES[idx];
     }
     return {};
   }

@@ -93,11 +93,11 @@ struct Str {
 
  public:
   // trait: ops::Eq
-  auto operator==(Str other) const noexcept -> bool {
+  constexpr auto operator==(Str other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
     }
-    if (_len == 0 || _ptr == other._ptr) {
+    if (_len == 0) {
       return true;
     }
     if (_ptr && other._ptr) {
@@ -316,19 +316,16 @@ auto Str::trim_matches(auto&& pat) const -> Str {
 }
 
 template <class T>
-static constexpr auto type_name() -> Str {
-  static constexpr auto S1 = sizeof("Str sfc::str::type_name() [T = ") - 1;
-  static constexpr auto S2 = sizeof("]");
-  static constexpr auto ss = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
-  return ss;
+static constexpr Str type_name() {
+  constexpr auto S1 = sizeof("Str sfc::str::type_name() [T =");
+  constexpr auto S2 = sizeof("]");
+  return Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
 }
 
 template <auto E>
-static constexpr auto enum_name() -> Str {
-  static_assert(trait::enum_<decltype(E)>);
-
+static constexpr Str enum_name() {
   static constexpr auto SN = str::type_name<decltype(E)>();
-  static constexpr auto S1 = sizeof("Str sfc::str::enum_name() [E = ") - 1;
+  static constexpr auto S1 = sizeof("Str sfc::str::enum_name() [E =");
   static constexpr auto S2 = sizeof("]");
   static constexpr auto ss = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
   for (auto n = ss._len; n != 0; --n) {

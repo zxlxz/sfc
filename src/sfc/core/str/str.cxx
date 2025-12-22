@@ -160,4 +160,13 @@ SFC_TEST(trim) {
   panicking::expect_eq(s2.trim_matches([](char c) { return c == 'x' || c == 'y'; }), "abcz");
 }
 
+enum EE { A, B };
+
+SFC_TEST(enum_name) {
+  static_assert(str::type_name<EE>().len() > 0);
+  panicking::expect_eq(str::type_name<EE>(), "sfc::str::test::EE");
+  panicking::expect_eq(str::enum_name<EE::A>(), "A");
+  panicking::expect_eq(str::enum_name<EE::B>(), "B");
+}
+
 }  // namespace sfc::str::test

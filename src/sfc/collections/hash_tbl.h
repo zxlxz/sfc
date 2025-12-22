@@ -120,7 +120,7 @@ class HashTbl {
 
     // alloc new
     const auto min_cap = (_len + additional) * 4 / 3;
-    const auto new_cap = num::next_power_of_two(min_cap, 8UL);
+    const auto new_cap = num::next_power_of_two<usize>(min_cap, 8);
     this->realloc(new_cap);
   }
 

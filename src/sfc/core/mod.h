@@ -18,7 +18,7 @@ using u8 = unsigned char;
 using u16 = unsigned short;
 using u32 = unsigned int;
 
-#if __SIZEOF_LONG__ == 4
+#ifdef _MSC_VER
 using i64 = long long;
 using u64 = unsigned long long;
 #else
@@ -33,9 +33,6 @@ using f32 = float;
 using f64 = double;
 
 using cstr_t = const char*;
-
-template <class T>
-using auto_t = decltype(auto{static_cast<T (*)()>(0)()});
 
 namespace str {
 struct Str;
@@ -61,11 +58,11 @@ class Result;
 #if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
 #define __PLACEMENT_NEW_INLINE
 #define _LIBCPP_NEW
-[[gnu::always_inline]] inline void* operator new(sfc::usize, void* ptr) noexcept {
+inline void* operator new(sfc::usize, void* ptr) noexcept {
   return ptr;
 }
 
-[[gnu::always_inline]] inline void operator delete(void*, void*) noexcept {
+inline void operator delete(void*, void*) noexcept {
   return;
 }
 #endif

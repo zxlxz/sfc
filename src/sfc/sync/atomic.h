@@ -15,7 +15,8 @@ enum class Ordering {
 
 template <class T>
 struct Atomic {
-  static_assert(trait::int_<T> || trait::enum_<T> || trait::ptr_<T>);
+  static_assert(!__is_class(T) && !__is_union(T));
+
   T _val;
 
  public:
