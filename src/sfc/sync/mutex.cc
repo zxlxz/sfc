@@ -53,21 +53,21 @@ struct ReentrantLock::Inn {
   void lock() noexcept {
     const auto tid = sys_imp::get_tid();
 
-    if (tid == _tid.load()) {
-      _cnt.fetch_add(1);
+    if (_tid.load(sync::Ordering::Acquire) == tid) {
+      _cnt.fetch_add(1, sync::Ordering::Relaxed);
       return;
     }
 
     sys_imp::mtx_lock(_raw);
-    _tid.store(tid);
-    _cnt.store(1);
+    _tid.store(tid, sync::Ordering::Release);
+    _cnt.store(1, sync::Ordering::Relaxed);
   }
 
   bool try_lock() noexcept {
     const auto tid = sys_imp::get_tid();
 
-    if (tid == _tid.load()) {
-      _cnt.fetch_add(1);
+    if (tid == _tid.load(sync::Ordering::Acquire)) {
+      _cnt.fetch_add(1, sync::Ordering::Relaxed);
       return true;
     }
 
@@ -75,20 +75,20 @@ struct ReentrantLock::Inn {
       return false;
     }
 
-    _tid.store(tid);
-    _cnt.store(1);
+    _tid.store(tid, sync::Ordering::Release);
+    _cnt.store(1, sync::Ordering::Relaxed);
     return true;
   }
 
   bool unlock() noexcept {
     const auto tid = sys_imp::get_tid();
 
-    if (tid != _tid.load()) {
+    if (_tid.load(sync::Ordering::Acquire) != tid) {
       return false;
     }
 
-    if (_cnt.fetch_sub(1) == 1) {
-      _tid.store(tid_t{});
+    if (_cnt.fetch_sub(1, sync::Ordering::AcqRel) == 1) {
+      _tid.store(tid_t{}, sync::Ordering::Release);
       sys_imp::mtx_unlock(_raw);
     }
     return true;

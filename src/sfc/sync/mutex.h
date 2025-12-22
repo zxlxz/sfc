@@ -71,6 +71,9 @@ struct Inner<sync::Mutex::Guard> {
   Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
   ~Inner() noexcept = default;
 
+  Inner(const Inner&) = delete;
+  Inner& operator=(const Inner&) = delete;
+
   explicit operator bool() const noexcept {
     return _val._inn != nullptr;
   }

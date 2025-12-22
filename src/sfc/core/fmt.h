@@ -33,7 +33,7 @@ struct Debug {
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto sval = num::to_str(buf, val, f._style._type);
+    const auto sval = num::to_str(buf, static_cast<const void*>(val), f._style._type);
     f.pad_num(false, sval);
   }
 
@@ -269,10 +269,8 @@ struct Fmter {
   void write_val(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
-    } else if constexpr (requires { Debug::fmt(val, *this); }) {
-      Debug::fmt(val, *this);
     } else {
-      static_assert(false, "Fmter::write_val: unsupported type");
+      Debug::fmt(val, *this);
     }
   }
 

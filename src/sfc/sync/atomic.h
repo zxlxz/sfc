@@ -20,30 +20,23 @@ struct Atomic {
   T _val;
 
  public:
-  template <Ordering order = Ordering::SeqCst>
-  auto load() const noexcept -> T {
+  auto load(Ordering order = Ordering::SeqCst) const noexcept -> T {
     return __atomic_load_n(const_cast<T*>(&_val), static_cast<int>(order));
   }
 
-  template <Ordering order = Ordering::SeqCst>
-  void store(T val) noexcept {
+  void store(T val, Ordering order = Ordering::SeqCst) noexcept {
     return __atomic_store_n(&_val, val, static_cast<int>(order));
   }
 
-  template <Ordering order = Ordering::SeqCst>
-  auto exchange(T val) noexcept -> T {
+  auto exchange(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
     return __atomic_exchange_n(&_val, val, static_cast<int>(order));
   }
 
-  template <Ordering order = Ordering::SeqCst>
-  auto fetch_add(T val) noexcept -> T {
-    static_assert(trait::int_<T>);
+  auto fetch_add(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
     return __atomic_fetch_add(&_val, val, static_cast<int>(order));
   }
 
-  template <Ordering order = Ordering::SeqCst>
-  auto fetch_sub(T val) noexcept -> T {
-    static_assert(trait::int_<T>);
+  auto fetch_sub(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
     return __atomic_fetch_sub(&_val, val, static_cast<int>(order));
   }
 };

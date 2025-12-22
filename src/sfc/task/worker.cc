@@ -15,11 +15,11 @@ Worker::Worker(Worker&&) noexcept = default;
 Worker& Worker::operator=(Worker&&) noexcept = default;
 
 void Worker::run() {
-  while (_running.load<Ordering::Acquire>()) {
+  while (_running.load(sync::Ordering::Acquire)) {
     auto lock = _mutex.lock();
     _condvar.wait_while(lock, [&]() { return _tasks.is_empty() && _running.load(); });
 
-    if (!_running.load<Ordering::Acquire>() || _tasks.is_empty()) {
+    if (!_running.load(sync::Ordering::Acquire) || _tasks.is_empty()) {
       break;
     }
 
@@ -33,13 +33,13 @@ void Worker::run() {
 }
 
 void Worker::stop() {
-  _running.store<Ordering::Release>(false);
+  _running.store(false, sync::Ordering::Release);
   _condvar.notify_all();
 }
 
 void Worker::wait() {
   while (true) {
-    if (!_running.load<Ordering::Acquire>()) {
+    if (!_running.load(sync::Ordering::Acquire)) {
       break;
     }
 
@@ -52,7 +52,7 @@ void Worker::wait() {
 }
 
 auto Worker::post(Task task) -> bool {
-  if (!_running.load<Ordering::Acquire>()) {
+  if (!_running.load(sync::Ordering::Acquire)) {
     return false;
   }
 

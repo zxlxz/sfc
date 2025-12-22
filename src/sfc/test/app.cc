@@ -46,7 +46,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
     for (auto& test : tests) {
       out.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n",
                     test.name(),
-                    test._loc.file,
+                    Str{test._loc.file},
                     test._loc.line);
     }
     out.write_str("  </testsuite>\n");

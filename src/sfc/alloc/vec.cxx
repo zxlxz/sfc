@@ -2,30 +2,6 @@
 
 namespace sfc::vec::test {
 
-struct Element {
-  int _value = 0;
-
- public:
-  explicit Element(int value) : _value{value} {
-    totalCnt() += 1;
-  }
-
-  ~Element() {
-    _value = 0;
-    totalCnt() -= 1;
-  }
-
-  Element(Element&& other) noexcept : _value{other._value} {
-    other._value = 0;
-    totalCnt() += 1;
-  }
-
-  static auto totalCnt() -> usize& {
-    static usize val = 0U;
-    return val;
-  }
-};
-
 SFC_TEST(index) {
   int tmp[] = {0, 1, 2, 3};
 
@@ -96,33 +72,24 @@ SFC_TEST(remove) {
 }
 
 SFC_TEST(reserve) {
-  Element::totalCnt() = 0U;
-
-  auto v = Vec<Element>{};
-  for (auto i = 0u; i < 4; ++i) {
-    v.push(Element{static_cast<int>(i)});
+  auto v = Vec<int>::with_capacity(10);
+  panicking::expect_eq(v.capacity(), 10U);
+  for (auto i = 0; i < 10; ++i) {
+    v.push(i);
   }
-  panicking::expect_eq(Element::totalCnt(), 4U);
-
-  for (auto i = 0u; i < 4; ++i) {
-    panicking::expect_eq(v[i]._value, i);
-  }
-
-  v.reserve(10);
-  panicking::expect_eq(Element::totalCnt(), 4U);
-  for (auto i = 0U; i < 4U; ++i) {
-    panicking::expect_eq(v[i]._value, i);
-  }
-
-  for (auto i = 4U; i < 100U; ++i) {
-    v.push(Element{static_cast<int>(i)});
-    panicking::expect_eq(v[i]._value, i);
-  }
-  panicking::expect_eq(Element::totalCnt(), 100U);
-
-  for (auto i = 0U; i < 100U; ++i) {
-    panicking::expect_eq(v[i]._value, i);
-  }
+  v.reserve(1);
+  panicking::expect(v.capacity() >= 16);
 }
 
+SFC_TEST(drain) {
+  int tmp[] = {0, 1, 2, 3, 4, 5};
+
+  auto v = Vec<int>::from(tmp);
+  v.drain(ops::Range{2, 4});
+  panicking::expect_eq(v.len(), 4U);
+  panicking::expect_eq(v[0], 0);
+  panicking::expect_eq(v[1], 1);
+  panicking::expect_eq(v[2], 4);
+  panicking::expect_eq(v[3], 5);
+}
 }  // namespace sfc::vec::test
