@@ -34,12 +34,12 @@ struct Str {
     return _len;
   }
 
-  constexpr auto as_bytes() const noexcept -> Slice<const u8> {
-    return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
-  }
-
   constexpr auto as_str() const noexcept -> Str {
     return *this;
+  }
+
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
   }
 
  public:
@@ -97,13 +97,10 @@ struct Str {
     if (_len != other._len) {
       return false;
     }
-    if (_len == 0) {
-      return true;
-    }
-    if (_ptr && other._ptr) {
+    if (_len != 0) {
       return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
     }
-    return false;
+    return true;
   }
 
   // trait: fmt::Display
@@ -123,9 +120,9 @@ struct Str {
     if constexpr (requires { T::from_str(*this); }) {
       return T::from_str(*this);
     } else if constexpr (trait::int_<T>) {
-      return num::from_str<T>(*this);
+      return num::int_from_str<T>(*this);
     } else if constexpr (trait::flt_<T>) {
-      return num::from_str<T>(*this);
+      return num::flt_from_str<T>(*this);
     } else {
       static_assert(false, "Str::parse: unsupported type");
     }

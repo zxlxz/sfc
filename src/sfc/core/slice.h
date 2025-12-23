@@ -53,6 +53,11 @@ struct Slice {
     return {_ptr, _len};
   }
 
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
+  }
+
  public:
   auto operator[](usize idx) const noexcept -> const T& {
     panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
@@ -183,7 +188,7 @@ struct Slice {
 
  public:
   // trait: ops::Eq
-  auto operator==(Slice<const T> other) const noexcept -> bool {
+  constexpr auto operator==(Slice<const T> other) const noexcept -> bool {
     if (_len != other._len) {
       return false;
     }

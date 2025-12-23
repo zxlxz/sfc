@@ -46,17 +46,16 @@ constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
   return x;
 }
 
-auto to_str(slice::Slice<char> buf, const void* val, char type = 0) noexcept -> str::Str;
-auto to_str(slice::Slice<char> buf, trait::int_ auto val, char type = 0) noexcept -> str::Str;
-auto to_str(slice::Slice<char> buf, trait::flt_ auto val, u32 prec = 6, char type = 0) noexcept -> str::Str;
-
-template <trait::int_ T>
-auto from_str(str::Str buf, u32 radix = 0) noexcept -> Option<T>;
-
-template <trait::flt_ T>
-auto from_str(str::Str buf) noexcept -> Option<T>;
-
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
+
+auto int_to_str(auto val, slice::Slice<char> buf, char type = 0) noexcept -> str::Str;
+auto flt_to_str(auto val, slice::Slice<char> buf, u32 prec = 6, char type = 0) noexcept -> str::Str;
+
+template <class T>
+auto int_from_str(str::Str buf, u32 radix = 0) noexcept -> Option<T>;
+
+template <class T>
+auto flt_from_str(str::Str buf) noexcept -> Option<T>;
 
 }  // namespace sfc::num
 

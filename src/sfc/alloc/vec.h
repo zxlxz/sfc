@@ -14,9 +14,7 @@ class RawVec {
   RawVec() noexcept = default;
 
   ~RawVec() noexcept {
-    if (_ptr != nullptr) {
-      __builtin_operator_delete(_ptr);
-    }
+    this->dealloc();
   }
 
   RawVec(RawVec&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
@@ -35,6 +33,16 @@ class RawVec {
     return res;
   }
 
+ public:
+  void dealloc() noexcept {
+    if (_ptr == nullptr) {
+      return;
+    }
+    __builtin_operator_delete(_ptr);
+    _ptr = nullptr;
+    _cap = 0;
+  }
+
   void realloc(usize used, usize new_cap) noexcept {
     if (new_cap == _cap || used > _cap || used > new_cap) {
       return;
@@ -42,7 +50,7 @@ class RawVec {
     const auto new_ptr = static_cast<T*>(new_cap ? __builtin_operator_new(new_cap * sizeof(T)) : nullptr);
     if (_ptr) {
       ptr::uninit_move(_ptr, new_ptr, used);
-      __builtin_operator_delete(_ptr);
+      this->dealloc();
     }
     _ptr = new_ptr;
     _cap = new_cap;

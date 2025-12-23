@@ -33,20 +33,22 @@ struct Debug {
 
   static void fmt(const void* val, auto& f) {
     char buf[8 * sizeof(val)];
-    const auto sval = num::to_str(buf, static_cast<const void*>(val), f._style._type);
+    const auto uval = reinterpret_cast<usize>(val);
+    const auto type = f._style._type ? f._style._type : 'p';
+    const auto sval = num::int_to_str(uval, buf, type);
     f.pad_num(false, sval);
   }
 
   static void fmt(trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
-    const auto sval = num::to_str(buf, val, f._style._type);
+    const auto sval = num::int_to_str(val, buf, f._style._type);
     f.pad_num(false, sval);
   }
 
   static void fmt(trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 16];
     const auto uval = val >= 0 ? val : 0 - val;
-    const auto sval = num::to_str(buf, uval, f._style._type);
+    const auto sval = num::int_to_str(uval, buf, f._style._type);
     f.pad_num(val < 0, sval);
   }
 
@@ -55,7 +57,7 @@ struct Debug {
     char buf[8 * sizeof(val) + 16];
     const auto prec = f._style._point ? f._style._precision : DEFAULT_PREC;
     const auto uval = val >= 0 ? val : 0 - val;
-    const auto sval = num::to_str(buf, uval, prec, f._style._type);
+    const auto sval = num::flt_to_str(uval, buf, prec, f._style._type);
     f.pad_num(val < 0, sval);
   }
 
@@ -68,7 +70,7 @@ struct Debug {
       }
     }
     char buf[8];
-    const auto sval = num::to_str(buf, static_cast<u32>(val));
+    const auto sval = num::int_to_str(static_cast<u32>(val), buf);
     f.pad(sval);
   }
 

@@ -86,11 +86,10 @@ struct IntFmter {
     return nret;
   }
 
-  auto write_ptr(const void* val, bool upcase = false) noexcept -> usize {
+  auto write_ptr(usize val, bool upcase = false) noexcept -> usize {
     static const auto MIN_LEN = 12L;
 
-    const auto uval = reinterpret_cast<usize>(val);
-    auto nret = this->write_bin<16>(uval, upcase);
+    auto nret = this->write_bin<16>(val, upcase);
 
     // pad '0', to at least MIN_LEN characters
     for (; nret < MIN_LEN; ++nret) {
@@ -216,13 +215,7 @@ struct IntParser {
   }
 };
 
-auto to_str(Slice<char> buf, const void* val, char type) noexcept -> Str {
-  auto imp = IntFmter{buf._ptr, buf._ptr + buf._len};
-  imp.write_ptr(val, type);
-  return imp.as_str();
-}
-
-auto to_str(Slice<char> buf, trait::int_ auto val, char type) noexcept -> Str {
+auto int_to_str(auto val, Slice<char> buf, char type) noexcept -> Str {
   auto imp = IntFmter{buf._ptr, buf._ptr + buf._len};
   switch (type) {
     default:  imp.write_dec(val + 0); break;
@@ -232,14 +225,14 @@ auto to_str(Slice<char> buf, trait::int_ auto val, char type) noexcept -> Str {
     case 'o': imp.write_bin<8>(val + 0); break;
     case 'X': imp.write_bin<16>(val + 0, true); break;
     case 'x': imp.write_bin<16>(val + 0, false); break;
-    case 'P': imp.write_bin<16>(val + 0, true); break;
-    case 'p': imp.write_bin<16>(val + 0, false); break;
+    case 'P': imp.write_ptr(val + 0, true); break;
+    case 'p': imp.write_ptr(val + 0, false); break;
   }
   return imp.as_str();
 }
 
 template <trait::int_ T>
-auto from_str(Str buf, u32 radix) noexcept -> Option<T> {
+auto int_from_str(Str buf, u32 radix) noexcept -> Option<T> {
   auto imp = IntParser{buf._ptr, buf._ptr + buf._len};
   auto val = T{};
 
@@ -249,27 +242,27 @@ auto from_str(Str buf, u32 radix) noexcept -> Option<T> {
   return Option{val};
 }
 
-template auto to_str(Slice<char>, signed char, char) noexcept -> Str;
-template auto to_str(Slice<char>, short, char) noexcept -> Str;
-template auto to_str(Slice<char>, int, char) noexcept -> Str;
-template auto to_str(Slice<char>, long, char) noexcept -> Str;
-template auto to_str(Slice<char>, long long, char) noexcept -> Str;
+template auto int_to_str(signed char, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(short, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(int, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(long, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(long long, Slice<char>, char) noexcept -> Str;
 
-template auto to_str(Slice<char>, unsigned char, char) noexcept -> Str;
-template auto to_str(Slice<char>, unsigned short, char) noexcept -> Str;
-template auto to_str(Slice<char>, unsigned int, char) noexcept -> Str;
-template auto to_str(Slice<char>, unsigned long, char) noexcept -> Str;
-template auto to_str(Slice<char>, unsigned long long, char) noexcept -> Str;
+template auto int_to_str(unsigned char, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(unsigned short, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(unsigned int, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(unsigned long, Slice<char>, char) noexcept -> Str;
+template auto int_to_str(unsigned long long, Slice<char>, char) noexcept -> Str;
 
-template auto from_str(Str, u32 radix) noexcept -> Option<signed char>;
-template auto from_str(Str, u32 radix) noexcept -> Option<short>;
-template auto from_str(Str, u32 radix) noexcept -> Option<int>;
-template auto from_str(Str, u32 radix) noexcept -> Option<long>;
-template auto from_str(Str, u32 radix) noexcept -> Option<long long>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<signed char>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<short>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<int>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<long>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<long long>;
 
-template auto from_str(Str, u32 radix) noexcept -> Option<unsigned char>;
-template auto from_str(Str, u32 radix) noexcept -> Option<unsigned short>;
-template auto from_str(Str, u32 radix) noexcept -> Option<unsigned int>;
-template auto from_str(Str, u32 radix) noexcept -> Option<unsigned long>;
-template auto from_str(Str, u32 radix) noexcept -> Option<unsigned long long>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned char>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned short>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned int>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned long>;
+template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned long long>;
 }  // namespace sfc::num

@@ -155,13 +155,18 @@ class HashTbl {
     u8 h2;
   };
 
-  auto hidx(const auto& key) const noexcept -> HIdx {
-    auto hx = u64{0};
+  static auto hash(const auto& key) noexcept -> u64 {
     if constexpr (requires { key.hash(); }) {
-      hx = key.hash();
+      return key.hash();
+    } else if constexpr (requires { static_cast<u64>(key); }) {
+      return static_cast<u64>(key);
     } else {
-      hx = static_cast<u64>(key);
+      static_assert(false, "HashTbl::hash: cannot hash key type");
     }
+  }
+
+  auto hidx(const auto& key) const noexcept -> HIdx {
+    const auto hx = HashTbl::hash(key);
     const auto h1 = hx & (_cap - 1);
     const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
     return {h1, h2};

@@ -278,7 +278,7 @@ auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
   return diff <= ulp;
 }
 
-auto to_str(Slice<char> buf, trait::flt_ auto val, u32 precision, char type) noexcept -> Str {
+auto flt_to_str(auto val, Slice<char> buf, u32 precision, char type) noexcept -> Str {
   if (__builtin_isnan(val)) {
     return "nan";
   }
@@ -296,8 +296,8 @@ auto to_str(Slice<char> buf, trait::flt_ auto val, u32 precision, char type) noe
   return imp.as_str();
 }
 
-template <trait::flt_ T>
-auto from_str(Str buf) noexcept -> Option<T> {
+template <class T>
+auto flt_from_str(Str buf) noexcept -> Option<T> {
   auto imp = FltParser{buf._ptr, buf._ptr + buf._len};
   auto dst = T{};
   if (!imp.read(dst)) {
@@ -306,10 +306,10 @@ auto from_str(Str buf) noexcept -> Option<T> {
   return Option{dst};
 }
 
-template auto to_str(Slice<char>, f32, u32, char) noexcept -> Str;
-template auto to_str(Slice<char>, f64, u32, char) noexcept -> Str;
+template auto flt_to_str(f32, Slice<char>, u32, char) noexcept -> Str;
+template auto flt_to_str(f64, Slice<char>, u32, char) noexcept -> Str;
 
-template auto from_str(Str) noexcept -> Option<f32>;
-template auto from_str(Str) noexcept -> Option<f64>;
+template auto flt_from_str(Str) noexcept -> Option<f32>;
+template auto flt_from_str(Str) noexcept -> Option<f64>;
 
 }  // namespace sfc::num
