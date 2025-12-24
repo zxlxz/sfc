@@ -11,7 +11,7 @@ SFC_TEST(mutex) {
   auto vec = Vec<int>::with_capacity(2 * CNT);
   auto mtx = Mutex{};
 
-  auto push = [&](Str name) {
+  auto thread_func = [&]() {
     for (auto i = 0u; i < CNT; ++i) {
       auto lock = mtx.lock();
       auto n = static_cast<int>(vec.len());
@@ -23,8 +23,8 @@ SFC_TEST(mutex) {
   };
 
   {
-    auto t1 = thread::spawn([&]() { push("a"); });
-    auto t2 = thread::spawn([&]() { push("b"); });
+    auto t1 = thread::spawn([&]() { thread_func(); });
+    auto t2 = thread::spawn([&]() { thread_func(); });
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
@@ -32,9 +32,26 @@ SFC_TEST(mutex) {
   }
 }
 
+SFC_TEST(mutex_try_lock) {
+  auto mtx = Mutex{};
+
+  {
+    auto guard = mtx.try_lock();
+    panicking::expect(guard.is_some());
+  }
+
+  {
+    auto guard1 = mtx.try_lock();
+    panicking::expect(guard1.is_some());
+
+    auto guard2 = mtx.try_lock();
+    panicking::expect(guard2.is_none());
+  }
+}
+
 SFC_TEST(reentrant_lock) {
   static constexpr auto CNT = 10U;
-  auto vec = Vec<int>::with_capacity(4*CNT);
+  auto vec = Vec<int>::with_capacity(4 * CNT);
   auto mtx = ReentrantLock{};
 
   auto push = [&](Str name) {

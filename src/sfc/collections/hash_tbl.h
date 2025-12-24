@@ -54,16 +54,19 @@ class HashTbl {
     if (_len == 0) {
       return nullptr;
     }
-    const auto ctrl_ptr = _ptr;
+    auto ctrl_ptr = _ptr;
     const auto data_ptr = this->data();
+    const auto mask = _cap - 1;
+
     const auto [h1, h2] = this->hidx(key);
-    for (auto idx = h1;; idx = (idx + 1) & (_cap - 1)) {
+    for (auto i = 0UL; i < _cap; ++i) {
+      const auto idx = (h1 + i) & mask;
       const auto ctrl = ctrl_ptr[idx];
       const auto& item = data_ptr[idx];
-      if (ctrl == CTRL_NUL) {
-        return nullptr;
-      } else if (ctrl == h2 && item.key == key) {
+      if (ctrl == h2 && item.key == key) {  // found
         return &item;
+      } else if (ctrl == CTRL_NUL) {  // not found
+        break;
       }
     }
     return nullptr;
@@ -84,32 +87,33 @@ class HashTbl {
 
     const auto [h1, h2] = this->hidx(entry.key);
     auto del_idx = _cap;
-    for (auto idx = h1;; idx = (idx + 1) & (_cap - 1)) {
+    for (auto i = 0UL; i < _cap; ++i) {
+      const auto idx = (h1 + i) & (_cap - 1);
+      const auto ctrl = ctrl_ptr[idx];
       const auto& item = data_ptr[idx];
-      if (ctrl_ptr[idx] == CTRL_NUL) {
+      if (ctrl == h2 && item.key == entry.key) {
+        return data_ptr + idx;
+      } else if (ctrl == CTRL_NUL) {
         insert_at(del_idx == _cap ? idx : del_idx, h2, entry);
         return nullptr;
-      } else if (ctrl_ptr[idx] == h2 && data_ptr[idx].key == entry.key) {
-        return data_ptr + idx;
-      } else if (ctrl_ptr[idx] == CTRL_DEL && del_idx == _cap) {
+      } else if (ctrl == CTRL_DEL && del_idx == _cap) {
         del_idx = idx;
       }
     }
     return nullptr;
   }
 
-  auto erase(T* dst) noexcept -> bool {
+  auto try_erase(T* dst) noexcept -> bool {
     const auto data = this->data();
     const auto idx = static_cast<usize>(dst - data);
-    if (idx >= _cap) {
+    if (idx >= _cap) {  // check if dst belongs to this table
       return false;
     }
 
+    // mark as deleted
     data[idx].~T();
     _ptr[idx] = CTRL_DEL;
     _len -= 1;
-    // note: don't increase _remain here
-
     return true;
   }
 
@@ -187,13 +191,12 @@ class HashTbl {
     const auto new_ctrl = _ptr;
     const auto new_data = this->data();
 
-    auto insert_new = [&](T& entry) {
+    auto insert_new = [&](T&& entry) {
       const auto [h1, h2] = this->hidx(entry.key);
       for (auto idx = h1;; idx = (idx + 1) & (_cap - 1)) {
         if (new_ctrl[idx] == CTRL_NUL) {
           new_ctrl[idx] = h2;
           ptr::write(new_data + idx, static_cast<T&&>(entry));
-          entry.~T();
           _len += 1;
           _remain -= 1;
           break;
@@ -204,7 +207,8 @@ class HashTbl {
     for (usize idx = 0; idx < old_cap; ++idx) {
       const auto ctrl = old_ctrl[idx];
       if (ctrl < CTRL_NUL) {
-        insert_new(old_data[idx]);
+        auto entry = ptr::read(old_data + idx);
+        insert_new(static_cast<T&&>(entry));
       }
     }
   }

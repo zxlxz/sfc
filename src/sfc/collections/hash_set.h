@@ -44,12 +44,11 @@ class HashSet {
 
   // Returns whether the value was present in the set.
   auto remove(const auto& val) noexcept -> bool {
-    const auto p = const_cast<Entry*>(_inn.search(val));
-    if (!p) {
-      return false;
+    if (auto p = const_cast<Entry*>(_inn.search(val))) {
+      (void)_inn.try_erase(p);
+      return true;
     }
-    _inn.erase(p);
-    return true;
+    return false;
   }
 
   void clear() {

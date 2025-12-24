@@ -109,8 +109,7 @@ auto Mutex::lock() noexcept -> Guard {
 }
 
 auto Mutex::try_lock() noexcept -> Option<Guard> {
-  const auto ret = _inn->try_lock();
-  if (!ret) {
+  if (!_inn->try_lock()) {
     return {};
   }
   return {option::some_t{}, &*_inn};
@@ -138,8 +137,7 @@ auto ReentrantLock::lock() noexcept -> Guard {
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
-  const auto ret = _inn->try_lock();
-  if (!ret) {
+  if (!_inn->try_lock()) {
     return {};
   }
   return {option::some_t{}, &*_inn};
@@ -148,9 +146,10 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
 ReentrantLock::Guard::Guard(Inn* mtx) noexcept : _inn{mtx} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  if (_inn) {
-    _inn->unlock();
+  if (!_inn) {
+    return;
   }
+  (void)_inn->unlock();
 }
 
 }  // namespace sfc::sync

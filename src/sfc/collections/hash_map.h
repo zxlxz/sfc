@@ -75,7 +75,7 @@ class HashMap {
       return {};
     }
     auto res = Option{static_cast<V&&>(p->val)};
-    _inn.erase(p);
+    (void)_inn.try_erase(p);
     return res;
   }
 
