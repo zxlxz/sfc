@@ -1,12 +1,10 @@
 #pragma once
 #if defined(__unix__) || defined(__APPLE__)
 
+#include <sys/time.h>
 #include <pthread.h>
-#include <time.h>
 
 namespace sfc::sys::thread {
-
-using timespec_t = struct ::timespec;
 
 using ret_t = void*;
 using thrd_t = pthread_t;
@@ -70,7 +68,7 @@ inline auto thrd_sleep_ms(unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 
-  const auto ts = timespec_t{
+  const auto ts = ::timespec{
       .tv_sec = millis / MILLIS_PER_SEC,
       .tv_nsec = (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI,
   };
