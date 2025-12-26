@@ -111,12 +111,12 @@ void App::list_xml(Str path) const {
 
 auto main(int argc, const char* argv[]) -> int {
   auto cmd = app::Clap{"sfc_test"};
-  cmd.add_flag("h:help", "Show this help message");
-  cmd.add_flag("l:list", "List all tests");
-  cmd.add_flag("gtest_list_tests", "List all tests instead of running them");
-  cmd.add_opt("gtest_filter", "Run only tests matching the given pattern", "PATTERNS");
-  cmd.add_opt("gtest_color", "Enable or disable colored output", "BOOL");
-  cmd.add_opt("gtest_output", "Output file for test results", "FILE");
+  cmd.flag("h:help", "Show this help message");
+  cmd.flag("l:list", "List all tests");
+  cmd.flag("gtest_list_tests", "List all tests instead of running them");
+  cmd.opt("gtest_filter", "Run only tests matching the given pattern", "PATTERNS");
+  cmd.opt("gtest_color", "Enable or disable colored output", "BOOL");
+  cmd.opt("gtest_output", "Output file for test results", "FILE");
 
   if (!cmd.parse_cmdline(argc, argv)) {
     cmd.print_help();

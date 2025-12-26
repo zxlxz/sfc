@@ -21,9 +21,9 @@ class Clap {
   void set_about(Str s);
   void print_help() const;
 
-  void add_flag(Str name, Str help);
-  void add_opt(Str name, Str help, Str val);
-  void add_arg(Str name, Str help, Str val);
+  auto flag(Str name, Str help) -> Clap&;
+  auto opt(Str name, Str help, Str val) -> Clap&;
+  auto arg(Str name, Str help, Str val) -> Clap&;
 
  public:
   auto get(Str name) const -> Option<Str>;

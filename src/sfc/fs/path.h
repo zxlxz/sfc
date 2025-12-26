@@ -52,6 +52,11 @@ class PathBuf {
   void set_extension(Str extension) noexcept;
 
  public:
+  // trait: deref<Path>
+  auto operator*() const noexcept -> Path {
+    return this->as_path();
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     _inn.fmt(f);

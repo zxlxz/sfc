@@ -269,16 +269,19 @@ void Clap::set_about(Str s) {
   _about = String::from(s);
 }
 
-void Clap::add_flag(Str desc, Str help) {
+auto Clap::flag(Str desc, Str help) -> Clap& {
   _items.push({Item::Flag, desc, help, {}});
+  return *this;
 }
 
-void Clap::add_opt(Str desc, Str help, Str sval) {
+auto Clap::opt(Str desc, Str help, Str sval) -> Clap& {
   _items.push({Item::Opt, desc, help, sval});
+  return *this;
 }
 
-void Clap::add_arg(Str desc, Str help, Str sval) {
+auto Clap::arg(Str desc, Str help, Str sval) -> Clap& {
   _items.push({Item::Arg, desc, help, sval});
+  return *this;
 }
 
 auto Clap::get(Str s) const -> Option<Str> {
