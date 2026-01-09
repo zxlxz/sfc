@@ -44,10 +44,10 @@ SFC_TEST(pop) {
   int tmp[] = {0, 1, 2, 3};
 
   auto v = Vec<int>::from(tmp);
-  panicking::expect_eq(*v.pop(), 3);
-  panicking::expect_eq(*v.pop(), 2);
-  panicking::expect_eq(*v.pop(), 1);
-  panicking::expect_eq(*v.pop(), 0);
+  panicking::expect_eq(v.pop().unwrap(), 3);
+  panicking::expect_eq(v.pop().unwrap(), 2);
+  panicking::expect_eq(v.pop().unwrap(), 1);
+  panicking::expect_eq(v.pop().unwrap(), 0);
 };
 
 SFC_TEST(insert) {

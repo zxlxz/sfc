@@ -1,4 +1,5 @@
 #include "sfc/test/ut.h"
+
 #include "sfc/io.h"
 #include "sfc/time.h"
 
@@ -68,7 +69,8 @@ auto Suite::tests() const -> Slice<const Case> {
 }
 
 auto Suite::push(Case unit) -> Case& {
-  return _cases.push(unit);
+  _cases.push(unit);
+  return _cases.last_mut().unwrap();
 }
 
 void Suite::run(Slice<const Str> pats, bool color) {
@@ -109,7 +111,8 @@ auto AllTest::regist(Case test_case) -> bool {
         return suite;
       }
     }
-    return _suites.push(Suite{name});
+    _suites.push(Suite{name});
+    return _suites.last_mut().unwrap();
   };
 
   const auto suite_name = test_case.suite();

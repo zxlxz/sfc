@@ -1,23 +1,31 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/alloc/alloc.h"
 
 namespace sfc::vec {
 
-template <class T>
+template <class T, class A = alloc::Global>
 class RawVec {
  public:
   T* _ptr{nullptr};
   usize _cap{0};
+  [[no_unique_address]] A _a{};
 
  public:
   RawVec() noexcept = default;
 
   ~RawVec() noexcept {
-    this->dealloc();
+    if (_ptr == nullptr) {
+      return;
+    }
+    const auto layout = alloc::Layout::array<T>(_cap);
+    _a.dealloc(_ptr, layout);
   }
 
-  RawVec(RawVec&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)} {}
+  RawVec(RawVec&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _a{other._a} {
+    other._ptr = nullptr;
+    other._cap = 0;
+  }
 
   RawVec& operator=(RawVec&& other) noexcept {
     if (this != &other) {
@@ -27,39 +35,25 @@ class RawVec {
     return *this;
   }
 
-  static auto with_capacity(usize capacity) noexcept -> RawVec {
+  static auto with_capacity(usize capacity, A alloc = A{}) noexcept -> RawVec {
+    const auto layout = alloc::Layout::array<T>(capacity);
     auto res = RawVec{};
-    res.realloc(0, capacity);
+    res._ptr = static_cast<T*>(alloc.alloc(layout));
+    res._a = alloc;
     return res;
   }
 
- public:
-  void dealloc() noexcept {
-    if (_ptr == nullptr) {
-      return;
-    }
-    __builtin_operator_delete(_ptr);
-    _ptr = nullptr;
-    _cap = 0;
-  }
-
-  void realloc(usize used, usize new_cap) noexcept {
-    if (new_cap == _cap || used > _cap || used > new_cap) {
-      return;
-    }
-    const auto new_ptr = static_cast<T*>(new_cap ? __builtin_operator_new(new_cap * sizeof(T)) : nullptr);
-    if (_ptr) {
-      ptr::uninit_move(_ptr, new_ptr, used);
-      this->dealloc();
-    }
-    _ptr = new_ptr;
+  void realloc([[maybe_unused]] usize used, usize new_cap) noexcept {
+    const auto layout = alloc::Layout::array<T>(_cap);
+    _ptr = static_cast<T*>(_a.realloc(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
 };
 
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] Vec {
-  RawVec<T> _buf = {};
+  using Buf = RawVec<T, A>;
+  Buf _buf = {};
   usize _len = 0;
 
  public:
@@ -163,14 +157,13 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  auto push(T val) -> T& {
+  void push(T val) {
     if (_len == _buf._cap) {
       this->reserve(1);
     }
     const auto dst = _buf._ptr + _len;
     ptr::write(dst, static_cast<T&&>(val));
     _len += 1;
-    return *dst;
   }
 
   auto pop() -> Option<T> {
@@ -215,7 +208,7 @@ class [[nodiscard]] Vec {
     if (_len + additional <= _buf._cap) {
       return;
     }
-    const auto new_cap = num::max(_buf._cap * 2, _len + additional);
+    const auto new_cap = cmp::max(_buf._cap * 2, _len + additional);
     _buf.realloc(_len, new_cap);
   }
 
@@ -428,6 +421,6 @@ class [[nodiscard]] Vec {
 }  // namespace sfc::vec
 
 namespace sfc {
-using vec::Vec;
 using vec::RawVec;
+using vec::Vec;
 }  // namespace sfc

@@ -4,9 +4,9 @@
 
 namespace sfc::collections {
 
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
-  using Buf = RawVec<T>;
+  using Buf = RawVec<T, A>;
 
   Buf _buf{};
   usize _len{0};

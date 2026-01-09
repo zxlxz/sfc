@@ -27,16 +27,6 @@ constexpr auto abs(T val) -> T {
   return val >= 0 ? val : 0 - val;
 }
 
-template <class T>
-constexpr auto min(T a, T b) -> T {
-  return a < b ? a : b;
-}
-
-template <class T>
-constexpr auto max(T a, T b) -> T {
-  return a < b ? b : a;
-}
-
 template <trait::uint_ T>
 constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
   auto x = init_val;

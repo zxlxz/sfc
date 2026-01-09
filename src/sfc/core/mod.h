@@ -6,7 +6,6 @@
 #pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
 #endif
 
-#define SFC_STD std
 
 namespace sfc {
 
@@ -55,14 +54,8 @@ class Result;
 
 }  // namespace sfc
 
-#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
-#define __PLACEMENT_NEW_INLINE
-#define _LIBCPP_NEW
-inline void* operator new(sfc::usize, void* ptr) noexcept {
-  return ptr;
-}
-
-inline void operator delete(void*, void*) noexcept {
-  return;
-}
+#ifdef __APPLE__
+#define SFC_STD std::inline __1
+#else
+#define SFC_STD std
 #endif

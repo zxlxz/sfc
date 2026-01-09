@@ -140,12 +140,12 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
 
 template <trait::copy_ T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0 || !src || !dst) {
+  if (cnt == 0) {
     return;
   }
 
   if constexpr (__is_trivially_copyable(T)) {
-    cnt ? (void)__builtin_memcpy(dst, src, sizeof(T) * cnt) : (void)0;
+    __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
       new (&dst[idx]) T{static_cast<T&&>(src[idx])};
