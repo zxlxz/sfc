@@ -1,13 +1,9 @@
 ---
-# Start with Google style as base
 BasedOnStyle: Google
 ---
 Language: Cpp
 Standard: Latest
 ColumnLimit: 120
-
-BreakBeforeBraces: Attach
-InsertBraces: true
 
 AlignConsecutiveDeclarations: false
 AlignConsecutiveAssignments: false
@@ -17,24 +13,18 @@ AlignConsecutiveShortCaseStatements:
 
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: Empty
-AllowShortCaseLabelsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
 
 BinPackArguments: false
 BinPackParameters: false
 
 # break
-BreakBeforeBinaryOperators: None
 BreakConstructorInitializers: BeforeComma
 
 # Penalties
 PenaltyBreakOpenParenthesis: 21
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakAssignment: 19
-
-# Sort
-SortIncludes: false
-SortUsingDeclarations: Never
