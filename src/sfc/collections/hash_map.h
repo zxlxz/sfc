@@ -88,13 +88,12 @@ class HashMap {
   void fmt(auto& f) const {
     auto imp = f.debug_map();
     _inn.for_each([&](const Entry& entry) { imp.entry(entry.key, entry.val); });
-    imp.finish();
   }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
-    auto map = ser.serialize_map();
-    _inn.for_each([&](const Entry& entry) { map.serialize_entry(entry.key, entry.val); });
+    auto imp = ser.serialize_map();
+    _inn.for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
   }
 
   // trait: serde::Deserialize

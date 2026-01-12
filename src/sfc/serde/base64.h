@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/serde/mod.h"
+#include "sfc/alloc/string.h"
 
 namespace sfc::serde::base64 {
 

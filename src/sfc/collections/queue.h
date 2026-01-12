@@ -141,7 +141,6 @@ class [[nodiscard]] Queue {
   void fmt(auto& f) const {
     auto imp = f.debug_list();
     this->for_each([&](const T& val) { imp.entry(val); });
-    imp.finish();
   }
 };
 

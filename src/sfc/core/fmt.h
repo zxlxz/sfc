@@ -287,32 +287,27 @@ struct Fmter {
  public:
   struct DebugTuple;
   auto debug_tuple() -> DebugTuple {
-    this->node_begin("(");
     return DebugTuple{*this};
   }
 
   struct DebugList;
   auto debug_list() -> DebugList {
-    this->node_begin("[");
-    return DebugList{this};
+    return DebugList{*this};
   }
 
   struct DebugSet;
   auto debug_set() -> DebugSet {
-    this->node_begin("{");
-    return DebugSet{this};
+    return DebugSet{*this};
   }
 
   struct DebugMap;
   auto debug_map() -> DebugMap {
-    this->node_begin("{");
-    return DebugMap{this};
+    return DebugMap{*this};
   }
 
   struct DebugStruct;
   auto debug_struct() -> DebugStruct {
-    this->write_str("{");
-    return DebugStruct{this};
+    return DebugStruct{*this};
   }
 
  private:
@@ -349,135 +344,145 @@ struct Fmter {
 
 template <class W>
 struct Fmter<W>::DebugTuple {
-  Fmter* _fmt = nullptr;
+  Fmter& _fmt;
   u32 _cnt = 0;
 
  public:
+  explicit DebugTuple(Fmter& fmt) : _fmt{fmt} {
+    _fmt.node_begin("(");
+  }
+
+  ~DebugTuple() {
+    _fmt.node_end(")", _cnt);
+  }
+
+  DebugTuple(const DebugTuple&) = delete;
+  void operator=(const DebugTuple&) = delete;
+
   auto entry(const auto& value) -> DebugTuple& {
-    if (_fmt) {
-      _fmt->node_item(_cnt++);
-      _fmt->write_val(value);
-    }
+    _fmt.node_item(_cnt++);
+    _fmt.write_val(value);
     return *this;
   }
 
-  void finish() {
-    if (_fmt) {
-      _fmt->node_end(")", _cnt);
-    }
-  }
-
-  auto entries(auto&& iter) -> DebugTuple& {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entry(val); });
-    return *this;
   }
 };
 
 template <class W>
 struct Fmter<W>::DebugList {
-  Fmter* _fmt = nullptr;
+  Fmter& _fmt;
   u32 _cnt = 0;
 
  public:
+  explicit DebugList(Fmter& fmt) : _fmt{fmt} {
+    _fmt.node_begin("[");
+  }
+
+  ~DebugList() {
+    _fmt.node_end("]", _cnt);
+  }
+
+  DebugList(const DebugList&) = delete;
+  void operator=(const DebugList&) = delete;
+
   auto entry(const auto& value) -> DebugList& {
-    if (_fmt) {
-      _fmt->node_item(_cnt++);
-      _fmt->write_val(value);
-    }
+    _fmt.node_item(_cnt++);
+    _fmt.write_val(value);
     return *this;
   }
 
-  void finish() {
-    if (_fmt) {
-      _fmt->node_end("]", _cnt);
-    }
-  }
-
-  auto entries(auto&& iter) -> DebugList& {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entry(val); });
-    return *this;
   }
 };
 
 template <class W>
 struct Fmter<W>::DebugSet {
-  Fmter* _fmt = nullptr;
+  Fmter& _fmt;
   u32 _cnt = 0;
 
  public:
+  explicit DebugSet(Fmter& fmt) : _fmt{fmt} {
+    _fmt.node_begin("{");
+  }
+
+  ~DebugSet() {
+    _fmt.node_end("}", _cnt);
+  }
+
+  DebugSet(const DebugSet&) = delete;
+  void operator=(const DebugSet&) = delete;
+
   auto entry(const auto& value) -> DebugSet& {
-    if (_fmt) {
-      _fmt->node_item(_cnt++);
-      _fmt->write_val(value);
-    }
+    _fmt.node_item(_cnt++);
+    _fmt.write_val(value);
     return *this;
   }
 
-  auto entries(auto&& iter) -> DebugSet& {
+  void entries(auto&& iter) {
     iter.for_each([&](auto&& val) { this->entry(val); });
-    return *this;
-  }
-
-  void finish() {
-    if (_fmt) {
-      _fmt->node_end("}", _cnt);
-    }
   }
 };
 
 template <class W>
 struct Fmter<W>::DebugMap {
-  Fmter* _fmt = nullptr;
+  Fmter& _fmt;
   u32 _cnt = 0;
 
  public:
+  explicit DebugMap(Fmter& fmt) : _fmt{fmt} {
+    _fmt.node_begin("{");
+  }
+
+  ~DebugMap() {
+    _fmt.node_end("}", _cnt);
+  }
+
+  DebugMap(const DebugMap&) = delete;
+  void operator=(const DebugMap&) = delete;
+
   auto entry(Str key, const auto& value) -> DebugMap& {
-    if (_fmt) {
-      _fmt->node_item(_cnt++);
-      _fmt->write_str('"');
-      _fmt->write_str(key);
-      _fmt->write_str("\": ");
-      _fmt->write_val(value);
-    }
+    _fmt.node_item(_cnt++);
+    _fmt.write_str('"');
+    _fmt.write_str(key);
+    _fmt.write_str("\": ");
+    _fmt.write_val(value);
     return *this;
   }
 
-  void finish() {
-    if (_fmt) {
-      _fmt->node_end("}", _cnt);
-      _fmt = nullptr;
-    }
-  }
-
-  auto entries(auto&& iter) -> DebugMap& {
+  void entries(auto&& iter) {
     iter.for_each([&](const auto& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
     });
-    return *this;
   }
 };
 
 template <class W>
 struct Fmter<W>::DebugStruct {
-  Fmter* _fmt = nullptr;
+  Fmter& _fmt;
   u32 _cnt = 0;
 
  public:
-  auto field(Str key, const auto& value) -> DebugStruct& {
-    if (_fmt) {
-      _fmt->node_item(_cnt++);
-      _fmt->write_str(key);
-      _fmt->write_str(": ");
-      _fmt->write_val(value);
-    }
-    return *this;
+  explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
+    _fmt.node_begin("{");
   }
 
-  void finish() {
-    if (_fmt) {
-      _fmt->node_end("}", _cnt);
-    }
+  ~DebugStruct() {
+    _fmt.node_end("}", _cnt);
+  }
+
+  DebugStruct(const DebugStruct&) = delete;
+  void operator=(const DebugStruct&) = delete;
+
+  auto field(Str key, const auto& value) -> DebugStruct& {
+    _fmt.node_item(_cnt++);
+    _fmt.write_str(key);
+    _fmt.write_str(": ");
+    _fmt.write_val(value);
+    return *this;
   }
 
   void fields(auto&& iter) {

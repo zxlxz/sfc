@@ -72,6 +72,7 @@ struct Tuple {
   void serialize(auto& ser) const {
     auto imp = ser.serialize_tuple();
     this->map([&](const auto& e) { imp.serialize_element(e); });
+    imp.end();
   }
 };
 

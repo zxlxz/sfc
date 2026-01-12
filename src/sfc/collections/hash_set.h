@@ -60,7 +60,6 @@ class HashSet {
   void fmt(auto& f) const {
     auto imp = f.debug_set();
     _inn.for_each([&](const Entry& entry) { imp.entry(entry.key); });
-    imp.finish();
   }
 };
 

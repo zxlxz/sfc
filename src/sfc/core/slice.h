@@ -1,11 +1,11 @@
 #pragma once
 
+#include "sfc/core/io.h"
+#include "sfc/core/iter.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
-#include "sfc/core/iter.h"
 #include "sfc/core/result.h"
 #include "sfc/core/tuple.h"
-#include "sfc/core/io.h"
 
 namespace sfc::slice {
 
@@ -20,8 +20,6 @@ struct Chunks;
 
 template <class T>
 struct Slice {
-  using Item = T;
-
   T* _ptr = nullptr;
   usize _len = 0;
 
@@ -202,7 +200,7 @@ struct Slice {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_list().entries(this->iter()).finish();
+    f.debug_list().entries(this->iter());
   }
 
   // trait: io::Read
@@ -235,7 +233,6 @@ Slice(T*, usize) -> Slice<T>;
 
 template <class T>
 struct Iter : iter::Iterator<T&> {
-  using Item = T&;
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -265,8 +262,6 @@ struct Iter : iter::Iterator<T&> {
 
 template <class T>
 struct Windows : iter::Iterator<Slice<T>> {
-  using Item = Slice<T>;
-
   Slice<T> _buf = {};
   usize _len = 0;
 
@@ -275,23 +270,23 @@ struct Windows : iter::Iterator<Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() noexcept -> Option<Item> {
+  auto next() noexcept -> Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
 
-    auto res = Item{_buf._ptr, _len};
+    const auto res = Slice<T>{_buf._ptr, _len};
     _buf._ptr += 1;
     _buf._len -= 1;
     return res;
   }
 
-  auto next_back() noexcept -> Option<Item> {
+  auto next_back() noexcept -> Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
     }
 
-    auto res = Item{_buf._ptr + _buf._len - _len, _len};
+    const auto res = Slice<T>{_buf._ptr + _buf._len - _len, _len};
     _buf._len -= 1;
     return res;
   }
@@ -299,8 +294,6 @@ struct Windows : iter::Iterator<Slice<T>> {
 
 template <class T>
 struct Chunks : iter::Iterator<Slice<T>> {
-  using Item = Slice<T>;
-
   Slice<T> _buf = {};
   usize _len = 0;
 
@@ -309,12 +302,12 @@ struct Chunks : iter::Iterator<Slice<T>> {
     return _buf._len >= _len;
   }
 
-  auto next() noexcept -> Option<Item> {
+  auto next() noexcept -> Option<Slice<T>> {
     if (_buf._len == 0) {
       return {};
     }
     const auto pos = _len < _buf._len ? _len : _buf._len;
-    const auto res = Item{_buf._ptr, pos};
+    const auto res = Slice<T>{_buf._ptr, pos};
     _buf._ptr += pos;
     _buf._len -= pos;
     return res;
@@ -324,6 +317,7 @@ struct Chunks : iter::Iterator<Slice<T>> {
 }  // namespace sfc::slice
 
 namespace sfc::option {
+
 template <class T>
 struct Inner<slice::Slice<T>> {
   slice::Slice<T> _val;
@@ -344,6 +338,7 @@ struct Inner<slice::Slice<T>> {
     return _val;
   }
 };
+
 }  // namespace sfc::option
 
 namespace sfc {

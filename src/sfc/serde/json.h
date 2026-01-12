@@ -19,7 +19,7 @@ enum class Token {
   Other,        // number, etc.
 };
 
-enum class Error : i8 {
+enum class Error {
   Success,
   EofWhileParsing,      // EOF while parsing keyword
   ExpectedComma,        // expected ','
@@ -79,13 +79,34 @@ struct Serializer {
     _buf.push('"');
   }
 
+  template <class T>
+  void serialize_any(const T& val) {
+    if constexpr (requires { val.serialize(*this); }) {
+      return val.serialize(*this);
+    } else if constexpr (trait::same_<T, bool>) {
+      return this->serialize_bool(val);
+    } else if constexpr (trait::same_<T, char>) {
+      return this->serialize_char(val);
+    } else if constexpr (trait::int_<T>) {
+      return this->serialize_int(val);
+    } else if constexpr (trait::flt_<T>) {
+      return this->serialize_flt(val);
+    } else if constexpr (requires { Str{val}; }) {
+      return this->serialize_str(val);
+    } else if constexpr (requires { Slice{val}; }) {
+      return Slice{val}.serialize(*this);
+    } else {
+      static_assert(false, "Serialize::serialize: not serializable");
+    }
+  }
+
  public:
   struct SerArray {
     Serializer& _ser;
     u32 _cnt = 0;
 
    public:
-    SerArray(Serializer& ser) : _ser{ser} {
+    explicit SerArray(Serializer& ser) : _ser{ser} {
       _ser._buf.push('[');
     }
 
@@ -94,13 +115,13 @@ struct Serializer {
     }
 
     SerArray(const SerArray&) = delete;
-    SerArray& operator=(const SerArray&) = delete;
+    void operator=(const SerArray&) = delete;
 
     void serialize_element(const auto& item) noexcept {
       if (_cnt++ != 0) {
         _ser._buf.push(',');
       }
-      Serialize::serialize(item, _ser);
+      _ser.serialize_any(item);
     }
   };
 
@@ -118,7 +139,8 @@ struct Serializer {
     }
 
     SerObject(const SerObject&) = delete;
-    SerObject& operator=(const SerObject&) = delete;
+
+    void operator=(const SerObject&) = delete;
 
     void serialize_entry(Str key, const auto& val) noexcept {
       if (_cnt++ != 0) {
@@ -127,7 +149,7 @@ struct Serializer {
       _ser._buf.push('"');
       _ser._buf.push_str(key);
       _ser._buf.push_str("\":");
-      Serialize::serialize(val, _ser);
+      _ser.serialize_any(val);
     }
   };
 
@@ -145,7 +167,6 @@ struct Serializer {
 };
 
 struct Deserializer {
-  using Error = json::Error;
   Str _buf;
 
  public:
@@ -161,6 +182,18 @@ struct Deserializer {
       case Token::Eof:   return Error::EofWhileParsing;
       default:           return Error::InvalidKeyword;
     }
+  }
+
+  auto deserialize_char() noexcept -> Result<char> {
+    const auto s = this->extract_str();
+    if (s.is_err()) {
+      return ~s;
+    }
+    const auto str = *s;
+    if (str.len() != 1) {
+      return Error::InvalidString;
+    }
+    return str[0];
   }
 
   template <trait::int_ T>
@@ -193,6 +226,25 @@ struct Deserializer {
     return this->extract_str();
   }
 
+  template <class T>
+  auto deserialize_any() noexcept -> Result<T> {
+    if constexpr (requires { T::deserialize(*this); }) {
+      return T::deserialize(*this);
+    } else if constexpr (trait::same_<T, bool>) {
+      return this->deserialize_bool();
+    } else if constexpr (trait::same_<T, char>) {
+      return this->deserialize_char();
+    } else if constexpr (trait::int_<T>) {
+      return this->template deserialize_int<T>();
+    } else if constexpr (trait::flt_<T>) {
+      return this->template deserialize_flt<T>();
+    } else if constexpr (requires { T{Str{}}; }) {
+      return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });
+    } else {
+      static_assert(false, "Deserialize::deserialize: not deserializable");
+    }
+  }
+
  public:
   struct DesArray {
     using Error = json::Error;
@@ -211,7 +263,7 @@ struct Deserializer {
         return Error::ExpectedComma;
       }
       _idx += 1;
-      return Deserialize::deserialize<T>(_inn);
+      return _inn.deserialize_any<T>();
     }
   };
 
@@ -242,7 +294,7 @@ struct Deserializer {
       if (_inn.extract_tok(Token::Colon).is_err()) {
         return Error::ExpectedColon;
       }
-      return Deserialize::deserialize<T>(_inn);
+      return _inn.deserialize_any<T>();
     }
   };
 
@@ -290,13 +342,13 @@ struct Deserializer {
 
 void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};
-  Serialize::serialize(val, ser);
+  ser.serialize_any(val);
 }
 
 auto to_string(const auto& val) -> String {
   auto buf = String{};
   auto ser = Serializer{buf};
-  Serialize::serialize(val, ser);
+  ser.serialize_any(val);
   return buf;
 }
 
