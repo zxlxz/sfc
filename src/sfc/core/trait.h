@@ -43,35 +43,34 @@ concept polymorphic_ = __is_polymorphic(T);
 template <class F, class T>
 concept AsRef = requires(const F& from) { T{from}; };
 
-template <class T, T... I>
-struct Ints {};
+template <auto... I>
+struct idxs_t {};
 
-template <usize... I>
-using idxs_t = Ints<usize, I...>;
+template <class, auto... I>
+struct _int_seq_helper {
+  using Type = idxs_t<I...>;
+};
 
 template <auto N>
-using idxs_seq_t = __make_integer_seq<Ints, decltype(N), N>;
-
-template <class I, class X>
-struct Impl : I, X {
-  static_assert(__is_empty(I), "Trait interface must be empty");
-};
+using idxs_seq_t = typename __make_integer_seq<_int_seq_helper, decltype(N), N>::Type;
 
 template <class I, class X>
 auto as(const X& x) -> auto& {
+  struct Impl : I, X {};
   if constexpr (requires { static_cast<const I&>(x); }) {
     return static_cast<const I&>(x);
   } else {
-    return static_cast<const Impl<I, X>&>(x);
+    return static_cast<const Impl&>(x);
   }
 }
 
 template <class I, class X>
 auto as_mut(X& x) -> auto& {
+  struct Impl : I, X {};
   if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);
   } else {
-    return static_cast<Impl<I, X>&>(x);
+    return static_cast<Impl&>(x);
   }
 }
 

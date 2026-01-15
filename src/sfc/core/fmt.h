@@ -108,7 +108,7 @@ struct Debug {
   template <trait::enum_ E>
   static auto enum_name(E val) -> Str {
     static constexpr auto COUNT = static_cast<u32>(E::_COUNT_) & 0xFFU;
-    static const auto NAMES = []<u32... I>(trait::Ints<u32, I...>) {
+    static const auto NAMES = []<u32... I>(trait::idxs_t<I...>) {
       static const Str names[] = {str::enum_name<static_cast<E>(I)>()...};
       return names;
     }(trait::idxs_seq_t<COUNT>{});
