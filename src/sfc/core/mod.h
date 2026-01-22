@@ -1,11 +1,12 @@
 #pragma once
 
+#include <new>
+
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++26-extensions"
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 #pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
 #endif
-
 
 namespace sfc {
 
