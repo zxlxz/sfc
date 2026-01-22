@@ -5,7 +5,7 @@
 namespace sfc::sys::sync {
 
 using tid_t = DWORD;
-using mtx_t = CRITICAL_SECTION;
+using mtx_t = SRWLOCK;
 using cnd_t = CONDITION_VARIABLE;
 
 inline auto get_tid() -> tid_t {
@@ -13,23 +13,23 @@ inline auto get_tid() -> tid_t {
 }
 
 inline void mtx_init(mtx_t& mtx) {
-  ::InitializeCriticalSection(&mtx);
+  ::InitializeSRWLock(&mtx);
 }
 
 inline void mtx_destroy(mtx_t& mtx) {
-  ::DeleteCriticalSection(&mtx);
+  (void)mtx;
 }
 
 inline void mtx_lock(mtx_t& mtx) {
-  ::EnterCriticalSection(&mtx);
+  ::AcquireSRWLockExclusive(&mtx);
 }
 
 inline void mtx_unlock(mtx_t& mtx) {
-  ::LeaveCriticalSection(&mtx);
+  ::ReleaseSRWLockExclusive(&mtx);
 }
 
 inline bool mtx_trylock(mtx_t& mtx) {
-  return ::TryEnterCriticalSection(&mtx);
+  return ::TryAcquireSRWLockExclusive(&mtx);
 }
 
 inline void cnd_init(cnd_t& cond) {
@@ -49,11 +49,11 @@ inline void cnd_broadcast(cnd_t& cond) {
 }
 
 inline void cnd_wait(cnd_t& cond, mtx_t& mtx) {
-  ::SleepConditionVariableCS(&cond, &mtx, INFINITE);
+  ::SleepConditionVariableSRW(&cond, &mtx, INFINITE, 0);
 }
 
 inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, DWORD millis) -> bool {
-  return ::SleepConditionVariableCS(&cond, &mtx, millis);
+  return ::SleepConditionVariableSRW(&cond, &mtx, millis, 0);
 }
 
 }  // namespace sfc::sys::sync

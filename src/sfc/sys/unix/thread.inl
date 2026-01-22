@@ -1,8 +1,9 @@
 #pragma once
 #if defined(__unix__) || defined(__APPLE__)
 
-#include <sys/time.h>
+#include <errno.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 namespace sfc::sys::thread {
 
@@ -13,7 +14,7 @@ inline auto thrd_current() -> thrd_t {
   return ::pthread_self();
 }
 
-inline auto thrd_create(size_t stack_size, void* (*func)(void*), void* data) -> thrd_t {
+inline auto thrd_create(size_t stack_size, ret_t (*func)(void*), void* data) -> thrd_t {
   // attr
   auto attr = ::pthread_attr_t{};
   ::pthread_attr_init(&attr);
@@ -68,13 +69,23 @@ inline auto thrd_sleep_ms(unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 
-  const auto ts = ::timespec{
+  auto ts = ::timespec{
       .tv_sec = millis / MILLIS_PER_SEC,
       .tv_nsec = (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI,
   };
 
-  const auto ret = ::nanosleep(&ts, nullptr);
-  return ret != -1;
+  while (true) {
+    auto rem = ::timespec{};
+    const auto err = ::nanosleep(&ts, &rem);
+    if (err == 0) {
+      break;
+    }
+    if (errno != EINTR) {
+      return false;
+    }
+    ts = rem;
+  }
+  return true;
 }
 
 }  // namespace sfc::sys::thread

@@ -1,18 +1,15 @@
 #include "sfc/thread.h"
 
-#include "sfc/sys/thread.h"
 #include "sfc/ffi/c_str.h"
+#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 
 namespace sys_imp = sys::thread;
-using ffi::CString;
-
-using sys_imp::thrd_t;
 
 struct ThreadData {
   Box<void()> _func;
-  CString _name;
+  ffi::CString _name;
 
  public:
   void run() noexcept {
@@ -20,20 +17,22 @@ struct ThreadData {
 
     try {
       _func();
-    } catch (...) {}
+    } catch (...) {
+      __builtin_abort();
+    }
   }
 };
 
-auto Builder::spawn(Box<void()> fun) -> JoinHandle {
-  const auto call_back = [](void* ptr) -> sys_imp::ret_t {
-    auto dat = static_cast<ThreadData*>(ptr);
+static auto thread_callback(void* ptr) -> sys_imp::ret_t {
+  auto dat = static_cast<ThreadData*>(ptr);
     auto obj = Box<ThreadData>::from_raw(dat);
     obj->run();
     return {};
-  };
+}
 
-  auto data = Box<ThreadData>::xnew(mem::move(fun), CString::xnew(name));
-  auto thrd = sys_imp::thrd_create(stack_size, call_back, &*data);
+auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::CString::xnew(name));
+  auto thrd = sys_imp::thrd_create(stack_size, thread_callback, data.ptr());
   if (thrd) {
     mem::move(data).into_raw();
   }
@@ -47,7 +46,7 @@ JoinHandle::~JoinHandle() noexcept {
   if (!_thrd._raw) {
     return;
   }
-  sys_imp::thrd_join(static_cast<thrd_t>(_thrd._raw));
+  sys_imp::thrd_join(static_cast<sys_imp::thrd_t>(_thrd._raw));
 }
 
 auto current() -> Thread {

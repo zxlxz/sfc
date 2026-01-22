@@ -28,7 +28,7 @@ static inline auto instant_now() -> ULONG64 {
 
 static inline auto system_now() -> ULONG64 {
   auto file_time = FILETIME{};
-  ::GetSystemTimeAsFileTime(&file_time);
+  ::GetSystemTimePreciseAsFileTime(&file_time);
 
   const auto cnt = static_cast<ULONG64>(file_time.dwHighDateTime) << 32 | static_cast<ULONG64>(file_time.dwLowDateTime);
 

@@ -17,11 +17,11 @@ inline auto get_tid() -> tid_t {
 }
 
 inline void mtx_init(mtx_t& mtx) {
-  mtx = PTHREAD_MUTEX_INITIALIZER;
+  ::pthread_mutex_init(&mtx, nullptr);
 }
 
 inline void mtx_destroy(mtx_t& mtx) {
-  (void)mtx;
+  ::pthread_mutex_destroy(&mtx);
 }
 
 inline void mtx_lock(mtx_t& mtx) {
