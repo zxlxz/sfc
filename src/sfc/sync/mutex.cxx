@@ -2,7 +2,7 @@
 
 #include "sfc/log.h"
 #include "sfc/sync.h"
-#include "sfc/test/ut.h"
+#include "sfc/test/test.h"
 #include "sfc/thread.h"
 namespace sfc::sync::test {
 

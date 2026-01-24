@@ -1,5 +1,5 @@
 #include "sfc/serde/base64.h"
-#include "sfc/test/ut.h"
+#include "sfc/test/test.h"
 
 namespace sfc::serde::base64::test {
 

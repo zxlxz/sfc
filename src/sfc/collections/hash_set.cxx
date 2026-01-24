@@ -1,6 +1,6 @@
 #include "sfc/collections/hash_set.h"
 
-#include "sfc/test/ut.h"
+#include "sfc/test/test.h"
 
 namespace sfc::collections::hash_set::test {
 

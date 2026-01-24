@@ -3,7 +3,7 @@
 #include "sfc/app/clap.h"
 #include "sfc/fs.h"
 #include "sfc/io.h"
-#include "sfc/test/ut.h"
+#include "sfc/test/test.h"
 
 namespace sfc::test {
 

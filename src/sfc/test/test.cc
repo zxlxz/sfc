@@ -1,4 +1,4 @@
-#include "sfc/test/ut.h"
+#include "sfc/test/test.h"
 
 #include "sfc/io.h"
 #include "sfc/time.h"
