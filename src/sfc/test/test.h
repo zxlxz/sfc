@@ -40,8 +40,11 @@ struct Suite {
   auto filter(Slice<const Str> pats) const -> Suite;
 };
 
-auto suites() -> Slice<const Suite>;
+
 auto regist(Test test) -> bool;
+auto suites() -> Slice<const Suite>;
+void run(Slice<const Suite> suites, bool color = false);
+
 auto filter(Slice<const Str> pats) -> Vec<Suite>;
 
 }  // namespace sfc::test

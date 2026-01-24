@@ -92,7 +92,8 @@ void Suite::run(bool color) const {
   for (auto& test : _tests.as_slice()) {
     test.run(color);
   }
-  io::println("{} {} tests from {} ({} ms total)", title, _tests.len(), _name, timer.elapsed().as_millis());
+  const auto dur_ms = timer.elapsed().as_millis();
+  io::println("{} {} tests from {} ({} ms total)", title, _tests.len(), _name, dur_ms);
 }
 
 auto Suite::filter(Slice<const Str> pats) const -> Suite {
@@ -148,6 +149,24 @@ auto regist(Test test) -> bool {
   }
   suite.push(test);
   return true;
+}
+
+void run(Slice<const Suite> suites, bool color) {
+  const auto title = color ? Str{"\033[32m[==========]\033[39m"} : Str{"[==========]"};
+
+  auto tests_cnt = usize{0U};
+  for (auto& suite : suites) {
+    tests_cnt += suite.tests().len();
+  }
+
+  io::println("Running {} tests from {} test suites.", title, tests_cnt, suites.len());
+  const auto timer = time::Instant::now();
+  for (auto& suite : suites) {
+    suite.run(color);
+    io::println("");
+  }
+  const auto dur_ms = timer.elapsed().as_millis();
+  io::println("{} {} tests ran. ({} ms total)", title, tests_cnt, dur_ms);
 }
 
 auto filter(Slice<const Str> pats) -> Vec<Suite> {

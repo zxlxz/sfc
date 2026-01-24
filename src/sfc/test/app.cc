@@ -75,9 +75,7 @@ void App::exec(Str filter, Option<bool> color_opt) {
   auto suites = test::filter(pats.as_slice());
 
   const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
-  for(auto& suite: suites.as_slice()) {
-    suite.run(color);
-  }
+  test::run(suites.as_slice(), color);
 }
 
 void App::list() const {
