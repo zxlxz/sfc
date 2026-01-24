@@ -4,62 +4,52 @@
 
 namespace sfc::test {
 
-struct Case {
-  Str _str;
+struct Test {
   void (*_fun)();
+  Str _type;
   panicking::Location _loc;
 
  public:
   auto suite() const -> Str;
   auto name() const -> Str;
 
+  auto match(Str pat) const -> bool;
   auto run(bool color = false) const -> bool;
-};
-
-class Suite {
-  String _name{};
-  Vec<Case> _cases{};
 
  public:
-  explicit Suite(Str name);
-  ~Suite();
+  template <class T>
+  static auto of(panicking::Location loc = {}) -> Test {
+    static constexpr auto full_name = str::type_name<T>();
+    static constexpr auto type_name = full_name[{0, full_name.len() - 4}];
+    return Test{&T::test, type_name, loc};
+  }
+};
 
-  Suite(Suite&&) noexcept = default;
-  Suite& operator=(Suite&&) noexcept = default;
+struct Suite {
+  Str _name{};
+  Vec<Test> _tests{};
 
+ public:
   auto name() const -> Str;
-  auto tests() const -> Slice<const Case>;
+  auto tests() const -> Slice<const Test>;
 
-  auto push(Case unit) -> Case&;
-  void run(Slice<const Str> pats, bool color = false);
+  void push(Test test);
+  void run(bool color = false) const;
+
+  auto match(Str pat) const -> bool;
+  auto filter(Slice<const Str> pats) const -> Suite;
 };
 
-class AllTest {
-  Vec<Suite> _suites;
-
- public:
-  static auto instance() -> AllTest&;
-  auto suites() -> Slice<Suite>;
-  auto regist(Case test_case) -> bool;
-
-  void run(Slice<const Str> pats, bool color = false);
-};
-
-template <class T>
-auto auto_regist(panicking::Location loc = {}) -> bool {
-  const auto full_name = str::type_name<T>();
-  const auto test_name = full_name[{0, full_name.len() - 4}];
-  static const auto test_case = Case{test_name, &T::test, loc};
-  static const auto regist_val = AllTest::instance().regist(test_case);
-  return regist_val;
-}
+auto suites() -> Slice<const Suite>;
+auto regist(Test test) -> bool;
+auto filter(Slice<const Str> pats) -> Vec<Suite>;
 
 }  // namespace sfc::test
 
-#define SFC_TEST(X)                                             \
-  struct X##_UT_ {                                              \
-    static const bool _UT_;                                     \
-    static void test();                                         \
-  };                                                            \
-  const bool X##_UT_::_UT_ = sfc::test::auto_regist<X##_UT_>(); \
+#define SFC_TEST(X)                                                             \
+  struct X##_UT_ {                                                              \
+    static const bool _UT_;                                                     \
+    static void test();                                                         \
+  };                                                                            \
+  const bool X##_UT_::_UT_ = sfc::test::regist(sfc::test::Test::of<X##_UT_>()); \
   void X##_UT_::test()

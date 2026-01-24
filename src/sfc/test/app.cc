@@ -1,7 +1,8 @@
+#include "sfc/test/app.h"
+
+#include "sfc/app/clap.h"
 #include "sfc/fs.h"
 #include "sfc/io.h"
-#include "sfc/app/clap.h"
-#include "sfc/test/app.h"
 #include "sfc/test/ut.h"
 
 namespace sfc::test {
@@ -41,7 +42,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt);
   for (auto& suite : suites) {
-    const auto tests = suite.tests();
+    auto tests = suite.tests();
     out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
       out.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n",
@@ -70,19 +71,20 @@ void App::help() {
 }
 
 void App::exec(Str filter, Option<bool> color_opt) {
-  auto& all_test = AllTest::instance();
-
   const auto pats = parse_filter(filter);
-  const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
+  auto suites = test::filter(pats.as_slice());
 
-  all_test.run(pats.as_slice(), color);
+  const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
+  for(auto& suite: suites.as_slice()) {
+    suite.run(color);
+  }
 }
 
 void App::list() const {
-  auto& all_test = AllTest::instance();
+  auto suites = test::suites();
 
   auto outs = io::Stdout::lock();
-  for (auto& suite : all_test.suites()) {
+  for (auto& suite : suites) {
     outs.write_fmt("{}\n", suite.name());
     for (auto& test : suite.tests()) {
       outs.write_fmt("    {}\n", test.name());
@@ -91,9 +93,9 @@ void App::list() const {
 }
 
 void App::list_xml(Str path) const {
-  auto& all_test = AllTest::instance();
+  auto suites = test::suites();
 
-  const auto xml_str = format_xml(all_test.suites());
+  const auto xml_str = format_xml(suites);
   if (path.is_empty() || path == "stdout") {
     io::println(xml_str.as_str());
     return;

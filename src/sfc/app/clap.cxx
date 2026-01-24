@@ -12,7 +12,7 @@ SFC_TEST(clap) {
   clap.opt("c:config", "Configuration file", "CONFIG");
   clap.arg("i:input", "Input file", "INPUT...");
   clap.arg("o:output", "Output file", "OUTPUT");
-  
+
   const Str args[] = {"--verbose", "--output", "output.txt", "-c=config.yaml", "a.txt", "b.txt"};
   clap.parse(args);
 

@@ -5,43 +5,54 @@
 
 namespace sfc::test {
 
-static auto parse_filter(Str s) -> Tuple<Str, Str> {
-  if (s.is_empty()) {
-    return Tuple{Str{}, Str{}};
+static auto unpack_type(Str type) -> Tuple<Str, Str> {
+  const auto pos = type.rfind(':').unwrap_or(0);
+  if (pos > 1) {
+    return {type[{0, pos - 1}], type[{pos + 1, $}]};
   }
-  if (auto p = s.find('.')) {
-    const auto i = *p;
-    return Tuple{s[{0, i}], s[{i + 1, $}]};
-  }
-  if (auto p = s.rfind(':')) {
-    const auto i = *p;
-    if (i != 0 && s[i - 1] == ':') {
-      return Tuple{s[{0, i - 1}], s[{i + 1, $}]};
-    }
-  }
-  return {s, Str{}};
-};
-
-auto Case::suite() const -> Str {
-  const auto p = _str.rfind(':');
-  return p ? _str[{0, *p - 1}] : Str{};
+  return {Str{}, type};
 }
 
-auto Case::name() const -> Str {
-  const auto pos = _str.rfind(':');
-  const auto res = pos ? _str[{*pos + 1, $}] : _str;
-  return res;
+static auto unpack_pat(Str pat) -> Tuple<Str, Str> {
+  if (auto p = pat.find('.')) {
+    return {pat[{0, *p}], pat[{*p + 1, $}]};
+  }
+
+  return {Str{}, pat};
 }
 
-auto Case::run(bool color) const -> bool {
+auto Test::suite() const -> Str {
+  return unpack_type(_type).get<0>();
+}
+
+auto Test::name() const -> Str {
+  return unpack_type(_type).get<1>();
+}
+
+auto Test::match(Str pat) const -> bool {
+  if (pat.is_empty() || pat == "*") {
+    return true;
+  }
+
+  if (_type.len() == pat.len()) {
+    return _type == pat;
+  }
+
+  if (_type.len() > pat.len()) {
+    const auto colon_pos = _type.len() - pat.len() - 1;
+    return _type[colon_pos] == ':' && _type.ends_with(pat);
+  }
+
+  return false;
+}
+
+auto Test::run(bool color) const -> bool {
   const auto s_run = color ? Str{"\033[32m[ RUN      ]\033[39m"} : Str{"[ RUN      ]"};
   const auto s_suc = color ? Str{"\033[32m[       OK ]\033[39m"} : Str{"[       OK ]"};
   const auto s_err = color ? Str{"\033[31m[  FAILED  ]\033[39m"} : Str{"[  FAILED  ]"};
 
-  const auto suite_name = this->suite();
-  const auto test_name = this->name();
+  const auto [suite_name, test_name] = unpack_type(_type);
   const auto timer = time::Instant::now();
-
   io::println("{} {}.{}", s_run, suite_name, test_name);
   try {
     (_fun)();
@@ -54,77 +65,101 @@ auto Case::run(bool color) const -> bool {
   return true;
 }
 
-Suite::Suite(Str name) : _name{String::from(name)}, _cases{_cases.with_capacity(64)} {}
-
-Suite::~Suite() {
-  _cases.clear();
+void Suite::push(Test test) {
+  if (_tests.is_empty()) {
+    _tests.reserve(32);
+  }
+  _tests.push(test);
 }
 
 auto Suite::name() const -> Str {
-  return _name.as_str();
+  return _name;
 }
 
-auto Suite::tests() const -> Slice<const Case> {
-  return _cases.as_slice();
+auto Suite::tests() const -> Slice<const Test> {
+  return _tests.as_slice();
 }
 
-auto Suite::push(Case unit) -> Case& {
-  _cases.push(unit);
-  return _cases.last_mut().unwrap();
+auto Suite::match(Str pat) const -> bool {
+  return pat.is_empty() || pat == "*" || pat == _name;
 }
 
-void Suite::run(Slice<const Str> pats, bool color) {
-  if (pats.is_empty()) {
-    for (auto& test : _cases.as_mut_slice()) {
-      test.run(color);
-    }
-    return;
+void Suite::run(bool color) const {
+  const auto title = color ? Str{"\033[32m[----------]\033[39m"} : Str{"[----------]"};
+
+  io::println("{} {} tests from {}", title, _tests.len(), _name);
+  const auto timer = time::Instant::now();
+  for (auto& test : _tests.as_slice()) {
+    test.run(color);
   }
+  io::println("{} {} tests from {} ({} ms total)", title, _tests.len(), _name, timer.elapsed().as_millis());
+}
 
-  for (auto pat : pats) {
-    const auto [suite_name, test_name] = parse_filter(pat);
-    if (suite_name != _name) {
-      continue;
+auto Suite::filter(Slice<const Str> pats) const -> Suite {
+  auto res = Suite{
+      ._name = _name,
+  };
+
+  for (auto& test : _tests.as_slice()) {
+    if (pats.is_empty()) {
+      res.push(test);
     }
-
-    for (auto& test : _cases.as_mut_slice()) {
-      if (test_name == test.name()) {
-        test.run(color);
+    for (auto pat : pats) {
+      const auto [suite_pat, test_pat] = unpack_pat(pat);
+      if (this->match(suite_pat) && test.match(test_pat)) {
+        res.push(test);
+        break;
       }
     }
   }
-}
 
-auto AllTest::instance() -> AllTest& {
-  static auto res = AllTest{};
   return res;
 }
 
-auto AllTest::suites() -> Slice<Suite> {
-  return _suites.as_mut_slice();
+static auto _all_suites() -> Vec<Suite>& {
+  static auto s_suites = Vec<Suite>{};
+  return s_suites;
 }
 
-auto AllTest::regist(Case test_case) -> bool {
-  auto find_suite = [this](Str name) -> Suite& {
-    for (auto& suite : _suites.as_mut_slice()) {
-      if (suite.name() == name) {
-        return suite;
-      }
-    }
-    _suites.push(Suite{name});
-    return _suites.last_mut().unwrap();
-  };
+auto suites() -> Slice<const Suite> {
+  return _all_suites().as_slice();
+}
 
-  const auto suite_name = test_case.suite();
-  auto& suite = find_suite(suite_name);
-  suite.push(test_case);
+auto get_suite(Str suite_name) -> Suite& {
+  auto& suites = _all_suites();
+
+  for (auto& suite : suites.as_mut_slice()) {
+    if (suite._name == suite_name) {
+      return suite;
+    }
+  }
+
+  suites.push(Suite{._name = suite_name});
+  return suites.last_mut().unwrap();
+}
+
+auto regist(Test test) -> bool {
+  auto& suite = get_suite(test.suite());
+
+  for (auto& t : suite._tests.as_slice()) {
+    if (t._type == test._type) {
+      return false;
+    }
+  }
+  suite.push(test);
   return true;
 }
 
-void AllTest::run(Slice<const Str> pats, bool color) {
-  for (auto& suite : _suites.as_mut_slice()) {
-    suite.run(pats, color);
+auto filter(Slice<const Str> pats) -> Vec<Suite> {
+  auto res = Vec<Suite>{};
+
+  for (auto& suite : _all_suites().as_slice()) {
+    auto filtered_suite = suite.filter(pats);
+    if (!filtered_suite._tests.is_empty()) {
+      res.push(mem::move(filtered_suite));
+    }
   }
+  return res;
 }
 
 }  // namespace sfc::test

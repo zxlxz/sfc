@@ -1,20 +1,20 @@
 #pragma once
 
 #include "sfc/core/mem.h"
+#include "sfc/core/option.h"
 #include "sfc/core/trait.h"
 #include "sfc/core/tuple.h"
-#include "sfc/core/option.h"
 
 namespace sfc::iter {
 
 template <class I>
 struct Rev;
 
-template <class I, class P>
-struct Filter;
-
 template <class I, class F>
 struct Map;
+
+template <class I, class P>
+struct Filter;
 
 template <class T>
 struct Iterator {
@@ -144,6 +144,49 @@ struct Iterator {
   template <class B>
   auto collect(this auto&& self) -> B {
     return B::from_iter(static_cast<decltype(self)&&>(self));
+  }
+
+  template <class Self, class F>
+  auto map(this Self&& self, F&& f) -> Map<Self, F> {
+    return Map<Self, F>{static_cast<Self&&>(self), static_cast<F&&>(f)};
+  }
+
+  template <class Self, class P>
+  auto filter(this Self&& self, P&& pred) -> Filter<Self, P> {
+    return Filter<Self, P>{static_cast<Self&&>(self), static_cast<P&&>(pred)};
+  }
+};
+
+template <class I, class F>
+struct Map : Iterator<typename ops::invoke_t<F(typename I::Item)>> {
+  using Item = typename ops::invoke_t<F(typename I::Item)>;
+  I _iter;
+  F _func;
+
+ public:
+  auto next() noexcept -> Option<Item> {
+    if (auto x = _iter.next()) {
+      return Item{_func(*x)};
+    }
+    return {};
+  }
+};
+
+template <class I, class P>
+struct Filter : Iterator<typename I::Item> {
+  using Item = typename I::Item;
+
+  I _iter;
+  P _pred;
+
+ public:
+  auto next() noexcept -> Option<Item> {
+    while (auto x = _iter.next()) {
+      if (_pred(*x)) {
+        return x;
+      }
+    }
+    return {};
   }
 };
 
