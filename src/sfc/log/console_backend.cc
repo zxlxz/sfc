@@ -24,36 +24,41 @@ static inline auto color_str(Level level) -> Str {
     case Level::Warn:  return "\033[33m";
     case Level::Error: return "\033[31m";
     case Level::Fatal: return "\033[41m";
-    default:           return "\033[34m";
+    default:           return "\033[39m";
   }
+}
+
+static inline auto color_off() -> Str {
+  return "\033[0m";
 }
 
 ConsoleBackend::ConsoleBackend() : _color{io::Stdout::is_tty()} {}
 
-ConsoleBackend::~ConsoleBackend() {
-  this->flush();
-}
+ConsoleBackend::~ConsoleBackend() {}
 
 void ConsoleBackend::set_color(bool value) {
   _color = value;
 }
 
 void ConsoleBackend::flush() {
-  auto out = io::Stdout::lock();
-  out.flush();
+  io::Stdout::flush();
 }
 
 void ConsoleBackend::write(Record entry) {
-  static const Str COLOR_OFF = "\033[0m";
+  // format buf
+  static thread_local auto buf = String();
+  const auto color_on = _color ? color_str(entry.level) : Str{};
+  buf.clear();
+  buf.push_str(color_on);
+  buf.push_str(entry.time);
+  buf.push_str(level_str(entry.level));
+  buf.push_str(color_off());
+  buf.push_str(entry.msg);
+  buf.push_str("\n");
 
-  auto out = io::Stdout::lock();
-
-  _color ? out.write_str(color_str(entry.level)) : void();
-  out.write_str(entry.time);
-  out.write_str(level_str(entry.level));
-  _color ? out.write_str(COLOR_OFF) : void();
-  out.write_str(entry.msg);
-  out.write_str("\n");
+  // dump to stdout
+  io::Stdout::write_str(buf.as_str());
+  buf.clear();
 }
 
 }  // namespace sfc::log

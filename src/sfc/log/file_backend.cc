@@ -31,14 +31,17 @@ auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
 void FileBackend::flush() {}
 
 void FileBackend::write(Record entry) {
+  // format buf
   static thread_local auto buf = String();
-
   buf.clear();
   buf.push_str(entry.time);
   buf.push_str(log::level_str(entry.level));
   buf.push_str(entry.msg);
   buf.push_str("\n");
+
+  // dump to file
   _file.write_str(buf.as_str()).unwrap();
+  buf.clear();
 }
 
 }  // namespace sfc::log
