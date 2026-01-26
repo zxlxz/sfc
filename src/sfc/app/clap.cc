@@ -1,4 +1,5 @@
 #include "sfc/app/clap.h"
+
 #include "sfc/io/stdio.h"
 
 namespace sfc::app {

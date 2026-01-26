@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/core/fmt/debug.h"
 #include "sfc/core/fmt/args.h"
+#include "sfc/core/fmt/debug.h"
 
 namespace sfc::fmt {
 
@@ -135,11 +135,12 @@ struct Fmter {
     }
   }
 
-  void write_fmt(Str fmts, const auto&... args) {
+  template <class... T>
+  void write_fmt(fmts_t<T...> pats, const T&... args) {
     if constexpr (sizeof...(args) == 0) {
-      this->write_str(fmts);
+      this->write_str({pats._ptr, pats._len});
     } else {
-      Args{fmts, args...}.fmt(*this);
+      Args<T...>{pats, args...}.fmt(*this);
     }
   }
 
@@ -352,7 +353,8 @@ struct Fmter<W>::DebugStruct {
   }
 };
 
-void write(auto& out, Str fmts, const auto&... args) {
+template <class... T>
+void write(auto& out, fmt::fmts_t<T...> fmts, const T&... args) {
   Fmter{out}.write_fmt(fmts, args...);
 }
 

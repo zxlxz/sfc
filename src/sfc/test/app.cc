@@ -95,7 +95,7 @@ void App::list_xml(Str path) const {
 
   const auto xml_str = format_xml(suites);
   if (path.is_empty() || path == "stdout") {
-    io::println(xml_str.as_str());
+    io::println("{}", xml_str.as_str());
     return;
   }
 

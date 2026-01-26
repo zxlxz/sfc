@@ -180,7 +180,8 @@ class [[nodiscard]] String {
   }
 };
 
-auto format(Str fmts, const auto&... args) -> String {
+template <class... T>
+auto format(fmt::fmts_t<T...> fmts, const T&... args) -> String {
   auto s = String{};
   fmt::Fmter{s}.write_fmt(fmts, args...);
   return s;
@@ -198,14 +199,14 @@ namespace sfc::panicking {
 
 [[noreturn]] void panic_str(Location loc, Str msg) noexcept;
 
-[[noreturn]] void panic_fmt(Location loc, const auto&... args) noexcept {
+template <class... T>
+[[noreturn]] void panic_fmt(Location loc, fmt::fmts_t<T...> fmts, const T&... args) noexcept {
   if constexpr (sizeof...(args) == 0) {
-    panicking::panic_str(loc, "panic occurred");
-  } else if constexpr (sizeof...(args) == 1) {
-    panicking::panic_str(loc, args...);
+    panicking::panic_str(loc, Str{fmts._ptr, fmts._len});
   } else {
-    const auto msg = string::format(args...);
+    const auto msg = string::format(fmts, args...);
     panicking::panic_str(loc, msg.as_str());
+    panicking::panic_str(loc, "");
   }
 }
 

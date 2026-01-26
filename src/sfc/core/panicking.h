@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/fmt/args.h"
 #include "sfc/core/trait.h"
 
 namespace sfc::panicking {
@@ -16,7 +17,8 @@ struct ExpectInfo {
   ExpectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
-[[noreturn]] void panic_fmt(Location loc, const auto&... args) noexcept;
+template <class... T>
+[[noreturn]] void panic_fmt(Location loc, fmt::fmts_t<T...> fmts, const T&... args) noexcept;
 
 void expect(ExpectInfo info, const auto& fmts, const auto&... args) noexcept {
   if (info.val) {

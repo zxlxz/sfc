@@ -39,7 +39,8 @@ class Logger {
     }
   }
 
-  void write_fmt(Level level, Str fmts, const auto&... args) {
+  template <class... T>
+  void write_fmt(Level level, fmt::fmts_t<T...> fmts, const T&... args) {
     if (_backends.is_empty() && level < _level) {
       return;
     }
@@ -52,28 +53,34 @@ class Logger {
 
 auto global() -> Logger&;
 
-void trace(const auto&... args) {
-  log::global().write_fmt(Level::Trace, args...);
+template <class... T>
+void trace(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Trace, fmts, args...);
 }
 
-void debug(const auto&... args) {
-  log::global().write_fmt(Level::Debug, args...);
+template <class... T>
+void debug(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Debug, fmts, args...);
 }
 
-void info(const auto&... args) {
-  log::global().write_fmt(Level::Info, args...);
+template <class... T>
+void info(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Info, fmts, args...);
 }
 
-void warn(const auto&... args) {
-  log::global().write_fmt(Level::Warn, args...);
+template <class... T>
+void warn(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Warn, fmts, args...);
 }
 
-void error(const auto&... args) {
-  log::global().write_fmt(Level::Error, args...);
+template <class... T>
+void error(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Error, fmts, args...);
 }
 
-void fatal(const auto&... args) {
-  log::global().write_fmt(Level::Fatal, args...);
+template <class... T>
+void fatal(fmt::fmts_t<T...> fmts, const T&... args) {
+  log::global().write_fmt(Level::Fatal, fmts, args...);
 }
 
 }  // namespace sfc::log
