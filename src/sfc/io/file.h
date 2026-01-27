@@ -11,7 +11,7 @@ using fd_t = void*;
 using fd_t = int;
 #endif
 
-class File {
+class File : public io::Read, public io::Write {
  public:
   fd_t _fd;
 

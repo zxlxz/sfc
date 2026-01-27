@@ -3,6 +3,7 @@
 #include "sfc/core/num.h"
 #include "sfc/core/hash.h"
 #include "sfc/core/slice.h"
+#include "sfc/core/convert.h"
 
 namespace sfc::str {
 
@@ -196,10 +197,10 @@ struct Pattern<Str> {
 template <class P>
 Pattern(P) -> Pattern<P>;
 
-template <trait::AsRef<char> C>
+template <convert::Into<char> C>
 Pattern(C) -> Pattern<char>;
 
-template <trait::AsRef<Str> S>
+template <convert::Into<Str> S>
 Pattern(S) -> Pattern<Str>;
 
 auto Str::find(auto&& pat) const -> Option<usize> {

@@ -8,7 +8,7 @@ struct Path {
   Str _inn = {};
 
  public:
-  template <trait::AsRef<Str> S>
+  template <convert::Into<Str> S>
   Path(const S& s) noexcept : _inn(s) {}
 
   auto as_str() const noexcept -> Str;

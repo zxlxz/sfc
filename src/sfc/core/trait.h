@@ -40,16 +40,13 @@ concept tv_dtor_ = __is_trivially_destructible(T);
 template <class T>
 concept polymorphic_ = __is_polymorphic(T);
 
-template<class T>
+template <class T>
 struct _type_t {
   using Type = T;
 };
 
-template<class T>
+template <class T>
 using type_t = typename _type_t<T>::Type;
-
-template <class F, class T>
-concept AsRef = requires(const F& from) { T{from}; };
 
 template <auto... I>
 struct idxs_t {};
@@ -62,23 +59,18 @@ struct _int_seq_helper {
 template <auto N>
 using idxs_seq_t = typename __make_integer_seq<_int_seq_helper, decltype(N), N>::Type;
 
-template <class I, class X>
-auto as(const X& x) -> auto& {
-  struct Impl : I, X {};
-  if constexpr (requires { static_cast<const I&>(x); }) {
-    return static_cast<const I&>(x);
-  } else {
-    return static_cast<const Impl&>(x);
-  }
-}
+template <class I, class For>
+struct Impl : I, For {
+  Impl() = delete;
+  ~Impl() = delete;
+};
 
 template <class I, class X>
-auto as_mut(X& x) -> auto& {
-  struct Impl : I, X {};
+auto as(X& x) -> auto& {
   if constexpr (requires { static_cast<I&>(x); }) {
     return static_cast<I&>(x);
   } else {
-    return static_cast<Impl&>(x);
+    return static_cast<Impl<I, X>&>(x);
   }
 }
 
