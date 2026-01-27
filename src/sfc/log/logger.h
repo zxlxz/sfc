@@ -29,7 +29,7 @@ class Logger {
   }
 
   void write_str(Level level, Str msg) {
-    if (_backends.is_empty() && level < _level) {
+    if (_backends.is_empty() || level < _level) {
       return;
     }
 
