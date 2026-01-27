@@ -206,7 +206,6 @@ template <class... T>
   } else {
     const auto msg = string::format(fmts, args...);
     panicking::panic_str(loc, msg.as_str());
-    panicking::panic_str(loc, "");
   }
 }
 
