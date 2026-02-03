@@ -339,7 +339,7 @@ auto Clap::parse(Slice<const Str> args) -> bool {
 auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
   auto args = Vec<Str>::with_capacity(static_cast<usize>(argc - 1));
   for (auto i = 1; i < argc; i++) {
-    args.push(Str{argv[i]});
+    args.push(Str::from_cstr(argv[i]));
   }
   return this->parse(args.as_slice());
 }

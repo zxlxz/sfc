@@ -163,7 +163,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
     __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+      new (dst + idx) T{static_cast<T&&>(src[idx])};
       src[idx].~T();
     }
   }

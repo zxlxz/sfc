@@ -8,8 +8,7 @@ struct Path {
   Str _inn = {};
 
  public:
-  template <convert::Into<Str> S>
-  Path(const S& s) noexcept : _inn(s) {}
+  explicit Path(convert::Into<Str> auto&& s) noexcept : _inn(s) {}
 
   auto as_str() const noexcept -> Str;
   auto file_name() const noexcept -> Str;

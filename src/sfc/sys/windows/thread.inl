@@ -12,12 +12,13 @@ using thrd_t = HANDLE;
 
 template <int N>
 auto wchar_to_u8(const wchar_t src[], char (&dst)[N]) -> int {
-  return ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, N, nullptr, nullptr);
+  const auto write_bytes = ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, N, nullptr, nullptr);
 }
 
 template <int N>
-auto u8_to_wchar(const char src[], wchar_t (&dst)[N]) -> int {
-  return ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
+static inline auto to_os_str(const char src[], wchar_t (&dst)[N]) -> UINT {
+  const auto ret = ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
+  return ret > 0 ? static_cast<UINT>(ret - 1) : 0;
 }
 
 inline auto thrd_current() -> thrd_t {
@@ -63,13 +64,13 @@ inline auto thrd_name(thrd_t thr, char (&buf)[N]) -> const char* {
 }
 
 inline auto thrd_setname(const char* name) -> bool {
-  wchar_t wbuff[256];
-  if (u8_to_wchar(name, wbuff) == 0) {
+  wchar_t os_name[MAX_PATH];
+  if (!to_os_str(name, os_name)) {
     return false;
   }
 
   const auto thrd = ::GetCurrentThread();
-  const auto hres = ::SetThreadDescription(thrd, wbuff);
+  const auto hres = ::SetThreadDescription(thrd, os_name);
   return SUCCEEDED(hres);
 }
 

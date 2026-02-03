@@ -53,7 +53,7 @@ class [[nodiscard]] String {
   }
 
  public:
-  auto operator[](usize idx) const noexcept -> u8 {
+  auto operator[](usize idx) const noexcept -> const u8& {
     return _vec[idx];
   }
 

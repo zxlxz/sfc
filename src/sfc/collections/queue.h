@@ -50,7 +50,7 @@ class [[nodiscard]] Queue {
   }
 
   auto is_contiguous() const noexcept -> bool {
-    return _head + _len <= _buf._cap;
+    return _len == 0 || _head + _len <= _buf._cap;
   }
 
  public:

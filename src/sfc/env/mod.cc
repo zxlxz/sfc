@@ -1,7 +1,6 @@
 #include "sfc/env.h"
-
-#include "sfc/sys/os.h"
 #include "sfc/ffi/c_str.h"
+#include "sfc/sys/os.h"
 
 namespace sfc::env {
 
@@ -9,9 +8,15 @@ namespace sys_imp = sys::os;
 using ffi::CString;
 
 auto var(Str key) -> String {
+  static constexpr auto MAX_LEN = 2048U;
   const auto c_key = CString::xnew(key);
-  const auto c_val = sys_imp::getenv(c_key.as_ptr());
-  return String::from(Str{c_val});
+
+  char buf[MAX_LEN];
+  const auto val = sys_imp::getenv(c_key.as_ptr(), buf);
+  if (!val) {
+    return {};
+  }
+  return String::from(Str::from_cstr(val));
 }
 
 auto set_var(Str key, Str val) -> bool {
@@ -31,22 +36,22 @@ auto remove_var(Str key) -> bool {
 
 auto home_dir() -> fs::Path {
   const auto res = sys_imp::home_dir();
-  return fs::Path{Str{res}};
+  return fs::Path{Str::from_cstr(res)};
 }
 
 auto temp_dir() -> fs::Path {
   const auto res = sys_imp::temp_dir();
-  return fs::Path{Str{res}};
+  return fs::Path{Str::from_cstr(res)};
 }
 
 auto current_exe() -> fs::Path {
   const auto res = sys_imp::current_exe();
-  return fs::Path{Str{res}};
+  return fs::Path{Str::from_cstr(res)};
 }
 
 auto current_dir() -> fs::Path {
   const auto res = sys_imp::getcwd();
-  return fs::Path{Str{res}};
+  return fs::Path{Str::from_cstr(res)};
 }
 
 auto set_current_dir(const fs::Path& path) -> bool {

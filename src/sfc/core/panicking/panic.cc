@@ -77,7 +77,7 @@ void panic_str(Location loc, Str msg) noexcept {
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
   println(msg);
-  println(Str{" > "}, Str{loc.file}, Str{":"}, line_str);
+  println(Str{" > "}, Str::from_cstr(loc.file), Str{":"}, line_str);
   dump_frames();
 
   __builtin_trap();

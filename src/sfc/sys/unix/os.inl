@@ -13,7 +13,8 @@ namespace sfc::sys::os {
 
 static constexpr auto kMaxPathSize = 256U;
 
-static auto getenv(const char* key) -> const char* {
+static auto getenv(const char* key, void* buf = nullptr) -> const char* {
+  (void)buf;
   return ::getenv(key);
 }
 

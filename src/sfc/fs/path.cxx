@@ -44,7 +44,7 @@ SFC_TEST(is_relative) {
 
 SFC_TEST(push) {
   auto p = PathBuf::from("tmp");
-  p.push("foo.txt");
+  p.push(Path{"foo.txt"});
   panicking::expect_eq(p.as_str(), "tmp/foo.txt");
 }
 

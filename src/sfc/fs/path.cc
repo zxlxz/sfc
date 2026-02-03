@@ -91,7 +91,7 @@ auto Path::parent() const noexcept -> Path {
 
 auto Path::join(Str path) const noexcept -> PathBuf {
   auto res = PathBuf::from(_inn);
-  res.push(path);
+  res.push(Path{path});
   return res;
 }
 
@@ -193,7 +193,7 @@ void PathBuf::set_file_name(Str new_file_name) noexcept {
   if (!old_name.is_empty()) {
     _inn.truncate(_inn.len() - old_name.len());
   }
-  this->push(new_file_name);
+  this->push(Path{new_file_name});
 }
 
 void PathBuf::set_extension(Str new_ext) noexcept {

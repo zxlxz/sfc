@@ -6,6 +6,7 @@ namespace sfc::tuple {
 
 template <usize I, class T>
 struct Entry {
+  using Type = T;
   T _0;
 };
 

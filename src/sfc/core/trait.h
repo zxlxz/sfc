@@ -8,7 +8,7 @@ template <class T, class U>
 concept same_ = __is_same(T, U);
 
 template <class T, class... U>
-concept any_ = (... || __is_same(T, U));
+concept any_ = (... || same_<T, U>);
 
 template <class T>
 concept enum_ = __is_enum(T);

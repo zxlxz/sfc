@@ -1,9 +1,9 @@
 #pragma once
 
-#include "sfc/core/num.h"
-#include "sfc/core/hash.h"
-#include "sfc/core/slice.h"
 #include "sfc/core/convert.h"
+#include "sfc/core/hash.h"
+#include "sfc/core/num.h"
+#include "sfc/core/slice.h"
 
 namespace sfc::str {
 
@@ -16,11 +16,20 @@ struct Str {
 
   constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
+  template <usize N>
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+
+  template <usize N>
+  constexpr Str(char (&s)[N]) noexcept = delete;
 
   constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto p = reinterpret_cast<const char*>(s._ptr);
     return {p, s._len};
+  }
+
+  constexpr static auto from_cstr(const char* p) -> Str {
+    const auto n = p ? __builtin_strlen(p) : 0U;
+    return Str{p, n};
   }
 
   constexpr auto as_ptr() const noexcept -> const u8* {
@@ -147,20 +156,6 @@ struct Str {
 template <class>
 struct Pattern;
 
-template <>
-struct Pattern<char> {
-  char _needle;
-
- public:
-  constexpr static auto len() noexcept -> usize {
-    return 1;
-  }
-
-  auto match(const char* s) const noexcept -> bool {
-    return *s == _needle;
-  }
-};
-
 template <class F>
 struct Pattern {
   F _pred;
@@ -172,6 +167,20 @@ struct Pattern {
 
   auto match(const char* s) noexcept -> bool {
     return _pred(*s);
+  }
+};
+
+template <>
+struct Pattern<char> {
+  char _needle;
+
+ public:
+  constexpr static auto len() noexcept -> usize {
+    return 1;
+  }
+
+  auto match(const char* s) const noexcept -> bool {
+    return *s == _needle;
   }
 };
 
@@ -195,13 +204,13 @@ struct Pattern<Str> {
 };
 
 template <class P>
-Pattern(P) -> Pattern<P>;
+Pattern(P&&) -> Pattern<P>;
 
 template <convert::Into<char> C>
-Pattern(C) -> Pattern<char>;
+Pattern(C&&) -> Pattern<char>;
 
 template <convert::Into<Str> S>
-Pattern(S) -> Pattern<Str>;
+Pattern(S&&) -> Pattern<Str>;
 
 auto Str::find(auto&& pat) const -> Option<usize> {
   auto p = Pattern{static_cast<decltype(pat)&&>(pat)};

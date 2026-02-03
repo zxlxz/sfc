@@ -71,8 +71,9 @@ static inline auto read(HANDLE fd, void* buf, SIZE_T buf_size) -> SSIZE_T {
     return 0;
   }
 
+  const auto bytes = static_cast<DWORD>(min(buf_size, UINT_MAX));
   auto bytes_read = 0UL;
-  if (!::ReadFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr)) {
+  if (!::ReadFile(fd, buf, bytes, &bytes_read, nullptr)) {
     return -1;
   }
 
@@ -88,8 +89,9 @@ static inline auto write(HANDLE fd, const void* buf, SIZE_T buf_size) -> SSIZE_T
     return 0;
   }
 
+  const auto bytes = static_cast<DWORD>(min(buf_size, UINT_MAX));
   auto bytes_write = 0UL;
-  if (!::WriteFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_write, nullptr)) {
+  if (!::WriteFile(fd, buf, bytes, &bytes_write, nullptr)) {
     return -1;
   }
   return bytes_write;

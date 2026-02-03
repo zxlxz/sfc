@@ -22,7 +22,7 @@ class RawVec {
     _a.dealloc(_ptr, layout);
   }
 
-  RawVec(RawVec&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _a{other._a} {
+  RawVec(RawVec&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _a{static_cast<A&&>(other._a)} {
     other._ptr = nullptr;
     other._cap = 0;
   }

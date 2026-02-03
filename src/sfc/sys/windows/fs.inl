@@ -10,7 +10,18 @@ static inline auto combine_u64(DWORD high, DWORD low) -> SIZE_T {
   return (static_cast<SIZE_T>(high) << 32) | static_cast<SIZE_T>(low);
 }
 
+template <int N>
+static inline auto to_os_str(const char src[], wchar_t (&dst)[N]) -> bool {
+  const auto ret = ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
+  return ret >= 0;
+}
+
 static inline auto open(const char* path, const auto& opts) -> HANDLE {
+  wchar_t os_path[MAX_PATH];
+  if (to_os_str(path, os_path) == 0) {
+    return nullptr;
+  }
+
   const auto access_mode = (opts.read ? GENERIC_READ : 0) |    //
                            (opts.write ? GENERIC_WRITE : 0) |  //
                            (opts.append ? FILE_APPEND_DATA : 0);
@@ -24,9 +35,7 @@ static inline auto open(const char* path, const auto& opts) -> HANDLE {
                                                           : OPEN_EXISTING;
 
   const auto flags = FILE_ATTRIBUTE_NORMAL;
-
-  const auto handle =
-      ::CreateFileA(path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
+  const auto handle = ::CreateFileW(os_path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
 
   return handle;
 }
@@ -40,8 +49,13 @@ static inline auto is_file(DWORD attr) -> bool {
 }
 
 static inline bool lstat(const char* path, auto& res) {
+  wchar_t os_path[MAX_PATH] = {};
+  if (!to_os_str(path, os_path)) {
+    return false;
+  }
+
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
-  if (!::GetFileAttributesExA(path, GetFileExInfoStandard, &attr)) {
+  if (!::GetFileAttributesExW(os_path, GetFileExInfoStandard, &attr)) {
     return false;
   }
 
@@ -53,19 +67,42 @@ static inline bool lstat(const char* path, auto& res) {
 }
 
 static inline auto unlink(const char* path) -> bool {
-  return ::DeleteFileA(path);
+  wchar_t os_path[MAX_PATH] = {};
+  if (!to_os_str(path, os_path)) {
+    return false;
+  }
+
+  return ::DeleteFileW(os_path);
 }
 
 static inline auto rename(const char* old_path, const char* new_path) -> bool {
-  return ::MoveFileA(old_path, new_path);
+  wchar_t old_os_path[MAX_PATH] = {};
+  if (!to_os_str(old_path, old_os_path)) {
+    return false;
+  }
+
+  wchar_t new_os_path[MAX_PATH] = {};
+  if (!to_os_str(new_path, new_os_path)) {
+    return false;
+  }
+
+  return ::MoveFileW(old_os_path, new_os_path);
 }
 
 static inline auto mkdir(const char* path) -> bool {
-  return ::CreateDirectoryA(path, nullptr);
+  wchar_t os_path[MAX_PATH] = {};
+  if (!to_os_str(path, os_path)) {
+    return false;
+  }
+  return ::CreateDirectoryW(os_path, nullptr);
 }
 
 static inline auto rmdir(const char* path) -> bool {
-  return ::RemoveDirectoryA(path);
+  wchar_t os_path[MAX_PATH] = {};
+  if (to_os_str(path, os_path) == 0) {
+    return false;
+  }
+  return ::RemoveDirectoryW(os_path);
 }
 
 }  // namespace sfc::sys::fs
