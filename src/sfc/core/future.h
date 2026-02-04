@@ -173,15 +173,19 @@ class Promise {
 
   auto yield_value(T val) noexcept -> Suspend {
     // NOLINTNEXTLINE (clang-analyzer-core.uninitialized.Branch)
-    _state != State::Pending ? _value.~T() : void();
-    new (&_value) T{static_cast<T&&>(val)};
+    if (_state != State::Pending) {
+      mem::drop(_value);
+    }
+    ptr::write(&_value, mem::move(val));
     _state = State::Yield;
     return {};
   }
 
   void return_value(T val) noexcept {
-    _state != State::Pending ? _value.~T() : void();
-    new (&_value) T{static_cast<T&&>(val)};
+    if (_state != State::Pending) {
+      mem::drop(_value);
+    }
+    ptr::write(&_value, mem::move(val));
     _state = State::Ready;
   }
 

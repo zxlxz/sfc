@@ -1,7 +1,5 @@
 #pragma once
 
-#include <new>
-
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++26-extensions"
 #pragma clang diagnostic ignored "-Wunknown-attributes"

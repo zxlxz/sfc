@@ -16,13 +16,8 @@ struct Layout {
 };
 
 struct Global {
-  auto alloc(Layout layout) noexcept -> void* {
-    return ::operator new(layout.size);
-  }
-
-  void dealloc(void* ptr, [[maybe_unused]] Layout layout) noexcept {
-    return ::operator delete(ptr);
-  }
+  static auto alloc(Layout layout) noexcept -> void*;
+  static void dealloc(void* ptr, Layout layout) noexcept;
 };
 
 }  // namespace sfc::alloc

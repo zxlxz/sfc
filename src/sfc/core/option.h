@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mem.h"
+#include "sfc/core/ptr.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/panicking.h"
 
@@ -28,15 +28,15 @@ struct Inner {
 
   constexpr Inner(Inner&& other) noexcept : _tag{other._tag} {
     if (_tag) {
-      new (&_val) T{static_cast<T&&>(other._val)};
+      ptr::write(&_val, static_cast<T&&>(other._val));
     }
   }
 
   constexpr Inner& operator=(Inner&& other) noexcept {
     if (this != &other) {
-      _tag ? _val.~T() : void();
+      if (_tag) _val.~T();
+      if (other._tag) ptr::write(&_val, static_cast<T&&>(other._val));
       _tag = other._tag;
-      _tag ? new (&_val) T{static_cast<T&&>(other._val)} : &_val;
     }
     return *this;
   }

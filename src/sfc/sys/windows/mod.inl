@@ -13,7 +13,6 @@
 
 namespace sfc::sys {
 
-
 class OsStr {
   wchar_t* _ptr = nullptr;
 
@@ -26,9 +25,8 @@ class OsStr {
 
   ~OsStr() {
     if (_ptr) {
-      return;
+      ::LocalFree(_ptr);
     }
-    ::LocalFree(_ptr);
   }
 
   auto ptr() const {

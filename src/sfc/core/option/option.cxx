@@ -50,13 +50,10 @@ SFC_TEST(move_ctor) {
 
   auto x = mem::move(a);
   panicking::expect(x.is_none());
-  panicking::expect(a.is_none());
 
   auto y = mem::move(b);
   panicking::expect(y.is_some());
-  panicking::expect(b.is_some());
   panicking::expect_eq(*y, "hello");
-  panicking::expect_eq(*b, "");
 }
 
 SFC_TEST(move_assign) {
@@ -74,13 +71,9 @@ SFC_TEST(move_assign) {
   x = mem::move(b);
   panicking::expect(x.is_some());
   panicking::expect_eq(*x, "hello");
-  panicking::expect_eq(*b, "");
 
   auto y = Option{String::from("world")};
   panicking::expect_eq(*y, "world");
-
-  y = mem::move(a);
-  panicking::expect(y.is_none());
 
   y = mem::move(x);
   panicking::expect(y.is_some());

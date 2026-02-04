@@ -69,7 +69,7 @@ inline auto read(T* src) noexcept -> T {
 
 template <class T>
 inline void write(T* dst, auto&& val) noexcept {
-  new (dst) T{static_cast<decltype(val)&&>(val)};
+  new (mem::place_t{dst}) T{static_cast<decltype(val)&&>(val)};
 }
 
 template <trait::tv_copy_ T>
@@ -90,7 +90,7 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
     __builtin_memset(dst, val, cnt * sizeof(T));
   } else {
     for (auto i = 0UL; i < cnt; ++i) {
-      new (&dst[i]) T{static_cast<T&&>(val)};
+      ptr::write(&dst[i], static_cast<T&&>(val));
     }
   }
 }
@@ -148,7 +148,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
     __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+      ptr::write(dst+idx, static_cast<T&&>(src[idx]));
     }
   }
 }
@@ -163,7 +163,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
     __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      new (dst + idx) T{static_cast<T&&>(src[idx])};
+      ptr::write(dst + idx, static_cast<T&&>(src[idx]));
       src[idx].~T();
     }
   }
@@ -180,7 +180,7 @@ inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = 0UL; idx < offset; ++idx) {
-      new (&dst[idx]) T{static_cast<T&&>(src[idx])};
+      ptr::write(dst+idx, static_cast<T&&>(src[idx]));
     }
     for (auto idx = offset; idx < len; ++idx) {
       dst[idx] = static_cast<T&&>(src[idx]);
@@ -202,7 +202,7 @@ inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = len; idx > len - offset; --idx) {
-      new (&dst[idx - 1]) T{static_cast<T&&>(src[idx - 1])};
+      ptr::write(dst+idx - 1, static_cast<T&&>(src[idx - 1]));
     }
     for (auto idx = len - offset; idx > 0; --idx) {
       dst[idx - 1] = static_cast<T&&>(src[idx - 1]);

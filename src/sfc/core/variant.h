@@ -17,21 +17,21 @@ union Inner<T> {
 
  public:
   template <u32 I, class... U>
-  Inner(tag_t<I>, U&&... u) : _0{static_cast<U&&>(u)...} {}
+  Inner(tag_t<I>, U&&... u) noexcept : _0{static_cast<U&&>(u)...} {}
 
-  Inner(u32 tag, Inner&& other) {
+  Inner(u32 tag, Inner&& other) noexcept {
     if (tag == 0) {
-      new (&_0) T{static_cast<T&&>(other._0)};
+      ptr::write(&_0, mem::move(other._0));
     }
   }
 
-  Inner(u32 tag, const Inner& other) {
+  Inner(u32 tag, const Inner& other) noexcept {
     if (tag == 0) {
-      new (&_0) T{other._0};
+      ptr::write(&_0, other._0);
     }
   }
 
-  ~Inner() {}
+  ~Inner() noexcept {}
 
   template <class U>
   static constexpr auto tag() -> u32 {
@@ -69,19 +69,19 @@ union Inner<T0, Ts...> {
   template <u32 I, class... U>
   Inner(tag_t<I>, U&&... u) : _1{tag_t<I - 1>{}, static_cast<U&&>(u)...} {}
 
-  Inner(u32 tag, Inner&& other) : _1{tag - 1, static_cast<Inner<Ts...>&&>(other._1)} {
+  Inner(u32 tag, Inner&& other) : _1{tag - 1, mem::move(other._1)} {
     if (tag == 0) {
-      new (&_0) T0{static_cast<T0&&>(other._0)};
+      ptr::write(&_0, mem::move(other._0));
     }
   }
 
   Inner(u32 tag, const Inner& other) : _1{tag - 1, other._1} {
     if (tag == 0) {
-      new (&_0) T0{other._0};
+      ptr::write(&_0, other._0);
     }
   }
 
-  ~Inner() {}
+  ~Inner() noexcept {}
 
   template <class U>
   static constexpr auto tag() -> u32 {
@@ -111,19 +111,11 @@ union Inner<T0, Ts...> {
   }
 
   auto map(u32 tag, auto&& f) const {
-    if (tag == 0) {
-      return f(_0);
-    } else {
-      return _1.map(tag - 1, f);
-    }
+    return tag == 0 ? f(_0) : _1.map(tag - 1, f);
   }
 
   auto map_mut(u32 tag, auto&& f) {
-    if (tag == 0) {
-      return f(_0);
-    } else {
-      return _1.map_mut(tag - 1, f);
-    }
+    return tag == 0 ? f(_0) : _1.map_mut(tag - 1, f);
   }
 };
 
@@ -141,25 +133,24 @@ class Variant {
   }
 
   template <class U, u32 I = Inn::template tag<U>()>
-  Variant(U val) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(val)} {
+  Variant(U val) : _tag{I}, _inn{tag_t<I>{}, mem::move(val)} {
     static_assert(I < sizeof...(T), "variant::Variant: invalid type");
   }
 
   ~Variant() {
-    _inn.map(_tag, []<class U>(U& x) { x.~U(); });
+    _inn.map(_tag, [](auto& x) { mem::drop(x); });
   }
 
-  Variant(Variant&& other) noexcept : _tag{other._tag}, _inn{_tag, static_cast<Inn&&>(other._inn)} {}
+  Variant(Variant&& other) noexcept : _tag{other._tag}, _inn{_tag, mem::move(other._inn)} {}
 
   Variant(const Variant& other) : _tag{other._tag}, _inn{other._tag, other._inn} {}
 
   Variant& operator=(Variant&& other) noexcept {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      _inn.map_mut(_tag, [](auto& x) { mem::drop(x); });
+      _inn.map_mut(other._tag, [&]<class U>(U& x) { ptr::write(&x, mem::move(other._inn.template as_mut<U>())); });
+      _tag = other._tag;
     }
-    _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
-    _tag = other._tag;
-    _inn.map_mut(_tag, [&]<class U>(U& x) { new (&x) U{static_cast<U&&>(other._inn.template as_mut<U>())}; });
     return *this;
   }
 
@@ -167,7 +158,7 @@ class Variant {
     if (this == &other) {
       return *this;
     }
-    _inn.map_mut(_tag, []<class U>(U& x) { x.~U(); });
+    _inn.map_mut(_tag, [](auto& x) { mem::drop(x); });
     _tag = other._tag;
     _inn = {other._tag, other._inn};
     return *this;

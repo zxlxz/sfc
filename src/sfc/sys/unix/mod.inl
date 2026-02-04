@@ -10,7 +10,8 @@
 #include <sys/types.h>
 #include <time.h>
 
-#ifdef __unix__
+// unix
+#if defined(__unix__) || defined(__APPLE__)
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
@@ -20,6 +21,7 @@
 #include <unistd.h>
 #endif
 
+// apple
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
 #endif
@@ -38,9 +40,8 @@ class OsStr {
 
   ~OsStr() {
     if (_ptr) {
-      return;
+      ::free(_ptr);
     }
-    ::free(_ptr);
   }
 
   auto ptr() const {
@@ -67,7 +68,7 @@ static auto to_utf8(const char* src, char (&dst)[BUF_SIZE]) -> const char* {
     return nullptr;
   }
 
-  const auto len = ::strlen(src);
+  const auto len = __builtin_strlen(src);
   if (len >= BUF_SIZE) {
     return nullptr;
   }

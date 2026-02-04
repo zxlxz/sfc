@@ -4,6 +4,10 @@
 
 namespace sfc::mem {
 
+struct place_t {
+  void* _ptr;
+};
+
 template <class T>
 inline void drop(T& x) {
   x.~T();
@@ -27,23 +31,13 @@ inline void swap(T& x, T& y) noexcept {
 
 template <class T, class U>
 inline void assign(T& dst, U&& src) noexcept {
-  if constexpr (requires { dst = static_cast<U&&>(src); }) {
-    dst = static_cast<U&&>(src);
-  } else {
-    dst.~T();
-    new (&dst) T{static_cast<U&&>(src)};
-  }
+  dst = static_cast<U&&>(src);
 }
 
 template <class T, class U>
 inline auto replace(T& dst, U&& src) noexcept -> T {
   auto tmp = static_cast<T&&>(dst);
-  if constexpr (requires { dst = static_cast<U&&>(src); }) {
-    dst = static_cast<U&&>(src);
-  } else {
-    dst.~T();
-    new (&dst) T{static_cast<U&&>(src)};
-  }
+  dst = static_cast<U&&>(src);
   return tmp;
 }
 
@@ -66,12 +60,10 @@ inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
 
 }  // namespace sfc::mem
 
-#ifndef __cpp_aligned_new
-inline void* operator new(sfc::usize, void* ptr) noexcept {
-  return ptr;
+constexpr void* operator new(sfc::usize, sfc::mem::place_t p) noexcept {
+  return p._ptr;
 }
 
-inline void operator delete(void*, void*) noexcept {
+constexpr void operator delete(void*, sfc::mem::place_t) noexcept {
   return;
 }
-#endif

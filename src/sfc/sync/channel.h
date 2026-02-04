@@ -3,7 +3,7 @@
 #include "sfc/sync/mutex.h"
 #include "sfc/sync/condvar.h"
 #include "sfc/time/duration.h"
-#include "sfc/collections/vec_deque.h"
+#include "sfc/collections/queue.h"
 
 namespace sfc::sync {
 
@@ -17,7 +17,7 @@ template <class T>
 class Channel {
   Mutex _mtx{};
   Condvar _cnd{};
-  collections::VecDeque<T> _queue{};
+  collections::Queue<T> _queue{};
 
  public:
   friend struct Sender<T>;
