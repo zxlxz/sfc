@@ -4,23 +4,23 @@
 
 namespace sfc::num {
 
-template <trait::int_ T>
-consteval auto max_value() -> T {
-  if constexpr (trait::uint_<T>) {
-    return static_cast<T>(~T{0});
-  } else {
-    return static_cast<T>(~(T{1} << (sizeof(T) * 8 - 1)));
-  }
-}
+template <class T>
+struct Int {
+  T _val;
 
-template <trait::int_ T>
-consteval auto min_value() -> T {
-  if constexpr (trait::uint_<T>) {
-    return T{0};
-  } else {
-    return static_cast<T>(T{1} << (sizeof(T) * 8 - 1));
-  }
-}
+ public:
+  static auto from_str(str::Str buf, u32 radix = 0) noexcept -> Option<T>;
+  auto to_str(slice::Slice<char> buf, char type = 0) const noexcept -> str::Str;
+};
+
+template <class T>
+struct Flt {
+  T _val;
+
+ public:
+  static auto from_str(str::Str buf) noexcept -> Option<T>;
+  auto to_str(slice::Slice<char> buf, u32 prec = 6, char type = 0) const noexcept -> str::Str;
+};
 
 template <class T>
 constexpr auto abs(T val) -> T {
@@ -37,15 +37,6 @@ constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
-
-auto int_to_str(auto val, slice::Slice<char> buf, char type = 0) noexcept -> str::Str;
-auto flt_to_str(auto val, slice::Slice<char> buf, u32 prec = 6, char type = 0) noexcept -> str::Str;
-
-template <class T>
-auto int_from_str(str::Str buf, u32 radix = 0) noexcept -> Option<T>;
-
-template <class T>
-auto flt_from_str(str::Str buf) noexcept -> Option<T>;
 
 }  // namespace sfc::num
 

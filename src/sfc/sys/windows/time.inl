@@ -1,6 +1,6 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
+
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::time {
 
@@ -69,5 +69,4 @@ static inline void make_local(ULONG64 secs, auto& dst) {
   make_datetime(local_time, dst);
 }
 
-}  // namespace sfc::sys::time
-#endif
+}  // namespace sfc::sys::.time

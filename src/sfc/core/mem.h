@@ -66,9 +66,7 @@ inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
 
 }  // namespace sfc::mem
 
-#if !defined(__PLACEMENT_NEW_INLINE) && !defined(_LIBCPP_NEW)
-#define __PLACEMENT_NEW_INLINE
-#define _LIBCPP_NEW
+#ifndef __cpp_aligned_new
 inline void* operator new(sfc::usize, void* ptr) noexcept {
   return ptr;
 }

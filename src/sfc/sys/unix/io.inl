@@ -1,9 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include "sfc/sys/unix/mod.inl"
 
 #undef stdin
 #undef stdout
@@ -113,5 +110,4 @@ static inline auto stderr() -> int {
   return STDERR_FILENO;
 }
 
-}  // namespace sfc::sys::io
-#endif
+}  // namespace sfc::sys::.io

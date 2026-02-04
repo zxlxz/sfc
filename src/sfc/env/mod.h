@@ -13,6 +13,6 @@ auto temp_dir() -> fs::Path;
 
 auto current_exe() -> fs::Path;
 auto current_dir() -> fs::Path;
-auto set_current_dir(const fs::Path& path) -> bool;
+auto set_current_dir(fs::Path path) -> bool;
 
 }  // namespace sfc::env

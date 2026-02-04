@@ -1,25 +1,11 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
-#include <process.h>
-#include <timeapi.h>
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::thread {
 
 using ret_t = unsigned;
 using tid_t = DWORD;
 using thrd_t = HANDLE;
-
-template <int N>
-auto wchar_to_u8(const wchar_t src[], char (&dst)[N]) -> int {
-  const auto write_bytes = ::WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, N, nullptr, nullptr);
-}
-
-template <int N>
-static inline auto to_os_str(const char src[], wchar_t (&dst)[N]) -> UINT {
-  const auto ret = ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
-  return ret > 0 ? static_cast<UINT>(ret - 1) : 0;
-}
 
 inline auto thrd_current() -> thrd_t {
   return ::GetCurrentThread();
@@ -51,26 +37,21 @@ inline void thrd_yield() {
 }
 
 template <int N>
-inline auto thrd_name(thrd_t thr, char (&buf)[N]) -> const char* {
-  wchar_t* wbuf = nullptr;
-  if (FAILED(::GetThreadDescription(thr, &wbuf))) {
+inline auto thrd_name(thrd_t thr, char (&u8_buf)[N]) -> const char* {
+  wchar_t* os_buf = nullptr;
+  if (FAILED(::GetThreadDescription(thr, &os_buf))) {
     return nullptr;
   };
 
-  wchar_to_u8(wbuf, buf);
-  ::LocalFree(wbuf);
+  to_u8_str(os_buf, u8_buf);
+  ::LocalFree(os_buf);
 
-  return buf;
+  return u8_buf;
 }
 
-inline auto thrd_setname(const char* name) -> bool {
-  wchar_t os_name[MAX_PATH];
-  if (!to_os_str(name, os_name)) {
-    return false;
-  }
-
+inline auto thrd_setname(const wchar_t* name) -> bool {
   const auto thrd = ::GetCurrentThread();
-  const auto hres = ::SetThreadDescription(thrd, os_name);
+  const auto hres = ::SetThreadDescription(thrd, name);
   return SUCCEEDED(hres);
 }
 
@@ -82,5 +63,4 @@ inline void thrd_sleep_ms(DWORD millis) {
   ::Sleep(millis);
 }
 
-}  // namespace sfc::sys::thread
-#endif
+}  // namespace sfc::sys::.thread

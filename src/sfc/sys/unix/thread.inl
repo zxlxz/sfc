@@ -1,9 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <errno.h>
-#include <pthread.h>
-#include <sys/time.h>
+#include "sfc/sys/unix/mod.inl"
 
 namespace sfc::sys::thread {
 
@@ -88,5 +85,4 @@ inline auto thrd_sleep_ms(unsigned millis) -> bool {
   return true;
 }
 
-}  // namespace sfc::sys::thread
-#endif
+}  // namespace sfc::sys::.thread

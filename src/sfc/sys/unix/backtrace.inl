@@ -1,9 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <cxxabi.h>
-#include <dlfcn.h>
-#include <execinfo.h>
+#include "sfc/sys/unix/mod.inl"
 
 namespace sfc::sys::backtrace {
 
@@ -44,5 +41,4 @@ static auto cxx_demangle(const char in[], char buf[], size_t buf_len) -> size_t 
   return out_len;
 }
 
-}  // namespace sfc::sys::backtrace
-#endif
+}  // namespace sfc::sys::.backtrace

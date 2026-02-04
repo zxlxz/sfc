@@ -35,9 +35,6 @@ template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
 
 template <class T>
-concept tv_dtor_ = __is_trivially_destructible(T);
-
-template <class T>
 concept polymorphic_ = __is_polymorphic(T);
 
 template <class T>
@@ -51,6 +48,7 @@ using type_t = typename _type_t<T>::Type;
 template <auto... I>
 struct idxs_t {};
 
+#if __has_builtin(__make_integer_seq)
 template <class, auto... I>
 struct _int_seq_helper {
   using Type = idxs_t<I...>;
@@ -58,6 +56,10 @@ struct _int_seq_helper {
 
 template <auto N>
 using idxs_seq_t = typename __make_integer_seq<_int_seq_helper, decltype(N), N>::Type;
+#else
+template <auto N>
+using idxs_seq_t = idxs_t<__integer_pack(N)...>;
+#endif
 
 template <class I, class For>
 struct Impl : I, For {

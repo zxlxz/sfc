@@ -130,9 +130,9 @@ struct Str {
     if constexpr (requires { T::from_str(*this); }) {
       return T::from_str(*this);
     } else if constexpr (trait::int_<T>) {
-      return num::int_from_str<T>(*this);
+      return num::Int<T>::from_str(*this);
     } else if constexpr (trait::flt_<T>) {
-      return num::flt_from_str<T>(*this);
+      return num::Flt<T>::from_str(*this);
     } else {
       static_assert(false, "Str::parse: unsupported type");
     }

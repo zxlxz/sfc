@@ -1,7 +1,5 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
-#include <winerror.h>
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::io {
 
@@ -121,5 +119,4 @@ static inline auto stdin() -> HANDLE {
   return ::GetStdHandle(STD_INPUT_HANDLE);
 }
 
-}  // namespace sfc::sys::io
-#endif
+}  // namespace sfc::sys::.io

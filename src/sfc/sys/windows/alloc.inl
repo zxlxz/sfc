@@ -1,5 +1,4 @@
 #pragma once
-#ifdef _WIN32
 #include <Windows.h>
 
 namespace sfc::sys::alloc {
@@ -19,11 +18,4 @@ static inline void* realloc(void* ptr, SIZE_T new_size) {
   return ::HeapReAlloc(heap, 0, ptr, new_size);
 }
 
-static inline SIZE_T msize(void* addr) {
-  const auto heap = ::GetProcessHeap();
-  return ::HeapSize(heap, 0, addr);
-}
-
 }  // namespace sfc::sys::alloc
-
-#endif

@@ -1,6 +1,5 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::sync {
 
@@ -57,4 +56,3 @@ inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, DWORD millis) -> bool {
 }
 
 }  // namespace sfc::sys::sync
-#endif

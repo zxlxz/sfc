@@ -14,7 +14,7 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from(Str s) noexcept -> String {
+  static auto from(const auto& s) noexcept -> String {
     auto res = String{};
     res.push_str(s);
     return res;

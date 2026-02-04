@@ -1,10 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "sfc/sys/unix/mod.inl"
 
 namespace sfc::sys::fs {
 
@@ -36,7 +32,7 @@ static inline auto lstat(const char* path, auto& res) -> bool {
     return false;
   }
 
-  res._attr = static_cast<uint32_t>(st.st_mode);
+  res._attr = static_cast<unsigned>(st.st_mode);
   res._size = static_cast<size_t>(st.st_size);
   return true;
 }
@@ -57,5 +53,4 @@ static inline auto rmdir(const char* path) -> bool {
   return ::rmdir(path) == 0;
 }
 
-}  // namespace sfc::sys::fs
-#endif
+}  // namespace sfc::sys::.fs

@@ -44,8 +44,13 @@ class RawVec {
   }
 
   void realloc([[maybe_unused]] usize used, usize new_cap) noexcept {
-    const auto layout = alloc::Layout::array<T>(_cap);
-    _ptr = static_cast<T*>(_a.realloc(_ptr, layout, new_cap * sizeof(T)));
+    const auto new_layout = alloc::Layout::array<T>(new_cap);
+    const auto new_ptr = static_cast<T*>(_a.alloc(new_layout));
+    if (_ptr != nullptr && new_ptr != nullptr) {
+      ptr::uninit_move(_ptr, new_ptr, used);
+      _a.dealloc(_ptr, alloc::Layout::array<T>(_cap));
+    }
+    _ptr = new_ptr;
     _cap = new_cap;
   }
 };

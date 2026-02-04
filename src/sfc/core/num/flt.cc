@@ -3,34 +3,6 @@
 
 namespace sfc::num {
 
-static auto pow10(u32 val) noexcept -> u64 {
-  auto res = u64{1U};
-  for (; val >= 2; val -= 2) {
-    res *= 100;
-  }
-  for (; val >= 1; val -= 1) {
-    res *= 10;
-  }
-  return res;
-}
-
-static auto exp10(i32 val) noexcept -> f64 {
-  auto res = 1.0;
-  for (; val >= 2; val -= 2) {
-    res *= 100.0;
-  }
-  for (; val >= 1; val -= 1) {
-    res *= 10.0;
-  }
-  for (; val <= -2; val += 2) {
-    res /= 100.0;
-  }
-  for (; val <= -1; val += 1) {
-    res /= 10.0;
-  }
-  return res;
-}
-
 struct FltFix {
   u64 _int;
   u64 _flt;
@@ -52,6 +24,18 @@ struct FltFix {
     }
 
     return {int_part, flt_part};
+  }
+
+ private:
+  static auto pow10(u32 val) noexcept -> u64 {
+    auto res = u64{1U};
+    for (; val >= 2; val -= 2) {
+      res *= 100;
+    }
+    for (; val >= 1; val -= 1) {
+      res *= 10;
+    }
+    return res;
   }
 };
 
@@ -89,8 +73,8 @@ struct FltFmter {
   char* _ptr = _end;  // write backwards
 
  public:
-  auto as_str() const -> Str {
-    return Str{_ptr, static_cast<usize>(_end - _ptr)};
+  auto as_str() const -> str::Str {
+    return str::Str{_ptr, static_cast<usize>(_end - _ptr)};
   }
 
   void write_fix(f64 val, u32 precision) noexcept {
@@ -190,6 +174,23 @@ struct FltParser {
   }
 
  private:
+  static auto exp10(i32 val) noexcept -> f64 {
+    auto res = 1.0;
+    for (; val >= 2; val -= 2) {
+      res *= 100.0;
+    }
+    for (; val >= 1; val -= 1) {
+      res *= 10.0;
+    }
+    for (; val <= -2; val += 2) {
+      res /= 100.0;
+    }
+    for (; val <= -1; val += 1) {
+      res /= 10.0;
+    }
+    return res;
+  }
+
   auto extract_sign() noexcept -> bool {
     if (_ptr == _end) {
       return false;
@@ -259,6 +260,35 @@ struct FltParser {
   }
 };
 
+template <class T>
+auto Flt<T>::from_str(str::Str buf) noexcept -> Option<T> {
+  auto imp = FltParser{buf._ptr, buf._ptr + buf._len};
+  auto dst = T{};
+  if (!imp.read(dst)) {
+    return {};
+  }
+  return Option{dst};
+}
+
+template <class T>
+auto Flt<T>::to_str(Slice<char> buf, u32 precision, char type) const noexcept -> str::Str {
+  if (__builtin_isnan(_val)) {
+    return "nan";
+  }
+
+  if (__builtin_isinf(_val)) {
+    return _val > 0.0f ? Str{"inf"} : Str{"-inf"};
+  }
+
+  auto imp = FltFmter{buf._ptr, buf._ptr + buf._len};
+  switch (type) {
+    case 'e':
+    case 'E': imp.write_exp(_val, precision, type < 'a'); break;
+    default:  imp.write_fix(_val, precision); break;
+  }
+  return imp.as_str();
+}
+
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
   if (__builtin_isnan(a) || __builtin_isnan(b)) {
     return false;
@@ -278,38 +308,7 @@ auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
   return diff <= ulp;
 }
 
-auto flt_to_str(auto val, Slice<char> buf, u32 precision, char type) noexcept -> Str {
-  if (__builtin_isnan(val)) {
-    return "nan";
-  }
-
-  if (__builtin_isinf(val)) {
-    return val > 0.0f ? Str{"inf"} : Str{"-inf"};
-  }
-
-  auto imp = FltFmter{buf._ptr, buf._ptr + buf._len};
-  switch (type) {
-    case 'e':
-    case 'E': imp.write_exp(val, precision, type < 'a'); break;
-    default:  imp.write_fix(val, precision); break;
-  }
-  return imp.as_str();
-}
-
-template <class T>
-auto flt_from_str(Str buf) noexcept -> Option<T> {
-  auto imp = FltParser{buf._ptr, buf._ptr + buf._len};
-  auto dst = T{};
-  if (!imp.read(dst)) {
-    return {};
-  }
-  return Option{dst};
-}
-
-template auto flt_to_str(f32, Slice<char>, u32, char) noexcept -> Str;
-template auto flt_to_str(f64, Slice<char>, u32, char) noexcept -> Str;
-
-template auto flt_from_str(Str) noexcept -> Option<f32>;
-template auto flt_from_str(Str) noexcept -> Option<f64>;
+template struct Flt<float>;
+template struct Flt<double>;
 
 }  // namespace sfc::num

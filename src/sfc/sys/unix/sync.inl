@@ -1,9 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <pthread.h>
-#include <sys/time.h>
-#include <time.h>
+#include "sfc/sys/unix/mod.inl"
 
 namespace sfc::sys::sync {
 
@@ -71,5 +68,4 @@ inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, unsigned millis) -> bool {
   return err == 0;
 }
 
-}  // namespace sfc::sys::sync
-#endif
+}  // namespace sfc::sys::.sync

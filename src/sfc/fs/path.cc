@@ -1,12 +1,11 @@
 #include "sfc/fs/path.h"
 
 #include "sfc/sys/fs.h"
-#include "sfc/ffi/c_str.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
-using ffi::CString;
+using sys::OsStr;
 
 static constexpr auto is_delim(char c) -> bool {
 #ifdef _WIN32
@@ -230,19 +229,19 @@ auto Meta::is_file() const noexcept -> bool {
 }
 
 auto meta(Path path) -> io::Result<Meta> {
-  const auto c_path = CString::xnew(path.as_str());
+  const auto os_path = OsStr::xnew(path.as_str());
 
   auto res = Meta{};
-  if (!sys_imp::lstat(c_path.as_ptr(), res)) {
+  if (!sys_imp::lstat(os_path.ptr(), res)) {
     return io::last_os_error();
   }
   return res;
 }
 
 auto create_dir(Path path) -> io::Result<> {
-  const auto c_path = CString::xnew(path.as_str());
+  const auto os_path = OsStr::xnew(path.as_str());
 
-  if (sys_imp::mkdir(c_path.as_ptr())) {
+  if (sys_imp::mkdir(os_path.ptr())) {
     return {};
   }
   const auto err = io::last_os_error();
@@ -253,9 +252,9 @@ auto create_dir(Path path) -> io::Result<> {
 }
 
 auto remove_dir(Path path) -> io::Result<> {
-  const auto c_path = CString::xnew(path.as_str());
+  const auto os_path = OsStr::xnew(path.as_str());
 
-  const auto ret = sys_imp::rmdir(c_path.as_ptr());
+  const auto ret = sys_imp::rmdir(os_path.ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -264,9 +263,9 @@ auto remove_dir(Path path) -> io::Result<> {
 }
 
 auto remove_file(Path path) -> io::Result<> {
-  const auto c_path = CString::xnew(path.as_str());
+  const auto os_path = OsStr::xnew(path.as_str());
 
-  const auto ret = sys_imp::unlink(c_path.as_ptr());
+  const auto ret = sys_imp::unlink(os_path.ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -275,10 +274,10 @@ auto remove_file(Path path) -> io::Result<> {
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto c_old = CString::xnew(old_path.as_str());
-  const auto c_new = CString::xnew(new_path.as_str());
+  const auto os_old = OsStr::xnew(old_path.as_str());
+  const auto os_new = OsStr::xnew(new_path.as_str());
 
-  const auto ret = sys_imp::rename(c_old.as_ptr(), c_new.as_ptr());
+  const auto ret = sys_imp::rename(os_old.ptr(), os_new.ptr());
   if (!ret) {
     return io::last_os_error();
   }

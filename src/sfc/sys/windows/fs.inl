@@ -1,27 +1,11 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::fs {
 
 static const auto INVALID_FD = INVALID_HANDLE_VALUE;
 
-static inline auto combine_u64(DWORD high, DWORD low) -> SIZE_T {
-  return (static_cast<SIZE_T>(high) << 32) | static_cast<SIZE_T>(low);
-}
-
-template <int N>
-static inline auto to_os_str(const char src[], wchar_t (&dst)[N]) -> bool {
-  const auto ret = ::MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, N);
-  return ret >= 0;
-}
-
-static inline auto open(const char* path, const auto& opts) -> HANDLE {
-  wchar_t os_path[MAX_PATH];
-  if (to_os_str(path, os_path) == 0) {
-    return nullptr;
-  }
-
+static inline auto open(const wchar_t* path, const auto& opts) -> HANDLE {
   const auto access_mode = (opts.read ? GENERIC_READ : 0) |    //
                            (opts.write ? GENERIC_WRITE : 0) |  //
                            (opts.append ? FILE_APPEND_DATA : 0);
@@ -35,7 +19,7 @@ static inline auto open(const char* path, const auto& opts) -> HANDLE {
                                                           : OPEN_EXISTING;
 
   const auto flags = FILE_ATTRIBUTE_NORMAL;
-  const auto handle = ::CreateFileW(os_path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
+  const auto handle = ::CreateFileW(path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
 
   return handle;
 }
@@ -48,62 +32,32 @@ static inline auto is_file(DWORD attr) -> bool {
   return attr & FILE_ATTRIBUTE_NORMAL;
 }
 
-static inline bool lstat(const char* path, auto& res) {
-  wchar_t os_path[MAX_PATH] = {};
-  if (!to_os_str(path, os_path)) {
-    return false;
-  }
-
+static inline bool lstat(const wchar_t* path, auto& res) {
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
-  if (!::GetFileAttributesExW(os_path, GetFileExInfoStandard, &attr)) {
+  if (!::GetFileAttributesExW(path, GetFileExInfoStandard, &attr)) {
     return false;
   }
 
-  const auto size = combine_u64(attr.nFileSizeHigh, attr.nFileSizeLow);
-
+  const auto size = (SIZE_T(attr.nFileSizeHigh) << 32U) | attr.nFileSizeLow;
   res._attr = static_cast<UINT32>(attr.dwFileAttributes);
   res._size = size;
   return true;
 }
 
-static inline auto unlink(const char* path) -> bool {
-  wchar_t os_path[MAX_PATH] = {};
-  if (!to_os_str(path, os_path)) {
-    return false;
-  }
-
-  return ::DeleteFileW(os_path);
+static inline auto unlink(const wchar_t* path) -> bool {
+  return ::DeleteFileW(path);
 }
 
-static inline auto rename(const char* old_path, const char* new_path) -> bool {
-  wchar_t old_os_path[MAX_PATH] = {};
-  if (!to_os_str(old_path, old_os_path)) {
-    return false;
-  }
-
-  wchar_t new_os_path[MAX_PATH] = {};
-  if (!to_os_str(new_path, new_os_path)) {
-    return false;
-  }
-
-  return ::MoveFileW(old_os_path, new_os_path);
+static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> bool {
+  return ::MoveFileW(old_path, new_path);
 }
 
-static inline auto mkdir(const char* path) -> bool {
-  wchar_t os_path[MAX_PATH] = {};
-  if (!to_os_str(path, os_path)) {
-    return false;
-  }
-  return ::CreateDirectoryW(os_path, nullptr);
+static inline auto mkdir(const wchar_t* path) -> bool {
+  return ::CreateDirectoryW(path, nullptr);
 }
 
-static inline auto rmdir(const char* path) -> bool {
-  wchar_t os_path[MAX_PATH] = {};
-  if (to_os_str(path, os_path) == 0) {
-    return false;
-  }
-  return ::RemoveDirectoryW(os_path);
+static inline auto rmdir(const wchar_t* path) -> bool {
+  return ::RemoveDirectoryW(path);
 }
 
 }  // namespace sfc::sys::fs
-#endif

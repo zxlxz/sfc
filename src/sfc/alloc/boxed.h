@@ -5,15 +5,19 @@
 namespace sfc::boxed {
 
 template <class T>
-class [[nodiscard]] Box {
- public:
+class [[nodiscard]] Box;
+
+template <class T>
+class Box {
   T* _ptr = nullptr;
 
  public:
   Box() noexcept = default;
 
   ~Box() {
-    _ptr ? delete _ptr : void();
+    if (_ptr) {
+      delete _ptr;
+    }
   }
 
   Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {}
@@ -31,9 +35,10 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  static auto xnew(auto&&... args) -> Box {
+  template <class... U>
+  static auto xnew(U&&... args) -> Box {
     auto res = Box{};
-    res._ptr = new T{static_cast<decltype(args)&&>(args)...};
+    res._ptr = new T{static_cast<U&&>(args)...};
     return res;
   }
 
@@ -78,8 +83,56 @@ class [[nodiscard]] Box {
   }
 };
 
+template <class T>
+class Box<T[]> {
+  Slice<T> _inn;
+
+ public:
+  Box() noexcept = default;
+
+  ~Box() {
+    if (_inn._ptr != nullptr) {
+      delete[] _inn._ptr;
+    }
+  }
+
+  Box(Box&& other) noexcept : _inn{mem::take(other._inn)} {}
+
+  Box& operator=(Box&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_inn, other._inn);
+    }
+    return *this;
+  }
+
+  static auto from_raw(Slice<T> raw) -> Box {
+    auto res = Box{};
+    res._inn = raw;
+    return res;
+  }
+
+  static auto xnew_uninit_slice(usize len) -> Box {
+    const auto p = static_cast<T*>(::operator new[](sizeof(T) * len));
+    return Box::from_raw(Slice<T>{p, len});
+  }
+
+  static auto xnew(Slice<const T> x) -> Box {
+    auto res = Box::xnew_uninit_slice(x._len);
+    ptr::uninit_copy(x._ptr, res._inn._ptr, x._len);
+    return res;
+  }
+
+  auto ptr() const noexcept -> T* {
+    return _inn._ptr;
+  }
+
+  auto len() const noexcept -> usize {
+    return _inn._len;
+  }
+};
+
 template <class R, class... T>
-class [[nodiscard]] Box<R(T...)> {
+class Box<R(T...)> {
  public:
   using dtor_t = void (*)(void*);
   using call_t = R (*)(void*, T&&...);

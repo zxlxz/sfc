@@ -57,9 +57,13 @@ static void dump_frame(u32 idx, void* ptr) noexcept {
   char fun_buf[256];
 
   const auto info = sys::backtrace::frame_info(ptr);
+  const auto raw_fun = Str::from_cstr(info.func);
+
+  const auto demangle_len = sys::backtrace::cxx_demangle(info.func, fun_buf, sizeof(fun_buf));
+  const auto demangle_fun = Str{fun_buf, demangle_len};
+
   const auto idx_str = idx2str(idx);
-  const auto fun_len = sys::backtrace::cxx_demangle(info.func, fun_buf, sizeof(fun_buf));
-  const auto fun_str = fun_len == 0 ? Str{info.func} : Str{fun_buf, fun_len};
+  const auto fun_str = demangle_len == 0 ? raw_fun : demangle_fun;
   println(Str{" "}, idx_str, Str{" "}, fun_str);
 }
 

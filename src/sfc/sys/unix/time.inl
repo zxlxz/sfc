@@ -1,12 +1,6 @@
 #pragma once
-#if defined(__unix__) || defined(__APPLE__)
 
-#include <time.h>
-
-#ifdef __APPLE__
-// no need include, just make clang-tidy happy
-#include <_time.h>
-#endif
+#include "sfc/sys/unix/mod.inl"
 
 namespace sfc::sys::time {
 
@@ -48,5 +42,4 @@ static inline void make_local(time_t secs, auto& dst) {
   make_datetime(tm, dst);
 }
 
-}  // namespace sfc::sys::time
-#endif
+}  // namespace sfc::sys::.time

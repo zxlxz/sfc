@@ -1,10 +1,5 @@
 #pragma once
-#ifdef _WIN32
-#include <Windows.h>
-
-// dont sort this file, windows.h must be included first
-#include <DbgHelp.h>
-#pragma comment(lib, "DbgHelp.lib")
+#include "sfc/sys/windows/mod.inl"
 
 namespace sfc::sys::backtrace {
 
@@ -80,5 +75,4 @@ static inline auto cxx_demangle(const char in[], char buf[], DWORD buf_len) -> D
   return ret;
 }
 
-}  // namespace sfc::sys::backtrace
-#endif
+}  // namespace sfc::sys::.backtrace

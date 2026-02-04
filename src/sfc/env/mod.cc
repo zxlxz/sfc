@@ -1,62 +1,64 @@
 #include "sfc/env.h"
-#include "sfc/ffi/c_str.h"
-#include "sfc/sys/os.h"
+#include "sfc/sys/env.h"
 
 namespace sfc::env {
 
-namespace sys_imp = sys::os;
-using ffi::CString;
+namespace sys_imp = sys::env;
+using sys::OsStr;
+
+static constexpr auto PATH_MAX = 1024U;
 
 auto var(Str key) -> String {
-  static constexpr auto MAX_LEN = 2048U;
-  const auto c_key = CString::xnew(key);
+  static constexpr auto MAX_ENV = 4096U;
+  char buf[MAX_ENV];
 
-  char buf[MAX_LEN];
-  const auto val = sys_imp::getenv(c_key.as_ptr(), buf);
-  if (!val) {
-    return {};
-  }
-  return String::from(Str::from_cstr(val));
+  const auto os_key = OsStr::xnew(key);
+  const auto os_val = sys_imp::getenv(os_key.ptr(), buf);
+  return String::from(Str::from_cstr(os_val));
 }
 
 auto set_var(Str key, Str val) -> bool {
-  const auto c_key = CString::xnew(key);
-  if (val.is_empty()) {
-    return sys_imp::unsetenv(c_key.as_ptr());
-  }
-
-  const auto c_val = CString::xnew(val);
-  return sys_imp::setenv(c_key.as_ptr(), c_val.as_ptr());
+  const auto os_key = OsStr::xnew(key);
+  const auto os_val = OsStr::xnew(val);
+  return sys_imp::setenv(os_key.ptr(), os_val.ptr());
 }
 
 auto remove_var(Str key) -> bool {
-  const auto c_key = CString::xnew(key);
-  return sys_imp::unsetenv(c_key.as_ptr());
+  const auto os_key = OsStr::xnew(key);
+  return sys_imp::unsetenv(os_key.ptr());
 }
 
 auto home_dir() -> fs::Path {
-  const auto res = sys_imp::home_dir();
+  static char buf[PATH_MAX];
+
+  const auto res = sys_imp::home_dir(buf);
   return fs::Path{Str::from_cstr(res)};
 }
 
 auto temp_dir() -> fs::Path {
-  const auto res = sys_imp::temp_dir();
+  static char buf[PATH_MAX];
+
+  const auto res = sys_imp::temp_dir(buf);
   return fs::Path{Str::from_cstr(res)};
 }
 
 auto current_exe() -> fs::Path {
-  const auto res = sys_imp::current_exe();
+  static char buf[PATH_MAX];
+
+  const auto res = sys_imp::current_exe(buf);
   return fs::Path{Str::from_cstr(res)};
 }
 
 auto current_dir() -> fs::Path {
-  const auto res = sys_imp::getcwd();
+  static char buf[PATH_MAX];
+
+  const auto res = sys_imp::getcwd(buf);
   return fs::Path{Str::from_cstr(res)};
 }
 
-auto set_current_dir(const fs::Path& path) -> bool {
-  const auto c_path = CString::xnew(path.as_str());
-  return sys_imp::chdir(c_path.as_ptr());
+auto set_current_dir(fs::Path path) -> bool {
+  const auto os_path = OsStr::xnew(path.as_str());
+  return sys_imp::chdir(os_path.ptr());
 }
 
 }  // namespace sfc::env

@@ -107,7 +107,7 @@ struct IntParser {
  public:
   template <trait::uint_ T>
   auto read(T& dst, u32 radix) noexcept -> bool {
-    static constinit auto MAX = max_value<T>();
+    static constexpr auto MAX = static_cast<T>(T{0} - T{1});
 
     // extract sign
     const auto is_neg = this->extract_sign();
@@ -133,7 +133,7 @@ struct IntParser {
 
   template <trait::sint_ T>
   auto read(T& dst, u32 radix) noexcept -> bool {
-    static constinit auto MAX = static_cast<u64>(max_value<T>()) + 1;
+    static constinit auto MAX = static_cast<u64>(1LL << (8 * sizeof(T) - 1));
 
     // extract sign
     const auto is_neg = this->extract_sign();
@@ -215,24 +215,25 @@ struct IntParser {
   }
 };
 
-auto int_to_str(auto val, Slice<char> buf, char type) noexcept -> Str {
+template <class T>
+auto Int<T>::to_str(slice::Slice<char> buf, char type) const noexcept -> str::Str {
   auto imp = IntFmter{buf._ptr, buf._ptr + buf._len};
   switch (type) {
-    default:  imp.write_dec(val + 0); break;
-    case 'B': imp.write_bin<2>(val + 0); break;
-    case 'b': imp.write_bin<2>(val + 0); break;
-    case 'O': imp.write_bin<8>(val + 0); break;
-    case 'o': imp.write_bin<8>(val + 0); break;
-    case 'X': imp.write_bin<16>(val + 0, true); break;
-    case 'x': imp.write_bin<16>(val + 0, false); break;
-    case 'P': imp.write_ptr(val + 0, true); break;
-    case 'p': imp.write_ptr(val + 0, false); break;
+    default:  imp.write_dec(_val + 0); break;
+    case 'B': imp.write_bin<2>(_val + 0); break;
+    case 'b': imp.write_bin<2>(_val + 0); break;
+    case 'O': imp.write_bin<8>(_val + 0); break;
+    case 'o': imp.write_bin<8>(_val + 0); break;
+    case 'X': imp.write_bin<16>(_val + 0, true); break;
+    case 'x': imp.write_bin<16>(_val + 0, false); break;
+    case 'P': imp.write_ptr(_val + 0, true); break;
+    case 'p': imp.write_ptr(_val + 0, false); break;
   }
   return imp.as_str();
 }
 
-template <trait::int_ T>
-auto int_from_str(Str buf, u32 radix) noexcept -> Option<T> {
+template <class T>
+auto Int<T>::from_str(Str buf, u32 radix) noexcept -> Option<T> {
   auto imp = IntParser{buf._ptr, buf._ptr + buf._len};
   auto val = T{};
 
@@ -242,27 +243,15 @@ auto int_from_str(Str buf, u32 radix) noexcept -> Option<T> {
   return Option{val};
 }
 
-template auto int_to_str(signed char, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(short, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(int, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(long, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(long long, Slice<char>, char) noexcept -> Str;
+template struct Int<signed char>;
+template struct Int<short>;
+template struct Int<int>;
+template struct Int<long>;
+template struct Int<long long>;
 
-template auto int_to_str(unsigned char, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(unsigned short, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(unsigned int, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(unsigned long, Slice<char>, char) noexcept -> Str;
-template auto int_to_str(unsigned long long, Slice<char>, char) noexcept -> Str;
-
-template auto int_from_str(Str, u32 radix) noexcept -> Option<signed char>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<short>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<int>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<long>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<long long>;
-
-template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned char>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned short>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned int>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned long>;
-template auto int_from_str(Str, u32 radix) noexcept -> Option<unsigned long long>;
+template struct Int<unsigned char>;
+template struct Int<unsigned short>;
+template struct Int<unsigned int>;
+template struct Int<unsigned long>;
+template struct Int<unsigned long long>;
 }  // namespace sfc::num

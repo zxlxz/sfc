@@ -1,6 +1,5 @@
 #include "sfc/thread.h"
 
-#include "sfc/ffi/c_str.h"
 #include "sfc/sys/thread.h"
 
 namespace sfc::thread {
@@ -9,11 +8,14 @@ namespace sys_imp = sys::thread;
 
 struct ThreadData {
   Box<void()> _func;
-  ffi::CString _name;
+  sys::OsStr _name;
 
  public:
   void run() noexcept {
-    sys_imp::thrd_setname(_name.as_ptr());
+    const auto name_ptr = _name.ptr();
+    if (name_ptr != nullptr) {
+      sys_imp::thrd_setname(name_ptr);
+    }
 
     try {
       _func();
@@ -25,13 +27,13 @@ struct ThreadData {
 
 static auto thread_callback(void* ptr) -> sys_imp::ret_t {
   auto dat = static_cast<ThreadData*>(ptr);
-    auto obj = Box<ThreadData>::from_raw(dat);
-    obj->run();
-    return {};
+  auto obj = Box<ThreadData>::from_raw(dat);
+  obj->run();
+  return {};
 }
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
-  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::CString::xnew(name));
+  auto data = Box<ThreadData>::xnew(mem::move(fun), sys::OsStr::xnew(name));
   auto thrd = sys_imp::thrd_create(stack_size, thread_callback, data.ptr());
   if (thrd) {
     mem::move(data).into_raw();
