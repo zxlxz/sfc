@@ -15,7 +15,7 @@ SFC_TEST(slice) {
 
   auto v = Vec<int>::from(tmp);
   auto s = v.as_slice();
-  panicking::expect(s.as_ptr() == v.as_ptr());
+  panicking::expect_eq(s.as_ptr(), v.as_ptr());
   panicking::expect_eq(s.len(), v.len());
 }
 
@@ -78,7 +78,7 @@ SFC_TEST(reserve) {
     v.push(i);
   }
   v.reserve(1);
-  panicking::expect(v.capacity() >= 16);
+  panicking::expect_true(v.capacity() >= 16);
 }
 
 SFC_TEST(drain) {

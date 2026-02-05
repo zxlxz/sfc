@@ -14,13 +14,13 @@ SFC_TEST(simple) {
 
   const auto ok = Result{1};
 
-  panicking::expect(ok.is_ok());
-  panicking::expect(!ok.is_err());
+  panicking::expect_true(ok.is_ok());
+  panicking::expect_false(ok.is_err());
   panicking::expect_eq(*ok, 1);
 
   const auto err = Result{Error::EA};
-  panicking::expect(!err.is_ok());
-  panicking::expect(err.is_err());
+  panicking::expect_false(err.is_ok());
+  panicking::expect_true(err.is_err());
   panicking::expect_eq(~err, Error::EA);
 }
 

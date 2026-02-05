@@ -1,7 +1,8 @@
 #pragma once
 
+#include "sfc/core/option.h"
 #include "sfc/core/panicking.h"
-#include "sfc/core/trait.h"
+#include "sfc/core/ptr.h"
 
 namespace sfc::variant {
 
@@ -165,19 +166,23 @@ class Variant {
   }
 
   template <class U>
-  auto is() const -> bool {
+  auto is() const noexcept -> bool {
     return _tag == _inn.template tag<U>();
   }
 
   template <class U>
-  auto as() const -> const U& {
-    panicking::expect(_tag == _inn.template tag<U>(), "variant::Variant::as: invalid type");
+  auto as() const noexcept -> option::Option<const U&> {
+    if (_tag != _inn.template tag<U>()) {
+      return {};
+    }
     return _inn.template as<U>();
   }
 
   template <class U>
-  auto as_mut() -> U& {
-    panicking::expect(_tag == _inn.template tag<U>(), "variant::Variant::as_mut: invalid type");
+  auto as_mut() noexcept -> Option<U&> {
+    if (_tag != _inn.template tag<U>()) {
+      return {};
+    }
     return _inn.template as_mut<U>();
   }
 
@@ -190,13 +195,7 @@ class Variant {
   }
 
   void fmt(auto& f) const {
-    _inn.map(_tag, [&](const auto& val) {
-      if constexpr (requires { val.fmt(f); }) {
-        val.fmt(f);
-      } else {
-        fmt::Debug::fmt(val, f);
-      }
-    });
+    _inn.map(_tag, [&](const auto& val) { f.write_val(val); });
   }
 };
 

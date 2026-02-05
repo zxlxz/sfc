@@ -23,13 +23,13 @@ SFC_TEST(read_exact) {
   auto& r = trait::as<io::Read>(buf);
 
   u8 tmp[4] = {};
-  panicking::expect(r.read_exact(tmp).is_ok());
+  panicking::expect_true(r.read_exact(tmp).is_ok());
   panicking::expect_eq(Str::from_utf8(tmp), "0123");
 
-  panicking::expect(r.read_exact(tmp).is_ok());
+  panicking::expect_true(r.read_exact(tmp).is_ok());
   panicking::expect_eq(Str::from_utf8(tmp), "4567");
 
-  panicking::expect(r.read_exact(tmp).is_err());
+  panicking::expect_true(r.read_exact(tmp).is_err());
   panicking::expect_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
@@ -38,7 +38,7 @@ SFC_TEST(read_to_end) {
   auto& r = trait::as<io::Read>(buf);
 
   auto v = Vec<u8>{};
-  panicking::expect(r.read_to_end(v).is_ok());
+  panicking::expect_true(r.read_to_end(v).is_ok());
   panicking::expect_eq(Str::from_utf8(v.as_slice()), "0123456789");
 }
 
@@ -47,7 +47,7 @@ SFC_TEST(read_to_string) {
   auto& r = trait::as<io::Read>(buf);
 
   auto str = String{};
-  panicking::expect(r.read_to_string(str).is_ok());
+  panicking::expect_true(r.read_to_string(str).is_ok());
   panicking::expect_eq(str, "0123456789");
 }
 

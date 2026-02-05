@@ -7,10 +7,10 @@ SFC_TEST(property) {
   const auto null_str = String::from("");
 
   panicking::expect_eq(test_str.len(), 3U);
-  panicking::expect(!test_str.is_empty());
+  panicking::expect_true(!test_str.is_empty());
 
   panicking::expect_eq(null_str.len(), 0U);
-  panicking::expect(null_str.is_empty());
+  panicking::expect_true(null_str.is_empty());
 }
 
 SFC_TEST(index) {

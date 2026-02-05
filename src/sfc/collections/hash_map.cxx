@@ -8,7 +8,7 @@ SFC_TEST(get) {
   auto t = HashMap<int, int>{};
   t.insert(1, 10);
   auto v = t.get_mut(1);
-  panicking::expect(v);
+  panicking::expect_true(v);
 
   *v = 11;
   panicking::expect_eq(t.get(1).unwrap(), 11);
@@ -24,7 +24,7 @@ SFC_TEST(try_insert) {
 
   panicking::expect_eq(*t.get(0), 0);
   panicking::expect_eq(*t.get(1), 10);
-  panicking::expect(!t.get(5));
+  panicking::expect_false(t.get(5));
 
   for (auto i = 5; i < 10; ++i) {
     t.try_insert(i, i * 10);
@@ -33,7 +33,7 @@ SFC_TEST(try_insert) {
 
   panicking::expect_eq(*t.get(5), 50);
   panicking::expect_eq(*t.get(9), 90);
-  panicking::expect(!t.get(10));
+  panicking::expect_false(t.get(10));
 
   for (auto i = 10; i < 100; ++i) {
     t.try_insert(i, i * 10);
@@ -45,7 +45,7 @@ SFC_TEST(try_insert) {
     panicking::expect_eq(*t.get(i), i * 10);
   }
 
-  panicking::expect(t.capacity() < t.len() * 4);
+  panicking::expect_true(t.capacity() < t.len() * 4);
 }
 
 SFC_TEST(insert) {
@@ -68,7 +68,7 @@ SFC_TEST(remove) {
 
   for (auto i = 0; i < 3; ++i) {
     panicking::expect_eq(t.remove(i), Option{i * 10});
-    panicking::expect(!t.get(i));
+    panicking::expect_false(t.get(i));
   }
 
   for (auto i = 0; i < 100; ++i) {

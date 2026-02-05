@@ -10,15 +10,15 @@ SFC_TEST(worker) {
   auto worker = Worker{};
   auto thrd = thread::spawn([&]() { worker.run(); });
 
-  panicking::expect(worker.post(Task::xnew([&, val = 1]() { cnt += val; })));
+  panicking::expect_true(worker.post(Task::xnew([&, val = 1]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 1);
 
-  panicking::expect(worker.post(Task::xnew([&, val = 2]() { cnt += val; })));
+  panicking::expect_true(worker.post(Task::xnew([&, val = 2]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 3);
 
-  panicking::expect(worker.post(Task::xnew([&, val = 3]() { cnt += val; })));
+  panicking::expect_true(worker.post(Task::xnew([&, val = 3]() { cnt += val; })));
   worker.wait();
   panicking::expect_eq(cnt, 6);
 

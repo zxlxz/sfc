@@ -3,21 +3,21 @@
 namespace sfc::num::test {
 
 SFC_TEST(flt_eq) {
-  panicking::expect(num::flt_eq_ulp(1.0, 1.0));
-  panicking::expect(num::flt_eq_ulp(-1.0, -1.0));
-  panicking::expect(!num::flt_eq_ulp(1.0, -1.0));
+  panicking::expect_flt_eq(1.0, 1.0);
+  panicking::expect_flt_eq(-1.0, -1.0);
+  panicking::expect_flt_ne(1.0, -1.0);
 
-  panicking::expect(num::flt_eq_ulp(1.0, 1.0 + 1e-20));
-  panicking::expect(!num::flt_eq_ulp(1.0, 1.0 + 1e-10));
+  panicking::expect_flt_eq(1.0, 1.0 + 1e-20);
+  panicking::expect_flt_ne(1.0, 1.0 + 1e-10);
 
-  panicking::expect(num::flt_eq_ulp(0.0, 0.0));
-  panicking::expect(num::flt_eq_ulp(-0.0, +0.0));
-  panicking::expect(num::flt_eq_ulp(-0.0, -0.0));
+  panicking::expect_flt_eq(0.0, 0.0);
+  panicking::expect_flt_eq(-0.0, +0.0);
+  panicking::expect_flt_eq(-0.0, -0.0);
 
-  panicking::expect(!num::flt_eq_ulp(__builtin_nan(""), __builtin_nan("")));
-  panicking::expect(!num::flt_eq_ulp(__builtin_inf(), __builtin_inf()));
-  panicking::expect(!num::flt_eq_ulp(-__builtin_inf(), -__builtin_inf()));
-  panicking::expect(!num::flt_eq_ulp(__builtin_inf(), -__builtin_inf()));
+  panicking::expect_flt_ne(__builtin_nan(""), __builtin_nan(""));
+  panicking::expect_flt_ne(__builtin_inf(), __builtin_inf());
+  panicking::expect_flt_ne(-__builtin_inf(), -__builtin_inf());
+  panicking::expect_flt_ne(__builtin_inf(), -__builtin_inf());
 }
 
 SFC_TEST(flt_to_str) {
@@ -80,12 +80,12 @@ SFC_TEST(flt_from_str) {
   panicking::expect_flt_eq(Flt<f64>::from_str("-123.456").unwrap_or(0), -123.456);
 
   // invalid
-  panicking::expect(!Flt<f64>::from_str("abc"));
-  panicking::expect(!Flt<f64>::from_str("++12"));
-  panicking::expect(!Flt<f64>::from_str("+-12"));
-  panicking::expect(!Flt<f64>::from_str("12.34.56"));
-  panicking::expect(!Flt<f64>::from_str("12..3"));
-  panicking::expect(!Flt<f64>::from_str("12..3"));
+  panicking::expect_false(Flt<f64>::from_str("abc"));
+  panicking::expect_false(Flt<f64>::from_str("++12"));
+  panicking::expect_false(Flt<f64>::from_str("+-12"));
+  panicking::expect_false(Flt<f64>::from_str("12.34.56"));
+  panicking::expect_false(Flt<f64>::from_str("12..3"));
+  panicking::expect_false(Flt<f64>::from_str("12..3"));
 }
 
 SFC_TEST(flt_from_exp) {
@@ -96,9 +96,9 @@ SFC_TEST(flt_from_exp) {
   panicking::expect_flt_eq(Flt<f64>::from_str("-1.23456E-2").unwrap_or(0), -0.0123456);
 
   // invalid
-  panicking::expect(!Flt<f64>::from_str("1.23e"));
-  panicking::expect(!Flt<f64>::from_str("1.23e++2"));
-  panicking::expect(!Flt<f64>::from_str("1.23e--2"));
+  panicking::expect_false(Flt<f64>::from_str("1.23e"));
+  panicking::expect_false(Flt<f64>::from_str("1.23e++2"));
+  panicking::expect_false(Flt<f64>::from_str("1.23e--2"));
 }
 
 }  // namespace sfc::num::test

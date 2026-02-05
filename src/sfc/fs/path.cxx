@@ -29,17 +29,17 @@ SFC_TEST(parrent) {
 }
 
 SFC_TEST(is_absolute) {
-  panicking::expect(Path{"/usr/bin"}.is_absolute());
-  panicking::expect(!Path{"tmp/foo.txt"}.is_absolute());
-  panicking::expect(!Path{"foo.txt/."}.is_absolute());
-  panicking::expect(!Path{"foo.txt/.//"}.is_absolute());
+  panicking::expect_true(Path{"/usr/bin"}.is_absolute());
+  panicking::expect_false(Path{"tmp/foo.txt"}.is_absolute());
+  panicking::expect_false(Path{"foo.txt/."}.is_absolute());
+  panicking::expect_false(Path{"foo.txt/.//"}.is_absolute());
 }
 
 SFC_TEST(is_relative) {
-  panicking::expect(!Path{"/usr/bin"}.is_relative());
-  panicking::expect(Path{"tmp/foo.txt"}.is_relative());
-  panicking::expect(Path{"foo.txt/."}.is_relative());
-  panicking::expect(Path{"foo.txt/.//"}.is_relative());
+  panicking::expect_false(Path{"/usr/bin"}.is_relative());
+  panicking::expect_true(Path{"tmp/foo.txt"}.is_relative());
+  panicking::expect_true(Path{"foo.txt/."}.is_relative());
+  panicking::expect_true(Path{"foo.txt/.//"}.is_relative());
 }
 
 SFC_TEST(push) {

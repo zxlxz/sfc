@@ -6,7 +6,7 @@ SFC_TEST(simple) {
   {
     const auto a = Slice<int>{};
     panicking::expect_eq(a.len(), 0U);
-    panicking::expect(a.is_empty());
+    panicking::expect_true(a.is_empty());
   }
 
   {
@@ -14,7 +14,7 @@ SFC_TEST(simple) {
     const auto b = Slice{v};
     panicking::expect_eq(b.as_ptr(), b._ptr);
     panicking::expect_eq(b.len(), 3U);
-    panicking::expect(!b.is_empty());
+    panicking::expect_false(b.is_empty());
   }
 }
 
@@ -22,7 +22,7 @@ SFC_TEST(index) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};
   panicking::expect_eq(s.len(), 3U);
-  panicking::expect(!s.is_empty());
+  panicking::expect_false(s.is_empty());
   panicking::expect_eq(s[0], 1);
   panicking::expect_eq(s[1], 2);
   panicking::expect_eq(s[2], 3);
@@ -56,7 +56,7 @@ SFC_TEST(slice) {
   {
     const auto e = a[{5, 6}];
     panicking::expect_eq(e.len(), 0U);
-    panicking::expect(e.is_empty());
+    panicking::expect_true(e.is_empty());
   }
 }
 
@@ -77,7 +77,7 @@ SFC_TEST(split_at) {
   panicking::expect_eq(d[1], 2);
   panicking::expect_eq(d[2], 3);
   panicking::expect_eq(e.len(), 0U);
-  panicking::expect(e.is_empty());
+  panicking::expect_true(e.is_empty());
 }
 
 SFC_TEST(swap) {
@@ -114,23 +114,23 @@ SFC_TEST(eq) {
 SFC_TEST(contains) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};
-  panicking::expect(s.contains(2));
-  panicking::expect(!s.contains(4));
+  panicking::expect_true(s.contains(2));
+  panicking::expect_false(s.contains(4));
 }
 
 SFC_TEST(starts_with) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};
 
-  panicking::expect(s.starts_with({v + 0, 2}));
-  panicking::expect(!s.starts_with({v + 1, 2}));
+  panicking::expect_true(s.starts_with({v + 0, 2}));
+  panicking::expect_false(s.starts_with({v + 1, 2}));
 }
 
 SFC_TEST(ends_with) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};
-  panicking::expect(s.ends_with({v + 1, 2}));
-  panicking::expect(!s.ends_with({v + 0, 2}));
+  panicking::expect_true(s.ends_with({v + 1, 2}));
+  panicking::expect_false(s.ends_with({v + 0, 2}));
 }
 
 SFC_TEST(iter) {
@@ -141,7 +141,7 @@ SFC_TEST(iter) {
   panicking::expect_eq(it.next(), Option{1});
   panicking::expect_eq(it.next(), Option{2});
   panicking::expect_eq(it.next(), Option{3});
-  panicking::expect(!it.next());
+  panicking::expect_false(it.next().is_some());
 }
 
 SFC_TEST(windows) {
@@ -152,13 +152,13 @@ SFC_TEST(windows) {
     auto w = s.windows(2);
     panicking::expect_eq(w.next(), Option{Slice{v + 0, 2}});
     panicking::expect_eq(w.next(), Option{Slice{v + 1, 2}});
-    panicking::expect(!w.next());
+    panicking::expect_false(w.next().is_some());
   }
 
   {
     auto w = s.windows(3);
     panicking::expect_eq(w.next(), Option{Slice{v + 0, 3}});
-    panicking::expect(!w.next());
+    panicking::expect_false(w.next().is_some());
   }
 }
 
@@ -170,13 +170,13 @@ SFC_TEST(chunks) {
     auto c = s.chunks(2);
     panicking::expect_eq(c.next(), Option{Slice{v + 0, 2}});
     panicking::expect_eq(c.next(), Option{Slice{v + 2, 1}});
-    panicking::expect(!c.next());
+    panicking::expect_false(c.next().is_some());
   }
 
   {
     auto c = s.chunks(3);
     panicking::expect_eq(c.next(), Option{Slice{v + 0, 3}});
-    panicking::expect(!c.next());
+    panicking::expect_false(c.next().is_some());
   }
 }
 

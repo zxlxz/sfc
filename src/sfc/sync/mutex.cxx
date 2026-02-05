@@ -37,15 +37,15 @@ SFC_TEST(mutex_try_lock) {
 
   {
     auto guard = mtx.try_lock();
-    panicking::expect(guard.is_some());
+    panicking::expect_true(guard.is_some());
   }
 
   {
     auto guard1 = mtx.try_lock();
-    panicking::expect(guard1.is_some());
+    panicking::expect_true(guard1.is_some());
 
     auto guard2 = mtx.try_lock();
-    panicking::expect(guard2.is_none());
+    panicking::expect_false(guard2.is_some());
   }
 }
 

@@ -17,7 +17,7 @@ SFC_TEST(push_pop) {
 
   panicking::expect_eq(q.top(), Option{2});
   panicking::expect_eq(q.pop(), Option{2});
-  panicking::expect(!q.pop());
+  panicking::expect_false(q.pop());
 }
 
 }  // namespace sfc::collections::queue::test

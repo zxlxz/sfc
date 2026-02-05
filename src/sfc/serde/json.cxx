@@ -40,7 +40,7 @@ SFC_TEST(serialize_map) {
 
 SFC_TEST(deserialize_simple) {
   // null
-  { panicking::expect(Deserializer{"null"}.deserialize_null().is_ok()); }
+  { panicking::expect_true(Deserializer{"null"}.deserialize_null().is_ok()); }
 
   // bool
   {
@@ -75,15 +75,15 @@ SFC_TEST(deserialize_seq) {
   auto visit = [&](auto& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
       const auto val = seq.template next_element<int>();
-      panicking::expect(val.is_ok());
+      panicking::expect_true(val.is_ok());
       panicking::expect_eq(*val, vals[i]);
     }
-    panicking::expect(!seq.has_next());
+    panicking::expect_false(seq.has_next());
     return {};
   };
 
   auto des = Deserializer{s};
-  panicking::expect(des.deserialize_seq(visit).is_ok());
+  panicking::expect_true(des.deserialize_seq(visit).is_ok());
 }
 
 SFC_TEST(deserialize_map) {
@@ -94,19 +94,19 @@ SFC_TEST(deserialize_map) {
   auto visit = [&](auto& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
       const auto key = map.template next_key<Str>();
-      panicking::expect(key.is_ok());
+      panicking::expect_true(key.is_ok());
       panicking::expect_eq(*key, keys[i]);
 
       const auto val = map.template next_value<int>();
-      panicking::expect(val.is_ok());
+      panicking::expect_true(val.is_ok());
       panicking::expect_eq(*val, vals[i]);
     }
-    panicking::expect(!map.has_next());
+    panicking::expect_false(map.has_next());
     return {};
   };
 
   auto des = Deserializer{s};
-  panicking::expect(des.deserialize_map(visit).is_ok());
+  panicking::expect_true(des.deserialize_map(visit).is_ok());
 }
 
 }  // namespace sfc::serde::json::test

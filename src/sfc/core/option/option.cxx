@@ -7,12 +7,12 @@ SFC_TEST(basic) {
   using Option = option::Option<int>;
 
   const auto none = Option{};
-  panicking::expect(none.is_none());
-  panicking::expect(!none.is_some());
+  panicking::expect_true(none.is_none());
+  panicking::expect_false(none.is_some());
 
   const auto some = Option{10};
-  panicking::expect(some.is_some());
-  panicking::expect(!some.is_none());
+  panicking::expect_true(some.is_some());
+  panicking::expect_false(some.is_none());
   panicking::expect_eq(*some, 10);
 }
 
@@ -23,8 +23,8 @@ SFC_TEST(copy_ctor) {
 
   const auto a = none;
   const auto b = some;
-  panicking::expect(a.is_none());
-  panicking::expect(b.is_some());
+  panicking::expect_true(a.is_none());
+  panicking::expect_true(b.is_some());
   panicking::expect_eq(*b, 10);
 }
 
@@ -35,10 +35,10 @@ SFC_TEST(copy_assign) {
 
   auto x = Option{};
   x = none;
-  panicking::expect(x.is_none());
+  panicking::expect_true(x.is_none());
 
   x = some;
-  panicking::expect(x.is_some());
+  panicking::expect_true(x.is_some());
   panicking::expect_eq(*x, 10);
 }
 
@@ -49,10 +49,10 @@ SFC_TEST(move_ctor) {
   auto b = Option{String::from("hello")};
 
   auto x = mem::move(a);
-  panicking::expect(x.is_none());
+  panicking::expect_true(x.is_none());
 
   auto y = mem::move(b);
-  panicking::expect(y.is_some());
+  panicking::expect_true(y.is_some());
   panicking::expect_eq(*y, "hello");
 }
 
@@ -63,20 +63,20 @@ SFC_TEST(move_assign) {
   auto b = Option{String::from("hello")};
 
   auto x = Option{};
-  panicking::expect(x.is_none());
+  panicking::expect_true(x.is_none());
 
   x = mem::move(a);
-  panicking::expect(x.is_none());
+  panicking::expect_true(x.is_none());
 
   x = mem::move(b);
-  panicking::expect(x.is_some());
+  panicking::expect_true(x.is_some());
   panicking::expect_eq(*x, "hello");
 
   auto y = Option{String::from("world")};
   panicking::expect_eq(*y, "world");
 
   y = mem::move(x);
-  panicking::expect(y.is_some());
+  panicking::expect_true(y.is_some());
   panicking::expect_eq(*y, "hello");
 }
 

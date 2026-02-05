@@ -104,48 +104,48 @@ SFC_TEST(contains) {
   const auto s = Str{"ababcd"};
 
   // char
-  panicking::expect(s.contains('a'));
-  panicking::expect(!s.contains('x'));
+  panicking::expect_true(s.contains('a'));
+  panicking::expect_false(s.contains('x'));
 
   // str
-  panicking::expect(s.contains("ab"));
-  panicking::expect(!s.contains("xy"));
+  panicking::expect_true(s.contains("ab"));
+  panicking::expect_false(s.contains("xy"));
 
   // pred
-  panicking::expect(s.contains([](char c) { return c == 'a'; }));
-  panicking::expect(!s.contains([](char c) { return c == 'x'; }));
+  panicking::expect_true(s.contains([](char c) { return c == 'a'; }));
+  panicking::expect_false(s.contains([](char c) { return c == 'x'; }));
 }
 
 SFC_TEST(starts_with) {
   const auto s = Str{"ababcd"};
 
   // char
-  panicking::expect(s.starts_with('a'));
-  panicking::expect(!s.starts_with('b'));
+  panicking::expect_true(s.starts_with('a'));
+  panicking::expect_false(s.starts_with('b'));
 
   // str
-  panicking::expect(s.starts_with("ab"));
-  panicking::expect(!s.starts_with("bc"));
+  panicking::expect_true(s.starts_with("ab"));
+  panicking::expect_false(s.starts_with("bc"));
 
   // pred
-  panicking::expect(s.starts_with([](char c) { return c == 'a'; }));
-  panicking::expect(!s.starts_with([](char c) { return c == 'b'; }));
+  panicking::expect_true(s.starts_with([](char c) { return c == 'a'; }));
+  panicking::expect_false(s.starts_with([](char c) { return c == 'b'; }));
 }
 
 SFC_TEST(ends_with) {
   const auto s = Str{"ababcd"};
 
   // char
-  panicking::expect(s.ends_with('d'));
-  panicking::expect(!s.ends_with('c'));
+  panicking::expect_true(s.ends_with('d'));
+  panicking::expect_false(s.ends_with('c'));
 
   // str
-  panicking::expect(s.ends_with("bcd"));
-  panicking::expect(!s.ends_with("bc"));
+  panicking::expect_true(s.ends_with("bcd"));
+  panicking::expect_false(s.ends_with("bc"));
 
   // pred
-  panicking::expect(s.ends_with([](char c) { return c == 'd'; }));
-  panicking::expect(!s.ends_with([](char c) { return c == 'c'; }));
+  panicking::expect_true(s.ends_with([](char c) { return c == 'd'; }));
+  panicking::expect_false(s.ends_with([](char c) { return c == 'c'; }));
 }
 
 SFC_TEST(trim) {
