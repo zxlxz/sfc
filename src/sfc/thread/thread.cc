@@ -32,23 +32,24 @@ static auto thread_callback(void* ptr) -> sys_imp::ret_t {
   return {};
 }
 
+void Thread::join() {
+  if (!_raw) {
+    return;
+  }
+  sys_imp::thrd_join(static_cast<sys_imp::thrd_t>(_raw));
+}
+
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
   auto data = Box<ThreadData>::xnew(mem::move(fun), sys::OsStr::xnew(name));
   auto thrd = sys_imp::thrd_create(stack_size, thread_callback, data.ptr());
   if (thrd) {
+    // forget data
     mem::move(data).into_raw();
   }
 
-  return JoinHandle{Thread{thrd}};
-}
-
-JoinHandle::JoinHandle(Thread thrd) noexcept : _thrd{thrd} {}
-
-JoinHandle::~JoinHandle() noexcept {
-  if (!_thrd._raw) {
-    return;
-  }
-  sys_imp::thrd_join(static_cast<sys_imp::thrd_t>(_thrd._raw));
+  auto res = JoinHandle{};
+  res._thrd = Thread{thrd};
+  return res;
 }
 
 auto current() -> Thread {

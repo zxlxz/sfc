@@ -7,21 +7,36 @@ namespace sfc::thread {
 
 struct Thread {
 #ifdef __unix__
-  u64 _raw{};
+  u64 _raw = 0;
 #else
-  void* _raw{};
+  void* _raw = nullptr;
 #endif
+
+ public:
+  void join();
 };
 
 class JoinHandle {
+  friend struct Builder;
   Thread _thrd{};
 
  public:
-  explicit JoinHandle(Thread thrd) noexcept;
-  ~JoinHandle() noexcept;
+  JoinHandle() noexcept = default;
 
-  JoinHandle(const JoinHandle&) = delete;
-  JoinHandle& operator=(const JoinHandle&) = delete;
+  ~JoinHandle() noexcept {
+    if (_thrd._raw) {
+      _thrd.join();
+    }
+  }
+
+  JoinHandle(JoinHandle&& other) noexcept : _thrd{mem::take(other._thrd)} {}
+
+  JoinHandle& operator=(JoinHandle&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_thrd, other._thrd);
+    }
+    return *this;
+  }
 };
 
 struct Builder {
