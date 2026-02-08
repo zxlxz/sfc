@@ -20,8 +20,10 @@ struct ExpectInfo {
   ExpectInfo(const auto& val, Location loc = {}) : val{val}, loc{loc} {}
 };
 
+[[noreturn]] void panic_str(Location loc, str::Str msg) noexcept;
+
 template <class... T>
-[[noreturn]] void panic_fmt(Location loc, fmt::fmts_t<T...> fmts, const T&... args) noexcept;
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const T&... args) noexcept;
 
 void expect(ExpectInfo info, const auto& fmts, const auto&... args) noexcept {
   if (info.val) {

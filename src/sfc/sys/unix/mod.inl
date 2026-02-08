@@ -24,6 +24,7 @@
 // apple
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
+#include <_time.h>
 #endif
 
 namespace sfc::sys {

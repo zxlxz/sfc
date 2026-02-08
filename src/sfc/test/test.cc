@@ -159,7 +159,7 @@ void run(Slice<const Suite> suites, bool color) {
     tests_cnt += suite.tests().len();
   }
 
-  io::println("Running {} tests from {} test suites.", title, tests_cnt, suites.len());
+  io::println("{} Running {} tests from {} test suites.", title, tests_cnt, suites.len());
   const auto timer = time::Instant::now();
   for (auto& suite : suites) {
     suite.run(color);

@@ -51,11 +51,11 @@ SFC_TEST(cmp) {
 }
 
 SFC_TEST(fmt) {
-  panicking::expect_eq(string::format("{}", ""), "");
-  panicking::expect_eq(string::format("{#?}", ""), R"("")");
+  panicking::expect_eq(fmt::format("{}", ""), "");
+  panicking::expect_eq(fmt::format("{#?}", ""), R"("")");
 
-  panicking::expect_eq(string::format("{}", "abc"), "abc");
-  panicking::expect_eq(string::format("{#?}", "abc"), R"("abc")");
+  panicking::expect_eq(fmt::format("{}", "abc"), "abc");
+  panicking::expect_eq(fmt::format("{#?}", "abc"), R"("abc")");
 }
 
 SFC_TEST(find) {

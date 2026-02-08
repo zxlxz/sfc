@@ -58,7 +58,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
 }
 
 void App::help() {
-  static const char msg[] =
+  static constexpr char msg[] =
       "This program contains tests written using SFC Test. You can use the\n"
       "following command line flags to control its behavior: \n"
       "\n"
@@ -83,9 +83,9 @@ void App::list() const {
 
   auto outs = io::Stdout::lock();
   for (auto& suite : suites) {
-    outs.write_fmt("{}\n", suite.name());
+    fmt::write(outs, "{}\n", suite.name());
     for (auto& test : suite.tests()) {
-      outs.write_fmt("    {}\n", test.name());
+      fmt::write(outs, "    {}\n", test.name());
     }
   }
 }

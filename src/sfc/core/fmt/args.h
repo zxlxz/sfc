@@ -1,20 +1,36 @@
 #pragma once
 
-#include "sfc/core/trait.h"
+#include "sfc/core/mod.h"
 
 namespace sfc::fmt {
 
 struct RawStr {
-  const char* _ptr;
-  usize _len;
+  const char* _ptr = nullptr;
+  usize _len = 0;
 
-  template <class S>
-  operator S() const noexcept {
-    return S{_ptr, _len};
+ public:
+  consteval RawStr() = default;
+
+  consteval RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
+
+  template <usize N>
+  consteval RawStr(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
+
+  consteval auto operator[](u32 idx) const -> char {
+    return idx < _len ? _ptr[idx] : '\0';
+  }
+
+  consteval auto find(char c, u32 pos = 0) const -> u32 {
+    for (; pos < _len; ++pos) {
+      if (_ptr[pos] == c) {
+        break;
+      }
+    }
+    return pos;
   }
 };
 
-struct Style {
+struct Options {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
@@ -27,129 +43,132 @@ struct Style {
 
  public:
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  constexpr static auto from(RawStr s) noexcept -> Style {
-    static constexpr auto is_num = [](char c) { return '0' <= c && c <= '9'; };
-    static constexpr auto is_any = [](char x, auto... t) { return ((x == t) || ...); };
-
-    if (s._len == 0 || s._len > 64) {
-      return {};
-    }
-
-    auto p = s._ptr;
-    auto e = s._ptr + s._len;
-
-    auto res = Style{};
-    if (p < e && *p == ':') {
-      p++;
-    }
-
-    if (p + 1 < e && is_any(p[1], '<', '>', '=', '^')) {
-      res._fill = *p++;
-      res._align = *p++;
-    } else if (p < e && is_any(p[0], '<', '>', '=', '^')) {
-      res._align = *p++;
-    }
-
-    if (p < e && is_any(p[0], '+', '-', ' ')) {
-      res._sign = *p++;
-    }
-
-    if (p < e && p[0] == '#') {
-      res._prefix = *p++;
-    }
-
-    if (p < e && p[0] == '0' && res._fill == 0) {
-      res._fill = *p++;
-    }
-
-    while (p < e && is_num(*p)) {
-      res._width = static_cast<u8>(res._width * 10 + (*p++ - '0'));
-    }
-
-    if (p < e && p[0] == '.') {
-      res._point = *p++;
-      while (p < e && is_num(*p)) {
-        res._precision = static_cast<u8>(res._precision * 10 + (*p++ - '0'));
+  consteval static auto from(RawStr s) noexcept -> Options {
+    auto idx = 0U;
+    auto extract = [p = s._ptr, n = s._len, &idx](auto... c) -> char {
+      if (idx < n && (sizeof...(c) == 0 || ((p[idx] == c) || ...))) {
+        return p[idx++];
       }
-    }
-
-    if (p != e) {
-      res._type = *p++;
-    }
-    return res;
-  }
-};
-
-template <class... T>
-struct Fmts {
-  RawStr _text[sizeof...(T) + 1] = {};
-  Style _style[sizeof...(T)] = {};
-
- public:
-  template <usize N>
-  consteval Fmts(const char (&s)[N]) noexcept {
-    auto find_next = [&](auto p, char c) {
-      while (p < s + N && *p != c) {
-        p++;
-      }
-      return p;
+      return '\0';
     };
 
-    auto p = s;
-    for (auto i = 0U; i < sizeof...(T); ++i) {
-      const auto a = find_next(p, '{');
-      const auto b = find_next(a, '}');
-      if (a == b) {
-        break;
+    auto extract_u32 = [p = s._ptr, n = s._len, &idx]() -> u32 {
+      auto res = 0U;
+      for (; idx < n; idx += 1) {
+        if (p[idx] < '0' || p[idx] > '9') break;
+        res = res * 10 + static_cast<u32>(p[idx] - '0');
       }
-      _text[i] = RawStr{p, static_cast<usize>(a - p)};
-      _style[i] = Style::from({a + 1, static_cast<usize>(b - a - 1)});
-      p = b + 1;
+      return res;
+    };
+
+    auto res = Options{};
+    extract(':');
+
+    res._fill = extract();
+    res._align = extract('<', '>', '=', '^');
+    if (res._fill && !res._align) {
+      idx -= 1;
+      res._fill = 0;
+      res._align = extract('<', '>', '=', '^');
     }
-    _text[sizeof...(T)] = {p, static_cast<usize>(s + N - p - 1)};
+
+    res._sign = extract('+', '-', ' ');
+    res._prefix = extract('#');
+    if (!res._fill) {
+      res._fill = extract('0');
+    }
+
+    res._width = static_cast<u8>(extract_u32());
+    if ((res._point = extract('.'))) {
+      res._precision = static_cast<u8>(extract_u32());
+    }
+    res._type = extract();
+    return res;
+  }
+
+  auto type(char default_type = 0) const -> char {
+    return _type ? _type : default_type;
+  }
+
+  auto precision(u32 default_prec = 0) const -> u32 {
+    return _point ? _precision : default_prec;
   }
 };
 
-template <>
-struct Fmts<> {
-  const char* _ptr;
-  usize _len;
+struct Fmts {
+  static constexpr auto N = 16U;
+  RawStr _str = {};
+  Options _options[N] = {};
+  RawStr _pieces[N + 1] = {};
 
  public:
-  template <usize N>
-  Fmts(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
+  consteval Fmts(const auto& s) : _str{s} {
+    auto p = 0U;
+    for (auto i = 0U; i < N; ++i) {
+      const auto a = _str.find('{', p);
+      const auto b = _str.find('}', a);
+      _pieces[i] = RawStr{_str._ptr + p, a - p};
+      if (a == _str._len || b == _str._len) {
+        break;
+      }
+      _options[i] = Options::from({_str._ptr + (a + 1), b - a - 1});
+      p = b + 1;
+    }
+  }
 };
 
 template <class... T>
 struct Args {
-  static constexpr u32 N = sizeof...(T);
-
-  Fmts<T...> _argf;
-  const void* _args[N];
+  static constexpr auto N = sizeof...(T);
+  RawStr _fmts;
+  Options _options[N] = {};
+  RawStr _pieces[N + 1] = {};
+  const void* _args[sizeof...(T)];
 
  public:
-  Args(Fmts<T...> argf, const T&... args) noexcept : _argf{argf}, _args{&args...} {}
+  explicit Args(Fmts fmts, const T&... args) : _fmts{fmts._str}, _args{&args...} {
+    for (auto I = 0U; I < N; ++I) {
+      _options[I] = fmts._options[I];
+      _pieces[I] = fmts._pieces[I];
+    }
+    _pieces[N] = fmts._pieces[N];
+  }
 
   void fmt(auto& f) const noexcept {
-    auto fmt_all = [&]<u32... I>(trait::idxs_t<I...>) { (void)(this->fmt_imp<I>(f), ...); };
-    fmt_all(trait::idxs_seq_t<N>());
-    f.write_str(_argf._text[N]);
+    this->fmt_imp<0U, T...>(f);
+    if (_pieces[N]._len != 0) {
+      f.write_str({_pieces[N]._ptr, _pieces[N]._len});
+    }
   }
 
  private:
-  template <u32 I>
+  template <u32 I, class U, class... S>
   void fmt_imp(auto& f) const {
-    using U = T...[I];
-    f.write_str(_argf._text[I]);
-    f._style = _argf._style[I];
-    f.write_val(*static_cast<const U*>(_args[I]));
+    const auto& x = *static_cast<const U*>(_args[I]);
+    if (const auto s = _pieces[I]; s._len != 0) {
+      f.write_str({s._ptr, s._len});
+    }
+    f._options = _options[I];
+    f.write_val(x);
+    if constexpr (sizeof...(S)) {
+      this->fmt_imp<I + 1, S...>(f);
+    }
+  }
+};
+
+template <>
+struct Args<> {
+  RawStr _fmts;
+
+ public:
+  explicit Args(Fmts fmts) : _fmts{fmts._str} {}
+
+  void fmt(auto& f) const noexcept {
+    f.pad({_fmts._ptr, _fmts._len});
   }
 };
 
 template <class... T>
-using fmts_t = Fmts<trait::type_t<T>...>;
-
-template <class... T>
-Args(fmts_t<T...>, const T&...) -> Args<T...>;
+Args(const auto&, const T&...) -> Args<T...>;
 
 }  // namespace sfc::fmt

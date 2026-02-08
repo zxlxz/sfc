@@ -85,7 +85,7 @@ struct Clap::Item {
 
   void show_usage(auto& f) const {
     if (_type == Type::Arg) {
-      f.write_fmt(" [{}]{}", _hint, _variadic ? Str{"..."} : Str{""});
+      fmt::write(f, " [{}]{}", _hint, _variadic ? Str{"..."} : Str{""});
     }
   }
 

@@ -1,22 +1,22 @@
 #pragma once
 
 #include "sfc/core/fmt/args.h"
-#include "sfc/core/fmt/debug.h"
+#include "sfc/core/fmt/display.h"
 
 namespace sfc::fmt {
 
 template <class W>
 struct Fmter {
-  W& _out;
-  Style _style = {};
+  W& _buf;
+  Options _options = {};
   u32 _depth = 0;
 
  public:
   void write_char(char c) {
-    if constexpr (requires { _out.push(c); }) {
-      _out.push(c);
+    if constexpr (requires { _buf.push(c); }) {
+      _buf.push(c);
     } else {
-      _out.write_str({&c, 1});
+      _buf.write_str({&c, 1});
     }
   }
 
@@ -32,23 +32,23 @@ struct Fmter {
     if (s.is_empty()) {
       return;
     }
-    if constexpr (requires { _out.push_str(s); }) {
-      _out.push_str(s);
+    if constexpr (requires { _buf.push_str(s); }) {
+      _buf.push_str(s);
     } else {
-      _out.write_str(s);
+      _buf.write_str(s);
     }
   }
 
   void pad(Str s) {
-    if (_style._width <= s._len) {
+    if (_options._width <= s._len) {
       this->write_str(s);
       return;
     }
 
-    const auto fill = _style._fill ? _style._fill : ' ';
-    const auto npad = usize{_style._width} - s._len;
+    const auto fill = _options._fill ? _options._fill : ' ';
+    const auto npad = usize{_options._width} - s._len;
 
-    switch (_style._align) {
+    switch (_options._align) {
       default:
       case '<':
         this->write_str(s);
@@ -91,12 +91,12 @@ struct Fmter {
       }
     };
 
-    const auto sign = is_neg ? Str{"-"} : make_sign(_style._sign);
-    const auto prefix = _style._prefix ? make_prefix(_style._type) : Str{""};
-    const auto align = (_style._prefix || _style._fill == '0') ? '=' : _style._align;
+    const auto sign = is_neg ? Str{"-"} : make_sign(_options._sign);
+    const auto prefix = _options._prefix ? make_prefix(_options._type) : Str{""};
+    const auto align = (_options._prefix || _options._fill == '0') ? '=' : _options._align;
     const auto nfill = sign._len + prefix._len + body._len;
-    const auto npad = _style._width > nfill ? _style._width - nfill : 0U;
-    const auto fill = _style._fill ? _style._fill : _style._prefix ? '0' : ' ';
+    const auto npad = _options._width > nfill ? _options._width - nfill : 0U;
+    const auto fill = _options._fill ? _options._fill : _options._prefix ? '0' : ' ';
 
     switch (align) {
       default:
@@ -136,12 +136,8 @@ struct Fmter {
   }
 
   template <class... T>
-  void write_fmt(fmts_t<T...> pats, const T&... args) {
-    if constexpr (sizeof...(args) == 0) {
-      this->write_str({pats._ptr, pats._len});
-    } else {
-      Args<T...>{pats, args...}.fmt(*this);
-    }
+  void write_fmt(Fmts fmts, const T&... args) {
+    Args{fmts, args...}.fmt(*this);
   }
 
  public:
@@ -192,7 +188,7 @@ struct Fmter {
   }
 
   void node_item(u32 idx) {
-    const auto pretty = _style._prefix == '#';
+    const auto pretty = _options._prefix == '#';
     if (idx != 0) {
       this->write_str(pretty ? Str{","} : Str{", "});
     }
@@ -221,7 +217,7 @@ struct Fmter<W>::DebugTuple {
 
   auto entry(const auto& value) -> DebugTuple& {
     _fmt.node_item(_cnt++);
-    _fmt.write_val(value);
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -249,7 +245,7 @@ struct Fmter<W>::DebugList {
 
   auto entry(const auto& value) -> DebugList& {
     _fmt.node_item(_cnt++);
-    _fmt.write_val(value);
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -277,7 +273,7 @@ struct Fmter<W>::DebugSet {
 
   auto entry(const auto& value) -> DebugSet& {
     _fmt.node_item(_cnt++);
-    _fmt.write_val(value);
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -308,7 +304,7 @@ struct Fmter<W>::DebugMap {
     _fmt.write_str('"');
     _fmt.write_str(key);
     _fmt.write_str("\": ");
-    _fmt.write_val(value);
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -341,7 +337,7 @@ struct Fmter<W>::DebugStruct {
     _fmt.node_item(_cnt++);
     _fmt.write_str(key);
     _fmt.write_str(": ");
-    _fmt.write_val(value);
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -354,8 +350,9 @@ struct Fmter<W>::DebugStruct {
 };
 
 template <class... T>
-void write(auto& out, fmt::fmts_t<T...> fmts, const T&... args) {
-  Fmter{out}.write_fmt(fmts, args...);
+void write(auto& out, Fmts fmts, const T&... args) {
+  auto fmter = Fmter{out};
+  fmt::Args{fmts, args...}.fmt(fmter);
 }
 
 }  // namespace sfc::fmt

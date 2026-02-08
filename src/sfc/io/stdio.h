@@ -22,11 +22,6 @@ class Stdout {
     auto is_tty() -> bool;
     void flush();
     void write_str(Str s);
-
-    template <class... T>
-    void write_fmt(fmt::fmts_t<T...> fmts, const T&... args) {
-      fmt::Fmter{*this}.write_fmt(fmts, args...);
-    }
   };
 
   static auto lock() -> Lock;
@@ -60,11 +55,6 @@ class Stderr {
     static auto is_tty() -> bool;
     void flush();
     void write_str(Str s);
-
-    template <class... T>
-    void write_fmt(fmt::Fmts<T...> fmts, const T&... args) {
-      fmt::Fmter{*this}.write_fmt(fmts, args...);
-    }
   };
 
   static auto lock() -> Lock;
@@ -83,28 +73,28 @@ class Stderr {
 };
 
 template <class... T>
-void print(fmt::fmts_t<T...> fmts, const T&... args) {
+void print(fmt::Fmts fmts, const T&... args) {
   auto out = Stdout::lock();
-  out.write_fmt(fmts, args...);
+  fmt::write(out, fmts, args...);
 }
 
 template <class... T>
-void println(fmt::fmts_t<T...> fmts, const T&... args) {
+void println(fmt::Fmts fmts, const T&... args) {
   auto out = Stdout::lock();
-  out.write_fmt(fmts, args...);
+  fmt::write(out, fmts, args...);
   out.write_str("\n");
 }
 
 template <class... T>
-void eprint(fmt::fmts_t<T...> fmts, const T&... args) {
+void eprint(fmt::Fmts fmts, const T&... args) {
   auto out = Stderr::lock();
-  out.write_fmt(fmts, args...);
+  fmt::write(out, fmts, args...);
 }
 
 template <class... T>
-void eprintln(fmt::fmts_t<T...> fmts, const T&... args) {
+void eprintln(fmt::Fmts fmts, const T&... args) {
   auto out = Stderr::lock();
-  out.write_fmt(fmts, args...);
+  fmt::write(out, fmts, args...);
   out.write_str("\n");
 }
 

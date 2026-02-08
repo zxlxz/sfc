@@ -37,14 +37,6 @@ concept tv_copy_ = __is_trivially_copyable(T);
 template <class T>
 concept polymorphic_ = __is_polymorphic(T);
 
-template <class T>
-struct _type_t {
-  using Type = T;
-};
-
-template <class T>
-using type_t = typename _type_t<T>::Type;
-
 template <auto... I>
 struct idxs_t {};
 

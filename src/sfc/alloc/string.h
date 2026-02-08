@@ -180,35 +180,36 @@ class [[nodiscard]] String {
   }
 };
 
-template <class... T>
-auto format(fmt::fmts_t<T...> fmts, const T&... args) -> String {
-  auto s = String{};
-  fmt::Fmter{s}.write_fmt(fmts, args...);
-  return s;
-}
-
-auto to_string(const auto& val) -> String {
-  auto s = String{};
-  fmt::write(s, {}, val);
-  return s;
-}
+struct ToString {
+  static auto to_string(const auto& self) -> String {
+    auto buf = String{};
+    auto fmter = fmt::Fmter{buf};
+    fmt::Display::fmt(self, fmter);
+    return buf;
+  }
+};
 
 }  // namespace sfc::string
 
-namespace sfc::panicking {
-
-[[noreturn]] void panic_str(Location loc, Str msg) noexcept;
-
+namespace sfc::fmt {
 template <class... T>
-[[noreturn]] void panic_fmt(Location loc, fmt::fmts_t<T...> fmts, const T&... args) noexcept {
+auto format(fmt::Fmts fmts, const T&... args) -> string::String {
+  auto buf = string::String{};
+  Fmter{buf}.write_fmt(fmts, args...);
+  return buf;
+}
+}  // namespace sfc::fmt
+
+namespace sfc::panicking {
+template <class... T>
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const T&... args) noexcept {
   if constexpr (sizeof...(args) == 0) {
-    panicking::panic_str(loc, Str{fmts._ptr, fmts._len});
+    panicking::panic_str(loc, {fmts._str._ptr, fmts._str._len});
   } else {
-    const auto msg = string::format(fmts, args...);
+    const auto msg = fmt::format(fmts, args...);
     panicking::panic_str(loc, msg.as_str());
   }
 }
-
 }  // namespace sfc::panicking
 
 namespace sfc {

@@ -115,7 +115,7 @@ struct Str {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (f._style._type == '?' || f._style._type == 's') {
+    if (auto t = f._options._type;  t == '?' || t == 's') {
       f.write_char('"');
       f.pad(*this);
       f.write_char('"');

@@ -31,10 +31,10 @@ SFC_TEST(map) {
 // Variant::fmt
 SFC_TEST(fmt) {
   auto a = Variant<i32, f32>{2};
-  panicking::expect_eq(string::format("{}", a), "2");
+  panicking::expect_eq(fmt::format("{}", a), "2");
 
   auto b = Variant<i32, f32>{3.5f};
-  panicking::expect_eq(string::format("{}", b), "3.5000");
+  panicking::expect_eq(fmt::format("{}", b), "3.5000");
 }
 
 }  // namespace sfc::variant::test
