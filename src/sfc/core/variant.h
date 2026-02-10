@@ -1,7 +1,7 @@
 #pragma once
 
+#include "sfc/core/expect.h"
 #include "sfc/core/option.h"
-#include "sfc/core/panicking.h"
 #include "sfc/core/ptr.h"
 
 namespace sfc::variant {
@@ -195,7 +195,7 @@ class Variant {
   }
 
   void fmt(auto& f) const {
-    _inn.map(_tag, [&](const auto& val) { f.write_val(val); });
+    _inn.map(_tag, [&](const auto& val) { fmt::Display::fmt(val, f); });
   }
 };
 

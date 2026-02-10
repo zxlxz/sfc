@@ -27,7 +27,7 @@ SFC_TEST(mutex) {
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
-    panicking::expect_eq(vec[i], i);
+    sfc::expect_eq(vec[i], i);
   }
 }
 
@@ -36,15 +36,15 @@ SFC_TEST(mutex_try_lock) {
 
   {
     auto guard = mtx.try_lock();
-    panicking::expect_true(guard.is_some());
+    sfc::expect_true(guard.is_some());
   }
 
   {
     auto guard1 = mtx.try_lock();
-    panicking::expect_true(guard1.is_some());
+    sfc::expect_true(guard1.is_some());
 
     auto guard2 = mtx.try_lock();
-    panicking::expect_false(guard2.is_some());
+    sfc::expect_false(guard2.is_some());
   }
 }
 
@@ -71,7 +71,7 @@ SFC_TEST(reentrant_lock) {
   }
 
   for (auto i = 0; i < vec.len(); ++i) {
-    panicking::expect_eq(vec[i], i);
+    sfc::expect_eq(vec[i], i);
   }
 }
 

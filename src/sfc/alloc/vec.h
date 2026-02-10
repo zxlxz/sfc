@@ -140,12 +140,12 @@ class [[nodiscard]] Vec {
   }
 
   auto operator[](usize idx) const noexcept -> const T& {
-    panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    sfc::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
   auto operator[](usize idx) noexcept -> T& {
-    panicking::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    sfc::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
     return _buf._ptr[idx];
   }
 
@@ -190,7 +190,7 @@ class [[nodiscard]] Vec {
   }
 
   auto swap_remove(usize idx) noexcept -> T {
-    panicking::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     _len -= 1;
     auto tmp = ptr::read(_buf._ptr + _len);
@@ -245,7 +245,7 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T val) noexcept {
-    panicking::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
     ptr::shift_elements_right(_buf._ptr + idx, _len - idx, 1);
@@ -254,7 +254,7 @@ class [[nodiscard]] Vec {
   }
 
   auto remove(usize idx) noexcept -> T {
-    panicking::expect(idx < _len, "Vec::remove: idx(={}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx < _len, "Vec::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
     auto dst = _buf._ptr + idx;
     auto res = ptr::read(dst);

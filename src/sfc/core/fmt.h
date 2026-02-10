@@ -5,10 +5,24 @@
 
 namespace sfc::fmt {
 
+template <usize N>
+struct FixedBuf {
+  u32 _len = 0;
+  char _buf[N];
+
+ public:
+  void write_str(Str s) noexcept {
+    if (_len + s._len < N) {
+      __builtin_memcpy(_buf + _len, s._ptr, s._len);
+      _len += s._len;
+    }
+  }
+};
+
 template <class W>
 struct Fmter {
   W& _buf;
-  Options _options = {};
+  Spec _spec = {};
   u32 _depth = 0;
 
  public:
@@ -40,15 +54,15 @@ struct Fmter {
   }
 
   void pad(Str s) {
-    if (_options._width <= s._len) {
+    if (_spec._width <= s._len) {
       this->write_str(s);
       return;
     }
 
-    const auto fill = _options._fill ? _options._fill : ' ';
-    const auto npad = usize{_options._width} - s._len;
+    const auto fill = _spec._fill ? _spec._fill : ' ';
+    const auto npad = usize{_spec._width} - s._len;
 
-    switch (_options._align) {
+    switch (_spec._align) {
       default:
       case '<':
         this->write_str(s);
@@ -91,12 +105,12 @@ struct Fmter {
       }
     };
 
-    const auto sign = is_neg ? Str{"-"} : make_sign(_options._sign);
-    const auto prefix = _options._prefix ? make_prefix(_options._type) : Str{""};
-    const auto align = (_options._prefix || _options._fill == '0') ? '=' : _options._align;
+    const auto sign = is_neg ? Str{"-"} : make_sign(_spec._sign);
+    const auto prefix = _spec._prefix ? make_prefix(_spec._type) : Str{""};
+    const auto align = (_spec._prefix || _spec._fill == '0') ? '=' : _spec._align;
     const auto nfill = sign._len + prefix._len + body._len;
-    const auto npad = _options._width > nfill ? _options._width - nfill : 0U;
-    const auto fill = _options._fill ? _options._fill : _options._prefix ? '0' : ' ';
+    const auto npad = _spec._width > nfill ? _spec._width - nfill : 0U;
+    const auto fill = _spec._fill ? _spec._fill : _spec._prefix ? '0' : ' ';
 
     switch (align) {
       default:
@@ -135,8 +149,7 @@ struct Fmter {
     }
   }
 
-  template <class... T>
-  void write_fmt(Fmts fmts, const T&... args) {
+  void write_fmt(Fmts fmts, const auto&... args) {
     Args{fmts, args...}.fmt(*this);
   }
 
@@ -188,7 +201,7 @@ struct Fmter {
   }
 
   void node_item(u32 idx) {
-    const auto pretty = _options._prefix == '#';
+    const auto pretty = _spec._prefix == '#';
     if (idx != 0) {
       this->write_str(pretty ? Str{","} : Str{", "});
     }
@@ -349,10 +362,23 @@ struct Fmter<W>::DebugStruct {
   }
 };
 
-template <class... T>
-void write(auto& out, Fmts fmts, const T&... args) {
+void write(auto& out, Fmts fmts, const auto&... args) {
   auto fmter = Fmter{out};
   fmt::Args{fmts, args...}.fmt(fmter);
 }
 
 }  // namespace sfc::fmt
+
+namespace sfc::panic {
+
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args) noexcept {
+  if constexpr (sizeof...(args) == 0) {
+    panic::panic_imp(loc, fmts._ptr, fmts._len);
+  } else {
+    auto buf = fmt::FixedBuf<256U>{};
+    fmt::write(buf, fmts, args...);
+    panic::panic_imp(loc, buf._buf, buf._len);
+  }
+}
+
+}  // namespace sfc::panic

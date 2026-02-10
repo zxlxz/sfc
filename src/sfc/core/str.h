@@ -115,7 +115,7 @@ struct Str {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (auto t = f._options._type;  t == '?' || t == 's') {
+    if (auto t = f._spec.type();  t == '?' || t == 's') {
       f.write_char('"');
       f.pad(*this);
       f.write_char('"');
@@ -322,26 +322,7 @@ auto Str::trim_matches(auto&& pat) const -> Str {
   return Str{_ptr + start, end - start};
 }
 
-template <class T>
-static constexpr Str type_name() {
-  constexpr auto S1 = sizeof("Str sfc::str::type_name() [T =");
-  constexpr auto S2 = sizeof("]");
-  return Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
-}
 
-template <auto E>
-static constexpr Str enum_name() {
-  static constexpr auto SN = str::type_name<decltype(E)>();
-  static constexpr auto S1 = sizeof("Str sfc::str::enum_name() [E =");
-  static constexpr auto S2 = sizeof("]");
-  static constexpr auto ss = Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
-  for (auto n = ss._len; n != 0; --n) {
-    if (ss._ptr[n - 1] == ':') {
-      return Str{ss._ptr + n, ss._len - n};
-    }
-  }
-  return ss;
-}
 
 }  // namespace sfc::str
 

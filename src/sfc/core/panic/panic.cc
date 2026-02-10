@@ -1,9 +1,10 @@
-#include "sfc/core/panicking.h"
-#include "sfc/core/str.h"
+#include "sfc/core/panic.h"
+
+#include "sfc/core/fmt.h"
 #include "sfc/sys/backtrace.h"
 #include "sfc/sys/io.h"
 
-namespace sfc::panicking {
+namespace sfc::panic {
 
 template <u32 N>
 static auto int2str(char (&buf)[N], u32 val) -> Str {
@@ -36,21 +37,10 @@ static auto idx2str(u32 idx) -> Str {
 }
 
 static void println(const auto&... args) noexcept {
-  char buf[256];
-  auto buf_len = usize{0};
-
-  auto append_to_buf = [&](Str s) {
-    if (buf_len + s._len >= sizeof(buf)) {
-      return;
-    }
-    ptr::copy_nonoverlapping(s._ptr, buf + buf_len, s._len);
-    buf_len += s._len;
-  };
-
-  (void)(append_to_buf(args), ...);
-  (void)(append_to_buf("\n"));
-
-  sys::io::write(sys::io::stderr(), buf, buf_len);
+  auto buf = fmt::FixedBuf<256U>{};
+  (void)(buf.write_str(Str{args}), ...);
+  (void)(buf.write_str(Str{"\n"}));
+  sys::io::write(sys::io::stderr(), buf._buf, buf._len);
 }
 
 static void dump_frame(u32 idx, void* ptr) noexcept {
@@ -76,15 +66,15 @@ void dump_frames() {
   }
 }
 
-void panic_str(Location loc, Str msg) noexcept {
+void panic_imp(Location loc, const char* msg, usize len) noexcept {
   char line_buf[8] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
-  println(msg);
+  println(Str{msg, len});
   println(Str{" > "}, Str::from_cstr(loc.file), Str{":"}, line_str);
   dump_frames();
 
   __builtin_trap();
 }
 
-}  // namespace sfc::panicking
+}  // namespace sfc::panic

@@ -20,13 +20,13 @@ Copilot guidance
 
 UnitTest
 - use SFC_TEST for unit tests
-- use panicking::assert for test assertions
+- use panic::assert for test assertions
 ```cpp
   namespace suite_name {
     SFC_TEST(case_name) {
-      panicking::expect(cond, fmts...);
-      panicking::assert_eq(a, b);
-      panicking::assert_ne(a, b);
+      sfc::expect(cond, fmts...);
+      panic::assert_eq(a, b);
+      panic::assert_ne(a, b);
      }
   }
 ```

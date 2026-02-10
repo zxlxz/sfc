@@ -27,7 +27,7 @@ SFC_TEST(encode) {
   for (auto i = 0u; i < sizeof(texts) / sizeof(texts[0]); ++i) {
     const auto data = datas[i].as_bytes();
     const auto text = base64::encode(data);
-    panicking::expect_eq(text, texts[i]);
+    sfc::expect_eq(text, texts[i]);
   }
 }
 
@@ -55,7 +55,7 @@ SFC_TEST(decode) {
   for (auto i = 0u; i < sizeof(texts) / sizeof(texts[0]); ++i) {
     const auto text = texts[i];
     const auto data = base64::decode(text);
-    panicking::expect_eq(Str::from_utf8(data.as_slice()), datas[i]);
+    sfc::expect_eq(Str::from_utf8(data.as_slice()), datas[i]);
   }
 }
 

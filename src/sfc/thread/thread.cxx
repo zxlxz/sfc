@@ -14,8 +14,8 @@ SFC_TEST(spawn) {
     auto t2 = thread::spawn([&]() { n2 += 1; });
   }
 
-  panicking::expect_eq(n1, 1);
-  panicking::expect_eq(n2, 1);
+  sfc::expect_eq(n1, 1);
+  sfc::expect_eq(n2, 1);
 }
 
 }  // namespace sfc::thread

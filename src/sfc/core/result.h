@@ -93,22 +93,22 @@ class [[nodiscard]] Result {
   }
 
   auto operator*() const noexcept -> const T& {
-    panicking::expect(_inn.is_ok(), "Result::operator*: not Ok()");
+    sfc::expect(_inn.is_ok(), "Result::operator*: not Ok()");
     return *_inn;
   }
 
   auto operator*() noexcept -> T& {
-    panicking::expect(_inn.is_ok(), "Result::operator*: not Ok()");
+    sfc::expect(_inn.is_ok(), "Result::operator*: not Ok()");
     return *_inn;
   }
 
   auto operator~() const noexcept -> const E& {
-    panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
+    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
   }
 
   auto operator~() noexcept -> E& {
-    panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
+    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
   }
 
@@ -127,7 +127,7 @@ class [[nodiscard]] Result {
   }
 
   auto unwrap() && noexcept -> T {
-    panicking::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
+    sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
     return static_cast<T&&>(*_inn);
   }
 
@@ -139,7 +139,7 @@ class [[nodiscard]] Result {
   }
 
   auto unwrap_err() && noexcept -> E {
-    panicking::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
+    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
     return static_cast<E&&>(~_inn);
   }
 
@@ -234,16 +234,16 @@ class [[nodiscard]] Result<void, E> {
   }
 
   void operator*() const noexcept {
-    panicking::expect(_inn.is_ok(), "Result::operator~: not Ok()");
+    sfc::expect(_inn.is_ok(), "Result::operator~: not Ok()");
   }
 
   auto operator~() const noexcept -> const E& {
-    panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
+    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
   }
 
   auto operator~() noexcept -> E& {
-    panicking::expect(_inn.is_err(), "Result::operator~: not Err()");
+    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
     return ~_inn;
   }
 
@@ -255,11 +255,11 @@ class [[nodiscard]] Result<void, E> {
   }
 
   auto unwrap() const noexcept -> void {
-    panicking::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
+    sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
   }
 
   auto unwrap_err() && noexcept -> E {
-    panicking::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
+    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
     return static_cast<E&&>(~_inn);
   }
 

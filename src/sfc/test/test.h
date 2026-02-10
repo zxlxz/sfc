@@ -7,7 +7,7 @@ namespace sfc::test {
 struct Test {
   void (*_fun)();
   Str _type;
-  panicking::Location _loc;
+  panic::Location _loc;
 
  public:
   auto suite() const -> Str;
@@ -18,8 +18,8 @@ struct Test {
 
  public:
   template <class T>
-  static auto of(panicking::Location loc = {}) -> Test {
-    static constexpr auto full_name = str::type_name<T>();
+  static auto of(panic::Location loc = {}) -> Test {
+    static constexpr auto full_name = reflect::type_name<T>();
     static constexpr auto type_name = full_name[{0, full_name.len() - 4}];
     return Test{&T::test, type_name, loc};
   }

@@ -58,12 +58,12 @@ struct Slice {
 
  public:
   auto operator[](usize idx) const noexcept -> const T& {
-    panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
   auto operator[](usize idx) noexcept -> T& {
-    panicking::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
@@ -91,8 +91,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) noexcept {
-    panicking::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    panicking::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+    sfc::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
+    sfc::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
     if (i != j) {
       mem::swap(_ptr[i], _ptr[j]);

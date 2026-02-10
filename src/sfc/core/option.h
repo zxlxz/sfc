@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/core/ptr.h"
+#include "sfc/core/expect.h"
 #include "sfc/core/ops.h"
-#include "sfc/core/panicking.h"
+#include "sfc/core/ptr.h"
 
 namespace sfc::option {
 
@@ -18,6 +18,7 @@ struct Inner {
 
  public:
   constexpr Inner(none_t) noexcept {}
+
   constexpr Inner(some_t, auto&&... args) noexcept : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
 
   constexpr ~Inner() noexcept {
@@ -60,6 +61,7 @@ struct Inner<T&> {
 
  public:
   constexpr Inner(none_t) noexcept {}
+
   constexpr Inner(some_t, T& val) noexcept : _ptr{&val} {}
 
   constexpr explicit operator bool() const noexcept {
@@ -140,7 +142,7 @@ class Option {
   }
 
   auto unwrap() && noexcept -> T {
-    panicking::expect(bool(_inn), "Option::unwrap: not Some()");
+    sfc::expect(bool(_inn), "Option::unwrap: not Some()");
     return static_cast<T&&>(*_inn);
   }
 
@@ -152,7 +154,7 @@ class Option {
   }
 
   auto expect(const auto& msg) && noexcept -> T {
-    panicking::expect(bool(_inn), "Option::expect: {}", msg);
+    sfc::expect(bool(_inn), "Option::expect: {}", msg);
     return static_cast<T&&>(*_inn);
   }
 

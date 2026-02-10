@@ -192,25 +192,12 @@ struct ToString {
 }  // namespace sfc::string
 
 namespace sfc::fmt {
-template <class... T>
-auto format(fmt::Fmts fmts, const T&... args) -> string::String {
+auto format(fmt::Fmts fmts, const auto&... args) -> string::String {
   auto buf = string::String{};
   Fmter{buf}.write_fmt(fmts, args...);
   return buf;
 }
 }  // namespace sfc::fmt
-
-namespace sfc::panicking {
-template <class... T>
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const T&... args) noexcept {
-  if constexpr (sizeof...(args) == 0) {
-    panicking::panic_str(loc, {fmts._str._ptr, fmts._str._len});
-  } else {
-    const auto msg = fmt::format(fmts, args...);
-    panicking::panic_str(loc, msg.as_str());
-  }
-}
-}  // namespace sfc::panicking
 
 namespace sfc {
 using string::String;

@@ -61,12 +61,12 @@ struct Poll {
   }
 
   auto operator*() const -> const T& {
-    panicking::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
+    sfc::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }
 
   auto operator*() -> T& {
-    panicking::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
+    sfc::expect(_state != State::Pending, "Poll::operator*: cannot dereference a pending poll");
     return _value;
   }
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sfc/core/mem.h"
-#include "sfc/core/panicking.h"
+#include "sfc/core/expect.h"
 
 namespace sfc::ptr {
 
@@ -40,12 +40,12 @@ struct Unique {
   }
 
   auto operator*() const -> const T& {
-    panicking::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
+    sfc::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    panicking::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
+    sfc::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
     return *_ptr;
   }
 

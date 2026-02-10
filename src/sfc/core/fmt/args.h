@@ -4,33 +4,11 @@
 
 namespace sfc::fmt {
 
-struct RawStr {
-  const char* _ptr = nullptr;
-  usize _len = 0;
-
- public:
-  consteval RawStr() = default;
-
-  consteval RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
-
-  template <usize N>
-  consteval RawStr(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
-
-  consteval auto operator[](u32 idx) const -> char {
-    return idx < _len ? _ptr[idx] : '\0';
-  }
-
-  consteval auto find(char c, u32 pos = 0) const -> u32 {
-    for (; pos < _len; ++pos) {
-      if (_ptr[pos] == c) {
-        break;
-      }
-    }
-    return pos;
-  }
+struct Display {
+  static void fmt(const auto& self, auto& f);
 };
 
-struct Options {
+struct Spec {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
@@ -42,47 +20,56 @@ struct Options {
   u8 _precision = 0;
 
  public:
-  // [[fill]align][sign]['#'][0][width][.][precision][type]
-  consteval static auto from(RawStr s) noexcept -> Options {
-    auto idx = 0U;
-    auto extract = [p = s._ptr, n = s._len, &idx](auto... c) -> char {
-      if (idx < n && (sizeof...(c) == 0 || ((p[idx] == c) || ...))) {
-        return p[idx++];
-      }
-      return '\0';
-    };
+  struct Parser {
+    const char* _ptr;
+    const char* _end;
 
-    auto extract_u32 = [p = s._ptr, n = s._len, &idx]() -> u32 {
+    constexpr auto extract(auto... c) -> char {
+      if (_ptr >= _end) {
+        return 0;
+      }
+      if (((sizeof...(c) == 0) || ... || (*_ptr == c))) {
+        return *_ptr++;
+      }
+      return 0;
+    }
+
+    constexpr auto extract_int() -> u32 {
       auto res = 0U;
-      for (; idx < n; idx += 1) {
-        if (p[idx] < '0' || p[idx] > '9') break;
-        res = res * 10 + static_cast<u32>(p[idx] - '0');
+      for (; _ptr < _end; ++_ptr) {
+        if (*_ptr < '0' || *_ptr > '9') break;
+        res = res * 10 + static_cast<u32>(*_ptr - '0');
       }
       return res;
     };
+  };
 
-    auto res = Options{};
-    extract(':');
+  // [[fill]align][sign]['#'][0][width][.][precision][type]
+  constexpr static auto from(const char* p, usize n) noexcept -> Spec {
+    auto parser = Parser{p, p + n};
 
-    res._fill = extract();
-    res._align = extract('<', '>', '=', '^');
+    auto res = Spec{};
+    parser.extract(':');
+
+    res._fill = parser.extract();
+    res._align = parser.extract('<', '>', '=', '^');
     if (res._fill && !res._align) {
-      idx -= 1;
+      parser._ptr -= 1;
       res._fill = 0;
-      res._align = extract('<', '>', '=', '^');
+      res._align = parser.extract('<', '>', '=', '^');
     }
 
-    res._sign = extract('+', '-', ' ');
-    res._prefix = extract('#');
+    res._sign = parser.extract('+', '-', ' ');
+    res._prefix = parser.extract('#');
     if (!res._fill) {
-      res._fill = extract('0');
+      res._fill = parser.extract('0');
     }
 
-    res._width = static_cast<u8>(extract_u32());
-    if ((res._point = extract('.'))) {
-      res._precision = static_cast<u8>(extract_u32());
+    res._width = static_cast<u8>(parser.extract_int());
+    if ((res._point = parser.extract('.'))) {
+      res._precision = static_cast<u8>(parser.extract_int());
     }
-    res._type = extract();
+    res._type = parser.extract();
     return res;
   }
 
@@ -97,21 +84,34 @@ struct Options {
 
 struct Fmts {
   static constexpr auto N = 16U;
-  RawStr _str = {};
-  Options _options[N] = {};
-  RawStr _pieces[N + 1] = {};
+  struct Idxs {
+    u32 start;
+    u32 end;
+  };
+
+  cstr_t _ptr;
+  usize _len;
+  Idxs _idxs[N] = {};
+  Spec _spec[N] = {};
 
  public:
-  consteval Fmts(const auto& s) : _str{s} {
+  template <usize SL>
+  consteval Fmts(const char (&s)[SL]) : _ptr{s}, _len{SL - 1} {
+    auto find = [&](char c, u32 pos) -> u32 {
+      while (pos < _len && _ptr[pos] != c) {
+        pos++;
+      }
+      return pos;
+    };
+
     auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
-      const auto a = _str.find('{', p);
-      const auto b = _str.find('}', a);
-      _pieces[i] = RawStr{_str._ptr + p, a - p};
-      if (a == _str._len || b == _str._len) {
-        break;
+      const auto a = find('{', p);
+      const auto b = find('}', a);
+      _idxs[i] = Idxs{a, b};
+      if (a != b) {
+        _spec[i] = Spec::from(_ptr + (a + 1), b - a - 1);
       }
-      _options[i] = Options::from({_str._ptr + (a + 1), b - a - 1});
       p = b + 1;
     }
   }
@@ -120,51 +120,53 @@ struct Fmts {
 template <class... T>
 struct Args {
   static constexpr auto N = sizeof...(T);
-  RawStr _fmts;
-  Options _options[N] = {};
-  RawStr _pieces[N + 1] = {};
+  using Idxs = Fmts::Idxs;
+  cstr_t _ptr = nullptr;
+  usize _len = 0;
+  Idxs _idxs[N] = {};
+  Spec _spec[N] = {};
   const void* _args[sizeof...(T)];
 
  public:
-  explicit Args(Fmts fmts, const T&... args) : _fmts{fmts._str}, _args{&args...} {
+  explicit Args(Fmts fmts, const T&... args) : _ptr{fmts._ptr}, _len{fmts._len}, _args{&args...} {
     for (auto I = 0U; I < N; ++I) {
-      _options[I] = fmts._options[I];
-      _pieces[I] = fmts._pieces[I];
+      _spec[I] = fmts._spec[I];
+      _idxs[I] = fmts._idxs[I];
     }
-    _pieces[N] = fmts._pieces[N];
   }
 
   void fmt(auto& f) const noexcept {
-    this->fmt_imp<0U, T...>(f);
-    if (_pieces[N]._len != 0) {
-      f.write_str({_pieces[N]._ptr, _pieces[N]._len});
+    this->fmt_imp<T...>(f, 0);
+    if (auto x = _idxs[N - 1].end + 1; x < _len) {
+      f.write_str({this->_ptr + x, this->_len - x});
     }
   }
 
  private:
-  template <u32 I, class U, class... S>
-  void fmt_imp(auto& f) const {
-    const auto& x = *static_cast<const U*>(_args[I]);
-    if (const auto s = _pieces[I]; s._len != 0) {
-      f.write_str({s._ptr, s._len});
+  template <class U, class... S>
+  void fmt_imp(auto& f, u32 I = 0) const {
+    const auto s = Idxs{I == 0 ? 0 : _idxs[I - 1].end + 1, _idxs[I].start};
+    if (s.start < s.end) {
+      f.write_str({_ptr + s.start, s.end - s.start});
     }
-    f._options = _options[I];
-    f.write_val(x);
+    f._spec = _spec[I];
+    Display::fmt(*static_cast<const U*>(_args[I]), f);
     if constexpr (sizeof...(S)) {
-      this->fmt_imp<I + 1, S...>(f);
+      this->fmt_imp<S...>(f, I + 1);
     }
   }
 };
 
 template <>
 struct Args<> {
-  RawStr _fmts;
+  cstr_t _ptr;
+  usize _len;
 
  public:
-  explicit Args(Fmts fmts) : _fmts{fmts._str} {}
+  explicit Args(Fmts fmts) : _ptr{fmts._ptr}, _len{fmts._len} {}
 
   void fmt(auto& f) const noexcept {
-    f.pad({_fmts._ptr, _fmts._len});
+    f.pad({_ptr, _len});
   }
 };
 
