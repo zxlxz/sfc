@@ -57,24 +57,25 @@ static void dump_frame(u32 idx, void* ptr) noexcept {
   println(Str{" "}, idx_str, Str{" "}, fun_str);
 }
 
-void dump_frames() {
-  void* frame_buf[64] = {};
+void dump_frames() {}
 
-  const auto frame_cnt = sys::backtrace::trace(frame_buf);
-  for (auto idx = 0U; idx < frame_cnt; ++idx) {
-    dump_frame(idx, frame_buf[idx]);
-  }
-}
+void panic_imp(Location loc, const char* msg, usize len) {
+  static constexpr auto kMaxFrameCnt = 64U;
+  static constexpr auto kMaxIntLen = 8U;
 
-void panic_imp(Location loc, const char* msg, usize len) noexcept {
-  char line_buf[8] = {};
+  char line_buf[kMaxIntLen] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
   println(Str{msg, len});
   println(Str{" > "}, Str::from_cstr(loc.file), Str{":"}, line_str);
-  dump_frames();
 
-  __builtin_trap();
+  void* frame_buf[kMaxFrameCnt] = {};
+  const auto frame_cnt = sys::backtrace::trace(frame_buf);
+  for (auto idx = 0U; idx < frame_cnt; ++idx) {
+    dump_frame(idx, frame_buf[idx]);
+  }
+
+  throw Error{loc};
 }
 
 }  // namespace sfc::panic

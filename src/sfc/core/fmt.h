@@ -371,7 +371,7 @@ void write(auto& out, Fmts fmts, const auto&... args) {
 
 namespace sfc::panic {
 
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args) noexcept {
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args) {
   if constexpr (sizeof...(args) == 0) {
     panic::panic_imp(loc, fmts._ptr, fmts._len);
   } else {

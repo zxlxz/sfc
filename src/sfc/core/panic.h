@@ -13,8 +13,11 @@ struct Location {
   Location(const char* file = __builtin_FILE(), int line = __builtin_LINE()) : file{file}, line{line} {}
 };
 
-[[noreturn]] void panic_imp(Location loc, const char* msg, usize len) noexcept;
+struct Error {
+  Location _loc;
+};
 
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args) noexcept;
+[[noreturn]] void panic_imp(Location loc, const char* msg, usize len);
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args);
 
 }  // namespace sfc::panic
