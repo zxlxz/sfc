@@ -58,28 +58,22 @@ SFC_TEST(num_align) {
   sfc::expect_eq(format("{=5d}", -42), "-  42");
 }
 
-enum class E1 {
-  A,
-  B,
-  C,
-};
-
-enum class E2 {
-  X,
-  Y,
-  Z,
-};
+enum class E1 { A, B };
+enum E2 { X, Y };
+enum E3 {};
 
 SFC_TEST(enum) {
   sfc::expect_eq(reflect::type_name<E1>(), "sfc::fmt::test::E1");
   sfc::expect_eq(format("{}", E1::A), "A");
   sfc::expect_eq(format("{}", E1::B), "B");
-  sfc::expect_eq(format("{}", E1::C), "C");
 
   sfc::expect_eq(reflect::type_name<E2>(), "sfc::fmt::test::E2");
   sfc::expect_eq(format("{}", E2::X), "X");
   sfc::expect_eq(format("{}", E2::Y), "Y");
-  sfc::expect_eq(format("{}", E2::Z), "Z");
+
+  sfc::expect_eq(format("{}", static_cast<E3>(0)), "sfc::fmt::test::E3(0)");
+  sfc::expect_eq(format("{}", static_cast<E3>(+1)), "sfc::fmt::test::E3(1)");
+  sfc::expect_eq(format("{}", static_cast<E3>(-1)), "sfc::fmt::test::E3(-1)");
 }
 
 }  // namespace sfc::fmt::test

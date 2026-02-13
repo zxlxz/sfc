@@ -37,7 +37,9 @@ consteval Str enum_name() {
 template <class E, auto I>
 consteval auto enum_valid() -> bool {
   if constexpr (requires { static_cast<E>(I); }) {
-    return reflect::enum_name<static_cast<E>(I)>()._len != 0;
+    if constexpr (requires { reflect::enum_name<static_cast<E>(I)>(); }) {
+      return reflect::enum_name<static_cast<E>(I)>()._len != 0;
+    }
   }
   return false;
 }
@@ -56,17 +58,13 @@ consteval auto enum_count() -> u32 {
 template <trait::enum_ E>
 constexpr auto to_str(E val) -> Str {
   static constexpr auto N = reflect::enum_count<E>();
-  static constexpr auto f = []<u32... I>(Str v[], trait::idxs_t<I...>) {
-    ((v[I] = reflect::enum_name<static_cast<E>(I)>()), ...);
-    return true;
-  };
-
   static Str names[N] = {};
-  static const auto init = f(names, trait::idxs_seq_t<N>());
-  if (!init && static_cast<u32>(val) >= N) {
-    return "";
-  }
-  return names[static_cast<u32>(val)];
+  static const auto _init = []<u32... I>(trait::idxs_t<I...>) {
+    ((names[I] = reflect::enum_name<static_cast<E>(I)>()), ...);
+    return true;
+  }(trait::idxs_seq_t<N>());
+
+  return static_cast<u32>(val) < N ? names[static_cast<u32>(val)] : Str{};
 }
 
 }  // namespace sfc::reflect

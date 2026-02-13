@@ -22,13 +22,13 @@ struct Debug {
   }
 
   static void fmt(trait::uint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 16];
+    char buf[8 * sizeof(val) + 8];
     const auto sval = num::Int{val}.to_str(buf, f._spec._type);
     f.pad_num(false, sval);
   }
 
   static void fmt(trait::sint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 16];
+    char buf[8 * sizeof(val) + 8];
     const auto uval = val >= 0 ? val : 0 - val;
     const auto sval = num::Int{uval}.to_str(buf, f._spec._type);
     f.pad_num(val < 0, sval);
@@ -44,19 +44,23 @@ struct Debug {
   }
 
   static void fmt(trait::enum_ auto val, auto& f) {
-    using I = __underlying_type(decltype(val));
-    char buf[8];
-    const auto sval = num::Int{static_cast<I>(val)}.to_str(buf);
-    f.pad(sval);
+    using E = decltype(val);
+    using I = __underlying_type(E);
+    if (const auto name = reflect::to_str(val); !name.is_empty()) {
+      name.fmt(f);
+    } else {
+      char buf[16];
+      f.write_str(reflect::type_name<E>());
+      f.write_str("(");
+      f.write_str(num::Int{static_cast<I>(val)}.to_str(buf));
+      f.write_str(")");
+    }
   }
 };
 
 void Display::fmt(const auto& self, auto& f) {
   if constexpr (requires { self.fmt(f); }) {
     self.fmt(f);
-  } else if constexpr (requires { reflect::to_str(self); }) {
-    const auto s = reflect::to_str(self);
-    f.write_str(s);
   } else if constexpr (requires { Str{self}; }) {
     Str{self}.fmt(f);
   } else if constexpr (requires { Slice{self}; }) {
