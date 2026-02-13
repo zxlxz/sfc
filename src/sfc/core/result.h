@@ -222,7 +222,6 @@ class [[nodiscard]] Result<void, E> {
 
  public:
   constexpr Result() noexcept : _inn{} {}
-
   constexpr Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
 
   constexpr auto is_ok() const noexcept -> bool {

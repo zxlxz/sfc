@@ -29,3 +29,6 @@ BreakConstructorInitializers: BeforeComma
 PenaltyBreakOpenParenthesis: 21
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakAssignment: 19
+
+# Sort
+SortIncludes: false

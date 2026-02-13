@@ -5,12 +5,14 @@
 
 namespace sfc::thread {
 
-struct Thread {
 #ifdef __unix__
-  u64 _raw = 0;
+using thrd_t = u64;
 #else
-  void* _raw = nullptr;
+using thrd_t = void*;
 #endif
+
+struct Thread {
+  thrd_t _raw{};
 
  public:
   void join();

@@ -39,7 +39,6 @@ enum class Error : i8 {
   OutOfMemory,
   InProgress,
   Other,
-  _COUNT_,
 };
 
 template <class T = void>

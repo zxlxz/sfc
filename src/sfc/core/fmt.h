@@ -28,9 +28,9 @@ struct Fmter {
  public:
   void write_char(char c) {
     if constexpr (requires { _buf.push(c); }) {
-      _buf.push(c);
+      (void)_buf.push(c);
     } else {
-      _buf.write_str({&c, 1});
+      (void)_buf.write_str({&c, 1});
     }
   }
 
@@ -47,9 +47,9 @@ struct Fmter {
       return;
     }
     if constexpr (requires { _buf.push_str(s); }) {
-      _buf.push_str(s);
+      (void)_buf.push_str(s);
     } else {
-      _buf.write_str(s);
+      (void)_buf.write_str(s);
     }
   }
 

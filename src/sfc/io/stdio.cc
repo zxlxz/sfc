@@ -1,6 +1,8 @@
-#include "sfc/io/stdio.h"
 
 #include "sfc/io/file.h"
+#include "sfc/io/buf.h"
+#include "sfc/io/stdio.h"
+
 #include "sfc/sync/mutex.h"
 #include "sfc/sys/io.h"
 
@@ -59,7 +61,7 @@ class Stderr::Inn {
   }
 
   auto is_tty() const -> bool {
-    const auto res = sys_imp::is_tty(_imp._fd);
+    const auto res = sys_imp::is_tty(_imp.as_raw_fd());
     return res;
   }
 

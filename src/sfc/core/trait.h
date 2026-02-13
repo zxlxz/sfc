@@ -64,19 +64,4 @@ template <auto N>
 using idxs_seq_t = idxs_t<__integer_pack(N)...>;
 #endif
 
-template <class I, class For>
-struct Impl : I, For {
-  Impl() = delete;
-  ~Impl() = delete;
-};
-
-template <class I, class X>
-auto as(X& x) -> auto& {
-  if constexpr (requires { static_cast<I&>(x); }) {
-    return static_cast<I&>(x);
-  } else {
-    return static_cast<Impl<I, X>&>(x);
-  }
-}
-
 }  // namespace sfc::trait
