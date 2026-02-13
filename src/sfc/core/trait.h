@@ -35,6 +35,9 @@ template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
 
 template <class T>
+concept tv_dtor_ = __is_trivially_destructible(T);
+
+template <class T>
 concept polymorphic_ = __is_polymorphic(T);
 
 template <class T>

@@ -30,7 +30,7 @@ SFC re-imagines the “stdlib” surface for C++23 with explicit design: minimal
 | Core Types | `Option<T>`, `Result<T,E>`, `Tuple`, `Variant`, iter utilities | Error handling & composition first |
 | Ownership | `Box<T>`, `Rc<T>` | Deterministic lifetimes, no STL smart ptrs |
 | Memory | Custom allocator hooks, slices, raw pointer helpers | Fine-grained control |
-| Collections | `Vec<T>`, `VecMap<K,V>`, `BTree*`, `HashMap` | Purpose-built, STL-free |
+| Collections | `Vec<T>`, `BTree<K,V>`, `HashMap<K,V>` | Purpose-built, STL-free |
 | Concurrency | `Mutex`, `Condvar`, atomics, MPMC queue, threads | Portable & lean |
 | Tasking | Lightweight async/task primitives (WIP) | Foundation for schedulers |
 | I/O & FS | Paths, files, buffered stdio, platform bridges | Unified Windows / POSIX |

@@ -18,8 +18,7 @@ class RawVec {
     if (_ptr == nullptr) {
       return;
     }
-    const auto layout = alloc::Layout::array<T>(_cap);
-    _a.dealloc(_ptr, layout);
+    _a.dealloc_array(_ptr, _cap);
   }
 
   RawVec(RawVec&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _a{static_cast<A&&>(other._a)} {
@@ -31,26 +30,21 @@ class RawVec {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
+      mem::swap(_a, other._a);
     }
     return *this;
   }
 
   static auto with_capacity(usize capacity, A alloc = A{}) noexcept -> RawVec {
-    const auto layout = alloc::Layout::array<T>(capacity);
     auto res = RawVec{};
-    res._ptr = static_cast<T*>(alloc.alloc(layout));
+    res._ptr = alloc.template alloc_array<T>(capacity);
+    res._cap = capacity;
     res._a = alloc;
     return res;
   }
 
-  void realloc([[maybe_unused]] usize used, usize new_cap) noexcept {
-    const auto new_layout = alloc::Layout::array<T>(new_cap);
-    const auto new_ptr = static_cast<T*>(_a.alloc(new_layout));
-    if (_ptr != nullptr && new_ptr != nullptr) {
-      ptr::uninit_move(_ptr, new_ptr, used);
-      _a.dealloc(_ptr, alloc::Layout::array<T>(_cap));
-    }
-    _ptr = new_ptr;
+  void realloc(usize used, usize new_cap) noexcept {
+    _ptr = _a.realloc_array(_ptr, _cap, new_cap, used);
     _cap = new_cap;
   }
 };
