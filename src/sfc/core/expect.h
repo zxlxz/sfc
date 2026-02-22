@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/panic.h"
+#include "sfc/core/ops.h"
 
 namespace sfc {
 
@@ -33,14 +34,14 @@ void expect_false(const auto& a, panic::Location loc = {}) noexcept {
 }
 
 void expect_eq(const auto& a, const auto& b, panic::Location loc = {}) noexcept {
-  if (a == b) {
+  if (ops::eq(a, b)) {
     return;
   }
   panic::panic_fmt(loc, "sfc::expect(`{}`==`{}`) failed", a, b);
 }
 
 void expect_ne(const auto& a, const auto& b, panic::Location loc = {}) noexcept {
-  if (a != b) {
+  if (ops::ne(a, b)) {
     return;
   }
   panic::panic_fmt(loc, "sfc::expect(`{}`!=`{}`) failed", a, b);

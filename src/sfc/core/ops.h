@@ -36,6 +36,24 @@ struct Range {
   usize end = static_cast<usize>(-1);
 };
 
+auto eq(const auto& a, const auto& b) -> bool {
+  using slice::Slice;
+  if constexpr (requires { Slice{a} == Slice{b}; }) {
+    return Slice{a} == Slice{b};
+  } else {
+    return a == b;
+  }
+}
+
+auto ne(const auto& a, const auto& b) -> bool {
+  using slice::Slice;
+  if constexpr (requires { Slice{a} == Slice{b}; }) {
+    return Slice{a} != Slice{b};
+  } else {
+    return a != b;
+  }
+}
+
 }  // namespace sfc::ops
 
 namespace sfc {
