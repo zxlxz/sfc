@@ -59,25 +59,19 @@ SFC_TEST(num_align) {
 }
 
 enum class E1 { A, B };
-enum E2 { X, Y };
-enum E3 : int {};
-
 SFC_TEST(named_enum) {
   sfc::expect_eq(reflect::type_name<E1>(), "sfc::fmt::test::E1");
   sfc::expect_eq(format("{}", E1::A), "A");
   sfc::expect_eq(format("{}", E1::B), "B");
 }
 
+enum E2 { X = -1, Y, Z };
 SFC_TEST(unnamed_enum) {
   sfc::expect_eq(reflect::type_name<E2>(), "sfc::fmt::test::E2");
 
-#ifndef __APPLE__
-  sfc::expect_eq(format("{}", E2::X), "X");
-  sfc::expect_eq(format("{}", E2::Y), "Y");
-#endif
-  sfc::expect_eq(format("{}", static_cast<E3>(0)), "sfc::fmt::test::E3(0)");
-  sfc::expect_eq(format("{}", static_cast<E3>(+1)), "sfc::fmt::test::E3(1)");
-  sfc::expect_eq(format("{}", static_cast<E3>(-1)), "sfc::fmt::test::E3(-1)");
+  sfc::expect_eq(format("{}", E2::X), "sfc::fmt::test::E2(-1)");
+  sfc::expect_eq(format("{}", E2::Y), "sfc::fmt::test::E2(0)");
+  sfc::expect_eq(format("{}", E2::Z), "sfc::fmt::test::E2(1)");
 }
 
 }  // namespace sfc::fmt::test

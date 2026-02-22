@@ -36,9 +36,7 @@ consteval Str enum_name() {
 
 template <class E, auto I>
 consteval auto enum_valid() -> bool {
-  if constexpr (__is_trivially_constructible(u64, E) || __is_trivially_constructible(i64, E)) {
-    return true;
-  } else if constexpr (requires { static_cast<E>(I); }) {
+  if constexpr (requires { static_cast<E>(I); }) {
     if constexpr (requires { reflect::enum_name<static_cast<E>(I)>(); }) {
       return reflect::enum_name<static_cast<E>(I)>()._len != 0;
     }
@@ -48,11 +46,11 @@ consteval auto enum_valid() -> bool {
 
 template <class E, u32 I = 0, u32 N = 256>
 consteval auto enum_count() -> u32 {
-  if constexpr (__is_trivially_constructible(u64, E)) {
+  if constexpr (!__is_scoped_enum(E)) {
     return 0U;
   } else if constexpr (I + 1 == N) {
     return N;
-  } else if (reflect::enum_valid<E, I + (N - I) / 2>()) {
+  } else if constexpr (reflect::enum_valid<E, I + (N - I) / 2>()) {
     return reflect::enum_count<E, I + (N - I) / 2, N>();
   } else {
     return reflect::enum_count<E, I, I + (N - I) / 2>();
