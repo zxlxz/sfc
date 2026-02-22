@@ -93,14 +93,22 @@ Tests live next to sources (`*.cxx`) and are discovered via the single `sfc_test
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 
-# Windows
-build\src\Debug\sfc_test.exe
+# Run all tests
+./build/src/sfc_test[.exe]
 
-# Unix
-./build/src/sfc_test
+# Run specific test suite(s)
+./build/src/sfc_test --gtest_filter=VecTest.*
+
+# List all tests
+./build/src/sfc_test --gtest_list_tests
+
+# Build with AddressSanitizer
+cmake -B build-asan -DSFC_ENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-asan -j
+./build-asan/src/sfc_test
 ```
 
-Test expections use `sfc::expect_*` macros; a failure aborts fast with context.
+Test expectations use `sfc::expect_*` functions; a failure aborts fast with context.
 
 ---
 
