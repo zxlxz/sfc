@@ -28,6 +28,11 @@ constexpr auto abs(T val) -> T {
 }
 
 template <trait::uint_ T>
+constexpr auto saturating_sub(T a, T b) -> T {
+  return a < b ? 0 : a - b;
+}
+
+template <trait::uint_ T>
 constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
   auto x = init_val;
   while (x < n) {
