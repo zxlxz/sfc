@@ -38,7 +38,7 @@ class [[nodiscard]] Queue {
   }
 
   auto capacity() const noexcept -> usize {
-    return _buf._cap;
+    return _buf.cap();
   }
 
   auto len() const noexcept -> usize {
@@ -50,7 +50,7 @@ class [[nodiscard]] Queue {
   }
 
   auto is_contiguous() const noexcept -> bool {
-    return _len == 0 || _head + _len <= _buf._cap;
+    return _len == 0 || _head + _len <= _buf.cap();
   }
 
  public:
@@ -58,23 +58,23 @@ class [[nodiscard]] Queue {
     if (_len == 0) {
       return {};
     }
-    return Option<const T&>{_buf._ptr[_head]};
+    return Option<const T&>{_buf.ptr()[_head]};
   }
 
   auto top_mut() noexcept -> Option<T&> {
     if (_len == 0) {
       return {};
     }
-    return Option<T&>{_buf._ptr[_head]};
+    return Option<T&>{_buf.ptr()[_head]};
   }
 
   void push(T value) noexcept {
-    if (_len == _buf._cap) {
+    if (_len == _buf.cap()) {
       this->reserve(1);
     }
 
     const auto new_tail = this->to_physical_index(_len);
-    ptr::write(_buf._ptr + new_tail, static_cast<T&&>(value));
+    ptr::write(_buf.ptr() + new_tail, static_cast<T&&>(value));
     _len += 1;
   }
 
@@ -86,7 +86,7 @@ class [[nodiscard]] Queue {
     const auto old_head = _head;
     _head = this->to_physical_index(1);
     _len -= 1;
-    return Option<T>{ptr::read(_buf._ptr + old_head)};
+    return Option<T>{ptr::read(_buf.ptr() + old_head)};
   }
 
  public:
@@ -100,7 +100,7 @@ class [[nodiscard]] Queue {
   }
 
   void reserve(usize additional) noexcept {
-    if (_len + additional <= _buf._cap) {
+    if (_len + additional <= _buf.cap()) {
       return;
     }
     const auto new_cap = num::next_power_of_two(_len + additional);
@@ -108,7 +108,7 @@ class [[nodiscard]] Queue {
   }
 
   void reserve_exact(usize additional) noexcept {
-    if (_len + additional <= _buf._cap) {
+    if (_len + additional <= _buf.cap()) {
       return;
     }
 
@@ -117,8 +117,8 @@ class [[nodiscard]] Queue {
       _buf.realloc(_len, new_cap);
     } else {
       auto new_buf = Buf::with_capacity(new_cap);
-      ptr::uninit_move(_buf._ptr + _head, new_buf._ptr, _buf._cap - _head);
-      ptr::uninit_move(_buf._ptr, new_buf._ptr + (_buf._cap - _head), _head);
+      ptr::uninit_move(_buf.ptr() + _head, new_buf.ptr(), _buf.cap() - _head);
+      ptr::uninit_move(_buf.ptr(), new_buf.ptr() + (_buf.cap() - _head), _head);
       _buf = mem::move(new_buf);
       _head = 0;
     }
@@ -127,13 +127,13 @@ class [[nodiscard]] Queue {
  public:
   auto to_physical_index(usize idx) const noexcept -> usize {
     const auto logic_idx = _head + idx;
-    return logic_idx < _buf._cap ? logic_idx : logic_idx - _buf._cap;
+    return logic_idx < _buf.cap() ? logic_idx : logic_idx - _buf.cap();
   }
 
   void for_each(this auto&& self, auto&& f) {
     for (auto i = 0UL; i < self._len; ++i) {
       const auto off = self.to_physical_index(i);
-      f(self._buf._ptr[off]);
+      f(self._buf[off]);
     }
   }
 
