@@ -11,5 +11,10 @@
 build/
 out/
 
-# logs
+# test
 *.log
+*.dat
+*.raw
+
+# config
+CLAUDE.md
