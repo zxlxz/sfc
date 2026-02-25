@@ -16,11 +16,7 @@ struct Str {
 
   constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  template <usize N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
-
-  template <usize N>
-  constexpr Str(char (&s)[N]) noexcept = delete;
+  constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
 
   constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto p = reinterpret_cast<const char*>(s._ptr);
@@ -87,17 +83,23 @@ struct Str {
   auto trim_matches(auto&& pat) const -> Str;
 
   auto trim_start() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    const auto is_space = [](char c) {
+      return c == ' ' || ('\x09' <= c && c <= '\x0d');
+    };
     return this->trim_start_matches(is_space);
   }
 
   auto trim_end() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    const auto is_space = [](char c) {
+      return c == ' ' || ('\x09' <= c && c <= '\x0d');
+    };
     return this->trim_end_matches(is_space);
   }
 
   auto trim() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+    const auto is_space = [](char c) {
+      return c == ' ' || ('\x09' <= c && c <= '\x0d');
+    };
     return this->trim_matches(is_space);
   }
 
@@ -115,7 +117,7 @@ struct Str {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (auto t = f._spec.type();  t == '?' || t == 's') {
+    if (auto t = f._spec.type(); t == '?' || t == 's') {
       f.write_char('"');
       f.pad(*this);
       f.write_char('"');
@@ -321,8 +323,6 @@ auto Str::trim_matches(auto&& pat) const -> Str {
   }
   return Str{_ptr + start, end - start};
 }
-
-
 
 }  // namespace sfc::str
 

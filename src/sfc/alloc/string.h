@@ -166,7 +166,7 @@ class [[nodiscard]] String {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.pad(this->as_str());
+    this->as_str().fmt(f);
   }
 
   // trait: fmt::Write
