@@ -54,7 +54,10 @@ struct Str {
 
  public:
   constexpr auto operator[](usize idx) const noexcept -> char {
-    return _ptr && idx < _len ? _ptr[idx] : '\0';
+    if (!_ptr || idx > _len) {
+      return 0;
+    }
+    return _ptr[idx];
   }
 
   constexpr auto operator[](ops::Range ids) const noexcept -> Str {

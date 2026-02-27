@@ -16,14 +16,6 @@ SFC_TEST(property) {
 SFC_TEST(index) {
   const auto s = String::from("abc");
 
-  sfc::expect_eq(s[0], 'a');
-  sfc::expect_eq(s[1], 'b');
-  sfc::expect_eq(s[2], 'c');
-}
-
-SFC_TEST(index_range) {
-  const auto s = String::from("abc");
-
   sfc::expect_eq((s[{0, $}]), "abc");
   sfc::expect_eq((s[{0, 2}]), "ab");
   sfc::expect_eq((s[{0, 8}]), "abc");

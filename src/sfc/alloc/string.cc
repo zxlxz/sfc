@@ -32,6 +32,25 @@ static auto utf8_encode(u8 (&buf)[4], char32_t c) -> Slice<const u8> {
   return {buf, 0};
 }
 
+void String::push_str(Str s) noexcept {
+  if (s._len == 0) {
+    return;
+  }
+  _vec.extend_from_slice(s.as_bytes());
+}
+
+void String::reserve(usize amt) noexcept {
+  _vec.reserve(amt);
+}
+
+void String::truncate(usize len) noexcept {
+  _vec.truncate(len);
+}
+
+void String::clear() noexcept {
+  _vec.clear();
+}
+
 auto String::pop() noexcept -> Option<char32_t> {
   if (_vec.is_empty()) {
     return {};

@@ -11,11 +11,13 @@ static auto getenv(const wchar_t* key) -> ffi::OsString {
 }
 
 static auto setenv(const wchar_t* key, const wchar_t* val) -> bool {
-  return ::SetEnvironmentVariableW(key, val);
+  const auto ret = ::SetEnvironmentVariableW(key, val);
+  return bool(ret);
 }
 
 static auto unsetenv(const wchar_t* key) -> bool {
-  return ::SetEnvironmentVariableW(key, nullptr);
+  const auto ret = ::SetEnvironmentVariableW(key, nullptr);
+  return bool(ret);
 }
 
 static auto home_dir() -> ffi::OsString {
@@ -47,7 +49,8 @@ static auto getcwd() -> ffi::OsString {
 }
 
 static auto chdir(const wchar_t* path) -> bool {
-  return ::SetCurrentDirectoryW(path);
+  const auto ret = ::SetCurrentDirectoryW(path);
+  return bool(ret);
 }
 
 }  // namespace sfc::sys::env

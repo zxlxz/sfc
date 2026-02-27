@@ -44,7 +44,8 @@ auto current_dir() -> fs::PathBuf {
 
 auto set_current_dir(fs::Path path) -> bool {
   const auto os_path = ffi::OsString::from(path.as_str());
-  return sys_imp::chdir(os_path.ptr());
+  const auto ret = sys_imp::chdir(os_path.ptr());
+  return ret;
 }
 
 }  // namespace sfc::env

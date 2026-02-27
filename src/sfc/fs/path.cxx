@@ -6,10 +6,10 @@ namespace sfc::fs::path::test {
 SFC_TEST(file_name) {
   sfc::expect_eq(Path{"/usr/bin"}.file_name(), "bin");
   sfc::expect_eq(Path{"tmp/foo.txt"}.file_name(), "foo.txt");
-  sfc::expect_eq(Path{"foo.txt/."}.file_name(), "foo.txt");
-  sfc::expect_eq(Path{"foo.txt/.//"}.file_name(), "foo.txt");
 
+  sfc::expect_eq(Path{"foo.txt/."}.file_name(), "");
   sfc::expect_eq(Path{"foo.txt/.."}.file_name(), "");
+  sfc::expect_eq(Path{"foo.txt/.//"}.file_name(), "");
   sfc::expect_eq(Path{"/"}.file_name(), "");
 }
 
@@ -24,12 +24,16 @@ SFC_TEST(extension) {
 }
 
 SFC_TEST(parrent) {
-  sfc::expect_eq(Path{"/foo/bar"}.parent().as_str(), "/foo");
-  sfc::expect_eq(Path{"/"}.parent().as_str(), "");
+  sfc::expect_eq(Path{"/"}.parent(), Path{""});
+  sfc::expect_eq(Path{"/foo"}.parent(), Path{"/"});
+  sfc::expect_eq(Path{"/foo/"}.parent(), Path{"/"});
+  sfc::expect_eq(Path{"/foo/bar"}.parent(), Path{"/foo"});
+  sfc::expect_eq(Path{"/foo/bar/"}.parent(), Path{"/foo"});
 }
 
 SFC_TEST(is_absolute) {
   sfc::expect_true(Path{"/usr/bin"}.is_absolute());
+
   sfc::expect_false(Path{"tmp/foo.txt"}.is_absolute());
   sfc::expect_false(Path{"foo.txt/."}.is_absolute());
   sfc::expect_false(Path{"foo.txt/.//"}.is_absolute());
@@ -37,6 +41,7 @@ SFC_TEST(is_absolute) {
 
 SFC_TEST(is_relative) {
   sfc::expect_false(Path{"/usr/bin"}.is_relative());
+
   sfc::expect_true(Path{"tmp/foo.txt"}.is_relative());
   sfc::expect_true(Path{"foo.txt/."}.is_relative());
   sfc::expect_true(Path{"foo.txt/.//"}.is_relative());

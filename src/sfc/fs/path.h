@@ -8,7 +8,7 @@ struct Path {
   Str _inn = {};
 
  public:
-  Path(Str s) noexcept : _inn(s) {}
+  Path(const auto& s) noexcept : _inn{s} {}
 
   auto as_str() const noexcept -> Str;
 
@@ -24,10 +24,16 @@ struct Path {
   auto is_file() const noexcept -> bool;
   auto is_dir() const noexcept -> bool;
 
+  auto is_root() const noexcept -> bool;
   auto is_absolute() const noexcept -> bool;
   auto is_relative() const noexcept -> bool;
 
  public:
+  // trait: ops::Eq
+  auto operator==(const Path& p) const -> bool {
+    return _inn == p._inn;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     _inn.fmt(f);

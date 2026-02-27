@@ -7,53 +7,70 @@ namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
 
-static constexpr auto is_delim(char c) -> bool {
-#ifdef _WIN32
-  return c == '/' || c == '\\';
-#else
-  return c == '/';
-#endif
-};
-
 struct Components {
   Str _str;
 
  public:
-  auto as_str() const noexcept -> Str {
-    return _str;
+  auto len() const -> usize {
+    return _str.len();
   }
 
-  void trim_end() {
-    while (_str._len != 0 && is_delim(_str[_str._len - 1])) {
+  static constexpr auto is_delim(char c) -> bool {
+#ifdef _WIN32
+    return c == '/' || c == '\\';
+#else
+    return c == '/';
+#endif
+  };
+
+  auto next() noexcept -> Option<Str> {
+    if (_str.is_empty()) {
+      return {};
+    }
+
+    if (_str.len() == 1) {
+      return mem::take(_str);
+    }
+
+    const auto p = _str.find(is_delim);
+    if (!p) {
+      return mem::take(_str);
+    }
+
+    // root, use '/' for all platforms, don't use ugly '\'
+    if (*p == 0) {
+      _str = _str[{1, $}];
+      return Str{"/"};
+    }
+
+    const auto s = _str[{0, *p}];
+    _str = _str[{*p + 1, $}];
+    return s;
+  }
+
+  auto next_back() noexcept -> Option<Str> {
+    if (_str.is_empty()) {
+      return {};
+    }
+
+    // trim delimiters
+    if (_str.len() > 1 && _str.ends_with(is_delim)) {
       _str._len -= 1;
     }
-  }
 
-  auto pop() noexcept -> Str {
-    this->trim_end();
+    if (_str.len() == 1) {
+      return mem::take(_str);
+    }
 
     const auto p = _str.rfind(is_delim);
     if (!p) {
       return mem::take(_str);
     }
 
-    const auto res = _str[{*p + 1, $}];
-    _str = _str[{0, *p}];
-    return res;
-  }
-
-  auto next_back() noexcept -> Str {
-    while (!_str.is_empty()) {
-      const auto s = this->pop();
-      if (s.is_empty() || s == ".") {
-        continue;
-      } else if (s == "..") {
-        this->pop();
-      } else {
-        return s;
-      }
-    }
-    return {};
+    const auto i = *p;
+    const auto s = _str[{i + 1, $}];
+    _str = _str[{0, i ? i : 1}];
+    return s;
   }
 };
 
@@ -62,8 +79,13 @@ auto Path::as_str() const noexcept -> Str {
 }
 
 auto Path::file_name() const noexcept -> Str {
-  const auto s = Components{_inn.as_str()}.next_back();
-  if (s == "." || s == ".." || s == "/") {
+  if (_inn.is_empty()) {
+    return {};
+  }
+
+  auto cmpts = Components{_inn};
+  const auto s = cmpts.next_back().unwrap_or("");
+  if (s == "" || s == "." || s == ".." || s == "/") {
     return {};
   }
   return s;
@@ -85,7 +107,7 @@ auto Path::parent() const noexcept -> Path {
   auto cmpts = fs::Components{_inn.as_str()};
   cmpts.next_back();
 
-  return Path{cmpts.as_str()};
+  return Path{cmpts._str};
 }
 
 auto Path::join(Str path) const noexcept -> PathBuf {
@@ -94,21 +116,33 @@ auto Path::join(Str path) const noexcept -> PathBuf {
   return res;
 }
 
+auto Path::is_root() const noexcept -> bool {
+  if (_inn.is_empty()) {
+    return false;
+  }
+  if (_inn == "/") {
+    return true;
+  }
+#ifdef _WIN32
+  if (_inn.len() == 2 && _inn.ends_with(':')) {
+    return true;
+  }
+#endif
+  return false;
+}
+
 auto Path::is_absolute() const noexcept -> bool {
   if (_inn.is_empty()) {
     return false;
   }
+
   if (_inn.starts_with('/')) {
     return true;
   }
+
 #ifdef _WIN32
-  if (_inn.len() >= 2) {
-    const auto drive = _inn[0] | 32;
-    const auto colon = _inn[1];
-    if (colon == ':' && ('a' <= drive && drive <= 'z')) {
-      return true;
-    }
-  }
+  const auto first_cmpt = Path{Components{_inn}.next().unwrap_or("")};
+  return first_cmpt.is_root();
 #endif
   return false;
 }
@@ -167,29 +201,35 @@ void PathBuf::push(Path path) noexcept {
   if (path.is_absolute()) {
     _inn.clear();
   }
-  if (!_inn.is_empty() && !is_delim(_inn[_inn.len() - 1])) {
-    _inn.push('/');
-  }
-  _inn.push_str(path.as_str());
 
-#ifdef _WIN32
-  for (auto& c : _inn.as_mut_slice()) {
-    if (c == '\\') {
-      c = '/';
+  auto cmpts = Components{path._inn};
+  while (auto x = cmpts.next()) {
+    const auto s = *x;
+    // skip empty or '.', but don't normalize '..'
+    if (s == "" || s == ".") {
+      continue;
     }
+    // use '/' for all platforms!, don't use ugly '\'
+    if (!_inn.is_empty() && !_inn.ends_with('/')) {
+      _inn.push('/');
+    }
+    _inn.push_str(s);
   }
-#endif
 }
 
 auto PathBuf::pop() noexcept -> bool {
-  auto cmpts = Components{_inn.as_str()};
-
-  const auto tail = cmpts.next_back();
-  if (tail.is_empty()) {
+  if (_inn.is_empty()) {
     return false;
   }
 
-  _inn.truncate(cmpts.as_str().len());
+  auto cmpts = Components{_inn.as_str()};
+  while (auto s = cmpts.next_back()) {
+    if (!s->is_empty()) {
+      break;
+    }
+  }
+
+  _inn.truncate(cmpts.len());
   return true;
 }
 
@@ -208,6 +248,7 @@ void PathBuf::set_extension(Str new_ext) noexcept {
     return;
   }
 
+  // file_stem and old_path, based on same str, so we can caculate ptrdiff
   const auto stem_pos = static_cast<usize>(file_stem.as_ptr() - old_path.as_str().as_ptr());
   _inn.truncate(stem_pos + file_stem.len());
 
@@ -251,16 +292,35 @@ auto meta(Path path) -> io::Result<Meta> {
 }
 
 auto create_dir(Path path) -> io::Result<> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  if (path._inn.is_empty() || path.is_root()) {
+    return io::Error::InvalidInput;
+  }
 
+  const auto os_path = ffi::OsString::from(path.as_str());
   if (sys_imp::mkdir(os_path.ptr())) {
     return {};
   }
-  const auto err = io::last_os_error();
-  if (err != io::Error::AlreadyExists) {
-    return err;
+
+  const auto meta = fs::meta(path);
+  if (meta.is_ok() && meta->is_dir()) {
+    return {};
   }
-  return {};
+
+  const auto err = io::last_os_error();
+  return err;
+}
+
+auto create_dir_all(Path path) -> io::Result<> {
+  if (auto ret = fs::create_dir(path); ret.is_ok()) {
+    return {};
+  }
+
+  const auto parent = path.parent();
+  if (auto ret = fs::create_dir_all(parent); ret.is_err()) {
+    return ret;
+  }
+
+  return fs::create_dir(path);
 }
 
 auto remove_dir(Path path) -> io::Result<> {

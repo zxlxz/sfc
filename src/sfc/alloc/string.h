@@ -53,14 +53,6 @@ class [[nodiscard]] String {
   }
 
  public:
-  auto operator[](usize idx) const noexcept -> const u8& {
-    return _vec[idx];
-  }
-
-  auto operator[](usize idx) noexcept -> u8& {
-    return _vec[idx];
-  }
-
   auto operator[](ops::Range ids) const noexcept -> Str {
     const auto v = _vec[ids];
     return Str::from_utf8(v);
@@ -68,48 +60,13 @@ class [[nodiscard]] String {
 
  public:
   auto pop() noexcept -> Option<char32_t>;
+
   void push(char32_t c) noexcept;
+  void push_str(Str s) noexcept;
 
-  void push_str(Str s) noexcept {
-    _vec.extend_from_slice(s.as_bytes());
-  }
-
-  void reserve(usize amt) noexcept {
-    _vec.reserve(amt);
-  }
-
-  void truncate(usize len) noexcept {
-    _vec.truncate(len);
-  }
-
-  void clear() noexcept {
-    _vec.clear();
-  }
-
-  void insert(usize idx, u8 ch) noexcept {
-    _vec.insert(idx, ch);
-  }
-
-  auto remove(usize idx) noexcept -> u8 {
-    return _vec.remove(idx);
-  }
-
-  void drain(ops::Range ids) noexcept {
-    _vec.drain(ids);
-  }
-
-  void insert_str(usize idx, Str str) noexcept {
-    if (idx >= _vec.len()) {
-      return this->push_str(str);
-    }
-
-    _vec.reserve(str._len);
-    _vec.set_len(_vec.len() + str._len);
-
-    const auto ptr = _vec.as_mut_ptr() + idx;
-    __builtin_memmove(ptr + str._len, ptr, _vec.len() - idx);
-    __builtin_memcpy(ptr, str._ptr, str._len);
-  }
+  void reserve(usize amt) noexcept;
+  void truncate(usize len) noexcept;
+  void clear() noexcept;
 
  public:
   auto iter() const noexcept {
@@ -168,7 +125,7 @@ class [[nodiscard]] String {
 
   // trait: fmt::Write
   void write_str(Str s) {
-    _vec.extend_from_slice(s.as_bytes());
+    this->push_str(s);
   }
 
   // trait: serde::Serialize
