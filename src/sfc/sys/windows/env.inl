@@ -3,14 +3,11 @@
 
 namespace sfc::sys::env {
 
-template <int N>
-static auto getenv(const wchar_t* key, char (&buf)[N]) -> const char* {
-  wchar_t os_buf[N];
-  const auto len = ::GetEnvironmentVariableW(key, os_buf, N);
-  if (len <= 0 || len >= N) {
-    return nullptr;
-  }
-  return to_utf8(os_buf, buf);
+static auto getenv(const wchar_t* key) -> ffi::OsString {
+  auto f = [&](wchar_t* buf, DWORD buf_len) {
+    return ::GetEnvironmentVariableW(key, buf, buf_len);
+  };
+  return sys::build_string(f);
 }
 
 static auto setenv(const wchar_t* key, const wchar_t* val) -> bool {
@@ -21,46 +18,32 @@ static auto unsetenv(const wchar_t* key) -> bool {
   return ::SetEnvironmentVariableW(key, nullptr);
 }
 
-template <int BUF_SIZE>
-static auto home_dir(char (&buf)[BUF_SIZE]) -> char* {
-  wchar_t os_path[BUF_SIZE];
-  const auto len = ::GetEnvironmentVariableW(L"USERPROFILE", os_path, BUF_SIZE);
-  if (len == 0 || len >= BUF_SIZE) {
-    return nullptr;
-  }
-
-  return to_utf8(os_path, buf);
+static auto home_dir() -> ffi::OsString {
+  auto f = [&](wchar_t* buf, auto buf_len) {
+    return ::GetEnvironmentVariableW(L"USERPROFILE", buf, buf_len);
+  };
+  return sys::build_string(f);
 }
 
-template <int BUF_SIZE>
-static auto temp_dir(char (&buf)[BUF_SIZE]) -> char* {
-  wchar_t os_path[BUF_SIZE];
-  const auto len = ::GetTempPath2W(BUF_SIZE, os_path);
-  if (len == 0 || len >= BUF_SIZE) {
-    return nullptr;
-  }
-
-  return to_utf8(os_path, buf);
+static auto temp_dir() -> ffi::OsString {
+  auto f = [](wchar_t* buf, auto buf_len) {
+    return ::GetTempPathW(buf_len, buf);
+  };
+  return sys::build_string(f);
 }
 
-template <int BUF_SIZE>
-static auto current_exe(char (&buf)[BUF_SIZE]) -> char* {
-  wchar_t os_path[BUF_SIZE];
-  const auto len = ::GetModuleFileNameW(nullptr, os_path, BUF_SIZE);
-  if (len == 0 || len >= BUF_SIZE) {
-    return nullptr;
-  }
-  return to_utf8(os_path, buf);
+static auto current_exe() -> ffi::OsString {
+  auto f = [](wchar_t* buf, DWORD buf_len) {
+    return ::GetModuleFileNameW(nullptr, buf, buf_len);
+  };
+  return sys::build_string(f, MAX_PATH);
 }
 
-template <int BUF_SIZE>
-static auto getcwd(char (&buf)[BUF_SIZE]) -> char* {
-  wchar_t os_path[BUF_SIZE];
-  const auto len = ::GetCurrentDirectoryW(BUF_SIZE, os_path);
-  if (len == 0 || len >= BUF_SIZE) {
-    return nullptr;
-  }
-  return to_utf8(os_path, buf);
+static auto getcwd() -> ffi::OsString {
+  auto f = [](wchar_t* buf, auto buf_len) {
+    return ::GetCurrentDirectoryW(buf_len, buf);
+  };
+  return sys::build_string(f);
 }
 
 static auto chdir(const wchar_t* path) -> bool {

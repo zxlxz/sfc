@@ -5,17 +5,17 @@
 
 namespace sfc::ffi {
 
-class CString {
-  Vec<char> _vec;
+class WString {
+  Vec<wchar_t> _vec;
 
  public:
-  static auto from(Str s) -> CString;
+  static auto from(Str s) -> WString;
 
-  auto ptr() const -> const char* {
+  auto ptr() const -> const wchar_t* {
     return _vec.as_ptr();
   }
 
-  auto as_mut_vec() -> Vec<char>& {
+  auto as_mut_vec() -> Vec<wchar_t>& {
     return _vec;
   }
 

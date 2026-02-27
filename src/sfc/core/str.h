@@ -7,6 +7,15 @@
 
 namespace sfc::str {
 
+struct Chars {
+  const char* _ptr;
+  const char* _end;
+
+ public:
+  auto next() noexcept -> Option<char32_t>;
+  auto next_back() noexcept -> Option<char32_t>;
+};
+
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -23,29 +32,24 @@ struct Str {
     return {p, s._len};
   }
 
-  constexpr static auto from_cstr(const char* p) -> Str {
-    const auto n = p ? __builtin_strlen(p) : 0U;
-    return Str{p, n};
-  }
-
-  constexpr auto as_ptr() const noexcept -> const u8* {
-    return reinterpret_cast<const u8*>(_ptr);
-  }
-
-  constexpr auto is_empty() const noexcept -> bool {
-    return _len == 0;
-  }
-
   constexpr auto len() const noexcept -> usize {
     return _len;
+  }
+
+  constexpr auto as_ptr() const noexcept -> cstr_t {
+    return _ptr;
   }
 
   constexpr auto as_str() const noexcept -> Str {
     return *this;
   }
 
+  constexpr auto is_empty() const noexcept -> bool {
+    return _len == 0;
+  }
+
   auto as_bytes() const noexcept -> Slice<const u8> {
-    return {static_cast<const u8*>(static_cast<const void*>(_ptr)), _len};
+    return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
  public:
@@ -68,6 +72,10 @@ struct Str {
   using Iter = slice::Iter<const char>;
   auto iter() const noexcept -> slice::Iter<const char> {
     return Iter{{}, _ptr, _ptr + _len};
+  }
+
+  auto chars() const -> Chars {
+    return Chars{_ptr, _ptr + _len};
   }
 
  public:
@@ -335,7 +343,7 @@ struct Inner<str::Str> {
  public:
   Inner(none_t) noexcept : _val{} {}
 
-  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
+  Inner(some_t, const auto&... args) noexcept : _val{args...} {}
 
   explicit operator bool() const noexcept {
     return _val._ptr != nullptr;

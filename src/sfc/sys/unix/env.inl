@@ -4,10 +4,9 @@
 
 namespace sfc::sys::env {
 
-template <size_t BUF_SIZE>
-static auto getenv(const char* key, char (&buf)[BUF_SIZE]) -> const char* {
+static auto getenv(const char* key) -> String {
   const auto val = ::getenv(key);
-  return to_utf8(val, buf);
+  return sys::make_string(val);
 }
 
 static auto setenv(const char* key, const char* val) -> bool {
@@ -22,53 +21,51 @@ static auto unsetenv(const char* key) -> bool {
   return ::unsetenv(key) == 0;
 }
 
-template <size_t BUF_SIZE>
-static auto home_dir(char (&buf)[BUF_SIZE]) -> const char* {
+static auto home_dir() -> String {
   const auto uid = getuid();
   const auto usr = getpwuid(uid);
-  if (!usr) {
-    return nullptr;
+  if (!usr || !usr->pw_dir) {
+    return {};
   }
-  return to_utf8(usr->pw_dir, buf);
+  return sys::make_string(usr->pw_dir);
 }
 
-template <size_t BUF_SIZE>
-static auto temp_dir(char (&buf)[BUF_SIZE]) -> const char* {
+static auto temp_dir() -> String {
 #ifdef __APPLE__
-  static const auto len = ::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, BUF_SIZE);
-  if (len <= 0 || len >= BUF_SIZE) {
-    return nullptr;
+  char buf[PATH_MAX];
+  if (::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, sizeof(buf)) <= 0) {
+    return {};
   }
-  return buf;
+  return sys::make_string(buf);
 #else
-  return to_utf8("/tmp", buf);
+  return sys::make_string("/tmp");
 #endif
 }
 
-template <size_t BUF_SIZE>
-static auto current_exe(char (&buf)[BUF_SIZE]) -> const char* {
+static auto current_exe() -> String {
+  char buf[1024];
 #ifdef __APPLE__
   auto size = uint32_t{BUF_SIZE};
   if (_NSGetExecutablePath(buf, &size) != 0) {
-    return nullptr;
+    return {};
   }
 #else
-  const auto len = ::readlink("/proc/self/exe", buf, BUF_SIZE);
-  if (len <= 0 || static_cast<size_t>(len) >= BUF_SIZE) {
-    return nullptr;
+  if (::readlink("/proc/self/exe", buf, sizeof(buf)) == -1) {
+    return {};
   }
-  buf[len] = '\0';
+  return sys::make_string(buf);
 #endif
-  return buf;
 }
 
-template <size_t BUF_SIZE>
-static auto getcwd(char (&buf)[BUF_SIZE]) -> const char* {
-  return ::getcwd(buf, BUF_SIZE);
+static auto getcwd() -> String {
+  char buf[1024];
+  const auto s = ::getcwd(buf, sizeof(buf));
+  return sys::make_string(s);
 }
 
 static auto chdir(const char* path) -> bool {
-  return ::chdir(path) == 0;
+  const auto ret = ::chdir(path);
+  return ret == 0;
 }
 
 }  // namespace sfc::sys::env

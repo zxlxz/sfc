@@ -57,7 +57,6 @@ struct Write {
   auto write_str(this auto& self, Str buf) -> Result<> {
     return self.write_all(buf.as_bytes());
   }
-
 };
 
 }  // namespace sfc::io

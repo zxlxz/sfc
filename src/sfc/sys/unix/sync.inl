@@ -9,52 +9,52 @@ using mtx_t = pthread_mutex_t;
 using cnd_t = pthread_cond_t;
 using timespec_t = struct ::timespec;
 
-inline auto get_tid() -> tid_t {
+inline auto get_tid() -> pthread_t {
   return ::pthread_self();
 }
 
-inline void mtx_init(mtx_t& mtx) {
+inline void mtx_init(pthread_mutex_t& mtx) {
   ::pthread_mutex_init(&mtx, nullptr);
 }
 
-inline void mtx_destroy(mtx_t& mtx) {
+inline void mtx_destroy(pthread_mutex_t& mtx) {
   ::pthread_mutex_destroy(&mtx);
 }
 
-inline void mtx_lock(mtx_t& mtx) {
+inline void mtx_lock(pthread_mutex_t& mtx) {
   ::pthread_mutex_lock(&mtx);
 }
 
-inline void mtx_unlock(mtx_t& mtx) {
+inline void mtx_unlock(pthread_mutex_t& mtx) {
   ::pthread_mutex_unlock(&mtx);
 }
 
-inline bool mtx_trylock(mtx_t& mtx) {
+inline bool mtx_trylock(pthread_mutex_t& mtx) {
   const auto ret = ::pthread_mutex_trylock(&mtx);
   return ret == 0;
 }
 
-inline void cnd_init(cnd_t& cond) {
+inline void cnd_init(pthread_cond_t& cond) {
   cond = PTHREAD_COND_INITIALIZER;
 }
 
-inline void cnd_destroy(cnd_t& cond) {
+inline void cnd_destroy(pthread_cond_t& cond) {
   (void)cond;
 }
 
-inline void cnd_signal(cnd_t& cond) {
+inline void cnd_signal(pthread_cond_t& cond) {
   ::pthread_cond_signal(&cond);
 }
 
-inline void cnd_broadcast(cnd_t& cond) {
+inline void cnd_broadcast(pthread_cond_t& cond) {
   ::pthread_cond_broadcast(&cond);
 }
 
-inline void cnd_wait(cnd_t& cond, mtx_t& mtx) {
+inline void cnd_wait(pthread_cond_t& cond, pthread_mutex_t& mtx) {
   ::pthread_cond_wait(&cond, &mtx);
 }
 
-inline auto cnd_timedwait(cnd_t& cond, mtx_t& mtx, unsigned millis) -> bool {
+inline auto cnd_timedwait(pthread_cond_t& cond, pthread_mutex_t& mtx, unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 

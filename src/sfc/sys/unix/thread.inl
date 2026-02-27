@@ -7,11 +7,13 @@ namespace sfc::sys::thread {
 using ret_t = void*;
 using thrd_t = pthread_t;
 
-inline auto thrd_current() -> thrd_t {
+using thrd_func_t = void*(*)(void*);
+
+inline auto thrd_current() -> pthread_t {
   return ::pthread_self();
 }
 
-inline auto thrd_create(size_t stack_size, ret_t (*func)(void*), void* data) -> thrd_t {
+inline auto thrd_create(size_t stack_size, thrd_func_t func, void* data) -> pthread_t {
   // attr
   auto attr = ::pthread_attr_t{};
   ::pthread_attr_init(&attr);
@@ -30,27 +32,18 @@ inline auto thrd_create(size_t stack_size, ret_t (*func)(void*), void* data) -> 
   return thrd;
 }
 
-inline auto thrd_join(thrd_t thrd) -> bool {
+inline auto thrd_join(pthread_t thrd) -> bool {
   const auto err = ::pthread_join(thrd, nullptr);
   return err == 0;
 }
 
-inline auto thrd_detach(thrd_t thrd) -> bool {
+inline auto thrd_detach(pthread_t thrd) -> bool {
   const auto err = ::pthread_detach(thrd);
   return err == 0;
 }
 
 inline void thrd_yield() {
   ::sched_yield();
-}
-
-template <size_t N>
-inline auto thrd_name(thrd_t thrd, char (&buf)[N]) -> const char* {
-  const auto err = ::pthread_getname_np(thrd, buf, N);
-  if (err != 0) {
-    return "";
-  }
-  return buf;
 }
 
 inline auto thrd_setname(const char* name) -> bool {
@@ -85,4 +78,4 @@ inline auto thrd_sleep_ms(unsigned millis) -> bool {
   return true;
 }
 
-}  // namespace sfc::sys::.thread
+}  // namespace sfc::sys::thread

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -27,54 +28,21 @@
 #include <_time.h>
 #endif
 
+namespace sfc::string {
+class String;
+}
+
 namespace sfc::sys {
 
-class OsStr {
-  char* _ptr = nullptr;
+using string::String;
 
- public:
-  OsStr() noexcept = default;
-
-  OsStr(OsStr&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = nullptr;
+template <class S = String>
+static auto make_string(const char* p) -> S {
+  if (p == nullptr) {
+    return {};
   }
-
-  ~OsStr() {
-    if (_ptr) {
-      ::free(_ptr);
-    }
-  }
-
-  auto ptr() const {
-    return _ptr;
-  }
-
-  static auto xnew(auto src) -> OsStr {
-    if (src._len == 0) {
-      return {};
-    }
-
-    auto res = OsStr{};
-    res._ptr = static_cast<char*>(::malloc(src._len + 1));
-    ::__builtin_memcpy(res._ptr, src._ptr, src._len);
-    res._ptr[src._len] = 0;
-
-    return res;
-  }
-};
-
-template <size_t BUF_SIZE>
-static auto to_utf8(const char* src, char (&dst)[BUF_SIZE]) -> const char* {
-  if (src == nullptr) {
-    return nullptr;
-  }
-
-  const auto len = __builtin_strlen(src);
-  if (len >= BUF_SIZE) {
-    return nullptr;
-  }
-  __builtin_memcpy(dst, src, len + 1);
-  return dst;
+  const auto n = __builtin_strlen(p);
+  return S::from({p, n});
 }
 
 }  // namespace sfc::sys

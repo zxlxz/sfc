@@ -20,15 +20,14 @@ static inline auto sym_init() -> bool {
   return res;
 }
 
-template <DWORD N>
-static inline auto trace(void* (&frame_buf)[N]) -> SIZE_T {
+static inline auto trace(void* frame_buf[], DWORD frame_cnt) -> SIZE_T {
   static constexpr auto SKIP_FRAME_CNT = 2U;
 
   if (!sym_init()) {
     return 0;
   }
 
-  const auto cnt = ::RtlCaptureStackBackTrace(0, N, frame_buf, nullptr);
+  const auto cnt = ::RtlCaptureStackBackTrace(0, frame_cnt, frame_buf, nullptr);
   if (cnt <= SKIP_FRAME_CNT) {
     return 0;
   }
@@ -75,4 +74,4 @@ static inline auto cxx_demangle(const char in[], char buf[], DWORD buf_len) -> D
   return ret;
 }
 
-}  // namespace sfc::sys::.backtrace
+}  // namespace sfc::sys::backtrace

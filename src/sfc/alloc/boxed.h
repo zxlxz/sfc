@@ -129,6 +129,10 @@ class Box<T[]> {
   auto len() const noexcept -> usize {
     return _inn._len;
   }
+
+  auto as_slice() const noexcept -> Slice<T> {
+    return Slice<T>{_inn._ptr, _inn._len};
+  }
 };
 
 template <class R, class... T>

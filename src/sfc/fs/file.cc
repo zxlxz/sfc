@@ -1,12 +1,11 @@
 #include "sfc/fs/file.h"
 
-#include "sfc/ffi/c_str.h"
+#include "sfc/ffi/os_str.h"
 #include "sfc/sys/fs.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
-using sys::OsStr;
 
 auto File::open(Path path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.read = true, .write = true};
@@ -31,7 +30,7 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
 }
 
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
-  const auto os_path = OsStr::xnew(path.as_str());
+  const auto os_path = ffi::OsString::from(path.as_str());
 
   const auto fd = sys_imp::open(os_path.ptr(), *this);
   if (fd == sys_imp::INVALID_FD) {

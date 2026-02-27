@@ -1,11 +1,11 @@
 #include "sfc/fs/path.h"
 
 #include "sfc/sys/fs.h"
+#include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
 
 namespace sys_imp = sys::fs;
-using sys::OsStr;
 
 static constexpr auto is_delim(char c) -> bool {
 #ifdef _WIN32
@@ -149,6 +149,12 @@ auto PathBuf::as_str() const noexcept -> Str {
   return _inn.as_str();
 }
 
+auto PathBuf::clone() const -> PathBuf {
+  auto res = PathBuf{};
+  res._inn = _inn.clone();
+  return res;
+}
+
 void PathBuf::clear() noexcept {
   _inn.clear();
 }
@@ -202,14 +208,20 @@ void PathBuf::set_extension(Str new_ext) noexcept {
     return;
   }
 
-  const auto end_stem = file_stem.as_ptr() + file_stem.len();
-  _inn.truncate(static_cast<usize>(end_stem - _inn.as_ptr()));
+  const auto stem_pos = static_cast<usize>(file_stem.as_ptr() - old_path.as_str().as_ptr());
+  _inn.truncate(stem_pos + file_stem.len());
 
   if (!new_ext.is_empty()) {
     _inn.reserve(new_ext.len() + 1);
     _inn.push('.');
     _inn.push_str(new_ext);
   }
+}
+
+auto PathBuf::join(Path path) const -> PathBuf {
+  auto res = this->clone();
+  res.push(path);
+  return res;
 }
 
 auto Meta::exists() const noexcept -> bool {
@@ -229,7 +241,7 @@ auto Meta::is_file() const noexcept -> bool {
 }
 
 auto meta(Path path) -> io::Result<Meta> {
-  const auto os_path = OsStr::xnew(path.as_str());
+  const auto os_path = ffi::OsString::from(path.as_str());
 
   auto res = Meta{};
   if (!sys_imp::lstat(os_path.ptr(), res)) {
@@ -239,7 +251,7 @@ auto meta(Path path) -> io::Result<Meta> {
 }
 
 auto create_dir(Path path) -> io::Result<> {
-  const auto os_path = OsStr::xnew(path.as_str());
+  const auto os_path = ffi::OsString::from(path.as_str());
 
   if (sys_imp::mkdir(os_path.ptr())) {
     return {};
@@ -252,7 +264,7 @@ auto create_dir(Path path) -> io::Result<> {
 }
 
 auto remove_dir(Path path) -> io::Result<> {
-  const auto os_path = OsStr::xnew(path.as_str());
+  const auto os_path = ffi::OsString::from(path.as_str());
 
   const auto ret = sys_imp::rmdir(os_path.ptr());
   if (!ret) {
@@ -263,7 +275,7 @@ auto remove_dir(Path path) -> io::Result<> {
 }
 
 auto remove_file(Path path) -> io::Result<> {
-  const auto os_path = OsStr::xnew(path.as_str());
+  const auto os_path = ffi::OsString::from(path.as_str());
 
   const auto ret = sys_imp::unlink(os_path.ptr());
   if (!ret) {
@@ -274,8 +286,8 @@ auto remove_file(Path path) -> io::Result<> {
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto os_old = OsStr::xnew(old_path.as_str());
-  const auto os_new = OsStr::xnew(new_path.as_str());
+  const auto os_old = ffi::OsString::from(old_path.as_str());
+  const auto os_new = ffi::OsString::from(new_path.as_str());
 
   const auto ret = sys_imp::rename(os_old.ptr(), os_new.ptr());
   if (!ret) {

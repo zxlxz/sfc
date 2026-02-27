@@ -14,7 +14,7 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from(const auto& s) noexcept -> String {
+  static auto from(Str s) noexcept -> String {
     auto res = String{};
     res.push_str(s);
     return res;
@@ -67,13 +67,8 @@ class [[nodiscard]] String {
   }
 
  public:
-  auto pop() noexcept -> Option<u8> {
-    return _vec.pop();
-  }
-
-  void push(u8 c) noexcept {
-    _vec.push(c);
-  }
+  auto pop() noexcept -> Option<char32_t>;
+  void push(char32_t c) noexcept;
 
   void push_str(Str s) noexcept {
     _vec.extend_from_slice(s.as_bytes());
@@ -104,14 +99,16 @@ class [[nodiscard]] String {
   }
 
   void insert_str(usize idx, Str str) noexcept {
-    const auto len = _vec.len();
-    if (idx > len) {
-      idx = len;
+    if (idx >= _vec.len()) {
+      return this->push_str(str);
     }
+
     _vec.reserve(str._len);
-    ptr::shift_elements_right(_vec.as_mut_ptr() + idx, len - idx, str._len);
-    ptr::copy_nonoverlapping(str.as_ptr(), _vec.as_mut_ptr() + idx, str._len);
-    _vec.set_len(len + str._len);
+    _vec.set_len(_vec.len() + str._len);
+
+    const auto ptr = _vec.as_mut_ptr() + idx;
+    __builtin_memmove(ptr + str._len, ptr, _vec.len() - idx);
+    __builtin_memcpy(ptr, str._ptr, str._len);
   }
 
  public:
@@ -177,15 +174,6 @@ class [[nodiscard]] String {
   // trait: serde::Serialize
   void serialize(auto& s) const {
     s.serialize_str(this->as_str());
-  }
-};
-
-struct ToString {
-  static auto to_string(const auto& self) -> String {
-    auto buf = String{};
-    auto fmter = fmt::Fmter{buf};
-    fmt::Display::fmt(self, fmter);
-    return buf;
   }
 };
 

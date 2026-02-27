@@ -7,17 +7,19 @@ using ret_t = unsigned;
 using tid_t = DWORD;
 using thrd_t = HANDLE;
 
+using thrd_func_t = unsigned(*)(void*);
+
 inline auto thrd_current() -> thrd_t {
   return ::GetCurrentThread();
 }
 
-inline auto thrd_create(size_t stack_size, ret_t(__stdcall* func)(void*), void* data) -> thrd_t {
+inline auto thrd_create(size_t stack_size, thrd_func_t func, void* data) -> HANDLE {
   unsigned thrd_id = 0;
   const auto handle = ::_beginthreadex(nullptr, static_cast<unsigned>(stack_size), func, data, 0, &thrd_id);
   return reinterpret_cast<HANDLE>(handle);
 }
 
-inline auto thrd_join(thrd_t thr) -> bool {
+inline auto thrd_join(HANDLE thr) -> bool {
   if (thr == nullptr || thr == INVALID_HANDLE_VALUE) {
     return false;
   }
@@ -25,7 +27,7 @@ inline auto thrd_join(thrd_t thr) -> bool {
   return ret == WAIT_OBJECT_0;
 }
 
-inline auto thrd_detach(thrd_t thr) -> bool {
+inline auto thrd_detach(HANDLE thr) -> bool {
   if (thr == nullptr || thr == INVALID_HANDLE_VALUE) {
     return false;
   }
@@ -34,19 +36,6 @@ inline auto thrd_detach(thrd_t thr) -> bool {
 
 inline void thrd_yield() {
   ::SwitchToThread();
-}
-
-template <int N>
-inline auto thrd_name(thrd_t thr, char (&u8_buf)[N]) -> const char* {
-  wchar_t* os_buf = nullptr;
-  if (FAILED(::GetThreadDescription(thr, &os_buf))) {
-    return nullptr;
-  };
-
-  to_u8_str(os_buf, u8_buf);
-  ::LocalFree(os_buf);
-
-  return u8_buf;
 }
 
 inline auto thrd_setname(const wchar_t* name) -> bool {
@@ -63,4 +52,4 @@ inline void thrd_sleep_ms(DWORD millis) {
   ::Sleep(millis);
 }
 
-}  // namespace sfc::sys::.thread
+}  // namespace sfc::sys::thread

@@ -1,6 +1,7 @@
 #include "sfc/thread.h"
 
 #include "sfc/sys/thread.h"
+#include "sfc/ffi/os_str.h"
 
 namespace sfc::thread {
 
@@ -8,7 +9,7 @@ namespace sys_imp = sys::thread;
 
 struct ThreadData {
   Box<void()> _func;
-  sys::OsStr _name;
+  ffi::OsString _name;
 
  public:
   void run() noexcept {
@@ -40,7 +41,7 @@ void Thread::join() {
 }
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
-  auto data = Box<ThreadData>::xnew(mem::move(fun), sys::OsStr::xnew(name));
+  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::OsString::from(name));
   auto thrd = sys_imp::thrd_create(stack_size, thread_callback, data.ptr());
   if (thrd) {
     // forget data

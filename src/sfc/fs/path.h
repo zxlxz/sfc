@@ -8,13 +8,15 @@ struct Path {
   Str _inn = {};
 
  public:
-  Path(convert::Into<Str> auto&& s) noexcept : _inn(s) {}
+  Path(Str s) noexcept : _inn(s) {}
 
   auto as_str() const noexcept -> Str;
+
   auto file_name() const noexcept -> Str;
   auto file_stem() const noexcept -> Str;
   auto extension() const noexcept -> Str;
   auto parent() const noexcept -> Path;
+
   auto join(Str path) const noexcept -> class PathBuf;
 
  public:
@@ -41,6 +43,8 @@ class PathBuf {
   auto as_path() const noexcept -> Path;
   auto as_str() const noexcept -> Str;
 
+ public:
+  auto clone() const -> PathBuf;
   void clear() noexcept;
   void reserve(usize additional) noexcept;
 
@@ -49,6 +53,8 @@ class PathBuf {
 
   void set_file_name(Str file_name) noexcept;
   void set_extension(Str extension) noexcept;
+
+  auto join(Path path) const -> PathBuf;
 
  public:
   // trait: deref<Path>
@@ -76,9 +82,9 @@ struct Meta {
 auto meta(Path path) -> io::Result<Meta>;
 
 auto create_dir(Path path) -> io::Result<>;
+auto create_dir_all(Path path) -> io::Result<>;
 
 auto remove_dir(Path path) -> io::Result<>;
-
 auto remove_file(Path path) -> io::Result<>;
 
 auto rename(Path from, Path to) -> io::Result<>;

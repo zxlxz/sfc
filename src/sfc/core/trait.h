@@ -4,8 +4,24 @@
 
 namespace sfc::trait {
 
+template <auto X>
+struct Const {
+  static constexpr auto VALUE = X;
+};
+
+#if defined(__clang__) || defined(__GNUC__)
 template <class T, class U>
 concept same_ = __is_same(T, U);
+#else
+template <class T, class U>
+struct _IsSame : Const<false> {};
+
+template <class T>
+struct _IsSame<T, T> : const<true> {};
+
+template <class T, class U>
+concept same_ = _IsSame<T, U>::VALUE;
+#endif
 
 template <class T, class... U>
 concept any_ = (... || same_<T, U>);
@@ -39,14 +55,6 @@ concept tv_dtor_ = __is_trivially_destructible(T);
 
 template <class T>
 concept polymorphic_ = __is_polymorphic(T);
-
-template <class T>
-struct _void_t {
-  using Type = void;
-};
-
-template <class T>
-using void_t = typename _void_t<T>::Type;
 
 template <auto... I>
 struct idxs_t {};

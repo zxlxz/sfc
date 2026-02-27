@@ -47,7 +47,7 @@ static void dump_frame(u32 idx, void* ptr) noexcept {
   char fun_buf[256];
 
   const auto info = sys::backtrace::frame_info(ptr);
-  const auto raw_fun = Str::from_cstr(info.func);
+  const auto raw_fun = Str{info.func};
 
   const auto demangle_len = sys::backtrace::cxx_demangle(info.func, fun_buf, sizeof(fun_buf));
   const auto demangle_fun = Str{fun_buf, demangle_len};
@@ -67,10 +67,10 @@ void panic_imp(Location loc, const char* msg, usize len) {
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
   println(Str{msg, len});
-  println(Str{" > "}, Str::from_cstr(loc.file), Str{":"}, line_str);
+  println(Str{" > "}, Str{loc.file}, Str{":"}, line_str);
 
   void* frame_buf[kMaxFrameCnt] = {};
-  const auto frame_cnt = sys::backtrace::trace(frame_buf);
+  const auto frame_cnt = sys::backtrace::trace(frame_buf, kMaxFrameCnt);
   for (auto idx = 0U; idx < frame_cnt; ++idx) {
     dump_frame(idx, frame_buf[idx]);
   }
