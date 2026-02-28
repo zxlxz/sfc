@@ -135,8 +135,8 @@ auto get_suite(Str suite_name) -> Suite& {
     }
   }
 
-  suites.push(Suite{._name = suite_name});
-  return suites.last_mut().unwrap();
+  auto& end = suites.push(Suite{._name = suite_name});
+  return end;
 }
 
 auto regist(Test test) -> bool {

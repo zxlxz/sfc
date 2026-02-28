@@ -30,12 +30,12 @@ struct GlobalAlloc {
   auto realloc_array(this auto& self, T* ptr, usize len, usize new_len, usize used) -> T* {
     if constexpr (trait::tv_copy_<T> || trait::tv_dtor_<T>) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));
-    } else if (used == 0 || new_len <= len) {
+    } else if (used == 0) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));
     } else {
       const auto new_ptr = self.template alloc_array<T>(new_len);
-      ptr::uninit_move(ptr, new_ptr, used);
-      self.dealloc_array(ptr, len);
+      ptr::uninit_copy(ptr, new_ptr, used);
+      ptr::drop_in_place(ptr, len);
       return new_ptr;
     }
   }

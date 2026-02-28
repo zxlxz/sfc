@@ -5,8 +5,6 @@
 
 namespace sfc::ptr {
 
-using nullptr_t = decltype(nullptr);
-
 template <class T>
 struct Unique {
   T* _ptr = nullptr;
@@ -69,7 +67,11 @@ inline auto read(T* src) noexcept -> T {
 
 template <class T>
 inline void write(T* dst, auto&& val) noexcept {
-  new (dst) mem::MaybeUninit<T>{static_cast<decltype(val)&&>(val)};
+  if constexpr (__is_trivially_copyable(T)) {
+    *dst = static_cast<decltype(val)&&>(val);
+  } else {
+    new (dst) mem::MaybeUninit<T>{static_cast<decltype(val)&&>(val)};
+  }
 }
 
 template <class T>
@@ -79,9 +81,11 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
 }
 
 template <class T>
-inline void drop_in_place(T* ptr, usize cnt) noexcept {
-  for (auto end = ptr + cnt; ptr != end; ++ptr) {
-    ptr->~T();
+inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
+  if constexpr (!__is_trivially_destructible(T)) {
+    for (auto end = ptr + cnt; ptr != end; ++ptr) {
+      ptr->~T();
+    }
   }
 }
 
@@ -91,7 +95,7 @@ inline void copy(const T* src, T* dst, usize cnt) noexcept {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
+  if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
@@ -114,9 +118,8 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
+  if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
-    return;
   } else {
     for (auto end = src + cnt; src != end; ++src, ++dst) {
       *dst = *src;
@@ -124,33 +127,18 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   }
 }
 
-template <trait::copy_ T>
-inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
+template <class S, class D>
+inline void uninit_copy(S* src, D* dst, usize cnt) noexcept {
+  static_assert(sizeof(S) == sizeof(D));
   if (cnt == 0) {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
-    __builtin_memcpy(dst, src, sizeof(T) * cnt);
+  if constexpr (__is_trivially_copyable(S)) {
+    __builtin_memcpy(dst, src, sizeof(S) * cnt);
   } else {
-    for (auto idx = 0UL; idx < cnt; ++idx) {
-      ptr::write(dst + idx, src[idx]);
-    }
-  }
-}
-
-template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
-  }
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, sizeof(T) * cnt);
-  } else {
-    for (auto idx = 0UL; idx < cnt; ++idx) {
-      ptr::write(dst + idx, static_cast<T&&>(src[idx]));
-      src[idx].~T();
+    for (auto end = src + cnt; src != end; ++src, ++dst) {
+      ptr::write(dst, static_cast<D&&>(*src));
     }
   }
 }
@@ -162,7 +150,7 @@ inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
   }
 
   const auto dst = src - offset;
-  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
+  if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = 0UL; idx < offset; ++idx) {
@@ -184,7 +172,7 @@ inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
   }
 
   const auto dst = src + offset;
-  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
+  if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = len; idx > len - offset; --idx) {

@@ -37,7 +37,7 @@ SFC_TEST(push) {
   v.push(4);
   v.push(5);
   sfc::expect_eq(v.len(), 6U);
-  sfc::expect_eq(v.last(), Option{5});
+  sfc::expect_eq(v[v.len() - 1], 5);
 }
 
 SFC_TEST(pop) {

@@ -58,14 +58,23 @@ class RawVec {
     return _ptr[idx];
   }
 
-  void realloc([[maybe_unused]] usize used, usize new_cap) noexcept {
-    const auto new_layout = alloc::Layout::array<T>(new_cap);
-    const auto new_ptr = static_cast<T*>(_a.alloc(new_layout));
-    if (_ptr != nullptr && new_ptr != nullptr) {
-      ptr::uninit_move(_ptr, new_ptr, used);
-      _a.dealloc(_ptr, alloc::Layout::array<T>(_cap));
+  void reserve(usize used, usize additional) {
+    if (used + additional <= _cap) {
+      return;
     }
-    _ptr = new_ptr;
+    const auto new_cap = cmp::max(_cap * 2, used + additional);
+    this->realloc(used, new_cap);
+  }
+
+  void reserve_exact(usize used, usize additional) {
+    if (used + additional <= _cap) {
+      return;
+    }
+    this->realloc(used, used + additional);
+  }
+
+  void realloc(usize used, usize new_cap) noexcept {
+    _ptr = _a.realloc_array(_ptr, _cap, new_cap, used);
     _cap = new_cap;
   }
 };
@@ -177,20 +186,20 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  void push(T val) {
+  auto push(T val) -> T& {
     if (_len == _buf.cap()) {
       this->reserve(1);
     }
-    const auto dst = _buf.ptr() + _len;
-    ptr::write(dst, static_cast<T&&>(val));
+    const auto end = _buf.ptr() + _len;
+    ptr::write(end, static_cast<T&&>(val));
     _len += 1;
+    return *end;
   }
 
   auto pop() -> Option<T> {
     if (_len == 0) {
       return {};
     }
-
     _len -= 1;
     return ptr::read(&_buf[_len]);
   }
@@ -199,9 +208,7 @@ class [[nodiscard]] Vec {
     if (_len == 0 || !f(_buf[_len - 1])) {
       return {};
     }
-
-    _len -= 1;
-    return ptr::read(&_buf[_len]);
+    return this->pop();
   }
 
   auto swap_remove(usize idx) noexcept -> T {
@@ -219,25 +226,16 @@ class [[nodiscard]] Vec {
     if (len >= _len) {
       return;
     }
-
     ptr::drop_in_place(_buf.ptr() + len, _len - len);
     _len = len;
   }
 
   void reserve(usize additional) noexcept {
-    if (_len + additional <= _buf.cap()) {
-      return;
-    }
-    const auto new_cap = cmp::max(_buf.cap() * 2, _len + additional);
-    _buf.realloc(_len, new_cap);
+    _buf.reserve(_len, additional);
   }
 
   void reserve_exact(usize additional) noexcept {
-    if (_len + additional <= _buf.cap()) {
-      return;
-    }
-    const auto new_cap = _len + additional;
-    _buf.realloc(_len, new_cap);
+    _buf.reserve_exact(_len, additional);
   }
 
   void shrink_to(usize min_cap) noexcept {
@@ -293,7 +291,6 @@ class [[nodiscard]] Vec {
     if (new_len <= _len) {
       return this->truncate(new_len);
     }
-
     this->extend_with(new_len - _len, value);
   }
 
@@ -301,9 +298,8 @@ class [[nodiscard]] Vec {
     if (other._len == 0) {
       return;
     }
-
     this->reserve(other._len);
-    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
+    ptr::uninit_copy(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
     other._len = 0;
   }
@@ -315,10 +311,10 @@ class [[nodiscard]] Vec {
     iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
   }
 
-  void extend_with(usize cnt, T value) noexcept {
+  void extend_with(usize cnt, const T& value) noexcept {
     this->reserve(cnt);
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      this->push(static_cast<T&&>(value));
+      this->push(value);
     }
   }
 
@@ -356,34 +352,6 @@ class [[nodiscard]] Vec {
 
   auto iter_mut() noexcept -> IterMut {
     return Slice{_buf.ptr(), _len}.iter_mut();
-  }
-
-  auto first() const noexcept -> Option<const T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf[0];
-  }
-
-  auto first_mut() noexcept -> Option<T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf[0];
-  }
-
-  auto last() const noexcept -> Option<const T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf[_len - 1];
-  }
-
-  auto last_mut() noexcept -> Option<T&> {
-    if (_len == 0) {
-      return {};
-    }
-    return _buf[_len - 1];
   }
 
  public:
