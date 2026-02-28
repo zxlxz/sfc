@@ -14,11 +14,15 @@ struct Debug {
   }
 
   static void fmt(const void* val, auto& f) {
-    char buf[8 * sizeof(val)];
-    const auto uval = reinterpret_cast<usize>(val);
-    const auto type = f._spec.type('p');
-    const auto sval = num::Int{uval}.to_str(buf, type);
-    f.pad_num(false, sval);
+    if (val == nullptr) {
+      f.write_str("nullptr");
+    } else {
+      char buf[16];
+      const auto uval = reinterpret_cast<usize>(val);
+      const auto type = f._spec.type('p');
+      const auto sval = num::Int{uval}.to_str(buf, type);
+      f.write_str(sval);
+    }
   }
 
   static void fmt(trait::uint_ auto val, auto& f) {
@@ -61,10 +65,12 @@ struct Debug {
 void Display::fmt(const auto& self, auto& f) {
   if constexpr (requires { self.fmt(f); }) {
     self.fmt(f);
-  } else if constexpr (requires { Str{self}; }) {
-    Str{self}.fmt(f);
   } else if constexpr (requires { Slice{self}; }) {
-    Slice{self}.fmt(f);
+    if constexpr (requires { Str{self}; }) {
+      Str{self}.fmt(f);
+    } else {
+      Slice{self}.fmt(f);
+    }
   } else {
     fmt::Debug::fmt(self, f);
   }

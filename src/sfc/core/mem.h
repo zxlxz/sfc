@@ -4,8 +4,16 @@
 
 namespace sfc::mem {
 
-struct place_t {
-  void* _ptr;
+template <class T>
+union MaybeUninit {
+  T _0;
+
+ public:
+  ~MaybeUninit() noexcept {}
+
+  static void* operator new([[maybe_unused]] usize size, T* p) noexcept {
+    return p;
+  }
 };
 
 template <class T>
@@ -59,11 +67,3 @@ inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
 }
 
 }  // namespace sfc::mem
-
-constexpr void* operator new(sfc::usize, sfc::mem::place_t p) noexcept {
-  return p._ptr;
-}
-
-constexpr void operator delete(void*, sfc::mem::place_t) noexcept {
-  return;
-}

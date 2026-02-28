@@ -8,7 +8,11 @@ namespace sfc::io {
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
     while (!buf.is_empty()) {
-      const auto cnt = _TRY(self.read(buf));
+      const auto read_res = self.read(buf);
+      if (read_res.is_err()) {
+        return ~read_res;
+      }
+      const auto cnt = *read_res;
       if (cnt == 0) {
         return Error::UnexpectedEof;
       }
@@ -26,11 +30,15 @@ struct Read {
       buf.reserve(PROBE_SIZE);
 
       auto spare = buf.spare_capacity_mut();
-      const auto cnt = _TRY(self.read(spare));
-      if (cnt == 0) {
+      const auto read_res = self.read(spare);
+      if (read_res.is_err()) {
+        return ~read_res;
+      }
+      const auto read_cnt = *read_res;
+      if (read_cnt == 0) {
         break;
       }
-      buf.set_len(buf.len() + cnt);
+      buf.set_len(buf.len() + read_cnt);
     }
     return buf.len() - old_len;
   }
@@ -42,14 +50,16 @@ struct Read {
 
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    static_assert(requires { self.write(buf); });
-
     while (!buf.is_empty()) {
-      const auto cnt = _TRY(Result{self.write(buf)});
-      if (cnt == 0) {
+      const auto write_res = self.write(buf);
+      if (write_res.is_err()) {
+        return ~write_res;
+      }
+      const auto write_cnt = *write_res;
+      if (write_cnt == 0) {
         return Error::WriteZero;
       }
-      buf = buf[{cnt, $}];
+      buf = buf[{write_cnt, $}];
     }
     return {};
   }

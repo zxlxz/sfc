@@ -5,33 +5,40 @@ namespace sfc::reflect {
 
 template <class T>
 consteval Str type_name() {
-#ifdef __INTELLISENSE__
+#if defined(_MSC_VER) && !defined(__clang__)
+  static constexpr char FN[] = __FUNCSIG__;
   static constexpr auto S1 = sizeof("sfc::str::Str sfc::reflect::type_name() [with T =");
   static constexpr auto S2 = sizeof("]");
+  return Str{__FUNCSIG__ + S1, sizeof(__FUNCSIG__) - S1 - S2};
 #else
   static constexpr auto S1 = sizeof("Str sfc::reflect::type_name() [T =");
   static constexpr auto S2 = sizeof("]");
+  return Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
 #endif
-  static constexpr auto SN = sizeof(__PRETTY_FUNCTION__) - S1 - S2;
-  return Str{__PRETTY_FUNCTION__ + S1, SN};
 }
 
 template <auto E>
 consteval Str enum_name() {
+#if defined(_MSC_VER) && !defined(__clang__)
+  static constexpr auto S1 = sizeof("sfc::str::Str sfc::reflect::enum_name() [with E =");
+  static constexpr auto S2 = sizeof("]");
+  static constexpr auto FN = __FUNCSIG__ + S1;
+  static constexpr auto SN = sizeof(__FUNCSIG__) - S1 - S2;
+#else
   static constexpr auto S1 = sizeof("Str sfc::reflect::enum_name() [E =");
   static constexpr auto S2 = sizeof("]");
+  static constexpr auto FN = __PRETTY_FUNCTION__ + S1;
   static constexpr auto SN = sizeof(__PRETTY_FUNCTION__) - S1 - S2;
-
-  static constexpr auto p = __PRETTY_FUNCTION__ + S1;
+#endif
   for (auto i = SN; i != 0; --i) {
-    if (p[i - 1] == ')') {
+    if (FN[i - 1] == ')') {
       return {};
     }
-    if (p[i - 1] == ':') {
-      return Str{p + i, SN - i};
+    if (FN[i - 1] == ':') {
+      return Str{FN + i, SN - i};
     }
   }
-  return Str{p, SN};
+  return Str{FN, SN};
 }
 
 template <class E, auto I>
@@ -46,9 +53,7 @@ consteval auto enum_valid() -> bool {
 
 template <class E, u32 I = 0, u32 N = 256>
 consteval auto enum_count() -> u32 {
-  if constexpr (!__is_scoped_enum(E)) {
-    return 0U;
-  } else if constexpr (I + 1 == N) {
+  if constexpr (I + 1 == N) {
     return N;
   } else if constexpr (reflect::enum_valid<E, I + (N - I) / 2>()) {
     return reflect::enum_count<E, I + (N - I) / 2, N>();

@@ -62,7 +62,7 @@ static inline auto frame_info(void* ptr) -> FrameInfo {
       .line = line_info.LineNumber,
       .func = {},
   };
-  ptr::copy_nonoverlapping(sym_info.Name, res.func, sizeof(sym_info._NameBuf));
+  ::memcpy(res.func, sym_info.Name, sizeof(sym_info._NameBuf));
   return res;
 }
 

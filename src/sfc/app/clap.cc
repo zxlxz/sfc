@@ -285,18 +285,18 @@ auto Clap::arg(Str desc, Str help, Str sval) -> Clap& {
   return *this;
 }
 
-auto Clap::get(Str s) const -> Option<Str> {
+auto Clap::get(Str key) const -> Option<Str> {
   for (auto& item : _items.as_slice()) {
-    if (item.match(s)) {
+    if (item.match(key)) {
       return item.value();
     }
   }
   return {};
 }
 
-auto Clap::get_flag(Str s) const -> Option<bool> {
+auto Clap::get_flag(Str key) const -> Option<bool> {
   for (auto& item : _items.as_slice()) {
-    if (item.match(s)) {
+    if (item.match(key)) {
       const auto s = item.value().unwrap_or({});
       const auto b = yes_or_no(s);
       return b;

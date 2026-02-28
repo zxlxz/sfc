@@ -9,6 +9,10 @@ struct IntFmter {
   char* _ptr = _end;  // write backwards
 
  public:
+  auto len() const -> usize {
+    return static_cast<usize>(_end - _ptr);
+  }
+
   auto as_str() const -> Str {
     return Str{_ptr, static_cast<usize>(_end - _ptr)};
   }
@@ -57,7 +61,7 @@ struct IntFmter {
   }
 
   template <u32 RADIX>
-  auto write_bin(auto val, bool upcase = false) noexcept -> usize {
+  auto write_bin(auto val, char x = 'x') noexcept -> usize {
     static constexpr auto UPCASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static constexpr auto LOWCASE = "0123456789abcdefghijklmnopqrstuvwxyz";
     static constexpr auto MASK = RADIX - 1;
@@ -66,7 +70,7 @@ struct IntFmter {
     auto nret = 0U;
 
     // write digits
-    const auto DIGITS = upcase ? UPCASE : LOWCASE;
+    const auto DIGITS = x < 'a' ? UPCASE : LOWCASE;
     auto uval = val > 0 ? val : 0 - val;
     if (uval == 0) {
       nret += this->push('0');
@@ -86,17 +90,18 @@ struct IntFmter {
     return nret;
   }
 
-  auto write_ptr(usize val, bool upcase = false) noexcept -> usize {
+  auto write_ptr(usize val, char x = 'x') noexcept -> usize {
     static const auto MIN_LEN = 12L;
 
-    auto nret = this->write_bin<16>(val, upcase);
-
-    // pad '0', to at least MIN_LEN characters
-    for (; nret < MIN_LEN; ++nret) {
-      nret += this->push('0');
+    this->write_bin<16>(val, x);
+    while (this->len() < MIN_LEN) {
+      this->push('0');
     }
 
-    return nret;
+    this->push(x);
+    this->push('0');
+
+    return this->len();
   }
 };
 
@@ -224,10 +229,10 @@ auto Int<T>::to_str(slice::Slice<char> buf, char type) const noexcept -> str::St
     case 'b': imp.write_bin<2>(_val + 0); break;
     case 'O': imp.write_bin<8>(_val + 0); break;
     case 'o': imp.write_bin<8>(_val + 0); break;
-    case 'X': imp.write_bin<16>(_val + 0, true); break;
-    case 'x': imp.write_bin<16>(_val + 0, false); break;
-    case 'P': imp.write_ptr(_val + 0, true); break;
-    case 'p': imp.write_ptr(_val + 0, false); break;
+    case 'X': imp.write_bin<16>(_val + 0, 'X'); break;
+    case 'x': imp.write_bin<16>(_val + 0, 'x'); break;
+    case 'P': imp.write_ptr(_val + 0, 'X'); break;
+    case 'p': imp.write_ptr(_val + 0, 'x'); break;
   }
   return imp.as_str();
 }

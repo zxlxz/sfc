@@ -5,7 +5,7 @@
 namespace sfc::trait {
 
 template <auto X>
-struct Const {
+struct ConstVal {
   static constexpr auto VALUE = X;
 };
 
@@ -14,10 +14,10 @@ template <class T, class U>
 concept same_ = __is_same(T, U);
 #else
 template <class T, class U>
-struct _IsSame : Const<false> {};
+struct _IsSame : ConstVal<false> {};
 
 template <class T>
-struct _IsSame<T, T> : const<true> {};
+struct _IsSame<T, T> : ConstVal<true> {};
 
 template <class T, class U>
 concept same_ = _IsSame<T, U>::VALUE;
@@ -59,17 +59,36 @@ concept polymorphic_ = __is_polymorphic(T);
 template <auto... I>
 struct idxs_t {};
 
-#if __has_builtin(__make_integer_seq)
+#ifdef __clang__
+template <u32 I, class... T>
+using element_t = T...[I];
+#else
+template <u32 I, class... T>
+struct _Element;
+
+template <class T, class... U>
+struct _Element<0, T, U...> {
+  using Type = T;
+};
+
+template <u32 I, class T, class... U>
+struct _Element<I, T, U...> : _Element<I - 1, U...> {};
+
+template<u32 I, class ...T>
+using element_t = typename _Element<I, T...>::Type;
+#endif
+
+#ifdef __GNUC__
+template <auto N>
+using idxs_seq_t = idxs_t<__integer_pack(N)...>;
+#else
 template <class, auto... I>
-struct _int_seq_helper {
+struct _IntSeq {
   using Type = idxs_t<I...>;
 };
 
 template <auto N>
-using idxs_seq_t = typename __make_integer_seq<_int_seq_helper, decltype(N), N>::Type;
-#else
-template <auto N>
-using idxs_seq_t = idxs_t<__integer_pack(N)...>;
+using idxs_seq_t = typename __make_integer_seq<_IntSeq, decltype(N), N>::Type;
 #endif
 
 }  // namespace sfc::trait

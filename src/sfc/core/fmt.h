@@ -7,13 +7,13 @@ namespace sfc::fmt {
 
 template <usize N>
 struct FixedBuf {
-  u32 _len = 0;
+  usize _len = 0;
   char _buf[N];
 
  public:
   void write_str(Str s) noexcept {
     if (_len + s._len < N) {
-      __builtin_memcpy(_buf + _len, s._ptr, s._len);
+      ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
       _len += s._len;
     }
   }
@@ -180,13 +180,6 @@ struct Fmter {
   }
 
  private:
-  static constexpr auto INDENT_SIZE = 4U;
-  static constexpr auto MAX_DEPTH = 20U;
-  static constexpr auto PRETTY_STR =
-      "\n"
-      "                                                            "
-      "                                                            ";
-
   void node_begin(Str s) noexcept {
     this->write_str(s);
     _depth += 1;
@@ -206,7 +199,9 @@ struct Fmter {
       this->write_str(pretty ? Str{","} : Str{", "});
     }
     if (pretty) {
-      this->write_str({PRETTY_STR, 1 + INDENT_SIZE * _depth});
+      for (auto i = 0U; i < _depth; ++i) {
+        this->write_str("    ");
+      }
     }
   }
 };
@@ -226,7 +221,6 @@ struct Fmter<W>::DebugTuple {
   }
 
   DebugTuple(const DebugTuple&) = delete;
-  void operator=(const DebugTuple&) = delete;
 
   auto entry(const auto& value) -> DebugTuple& {
     _fmt.node_item(_cnt++);
@@ -254,12 +248,10 @@ struct Fmter<W>::DebugList {
   }
 
   DebugList(const DebugList&) = delete;
-  void operator=(const DebugList&) = delete;
 
-  auto entry(const auto& value) -> DebugList& {
+  void entry(const auto& value) {
     _fmt.node_item(_cnt++);
     Display::fmt(value, _fmt);
-    return *this;
   }
 
   void entries(auto&& iter) {
@@ -282,12 +274,10 @@ struct Fmter<W>::DebugSet {
   }
 
   DebugSet(const DebugSet&) = delete;
-  void operator=(const DebugSet&) = delete;
 
-  auto entry(const auto& value) -> DebugSet& {
+  void entry(const auto& value) {
     _fmt.node_item(_cnt++);
     Display::fmt(value, _fmt);
-    return *this;
   }
 
   void entries(auto&& iter) {
@@ -310,15 +300,13 @@ struct Fmter<W>::DebugMap {
   }
 
   DebugMap(const DebugMap&) = delete;
-  void operator=(const DebugMap&) = delete;
 
-  auto entry(Str key, const auto& value) -> DebugMap& {
+  void entry(Str key, const auto& value) {
     _fmt.node_item(_cnt++);
     _fmt.write_str('"');
     _fmt.write_str(key);
     _fmt.write_str("\": ");
     Display::fmt(value, _fmt);
-    return *this;
   }
 
   void entries(auto&& iter) {
@@ -344,14 +332,12 @@ struct Fmter<W>::DebugStruct {
   }
 
   DebugStruct(const DebugStruct&) = delete;
-  void operator=(const DebugStruct&) = delete;
 
-  auto field(Str key, const auto& value) -> DebugStruct& {
+  void field(Str key, const auto& value) {
     _fmt.node_item(_cnt++);
     _fmt.write_str(key);
     _fmt.write_str(": ");
     Display::fmt(value, _fmt);
-    return *this;
   }
 
   void fields(auto&& iter) {

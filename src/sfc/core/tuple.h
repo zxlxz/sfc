@@ -34,7 +34,7 @@ struct Tuple {
   ~Tuple() = default;
 
   template <usize I>
-  using element_t = T...[I];
+  using element_t = trait::element_t<I, T...>;
 
   template <usize I>
   using entry_t = Entry<I, element_t<I>>;

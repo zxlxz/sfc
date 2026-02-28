@@ -6,6 +6,12 @@
 #pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
 #endif
 
+#ifdef __APPLE__
+#define SFC_STD std::inline __1
+#else
+#define SFC_STD std
+#endif
+
 namespace sfc {
 
 using i8 = signed char;
@@ -52,9 +58,3 @@ class Result;
 }
 
 }  // namespace sfc
-
-#ifdef __APPLE__
-#define SFC_STD std::inline __1
-#else
-#define SFC_STD std
-#endif

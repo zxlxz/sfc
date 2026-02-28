@@ -4,6 +4,8 @@
 
 namespace sfc::fs {
 
+class PathBuf;
+
 struct Path {
   Str _inn = {};
 
@@ -17,7 +19,7 @@ struct Path {
   auto extension() const noexcept -> Str;
   auto parent() const noexcept -> Path;
 
-  auto join(Str path) const noexcept -> class PathBuf;
+  auto join(Str path) const noexcept -> PathBuf;
 
  public:
   auto exists() const noexcept -> bool;

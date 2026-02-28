@@ -27,7 +27,7 @@ struct Str {
 
   constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
 
-  constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     const auto p = reinterpret_cast<const char*>(s._ptr);
     return {p, s._len};
   }

@@ -69,36 +69,19 @@ inline auto read(T* src) noexcept -> T {
 
 template <class T>
 inline void write(T* dst, auto&& val) noexcept {
-  new (mem::place_t{dst}) T{static_cast<decltype(val)&&>(val)};
-}
-
-template <trait::tv_copy_ T>
-inline auto read_unaligned(const void* src) noexcept -> T {
-  auto res = T{};
-  __builtin_memcpy(&res, src, sizeof(T));
-  return res;
-}
-
-template <trait::tv_copy_ T>
-inline void write_unaligned(void* dst, const T& val) noexcept {
-  __builtin_memcpy(dst, &val, sizeof(T));
+  new (dst) mem::MaybeUninit<T>{static_cast<decltype(val)&&>(val)};
 }
 
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memset(dst, val, cnt * sizeof(T));
-  } else {
-    for (auto i = 0UL; i < cnt; ++i) {
-      ptr::write(&dst[i], static_cast<T&&>(val));
-    }
-  }
+  static_assert(__is_trivially_copyable(T));
+  __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
 template <class T>
 inline void drop_in_place(T* ptr, usize cnt) noexcept {
-  for (auto i = 0UL; i < cnt; ++i) {
-    ptr[i].~T();
+  for (auto end = ptr + cnt; ptr != end; ++ptr) {
+    ptr->~T();
   }
 }
 
@@ -108,16 +91,18 @@ inline void copy(const T* src, T* dst, usize cnt) noexcept {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
     __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
-      for (auto idx = 0UL; idx < cnt; ++idx) {
-        dst[idx] = src[idx];
+      for (auto end = src + cnt; src != end; ++src, ++dst) {
+        *dst = *src;
       }
-    } else {
-      for (const auto end = src; cnt > 0; --cnt) {
-        dst[cnt - 1] = src[cnt - 1];
+    } else if (dst > src) {
+      src += cnt - 1;
+      dst += cnt - 1;
+      for (auto end = src - cnt; src != end; --src, --dst) {
+        *dst = *src;
       }
     }
   }
@@ -129,11 +114,12 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
+    return;
   } else {
-    for (auto idx = 0UL; idx < cnt; ++idx) {
-      dst[idx] = src[idx];
+    for (auto end = src + cnt; src != end; ++src, ++dst) {
+      *dst = *src;
     }
   }
 }
@@ -144,11 +130,11 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
     __builtin_memcpy(dst, src, sizeof(T) * cnt);
   } else {
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      ptr::write(dst+idx, static_cast<T&&>(src[idx]));
+      ptr::write(dst + idx, src[idx]);
     }
   }
 }
@@ -176,11 +162,11 @@ inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
   }
 
   const auto dst = src - offset;
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = 0UL; idx < offset; ++idx) {
-      ptr::write(dst+idx, static_cast<T&&>(src[idx]));
+      ptr::write(dst + idx, static_cast<T&&>(src[idx]));
     }
     for (auto idx = offset; idx < len; ++idx) {
       dst[idx] = static_cast<T&&>(src[idx]);
@@ -198,11 +184,11 @@ inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
   }
 
   const auto dst = src + offset;
-  if constexpr (__is_trivially_copyable(T)) {
+  if constexpr (__is_trivially_copyable(T) && _MSC_VER == 0) {
     __builtin_memmove(dst, src, len * sizeof(T));
   } else {
     for (auto idx = len; idx > len - offset; --idx) {
-      ptr::write(dst+idx - 1, static_cast<T&&>(src[idx - 1]));
+      ptr::write(dst + idx - 1, static_cast<T&&>(src[idx - 1]));
     }
     for (auto idx = len - offset; idx > 0; --idx) {
       dst[idx - 1] = static_cast<T&&>(src[idx - 1]);
