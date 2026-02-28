@@ -57,7 +57,12 @@ template <class T>
 concept polymorphic_ = __is_polymorphic(T);
 
 template <auto... I>
-struct idxs_t {};
+struct idxs_t {
+  template <class T>
+  static auto collect(auto&& v) -> T {
+    return T{v[I]...};
+  }
+};
 
 #ifdef __clang__
 template <u32 I, class... T>
@@ -74,7 +79,7 @@ struct _Element<0, T, U...> {
 template <u32 I, class T, class... U>
 struct _Element<I, T, U...> : _Element<I - 1, U...> {};
 
-template<u32 I, class ...T>
+template <u32 I, class... T>
 using element_t = typename _Element<I, T...>::Type;
 #endif
 

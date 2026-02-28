@@ -148,8 +148,3 @@ auto main(int argc, const char* argv[]) -> int {
 }
 
 }  // namespace sfc::test
-
-int main(int argc, const char* argv[]) {
-  sfc::test::main(argc, argv);
-  return 0;
-}
