@@ -83,7 +83,7 @@ template <u32 I, class... T>
 using element_t = typename _Element<I, T...>::Type;
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 template <auto N>
 using idxs_seq_t = idxs_t<__integer_pack(N)...>;
 #else

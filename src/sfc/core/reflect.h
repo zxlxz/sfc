@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/str.h"
+
 namespace sfc::reflect {
 
 template <class T>
@@ -41,8 +42,8 @@ consteval Str enum_name() {
   return Str{FN, SN};
 }
 
-template <class E, auto I>
-consteval auto enum_valid() -> bool {
+template <trait::enum_ E, auto I>
+constexpr auto enum_valid() -> bool {
   if constexpr (requires { static_cast<E>(I); }) {
     if constexpr (requires { reflect::enum_name<static_cast<E>(I)>(); }) {
       return reflect::enum_name<static_cast<E>(I)>()._len != 0;
@@ -51,8 +52,9 @@ consteval auto enum_valid() -> bool {
   return false;
 }
 
-template <class E, u32 I = 0, u32 N = 256>
-consteval auto enum_count() -> u32 {
+template <trait::enum_ E, u32 I = 0, u32 N = 256>
+constexpr auto enum_count() -> u32 {
+  static_assert(__is_scoped_enum(E));
   if constexpr (I + 1 == N) {
     return N;
   } else if constexpr (reflect::enum_valid<E, I + (N - I) / 2>()) {
@@ -64,15 +66,17 @@ consteval auto enum_count() -> u32 {
 
 template <trait::enum_ E>
 constexpr auto to_str(E val) -> Str {
-  static constexpr auto N = reflect::enum_count<E>();
-  static Str names[N] = {};
-  static const auto _init = []<u32... I>(trait::idxs_t<I...>) {
-    ((names[I] = reflect::enum_name<static_cast<E>(I)>()), ...);
-    return true;
-  }(trait::idxs_seq_t<N>());
-
-  const auto s = static_cast<u32>(val) < N ? names[static_cast<u32>(val)] : Str{};
-  return s;
+  if constexpr (__is_scoped_enum(E)) {
+    static constexpr auto N = reflect::enum_count<E>();
+    static const auto& names = []<u32... I>(trait::idxs_t<I...>) {
+      static const Str s[N] = {reflect::enum_name<static_cast<E>(I)>()...};
+      return s;
+    }(trait::idxs_seq_t<N>());
+    if (static_cast<u32>(val) < N) {
+      return names[static_cast<u32>(val)];
+    }
+  }
+  return {};
 }
 
 }  // namespace sfc::reflect

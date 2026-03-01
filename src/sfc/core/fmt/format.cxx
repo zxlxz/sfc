@@ -68,12 +68,9 @@ SFC_TEST(named_enum) {
 enum E2 { X = -1, Y, Z };
 SFC_TEST(unnamed_enum) {
   sfc::expect_eq(reflect::type_name<E2>(), "sfc::fmt::test::E2");
-
-#ifdef __APPLE__
   sfc::expect_eq(format("{}", E2::X), "sfc::fmt::test::E2(-1)");
   sfc::expect_eq(format("{}", E2::Y), "sfc::fmt::test::E2(0)");
   sfc::expect_eq(format("{}", E2::Z), "sfc::fmt::test::E2(1)");
-#endif
 }
 
 }  // namespace sfc::fmt::test

@@ -15,10 +15,6 @@ class CString {
     return _vec.as_ptr();
   }
 
-  auto as_mut_vec() -> Vec<char>& {
-    return _vec;
-  }
-
   auto into_string() && -> String;
 };
 

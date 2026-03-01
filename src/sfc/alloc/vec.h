@@ -149,9 +149,7 @@ class [[nodiscard]] Vec {
   }
 
   void set_len(usize new_len) noexcept {
-    if (new_len <= _buf.cap()) {
-      _len = new_len;
-    }
+    _len = new_len;
   }
 
  public:

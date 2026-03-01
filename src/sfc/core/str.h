@@ -7,15 +7,6 @@
 
 namespace sfc::str {
 
-struct Chars {
-  const char* _ptr;
-  const char* _end;
-
- public:
-  auto next() noexcept -> Option<char32_t>;
-  auto next_back() noexcept -> Option<char32_t>;
-};
-
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -77,9 +68,7 @@ struct Str {
     return Iter{{}, _ptr, _ptr + _len};
   }
 
-  auto chars() const -> Chars {
-    return Chars{_ptr, _ptr + _len};
-  }
+  auto chars() const noexcept -> struct Chars;
 
  public:
   auto find(auto&& pat) const -> Option<usize>;
@@ -165,6 +154,19 @@ struct Str {
     return imp.finish();
   }
 };
+
+struct Chars : iter::Iterator<char32_t> {
+  const char* _ptr;
+  const char* _end;
+
+ public:
+  auto next() noexcept -> Option<char32_t>;
+  auto next_back() noexcept -> Option<char32_t>;
+};
+
+inline auto Str::chars() const noexcept -> struct Chars {
+  return {{}, _ptr, _ptr + _len};
+}
 
 template <class>
 struct Pattern;

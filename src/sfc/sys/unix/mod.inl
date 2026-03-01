@@ -28,15 +28,15 @@
 #include <_time.h>
 #endif
 
-namespace sfc::string {
-class String;
+namespace sfc::ffi {
+class CString;
 }
 
 namespace sfc::sys {
 
-using string::String;
+using ffi::CString;
 
-template <class S = String>
+template <class S = ffi::CString>
 static auto make_string(const char* p) -> S {
   if (p == nullptr) {
     return {};

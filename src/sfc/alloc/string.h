@@ -20,6 +20,12 @@ class [[nodiscard]] String {
     return res;
   }
 
+  static auto from_utf8(Vec<u8> vec) -> String {
+    auto res = String{};
+    res._vec = mem::move(vec);
+    return res;
+  }
+
   auto as_ptr() const noexcept -> const u8* {
     return _vec.as_ptr();
   }
@@ -52,7 +58,6 @@ class [[nodiscard]] String {
     return Str::from_utf8(this->as_slice());
   }
 
- public:
   auto operator[](ops::Range ids) const noexcept -> Str {
     const auto v = _vec[ids];
     return Str::from_utf8(v);

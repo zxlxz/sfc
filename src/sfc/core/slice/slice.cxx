@@ -58,6 +58,7 @@ SFC_TEST(slice) {
     sfc::expect_eq(e.len(), 0U);
     sfc::expect_true(e.is_empty());
   }
+
 }
 
 SFC_TEST(split_at) {

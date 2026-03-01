@@ -6,8 +6,8 @@ namespace sfc::sys::time {
 
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
 
-using tm_t = struct tm;
-using timespec_t = struct timespec;
+using tm_t = struct ::tm;
+using timespec_t = struct ::timespec;
 
 static inline auto instant_now() -> unsigned long {
   auto ts = timespec_t{};
@@ -42,4 +42,4 @@ static inline void make_local(time_t secs, auto& dst) {
   make_datetime(tm, dst);
 }
 
-}  // namespace sfc::sys::.time
+}  // namespace sfc::sys::time

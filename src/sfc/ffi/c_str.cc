@@ -11,10 +11,11 @@ auto CString::from(Str s) -> CString {
 }
 
 auto CString::into_string() && -> String {
-  static_assert(sizeof(CString) == sizeof(String));
-
-  auto res = reinterpret_cast<String&&>(*this);
-  return res;
+  auto vec = reinterpret_cast<Vec<u8>&&>(_vec);
+  if (!vec.is_empty()) {
+    _vec.pop();
+  }
+  return String::from_utf8(mem::move(vec));
 }
 
 }  // namespace sfc::ffi

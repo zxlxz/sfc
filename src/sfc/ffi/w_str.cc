@@ -57,28 +57,48 @@ auto WString::from(Str s) -> WString {
 
   auto chars = s.chars();
 
-  auto res = WString{};
+  auto v = Vec<wchar_t>::with_capacity(s.len());
   while (auto x = chars.next()) {
     const auto ch = *x;
     if (ch <= 0xFFFF) {
-      res._vec.push(static_cast<wchar_t>(ch));
+      v.push(static_cast<wchar_t>(ch));
     } else {
       const auto t = ch - 0x10000;
-      res._vec.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
-      res._vec.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
+      v.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
+      v.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
     }
   }
-  res._vec.push(0);
+  v.push(0);
 
+  return WString::from_vec(mem::move(v));
+}
+
+auto WString::from_vec(Vec<wchar_t> v) -> WString {
+  auto res = WString{};
+  res._vec = mem::move(v);
   return res;
+}
+
+void WString::push(char32_t ch) {
+  if (_vec.len() != 0) {
+    _vec.set_len(_vec.len() - 1);
+  }
+
+  if (ch <= 0xFFFF) {
+    _vec.push(static_cast<wchar_t>(ch));
+  } else {
+    const auto t = ch - 0x10000;
+    _vec.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
+    _vec.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
+  }
 }
 
 auto WString::into_string() && -> String {
   auto chars = WChars{_vec.as_ptr(), _vec.as_ptr() + _vec.len()};
 
   auto res = String::with_capacity(_vec.len());
-  while (auto x = chars.next()) {
-    res.push(*x);
+  while (auto ch = chars.next()) {
+    res.push(*ch);
   }
   return res;
 }
