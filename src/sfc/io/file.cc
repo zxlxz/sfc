@@ -61,6 +61,19 @@ auto File::write(Slice<const u8> buf) noexcept -> Result<usize> {
   return static_cast<usize>(res);
 }
 
+auto File::seek(SeekFrom pos) noexcept -> Result<usize> {
+  if (_raw == sys_imp::INVALID_FD) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto where = static_cast<u32>(pos.whence);
+  const auto res = sys_imp::seek(_raw, pos.offset, where);
+  if (res == -1) {
+    return io::last_os_error();
+  }
+  return static_cast<usize>(res);
+}
+
 auto last_os_error() noexcept -> Error {
   const auto os_err = sys_imp::get_err();
   const auto io_err = sys_imp::map_err<Error>(os_err);

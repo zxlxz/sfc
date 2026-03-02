@@ -10,7 +10,7 @@ using fd_t = void*;
 using fd_t = int;
 #endif
 
-class File : public io::Read, public io::Write {
+class File {
   fd_t _raw;
 
  public:
@@ -26,6 +26,7 @@ class File : public io::Read, public io::Write {
 
   auto read(Slice<u8> buf) noexcept -> Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> Result<usize>;
+  auto seek(SeekFrom pos) noexcept -> Result<usize>;
 };
 
 auto last_os_error() noexcept -> Error;

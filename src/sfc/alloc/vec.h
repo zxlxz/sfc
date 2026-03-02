@@ -81,8 +81,7 @@ class RawVec {
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] Vec {
-  using Buf = RawVec<T, A>;
-  Buf _buf = {};
+  RawVec<T, A> _buf = {};
   usize _len = 0;
 
  public:

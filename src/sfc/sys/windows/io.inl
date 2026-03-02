@@ -93,6 +93,19 @@ static inline auto write(HANDLE fd, const void* buf, SIZE_T buf_size) -> SSIZE_T
   return bytes_write;
 }
 
+static inline auto seek(HANDLE fd, SSIZE_T offset, DWORD whence) -> SSIZE_T {
+  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
+    return -1;
+  }
+
+  const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
+  auto new_offset = LARGE_INTEGER{};
+  if (!::SetFilePointerEx(fd, old_offset, &new_offset, whence)) {
+    return -1;
+  }
+  return new_offset.QuadPart;
+}
+
 static inline auto is_tty(HANDLE fd) -> bool {
   if (fd == INVALID_HANDLE_VALUE) {
     return false;

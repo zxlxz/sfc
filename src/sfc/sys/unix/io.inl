@@ -91,6 +91,16 @@ static inline auto write(int fd, const void* buf, size_t buf_size) -> ssize_t {
   return ::write(fd, buf, buf_size);
 }
 
+static inline auto seek(int fd, off_t offset, int whence) -> off_t {
+  static_assert(SEEK_SET == 0);
+  static_assert(SEEK_CUR == 1);
+  static_assert(SEEK_END == 2);
+  if (fd == -1) {
+    return -1;
+  }
+  return ::lseek(fd, offset, whence);
+}
+
 static inline auto is_tty(int fd) -> bool {
   if (fd == -1) {
     return false;

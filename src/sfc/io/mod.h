@@ -69,4 +69,27 @@ struct Write {
   }
 };
 
+struct SeekFrom {
+  enum class Whence {
+    Set = 0,
+    Cur = 1,
+    End = 2,
+  };
+  i64 offset;
+  Whence whence = Whence::Set;
+
+ public:
+  static auto Start(u64 offset) -> SeekFrom {
+    return SeekFrom{static_cast<i64>(offset), Whence::Set};
+  }
+
+  static auto Current(i64 offset) -> SeekFrom {
+    return SeekFrom{offset, Whence::Cur};
+  }
+
+  static auto End(i64 offset) -> SeekFrom {
+    return SeekFrom{offset, Whence::End};
+  }
+};
+
 }  // namespace sfc::io

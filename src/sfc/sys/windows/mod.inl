@@ -19,8 +19,18 @@ namespace sfc::sys {
 
 using ffi::WString;
 
+template <class F>
+struct VecType;
+
+template <class R, class V>
+struct VecType<R(V)> {
+  using Vec = V;
+};
+
 template <class S = WString>
 static auto build_string(auto&& f, unsigned capacity = 0) -> S {
+  using V = typename VecType<decltype(S::from_vec)>::Vec;
+
   if (capacity == 0) {
     capacity = f(nullptr, 0);
   }
@@ -29,14 +39,11 @@ static auto build_string(auto&& f, unsigned capacity = 0) -> S {
     return {};
   }
 
-  auto res = S{};
-  auto& vec = res.as_mut_vec();
-  vec.reserve(capacity);
-
+  auto vec = V::with_capacity(capacity);
   const auto len = f(vec.as_mut_ptr(), capacity);
-  vec.set_len(len);
+  vec.set_len(len + 1);
 
-  return res;
+  return S::from_vec(static_cast<V&&>(vec));
 }
 
 }  // namespace sfc::sys

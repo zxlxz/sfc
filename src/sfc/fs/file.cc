@@ -21,6 +21,10 @@ auto File::create(Path path) noexcept -> io::Result<File> {
   return opts.open(path);
 }
 
+auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
+  return _inn.seek(pos);
+}
+
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   return _inn.read(buf);
 }

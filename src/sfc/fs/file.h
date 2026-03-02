@@ -12,6 +12,7 @@ class [[nodiscard]] File : public io::Read, public io::Write {
   static auto open(Path path) noexcept-> io::Result<File>;
   static auto create(Path path) noexcept-> io::Result<File>;
 
+  auto seek(io::SeekFrom pos) noexcept -> io::Result<usize>;
   auto read(Slice<u8> buf) noexcept-> io::Result<usize>;
   auto write(Slice<const u8> buf) noexcept-> io::Result<usize>;
 };
