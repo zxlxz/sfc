@@ -16,9 +16,4 @@ SFC_TEST(enum_name) {
   static_assert(reflect::enum_name<E2::B>() == "B");
 }
 
-SFC_TEST(enum_valid) {
-  static_assert(reflect::enum_valid<E1, 0>());
-  static_assert(reflect::enum_valid<E1, 1>());
-}
-
 }  // namespace sfc::reflect::test

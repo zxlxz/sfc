@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/sync/atomic.h"
 
 namespace sfc::rc {
 
@@ -9,7 +9,7 @@ class [[nodiscard]] Rc {
  public:
   struct Inn {
     T _val;
-    int _cnt = 1;
+    sync::Atomic<int> _cnt{1};
   };
   Inn* _ptr = nullptr;
 
@@ -17,7 +17,7 @@ class [[nodiscard]] Rc {
   Rc() noexcept = default;
 
   ~Rc() noexcept {
-    if (_ptr && __atomic_fetch_sub(&_ptr->_cnt, 1, 0) == 1) {
+    if (_ptr && _ptr->_cnt.fetch_sub(1) == 1) {
       delete _ptr;
     }
   }
@@ -61,7 +61,7 @@ class [[nodiscard]] Rc {
   // trait: Clone
   auto clone() const noexcept -> Rc {
     if (_ptr) {
-      __atomic_fetch_add(&_ptr->_cnt, 1, 0);
+      _ptr->_cnt.fetch_add(1);
     }
     auto res = Rc{};
     res._ptr = _ptr;

@@ -17,15 +17,13 @@ struct IntFmter {
     return Str{_ptr, static_cast<usize>(_end - _ptr)};
   }
 
-  auto push(char c) noexcept -> usize {
-    if (_ptr == _buf) {
-      return 0;
+  void push(char c) noexcept {
+    if (_ptr != _buf) {
+      *--_ptr = c;
     }
-    *--_ptr = c;
-    return 1;
   }
 
-  auto write_dec(auto val) noexcept -> usize {
+  void write_dec(auto val) noexcept {
     static const char DIGITS[] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
@@ -33,64 +31,56 @@ struct IntFmter {
         "6061626364656667686970717273747576777879"
         "8081828384858687888990919293949596979899";
 
-    auto nret = 0U;
-
     // write digits
     auto uval = val > 0 ? val : 0 - val;
     for (; uval >= 100; uval /= 100) {
       const auto n = uval % 100 * 2;
-      nret += this->push(DIGITS[n + 1]);
-      nret += this->push(DIGITS[n + 0]);
+      this->push(DIGITS[n + 1]);
+      this->push(DIGITS[n + 0]);
     }
     if (uval >= 10) {
       const auto n = uval % 100 * 2;
-      nret += this->push(DIGITS[n + 1]);
-      nret += this->push(DIGITS[n + 0]);
+      this->push(DIGITS[n + 1]);
+      this->push(DIGITS[n + 0]);
     } else {
-      nret += this->push(static_cast<char>(uval + '0'));
+      this->push(static_cast<char>(uval + '0'));
     }
 
     // write sign
     if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) {
-        nret += this->push('-');
+        this->push('-');
       }
     }
-
-    return nret;
   }
 
   template <u32 RADIX>
-  auto write_bin(auto val, char x = 'x') noexcept -> usize {
+  void write_bin(auto val, char x = 'x') noexcept {
     static constexpr auto UPCASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static constexpr auto LOWCASE = "0123456789abcdefghijklmnopqrstuvwxyz";
     static constexpr auto MASK = RADIX - 1;
     static_assert((RADIX & (RADIX - 1)) == 0, "radix must be power of 2");
 
-    auto nret = 0U;
-
     // write digits
     const auto DIGITS = x < 'a' ? UPCASE : LOWCASE;
     auto uval = val > 0 ? val : 0 - val;
     if (uval == 0) {
-      nret += this->push('0');
+      this->push('0');
     } else {
       for (; uval != 0; uval /= RADIX) {
-        nret += this->push(DIGITS[uval & MASK]);
+        this->push(DIGITS[uval & MASK]);
       }
     }
 
     // write sign
     if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) {
-        nret += this->push('-');
+        this->push('-');
       }
     }
-
-    return nret;
   }
 
-  auto write_ptr(usize val, char x = 'x') noexcept -> usize {
+  void write_ptr(usize val, char x = 'x') noexcept {
     static const auto MIN_LEN = 12L;
 
     this->write_bin<16>(val, x);
@@ -100,8 +90,6 @@ struct IntFmter {
 
     this->push(x);
     this->push('0');
-
-    return this->len();
   }
 };
 

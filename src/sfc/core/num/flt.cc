@@ -1,22 +1,6 @@
 #include "sfc/core/num.h"
 #include "sfc/core/str.h"
 
-#if defined(_MSC_VER) && !defined(__clang__)
-constexpr bool __builtin_isnan(double x) {
-  const auto bits = __builtin_bit_cast(unsigned long long, x);
-  const auto exponent = (bits >> 52) & 0x7FF;
-  const auto mantissa = bits & ((1ULL << 52) - 1);
-  return exponent == 0x7FF && mantissa != 0;
-}
-
-constexpr bool __builtin_isinf(double x) {
-  const auto bits = __builtin_bit_cast(unsigned long long, x);
-  const auto exponent = (bits >> 52) & 0x7FF;
-  const auto mantissa = bits & ((1ULL << 52) - 1);
-  return exponent == 0x7FF && mantissa == 0;
-}
-#endif
-
 namespace sfc::num {
 
 struct FltFix {
