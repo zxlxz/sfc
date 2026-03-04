@@ -5,6 +5,14 @@
 
 namespace sfc::ffi {
 
+struct WChars {
+  const wchar_t* _ptr;
+  const wchar_t* _end;
+
+ public:
+  auto next() noexcept -> Option<char32_t>;
+};
+
 class WString {
   Vec<wchar_t> _vec;
 
@@ -12,11 +20,8 @@ class WString {
   static auto from(Str s) -> WString;
   static auto from_vec(Vec<wchar_t> v) -> WString;
 
-  auto ptr() const -> const wchar_t* {
-    return _vec.as_ptr();
-  }
-
-  void push(char32_t ch);
+  auto ptr() const -> const wchar_t*;
+  auto chars() const -> WChars;
 
   auto into_string() && -> String;
 };

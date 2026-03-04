@@ -17,38 +17,33 @@ static auto wide_codelen(wchar_t h) -> u32 {
   }
 }
 
-struct WChars {
-  const wchar_t* _ptr;
-  const wchar_t* _end;
+auto WChars::next() noexcept -> Option<char32_t> {
+  if (_ptr >= _end) {
+    return {};
+  }
 
-  auto next() -> Option<char32_t> {
-    if (_ptr >= _end) {
-      return {};
+  const auto n = wide_codelen(*_ptr);
+  if (_ptr + n > _end) {
+    _ptr = _end;
+    return 0xFFFD;
+  }
+
+  switch (n) {
+    case 1: {
+      const auto a = *_ptr++;
+      return a;
     }
-
-    const auto n = wide_codelen(*_ptr);
-    if (_ptr + n > _end) {
-      _ptr = _end;
+    case 2: {
+      const auto a = *_ptr++;
+      const auto b = *_ptr++;
+      return 0x10000 + ((a - 0xD800) << 10) + (b - 0xDC00);
+    }
+    default: {
+      _ptr += 1;
       return 0xFFFD;
     }
-
-    switch (n) {
-      case 1: {
-        const auto a = *_ptr++;
-        return a;
-      }
-      case 2: {
-        const auto a = *_ptr++;
-        const auto b = *_ptr++;
-        return 0x10000 + ((a - 0xD800) << 10) + (b - 0xDC00);
-      }
-      default: {
-        _ptr += 1;
-        return 0xFFFD;
-      }
-    }
   }
-};
+}
 
 auto WString::from(Str s) -> WString {
   if (s.is_empty()) {
@@ -79,23 +74,21 @@ auto WString::from_vec(Vec<wchar_t> v) -> WString {
   return res;
 }
 
-void WString::push(char32_t ch) {
-  if (_vec.len() != 0) {
-    _vec.set_len(_vec.len() - 1);
-  }
+auto WString::ptr() const -> const wchar_t* {
+  return _vec.as_ptr();
+}
 
-  if (ch <= 0xFFFF) {
-    _vec.push(static_cast<wchar_t>(ch));
-  } else {
-    const auto t = ch - 0x10000;
-    _vec.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
-    _vec.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
-  }
+auto WString::chars() const -> WChars {
+  const auto v = _vec.as_slice();
+  return WChars{v._ptr, v._ptr + v._len - 1};
 }
 
 auto WString::into_string() && -> String {
-  auto chars = WChars{_vec.as_ptr(), _vec.as_ptr() + _vec.len()};
+  if (_vec.len() <= 1) {
+    return {};
+  }
 
+  auto chars = WChars{_vec.as_ptr(), _vec.as_ptr() + _vec.len() - 1};
   auto res = String::with_capacity(_vec.len());
   while (auto ch = chars.next()) {
     res.push(*ch);

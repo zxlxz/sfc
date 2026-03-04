@@ -10,11 +10,7 @@ class CString {
 
  public:
   static auto from(Str s) -> CString;
-
-  auto ptr() const -> const char* {
-    return _vec.as_ptr();
-  }
-
+  auto ptr() const -> const char*;
   auto into_string() && -> String;
 };
 

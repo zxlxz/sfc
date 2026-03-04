@@ -10,6 +10,10 @@ auto CString::from(Str s) -> CString {
   return res;
 }
 
+auto CString::ptr() const -> const char* {
+  return _vec.as_ptr();
+}
+
 auto CString::into_string() && -> String {
   auto vec = reinterpret_cast<Vec<u8>&&>(_vec);
   if (!vec.is_empty()) {

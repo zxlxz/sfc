@@ -142,7 +142,9 @@ auto Path::is_absolute() const noexcept -> bool {
 
 #ifdef _WIN32
   const auto first_cmpt = Path{Components{_inn}.next().unwrap_or("")};
-  return first_cmpt.is_root();
+  if (first_cmpt.is_root()) {
+    return true;
+  }
 #endif
   return false;
 }
