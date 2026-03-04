@@ -76,7 +76,10 @@ inline void write(T* dst, auto&& val) noexcept {
 
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
-  static_assert(__is_trivially_copyable(T));
+  if (cnt == 0) {
+    return;
+  }
+
   __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
@@ -99,14 +102,12 @@ inline void copy(const T* src, T* dst, usize cnt) noexcept {
     __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
-      for (auto end = src + cnt; src != end; ++src, ++dst) {
-        *dst = *src;
+      for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
+        *pd = *ps;
       }
     } else if (dst > src) {
-      src += cnt - 1;
-      dst += cnt - 1;
-      for (auto end = src - cnt; src != end; --src, --dst) {
-        *dst = *src;
+      for (auto ps = src + cnt - 1, pd = dst + cnt - 1; ps != src - 1; --ps, --pd) {
+        *pd = *ps;
       }
     }
   }
@@ -121,68 +122,71 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    for (auto end = src + cnt; src != end; ++src, ++dst) {
-      *dst = *src;
+    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
+      *pd = *ps;
     }
   }
 }
 
-template <class S, class D>
-inline void uninit_copy(S* src, D* dst, usize cnt) noexcept {
-  static_assert(sizeof(S) == sizeof(D));
+template <class T>
+inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) {
     return;
   }
 
-  if constexpr (__is_trivially_copyable(S)) {
-    __builtin_memcpy(dst, src, sizeof(S) * cnt);
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
-    for (auto end = src + cnt; src != end; ++src, ++dst) {
-      ptr::write(dst, static_cast<D&&>(*src));
+    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
+      new (pd) mem::MaybeUninit<T>{*ps};
     }
   }
 }
 
 template <class T>
-inline void shift_elements_left(T* src, usize len, usize offset) noexcept {
-  if (len == 0 || offset == 0) {
+inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
+  if (cnt == 0) {
     return;
   }
 
-  const auto dst = src - offset;
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, len * sizeof(T));
+    __builtin_memcpy(dst, src, sizeof(T));
   } else {
-    for (auto idx = 0UL; idx < offset; ++idx) {
-      ptr::write(dst + idx, static_cast<T&&>(src[idx]));
-    }
-    for (auto idx = offset; idx < len; ++idx) {
-      dst[idx] = static_cast<T&&>(src[idx]);
-    }
-    for (auto idx = len - offset; idx < len; ++idx) {
-      src[idx].~T();
+    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
+      new (pd) mem::MaybeUninit<T>{static_cast<T&&>(*ps)};
+      ps->~T();
     }
   }
 }
 
 template <class T>
-inline void shift_elements_right(T* src, usize len, usize offset) noexcept {
-  if (len == 0 || offset == 0) {
+inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
+  if (len == 0) {
     return;
   }
 
-  const auto dst = src + offset;
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, len * sizeof(T));
+    __builtin_memmove(ptr - offset, ptr, len * sizeof(T));
   } else {
-    for (auto idx = len; idx > len - offset; --idx) {
-      ptr::write(dst + idx - 1, static_cast<T&&>(src[idx - 1]));
+    for (auto p = ptr; p != ptr + len; ++p) {
+      new (p + offset) mem::MaybeUninit<T>{static_cast<T&&>(*p)};
+      p->~T();
     }
-    for (auto idx = len - offset; idx > 0; --idx) {
-      dst[idx - 1] = static_cast<T&&>(src[idx - 1]);
-    }
-    for (auto idx = offset; idx > 0; --idx) {
-      src[idx].~T();
+  }
+}
+
+template <class T>
+inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
+  if (len == 0) {
+    return;
+  }
+
+  if constexpr (__is_trivially_copyable(T)) {
+    __builtin_memmove(ptr + offset, ptr, len * sizeof(T));
+  } else {
+    for (auto p = ptr + len - 1; p != ptr - 1; --p) {
+      new (p - offset) mem::MaybeUninit<T>{static_cast<T&&>(*p)};
+      p->~T();
     }
   }
 }

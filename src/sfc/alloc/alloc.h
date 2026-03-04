@@ -34,8 +34,7 @@ struct GlobalAlloc {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));
     } else {
       const auto new_ptr = self.template alloc_array<T>(new_len);
-      ptr::uninit_copy(ptr, new_ptr, used);
-      ptr::drop_in_place(ptr, len);
+      ptr::uninit_move(ptr, new_ptr, used);
       return new_ptr;
     }
   }

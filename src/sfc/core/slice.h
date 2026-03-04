@@ -210,7 +210,7 @@ struct Slice {
       return 0uz;
     }
     const auto amt = _len < buf._len ? _len : buf._len;
-    __builtin_memcpy(buf._ptr, _ptr, amt);
+    ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
     _ptr += amt;
     _len -= amt;
     return amt;

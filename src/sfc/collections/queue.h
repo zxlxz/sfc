@@ -137,10 +137,8 @@ class [[nodiscard]] Queue {
     } else {
       auto [s1, s2] = this->as_mut_slices();
       auto new_buf = RawVec<T, A>::with_capacity(new_cap);
-      ptr::uninit_copy(s1._ptr, new_buf.ptr(), s1._len);
-      ptr::uninit_copy(s2._ptr, new_buf.ptr() + s1._len, s2._len);
-      ptr::drop_in_place(s1._ptr, s1._len);
-      ptr::drop_in_place(s2._ptr, s2._len);
+      ptr::uninit_move(s1._ptr, new_buf.ptr(), s1._len);
+      ptr::uninit_move(s2._ptr, new_buf.ptr() + s1._len, s2._len);
       _head = 0;
       _buf = mem::move(new_buf);
     }

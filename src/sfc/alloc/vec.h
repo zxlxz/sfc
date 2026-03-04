@@ -296,9 +296,8 @@ class [[nodiscard]] Vec {
       return;
     }
     this->reserve(other._len);
-    ptr::uninit_copy(other._buf.ptr(), _buf.ptr() + _len, other._len);
+    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
-    other._len = 0;
   }
 
   void extend(auto&& iter) noexcept {
