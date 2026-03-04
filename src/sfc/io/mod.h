@@ -8,11 +8,7 @@ namespace sfc::io {
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
     while (!buf.is_empty()) {
-      const auto read_res = self.read(buf);
-      if (read_res.is_err()) {
-        return ~read_res;
-      }
-      const auto cnt = *read_res;
+      const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
         return Error::UnexpectedEof;
       }
@@ -30,11 +26,7 @@ struct Read {
       buf.reserve(PROBE_SIZE);
 
       auto spare = buf.spare_capacity_mut();
-      const auto read_res = self.read(spare);
-      if (read_res.is_err()) {
-        return ~read_res;
-      }
-      const auto read_cnt = *read_res;
+      const auto read_cnt = _TRY(self.read(spare));
       if (read_cnt == 0) {
         break;
       }
@@ -51,11 +43,7 @@ struct Read {
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
     while (!buf.is_empty()) {
-      const auto write_res = self.write(buf);
-      if (write_res.is_err()) {
-        return ~write_res;
-      }
-      const auto write_cnt = *write_res;
+      const auto write_cnt = _TRY(self.write(buf));
       if (write_cnt == 0) {
         return Error::WriteZero;
       }

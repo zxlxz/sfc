@@ -40,15 +40,9 @@ class Stdout::Inn {
     }
 
     const auto [a, b] = s.split_at(*p + 1);
-    if (auto res = _inn.write(a); res.is_err()) {
-      return ~res;
-    }
-    if (auto res = _inn.flush(); res.is_err()) {
-      return ~res;
-    }
-    if (auto res = _inn.write(b); res.is_err()) {
-      return ~res;
-    }
+    _TRY(_inn.write(a));
+    _TRY(_inn.flush());
+    _TRY(_inn.write(b));
     return s.len();
   }
 };

@@ -84,51 +84,38 @@ class [[nodiscard]] Result {
     return _inn.is_err();
   }
 
-  auto operator->() const noexcept -> const T* {
+  auto operator->() const -> const T* {
+    sfc::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
     return &*_inn;
   }
 
-  auto operator->() noexcept -> T* {
+  auto operator->() -> T* {
+    sfc::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
     return &*_inn;
   }
 
-  auto operator*() const noexcept -> const T& {
-    sfc::expect(_inn.is_ok(), "Result::operator*: not Ok()");
-    return *_inn;
-  }
-
-  auto operator*() noexcept -> T& {
-    sfc::expect(_inn.is_ok(), "Result::operator*: not Ok()");
-    return *_inn;
-  }
-
-  auto operator~() const noexcept -> const E& {
-    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
-    return ~_inn;
-  }
-
-  auto operator~() noexcept -> E& {
-    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
-    return ~_inn;
-  }
-
-  auto ok() && noexcept -> Option<T> {
-    if (_inn.is_err()) {
+  auto ok(this auto self) noexcept -> Option<T> {
+    if (self._inn.is_err()) {
       return {};
     }
-    return Option<T>{static_cast<T&&>(*_inn)};
+    return Option<T>{static_cast<T&&>(*self._inn)};
   }
 
-  auto err() && noexcept -> Option<E> {
-    if (_inn.is_ok()) {
+  auto err(this auto self) noexcept -> Option<E> {
+    if (self._inn.is_ok()) {
       return {};
     }
-    return static_cast<E&&>(~_inn);
+    return Option<E>{static_cast<E&&>(~self._inn)};
   }
 
   auto unwrap() && noexcept -> T {
     sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
     return static_cast<T&&>(*_inn);
+  }
+
+  auto unwrap_err() && noexcept -> E {
+    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
+    return static_cast<E&&>(~_inn);
   }
 
   auto unwrap_or(T def) && noexcept -> T {
@@ -138,8 +125,11 @@ class [[nodiscard]] Result {
     return static_cast<T&&>(def);
   }
 
-  auto unwrap_err() && noexcept -> E {
-    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
+  auto unwrap_unchecked() noexcept -> T {
+    return static_cast<T&&>(*_inn);
+  }
+
+  auto unwrap_err_unchecked() noexcept -> E {
     return static_cast<E&&>(~_inn);
   }
 
@@ -218,6 +208,7 @@ class [[nodiscard]] Result {
 
 template <class E>
 class [[nodiscard]] Result<void, E> {
+  using T = void;
   Inner<void, E> _inn;
 
  public:
@@ -232,20 +223,6 @@ class [[nodiscard]] Result<void, E> {
     return _inn.is_err();
   }
 
-  void operator*() const noexcept {
-    sfc::expect(_inn.is_ok(), "Result::operator~: not Ok()");
-  }
-
-  auto operator~() const noexcept -> const E& {
-    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
-    return ~_inn;
-  }
-
-  auto operator~() noexcept -> E& {
-    sfc::expect(_inn.is_err(), "Result::operator~: not Err()");
-    return ~_inn;
-  }
-
   auto err() && noexcept -> Option<E> {
     if (_inn.is_ok()) {
       return {};
@@ -253,12 +230,21 @@ class [[nodiscard]] Result<void, E> {
     return static_cast<E&&>(~_inn);
   }
 
-  auto unwrap() const noexcept -> void {
+  auto unwrap() const noexcept -> T {
     sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
+    return;
   }
 
   auto unwrap_err() && noexcept -> E {
     sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
+    return static_cast<E&&>(~_inn);
+  }
+
+  auto unwrap_unchecked() noexcept -> T {
+    return;
+  }
+
+  auto unwrap_err_unchecked() noexcept -> E {
     return static_cast<E&&>(~_inn);
   }
 
@@ -303,12 +289,12 @@ using result::Result;
 #ifdef __INTELLISENSE__
 #define _TRY(expr) expr.unwrap()
 #else
-#define _TRY(expr)                                \
-  ({                                              \
-    auto _res = (expr);                           \
-    if (_res.is_err()) {                          \
-      return ~_res;                               \
-    }                                             \
-    static_cast<decltype(_res)&&>(_res).unwrap(); \
+#define _TRY(expr)                        \
+  ({                                      \
+    auto _res = (expr);                   \
+    if (_res.is_err()) {                  \
+      return _res.unwrap_err_unchecked(); \
+    }                                     \
+    _res.unwrap_unchecked();              \
   })
 #endif

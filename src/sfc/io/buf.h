@@ -221,12 +221,10 @@ class BufWriter : Write {
     }
     // write cold
     if (buf.len() > this->spare_capacity()) {
-      if (auto res = this->flush(); res.is_err()) {
-        return ~res;
-      }
+      _TRY(this->flush());
     }
     if (buf.len() >= _buf.capacity()) {
-      return _inn.write(buf);
+      _TRY(_inn.write(buf));
     }
     _buf.extend_from_slice(buf);
     return buf.len();
@@ -234,17 +232,10 @@ class BufWriter : Write {
 
   // triat:: io::Read
   auto flush() -> Result<> {
-    const auto buf = _buf.as_slice();
-    auto nwrite = usize{0UL};
-    while (nwrite < buf.len()) {
-      const auto res = _inn.write(buf[{nwrite, $}]);
-      if (res.is_err()) {
-        _buf.drain({0, nwrite});
-        return ~res;
-      }
-      nwrite += *res;
+    while (!_buf.is_empty()) {
+      const auto nwrite = _TRY(_inn.write(_buf.as_slice()));
+      _buf.drain({0, nwrite});
     }
-
     _buf.clear();
     return {};
   }

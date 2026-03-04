@@ -47,27 +47,15 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
 }
 
 auto read(Path path) noexcept -> io::Result<Vec<u8>> {
-  auto file = File::open(path);
-  if (file.is_err()) {
-    return ~file;
-  }
-
+  auto file = _TRY(File::open(path));
   auto buf = Vec<u8>{};
-  if (auto read_res = file->read_to_end(buf); read_res.is_err()) {
-    return ~read_res;
-  }
+  _TRY(file.read_to_end(buf));
   return buf;
 }
 
 auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
-  auto file = File::create(path);
-  if (file.is_err()) {
-    return ~file;
-  }
-
-  if (auto write_res = file->write_all(buf); write_res.is_err()) {
-    return ~write_res;
-  }
+  auto file = _TRY(File::create(path));
+  _TRY(file.write_all(buf));
   return {};
 }
 

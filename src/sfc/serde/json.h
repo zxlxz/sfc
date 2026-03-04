@@ -185,24 +185,17 @@ struct Deserializer {
   }
 
   auto deserialize_char() noexcept -> Result<char> {
-    const auto s = this->extract_str();
-    if (s.is_err()) {
-      return ~s;
-    }
-    const auto str = *s;
-    if (str.len() != 1) {
+    const auto s = _TRY(this->extract_str());
+    if (s.len() != 1) {
       return Error::InvalidString;
     }
-    return str[0];
+    return s[0];
   }
 
   template <trait::int_ T>
   auto deserialize_int() noexcept -> Result<T> {
-    const auto num_str = this->extract_num();
-    if (num_str.is_err()) {
-      return ~num_str;
-    }
-    const auto num_val = num_str->template parse<T>();
+    const auto num_str = _TRY(this->extract_num());
+    const auto num_val = num_str.template parse<T>();
     if (!num_val) {
       return Error::InvalidNumber;
     }
@@ -211,11 +204,8 @@ struct Deserializer {
 
   template <trait::flt_ T>
   auto deserialize_flt() -> Result<T> {
-    const auto num_str = this->extract_num();
-    if (num_str.is_err()) {
-      return ~num_str;
-    }
-    const auto num_val = num_str->template parse<T>();
+    const auto num_str = _TRY(this->extract_num());
+    const auto num_val = num_str.template parse<T>();
     if (!num_val) {
       return Error::InvalidNumber;
     }
@@ -303,9 +293,7 @@ struct Deserializer {
       return Error::ExpectedArrayBegin;
     }
     auto imp = DesArray{*this};
-    if (auto x = visit(imp); x.is_err()) {
-      return ~x;
-    }
+    _TRY(visit(imp));
     return this->extract_tok(Token::ArrayEnd);
   }
 
@@ -314,9 +302,7 @@ struct Deserializer {
       return Error::ExpectedObjectBegin;
     }
     auto imp = DesObject{*this};
-    if (auto x = visit(imp); x.is_err()) {
-      return ~x;
-    }
+    _TRY(visit(imp));
     return this->extract_tok(Token::ObjectEnd);
   }
 
@@ -325,9 +311,7 @@ struct Deserializer {
       return Error::ExpectedObjectBegin;
     }
     auto imp = DesObject{*this};
-    if (auto x = visit(imp); x.is_err()) {
-      return ~x;
-    }
+    _TRY(visit(imp));
     return this->extract_tok(Token::ObjectEnd);
   }
 
