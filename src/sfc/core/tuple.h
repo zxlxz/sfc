@@ -34,7 +34,7 @@ struct Tuple {
   ~Tuple() = default;
 
   template <usize I>
-  using element_t = trait::element_t<I, T...>;
+  using element_t = T...[I];
 
   template <usize I>
   using entry_t = Entry<I, element_t<I>>;
@@ -89,7 +89,7 @@ namespace sfc {
 using tuple::Tuple;
 }  // namespace sfc
 
-namespace SFC_STD {
+namespace std {
 
 template <class>
 struct tuple_size;
@@ -117,4 +117,4 @@ struct tuple_element<I, const sfc::Tuple<T...>> {
   using type = const sfc::Tuple<T...>::template element_t<I>;
 };
 
-}  // namespace SFC_STD
+}  // namespace std

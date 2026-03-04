@@ -4,24 +4,8 @@
 
 namespace sfc::trait {
 
-template <auto X>
-struct ConstVal {
-  static constexpr auto VALUE = X;
-};
-
-#if defined(__clang__) || defined(__GNUC__)
 template <class T, class U>
 concept same_ = __is_same(T, U);
-#else
-template <class T, class U>
-struct _IsSame : ConstVal<false> {};
-
-template <class T>
-struct _IsSame<T, T> : ConstVal<true> {};
-
-template <class T, class U>
-concept same_ = _IsSame<T, U>::VALUE;
-#endif
 
 template <class T, class... U>
 concept any_ = (... || same_<T, U>);
@@ -63,25 +47,6 @@ struct idxs_t {
     return T{v[I]...};
   }
 };
-
-#ifdef __clang__
-template <u32 I, class... T>
-using element_t = T...[I];
-#else
-template <u32 I, class... T>
-struct _Element;
-
-template <class T, class... U>
-struct _Element<0, T, U...> {
-  using Type = T;
-};
-
-template <u32 I, class T, class... U>
-struct _Element<I, T, U...> : _Element<I - 1, U...> {};
-
-template <u32 I, class... T>
-using element_t = typename _Element<I, T...>::Type;
-#endif
 
 #if defined(__GNUC__) && !defined(__clang__)
 template <auto N>

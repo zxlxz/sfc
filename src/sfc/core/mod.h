@@ -2,14 +2,11 @@
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wc++26-extensions"
-#pragma clang diagnostic ignored "-Wunknown-attributes"
-#pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
+#pragma clang diagnostic ignored "-Wgnu-statement-expression"
 #endif
 
-#ifdef __APPLE__
-#define SFC_STD std::inline __1
-#else
-#define SFC_STD std
+#if defined __clang__ && defined(_WIN32)
+#define no_unique_address msvc::no_unique_address
 #endif
 
 namespace sfc {
@@ -22,7 +19,7 @@ using u8 = unsigned char;
 using u16 = unsigned short;
 using u32 = unsigned int;
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 using i64 = long long;
 using u64 = unsigned long long;
 #else
