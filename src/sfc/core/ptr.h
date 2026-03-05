@@ -85,7 +85,7 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
 
 template <class T>
 inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
-  if constexpr (!__is_trivially_destructible(T)) {
+  if constexpr (!trait::tv_dtor_<T>) {
     for (auto end = ptr + cnt; ptr != end; ++ptr) {
       ptr->~T();
     }

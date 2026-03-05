@@ -23,6 +23,14 @@ struct Str {
     return {p, s._len};
   }
 
+  constexpr auto size() const noexcept -> usize {
+    return _len;
+  }
+
+  constexpr auto data() const noexcept -> const char* {
+    return _ptr;
+  }
+
   constexpr auto len() const noexcept -> usize {
     return _len;
   }

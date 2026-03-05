@@ -13,7 +13,7 @@ struct Entry {
 template <class I, class... T>
 struct Inner;
 
-template <usize... I, class... T>
+template <auto... I, class... T>
 struct Inner<trait::idxs_t<I...>, T...> : Entry<I, T>... {
   void map(auto&& f) const {
     (void)(f(Entry<I, T>::_0), ...);
@@ -26,8 +26,7 @@ struct Inner<trait::idxs_t<I...>, T...> : Entry<I, T>... {
 
 template <class... T>
 struct Tuple {
-  using Inn = Inner<trait::idxs_seq_t<sizeof...(T)>, T...>;
-  Inn _inn;
+  Inner<trait::idxs_seq_t<sizeof...(T)>, T...> _inn;
 
  public:
   Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
@@ -40,17 +39,17 @@ struct Tuple {
   using entry_t = Entry<I, element_t<I>>;
 
   template <usize I>
-  auto get() const -> const element_t<I>& {
+  auto get() const {
     return _inn.entry_t<I>::_0;
   }
 
   template <usize I>
-  auto get() -> element_t<I>& {
+  auto get() {
     return _inn.entry_t<I>::_0;
   }
 
   template <usize I>
-  auto get_mut() -> element_t<I>& {
+  auto get_mut() {
     return _inn.entry_t<I>::_0;
   }
 

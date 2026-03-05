@@ -6,53 +6,53 @@ namespace sfc::reflect {
 
 template <class T>
 consteval Str type_name() {
-  static constexpr auto S1 = sizeof("Str sfc::reflect::type_name() [T =");
-  static constexpr auto S2 = sizeof("]");
-  return Str{__PRETTY_FUNCTION__ + S1, sizeof(__PRETTY_FUNCTION__) - S1 - S2};
+  static constexpr auto FN = __PRETTY_FUNCTION__;
+  static constexpr auto SN = sizeof(__PRETTY_FUNCTION__) - 2;
+  for (auto i = 0UL; i < SN - 2; ++i) {
+    if (FN[i] == '=') {
+      return Str{FN + i + 2, SN - i - 2};
+    }
+  }
+  return Str{__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__)};
 }
 
 template <auto E>
 consteval Str enum_name() {
-  static constexpr auto S1 = sizeof("Str sfc::reflect::enum_name() [E =");
-  static constexpr auto S2 = sizeof("]");
-  static constexpr auto FN = __PRETTY_FUNCTION__ + S1;
-  static constexpr auto SN = sizeof(__PRETTY_FUNCTION__) - S1 - S2;
-  for (auto i = SN; i != 0; --i) {
-    if (FN[i - 1] == ')') {
+  static constexpr auto FN = __PRETTY_FUNCTION__;
+  static constexpr auto SN = sizeof(__PRETTY_FUNCTION__) - 2;
+  for (auto i = SN - 2; i != 0; --i) {
+    if (FN[i] == ':' || FN[i] == ' ') {
+      return Str{FN + i + 1, SN - i - 1};
+    }
+    if (FN[i] == ')') {
       return {};
     }
-    if (FN[i - 1] == ':') {
-      return Str{FN + i, SN - i};
-    }
   }
-  return Str{FN, SN};
+  return Str{__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__)};
 }
 
-template <trait::enum_ E, u32 I = 0, u32 N = 256>
+template <trait::enum_ E, u32 I = 0, u32 N = 64>
 consteval auto enum_count() -> u32 {
   if constexpr (I + 1 == N) {
     return N;
-  } else if (!__is_scoped_enum(E)) {
-    return 0;
-  } else if constexpr (requires { reflect::enum_name<static_cast<E>(I)>(); }) {
+  } else if constexpr (__is_scoped_enum(E) && requires { reflect::enum_name<static_cast<E>(I)>(); }) {
     static constexpr auto name = reflect::enum_name<static_cast<E>(I)>();
-    if constexpr (name._len != 0) {
-      return reflect::enum_count<E, I + (N - I) / 2, N>();
-    } else {
+    if constexpr (name._len == 0) {
       return reflect::enum_count<E, I, I + (N - I) / 2>();
+    } else {
+      return reflect::enum_count<E, I + (N - I) / 2, N>();
     }
   } else {
     return 0;
   }
 }
 
-template <trait::enum_ E>
+template <trait::enum_ E, u32 N = enum_count<E>()>
 consteval auto enum_names() -> Slice<const Str> {
-  static constexpr auto N = reflect::enum_count<E>();
-  if constexpr (N == 0) {
+  if constexpr (N == 0 || !__is_scoped_enum(E)) {
     return {};
   } else {
-    static constexpr auto names = []<u32... I>(trait::idxs_t<I...>) {
+    static constexpr auto names = []<auto... I>(trait::idxs_t<I...>) {
       static constexpr Str s[N] = {reflect::enum_name<static_cast<E>(I)>()...};
       return Slice{s};
     }(trait::idxs_seq_t<N>());
