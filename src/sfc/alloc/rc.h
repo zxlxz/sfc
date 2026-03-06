@@ -71,33 +71,6 @@ class [[nodiscard]] Rc {
 
 }  // namespace sfc::rc
 
-namespace sfc::option {
-template <class T>
-class Inner<rc::Rc<T>> {
-  rc::Rc<T> _val{};
-
- public:
-  Inner(none_t) noexcept {}
-  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
-  ~Inner() noexcept = default;
-
-  Inner(Inner&&) noexcept = default;
-  Inner& operator=(Inner&&) noexcept = default;
-
-  explicit operator bool() const noexcept {
-    return _val._ptr != nullptr;
-  }
-
-  auto operator*() const noexcept -> const rc::Rc<T>& {
-    return _val;
-  }
-
-  auto operator*() noexcept -> rc::Rc<T>& {
-    return _val;
-  }
-};
-}  // namespace sfc::option
-
 namespace sfc {
 using rc::Rc;
 }  // namespace sfc

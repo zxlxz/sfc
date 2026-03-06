@@ -194,38 +194,6 @@ auto box(B&& b) -> Box<B> {
 
 }  // namespace sfc::boxed
 
-namespace sfc::option {
-
-template <class... T>
-class Inner<boxed::Box<T...>> {
-  using Box = boxed::Box<T...>;
-  Box _val{};
-
- public:
-  Inner(none_t) noexcept {}
-  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
-
-  Inner(Inner&&) noexcept = default;
-  Inner& operator=(Inner&&) noexcept = default;
-
-  explicit operator bool() const noexcept {
-    if constexpr (requires { _val._ptr; }) {
-      return _val._ptr != nullptr;
-    } else {
-      return _val._data != nullptr;
-    }
-  }
-
-  auto operator*() const noexcept -> const Box& {
-    return _val;
-  }
-
-  auto operator*() noexcept -> Box& {
-    return _val;
-  }
-};
-}  // namespace sfc::option
-
 namespace sfc {
 using boxed::Box;
 using boxed::box;

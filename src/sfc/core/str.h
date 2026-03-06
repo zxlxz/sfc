@@ -348,29 +348,6 @@ auto Str::trim_matches(auto&& pat) const -> Str {
 }  // namespace sfc::str
 
 namespace sfc::option {
-
-template <>
-struct Inner<str::Str> {
-  str::Str _val;
-
- public:
-  Inner(none_t) noexcept : _val{} {}
-
-  Inner(some_t, const auto&... args) noexcept : _val{args...} {}
-
-  explicit operator bool() const noexcept {
-    return _val._ptr != nullptr;
-  }
-
-  auto operator*() const noexcept -> const str::Str& {
-    return _val;
-  }
-
-  auto operator*() noexcept -> str::Str& {
-    return _val;
-  }
-};
-
 template <usize N>
 Option(const char (&)[N]) -> Option<str::Str>;
 }  // namespace sfc::option

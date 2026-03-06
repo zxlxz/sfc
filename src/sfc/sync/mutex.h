@@ -59,23 +59,3 @@ class ReentrantLock {
 };
 
 }  // namespace sfc::sync
-
-namespace sfc::option {
-
-template <>
-struct Inner<sync::Mutex::Guard> {
-  sync::Mutex::Guard _val;
-
- public:
-  Inner(none_t) noexcept : _val{nullptr} {}
-  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
-  ~Inner() noexcept = default;
-
-  Inner(const Inner&) = delete;
-  Inner& operator=(const Inner&) = delete;
-
-  explicit operator bool() const noexcept {
-    return _val._inn != nullptr;
-  }
-};
-}  // namespace sfc::option

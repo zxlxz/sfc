@@ -51,6 +51,10 @@ struct Slice {
     return {_ptr, _len};
   }
 
+  explicit operator bool() const noexcept {
+    return _ptr != nullptr;
+  }
+
   auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
     return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
@@ -315,31 +319,6 @@ struct Chunks : iter::Iterator<Slice<T>> {
 };
 
 }  // namespace sfc::slice
-
-namespace sfc::option {
-
-template <class T>
-struct Inner<slice::Slice<T>> {
-  slice::Slice<T> _val;
-
- public:
-  Inner(none_t) noexcept : _val{} {}
-  Inner(some_t, auto&&... args) noexcept : _val{static_cast<decltype(args)&&>(args)...} {}
-
-  explicit operator bool() const noexcept {
-    return _val._ptr != nullptr;
-  }
-
-  auto operator*() const noexcept -> const slice::Slice<T>& {
-    return _val;
-  }
-
-  auto operator*() noexcept -> slice::Slice<T>& {
-    return _val;
-  }
-};
-
-}  // namespace sfc::option
 
 namespace sfc {
 using slice::Slice;
