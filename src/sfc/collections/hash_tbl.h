@@ -4,11 +4,43 @@
 
 namespace sfc::collections::hash {
 
+static constexpr u32 CTRL_ALIGN = 128UL;
+static constexpr u8 CTRL_NUL = 0x80U;
+static constexpr u8 CTRL_DEL = 0xFFU;
+
+struct Hasher {
+  static auto hash(const auto& key) noexcept -> u64 {
+    if constexpr (requires { key.hash(); }) {
+      return key.hash();
+    } else if constexpr (requires { static_cast<u64>(key); }) {
+      return static_cast<u64>(key);
+    } else {
+      static_assert(false, "HashTbl::hash: cannot hash key type");
+    }
+  }
+};
+
+template <class T>
+struct Iter : iter::Iterator<T&> {
+  const u8* _ctrl;
+  T* _data;
+  usize _mask;
+  usize _idx = 0;
+
+ public:
+  auto next() -> Option<T&> {
+    while (_idx <= _mask) {
+      const auto ctrl = _ctrl[_idx++];
+      if (ctrl < CTRL_NUL) {
+        return _data[_idx - 1];
+      }
+    }
+    return Option<T&>{};
+  }
+};
+
 template <class T>
 class HashTbl {
-  static constexpr u8 CTRL_NUL = 0x80U;
-  static constexpr u8 CTRL_DEL = 0xFFU;
-
   u8* _ptr = nullptr;
   usize _cap = 0;
   usize _len = 0;
@@ -54,53 +86,24 @@ class HashTbl {
     if (_len == 0) {
       return nullptr;
     }
-    auto ctrl_ptr = _ptr;
-    const auto data_ptr = this->data();
-    const auto mask = _cap - 1;
 
     const auto [h1, h2] = this->hidx(key);
-    for (auto i = 0UL; i < _cap; ++i) {
-      const auto idx = (h1 + i) & mask;
-      const auto ctrl = ctrl_ptr[idx];
-      const auto& item = data_ptr[idx];
-      if (ctrl == h2 && item.key == key) {  // found
-        return &item;
-      } else if (ctrl == CTRL_NUL) {  // not found
-        break;
-      }
-    }
-    return nullptr;
+    const auto bucket = this->bucket(h1);
+    return bucket.search_key(h2, key);
   }
 
   auto try_insert(T&& entry) noexcept -> T* {
     this->reserve(1);
 
-    const auto ctrl_ptr = _ptr;
-    const auto data_ptr = this->data();
-
-    auto insert_at = [&](usize idx, usize ctrl, T& entry) {
-      ctrl_ptr[idx] = ctrl;
-      ptr::write(data_ptr + idx, static_cast<T&&>(entry));
+    const auto [h1, h2] = this->hidx(entry.key);
+    auto bucket = this->bucket(h1);
+    const auto [ptr, idx] = bucket.search_key_or_nil(h2, entry.key);
+    if (!ptr && idx != static_cast<usize>(-1)) {
+      bucket.insert_at(idx, h2, static_cast<T&&>(entry));
       _len += 1;
       _remain -= 1;
-    };
-
-    const auto [h1, h2] = this->hidx(entry.key);
-    auto del_idx = _cap;
-    for (auto i = 0UL; i < _cap; ++i) {
-      const auto idx = (h1 + i) & (_cap - 1);
-      const auto ctrl = ctrl_ptr[idx];
-      const auto& item = data_ptr[idx];
-      if (ctrl == h2 && item.key == entry.key) {
-        return data_ptr + idx;
-      } else if (ctrl == CTRL_NUL) {
-        insert_at(del_idx == _cap ? idx : del_idx, h2, entry);
-        return nullptr;
-      } else if (ctrl == CTRL_DEL && del_idx == _cap) {
-        del_idx = idx;
-      }
     }
-    return nullptr;
+    return ptr;
   }
 
   auto try_erase(T* dst) noexcept -> bool {
@@ -132,108 +135,152 @@ class HashTbl {
     if (_len == 0) {
       return;
     }
-    this->for_each(mem::drop<T>);
+    this->iter_mut().for_each([](T& entry) { entry.~T(); });
     ptr::write_bytes(_ptr, CTRL_NUL, _cap);
     _len = 0;
     _remain = _cap * 3 / 4;
   }
 
-  void for_each(this auto& self, auto&& f) {
-    if (self._len == 0) {
-      return;
-    }
-    const auto ctrl_ptr = self._ptr;
-    const auto data_ptr = self.data();
-    for (usize idx = 0; idx < self._cap; ++idx) {
-      if (ctrl_ptr[idx] < CTRL_NUL) {
-        f(data_ptr[idx]);
-      }
-    }
+  using Iter = hash::Iter<const T>;
+  auto iter() const -> Iter {
+    return Iter{{}, _ptr, this->data(), _cap - 1};
+  }
+
+  using IterMut = hash::Iter<T>;
+  auto iter_mut() -> IterMut {
+    return IterMut{{}, _ptr, this->data(), _cap - 1};
   }
 
  private:
-  static constexpr auto CTRL_ALIGN = 128UL;
-
   struct HIdx {
     u64 h1;
     u8 h2;
   };
 
-  static auto hash(const auto& key) noexcept -> u64 {
-    if constexpr (requires { key.hash(); }) {
-      return key.hash();
-    } else if constexpr (requires { static_cast<u64>(key); }) {
-      return static_cast<u64>(key);
-    } else {
-      static_assert(false, "HashTbl::hash: cannot hash key type");
+  struct Bucket {
+    u8* _ctrl;
+    T* _data;
+    usize _mask;
+    usize _h1;
+
+   public:
+    auto search_nul() const -> usize {
+      for (auto idx = _h1;;) {
+        const auto ctrl = _ctrl[idx];
+        if (ctrl == CTRL_NUL) {
+          return idx;
+        }
+        if ((idx = (idx + 1) & _mask) == _h1) {
+          break;
+        }
+      }
+      return static_cast<usize>(-1);
     }
+
+    auto search_key(u8 h2, const auto& key) const -> T* {
+      for (auto idx = _h1;;) {
+        const auto ctrl = _ctrl[idx];
+        if (ctrl == h2 && _data[idx].key == key) {  // found
+          return &_data[idx];
+        } else if (ctrl == CTRL_NUL) {  // not found
+          return nullptr;
+        }
+        if ((idx = (idx + 1) & _mask) == _h1) {
+          return nullptr;
+        }
+      }
+    }
+
+    struct KeyOrNullResult {
+      T* ptr = nullptr;
+      usize idx = 0;
+    };
+
+    auto search_key_or_nil(u8 h2, const auto& key) const -> KeyOrNullResult {
+      auto del_idx = Option<usize>{};
+
+      for (auto idx = _h1;;) {
+        const auto ctrl = _ctrl[idx];
+        if (ctrl == h2 && _data[idx].key == key) {
+          return {&_data[idx]};
+        } else if (ctrl == CTRL_NUL) {
+          return {nullptr, del_idx.unwrap_or(idx)};
+        } else if (ctrl == CTRL_DEL && del_idx.is_none()) {
+          del_idx = idx;
+        }
+        if ((idx = (idx + 1) & _mask) == _h1) {
+          return {nullptr};
+        }
+      }
+    }
+
+    void insert_at(usize pos, u8 h2, T&& val) {
+      _ctrl[pos] = h2;
+      ptr::write(_data + pos, static_cast<T&&>(val));
+    }
+  };
+
+  auto bucket(usize h1) const -> Bucket {
+    const auto offset = num::align_up(_cap, CTRL_ALIGN);
+    const auto data = reinterpret_cast<T*>(_ptr + offset);
+    return {_ptr, data, _cap - 1, h1};
   }
 
   auto hidx(const auto& key) const noexcept -> HIdx {
-    const auto hx = HashTbl::hash(key);
+    const auto hx = Hasher::hash(key);
     const auto h1 = hx & (_cap - 1);
     const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
     return {h1, h2};
   }
 
-  auto size() const noexcept -> usize {
-    const auto ctrl_size = (_cap + CTRL_ALIGN - 1) & ~(CTRL_ALIGN - 1);
-    const auto data_size = _cap * sizeof(T);
-    return ctrl_size + data_size;
-  }
-
   auto data() const noexcept -> T* {
-    const auto ctrl_size = (_cap + CTRL_ALIGN - 1) & ~(CTRL_ALIGN - 1);
-    return reinterpret_cast<T*>(_ptr + ctrl_size);
+    const auto offset = num::align_up(_cap, CTRL_ALIGN);
+    return reinterpret_cast<T*>(_ptr + offset);
   }
 
-  void rehash(u8* old_ctrl, T* old_data, usize old_cap) noexcept {
-    const auto new_ctrl = _ptr;
-    const auto new_data = this->data();
-
-    auto insert_new = [&](T&& entry) {
-      const auto [h1, h2] = this->hidx(entry.key);
-      for (auto idx = h1;; idx = (idx + 1) & (_cap - 1)) {
-        if (new_ctrl[idx] == CTRL_NUL) {
-          new_ctrl[idx] = h2;
-          ptr::write(new_data + idx, static_cast<T&&>(entry));
-          _len += 1;
-          _remain -= 1;
-          break;
-        }
-      }
-    };
-
-    for (usize idx = 0; idx < old_cap; ++idx) {
-      const auto ctrl = old_ctrl[idx];
-      if (ctrl < CTRL_NUL) {
-        auto entry = ptr::read(old_data + idx);
-        insert_new(static_cast<T&&>(entry));
-      }
+  auto realloc(usize new_cap) -> bool {
+    if (new_cap < _len) {
+      return false;
     }
-  }
 
-  void realloc(usize new_cap) {
+    // alloc new memory
+    const auto ctrl_size = num::align_up(new_cap, CTRL_ALIGN);
+    const auto data_size = new_cap * sizeof(T);
+    const auto new_ptr = static_cast<u8*>(__builtin_operator_new(ctrl_size + data_size));
+    ptr::write_bytes(new_ptr, CTRL_NUL, ctrl_size);
+
     // save old state
-    const auto old_ptr = _ptr;
-    const auto old_cap = _cap;
-    const auto old_len = _len;
-    const auto old_data = this->data();
-
-    // init new state
-    _cap = new_cap;
-    _ptr = static_cast<u8*>(__builtin_operator_new(this->size()));
-    _len = 0;
+    auto old_iter = this->iter_mut();
+    const auto old_ptr = mem::replace(_ptr, new_ptr);
+    const auto old_cap = mem::replace(_cap, new_cap);
+    const auto old_len = mem::replace(_len, 0);
     _remain = _cap * 3 / 4;
-    ptr::write_bytes(_ptr, CTRL_NUL, _cap);
 
     // old->new
     if (old_len != 0) {
-      this->rehash(old_ptr, old_data, old_cap);
+      this->rehash(old_iter);
     }
 
     if (old_ptr) {
       __builtin_operator_delete(old_ptr);
+    }
+
+    return true;
+  }
+
+  void rehash(IterMut iter) noexcept {
+    while (auto opt = iter.next()) {
+      if (_remain == 0) {
+        break;
+      }
+      auto& val = *opt;
+      const auto [h1, h2] = this->hidx(val.key);
+
+      auto bucket = this->bucket(h1);
+      const auto ins_pos = bucket.search_nul();
+      bucket.insert_at(ins_pos, h2, static_cast<T&&>(val));
+      _len += 1;
+      _remain -= 1;
     }
   }
 };

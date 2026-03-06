@@ -87,13 +87,13 @@ class HashMap {
   // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_map();
-    _inn.for_each([&](const Entry& entry) { imp.entry(entry.key, entry.val); });
+    _inn.iter().for_each([&](const Entry& entry) { imp.entry(entry.key, entry.val); });
   }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
     auto imp = ser.serialize_map();
-    _inn.for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
+    _inn.iter().for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
   }
 
   // trait: serde::Deserialize

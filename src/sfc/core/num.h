@@ -41,6 +41,12 @@ constexpr auto next_power_of_two(T n, T init_val = 1U) -> T {
   return x;
 }
 
+template <trait::uint_ T>
+constexpr auto align_up(T n, u64 align) -> T {
+  const auto mask = align - 1;
+  return static_cast<T>((n + mask) & ~mask);
+}
+
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
 
 }  // namespace sfc::num
