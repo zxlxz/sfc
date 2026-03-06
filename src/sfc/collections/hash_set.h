@@ -2,7 +2,7 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections {
+namespace sfc::collections::hash {
 
 template <class T>
 class HashSet {
@@ -63,4 +63,8 @@ class HashSet {
   }
 };
 
-}  // namespace sfc::collections
+}  // namespace sfc::collections::hash
+
+namespace sfc::collections {
+using hash::HashSet;
+}

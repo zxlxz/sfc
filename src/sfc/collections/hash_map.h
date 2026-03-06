@@ -2,7 +2,7 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections {
+namespace sfc::collections::hash {
 
 template <class K, class V>
 class HashMap {
@@ -113,4 +113,8 @@ class HashMap {
   }
 };
 
-}  // namespace sfc::collections
+}  // namespace sfc::collections::hash
+
+namespace sfc::collections {
+using hash::HashMap;
+}

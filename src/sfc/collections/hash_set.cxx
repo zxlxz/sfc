@@ -4,7 +4,9 @@
 
 namespace sfc::collections::hash_set::test {
 
-SFC_TEST(contains) {
+using namespace sfc::collections::hash;
+
+SFC_TEST(set_contains) {
   auto t = HashSet<int>{};
   sfc::expect_false(t.contains(1));
 
@@ -20,7 +22,7 @@ SFC_TEST(contains) {
   sfc::expect_false(t.contains(4));
 }
 
-SFC_TEST(insert) {
+SFC_TEST(set_insert) {
   auto t = HashSet<int>{};
 
   // First insert should return true (newly inserted)

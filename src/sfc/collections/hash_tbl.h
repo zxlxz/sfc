@@ -2,7 +2,7 @@
 
 #include "sfc/alloc/vec.h"
 
-namespace sfc::collections {
+namespace sfc::collections::hash {
 
 template <class T>
 class HashTbl {
@@ -238,4 +238,4 @@ class HashTbl {
   }
 };
 
-}  // namespace sfc::collections
+}  // namespace sfc::collections::hash
