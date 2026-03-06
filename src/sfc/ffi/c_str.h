@@ -10,6 +10,8 @@ class CString {
 
  public:
   static auto from(Str s) -> CString;
+  static auto from_vec(Vec<char> v) -> CString;
+
   auto ptr() const -> const char*;
   auto into_string() && -> String;
 };
