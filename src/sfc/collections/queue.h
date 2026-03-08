@@ -10,20 +10,16 @@ struct Iter : iter::Iterator<T&> {
   slice::Iter<T> _iter2;
 
  public:
-  operator bool() const noexcept {
-    return _iter1 || _iter2;
-  }
-
   auto len() const noexcept -> usize {
     return _iter1.len() + _iter2.len();
   }
 
   auto next() noexcept -> Option<T&> {
-    return _iter1 ? _iter1.next() : _iter2.next();
+    return _iter1.next() ?: _iter2.next();
   }
 
   auto next_back() noexcept -> Option<T> {
-    return _iter2 ? _iter2.next_back() : _iter1.next_back();
+    return _iter2.next_back() ?: _iter1.next_back();
   }
 };
 

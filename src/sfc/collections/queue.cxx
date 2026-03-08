@@ -49,7 +49,7 @@ SFC_TEST(iter) {
   for (auto i = 0; i < 10; ++i) {
     sfc::expect_eq(iter.next(), Option{i});
   }
-  sfc::expect_false(iter);
+  sfc::expect_false(iter.next());
 }
 
 }  // namespace sfc::collections::queue::test
