@@ -20,7 +20,7 @@ template <class T>
 struct Iterator {
   using Item = T;
 
-  auto find(this auto&& self, auto&& pred) noexcept -> Option<Item> {
+  auto find(this auto self, auto&& pred) noexcept -> Option<Item> {
     while (auto x = self.next()) {
       if (pred(*x)) {
         return x;
@@ -29,7 +29,7 @@ struct Iterator {
     return {};
   }
 
-  auto rfind(this auto&& self, auto&& pred) noexcept -> Option<Item> {
+  auto rfind(this auto self, auto&& pred) noexcept -> Option<Item> {
     while (auto x = self.next_back()) {
       if (pred(*x)) {
         return x;
@@ -38,7 +38,7 @@ struct Iterator {
     return {};
   }
 
-  auto position(this auto&& self, auto&& pred) noexcept -> Option<usize> {
+  auto position(this auto self, auto&& pred) noexcept -> Option<usize> {
     auto idx = 0UL;
     while (auto x = self.next()) {
       if (pred(*x)) {
@@ -50,7 +50,7 @@ struct Iterator {
     return {};
   }
 
-  auto rposition(this auto&& self, auto&& pred) noexcept -> Option<usize> {
+  auto rposition(this auto self, auto&& pred) noexcept -> Option<usize> {
     auto idx = self.len() - 1;
     while (auto x = self.next_back()) {
       if (pred(*x)) {
@@ -61,13 +61,13 @@ struct Iterator {
     return {};
   }
 
-  void for_each(this auto&& self, auto&& f) {
+  void for_each(this auto self, auto&& f) {
     while (auto x = self.next()) {
       f(*x);
     }
   }
 
-  void for_each_idx(this auto&& self, auto&& f) {
+  void for_each_idx(this auto self, auto&& f) {
     auto i = 0UL;
     while (auto x = self.next()) {
       f(i, *x);
@@ -76,7 +76,7 @@ struct Iterator {
   }
 
   template <class B>
-  auto fold(this auto&& self, B init, auto&& f) -> B {
+  auto fold(this auto self, B init, auto&& f) -> B {
     auto accum = static_cast<B&&>(init);
     while (auto x = self.next()) {
       accum = f(accum, *x);
@@ -85,19 +85,20 @@ struct Iterator {
   }
 
   template <class F, class B = ops::invoke_t<F(Item, Item)>>
-  auto reduce(this auto&& self, F&& f) -> Option<B> {
-    if (!self) {
+  auto reduce(this auto self, F&& f) -> Option<B> {
+    auto opt = self.next();
+    if (!opt) {
       return {};
     }
 
-    if constexpr (!trait::same_<B, B&>) {
-      auto res_val = self.next().unwrap();
+    if constexpr (!trait::same_<const B, const B&>) {
+      auto res_val = mem::move(opt).unwrap();
       while (auto x = self.next()) {
         res_val = f(res_val, *x);
       }
       return res_val;
     } else {
-      auto res_ptr = &self.next().unwrap();
+      auto res_ptr = &*opt;
       while (auto x = self.next()) {
         res_ptr = &f(*res_ptr, *x);
       }
@@ -105,15 +106,15 @@ struct Iterator {
     }
   }
 
-  auto all(this auto&& self, auto&& f) -> bool {
+  auto all(this auto self, auto&& f) -> bool {
     return !self.position([&](auto& x) { return !f(x); });
   }
 
-  auto any(this auto&& self, auto&& f) -> bool {
+  auto any(this auto self, auto&& f) -> bool {
     return self.position(f).is_some();
   }
 
-  auto count(this auto&& self) -> usize {
+  auto count(this auto self) -> usize {
     if constexpr (requires { self.len(); }) {
       return self.len();
     } else {
@@ -125,24 +126,24 @@ struct Iterator {
     }
   }
 
-  auto min(this auto&& self) -> Option<Item> {
+  auto min(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a < b ? a : b; });
   }
 
-  auto max(this auto&& self) -> Option<Item> {
+  auto max(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a > b ? a : b; });
   }
 
-  auto min_by_key(this auto&& self, auto&& f) -> Option<Item> {
+  auto min_by_key(this auto self, auto&& f) -> Option<Item> {
     return self.reduce([&](auto& a, auto& b) -> Item { return f(a) < f(b) ? a : b; });
   }
 
-  auto max_by_key(this auto&& self, auto&& f) -> Option<Item> {
+  auto max_by_key(this auto self, auto&& f) -> Option<Item> {
     return self.reduce([&](auto& a, auto& b) -> Item { return f(a) > f(b) ? a : b; });
   }
 
   template <class B>
-  auto collect(this auto&& self) -> B {
+  auto collect(this auto self) -> B {
     return B::from_iter(static_cast<decltype(self)&&>(self));
   }
 
