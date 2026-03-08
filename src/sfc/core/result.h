@@ -269,19 +269,6 @@ class [[nodiscard]] Result<void, E> {
 
 }  // namespace sfc::result
 
-namespace sfc::option {
-
-template <class T>
-template <class E>
-auto Option<T>::ok_or(E err) && -> result::Result<T, E> {
-  if (_inn.is_some()) {
-    return result::Result<T, E>{static_cast<T&&>(*_inn)};
-  }
-  return result::Result<T, E>{static_cast<E&&>(err)};
-}
-
-}  // namespace sfc::option
-
 namespace sfc {
 using result::Result;
 }  // namespace sfc

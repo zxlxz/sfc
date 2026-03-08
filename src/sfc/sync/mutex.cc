@@ -112,7 +112,7 @@ auto Mutex::try_lock() noexcept -> Option<Guard> {
   if (!_inn->try_lock()) {
     return {};
   }
-  return {option::some_t{}, &*_inn};
+  return {option::Some{}, &*_inn};
 }
 
 Mutex::Guard::Guard(Inn* mtx) noexcept : _inn{mtx} {}
@@ -140,7 +140,7 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   if (!_inn->try_lock()) {
     return {};
   }
-  return {option::some_t{}, &*_inn};
+  return {option::Some{}, &*_inn};
 }
 
 ReentrantLock::Guard::Guard(Inn* mtx) noexcept : _inn{mtx} {}
