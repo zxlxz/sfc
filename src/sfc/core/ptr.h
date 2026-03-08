@@ -10,52 +10,49 @@ struct Unique {
   T* _ptr = nullptr;
 
  public:
-  Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
+  [[gnu::always_inline]] Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
 
-  Unique(Unique&& other) noexcept : _ptr{other._ptr} {
+  [[gnu::always_inline]] Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
   }
 
-  Unique& operator=(Unique&& other) noexcept {
-    _ptr = mem::take(other._ptr);
+  [[gnu::always_inline]] Unique& operator=(Unique&& other) noexcept {
+    if (this != &other) {
+      _ptr = other._ptr;
+      other._ptr = nullptr;
+    }
     return *this;
   }
 
-  auto ptr() const noexcept -> T* {
+  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  explicit operator bool() const noexcept {
-    return _ptr != nullptr;
-  }
-
-  auto operator->() const -> const T* {
+  [[gnu::always_inline]] auto operator->() const -> const T* {
     return _ptr;
   }
 
-  auto operator->() -> T* {
+  [[gnu::always_inline]] auto operator->() -> T* {
     return _ptr;
   }
 
-  auto operator*() const -> const T& {
-    sfc::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
+  [[gnu::always_inline]] auto operator*() const -> const T& {
     return *_ptr;
   }
 
-  auto operator*() -> T& {
-    sfc::expect(_ptr != nullptr, "ptr::Unique::*: deref null");
+  [[gnu::always_inline]] auto operator*() -> T& {
     return *_ptr;
   }
 
  public:
   // trait: Clone
-  auto clone() const noexcept -> Unique {
+  [[gnu::always_inline]] auto clone() const noexcept -> Unique {
     return Unique{_ptr};
   }
 };
 
 template <class T>
-inline auto read(T* src) noexcept -> T {
+[[gnu::always_inline]] inline auto read(T* src) noexcept -> T {
   if constexpr (trait::tv_copy_<T>) {
     return *src;
   } else {
@@ -66,7 +63,7 @@ inline auto read(T* src) noexcept -> T {
 }
 
 template <class T>
-inline void write(T* dst, auto&& val) noexcept {
+[[gnu::always_inline]] inline void write(T* dst, auto&& val) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
     *dst = static_cast<decltype(val)&&>(val);
   } else {
@@ -75,16 +72,14 @@ inline void write(T* dst, auto&& val) noexcept {
 }
 
 template <class T>
-inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
+[[gnu::always_inline]] inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
+  if (cnt != 0) {
+    __builtin_memset(dst, val, cnt * sizeof(T));
   }
-
-  __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
 template <class T>
-inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
+[[gnu::always_inline]] inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
   if constexpr (!trait::tv_dtor_<T>) {
     for (auto end = ptr + cnt; ptr != end; ++ptr) {
       ptr->~T();
@@ -93,13 +88,11 @@ inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) n
 }
 
 template <class T>
-inline void copy(const T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
-  }
-
+[[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, cnt * sizeof(T));
+    if (cnt != 0) {
+      __builtin_memmove(dst, src, cnt * sizeof(T));
+    }
   } else {
     if (dst < src) {
       for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
@@ -114,13 +107,11 @@ inline void copy(const T* src, T* dst, usize cnt) noexcept {
 }
 
 template <class T>
-inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
-  }
-
+[[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, cnt * sizeof(T));
+    if (cnt != 0) {
+      __builtin_memcpy(dst, src, cnt * sizeof(T));
+    }
   } else {
     for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
       *pd = *ps;

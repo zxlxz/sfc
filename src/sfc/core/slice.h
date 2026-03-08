@@ -24,38 +24,38 @@ struct Slice {
   usize _len = 0;
 
  public:
-  constexpr Slice() noexcept = default;
+   [[gnu::always_inline]] constexpr Slice() noexcept = default;
 
-  constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+  [[gnu::always_inline]] constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+  [[gnu::always_inline]] constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  constexpr auto as_ptr() const noexcept -> const T* {
+  [[gnu::always_inline]] constexpr auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  constexpr auto as_mut_ptr() noexcept -> T* {
-    return _ptr;
-  }
-
-  constexpr auto len() const noexcept -> usize {
+  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  constexpr auto is_empty() const noexcept -> bool {
+  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] constexpr auto as_mut_ptr() noexcept -> T* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  constexpr operator Slice<const T>() const noexcept {
+  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 
-  explicit operator bool() const noexcept {
-    return _ptr != nullptr;
-  }
-
-  auto as_bytes() const noexcept -> Slice<const u8> {
+  [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
     return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
   }
@@ -241,10 +241,6 @@ struct Iter : iter::Iterator<T&> {
   T* _end = nullptr;
 
  public:
-  explicit operator bool() const noexcept {
-    return _ptr < _end;
-  }
-
   auto len() const noexcept -> usize {
     return _ptr < _end ? static_cast<usize>(_end - _ptr) : 0U;
   }
@@ -270,10 +266,6 @@ struct Windows : iter::Iterator<Slice<T>> {
   usize _len = 0;
 
  public:
-  explicit operator bool() const noexcept {
-    return _buf._len >= _len;
-  }
-
   auto next() noexcept -> Option<Slice<T>> {
     if (_buf._len < _len) {
       return {};
@@ -302,10 +294,6 @@ struct Chunks : iter::Iterator<Slice<T>> {
   usize _len = 0;
 
  public:
-  explicit operator bool() const noexcept {
-    return _buf._len >= _len;
-  }
-
   auto next() noexcept -> Option<Slice<T>> {
     if (_buf._len == 0) {
       return {};

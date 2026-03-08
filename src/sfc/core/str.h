@@ -12,42 +12,45 @@ struct Str {
   usize _len = 0;
 
  public:
-  constexpr Str() noexcept = default;
+  [[gnu::always_inline]] constexpr Str() noexcept = default;
 
-  constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
+  [[gnu::always_inline]] constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
+  [[gnu::always_inline]] constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
 
-  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
-    const auto p = reinterpret_cast<const char*>(s._ptr);
-    return {p, s._len};
+  [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+    return {reinterpret_cast<const char*>(s._ptr), s._len};
   }
 
-  constexpr auto size() const noexcept -> usize {
-    return _len;
-  }
-
-  constexpr auto data() const noexcept -> const char* {
+  [[gnu::always_inline]] constexpr auto ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  constexpr auto len() const noexcept -> usize {
+  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  constexpr auto as_ptr() const noexcept -> cstr_t {
+  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  constexpr auto as_str() const noexcept -> Str {
+  [[gnu::always_inline]] constexpr auto as_str() const noexcept -> Str {
     return *this;
   }
 
-  constexpr auto is_empty() const noexcept -> bool {
+  [[gnu::always_inline]] constexpr auto data() const noexcept -> const char* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] constexpr auto size() const noexcept -> usize {
+    return _len;
+  }
+
+  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  auto as_bytes() const noexcept -> Slice<const u8> {
+  [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     return {reinterpret_cast<const u8*>(_ptr), _len};
   }
 
@@ -121,6 +124,11 @@ struct Str {
       return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
     }
     return true;
+  }
+
+  // trait: option
+  auto is_none() const noexcept -> bool {
+    return _ptr == nullptr;
   }
 
   // trait: fmt::Display
