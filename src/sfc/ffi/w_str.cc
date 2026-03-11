@@ -83,13 +83,13 @@ auto WString::chars() const -> WChars {
   return WChars{v._ptr, v._ptr + v._len - 1};
 }
 
-auto WString::into_string() && -> String {
+auto WString::into_string() const -> String {
   if (_vec.len() <= 1) {
     return {};
   }
 
-  auto chars = WChars{_vec.as_ptr(), _vec.as_ptr() + _vec.len() - 1};
   auto res = String::with_capacity(_vec.len());
+  auto chars = this->chars();
   while (auto ch = chars.next()) {
     res.push(*ch);
   }

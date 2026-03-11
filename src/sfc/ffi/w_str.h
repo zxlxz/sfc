@@ -23,7 +23,7 @@ class WString {
   auto ptr() const -> const wchar_t*;
   auto chars() const -> WChars;
 
-  auto into_string() && -> String;
+  auto into_string() const -> String;
 };
 
 }  // namespace sfc::ffi
