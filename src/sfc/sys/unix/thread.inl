@@ -28,10 +28,10 @@ struct Thread {
     auto thr = pthread_t{};
     const auto ret = ::pthread_create(&thr, &attr, func, data);
     ::pthread_attr_destroy(&attr);
-
     if (ret != 0) {
       return {};
     }
+
     return Thread{thr};
   }
 
@@ -55,16 +55,19 @@ struct Thread {
   }
 
   auto join() -> bool {
+    if (_thr == 0) return true;
     const auto err = ::pthread_join(_thr, nullptr);
     return err == 0;
   }
 
   auto detach() -> bool {
+    if (_thr == 0) return true;
     const auto err = ::pthread_detach(_thr);
     return err == 0;
   }
 
   auto tid() const -> unsigned {
+    if (_thr == 0) return 0;
 #ifdef __APPLE__
     auto thr = __uint64_t{0};
     ::pthread_threadid_np(_tid, &thr);
@@ -85,18 +88,8 @@ inline auto sleep_ms(unsigned millis) -> bool {
       .tv_nsec = (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI,
   };
 
-  while (true) {
-    auto rem = ::timespec{};
-    const auto err = ::nanosleep(&ts, &rem);
-    if (err == 0) {
-      break;
-    }
-    if (errno != EINTR) {
-      return false;
-    }
-    ts = rem;
-  }
-  return true;
+  const auto err = ::nanosleep(&ts, nullptr);
+  return err == 0;
 }
 
 }  // namespace sfc::sys::unix

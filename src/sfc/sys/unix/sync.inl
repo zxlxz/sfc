@@ -11,14 +11,14 @@ struct Mutex {
 
  public:
   explicit Mutex() {
-    _raw = new pthread_mutex_t;
+    _raw = static_cast<pthread_mutex_t*>(malloc(sizeof(pthread_mutex_t)));
     ::pthread_mutex_init(_raw, nullptr);
   }
 
   ~Mutex() {
     if (_raw) {
       ::pthread_mutex_destroy(_raw);
-      delete _raw;
+      ::free(_raw);
     }
   }
 
@@ -55,14 +55,14 @@ struct Condvar {
 
  public:
   explicit Condvar() {
-    _cond = new pthread_cond_t;
+    _cond = static_cast<pthread_cond_t*>(malloc(sizeof(pthread_cond_t)));
     ::pthread_cond_init(_cond, nullptr);
   }
 
   ~Condvar() {
     if (_cond) {
       ::pthread_cond_destroy(_cond);
-      delete _cond;
+      ::free(_cond);
     }
   }
 
@@ -99,7 +99,6 @@ struct Condvar {
 
     auto ts = timespec_t{};
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-
     ts.tv_sec += millis / MILLIS_PER_SEC;
     ts.tv_nsec += (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI;
 

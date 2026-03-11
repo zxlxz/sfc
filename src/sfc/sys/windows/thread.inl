@@ -12,7 +12,8 @@ struct Thread {
 
  public:
   static auto current() -> Thread {
-    return Thread{::GetCurrentThread()};
+    const auto thr = ::GetCurrentThread();
+    return Thread{thr};
   }
 
   static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
@@ -30,6 +31,7 @@ struct Thread {
   }
 
   static auto set_name(const wchar_t* name) -> bool {
+    if (name == nullptr) return true;
     const auto hres = ::SetThreadDescription(::GetCurrentThread(), name);
     return SUCCEEDED(hres);
   }
@@ -39,32 +41,25 @@ struct Thread {
   }
 
   auto join() -> bool {
-    if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
-      return false;
-    }
+    if (_handle == nullptr) return true;
     const auto ret = ::WaitForSingleObject(_handle, INFINITE);
     return ret == WAIT_OBJECT_0;
   }
 
   auto detach() -> bool {
-    if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
-      return false;
-    }
+    if (_handle == nullptr) return true;
     return ::CloseHandle(_handle);
   }
 
   auto tid() const -> unsigned {
-    if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
-      return 0;
-    }
+    if (_handle == nullptr) return 0;
     return static_cast<unsigned>(::GetThreadId(_handle));
   }
 };
 
 inline auto sleep_ms(unsigned millis) -> bool {
-  if (millis < 2) {
-    ::SwitchToThread();
-    return true;
+  if (millis <= 1) {
+    return ::SwitchToThread();
   }
   ::Sleep(millis);
   return true;
