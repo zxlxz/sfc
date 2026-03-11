@@ -2,11 +2,11 @@
 
 #include "sfc/sys/unix/mod.inl"
 
-namespace sfc::sys::env {
+namespace sfc::sys::unix {
 
-static auto getenv(const char* key) -> ffi::OsString {
+static auto getenv(const char* key) -> ffi::CString {
   const auto val = ::getenv(key);
-  return sys::make_string(val);
+  return ffi::CString::from(val);
 }
 
 static auto setenv(const char* key, const char* val) -> bool {
@@ -21,28 +21,28 @@ static auto unsetenv(const char* key) -> bool {
   return ::unsetenv(key) == 0;
 }
 
-static auto home_dir() -> ffi::OsString {
+static auto home_dir() -> ffi::CString {
   const auto uid = getuid();
   const auto usr = getpwuid(uid);
   if (!usr || !usr->pw_dir) {
     return {};
   }
-  return sys::make_string(usr->pw_dir);
+  return ffi::CString::from(usr->pw_dir);
 }
 
-static auto temp_dir() -> ffi::OsString {
+static auto temp_dir() -> ffi::CString {
 #ifdef __APPLE__
   char buf[PATH_MAX];
   if (::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, sizeof(buf)) <= 0) {
     return {};
   }
-  return sys::make_string(buf);
+  return ffi::CString::from(buf);
 #else
-  return sys::make_string("/tmp");
+  return ffi::CString::from("/tmp");
 #endif
 }
 
-static auto current_exe() -> ffi::OsString {
+static auto current_exe() -> ffi::CString {
   char buf[1024];
 #ifdef __APPLE__
   auto size = uint32_t{sizeof(buf)};
@@ -54,13 +54,13 @@ static auto current_exe() -> ffi::OsString {
     return {};
   }
 #endif
-  return sys::make_string(buf);
+  return ffi::CString::from(buf);
 }
 
-static auto getcwd() -> ffi::OsString {
+static auto getcwd() -> ffi::CString {
   char buf[1024];
   const auto s = ::getcwd(buf, sizeof(buf));
-  return sys::make_string(s);
+  return ffi::CString::from(s);
 }
 
 static auto chdir(const char* path) -> bool {
@@ -68,4 +68,4 @@ static auto chdir(const char* path) -> bool {
   return ret == 0;
 }
 
-}  // namespace sfc::sys::env
+}  // namespace sfc::sys::unix

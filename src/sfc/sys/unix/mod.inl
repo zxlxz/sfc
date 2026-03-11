@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -19,6 +20,7 @@
 #include <pthread.h>
 #include <pwd.h>
 #include <sys/time.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 #endif
 
@@ -28,21 +30,22 @@
 #include <_time.h>
 #endif
 
-namespace sfc::ffi {
-class CString;
+#undef unix
+#undef stdin
+#undef stdout
+#undef stderr
+
+#include "sfc/core.h"
+#include "sfc/ffi.h"
+
+namespace sfc::sys::unix {
+
+static inline auto os_error() -> int {
+  return errno;
 }
+
+}  // namespace sfc::sys::unix
 
 namespace sfc::sys {
-
-using ffi::CString;
-
-template <class S = ffi::CString>
-static auto make_string(const char* p) -> S {
-  if (p == nullptr) {
-    return {};
-  }
-  const auto n = __builtin_strlen(p);
-  return S::from({p, n});
+using namespace unix;
 }
-
-}  // namespace sfc::sys

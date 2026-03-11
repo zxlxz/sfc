@@ -1,12 +1,12 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/sys.h"
+#include "sfc/sync/atomic.h"
 
 namespace sfc::sync {
 
 class Mutex {
-  struct Inn;
-  Box<Inn> _inn;
+  sys::Mutex _inn;
 
  public:
   explicit Mutex() noexcept;
@@ -16,24 +16,27 @@ class Mutex {
   Mutex& operator=(Mutex&&) noexcept;
 
  public:
-  struct Guard {
-    Inn* _inn;
+  class Guard {
+    Mutex& _lock;
 
    public:
-    explicit Guard(Inn* mtx) noexcept;
+    Guard(trait::passkey_t<Mutex>);
     ~Guard() noexcept;
 
     Guard(const Guard&) = delete;
     Guard& operator=(const Guard&) = delete;
-  };
 
+    auto inner() -> sys::Mutex&;
+  };
   auto lock() noexcept -> Guard;
   auto try_lock() noexcept -> Option<Guard>;
 };
 
 class ReentrantLock {
-  struct Inn;
-  Box<Inn> _inn;
+  struct key_t;
+  sys::Mutex _mutex;
+  Atomic<u32> _ownner;
+  Atomic<u32> _count;
 
  public:
   explicit ReentrantLock() noexcept;
@@ -43,17 +46,15 @@ class ReentrantLock {
   ReentrantLock& operator=(ReentrantLock&&) noexcept;
 
  public:
-  struct Guard {
-    Inn* _inn;
+  class Guard {
+    ReentrantLock& _lock;
 
    public:
-    explicit Guard(Inn* mtx) noexcept;
+    Guard(trait::passkey_t<ReentrantLock>);
     ~Guard() noexcept;
-
     Guard(const Guard&) = delete;
-    Guard& operator=(const Guard&) = delete;
+    void operator=(const Guard&) = delete;
   };
-
   auto lock() noexcept -> Guard;
   auto try_lock() noexcept -> Option<Guard>;
 };

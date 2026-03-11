@@ -1,21 +1,24 @@
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/unix/io.inl"
+#elif defined(_WIN32)
+#include "sfc/sys/windows/io.inl"
+#endif
 
+#define _SFC_SYS_IO_
 #include "sfc/io/file.h"
 #include "sfc/io/buf.h"
 #include "sfc/io/stdio.h"
-
 #include "sfc/sync/mutex.h"
-#include "sfc/sys/io.h"
 
 namespace sfc::io {
-
-namespace sys_imp = sys::io;
 
 class Stdout::Inn {
   friend class Stdout;
   friend class Stdout::Lock;
 
+  io::File _file{sys::stdout()};
+  BufWriter<File&> _inn{_file};
   sync::ReentrantLock _mtx{};
-  BufWriter<File> _inn = BufWriter{File{sys::io::stdout()}};
 
  public:
   static inline auto instance() -> Inn& {
@@ -24,9 +27,7 @@ class Stdout::Inn {
   }
 
   auto is_tty() const noexcept -> bool {
-    const auto fd = sys::io::stdout();
-    const auto res = sys_imp::is_tty(fd);
-    return res;
+    return _file.is_tty();
   }
 
   void flush() noexcept {
@@ -51,8 +52,8 @@ class Stderr::Inn {
   friend class Stderr;
   friend class Stderr::Lock;
 
+  io::File _file{sys::stderr()};
   sync::ReentrantLock _mtx{};
-  File _imp{sys::io::stderr()};
 
  public:
   static inline auto instance() -> Inn& {
@@ -61,14 +62,15 @@ class Stderr::Inn {
   }
 
   auto is_tty() const -> bool {
-    const auto res = sys_imp::is_tty(_imp.as_raw_fd());
-    return res;
+    return _file.is_tty();
   }
 
-  void flush() noexcept {}
+  void flush() noexcept {
+    (void)_file.flush();
+  }
 
   void write(Slice<const u8> s) noexcept {
-    (void)_imp.write(s);
+    (void)_file.write(s);
   }
 };
 

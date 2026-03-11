@@ -1,22 +1,31 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/unix/io.inl"
 
-namespace sfc::sys::fs {
+namespace sfc::sys::unix {
 
 using stat_t = struct stat;
-static const auto INVALID_FD = -1;
 
-static inline auto open(const char* path, const auto& opts) -> int {
-  const auto access_flags = opts.write ? opts.read ? O_RDWR : O_WRONLY : O_RDONLY;
-  const auto create_flags = opts.create_new ? O_CREAT | O_EXCL : (opts.create ? O_CREAT : 0);
-  const auto append_flags = opts.append ? O_APPEND : 0;
-  const auto truncate_flags = opts.truncate ? O_TRUNC : 0;
+struct OpenOptions {
+  bool _append = false;
+  bool _create = false;
+  bool _create_new = false;
+  bool _read = false;
+  bool _write = false;
+  bool _truncate = false;
+  mode_t _mode = 0666;
 
-  const auto flag = access_flags | create_flags | append_flags | truncate_flags;
-  const auto mode = 0666;
-  return ::open(path, flag, mode);
-}
+  auto open(const char* path) const -> File {
+    const auto access_flags = _write ? _read ? O_RDWR : O_WRONLY : O_RDONLY;
+    const auto create_flags = _create_new ? O_CREAT | O_EXCL : (_create ? O_CREAT : 0);
+    const auto append_flags = _append ? O_APPEND : 0;
+    const auto truncate_flags = _truncate ? O_TRUNC : 0;
+
+    const auto flag = access_flags | create_flags | append_flags | truncate_flags;
+    const auto fd = ::open(path, flag, _mode);
+    return File{fd};
+  }
+};
 
 static inline auto is_dir(int attr) -> bool {
   return (attr & S_IFMT) == S_IFDIR;
@@ -53,4 +62,4 @@ static inline auto rmdir(const char* path) -> bool {
   return ::rmdir(path) == 0;
 }
 
-}  // namespace sfc::sys::.fs
+}  // namespace sfc::sys

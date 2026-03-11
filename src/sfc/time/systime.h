@@ -32,8 +32,8 @@ struct SysTime {
   }
 
  public:
- // trait:: ops::Eq
-   auto operator==(const SysTime& other) const noexcept -> bool {
+  // trait:: ops::Eq
+  auto operator==(const SysTime& other) const noexcept -> bool {
     return _nanos == other._nanos;
   }
 

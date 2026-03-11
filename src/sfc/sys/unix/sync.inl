@@ -2,70 +2,110 @@
 
 #include "sfc/sys/unix/mod.inl"
 
-namespace sfc::sys::sync {
+namespace sfc::sys::unix {
 
-using tid_t = pthread_t;
-using mtx_t = pthread_mutex_t;
-using cnd_t = pthread_cond_t;
 using timespec_t = struct ::timespec;
 
-inline auto get_tid() -> pthread_t {
-  return ::pthread_self();
-}
+struct Mutex {
+  pthread_mutex_t* _raw{nullptr};
 
-inline void mtx_init(pthread_mutex_t& mtx) {
-  ::pthread_mutex_init(&mtx, nullptr);
-}
+ public:
+  explicit Mutex() {
+    _raw = new pthread_mutex_t;
+    ::pthread_mutex_init(_raw, nullptr);
+  }
 
-inline void mtx_destroy(pthread_mutex_t& mtx) {
-  ::pthread_mutex_destroy(&mtx);
-}
+  ~Mutex() {
+    if (_raw) {
+      ::pthread_mutex_destroy(_raw);
+      delete _raw;
+    }
+  }
 
-inline void mtx_lock(pthread_mutex_t& mtx) {
-  ::pthread_mutex_lock(&mtx);
-}
+  Mutex(Mutex&& other) noexcept : _raw{other._raw} {
+    other._raw = nullptr;
+  }
 
-inline void mtx_unlock(pthread_mutex_t& mtx) {
-  ::pthread_mutex_unlock(&mtx);
-}
+  Mutex& operator=(Mutex&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_raw, other._raw);
+    }
+    return *this;
+  }
 
-inline bool mtx_trylock(pthread_mutex_t& mtx) {
-  const auto ret = ::pthread_mutex_trylock(&mtx);
-  return ret == 0;
-}
+  void lock() {
+    if (!_raw) return;
+    ::pthread_mutex_lock(_raw);
+  }
 
-inline void cnd_init(pthread_cond_t& cond) {
-  cond = PTHREAD_COND_INITIALIZER;
-}
+  void unlock() {
+    if (!_raw) return;
+    ::pthread_mutex_unlock(_raw);
+  }
 
-inline void cnd_destroy(pthread_cond_t& cond) {
-  (void)cond;
-}
+  auto try_lock() -> bool {
+    if (!_raw) return false;
+    const auto ret = ::pthread_mutex_trylock(_raw);
+    return ret == 0;
+  }
+};
 
-inline void cnd_signal(pthread_cond_t& cond) {
-  ::pthread_cond_signal(&cond);
-}
+struct Condvar {
+  pthread_cond_t* _cond{nullptr};
 
-inline void cnd_broadcast(pthread_cond_t& cond) {
-  ::pthread_cond_broadcast(&cond);
-}
+ public:
+  explicit Condvar() {
+    _cond = new pthread_cond_t;
+    ::pthread_cond_init(_cond, nullptr);
+  }
 
-inline void cnd_wait(pthread_cond_t& cond, pthread_mutex_t& mtx) {
-  ::pthread_cond_wait(&cond, &mtx);
-}
+  ~Condvar() {
+    if (_cond) {
+      ::pthread_cond_destroy(_cond);
+      delete _cond;
+    }
+  }
 
-inline auto cnd_timedwait(pthread_cond_t& cond, pthread_mutex_t& mtx, unsigned millis) -> bool {
-  static constexpr auto MILLIS_PER_SEC = 1000U;
-  static constexpr auto NANOS_PER_MILLI = 1000000U;
+  Condvar(Condvar&& other) noexcept : _cond{other._cond} {
+    other._cond = nullptr;
+  }
 
-  auto ts = timespec_t{};
-  ::clock_gettime(CLOCK_MONOTONIC, &ts);
+  Condvar& operator=(Condvar&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_cond, other._cond);
+    }
+    return *this;
+  }
 
-  ts.tv_sec += millis / MILLIS_PER_SEC;
-  ts.tv_nsec += (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI;
+  void notify_one() {
+    if (!_cond) return;
+    ::pthread_cond_signal(_cond);
+  }
 
-  const auto err = ::pthread_cond_timedwait(&cond, &mtx, &ts);
-  return err == 0;
-}
+  void notify_all() {
+    if (!_cond) return;
+    ::pthread_cond_broadcast(_cond);
+  }
 
-}  // namespace sfc::sys::.sync
+  void wait(Mutex& mtx) {
+    if (!_cond) return;
+    ::pthread_cond_wait(_cond, mtx._raw);
+  }
+
+  bool wait_timeout(Mutex& mtx, unsigned millis) {
+    if (!_cond) return false;
+    static constexpr auto MILLIS_PER_SEC = 1000U;
+    static constexpr auto NANOS_PER_MILLI = 1000000U;
+
+    auto ts = timespec_t{};
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    ts.tv_sec += millis / MILLIS_PER_SEC;
+    ts.tv_nsec += (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI;
+
+    const auto err = ::pthread_cond_timedwait(_cond, mtx._raw, &ts);
+    return err == 0;
+  }
+};
+
+}  // namespace sfc::sys::unix

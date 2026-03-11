@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 4.0.0)
 # sfc
 add_library(sfc)
 target_compile_features(sfc PUBLIC cxx_std_23)
+target_compile_options(sfc PUBLIC -Wno-c++26-extensions)
 target_compile_options(sfc PRIVATE -Wall -Wextra)
 
 target_include_directories(sfc PUBLIC ${CMAKE_CURRENT_LIST_DIR})

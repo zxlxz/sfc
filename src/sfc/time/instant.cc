@@ -4,13 +4,13 @@
 #include "sfc/sys/windows/time.inl"
 #endif
 
-#include "sfc/time/systime.h"
+#include "sfc/time/instant.h"
 
 namespace sfc::time {
 
-auto SysTime::now() noexcept -> SysTime {
-  const auto sys_imp = sys::SystemTime::now();
-  return SysTime{sys_imp.nanos()};
+auto Instant::now() noexcept -> Instant {
+  const auto ts = sys::Instant::now();
+  return Instant{ts.nanos()};
 }
 
 }  // namespace sfc::time

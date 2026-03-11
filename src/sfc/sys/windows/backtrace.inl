@@ -1,77 +1,79 @@
 #pragma once
 #include "sfc/sys/windows/mod.inl"
 
-namespace sfc::sys::backtrace {
+namespace sfc::sys::windows {
 
-struct FrameInfo {
-  static constexpr auto FUNC_SIZE = 256U;
+struct Backtrace {
+  static constexpr auto MAX_FRAME = 64U;
+  void* _frames[MAX_FRAME];
+  DWORD _count = 0;
 
-  PCHAR file;
-  DWORD line;
-  char func[FUNC_SIZE];
-};
+ public:
+  static auto capture() -> Backtrace {
+    static const auto sym_init = ::SymInitialize(::GetCurrentProcess(), nullptr, TRUE);
+    if (!sym_init) {
+      return {};
+    }
 
-struct SYMBOL_INFO_EX : SYMBOL_INFO {
-  char _NameBuf[FrameInfo::FUNC_SIZE] = {};
-};
-
-static inline auto sym_init() -> bool {
-  static const auto res = ::SymInitialize(::GetCurrentProcess(), nullptr, TRUE);
-  return res;
-}
-
-static inline auto trace(void* frame_buf[], DWORD frame_cnt) -> SIZE_T {
-  static constexpr auto SKIP_FRAME_CNT = 2U;
-
-  if (!sym_init()) {
-    return 0;
+    auto res = Backtrace{};
+    res._count = ::RtlCaptureStackBackTrace(0, MAX_FRAME, res._frames, nullptr);
+    return res;
   }
 
-  const auto cnt = ::RtlCaptureStackBackTrace(0, frame_cnt, frame_buf, nullptr);
-  if (cnt <= SKIP_FRAME_CNT) {
-    return 0;
-  }
-  return cnt - SKIP_FRAME_CNT;
-}
+  struct LineInfo {
+    PCHAR file = nullptr;
+    DWORD line = 0;
 
-static inline auto frame_info(void* ptr) -> FrameInfo {
-  if (!ptr || !sym_init()) {
-    return {};
-  }
+    static auto from_addr(ULONG_PTR addr) -> LineInfo {
+      auto fl = ::IMAGEHLP_LINE64{};
+      fl.SizeOfStruct = sizeof(::IMAGEHLP_LINE64);
 
-  const auto addr = reinterpret_cast<ULONG_PTR>(ptr);
-
-  auto sym_info = SYMBOL_INFO_EX{};
-  sym_info.SizeOfStruct = sizeof(SYMBOL_INFO);
-  sym_info.MaxNameLen = sizeof(sym_info._NameBuf);
-
-  auto sym_displacement = 0ULL;
-  if (!::SymFromAddr(::GetCurrentProcess(), addr, &sym_displacement, &sym_info)) {
-    return {};
-  }
-
-  auto displacement = 0UL;
-  auto line_info = ::IMAGEHLP_LINE64{};
-  line_info.SizeOfStruct = sizeof(::IMAGEHLP_LINE64);
-  if (!::SymGetLineFromAddr64(::GetCurrentProcess(), addr, &displacement, &line_info)) {
-    return {};
-  }
-
-  auto res = FrameInfo{
-      .file = line_info.FileName,
-      .line = line_info.LineNumber,
-      .func = {},
+      auto disp = 0UL;
+      if (!::SymGetLineFromAddr64(::GetCurrentProcess(), addr, &disp, &fl)) {
+        return {};
+      }
+      return {fl.FileName, fl.LineNumber};
+    }
   };
-  ::memcpy(res.func, sym_info.Name, sizeof(sym_info._NameBuf));
-  return res;
-}
 
-static inline auto cxx_demangle(const char in[], char buf[], DWORD buf_len) -> DWORD {
-  const auto ret = ::UnDecorateSymbolName(in, buf, buf_len, UNDNAME_COMPLETE);
-  if (ret <= 0 || ret > buf_len) {
-    return 0;
+  struct FuncInfo {
+    static constexpr auto MAX_NAME = 256U;
+    char func[MAX_NAME] = {};
+
+    static auto from_addr(ULONG_PTR addr) -> FuncInfo {
+      struct SymbolInfo : SYMBOL_INFO {
+        char _NameBuf[MAX_NAME] = {};
+      };
+      auto sym = SymbolInfo{};
+      sym.SizeOfStruct = sizeof(SYMBOL_INFO);
+      sym.MaxNameLen = sizeof(sym._NameBuf);
+
+      auto disp = 0ULL;
+      if (!::SymFromAddr(::GetCurrentProcess(), addr, &disp, &sym)) {
+        return {};
+      }
+
+      auto res = FuncInfo{};
+      const auto ret = ::UnDecorateSymbolName(sym.Name, res.func, MAX_NAME, UNDNAME_COMPLETE);
+      if (ret <= 0 || ret > MAX_NAME) {
+        ::memcpy(res.func, sym.Name, MAX_NAME);
+      }
+      return res;
+    }
+  };
+
+  struct FrameInfo : LineInfo, FuncInfo {};
+
+  auto frame(DWORD idx) const -> FrameInfo {
+    if (idx > _count) {
+      return {};
+    }
+
+    const auto addr = reinterpret_cast<uintptr_t>(_frames[idx]);
+    const auto line_info = LineInfo::from_addr(addr);
+    const auto func_info = FuncInfo::from_addr(addr);
+    return {line_info, func_info};
   }
-  return ret;
-}
+};
 
-}  // namespace sfc::sys::backtrace
+}  // namespace sfc::sys::windows

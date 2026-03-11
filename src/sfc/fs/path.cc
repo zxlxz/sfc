@@ -1,11 +1,14 @@
-#include "sfc/fs/path.h"
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/unix/fs.inl"
+#elif defined(_WIN32)
+#include "sfc/sys/windows/fs.inl"
+#endif
 
-#include "sfc/sys/fs.h"
+#define _SFC_SYS_IO_
+#include "sfc/fs/path.h"
 #include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
-
-namespace sys_imp = sys::fs;
 
 struct Components {
   Str _str;
@@ -276,18 +279,18 @@ auto Meta::file_len() const noexcept -> u64 {
 }
 
 auto Meta::is_dir() const noexcept -> bool {
-  return sys_imp::is_dir(_attr);
+  return sys::is_dir(_attr);
 }
 
 auto Meta::is_file() const noexcept -> bool {
-  return sys_imp::is_file(_attr);
+  return sys::is_file(_attr);
 }
 
 auto meta(Path path) -> io::Result<Meta> {
   const auto os_path = ffi::OsString::from(path.as_str());
 
   auto res = Meta{};
-  if (!sys_imp::lstat(os_path.ptr(), res)) {
+  if (!sys::lstat(os_path.ptr(), res)) {
     return io::last_os_error();
   }
   return res;
@@ -299,7 +302,7 @@ auto create_dir(Path path) -> io::Result<> {
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
-  if (sys_imp::mkdir(os_path.ptr())) {
+  if (sys::mkdir(os_path.ptr())) {
     return {};
   }
 
@@ -328,7 +331,7 @@ auto create_dir_all(Path path) -> io::Result<> {
 auto remove_dir(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
 
-  const auto ret = sys_imp::rmdir(os_path.ptr());
+  const auto ret = sys::rmdir(os_path.ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -339,7 +342,7 @@ auto remove_dir(Path path) -> io::Result<> {
 auto remove_file(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
 
-  const auto ret = sys_imp::unlink(os_path.ptr());
+  const auto ret = sys::unlink(os_path.ptr());
   if (!ret) {
     return io::last_os_error();
   }
@@ -351,7 +354,7 @@ auto rename(Path old_path, Path new_path) -> io::Result<> {
   const auto os_old = ffi::OsString::from(old_path.as_str());
   const auto os_new = ffi::OsString::from(new_path.as_str());
 
-  const auto ret = sys_imp::rename(os_old.ptr(), os_new.ptr());
+  const auto ret = sys::rename(os_old.ptr(), os_new.ptr());
   if (!ret) {
     return io::last_os_error();
   }

@@ -1,11 +1,14 @@
-#include "sfc/thread.h"
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/unix/thread.inl"
+#elif defined(_WIN32)
+#include "sfc/sys/windows/thread.inl"
+#endif
 
-#include "sfc/sys/thread.h"
+#define _SFC_SYS_THREAD_
+#include "sfc/thread.h"
 #include "sfc/ffi/os_str.h"
 
 namespace sfc::thread {
-
-namespace sys_imp = sys::thread;
 
 struct ThreadData {
   Box<void()> _func;
@@ -15,7 +18,7 @@ struct ThreadData {
   void run() noexcept {
     const auto name_ptr = _name.ptr();
     if (name_ptr != nullptr) {
-      sys_imp::thrd_setname(name_ptr);
+      sys::Thread::set_name(name_ptr);
     }
 
     try {
@@ -24,51 +27,66 @@ struct ThreadData {
       __builtin_abort();
     }
   }
+
+  static auto callback(void* ptr) -> sys::Thread::ret_t {
+    auto dat = static_cast<ThreadData*>(ptr);
+    auto obj = Box<ThreadData>::from_raw(dat);
+    obj->run();
+    return {};
+  }
 };
 
-static auto thread_callback(void* ptr) -> sys_imp::ret_t {
-  auto dat = static_cast<ThreadData*>(ptr);
-  auto obj = Box<ThreadData>::from_raw(dat);
-  obj->run();
-  return {};
+auto Thread::id() const -> u32 {
+  return _inn.tid();
 }
 
-void Thread::join() {
-  if (!_raw) {
-    return;
+JoinHandle::JoinHandle() noexcept = default;
+
+JoinHandle::~JoinHandle() noexcept {
+  if (_thread.is_valid()) {
+    _thread.join();
   }
-  sys_imp::thrd_join(static_cast<sys_imp::thrd_t>(_raw));
+}
+
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thread{other._thread} {
+  other._thread = {};
+}
+
+JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_thread, other._thread);
+  }
+  return *this;
 }
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
   auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::OsString::from(name));
-  auto thrd = sys_imp::thrd_create(stack_size, thread_callback, data.ptr());
-  if (thrd) {
-    // forget data
+  auto thrd = sys::Thread::spawn(stack_size, &ThreadData::callback, data.ptr());
+  if (thrd.is_valid()) {  // forget data if spawn success
     mem::move(data).into_raw();
   }
 
   auto res = JoinHandle{};
-  res._thrd = Thread{thrd};
+  res._thread = sys::Thread{thrd};
   return res;
 }
 
 auto current() -> Thread {
-  const auto thrd = sys_imp::thrd_current();
+  const auto thrd = sys::Thread::current();
   return Thread{thrd};
 }
 
 void yield_now() {
-  sys_imp::thrd_yield();
+  sys::Thread::yield();
 }
 
 void sleep(time::Duration dur) {
   const auto millis = static_cast<u32>(dur.as_millis());
-  sys_imp::thrd_sleep_ms(millis);
+  sys::sleep_ms(millis);
 }
 
 void sleep_ms(u32 ms) {
-  sys_imp::thrd_sleep_ms(ms);
+  sys::sleep_ms(ms);
 }
 
 }  // namespace sfc::thread

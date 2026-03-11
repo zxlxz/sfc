@@ -1,8 +1,14 @@
-#include "sfc/core/panic.h"
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/unix/io.inl"
+#include "sfc/sys/unix/backtrace.inl"
+#elif defined(_WIN32)
+#include "sfc/sys/windows/io.inl"
+#include "sfc/sys/windows/backtrace.inl"
+#endif
+#define _SFC_SYS_IO_
 
+#include "sfc/core/panic.h"
 #include "sfc/core/fmt.h"
-#include "sfc/sys/backtrace.h"
-#include "sfc/sys/io.h"
 
 namespace sfc::panic {
 
@@ -37,42 +43,27 @@ static auto idx2str(u32 idx) -> Str {
 }
 
 static void println(const auto&... args) noexcept {
-  auto buf = fmt::FixedBuf<256U>{};
-  (void)(buf.write_str(Str{args}), ...);
-  (void)(buf.write_str(Str{"\n"}));
-  sys::io::write(sys::io::stderr(), buf._buf, buf._len);
+  auto buf = fmt::FixedBuf<256>{};
+  (void)(buf.write_str(args), ...);
+  (void)(buf.write_str("\n"));
+
+  auto stdout = sys::stdout();
+  stdout.write(buf._buf, buf._len);
 }
-
-static void dump_frame(u32 idx, void* ptr) noexcept {
-  char fun_buf[256];
-
-  const auto info = sys::backtrace::frame_info(ptr);
-  const auto raw_fun = Str{info.func};
-
-  const auto demangle_len = sys::backtrace::cxx_demangle(info.func, fun_buf, sizeof(fun_buf));
-  const auto demangle_fun = Str{fun_buf, demangle_len};
-
-  const auto idx_str = idx2str(idx);
-  const auto fun_str = demangle_len == 0 ? raw_fun : demangle_fun;
-  println(Str{" "}, idx_str, Str{" "}, fun_str);
-}
-
-void dump_frames() {}
 
 void panic_imp(Location loc, const char* msg, usize len) {
-  static constexpr auto kMaxFrameCnt = 64U;
-  static constexpr auto kMaxIntLen = 8U;
-
-  char line_buf[kMaxIntLen] = {};
+  char line_buf[8] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
   println(Str{msg, len});
-  println(Str{" > "}, Str{loc.file}, Str{":"}, line_str);
+  println(" > ", loc.file, ":", line_str);
 
-  void* frame_buf[kMaxFrameCnt] = {};
-  const auto frame_cnt = sys::backtrace::trace(frame_buf, kMaxFrameCnt);
-  for (auto idx = 0U; idx < frame_cnt; ++idx) {
-    dump_frame(idx, frame_buf[idx]);
+  auto bt = sys::Backtrace::capture();
+  for (auto idx = 0U; idx < bt._count; ++idx) {
+    auto frame = bt.frame(idx);
+    const auto idx_str = idx2str(idx);
+    const auto fun_str = frame.func;
+    println(" ", idx_str, " ", fun_str);
   }
 
   throw Error{loc};

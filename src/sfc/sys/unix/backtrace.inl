@@ -2,42 +2,56 @@
 
 #include "sfc/sys/unix/mod.inl"
 
-namespace sfc::sys::backtrace {
+namespace sfc::sys::unix {
 
-struct FrameInfo {
-  const char* file;
-  unsigned line;
-  const char* func;
-};
+struct Backtrace {
+  static constexpr auto MAX_FRAME = 64U;
+  void* _frames[MAX_FRAME];
+  unsigned _count = 0;
 
-static inline auto trace(void* buf[], size_t buf_len) -> size_t {
-  const auto cnt = ::backtrace(buf, buf_len);
-  return cnt > 0 ? cnt : 0U;
-}
-
-static inline auto frame_info(void* addr) -> FrameInfo {
-  auto dl_info = ::Dl_info{};
-  if (!::dladdr(addr, &dl_info)) {
-    return {};
+ public:
+  static auto capture() -> Backtrace {
+    auto res = Backtrace{};
+    const auto cnt = ::backtrace(res._frames, MAX_FRAME);
+    if (cnt >= 0) {
+      res._count = static_cast<unsigned>(cnt);
+    }
+    return res;
   }
 
-  auto res = FrameInfo{
-      .file = dl_info.dli_fname,
-      .line = 0,
-      .func = dl_info.dli_sname,
+  struct FrameInfo {
+    static constexpr size_t MAX_NAME = 256U;
+    const char* file;
+    unsigned line;
+    char func[MAX_NAME];
+
+    static auto from_addr(void* addr) -> FrameInfo {
+      auto dli = ::Dl_info{};
+      if (!::dladdr(addr, &dli)) {
+        return {};
+      }
+
+      auto res = FrameInfo{dli.dli_fname, 0, {}};
+
+      auto status = 0;
+      auto out_len = MAX_NAME;
+      __cxxabiv1::__cxa_demangle(dli.dli_sname, res.func, &out_len, &status);
+      if (status != 0 || out_len == 0 || out_len >= MAX_NAME) {
+        ::strncpy(res.func, dli.dli_sname, sizeof(res.func));
+      }
+
+      return res;
+    }
   };
 
-  return res;
-}
+  auto frame(unsigned idx) const -> FrameInfo {
+    if (idx >= _count) {
+      return {};
+    }
 
-static auto cxx_demangle(const char in[], char buf[], size_t buf_len) -> size_t {
-  auto status = 0;
-  auto out_len = buf_len;
-  __cxxabiv1::__cxa_demangle(in, buf, &out_len, &status);
-  if (status != 0 || out_len == 0 || out_len >= buf_len) {
-    return 0;
+    const auto addr = _frames[idx];
+    return FrameInfo::from_addr(addr);
   }
-  return out_len;
-}
+};
 
-}  // namespace sfc::sys::.backtrace
+}  // namespace sfc::sys::unix

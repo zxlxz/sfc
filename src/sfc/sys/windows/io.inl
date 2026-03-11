@@ -1,133 +1,131 @@
 #pragma once
 #include "sfc/sys/windows/mod.inl"
 
-namespace sfc::sys::io {
+namespace sfc::sys::windows {
 
-static const auto INVALID_FD = INVALID_HANDLE_VALUE;
+struct File {
+  HANDLE _fd;
 
-static inline auto get_err() -> int {
-  return static_cast<int>(::GetLastError());
-}
-
-template <class T>
-static inline auto map_err(int code) -> T {
-  switch (code) {
-    case ERROR_FILE_NOT_FOUND:
-    case ERROR_PATH_NOT_FOUND:    return T::NotFound;
-    case ERROR_ACCESS_DENIED:     return T::PermissionDenied;
-    case WSAECONNREFUSED:         return T::ConnectionRefused;
-    case WSAECONNRESET:           return T::ConnectionReset;
-    case WSAECONNABORTED:         return T::ConnectionAborted;
-    case WSAENOTCONN:             return T::NotConnected;
-    case WSAEADDRINUSE:           return T::AddrInUse;
-    case WSAEADDRNOTAVAIL:        return T::AddrNotAvailable;
-    case WSAENETUNREACH:          return T::NetworkUnreachable;
-    case WSAEHOSTUNREACH:         return T::HostUnreachable;
-    case WSAENETDOWN:             return T::NetworkDown;
-    case ERROR_IO_DEVICE:         return T::BrokenPipe;
-    case ERROR_FILE_EXISTS:
-    case ERROR_ALREADY_EXISTS:    return T::AlreadyExists;
-    case WSAEWOULDBLOCK:          return T::WouldBlock;
-    case ERROR_INVALID_PARAMETER: return T::InvalidInput;
-    case ERROR_INVALID_FUNCTION:  return T::InvalidOperation;
-    case ERROR_OPERATION_ABORTED: return T::Interrupted;
-    case ERROR_NOT_SUPPORTED:     return T::Unsupported;
-    case ERROR_HANDLE_EOF:        return T::UnexpectedEof;
-    case ERROR_DISK_FULL:         return T::StorageFull;
-    case ERROR_DIRECTORY:         return T::NotADirectory;
-    case ERROR_DIR_NOT_EMPTY:     return T::DirectoryNotEmpty;
-    case ERROR_DEVICE_IN_USE:     return T::ResourceBusy;
-    case ERROR_POSSIBLE_DEADLOCK: return T::Deadlock;
-    case ERROR_NOT_ENOUGH_MEMORY:
-    case ERROR_OUTOFMEMORY:       return T::StorageFull;
-    case ERROR_IO_INCOMPLETE:     return T::InProgress;
-    case WSAETIMEDOUT:            return T::TimedOut;
-    default:                      return T::Other;
-  }
-}
-
-static inline void close(HANDLE fd) {
-  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  ::CloseHandle(fd);
-}
-
-static inline void flush(HANDLE fd) {
-  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
-    return;
-  }
-  ::FlushFileBuffers(fd);
-}
-
-static inline auto read(HANDLE fd, void* buf, SIZE_T buf_size) -> SSIZE_T {
-  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
-    return -1;
+ public:
+  auto is_valid() const -> bool {
+    return _fd != nullptr && _fd != INVALID_HANDLE_VALUE;
   }
 
-  if (buf == nullptr || buf_size == 0 || buf_size >= UINT_MAX) {
-    return 0;
+  auto close() -> bool {
+    if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) {
+      return true;
+    }
+    const auto ret = ::CloseHandle(_fd);
+    _fd = INVALID_HANDLE_VALUE;
+    return bool(ret);
   }
 
-  auto bytes_read = 0UL;
-  if (!::ReadFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr)) {
-    return -1;
+  auto flush() -> bool {
+    if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) {
+      return true;
+    }
+    const auto ret = ::FlushFileBuffers(_fd);
+    return bool(ret);
   }
 
-  return bytes_read;
+  auto read(void* buf, SIZE_T buf_size) -> SSIZE_T {
+    if (buf == nullptr || buf_size == 0 || buf_size >= UINT_MAX) {
+      return 0;
+    }
+
+    auto bytes_read = 0UL;
+    if (!::ReadFile(_fd, buf, static_cast<DWORD>(buf_size), &bytes_read, nullptr)) {
+      return -1;
+    }
+
+    return bytes_read;
+  }
+
+  auto write(const void* buf, SIZE_T buf_size) -> SSIZE_T {
+    if (buf == nullptr || buf_size == 0 || buf_size >= UINT_MAX) {
+      return 0;
+    }
+
+    auto bytes_written = 0UL;
+    if (!::WriteFile(_fd, buf, static_cast<DWORD>(buf_size), &bytes_written, nullptr)) {
+      return -1;
+    }
+
+    return bytes_written;
+  }
+
+  auto seek(SSIZE_T offset, DWORD whence) -> SSIZE_T {
+    const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
+
+    auto new_offset = LARGE_INTEGER{};
+    if (!::SetFilePointerEx(_fd, old_offset, &new_offset, whence)) {
+      return -1;
+    }
+    return new_offset.QuadPart;
+  }
+
+  auto is_tty() const -> bool {
+    if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) {
+      return false;
+    }
+
+    auto mode = 0UL;
+    if (!::GetConsoleMode(_fd, &mode)) {
+      return false;
+    }
+    return mode != 0;
+  }
 };
 
-static inline auto write(HANDLE fd, const void* buf, SIZE_T buf_size) -> SSIZE_T {
-  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
-    return -1;
-  }
-
-  if (buf == nullptr || buf_size == 0 || buf_size >= UINT_MAX) {
-    return 0;
-  }
-
-  auto bytes_write = 0UL;
-  if (!::WriteFile(fd, buf, static_cast<DWORD>(buf_size), &bytes_write, nullptr)) {
-    return -1;
-  }
-  return bytes_write;
+static inline auto stdout() -> File {
+  static const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+  return File{handle};
 }
 
-static inline auto seek(HANDLE fd, SSIZE_T offset, DWORD whence) -> SSIZE_T {
-  if (fd == nullptr || fd == INVALID_HANDLE_VALUE) {
-    return -1;
+static inline auto stderr() -> File {
+  static const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
+  return File{handle};
+}
+
+static inline auto stdin() -> File {
+  static const auto handle = ::GetStdHandle(STD_INPUT_HANDLE);
+  return File{handle};
+}
+
+static inline auto io_error(DWORD code) -> io::Error {
+  switch (code) {
+    case ERROR_FILE_NOT_FOUND:
+    case ERROR_PATH_NOT_FOUND:    return io::Error::NotFound;
+    case ERROR_ACCESS_DENIED:     return io::Error::PermissionDenied;
+    case WSAECONNREFUSED:         return io::Error::ConnectionRefused;
+    case WSAECONNRESET:           return io::Error::ConnectionReset;
+    case WSAECONNABORTED:         return io::Error::ConnectionAborted;
+    case WSAENOTCONN:             return io::Error::NotConnected;
+    case WSAEADDRINUSE:           return io::Error::AddrInUse;
+    case WSAEADDRNOTAVAIL:        return io::Error::AddrNotAvailable;
+    case WSAENETUNREACH:          return io::Error::NetworkUnreachable;
+    case WSAEHOSTUNREACH:         return io::Error::HostUnreachable;
+    case WSAENETDOWN:             return io::Error::NetworkDown;
+    case ERROR_IO_DEVICE:         return io::Error::BrokenPipe;
+    case ERROR_FILE_EXISTS:
+    case ERROR_ALREADY_EXISTS:    return io::Error::AlreadyExists;
+    case WSAEWOULDBLOCK:          return io::Error::WouldBlock;
+    case ERROR_INVALID_PARAMETER: return io::Error::InvalidInput;
+    case ERROR_INVALID_FUNCTION:  return io::Error::InvalidOperation;
+    case ERROR_OPERATION_ABORTED: return io::Error::Interrupted;
+    case ERROR_NOT_SUPPORTED:     return io::Error::Unsupported;
+    case ERROR_HANDLE_EOF:        return io::Error::UnexpectedEof;
+    case ERROR_DISK_FULL:         return io::Error::StorageFull;
+    case ERROR_DIRECTORY:         return io::Error::NotADirectory;
+    case ERROR_DIR_NOT_EMPTY:     return io::Error::DirectoryNotEmpty;
+    case ERROR_DEVICE_IN_USE:     return io::Error::ResourceBusy;
+    case ERROR_POSSIBLE_DEADLOCK: return io::Error::Deadlock;
+    case ERROR_NOT_ENOUGH_MEMORY:
+    case ERROR_OUTOFMEMORY:       return io::Error::StorageFull;
+    case ERROR_IO_INCOMPLETE:     return io::Error::InProgress;
+    case WSAETIMEDOUT:            return io::Error::TimedOut;
+    default:                      return io::Error::Other;
   }
-
-  const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
-  auto new_offset = LARGE_INTEGER{};
-  if (!::SetFilePointerEx(fd, old_offset, &new_offset, whence)) {
-    return -1;
-  }
-  return new_offset.QuadPart;
 }
 
-static inline auto is_tty(HANDLE fd) -> bool {
-  if (fd == INVALID_HANDLE_VALUE) {
-    return false;
-  }
-
-  auto mode = 0UL;
-  if (!::GetConsoleMode(fd, &mode)) {
-    return false;
-  }
-  return mode != 0;
-}
-
-static inline auto stdout() -> HANDLE {
-  return ::GetStdHandle(STD_OUTPUT_HANDLE);
-}
-
-static inline auto stderr() -> HANDLE {
-  return ::GetStdHandle(STD_ERROR_HANDLE);
-}
-
-static inline auto stdin() -> HANDLE {
-  return ::GetStdHandle(STD_INPUT_HANDLE);
-}
-
-}  // namespace sfc::sys::io
+}  // namespace sfc::sys::windows

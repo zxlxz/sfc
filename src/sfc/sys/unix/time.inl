@@ -2,44 +2,74 @@
 
 #include "sfc/sys/unix/mod.inl"
 
-namespace sfc::sys::time {
+namespace sfc::sys::unix {
 
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
 
 using tm_t = struct ::tm;
 using timespec_t = struct ::timespec;
 
-static inline auto instant_now() -> unsigned long {
-  auto ts = timespec_t{};
-  ::clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec;
-}
+struct Instant {
+  timespec_t _ts = {};
 
-static inline auto system_now() -> unsigned long {
-  auto ts = timespec_t{};
-  ::clock_gettime(CLOCK_REALTIME, &ts);
-  return ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec;
-}
+  static auto now() noexcept -> Instant {
+    auto ts = timespec_t{};
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    return Instant{ts};
+  }
 
-static inline auto make_datetime(const tm_t& tm, auto& dst) {
-  dst.year = static_cast<unsigned short>(tm.tm_year + 1900);
-  dst.month = static_cast<unsigned short>(tm.tm_mon + 1);
-  dst.day = static_cast<unsigned short>(tm.tm_mday);
-  dst.hour = static_cast<unsigned short>(tm.tm_hour);
-  dst.minute = static_cast<unsigned short>(tm.tm_min);
-  dst.second = static_cast<unsigned short>(tm.tm_sec);
-}
+  auto nanos() const -> uint64_t {
+    const auto nanos = _ts.tv_sec * NANOS_PER_SEC + _ts.tv_nsec;
+    return static_cast<uint64_t>(nanos);
+  }
+};
 
-static inline void make_utc(time_t secs, auto& dst) {
-  auto tm = tm_t{};
-  ::gmtime_r(&secs, &tm);
-  make_datetime(tm, dst);
-}
+struct SystemTime {
+  timespec_t _ts = {};
 
-static inline void make_local(time_t secs, auto& dst) {
-  auto tm = tm_t{};
-  ::localtime_r(&secs, &tm);
-  make_datetime(tm, dst);
-}
+  static auto now() noexcept -> SystemTime {
+    auto ts = timespec_t{};
+    ::clock_gettime(CLOCK_REALTIME, &ts);
+    return SystemTime{ts};
+  }
 
-}  // namespace sfc::sys::time
+  auto nanos() const -> uint64_t {
+    const auto nanos = _ts.tv_sec * NANOS_PER_SEC + _ts.tv_nsec;
+    return static_cast<uint64_t>(nanos);
+  }
+};
+
+struct DateTime {
+  unsigned short year = 0;
+  unsigned short month = 0;
+  unsigned short day = 0;
+  unsigned short hour = 0;
+  unsigned short minute = 0;
+  unsigned short second = 0;
+
+  static auto from_tm(const tm_t& tm) -> DateTime {
+    const auto res = DateTime{
+        .year = static_cast<unsigned short>(tm.tm_year + 1900),
+        .month = static_cast<unsigned short>(tm.tm_mon + 1),
+        .day = static_cast<unsigned short>(tm.tm_mday),
+        .hour = static_cast<unsigned short>(tm.tm_hour),
+        .minute = static_cast<unsigned short>(tm.tm_min),
+        .second = static_cast<unsigned short>(tm.tm_sec),
+    };
+    return res;
+  }
+
+  static auto from_utc(time_t srcs) -> DateTime {
+    auto tm = tm_t{};
+    ::gmtime_r(&srcs, &tm);
+    return from_tm(tm);
+  }
+
+  static auto from_local(time_t srcs) -> DateTime {
+    auto tm = tm_t{};
+    ::localtime_r(&srcs, &tm);
+    return from_tm(tm);
+  }
+};
+
+}  // namespace sfc::sys::unix

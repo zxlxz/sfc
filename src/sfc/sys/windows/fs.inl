@@ -1,28 +1,35 @@
 #pragma once
-#include "sfc/sys/windows/mod.inl"
 
-namespace sfc::sys::fs {
+#include "sfc/sys/windows/io.inl"
 
-static const auto INVALID_FD = INVALID_HANDLE_VALUE;
+namespace sfc::sys::windows {
 
-static inline auto open(const wchar_t* path, const auto& opts) -> HANDLE {
-  const auto access_mode = (opts.read ? GENERIC_READ : 0) |    //
-                           (opts.write ? GENERIC_WRITE : 0) |  //
-                           (opts.append ? FILE_APPEND_DATA : 0);
+struct OpenOptions {
+  bool _append = false;
+  bool _create = false;
+  bool _create_new = false;
+  bool _read = false;
+  bool _write = false;
+  bool _truncate = false;
+  DWORD _share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+  DWORD _flags = FILE_ATTRIBUTE_NORMAL;
 
-  const auto share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+  auto open(const wchar_t* path) const -> File {
+    const auto read_mode = _read ? GENERIC_READ : 0;
+    const auto write_mode = _write ? GENERIC_WRITE : 0;
+    const auto append_mode = _append ? FILE_APPEND_DATA : 0;
+    const auto access_mode = read_mode | write_mode | append_mode;
 
-  const auto create_mode = opts.create_new                ? CREATE_NEW
-                           : opts.create && opts.truncate ? CREATE_ALWAYS
-                           : opts.create                  ? OPEN_ALWAYS
-                           : opts.truncate                ? TRUNCATE_EXISTING
-                                                          : OPEN_EXISTING;
+    const auto create_mode = _create_new            ? CREATE_NEW
+                             : _create && _truncate ? CREATE_ALWAYS
+                             : _create              ? OPEN_ALWAYS
+                             : _truncate            ? TRUNCATE_EXISTING
+                                                    : OPEN_EXISTING;
 
-  const auto flags = FILE_ATTRIBUTE_NORMAL;
-  const auto handle = ::CreateFileW(path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
-
-  return handle;
-}
+    const auto handle = ::CreateFileW(path, access_mode, _share_mode, nullptr, create_mode, _flags, nullptr);
+    return File{handle};
+  }
+};
 
 static inline auto is_dir(DWORD attr) -> bool {
   return attr & FILE_ATTRIBUTE_DIRECTORY;
@@ -60,4 +67,4 @@ static inline auto rmdir(const wchar_t* path) -> bool {
   return ::RemoveDirectoryW(path);
 }
 
-}  // namespace sfc::sys::fs
+}  // namespace sfc::sys::windows

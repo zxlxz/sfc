@@ -22,5 +22,4 @@ SFC_TEST(datetime_local) {
   sfc::expect_true(dt_local.day >= 1 && dt_local.day <= 31);
 }
 
-}  // namespace sfc::chrono::test
-\
+}  // namespace sfc::time::test

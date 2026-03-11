@@ -2,60 +2,81 @@
 
 #include "sfc/sys/unix/mod.inl"
 
-namespace sfc::sys::thread {
+namespace sfc::sys::unix {
 
-using ret_t = void*;
-using thrd_t = pthread_t;
+struct Thread {
+  using ret_t = void*;
+  using func_t = void* (*)(void*);
 
-using thrd_func_t = void*(*)(void*);
+  pthread_t _thr = 0;
 
-inline auto thrd_current() -> pthread_t {
-  return ::pthread_self();
-}
-
-inline auto thrd_create(size_t stack_size, thrd_func_t func, void* data) -> pthread_t {
-  // attr
-  auto attr = ::pthread_attr_t{};
-  ::pthread_attr_init(&attr);
-  if (stack_size != 0) {
-    ::pthread_attr_setstacksize(&attr, stack_size);
+ public:
+  static auto current() -> Thread {
+    const auto thr = ::pthread_self();
+    return Thread{thr};
   }
 
-  // create
-  auto thrd = pthread_t{};
-  const auto ret = ::pthread_create(&thrd, &attr, func, data);
-  ::pthread_attr_destroy(&attr);
+  static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
+    // thread attr
+    auto attr = ::pthread_attr_t{};
+    ::pthread_attr_init(&attr);
+    if (stack_size != 0) {
+      ::pthread_attr_setstacksize(&attr, stack_size);
+    }
 
-  if (ret != 0) {
-    return {};
+    // create
+    auto thr = pthread_t{};
+    const auto ret = ::pthread_create(&thr, &attr, func, data);
+    ::pthread_attr_destroy(&attr);
+
+    if (ret != 0) {
+      return {};
+    }
+    return Thread{thr};
   }
-  return thrd;
-}
 
-inline auto thrd_join(pthread_t thrd) -> bool {
-  const auto err = ::pthread_join(thrd, nullptr);
-  return err == 0;
-}
+  static auto yield() -> bool {
+    const auto err = ::sched_yield();
+    return err == 0;
+  }
 
-inline auto thrd_detach(pthread_t thrd) -> bool {
-  const auto err = ::pthread_detach(thrd);
-  return err == 0;
-}
-
-inline void thrd_yield() {
-  ::sched_yield();
-}
-
-inline auto thrd_setname(const char* name) -> bool {
+  static auto set_name(const char* name) -> bool {
 #ifdef __APPLE__
-  const auto err = ::pthread_setname_np(name);
+    const auto err = ::pthread_setname_np(name);
 #else
-  const auto err = ::pthread_setname_np(pthread_self(), name);
+    const auto thr = ::pthread_self();
+    const auto err = ::pthread_setname_np(thr, name);
 #endif
-  return err == 0;
-}
+    return err == 0;
+  }
 
-inline auto thrd_sleep_ms(unsigned millis) -> bool {
+  auto is_valid() const -> bool {
+    return _thr != 0;
+  }
+
+  auto join() -> bool {
+    const auto err = ::pthread_join(_thr, nullptr);
+    return err == 0;
+  }
+
+  auto detach() -> bool {
+    const auto err = ::pthread_detach(_thr);
+    return err == 0;
+  }
+
+  auto tid() const -> unsigned {
+#ifdef __APPLE__
+    auto thr = __uint64_t{0};
+    ::pthread_threadid_np(_tid, &thr);
+    return static_cast<unsigned>(thr);
+#else
+    const auto thr = ::syscall(SYS_gettid);
+    return static_cast<unsigned>(thr);
+#endif
+  }
+};
+
+inline auto sleep_ms(unsigned millis) -> bool {
   static constexpr auto MILLIS_PER_SEC = 1000U;
   static constexpr auto NANOS_PER_MILLI = 1000000U;
 
@@ -78,4 +99,4 @@ inline auto thrd_sleep_ms(unsigned millis) -> bool {
   return true;
 }
 
-}  // namespace sfc::sys::thread
+}  // namespace sfc::sys::unix

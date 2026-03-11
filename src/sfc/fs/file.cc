@@ -1,11 +1,14 @@
-#include "sfc/fs/file.h"
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/unix/fs.inl"
+#elif defined(_WIN32)
+#include "sfc/sys/windows/fs.inl"
+#endif
 
+#define _SFC_SYS_IO_
+#include "sfc/fs/file.h"
 #include "sfc/ffi/os_str.h"
-#include "sfc/sys/fs.h"
 
 namespace sfc::fs {
-
-namespace sys_imp = sys::fs;
 
 auto File::open(Path path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.read = true, .write = true};
@@ -36,13 +39,22 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   const auto os_path = ffi::OsString::from(path.as_str());
 
-  const auto fd = sys_imp::open(os_path.ptr(), *this);
-  if (fd == sys_imp::INVALID_FD) {
+  const auto sys_opts = sys::OpenOptions{
+      ._append = append,
+      ._create = create,
+      ._create_new = create_new,
+      ._read = read,
+      ._write = write,
+      ._truncate = truncate,
+  };
+
+  const auto file = sys_opts.open(os_path.ptr());
+  if (!file.is_valid()) {
     return io::last_os_error();
   }
 
   auto res = File{};
-  res._inn = io::File{fd};
+  res._inn = io::File{file};
   return res;
 }
 
