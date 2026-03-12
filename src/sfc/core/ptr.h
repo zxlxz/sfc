@@ -140,7 +140,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
   }
 
   if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, sizeof(T));
+    __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
     for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
       new (pd) mem::MaybeUninit<T>{static_cast<T&&>(*ps)};
