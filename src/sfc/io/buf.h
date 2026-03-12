@@ -51,11 +51,7 @@ class Buffer {
   auto fill_buf(auto& read) -> Result<Slice<const u8>> {
     if (_pos == _buf.len()) {
       this->backshift();
-
-      auto ret = this->read_more(read);
-      if (ret.is_err()) {
-        return ~ret;
-      }
+      _TRY(this->read_more(read));
     }
     return this->buffer();
   }
@@ -71,12 +67,7 @@ struct BufRead : Read {
     auto nread = usize{0UL};
 
     while (true) {
-      const auto fill_res = r.fill_buf();
-      if (fill_res.is_err()) {
-        return ~fill_res;
-      }
-
-      const auto available = *fill_res;
+      const auto available = _TRY(r.fill_buf());
       const auto position = available.iter().position([&](auto c) { return !delim(c); });
       const auto used = position ? *position + 1 : available.len();
 
@@ -93,12 +84,7 @@ struct BufRead : Read {
     auto nread = 0UL;
 
     while (true) {
-      const auto fill_res = r.fill_buf();
-      if (fill_res.is_err()) {
-        return ~fill_res;
-      }
-
-      const auto available = *fill_res;
+      const auto available = _TRY(r.fill_buf());
       const auto position = available.find(delim);
       const auto used = position ? *position + 1 : available.len();
       buf.extend_from_slice(available[{0, used}]);
@@ -148,10 +134,7 @@ class BufReader : BufRead {
   auto peak(usize n) -> Result<Slice<const u8>> {
     if (n > _buf.len()) {
       _buf.backshift();
-
-      if (auto ret = _buf.read_more(_inn); ret.is_err()) {
-        return ~ret;
-      }
+      _TRY(_buf.read_more(_inn));
     }
     return _buf.buffer()[{0, n}];
   }
@@ -165,12 +148,7 @@ class BufReader : BufRead {
       return _inn.read(buf);
     }
 
-    auto fill_res = _buf.fill_buf(_inn);
-    if (fill_res.is_err()) {
-      return ~fill_res;
-    }
-
-    auto rem = *fill_res;
+    auto rem = _TRY(_buf.fill_buf(_inn));
     const auto nread = rem.read(buf).unwrap_or(0);
     _buf.consume(nread);
     return nread;
