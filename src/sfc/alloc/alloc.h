@@ -10,7 +10,7 @@ struct Layout {
 
  public:
   template <class T>
-  static auto array(usize n) noexcept -> Layout {
+  [[gnu::always_inline]] static auto array(usize n) noexcept -> Layout {
     return Layout{n * sizeof(T), alignof(T)};
   }
 };
@@ -28,7 +28,7 @@ struct GlobalAlloc {
 
   template <class T>
   auto realloc_array(this auto& self, T* ptr, usize len, usize new_len, usize used) -> T* {
-    if constexpr (trait::tv_copy_<T> || trait::tv_dtor_<T>) {
+    if constexpr (trait::tv_copy_<T>) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));
     } else if (used == 0) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));

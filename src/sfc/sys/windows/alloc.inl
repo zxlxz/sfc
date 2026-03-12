@@ -3,17 +3,18 @@
 
 namespace sfc::sys::windows {
 
-static inline void* alloc(alloc::Layout layout) {
+using alloc::Layout;
+
+static inline void* alloc(Layout layout) {
   return ::HeapAlloc(::GetProcessHeap(), 0, layout.size);
 }
 
-static inline void dealloc(void* addr, alloc::Layout layout) {
+static inline void dealloc(void* addr, [[maybe_unused]] Layout layout) {
   (void)layout;
-  ::HeapFree(::GetProcessHeap(), 0, addr);
+  (void)::HeapFree(::GetProcessHeap(), 0, addr);
 }
 
-static inline void* realloc(void* ptr, alloc::Layout layout, size_t new_size) {
-  (void)layout;
+static inline void* realloc(void* ptr, [[maybe_unused]] Layout layout, size_t new_size) {
   return ::HeapReAlloc(::GetProcessHeap(), 0, ptr, new_size);
 }
 
