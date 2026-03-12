@@ -8,7 +8,28 @@ struct Display {
   static void fmt(const auto& self, auto& f);
 };
 
-struct Spec {
+struct RawStr {
+  const char* _ptr;
+  usize _len;
+
+  template <usize N>
+  consteval RawStr(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
+
+  constexpr RawStr(const char* ptr, usize len) : _ptr{ptr}, _len{len} {}
+
+  constexpr auto find(char c, u32 pos) const -> u32 {
+    while (pos < _len && _ptr[pos] != c) {
+      pos++;
+    }
+    return pos;
+  }
+
+  constexpr auto substr(u32 start, u32 end) const -> RawStr {
+    return {_ptr + start, end - start};
+  }
+};
+
+struct Specifier {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
@@ -45,10 +66,10 @@ struct Spec {
   };
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  constexpr static auto from(const char* p, usize n) noexcept -> Spec {
-    auto parser = Parser{p, p + n};
+  constexpr static auto from(RawStr s) noexcept -> Specifier {
+    auto parser = Parser{s._ptr, s._ptr + s._len};
 
-    auto res = Spec{};
+    auto res = Specifier{};
     parser.extract(':');
 
     res._fill = parser.extract();
@@ -89,28 +110,19 @@ struct Fmts {
     u32 end;
   };
 
-  cstr_t _ptr;
-  usize _len;
+  RawStr _str;
   Idxs _idxs[N] = {};
-  Spec _spec[N] = {};
+  Specifier _spec[N] = {};
 
  public:
-  template <usize SL>
-  consteval Fmts(const char (&s)[SL]) : _ptr{s}, _len{SL - 1} {
-    auto find = [&](char c, u32 pos) -> u32 {
-      while (pos < _len && _ptr[pos] != c) {
-        pos++;
-      }
-      return pos;
-    };
-
+  consteval Fmts(const auto& s) : _str{s} {
     auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
-      const auto a = find('{', p);
-      const auto b = find('}', a);
+      const auto a = _str.find('{', p);
+      const auto b = _str.find('}', a);
       _idxs[i] = Idxs{a, b};
       if (a != b) {
-        _spec[i] = Spec::from(_ptr + (a + 1), b - a - 1);
+        _spec[i] = Specifier::from(_str.substr(a, b));
       }
       p = b + 1;
     }
@@ -121,14 +133,13 @@ template <class... T>
 struct Args {
   static constexpr auto N = sizeof...(T);
   using Idxs = Fmts::Idxs;
-  cstr_t _ptr = nullptr;
-  usize _len = 0;
+  RawStr _str;
   Idxs _idxs[N] = {};
-  Spec _spec[N] = {};
+  Specifier _spec[N] = {};
   const void* _args[sizeof...(T)];
 
  public:
-  explicit Args(Fmts fmts, const T&... args) : _ptr{fmts._ptr}, _len{fmts._len}, _args{&args...} {
+  explicit Args(Fmts fmts, const T&... args) : _str{fmts._str}, _args{&args...} {
     for (auto I = 0U; I < N; ++I) {
       _spec[I] = fmts._spec[I];
       _idxs[I] = fmts._idxs[I];
@@ -137,17 +148,19 @@ struct Args {
 
   void fmt(auto& f) const noexcept {
     this->fmt_imp<T...>(f, 0);
-    if (auto x = _idxs[N - 1].end + 1; x < _len) {
-      f.write_str({this->_ptr + x, this->_len - x});
+    if (auto x = _idxs[N - 1].end + 1; x < _str._len) {
+      const auto s = _str.substr(x, _str._len);
+      f.write_str({s._ptr, s._len});
     }
   }
 
  private:
   template <class U, class... S>
   void fmt_imp(auto& f, u32 I = 0) const {
-    const auto s = Idxs{I == 0 ? 0 : _idxs[I - 1].end + 1, _idxs[I].start};
-    if (s.start < s.end) {
-      f.write_str({_ptr + s.start, s.end - s.start});
+    const auto ids = Idxs{I == 0 ? 0 : _idxs[I - 1].end + 1, _idxs[I].start};
+    if (ids.start < ids.end) {
+      const auto s = _str.substr(ids.start, ids.end);
+      f.write_str({s._ptr, s._len});
     }
     f._spec = _spec[I];
     Display::fmt(*static_cast<const U*>(_args[I]), f);
@@ -159,14 +172,13 @@ struct Args {
 
 template <>
 struct Args<> {
-  cstr_t _ptr;
-  usize _len;
+  RawStr _str;
 
  public:
-  explicit Args(Fmts fmts) : _ptr{fmts._ptr}, _len{fmts._len} {}
+  explicit Args(Fmts fmts) : _str{fmts._str} {}
 
   void fmt(auto& f) const noexcept {
-    f.pad({_ptr, _len});
+    f.pad({_str._ptr, _str._len});
   }
 };
 

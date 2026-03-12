@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/core/mem.h"
-#include "sfc/core/expect.h"
 
 namespace sfc::ptr {
 

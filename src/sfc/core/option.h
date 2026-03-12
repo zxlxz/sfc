@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/core/expect.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
+#include "sfc/core/panic.h"
 
 namespace sfc::option {
 

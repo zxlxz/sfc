@@ -10,6 +10,29 @@
 
 namespace sfc::fs {
 
+File::File() : _inn{} {}
+
+File::~File() {
+  _inn.close();
+}
+
+File::File(File&& other) noexcept : _inn{other._inn} {
+  other._inn = {};
+}
+
+File& File::operator=(File&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_inn, other._inn);
+  }
+  return *this;
+}
+
+auto File::from_raw_fd(sys::RawFd fd) -> File {
+  auto res = File{};
+  res._inn._fd = fd;
+  return res;
+}
+
 auto File::open(Path path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.read = true, .write = true};
   return opts.open(path);
@@ -24,16 +47,23 @@ auto File::create(Path path) noexcept -> io::Result<File> {
   return opts.open(path);
 }
 
-auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
-  return _inn.seek(pos);
-}
-
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+  if (buf.is_empty()) {
+    return 0UL;
+  }
   return _inn.read(buf);
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
+  if (buf.is_empty()) {
+    return 0UL;
+  }
   return _inn.write(buf);
+}
+
+auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
+  const auto where = static_cast<u32>(pos.whence);
+  return _inn.seek(pos.offset, where);
 }
 
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
@@ -53,9 +83,7 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
     return io::last_os_error();
   }
 
-  auto res = File{};
-  res._inn = io::File{file};
-  return res;
+  return File::from_raw_fd(file._fd);
 }
 
 auto read(Path path) noexcept -> io::Result<Vec<u8>> {

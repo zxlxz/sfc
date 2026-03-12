@@ -80,6 +80,5 @@ struct SeekFrom {
   }
 };
 
-auto last_os_error() noexcept -> Error;
 
 }  // namespace sfc::io

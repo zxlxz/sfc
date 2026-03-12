@@ -5,10 +5,15 @@
 namespace sfc::fs {
 
 class [[nodiscard]] File : public io::Read, public io::Write {
-  friend struct OpenOptions;
-  io::File _inn{};
+  sys::File _inn;
 
  public:
+  File();
+  ~File();
+  File(File&&) noexcept;
+  File& operator=(File&&) noexcept;
+
+  static auto from_raw_fd(sys::RawFd fd) -> File;
   static auto open(Path path) noexcept-> io::Result<File>;
   static auto create(Path path) noexcept-> io::Result<File>;
 

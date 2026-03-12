@@ -41,6 +41,8 @@ enum class Error : i8 {
   Other,
 };
 
+auto last_os_error() noexcept -> Error;
+
 template <class T = void>
 using Result = result::Result<T, Error>;
 

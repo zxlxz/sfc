@@ -12,44 +12,45 @@ struct File {
     return _fd != -1;
   }
 
-  auto close() -> bool {
-    if (_fd == -1) {
-      return 0;
-    }
-    const auto ret = ::close(_fd);
+  void close() {
+    if (_fd == -1) return;
+    (void)::close(_fd);
     _fd = -1;
-    return ret != -1;
   }
 
-  auto flush() -> bool {
-    if (_fd == -1) {
-      return true;
-    }
+  auto flush() -> io::Result<> {
     const auto ret = ::fsync(_fd);
-    return ret != -1;
-  }
-
-  auto read(void* buf, size_t buf_size) -> ssize_t {
-    if (buf == nullptr || buf_size == 0) {
-      return 0;
+    if (ret == -1) {
+      return io::last_os_error();
     }
-    return ::read(_fd, buf, buf_size);
+    return {};
   }
 
-  auto write(const void* buf, size_t buf_size) -> ssize_t {
-    if (buf == nullptr || buf_size == 0) {
-      return 0;
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto ret = ::read(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
     }
-    return ::write(_fd, buf, buf_size);
+    return static_cast<usize>(ret);
   }
 
-  auto seek(off_t offset, int whence) -> off_t {
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto ret = ::write(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(ret);
+  }
+
+  auto seek(off_t offset, int whence) -> io::Result<usize> {
     static_assert(SEEK_SET == 0);
     static_assert(SEEK_CUR == 1);
     static_assert(SEEK_END == 2);
-
     const auto ret = ::lseek(_fd, offset, whence);
-    return ret;
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(ret);
   }
 
   auto is_tty() const -> bool {
@@ -108,4 +109,4 @@ static inline auto io_error(int code) -> io::Error {
   }
 }
 
-}  // namespace sfc::sys
+}  // namespace sfc::sys::unix

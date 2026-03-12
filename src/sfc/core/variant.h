@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/expect.h"
 #include "sfc/core/option.h"
 #include "sfc/core/ptr.h"
 

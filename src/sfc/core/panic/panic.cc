@@ -12,6 +12,16 @@
 
 namespace sfc::panic {
 
+void writeln(const auto&... args) {
+  u8 buf[256];
+  auto out = fmt::Buffer{buf, sizeof(buf)};
+  (void)(out.write_str(args), ...);
+  (void)(out.write_str("\n"));
+
+  const auto bytes = out.as_bytes();
+  (void)(sys::stdout().write(bytes));
+}
+
 template <u32 N>
 static auto int2str(char (&buf)[N], u32 val) -> Str {
   auto idx = N;
@@ -42,28 +52,19 @@ static auto idx2str(u32 idx) -> Str {
   return Str{idx_ptr, 2};
 }
 
-static void println(const auto&... args) noexcept {
-  auto buf = fmt::FixedBuf<256>{};
-  (void)(buf.write_str(args), ...);
-  (void)(buf.write_str("\n"));
-
-  auto stdout = sys::stdout();
-  stdout.write(buf._buf, buf._len);
-}
-
-void panic_imp(Location loc, const char* msg, usize len) {
+void panic_imp(Location loc, const void* buf, usize buf_len) {
   char line_buf[8] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
-  println(Str{msg, len});
-  println(" > ", loc.file, ":", line_str);
+  panic::writeln(Str{static_cast<const char*>(buf), buf_len});
+  panic::writeln(" > ", Str{loc.file}, ":", line_str);
 
   auto bt = sys::Backtrace::capture();
   for (auto idx = 0U; idx < bt._count; ++idx) {
     auto frame = bt.frame(idx);
     const auto idx_str = idx2str(idx);
     const auto fun_str = frame.func;
-    println(" ", idx_str, " ", fun_str);
+    panic::writeln(" ", idx_str, ": ", fun_str);
   }
 
   throw Error{loc};
