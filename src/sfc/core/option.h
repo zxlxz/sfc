@@ -150,7 +150,7 @@ class Option {
  public:
   // to result
   template <class E>
-  auto ok_or(this auto self, E err) -> result::Result<T, E> {
+  auto ok_or(this auto self, E err) noexcept -> result::Result<T, E> {
     if (self._tag) {
       return static_cast<T&&>(self._val);
     }
@@ -160,7 +160,7 @@ class Option {
  public:
   // trait: ops::Eq
   template <class U>
-  auto operator==(const Option<U>& other) const -> bool {
+  auto operator==(const Option<U>& other) const noexcept -> bool {
     if (!_tag) {
       return !bool(other);
     } else {
@@ -291,7 +291,7 @@ class Option<T> {
  public:
   // to result
   template <class E>
-  auto ok_or(this auto self, E err) -> result::Result<T, E> {
+  auto ok_or(this auto self, E err) noexcept -> result::Result<T, E> {
     if (self._inn.ptr()) {
       return {static_cast<T&&>(self._inn)};
     }
@@ -301,7 +301,7 @@ class Option<T> {
  public:
   // trait: ops::Eq
   template <class U>
-  auto operator==(const Option<U>& other) const -> bool {
+  auto operator==(const Option<U>& other) const noexcept -> bool {
     if (!_inn.ptr()) {
       return !other;
     } else {
@@ -429,7 +429,7 @@ class Option<T&> {
  public:
   // to result
   template <class E>
-  auto ok_or(E err) && -> result::Result<T, E> {
+  auto ok_or(E err) noexcept -> result::Result<T, E> {
     if (_ptr) {
       return {*_ptr};
     }
@@ -439,7 +439,7 @@ class Option<T&> {
  public:
   // trait: ops::Eq
   template <class U>
-  auto operator==(const Option<U>& other) const -> bool {
+  auto operator==(const Option<U>& other) const noexcept -> bool {
     if (!_ptr) {
       return !other;
     } else {
