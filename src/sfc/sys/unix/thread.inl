@@ -7,7 +7,6 @@ namespace sfc::sys::unix {
 struct Thread {
   using ret_t = void*;
   using func_t = void* (*)(void*);
-
   pthread_t _thr = 0;
 
  public:
@@ -70,7 +69,7 @@ struct Thread {
     if (_thr == 0) return 0;
 #ifdef __APPLE__
     auto thr = __uint64_t{0};
-    ::pthread_threadid_np(_tid, &thr);
+    ::pthread_threadid_np(_thr, &thr);
     return static_cast<unsigned>(thr);
 #else
     const auto thr = ::syscall(SYS_gettid);
