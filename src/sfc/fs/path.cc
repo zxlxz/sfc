@@ -288,12 +288,7 @@ auto Meta::is_file() const noexcept -> bool {
 
 auto meta(Path path) -> io::Result<Meta> {
   const auto os_path = ffi::OsString::from(path.as_str());
-
-  auto res = Meta{};
-  if (!sys::lstat(os_path.ptr(), res)) {
-    return io::last_os_error();
-  }
-  return res;
+  return sys::lstat<Meta>(os_path.ptr());
 }
 
 auto create_dir(Path path) -> io::Result<> {
@@ -302,64 +297,35 @@ auto create_dir(Path path) -> io::Result<> {
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
-  if (sys::mkdir(os_path.ptr())) {
-    return {};
-  }
-
-  const auto meta = fs::meta(path);
-  if (meta.is_ok() && meta->is_dir()) {
-    return {};
-  }
-
-  const auto err = io::last_os_error();
-  return err;
+  return sys::mkdir(os_path.ptr());
 }
 
 auto create_dir_all(Path path) -> io::Result<> {
-  if (auto ret = fs::create_dir(path); ret.is_ok()) {
+  const auto err = fs::create_dir(path).err();
+  if (!err || *err == io::Error::AlreadyExists) {
     return {};
   }
 
   const auto parent = path.parent();
-  if (auto ret = fs::create_dir_all(parent); ret.is_err()) {
-    return ret;
-  }
+  _TRY(fs::create_dir_all(parent));
 
   return fs::create_dir(path);
 }
 
 auto remove_dir(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
-
-  const auto ret = sys::rmdir(os_path.ptr());
-  if (!ret) {
-    return io::last_os_error();
-  }
-
-  return {};
+  return sys::rmdir(os_path.ptr());
 }
 
 auto remove_file(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
-
-  const auto ret = sys::unlink(os_path.ptr());
-  if (!ret) {
-    return io::last_os_error();
-  }
-
-  return {};
+  return sys::unlink(os_path.ptr());
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
   const auto os_old = ffi::OsString::from(old_path.as_str());
   const auto os_new = ffi::OsString::from(new_path.as_str());
-
-  const auto ret = sys::rename(os_old.ptr(), os_new.ptr());
-  if (!ret) {
-    return io::last_os_error();
-  }
-
-  return {};
+  return sys::rename(os_old.ptr(), os_new.ptr());
 }
 
 }  // namespace sfc::fs

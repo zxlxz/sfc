@@ -39,32 +39,51 @@ static inline auto is_file(DWORD attr) -> bool {
   return attr & FILE_ATTRIBUTE_NORMAL;
 }
 
-static inline bool lstat(const wchar_t* path, auto& res) {
+template<class Meta>
+static inline auto lstat(const wchar_t* path) -> io::Result<Meta> {
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
   if (!::GetFileAttributesExW(path, GetFileExInfoStandard, &attr)) {
-    return false;
+    return io::last_os_error();
   }
 
   const auto size = (SIZE_T(attr.nFileSizeHigh) << 32U) | attr.nFileSizeLow;
-  res._attr = static_cast<UINT32>(attr.dwFileAttributes);
-  res._size = size;
-  return true;
+  const auto res = Meta{
+    ._attr = static_cast<UINT32>(attr.dwFileAttributes),
+    ._size = size,
+  };
+  return res;
 }
 
-static inline auto unlink(const wchar_t* path) -> bool {
-  return ::DeleteFileW(path);
+static inline auto unlink(const wchar_t* path) -> io::Result<> {
+  const auto ret = ::DeleteFileW(path);
+  if (!ret) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> bool {
-  return ::MoveFileW(old_path, new_path);
+static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<> {
+  const auto ret = ::MoveFileW(old_path, new_path);
+  if (!ret) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto mkdir(const wchar_t* path) -> bool {
-  return ::CreateDirectoryW(path, nullptr);
+static inline auto mkdir(const wchar_t* path) -> io::Result<> {
+  const auto ret = ::CreateDirectoryW(path, nullptr);
+  if (!ret) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto rmdir(const wchar_t* path) -> bool {
-  return ::RemoveDirectoryW(path);
+static inline auto rmdir(const wchar_t* path) -> io::Result<> {
+  const auto ret = ::RemoveDirectoryW(path);
+  if (!ret) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
 }  // namespace sfc::sys::windows

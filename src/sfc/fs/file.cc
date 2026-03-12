@@ -29,7 +29,7 @@ File& File::operator=(File&& other) noexcept {
 
 auto File::from_raw_fd(sys::RawFd fd) -> File {
   auto res = File{};
-  res._inn._fd = fd;
+  res._inn = sys::File{fd};
   return res;
 }
 

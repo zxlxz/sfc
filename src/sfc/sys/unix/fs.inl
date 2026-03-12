@@ -35,31 +35,50 @@ static inline auto is_file(int attr) -> bool {
   return (attr & S_IFMT) == S_IFREG;
 }
 
-static inline auto lstat(const char* path, auto& res) -> bool {
+template<class Meta>
+static inline auto lstat(const char* path) -> io::Result<Meta> {
   auto st = stat_t{};
-  if (::lstat(path, &st) != 0) {
-    return false;
+  if (::lstat(path, &st) == -1) {
+    return io::last_os_error();
   }
 
-  res._attr = static_cast<unsigned>(st.st_mode);
-  res._size = static_cast<size_t>(st.st_size);
-  return true;
+  const auto res = Meta{
+      ._attr = static_cast<unsigned>(st.st_mode),
+      ._size = static_cast<size_t>(st.st_size),
+  };
+  return res;
 }
 
-static inline auto unlink(const char* path) -> bool {
-  return ::unlink(path) == 0;
+static inline auto unlink(const char* path) -> io::Result<> {
+  const auto ret = ::unlink(path);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto rename(const char* old_path, const char* new_path) -> bool {
-  return ::rename(old_path, new_path) == 0;
+static inline auto rename(const char* old_path, const char* new_path) -> io::Result<> {
+  const auto ret = ::rename(old_path, new_path);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto mkdir(const char* path) -> bool {
-  return ::mkdir(path, 0755) == 0;
+static inline auto mkdir(const char* path) -> io::Result<> {
+  const auto ret = ::mkdir(path, 0755);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-static inline auto rmdir(const char* path) -> bool {
-  return ::rmdir(path) == 0;
+static inline auto rmdir(const char* path) -> io::Result<> {
+  const auto ret = ::rmdir(path);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  return {};
 }
 
-}  // namespace sfc::sys
+}  // namespace sfc::sys::unix
