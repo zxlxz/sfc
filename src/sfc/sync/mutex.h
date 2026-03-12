@@ -35,7 +35,7 @@ class Mutex {
 class ReentrantLock {
   struct key_t;
   sys::Mutex _mutex;
-  Atomic<u32> _ownner;
+  Atomic<u32> _owner;
   Atomic<u32> _count;
 
  public:

@@ -40,7 +40,7 @@ auto Mutex::Guard::inner() -> sys::Mutex& {
   return _lock._inn;
 }
 
-ReentrantLock::ReentrantLock() noexcept : _mutex{}, _ownner{0}, _count{0} {}
+ReentrantLock::ReentrantLock() noexcept : _mutex{}, _owner{0}, _count{0} {}
 
 ReentrantLock::~ReentrantLock() noexcept {}
 
@@ -51,13 +51,13 @@ ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 auto ReentrantLock::lock() noexcept -> Guard {
   const auto tid = thread::current().id();
 
-  if (_ownner.load(Ordering::Acquire) == tid) {
+  if (_owner.load(Ordering::Acquire) == tid) {
     _count.fetch_add(1, sync::Ordering::Relaxed);
     return Guard{{*this}};
   }
 
   _mutex.lock();
-  _ownner.store(tid, sync::Ordering::Release);
+  _owner.store(tid, sync::Ordering::Release);
   _count.store(1, sync::Ordering::Relaxed);
   return Guard{*this};
 }
@@ -65,7 +65,7 @@ auto ReentrantLock::lock() noexcept -> Guard {
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   const auto tid = thread::current().id();
 
-  if (_ownner.load(Ordering::Acquire) == tid) {
+  if (_owner.load(Ordering::Acquire) == tid) {
     _count.fetch_add(1, sync::Ordering::Relaxed);
     return {option::Some{}, trait::passkey_t{*this}};
   }
@@ -73,7 +73,7 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   if (!_mutex.try_lock()) {
     return {};
   }
-  _ownner.store(tid, sync::Ordering::Release);
+  _owner.store(tid, sync::Ordering::Release);
   _count.store(1, sync::Ordering::Relaxed);
   return {option::Some{}, trait::passkey_t{*this}};
 }
@@ -83,12 +83,12 @@ ReentrantLock::Guard::Guard(trait::passkey_t<ReentrantLock> lock) : _lock{lock._
 ReentrantLock::Guard::~Guard() noexcept {
   const auto tid = thread::current().id();
 
-  if (_lock._ownner.load(sync::Ordering::Acquire) != tid) {
+  if (_lock._owner.load(sync::Ordering::Acquire) != tid) {
     return;
   }
 
   if (_lock._count.fetch_sub(1, sync::Ordering::AcqRel) == 1) {
-    _lock._ownner.store(0, sync::Ordering::Release);
+    _lock._owner.store(0, sync::Ordering::Release);
     _lock._mutex.unlock();
   }
 }
