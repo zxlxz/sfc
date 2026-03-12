@@ -28,7 +28,7 @@ void Global::dealloc(void* ptr, Layout layout) noexcept {
 
 auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
   if (new_size == 0) {
-    sys::dealloc(ptr, layout);
+    if (ptr != nullptr) sys::dealloc(ptr, layout);
     return nullptr;
   }
 
