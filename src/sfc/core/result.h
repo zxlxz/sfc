@@ -4,265 +4,213 @@
 
 namespace sfc::result {
 
-enum class Tag : u8 { Ok, Err };
-
-template <class T, class E>
-struct Inner {
-  T _ok = {};
-  E _err = {};
-
- public:
-  constexpr Inner(T&& ok) noexcept : _ok{static_cast<T&&>(ok)} {}
-
-  constexpr Inner(E&& err) noexcept : _err{static_cast<E&&>(err)} {}
-
-  constexpr auto is_ok() const -> bool {
-    return _err == E{};
-  }
-
-  constexpr auto is_err() const -> bool {
-    return _err != E{};
-  }
-
-  constexpr auto operator*() const -> const T& {
-    return _ok;
-  }
-
-  constexpr auto operator*() -> T& {
-    return _ok;
-  }
-
-  constexpr auto operator~() const -> const E& {
-    return _err;
-  }
-
-  constexpr auto operator~() -> E& {
-    return _err;
-  }
-};
-
-template <class E>
-struct Inner<void, E> {
-  static_assert(trait::tv_copy_<E>);
-  E _err;
-
- public:
-  constexpr Inner() noexcept : _err{} {}
-
-  constexpr Inner(E err) noexcept : _err{err} {}
-
-  constexpr auto is_ok() const -> bool {
-    return _err == E{};
-  }
-
-  constexpr auto is_err() const -> bool {
-    return _err != E{};
-  }
-
-  constexpr auto operator~() const -> const E& {
-    return _err;
-  }
-
-  constexpr auto operator~() -> E& {
-    return static_cast<E&>(_err);
-  }
-};
+enum class Tag : u8 { Err = 0, Ok = 1 };
 
 template <class T, class E>
 class [[nodiscard]] Result {
-  Inner<T, E> _inn;
+  Tag _tag;
+  union {
+    T _ok;
+    E _err;
+  };
 
  public:
-  constexpr Result(T val) noexcept : _inn{static_cast<T&&>(val)} {}
-  constexpr Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+  constexpr Result(T val) noexcept : _tag{Tag::Ok}, _ok{static_cast<T&&>(val)} {}
+  constexpr Result(E val) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(val)} {}
+
+  ~Result() noexcept {
+    if (_tag == Tag::Ok) {
+      mem::drop(_ok);
+    } else {
+      mem::drop(_err);
+    }
+  }
+
+  Result(Result&& other) noexcept : _tag{other._tag} {
+    _tag == Tag::Ok ? ptr::write(&_ok, static_cast<T&&>(other._ok)) : ptr::write(&_err, static_cast<E&&>(other._err));
+  }
+
+  Result(const Result& other) noexcept : _tag{other._tag} {
+    _tag == Tag::Ok ? ptr::write(&_ok, other._ok) : ptr::write(&_err, other._err);
+  }
+
+  Result& operator=(Result&& other) noexcept {
+    if (this != &other) {
+      _tag == Tag::Ok ? mem::drop(_ok) : mem::drop(_err);
+      _tag = other._tag;
+      _tag == Tag::Ok ? ptr::write(&_ok, static_cast<T&&>(other._ok)) : ptr::write(&_err, static_cast<E&&>(other._err));
+    }
+    return *this;
+  }
+
+  Result& operator=(const Result& other) noexcept {
+    if (this != &other) {
+      _tag == Tag::Ok ? mem::drop(_ok) : mem::drop(_err);
+      _tag = other._tag;
+      _tag == Tag::Ok ? ptr::write(&_ok, other._ok) : ptr::write(&_err, other._err);
+    }
+    return *this;
+  }
 
   constexpr auto is_ok() const noexcept -> bool {
-    return _inn.is_ok();
+    return _tag == Tag::Ok;
   }
 
   constexpr auto is_err() const noexcept -> bool {
-    return _inn.is_err();
-  }
-
-  auto operator->() const -> const T* {
-    sfc::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
-    return &*_inn;
-  }
-
-  auto operator->() -> T* {
-    sfc::expect(_inn.is_ok(), "Result::unwrap: Err({})", ~_inn);
-    return &*_inn;
+    return _tag == Tag::Err;
   }
 
   auto ok(this auto self) noexcept -> Option<T> {
-    if (self._inn.is_err()) {
-      return {};
-    }
-    return Option<T>{static_cast<T&&>(*self._inn)};
+    if (self._tag == Tag::Err) return {};
+    return static_cast<T&&>(self._ok);
   }
 
   auto err(this auto self) noexcept -> Option<E> {
-    if (self._inn.is_ok()) {
-      return {};
-    }
-    return Option<E>{static_cast<E&&>(~self._inn)};
+    if (self._tag == Tag::Ok) return {};
+    return static_cast<E&&>(self._err);
   }
 
-  auto unwrap() && noexcept -> T {
-    sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
-    return static_cast<T&&>(*_inn);
+  auto unwrap(this auto self) noexcept -> T {
+    sfc::expect(self._tag == Tag::Ok, "Result::unwrap: not Ok()");
+    return static_cast<T&&>(self._ok);
   }
 
-  auto unwrap_err() && noexcept -> E {
-    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
-    return static_cast<E&&>(~_inn);
+  auto unwrap_err(this auto self) noexcept -> E {
+    sfc::expect(self._tag == Tag::Err, "Result::unwrap_err: not Err()");
+    return static_cast<E&&>(self._err);
   }
 
-  auto unwrap_or(T def) && noexcept -> T {
-    if (_inn.is_ok()) {
-      return static_cast<T&&>(*_inn);
-    }
-    return static_cast<T&&>(def);
+  auto unwrap_or(this auto self, T default_val) noexcept -> T {
+    if (self._tag == Tag::Ok) return static_cast<T&&>(self._ok);
+    return static_cast<T&&>(default_val);
   }
 
-  auto unwrap_unchecked() noexcept -> T {
-    return static_cast<T&&>(*_inn);
+  auto unwrap_unchecked() noexcept -> T&& {
+    return static_cast<T&&>(_ok);
   }
 
-  auto unwrap_err_unchecked() noexcept -> E {
-    return static_cast<E&&>(~_inn);
+  auto unwrap_err_unchecked() noexcept -> E&& {
+    return static_cast<E&&>(_err);
   }
 
   template <class U>
-  auto operator&(Result<U, E> res) && noexcept -> Result<U, E> {
-    if (_inn.is_ok()) {
+  auto operator&(this auto self, Result<U, E> res) noexcept -> Result<U, E> {
+    if (self._tag == Tag::Ok) {
       return static_cast<Result<U, E>&&>(res);
     }
-    return ~_inn;
+    return static_cast<E&&>(self._err);
   }
 
   template <class F>
-  auto operator|(Result<T, F> res) && noexcept -> Result<T, F> {
-    if (_inn.is_err()) {
-      return static_cast<Result<T, F>&&>(res);
+  auto operator|(this auto self, Result<T, F> res) noexcept -> Result<T, F> {
+    if (self._tag == Tag::Ok) {
+      return static_cast<T&&>(self._ok);
     }
-    return static_cast<T&&>(*_inn);
+    return static_cast<Result<T, F>&&>(res);
   }
 
   template <class F>
-  auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_inn.is_ok()) {
-      return op(static_cast<T&&>(*_inn));
+  auto and_then(this auto self, F&& op) -> ops::invoke_t<F(T)> {
+    if (self._tag == Tag::Ok) {
+      return op(static_cast<T&&>(self._ok));
     }
-    return static_cast<E&&>(~_inn);
+    return static_cast<E&&>(self._err);
   }
 
   template <class O>
-  auto or_else(O&& op) && -> ops::invoke_t<O()> {
-    if (_inn.is_err()) {
-      return op();
+  auto or_else(this auto self, O&& op) -> ops::invoke_t<O()> {
+    if (self._tag == Tag::Ok) {
+      return static_cast<T&&>(self._ok);
     }
-    return static_cast<T&&>(*_inn);
+    return op();
   }
 
-  template <class F, class U = ops::invoke_t<F(T)>>
-  auto map(F&& op) && -> Result<U, E> {
-    if (_inn.is_ok()) {
-      if constexpr (trait::same_<U, void>) {
-        op(static_cast<T&&>(*_inn));
-        return Result<U, E>{};
-      } else {
-        return Result<U, E>{op(static_cast<T&&>(*_inn))};
-      }
+  template <class F>
+  auto map(this auto self, F&& op) -> Result<ops::invoke_t<F(T)>, E> {
+    if (self._tag == Tag::Ok) {
+      return op(static_cast<T&&>(self._ok));
     }
-    return Result<U, E>{static_cast<E&&>(~_inn)};
+    return static_cast<E&&>(self._err);
   }
 
   template <class O>
-  auto map_err(O&& op) && -> Result<T, ops::invoke_t<O(E)>> {
-    if (_inn.is_err()) {
-      return op(static_cast<E&&>(~_inn));
+  auto map_err(this auto self, O&& op) -> Result<T, ops::invoke_t<O(E)>> {
+    if (self._tag == Tag::Ok) {
+      return static_cast<T&&>(self._ok);
     }
-    return static_cast<T&&>(*_inn);
+    return op(static_cast<E&&>(self._err));
   }
 
  public:
-  // trait: ops::Eq
-  template <class U>
-  auto operator==(const Result<U, E>& other) const -> bool {
-    if (this->is_ok()) {
-      return other.is_ok() && *_inn == *other._inn;
+  // trait:: ops::Eq
+  auto operator==(const Result& other) const noexcept -> bool {
+    if (_tag == Tag::Ok) {
+      return other._tag == Tag::Ok && _ok == other._ok;
+    } else {
+      return other._tag == Tag::Err && _err == other._err;
     }
-    return other.is_err() && ~_inn == ~other._inn;
   }
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (_inn.is_ok()) {
-      f.write_fmt("Ok({})", *_inn);
+    if (_tag == Tag::Ok) {
+      f.write_fmt("Ok({})", _ok);
     } else {
-      f.write_fmt("Err({})", ~_inn);
+      f.write_fmt("Err({})", _err);
     }
   }
 };
 
 template <class E>
 class [[nodiscard]] Result<void, E> {
-  using T = void;
-  Inner<void, E> _inn;
+  Tag _tag;
+  E _err;
 
  public:
-  constexpr Result() noexcept : _inn{} {}
-  constexpr Result(E val) noexcept : _inn{static_cast<E&&>(val)} {}
+  constexpr Result() noexcept : _tag{Tag::Ok} {}
+
+  constexpr Result(E err) noexcept : _tag{Tag::Err}, _err{err} {}
 
   constexpr auto is_ok() const noexcept -> bool {
-    return _inn.is_ok();
+    return _tag == Tag::Ok;
   }
 
   constexpr auto is_err() const noexcept -> bool {
-    return _inn.is_err();
+    return _tag == Tag::Err;
   }
 
-  auto err() && noexcept -> Option<E> {
-    if (_inn.is_ok()) {
-      return {};
-    }
-    return static_cast<E&&>(~_inn);
+  auto err() const noexcept -> Option<E> {
+    if (_tag == Tag::Ok) return {};
+    return _err;
   }
 
-  auto unwrap() const noexcept -> T {
-    sfc::expect(_inn.is_ok(), "Result::unwrap: not Ok()");
-    return;
+  void unwrap() const noexcept {
+    sfc::expect(_tag == Tag::Ok, "Result::unwrap: not Ok()");
   }
 
-  auto unwrap_err() && noexcept -> E {
-    sfc::expect(_inn.is_err(), "Result::unwrap_err: not Err()");
-    return static_cast<E&&>(~_inn);
+  auto unwrap_err() const noexcept -> E {
+    sfc::expect(_tag == Tag::Err, "Result::unwrap_err: not Err()");
+    return _err;
   }
 
-  auto unwrap_unchecked() noexcept -> T {
-    return;
-  }
+  void unwrap_unchecked() const noexcept {}
 
-  auto unwrap_err_unchecked() noexcept -> E {
-    return static_cast<E&&>(~_inn);
-  }
-
-  template <class F>
-  auto map(F&& op) const -> Result<ops::invoke_t<F()>, E> {
-    if (_inn.is_ok()) {
-      return op();
-    }
-    return {};
+  auto unwrap_err_unchecked() const noexcept -> E {
+    return _err;
   }
 
  public:
+  // trait: ops::Eq
+  auto operator==(const Result& other) const noexcept -> bool {
+    return _tag == other._tag;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (_inn.is_ok()) {
+    if (_tag == Tag::Ok) {
       f.write_fmt("Ok()");
     } else {
-      f.write_fmt("Err({})", ~_inn);
+      f.write_fmt("Err({})", _err);
     }
   }
 };
