@@ -28,7 +28,7 @@ class Option {
   }
 
   constexpr Option(const Option& other) noexcept : _tag{other._tag} {
-    if (_tag) ptr::write(&_tag, other._tag);
+    if (_tag) ptr::write(&_val, other._val);
   }
 
   ~Option() noexcept {
