@@ -13,27 +13,38 @@ auto Global::alloc(Layout layout) noexcept -> void* {
     return nullptr;
   }
 
-  const auto p = sys::alloc(layout);
+  const auto p = sys::malloc(layout.size);
   sfc::expect(p != nullptr, "Global::alloc(size={}, align={}): failed", layout.size, layout.align);
   return p;
 }
 
-void Global::dealloc(void* ptr, Layout layout) noexcept {
+void Global::dealloc(void* ptr, [[maybe_unused]] Layout layout) noexcept {
   if (ptr == nullptr) {
     return;
   }
 
-  sys::dealloc(ptr, layout);
+  sys::free(ptr);
 }
 
 auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
   if (new_size == 0) {
-    if (ptr != nullptr) sys::dealloc(ptr, layout);
+    if (ptr != nullptr) {
+      sys::free(ptr);
+    }
     return nullptr;
   }
 
-  const auto new_layout = Layout{.size = new_size, .align = layout.align};
-  const auto p = ptr ? sys::realloc(ptr, layout, new_size) : sys::alloc(new_layout);
+  if (ptr == nullptr) {
+    const auto p = sys::malloc(new_size);
+    sfc::expect(p != nullptr,
+                "Global::realloc(size={}, align={}, new_size={}): failed",
+                layout.size,
+                layout.align,
+                new_size);
+    return p;
+  }
+
+  const auto p = sys::realloc(ptr, new_size);
   sfc::expect(p != nullptr,
               "Global::realloc(size={}, align={}, new_size={}): failed",
               layout.size,
