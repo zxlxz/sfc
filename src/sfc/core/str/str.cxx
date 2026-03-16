@@ -44,7 +44,7 @@ SFC_TEST(cmp) {
 
 SFC_TEST(fmt) {
   sfc::expect_eq(fmt::format("{}", ""), "");
-  sfc::expect_eq(fmt::format("{#?}", ""), R"("")");
+  sfc::expect_eq(fmt::format("{#?}", Str{""}), R"("")");
 
   sfc::expect_eq(fmt::format("{}", "abc"), "abc");
   sfc::expect_eq(fmt::format("{#?}", "abc"), R"("abc")");

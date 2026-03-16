@@ -122,7 +122,7 @@ struct Fmts {
       const auto b = _str.find('}', a);
       _idxs[i] = Idxs{a, b};
       if (a != b) {
-        _spec[i] = Specifier::from(_str.substr(a, b));
+        _spec[i] = Specifier::from(_str.substr(a + 1, b));
       }
       p = b + 1;
     }
