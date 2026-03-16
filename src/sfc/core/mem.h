@@ -4,17 +4,12 @@
 
 namespace sfc::mem {
 
+struct place_t {};
+
 template <class T>
-union MaybeUninit {
-  T _0;
-
- public:
-  [[gnu::always_inline]] ~MaybeUninit() noexcept {}
-
-  [[gnu::always_inline]] static void* operator new([[maybe_unused]] usize size, T* p) noexcept {
-    return p;
-  }
-};
+[[gnu::always_inline]] inline void forget(T& x) noexcept {
+  new (&x) T{static_cast<T&&>(x)};
+}
 
 template <class T>
 [[gnu::always_inline]] inline void drop(T& x) {
@@ -67,3 +62,8 @@ template <trait::tv_copy_ T>
 }
 
 }  // namespace sfc::mem
+
+template <class T>
+[[gnu::always_inline]] inline void* operator new([[maybe_unused]] sfc::usize size, T* p) noexcept {
+  return p;
+}
