@@ -1,6 +1,8 @@
 #pragma once
 
-namespace sfc::sys {
+#include "sfc/core.h"
+
+namespace sfc::sys::raw {
 
 #ifdef _WIN32
 using RawFd = void*;
@@ -8,27 +10,14 @@ using RawFd = void*;
 using RawFd = int;
 #endif
 
-#ifndef _SFC_SYS_IO_
 struct File {
-#ifdef _WIN32
-  RawFd _fd = nullptr;
-#else
-  RawFd _fd = -1;
-#endif
+  RawFd _raw;
 };
-#endif
 
-#ifndef _SFC_SYS_THREAD_
 struct Thread {
-#ifdef __unix__
-  unsigned long _raw;
-#else
   void* _raw;
-#endif
 };
-#endif
 
-#ifndef _SFC_SYS_SYNC_
 struct Mutex {
   void* _raw;
 };
@@ -36,6 +25,23 @@ struct Mutex {
 struct Condvar {
   void* _raw;
 };
+
+}  // namespace sfc::sys::raw
+
+namespace sfc::sys {
+
+using raw::RawFd;
+
+#ifndef _SFC_SYS_IO_
+using raw::File;
 #endif
 
+#ifndef _SFC_SYS_THREAD_
+using raw::Thread;
+#endif
+
+#ifndef _SFC_SYS_SYNC_
+using raw::Condvar;
+using raw::Mutex;
+#endif
 }  // namespace sfc::sys

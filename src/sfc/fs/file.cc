@@ -4,28 +4,17 @@
 #include "sfc/sys/windows/fs.inl"
 #endif
 
-#define _SFC_SYS_IO_
 #include "sfc/fs/file.h"
 #include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
 
-File::File() : _inn{} {}
+File::File() noexcept : _inn{} {}
 
-File::~File() {
-  _inn.close();
-}
+File::~File() noexcept {}
 
-File::File(File&& other) noexcept : _inn{other._inn} {
-  other._inn = {};
-}
-
-File& File::operator=(File&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_inn, other._inn);
-  }
-  return *this;
-}
+File::File(File&&) noexcept = default;
+File& File::operator=(File&& other) noexcept = default;
 
 auto File::from_raw_fd(sys::RawFd fd) -> File {
   auto res = File{};
@@ -78,12 +67,8 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
       ._truncate = truncate,
   };
 
-  const auto file = sys_opts.open(os_path.ptr());
-  if (!file.is_valid()) {
-    return io::last_os_error();
-  }
-
-  return File::from_raw_fd(file._fd);
+  const auto fd = _TRY(sys_opts.open(os_path.ptr()));
+  return File::from_raw_fd(fd);
 }
 
 auto read(Path path) noexcept -> io::Result<Vec<u8>> {

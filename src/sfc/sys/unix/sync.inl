@@ -1,12 +1,14 @@
 #pragma once
 
 #include "sfc/sys/unix/mod.inl"
+#define _SFC_SYS_SYNC_
 
 namespace sfc::sys::unix {
 
 using timespec_t = struct ::timespec;
 
-struct Mutex {
+class Mutex {
+  friend class Condvar;
   pthread_mutex_t* _raw{nullptr};
 
  public:
@@ -16,10 +18,9 @@ struct Mutex {
   }
 
   ~Mutex() {
-    if (_raw) {
-      ::pthread_mutex_destroy(_raw);
-      ::free(_raw);
-    }
+    if (!_raw) return;
+    ::pthread_mutex_destroy(_raw);
+    ::free(_raw);
   }
 
   Mutex(Mutex&& other) noexcept : _raw{other._raw} {
@@ -50,7 +51,7 @@ struct Mutex {
   }
 };
 
-struct Condvar {
+class Condvar {
   pthread_cond_t* _cond{nullptr};
 
  public:
@@ -60,10 +61,9 @@ struct Condvar {
   }
 
   ~Condvar() {
-    if (_cond) {
-      ::pthread_cond_destroy(_cond);
-      ::free(_cond);
-    }
+    if (!_cond) return;
+    ::pthread_cond_destroy(_cond);
+    ::free(_cond);
   }
 
   Condvar(Condvar&& other) noexcept : _cond{other._cond} {
@@ -92,7 +92,7 @@ struct Condvar {
     ::pthread_cond_wait(_cond, mtx._raw);
   }
 
-  bool wait_timeout(Mutex& mtx, unsigned millis) {
+  bool wait_timeout(Mutex& mtx, u32 millis) {
     if (!_cond) return false;
     static constexpr auto MILLIS_PER_SEC = 1000U;
     static constexpr auto NANOS_PER_MILLI = 1000000U;

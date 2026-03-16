@@ -4,7 +4,6 @@
 #include "sfc/sys/windows/sync.inl"
 #endif
 
-#define _SFC_SYS_SYNC_
 #include "sfc/sync/mutex.h"
 #include "sfc/thread.h"
 
@@ -14,7 +13,7 @@ Mutex::Mutex() noexcept : _inn{} {}
 
 Mutex::~Mutex() noexcept {}
 
-Mutex::Mutex(Mutex&& other) noexcept = default;
+Mutex::Mutex(Mutex&& other) noexcept : _inn{mem::move(other._inn)} {}
 
 Mutex& Mutex::operator=(Mutex&& other) noexcept = default;
 
@@ -36,10 +35,6 @@ Mutex::Guard::~Guard() noexcept {
   _lock._inn.unlock();
 }
 
-auto Mutex::Guard::inner() -> sys::Mutex& {
-  return _lock._inn;
-}
-
 ReentrantLock::ReentrantLock() noexcept : _mutex{}, _owner{0}, _count{0} {}
 
 ReentrantLock::~ReentrantLock() noexcept {}
@@ -49,23 +44,23 @@ ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
 auto ReentrantLock::lock() noexcept -> Guard {
-  const auto tid = thread::current().id();
+  const auto thr = thread::current();
 
-  if (_owner.load(Ordering::Acquire) == tid) {
+  if (_owner.load(Ordering::Acquire) == thr.id) {
     _count.fetch_add(1, sync::Ordering::Relaxed);
     return Guard{{*this}};
   }
 
   _mutex.lock();
-  _owner.store(tid, sync::Ordering::Release);
+  _owner.store(thr.id, sync::Ordering::Release);
   _count.store(1, sync::Ordering::Relaxed);
   return Guard{*this};
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
-  const auto tid = thread::current().id();
+  const auto thr = thread::current();
 
-  if (_owner.load(Ordering::Acquire) == tid) {
+  if (_owner.load(Ordering::Acquire) == thr.id) {
     _count.fetch_add(1, sync::Ordering::Relaxed);
     return {option::Some{}, trait::passkey_t{*this}};
   }
@@ -73,7 +68,7 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   if (!_mutex.try_lock()) {
     return {};
   }
-  _owner.store(tid, sync::Ordering::Release);
+  _owner.store(thr.id, sync::Ordering::Release);
   _count.store(1, sync::Ordering::Relaxed);
   return {option::Some{}, trait::passkey_t{*this}};
 }
@@ -81,9 +76,9 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
 ReentrantLock::Guard::Guard(trait::passkey_t<ReentrantLock> lock) : _lock{lock._val} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  const auto tid = thread::current().id();
+  const auto thr = thread::current();
 
-  if (_lock._owner.load(sync::Ordering::Acquire) != tid) {
+  if (_lock._owner.load(sync::Ordering::Acquire) != thr.id) {
     return;
   }
 

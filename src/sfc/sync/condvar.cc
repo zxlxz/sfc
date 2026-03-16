@@ -4,7 +4,6 @@
 #include "sfc/sys/windows/sync.inl"
 #endif
 
-#define _SFC_SYS_SYNC_
 #include "sfc/sync/condvar.h"
 
 namespace sfc::sync {
@@ -26,13 +25,13 @@ void Condvar::notify_all() noexcept {
 }
 
 auto Condvar::wait(Mutex::Guard& guard) noexcept -> bool {
-  auto& lock = guard.inner();
+  auto& lock = guard._lock._inn;
   _inn.wait(lock);
   return true;
 }
 
 auto Condvar::wait_timeout(Mutex::Guard& guard, time::Duration dur) noexcept -> bool {
-  auto& lock = guard.inner();
+  auto& lock = guard._lock._inn;
   const auto millis = static_cast<u32>(dur.as_millis());
   return _inn.wait_timeout(lock, millis);
 }

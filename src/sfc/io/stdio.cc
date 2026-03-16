@@ -4,7 +4,6 @@
 #include "sfc/sys/windows/io.inl"
 #endif
 
-#define _SFC_SYS_IO_
 #include "sfc/io/buf.h"
 #include "sfc/io/stdio.h"
 #include "sfc/sync/mutex.h"
@@ -15,7 +14,7 @@ class Stdout::Inn {
   friend class Stdout;
   friend class Stdout::Lock;
 
-  sys::File _file{sys::stdout()};
+  sys::File& _file{sys::stdout()};
   BufWriter<sys::File&> _inn{_file};
   sync::ReentrantLock _mtx{};
 
@@ -51,7 +50,7 @@ class Stderr::Inn {
   friend class Stderr;
   friend class Stderr::Lock;
 
-  sys::File _file{sys::stderr()};
+  sys::File& _file{sys::stderr()};
   sync::ReentrantLock _mtx{};
 
  public:

@@ -4,7 +4,6 @@
 #include "sfc/sys/windows/fs.inl"
 #endif
 
-#define _SFC_SYS_IO_
 #include "sfc/fs/path.h"
 #include "sfc/ffi/os_str.h"
 

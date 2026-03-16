@@ -5,7 +5,10 @@
 
 namespace sfc::sync {
 
+class Condvar;
+
 class Mutex {
+  friend class Condvar;
   sys::Mutex _inn;
 
  public:
@@ -17,6 +20,7 @@ class Mutex {
 
  public:
   class Guard {
+    friend class Condvar;
     Mutex& _lock;
 
    public:
@@ -25,8 +29,6 @@ class Mutex {
 
     Guard(const Guard&) = delete;
     Guard& operator=(const Guard&) = delete;
-
-    auto inner() -> sys::Mutex&;
   };
   auto lock() noexcept -> Guard;
   auto try_lock() noexcept -> Option<Guard>;
@@ -34,7 +36,11 @@ class Mutex {
 
 class ReentrantLock {
   struct key_t;
+#ifdef _SFC_SYS_SYNC_
   sys::Mutex _mutex;
+#else
+  void* _mutex;
+#endif
   Atomic<u32> _owner;
   Atomic<u32> _count;
 

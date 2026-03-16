@@ -1,21 +1,39 @@
 #pragma once
 
 #include "sfc/sys/unix/mod.inl"
+#define _SFC_SYS_IO_
 
 namespace sfc::sys::unix {
 
-struct File {
+class File {
   int _fd = -1;
 
  public:
+  File(int fd = -1) : _fd(fd) {}
+
+  ~File() {
+    if (_fd == -1) return;
+    ::close(_fd);
+  }
+
+  File(File&& other) noexcept : _fd(other._fd) {
+    other._fd = -1;
+  }
+
+  File& operator=(File&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_fd, other._fd);
+    }
+    return *this;
+  }
+
   auto is_valid() const -> bool {
     return _fd != -1;
   }
 
-  void close() {
-    if (_fd == -1) return;
-    (void)::close(_fd);
-    _fd = -1;
+  auto is_tty() const -> bool {
+    const auto ret = ::isatty(_fd);
+    return ret != 0;
   }
 
   auto flush() -> io::Result<> {
@@ -52,23 +70,21 @@ struct File {
     }
     return static_cast<usize>(ret);
   }
-
-  auto is_tty() const -> bool {
-    const auto ret = ::isatty(_fd);
-    return ret != 0;
-  }
 };
 
-static inline auto stdin() -> File {
-  return File{STDIN_FILENO};
+static inline auto stdin() -> File& {
+  static auto res = File{STDIN_FILENO};
+  return res;
 }
 
-static inline auto stdout() -> File {
-  return File{STDOUT_FILENO};
+static inline auto stdout() -> File& {
+  static auto res = File{STDOUT_FILENO};
+  return res;
 }
 
-static inline auto stderr() -> File {
-  return File{STDERR_FILENO};
+static inline auto stderr() -> File& {
+  static auto res = File{STDERR_FILENO};
+  return res;
 }
 
 static inline auto io_error(int code) -> io::Error {

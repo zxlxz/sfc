@@ -1,5 +1,6 @@
 #pragma once
 #include "sfc/sys/windows/mod.inl"
+#define _SFC_SYS_SYNC_
 
 namespace sfc::sys::windows {
 

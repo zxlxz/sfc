@@ -4,7 +4,6 @@
 #include "sfc/sys/windows/thread.inl"
 #endif
 
-#define _SFC_SYS_THREAD_
 #include "sfc/thread.h"
 #include "sfc/ffi/os_str.h"
 
@@ -28,7 +27,7 @@ struct ThreadData {
     }
   }
 
-  static auto callback(void* ptr) -> sys::Thread::ret_t {
+  static auto callback(void* ptr) -> sys::thrd_ret_t {
     auto dat = static_cast<ThreadData*>(ptr);
     auto obj = Box<ThreadData>::from_raw(dat);
     obj->run();
@@ -36,16 +35,11 @@ struct ThreadData {
   }
 };
 
-auto Thread::id() const -> u32 {
-  return _inn.tid();
-}
-
-JoinHandle::JoinHandle() noexcept = default;
+JoinHandle::JoinHandle() noexcept {}
 
 JoinHandle::~JoinHandle() noexcept {
-  if (_thread.is_valid()) {
-    _thread.join();
-  }
+  if (!_thread.is_valid()) return;
+  _thread.join();
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thread{other._thread} {
@@ -72,12 +66,12 @@ auto Builder::spawn(Box<void()> fun) -> JoinHandle {
 }
 
 auto current() -> Thread {
-  const auto thrd = sys::Thread::current();
-  return Thread{thrd};
+  const auto id = sys::Thread::current();
+  return Thread{id};
 }
 
 void yield_now() {
-  sys::Thread::yield();
+  sys::Thread::yield_now();
 }
 
 void sleep(time::Duration dur) {

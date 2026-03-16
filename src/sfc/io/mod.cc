@@ -4,8 +4,6 @@
 #include "sfc/sys/windows/io.inl"
 #endif
 
-#define _SFC_SYS_IO_
-
 namespace sfc::io {
 auto last_os_error() noexcept -> Error {
   const auto os_err = sys::os_error();

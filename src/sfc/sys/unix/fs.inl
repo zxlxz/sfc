@@ -15,7 +15,7 @@ struct OpenOptions {
   bool _truncate = false;
   mode_t _mode = 0666;
 
-  auto open(const char* path) const -> File {
+  auto open(const char* path) const -> io::Result<int> {
     const auto access_flags = _write ? _read ? O_RDWR : O_WRONLY : O_RDONLY;
     const auto create_flags = _create_new ? O_CREAT | O_EXCL : (_create ? O_CREAT : 0);
     const auto append_flags = _append ? O_APPEND : 0;
@@ -23,7 +23,10 @@ struct OpenOptions {
 
     const auto flag = access_flags | create_flags | append_flags | truncate_flags;
     const auto fd = ::open(path, flag, _mode);
-    return File{fd};
+    if (fd == -1) {
+      return io::last_os_error();
+    }
+    return fd;
   }
 };
 
@@ -35,7 +38,7 @@ static inline auto is_file(int attr) -> bool {
   return (attr & S_IFMT) == S_IFREG;
 }
 
-template<class Meta>
+template <class Meta>
 static inline auto lstat(const char* path) -> io::Result<Meta> {
   auto st = stat_t{};
   if (::lstat(path, &st) == -1) {

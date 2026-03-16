@@ -1,7 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/string.h"
-#include "sfc/alloc/vec.h"
+#include "sfc/alloc.h"
 
 namespace sfc::io {
 
@@ -79,6 +78,5 @@ struct SeekFrom {
     return SeekFrom{offset, Whence::End};
   }
 };
-
 
 }  // namespace sfc::io

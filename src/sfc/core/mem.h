@@ -4,11 +4,10 @@
 
 namespace sfc::mem {
 
-struct place_t {};
-
 template <class T>
 [[gnu::always_inline]] inline void forget(T& x) noexcept {
-  new (&x) T{static_cast<T&&>(x)};
+  alignas(T) char tmp[sizeof(T)];
+  new (tmp) T{static_cast<T&&>(x)};
 }
 
 template <class T>

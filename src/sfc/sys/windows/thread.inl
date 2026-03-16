@@ -1,23 +1,24 @@
 #pragma once
 
 #include "sfc/sys/windows/mod.inl"
+#define _SFC_SYS_THREAD_
 
 namespace sfc::sys::windows {
 
-struct Thread {
-  using ret_t = unsigned long;
-  using func_t = ret_t (*)(void*);
+using thrd_ret_t = DWORD;
 
+struct Thread {
+  using func_t = DWORD (*)(void*);
   HANDLE _handle = nullptr;
 
  public:
-  static auto current() -> Thread {
-    const auto thr = ::GetCurrentThread();
-    return Thread{thr};
+  static auto current_id() -> DWORD {
+    const auto tid = ::GetCurrentThreadId();
+    return tid;
   }
 
   static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
-    DWORD tid = 0;
+    auto tid = DWORD{0};
     auto handle = ::CreateThread(nullptr, stack_size, func, data, 0, &tid);
     if (handle == nullptr) {
       return {};
@@ -25,7 +26,7 @@ struct Thread {
     return Thread{handle};
   }
 
-  static auto yield() -> bool {
+  static auto yield_now() -> bool {
     const auto ret = ::SwitchToThread();
     return bool(ret);
   }
@@ -49,11 +50,6 @@ struct Thread {
   auto detach() -> bool {
     if (_handle == nullptr) return true;
     return ::CloseHandle(_handle);
-  }
-
-  auto tid() const -> unsigned {
-    if (_handle == nullptr) return 0;
-    return static_cast<unsigned>(::GetThreadId(_handle));
   }
 };
 

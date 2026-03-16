@@ -14,7 +14,7 @@ struct OpenOptions {
   DWORD _share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
   DWORD _flags = FILE_ATTRIBUTE_NORMAL;
 
-  auto open(const wchar_t* path) const -> File {
+  auto open(const wchar_t* path) const -> io::Result<HANDLE> {
     const auto read_mode = _read ? GENERIC_READ : 0;
     const auto write_mode = _write ? GENERIC_WRITE : 0;
     const auto append_mode = _append ? FILE_APPEND_DATA : 0;
@@ -27,7 +27,10 @@ struct OpenOptions {
                                                     : OPEN_EXISTING;
 
     const auto handle = ::CreateFileW(path, access_mode, _share_mode, nullptr, create_mode, _flags, nullptr);
-    return File{handle};
+    if (handle == INVALID_HANDLE_VALUE) {
+      return io::last_os_error();
+    }
+    return handle;
   }
 };
 

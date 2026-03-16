@@ -1,18 +1,25 @@
 #pragma once
 
 #include "sfc/sys/unix/mod.inl"
+#define _SFC_SYS_THREAD_
 
 namespace sfc::sys::unix {
 
+using thrd_ret_t = void*;
+
 struct Thread {
-  using ret_t = void*;
   using func_t = void* (*)(void*);
   pthread_t _thr = 0;
 
  public:
-  static auto current() -> Thread {
-    const auto thr = ::pthread_self();
-    return Thread{thr};
+  static auto current() -> u32 {
+#ifdef __APPLE__
+    auto tid = ino_t{0};
+    ::pthread_threadid_np(nullptr, &tid);
+#else
+    const auto tid = ::pthread_threadid_np();
+#endif
+    return static_cast<u32>(tid);
   }
 
   static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
@@ -34,7 +41,7 @@ struct Thread {
     return Thread{thr};
   }
 
-  static auto yield() -> bool {
+  static auto yield_now() -> bool {
     const auto err = ::sched_yield();
     return err == 0;
   }
@@ -63,18 +70,6 @@ struct Thread {
     if (_thr == 0) return true;
     const auto err = ::pthread_detach(_thr);
     return err == 0;
-  }
-
-  auto tid() const -> unsigned {
-    if (_thr == 0) return 0;
-#ifdef __APPLE__
-    auto thr = __uint64_t{0};
-    ::pthread_threadid_np(_thr, &thr);
-    return static_cast<unsigned>(thr);
-#else
-    const auto thr = ::syscall(SYS_gettid);
-    return static_cast<unsigned>(thr);
-#endif
   }
 };
 

@@ -5,7 +5,6 @@
 #include "sfc/sys/windows/io.inl"
 #include "sfc/sys/windows/backtrace.inl"
 #endif
-#define _SFC_SYS_IO_
 
 #include "sfc/core/panic.h"
 #include "sfc/core/fmt.h"

@@ -7,10 +7,7 @@
 namespace sfc::thread {
 
 struct Thread {
-  sys::Thread _inn{};
-
- public:
-  auto id() const -> u32;
+  u64 id;
 };
 
 class JoinHandle {
@@ -38,7 +35,6 @@ auto current() -> Thread;
 void yield_now();
 
 void sleep(time::Duration dur);
-
 void sleep_ms(u32 ms);
 
 auto spawn(auto f) -> JoinHandle {

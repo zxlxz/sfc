@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/sys.h"
 #include "sfc/fs/path.h"
 
 namespace sfc::fs {
@@ -8,18 +9,18 @@ class [[nodiscard]] File : public io::Read, public io::Write {
   sys::File _inn;
 
  public:
-  File();
-  ~File();
+  File() noexcept;
+  ~File() noexcept;
   File(File&&) noexcept;
   File& operator=(File&&) noexcept;
 
   static auto from_raw_fd(sys::RawFd fd) -> File;
-  static auto open(Path path) noexcept-> io::Result<File>;
-  static auto create(Path path) noexcept-> io::Result<File>;
+  static auto open(Path path) noexcept -> io::Result<File>;
+  static auto create(Path path) noexcept -> io::Result<File>;
 
   auto seek(io::SeekFrom pos) noexcept -> io::Result<usize>;
-  auto read(Slice<u8> buf) noexcept-> io::Result<usize>;
-  auto write(Slice<const u8> buf) noexcept-> io::Result<usize>;
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
+  auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;
 };
 
 struct OpenOptions {
