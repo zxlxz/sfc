@@ -1,7 +1,23 @@
 #pragma once
 #include "sfc/sys/windows/mod.inl"
+#include "sfc/ffi.h"
 
 namespace sfc::sys::windows {
+
+static auto build_wstring(auto&& f, unsigned capacity = 0) -> ffi::WString {
+  if (capacity == 0) {
+    capacity = f(nullptr, 0);
+  }
+
+  if (capacity == 0) {
+    return {};
+  }
+
+  auto vec = Vec<wchar_t>::with_capacity(capacity);
+  const auto len = f(vec.as_mut_ptr(), capacity);
+  vec.set_len(len + 1);
+  return ffi::WString::from_vec(mem::move(vec));
+}
 
 static auto getenv(const wchar_t* key) -> ffi::WString {
   auto f = [&](wchar_t* buf, DWORD buf_len) {
