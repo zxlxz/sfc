@@ -167,7 +167,7 @@ class [[nodiscard]] Result<void, E> {
   E _err;
 
  public:
-  constexpr Result() noexcept : _tag{Tag::Ok} {}
+  constexpr Result() noexcept : _tag{Tag::Ok}, _err{} {}
 
   constexpr Result(E err) noexcept : _tag{Tag::Err}, _err{err} {}
 
