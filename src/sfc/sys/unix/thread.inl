@@ -17,7 +17,7 @@ struct Thread {
     auto tid = ino_t{0};
     ::pthread_threadid_np(nullptr, &tid);
 #else
-    const auto tid = ::pthread_threadid_np();
+    const auto tid = ::syscall(SYS_gettid);
 #endif
     return static_cast<u32>(tid);
   }
