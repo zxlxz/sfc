@@ -8,36 +8,34 @@
 
 namespace sfc::time {
 
-auto DateTime::from_utc(SysTime sys_time) noexcept -> DateTime {
-  const auto secs = sys_time.secs();
-  const auto nanos = sys_time.subsec_nanos();
-  const auto datetime = sys::DateTime::from_utc(secs);
+auto DateTime::from_utc(SystemTime t) noexcept -> DateTime {
+  auto sys_time = sys::SystemTime::from_micros(t._micros);
+  auto sys_date = sys::DateTime::from_utc(sys_time);
 
   const auto res = DateTime{
-      .year = datetime.year,
-      .month = datetime.month,
-      .day = datetime.day,
-      .hour = datetime.hour,
-      .minute = datetime.minute,
-      .second = datetime.second,
-      .nanos = nanos,
+      .year = sys_date.year,
+      .month = sys_date.month,
+      .day = sys_date.day,
+      .hour = sys_date.hour,
+      .minute = sys_date.minute,
+      .second = sys_date.second,
+      .micros = t.subsec_micros(),
   };
   return res;
 }
 
-auto DateTime::from_local(SysTime sys_time) noexcept -> DateTime {
-  const auto secs = sys_time.secs();
-  const auto nanos = sys_time.subsec_nanos();
-  const auto datetime = sys::DateTime::from_local(secs);
+auto DateTime::from_local(SystemTime t) noexcept -> DateTime {
+  auto sys_time = sys::SystemTime::from_micros(t._micros);
+  auto sys_date = sys::DateTime::from_local(sys_time);
 
   const auto res = DateTime{
-      .year = datetime.year,
-      .month = datetime.month,
-      .day = datetime.day,
-      .hour = datetime.hour,
-      .minute = datetime.minute,
-      .second = datetime.second,
-      .nanos = nanos,
+      .year = sys_date.year,
+      .month = sys_date.month,
+      .day = sys_date.day,
+      .hour = sys_date.hour,
+      .minute = sys_date.minute,
+      .second = sys_date.second,
+      .micros = t.subsec_micros(),
   };
   return res;
 }

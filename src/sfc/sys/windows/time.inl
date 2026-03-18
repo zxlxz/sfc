@@ -5,7 +5,6 @@
 namespace sfc::sys::windows {
 
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
-static constexpr auto TICKS_PER_SECS = 10000000UL;  // 1 tick = 100ns
 
 struct Instant {
   LONGLONG cnt;
@@ -28,79 +27,72 @@ struct Instant {
 
   auto nanos() const noexcept -> ULONG64 {
     static const auto freq = Instant::freq();
-    const auto nanos = cnt * NANOS_PER_SEC / freq;
+
+    const auto q = cnt / freq;
+    const auto r = cnt % freq;
+    const auto nanos = q * NANOS_PER_SEC + r * NANOS_PER_SEC / freq;
     return static_cast<ULONG64>(nanos);
   }
 };
 
 struct SystemTime {
-  ULONG64 cnt;
+  static constexpr auto TICKS_PER_MICROS = 10UL;
+  FILETIME t;
 
   static auto now() noexcept -> SystemTime {
-    auto file_time = FILETIME{};
+    auto file_time = ::FILETIME{};
     ::GetSystemTimePreciseAsFileTime(&file_time);
-
-    const auto cnt = static_cast<ULONG64>(file_time.dwHighDateTime) << 32 |
-                     static_cast<ULONG64>(file_time.dwLowDateTime);
-
-    return SystemTime{cnt};
+    return SystemTime{file_time};
   }
 
-  auto nanos() const noexcept -> ULONG64 {
-    static constexpr auto TICKS_PER_NANOS = 100UL;
-    const auto nanos = cnt * TICKS_PER_NANOS;
-    return nanos;
+  static auto from_micros(ULONG64 micros) -> SystemTime {
+    const auto intervals = micros * TICKS_PER_MICROS;
+    const auto file_time = FILETIME{
+        .dwLowDateTime = static_cast<u32>(intervals),
+        .dwHighDateTime = static_cast<u32>(intervals >> 32),
+    };
+    return SystemTime{file_time};
+  }
+
+  auto as_micros() const noexcept -> ULONG64 {
+    const auto cnt = static_cast<ULONG64>(t.dwHighDateTime) << 32 | static_cast<ULONG64>(t.dwLowDateTime);
+    return cnt / TICKS_PER_MICROS;
   }
 };
 
 struct DateTime {
-  unsigned short year = 0;
-  unsigned short month = 0;
-  unsigned short day = 0;
-  unsigned short hour = 0;
-  unsigned short minute = 0;
-  unsigned short second = 0;
+  unsigned short year;
+  unsigned short month;
+  unsigned short day;
+  unsigned short hour;
+  unsigned short minute;
+  unsigned short second;
+  unsigned short millis;
 
-  static inline auto to_filetime(ULONG64 secs) -> FILETIME {
-    const auto cnts = secs * TICKS_PER_SECS;
+ public:
+  static auto from_filetime(const FILETIME& file_time) -> DateTime {
+    auto sys_time = SYSTEMTIME{};
+    ::FileTimeToSystemTime(&file_time, &sys_time);
 
-    auto res = FILETIME{};
-    res.dwLowDateTime = static_cast<DWORD>(cnts & 0xFFFFFFFFULL);
-    res.dwHighDateTime = static_cast<DWORD>(cnts >> 32);
-    return res;
-  }
-
-  static auto from_systemtime(const SYSTEMTIME& sys_time) -> DateTime {
-    const auto res = DateTime{
-        .year = static_cast<unsigned short>(sys_time.wYear),
-        .month = static_cast<unsigned short>(sys_time.wMonth),
-        .day = static_cast<unsigned short>(sys_time.wDay),
-        .hour = static_cast<unsigned short>(sys_time.wHour),
-        .minute = static_cast<unsigned short>(sys_time.wMinute),
-        .second = static_cast<unsigned short>(sys_time.wSecond),
+    return DateTime{
+        sys_time.wYear,
+        sys_time.wMonth,
+        sys_time.wDay,
+        sys_time.wHour,
+        sys_time.wMinute,
+        sys_time.wSecond,
+        sys_time.wMilliseconds,
     };
-    return res;
   }
 
-  static auto from_utc(ULONG64 secs) -> DateTime {
-    const auto utc_time = to_filetime(secs);
-
-    auto sys_time = SYSTEMTIME{};
-    ::FileTimeToSystemTime(&utc_time, &sys_time);
-
-    return DateTime::from_systemtime(sys_time);
+  static auto from_utc(const SystemTime& sys_time) -> DateTime {
+    return DateTime::from_filetime(sys_time.t);
   }
 
-  static auto from_local(ULONG64 secs) -> DateTime {
-    const auto utc_time = to_filetime(secs);
-
+  static auto from_local(const SystemTime& sys_time) -> DateTime {
     auto local_time = FILETIME{};
-    ::FileTimeToLocalFileTime(&utc_time, &local_time);
-
-    auto sys_time = SYSTEMTIME{};
-    ::FileTimeToSystemTime(&local_time, &sys_time);
-
-    return DateTime::from_systemtime(sys_time);
+    ::FileTimeToLocalFileTime(&sys_time.t, &local_time);
+    return DateTime::from_filetime(local_time);
   }
 };
 

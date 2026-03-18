@@ -8,9 +8,9 @@
 
 namespace sfc::time {
 
-auto SysTime::now() noexcept -> SysTime {
+auto SystemTime::now() noexcept -> SystemTime {
   const auto sys_imp = sys::SystemTime::now();
-  return SysTime{sys_imp.nanos()};
+  return SystemTime{sys_imp.as_micros()};
 }
 
 }  // namespace sfc::time
