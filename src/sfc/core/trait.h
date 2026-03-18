@@ -65,13 +65,4 @@ template <auto N>
 using idxs_seq_t = typename __make_integer_seq<_IntSeq, decltype(N), N>::Type;
 #endif
 
-template <class X>
-struct passkey_t {
-  X& _val;
-
- private:
-  friend X;
-  [[gnu::always_inline]] passkey_t(X& x) noexcept : _val{x} {}
-};
-
 }  // namespace sfc::trait
