@@ -74,7 +74,7 @@ void App::exec(Str filter, Option<bool> color_opt) {
   const auto pats = parse_filter(filter);
   auto suites = test::filter(pats.as_slice());
 
-  const auto color = color_opt ? *color_opt : io::Stdout::is_tty();
+  const auto color = color_opt ? *color_opt : io::Stdout::is_terminal();
   test::run(suites.as_slice(), color);
 }
 
@@ -143,8 +143,8 @@ auto main(int argc, const char* argv[]) -> int {
     return 0;
   }
 
-  const auto is_tty = io::Stdout::is_tty();
-  const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_tty);
+  const auto is_terminal = io::Stdout::is_terminal();
+  const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   app.exec(gtest_filter, gtest_color);
   return 0;

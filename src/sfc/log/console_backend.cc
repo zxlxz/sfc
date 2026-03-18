@@ -32,7 +32,7 @@ static inline auto color_off() -> Str {
   return "\033[0m";
 }
 
-ConsoleBackend::ConsoleBackend() : _color{io::Stdout::is_tty()} {}
+ConsoleBackend::ConsoleBackend() : _color{io::Stdout::is_terminal()} {}
 
 ConsoleBackend::~ConsoleBackend() {}
 

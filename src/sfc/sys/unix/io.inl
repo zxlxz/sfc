@@ -5,88 +5,6 @@
 
 namespace sfc::sys::unix {
 
-class File {
-  int _fd = -1;
-
- public:
-  File(int fd = -1) : _fd(fd) {}
-
-  ~File() {
-    if (_fd == -1) return;
-    ::close(_fd);
-  }
-
-  File(File&& other) noexcept : _fd(other._fd) {
-    other._fd = -1;
-  }
-
-  File& operator=(File&& other) noexcept {
-    if (this != &other) {
-      mem::swap(_fd, other._fd);
-    }
-    return *this;
-  }
-
-  auto is_valid() const -> bool {
-    return _fd != -1;
-  }
-
-  auto is_tty() const -> bool {
-    const auto ret = ::isatty(_fd);
-    return ret != 0;
-  }
-
-  auto flush() -> io::Result<> {
-    const auto ret = ::fsync(_fd);
-    if (ret == -1) {
-      return io::last_os_error();
-    }
-    return {};
-  }
-
-  auto read(Slice<u8> buf) -> io::Result<usize> {
-    const auto ret = ::read(_fd, buf._ptr, buf._len);
-    if (ret == -1) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(ret);
-  }
-
-  auto write(Slice<const u8> buf) -> io::Result<usize> {
-    const auto ret = ::write(_fd, buf._ptr, buf._len);
-    if (ret == -1) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(ret);
-  }
-
-  auto seek(off_t offset, int whence) -> io::Result<usize> {
-    static_assert(SEEK_SET == 0);
-    static_assert(SEEK_CUR == 1);
-    static_assert(SEEK_END == 2);
-    const auto ret = ::lseek(_fd, offset, whence);
-    if (ret == -1) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(ret);
-  }
-};
-
-static inline auto stdin() -> File& {
-  static auto res = File{STDIN_FILENO};
-  return res;
-}
-
-static inline auto stdout() -> File& {
-  static auto res = File{STDOUT_FILENO};
-  return res;
-}
-
-static inline auto stderr() -> File& {
-  static auto res = File{STDERR_FILENO};
-  return res;
-}
-
 static inline auto io_error(int code) -> io::Error {
   switch (code) {
     case 0:             return io::Error::Success;
@@ -124,5 +42,64 @@ static inline auto io_error(int code) -> io::Error {
     default:            return io::Error::Other;
   }
 }
+
+struct StdIo {
+  int _fd;
+
+ public:
+  auto is_console() -> bool {
+    return ::isatty(_fd) == 1;
+  }
+
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto ret = ::read(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return ret;
+  }
+
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto ret = ::write(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return ret;
+  }
+};
+
+struct StdIn {
+  static auto read(Slice<u8> data) -> io::Result<usize> {
+    return StdIo{STDIN_FILENO}.read(data);
+  }
+};
+
+struct Stdout {
+  static auto is_console() -> bool {
+    return StdIo{STDOUT_FILENO}.is_console();
+  }
+
+  static auto write(Slice<const u8> data) -> io::Result<usize> {
+    return StdIo{STDOUT_FILENO}.write(data);
+  }
+
+  static auto flush() -> io::Result<> {
+    return {};
+  }
+};
+
+struct Stderr {
+  static auto is_console() -> bool {
+    return StdIo{STDERR_FILENO}.is_console();
+  }
+
+  static auto write(Slice<const u8> data) -> io::Result<usize> {
+    return StdIo{STDERR_FILENO}.write(data);
+  }
+
+  static auto flush() -> io::Result<> {
+    return {};
+  }
+};
 
 }  // namespace sfc::sys::unix

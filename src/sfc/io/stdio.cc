@@ -11,11 +11,7 @@
 namespace sfc::io {
 
 class Stdout::Inn {
-  friend class Stdout;
-  friend class Stdout::Lock;
-
-  sys::File& _file{sys::stdout()};
-  BufWriter<sys::File&> _inn{_file};
+  BufWriter<sys::Stdout> _inn{{}};
   sync::ReentrantLock _mtx{};
 
  public:
@@ -24,8 +20,8 @@ class Stdout::Inn {
     return res;
   }
 
-  auto is_tty() const noexcept -> bool {
-    return _file.is_tty();
+  auto is_terminal() const noexcept -> bool {
+    return sys::Stdout::is_console();
   }
 
   void flush() noexcept {
@@ -44,13 +40,14 @@ class Stdout::Inn {
     _TRY(_inn.write(b));
     return s.len();
   }
+
+  auto lock() noexcept -> sync::ReentrantLock::Guard {
+    return _mtx.lock();
+  }
 };
 
 class Stderr::Inn {
-  friend class Stderr;
-  friend class Stderr::Lock;
-
-  sys::File& _file{sys::stderr()};
+  sys::Stderr _inn{};
   sync::ReentrantLock _mtx{};
 
  public:
@@ -59,28 +56,53 @@ class Stderr::Inn {
     return res;
   }
 
-  auto is_tty() const -> bool {
-    return _file.is_tty();
+  auto is_terminal() const -> bool {
+    return _inn.is_console();
   }
 
-  void flush() noexcept {
-    (void)_file.flush();
+  auto write(Slice<const u8> s) -> Result<usize> {
+    return _inn.write(s);
   }
 
-  void write(Slice<const u8> s) noexcept {
-    (void)_file.write(s);
+  void flush() noexcept {}
+
+  auto lock() noexcept -> sync::ReentrantLock::Guard {
+    return _mtx.lock();
   }
 };
 
-Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
+auto Stdout::is_terminal() -> bool {
+  auto& inn = Inn::instance();
+  auto lock = inn.lock();
+  return inn.is_terminal();
+}
+
+void Stdout::flush() {
+  auto& inn = Inn::instance();
+  auto lock = inn.lock();
+  return inn.flush();
+}
+
+void Stdout::write_str(Str s) {
+  auto& inn = Inn::instance();
+  auto lock = inn.lock();
+  const auto bytes = s.as_bytes();
+  (void)inn.write(bytes);
+}
+
+auto Stdout::lock() -> Lock {
+  return Lock{Inn::instance()};
+}
+
+Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
 
 Stdout::Lock::~Lock() noexcept {
   _inn.flush();
 }
 
-auto Stdout::Lock::is_tty() -> bool {
+auto Stdout::Lock::is_terminal() -> bool {
   static auto& inn = Inn::instance();
-  return inn.is_tty();
+  return inn.is_terminal();
 }
 
 void Stdout::Lock::flush() {
@@ -92,20 +114,33 @@ void Stdout::Lock::write_str(Str s) {
   (void)_inn.write(bytes);
 }
 
-auto Stdout::lock() -> Lock {
-  static auto& inn = Inn::instance();
-  return Lock{inn};
+auto Stderr::is_terminal() -> bool {
+  auto& inn = Inn::instance();
+  return inn.is_terminal();
 }
 
-Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn._mtx.lock()} {}
+void Stderr::flush() {
+  auto& inn = Inn::instance();
+  return inn.flush();
+}
+
+void Stderr::write_str(Str s) {
+  auto& inn = Inn::instance();
+  (void)inn.write(s.as_bytes());
+}
+
+auto Stderr::lock() -> Lock {
+  return Lock{Inn::instance()};
+}
+
+Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
 
 Stderr::Lock::~Lock() {
   _inn.flush();
 }
 
-auto Stderr::Lock::is_tty() -> bool {
-  static auto& inn = Inn::instance();
-  return inn.is_tty();
+auto Stderr::Lock::is_terminal() -> bool {
+  return _inn.is_terminal();
 }
 
 void Stderr::Lock::flush() {
@@ -113,12 +148,7 @@ void Stderr::Lock::flush() {
 }
 
 void Stderr::Lock::write_str(Str s) {
-  return _inn.write(s.as_bytes());
-}
-
-auto Stderr::lock() -> Lock {
-  static auto& inn = Inn::instance();
-  return Lock{inn};
+  (void)_inn.write(s.as_bytes());
 }
 
 }  // namespace sfc::io

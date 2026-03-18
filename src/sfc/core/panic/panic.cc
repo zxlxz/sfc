@@ -11,14 +11,14 @@
 
 namespace sfc::panic {
 
-void writeln(const auto&... args) {
+static void writeln(const auto&... args) {
   u8 buf[256];
   auto out = fmt::Buffer{buf, sizeof(buf)};
   (void)(out.write_str(args), ...);
   (void)(out.write_str("\n"));
 
   const auto bytes = out.as_bytes();
-  (void)(sys::stdout().write(bytes));
+  (void)(sys::Stderr::write(bytes));
 }
 
 template <u32 N>

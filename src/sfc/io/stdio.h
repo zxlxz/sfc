@@ -7,68 +7,52 @@ namespace sfc::io {
 
 class Stdout {
   class Inn;
-  using LockGuard = sync::ReentrantLock::Guard;
 
  public:
-  class Lock {
-    Inn& _inn;
-    LockGuard _lock;
+  static auto is_terminal() -> bool;
+  static void flush();
+  static void write_str(Str s);
 
-   public:
-    explicit Lock(Inn&);
-    ~Lock() noexcept;
-
-    auto is_tty() -> bool;
-    void flush();
-    void write_str(Str s);
-  };
-
+  class Lock;
   static auto lock() -> Lock;
+};
 
-  static auto is_tty() -> bool {
-    return Stdout::lock().is_tty();
-  }
+class Stdout::Lock {
+  Inn& _inn;
+  sync::ReentrantLock::Guard _lock;
 
-  static void flush() {
-    return Stdout::lock().flush();
-  }
+ public:
+  explicit Lock(Inn&);
+  ~Lock() noexcept;
 
-  static void write_str(Str s) {
-    return Stdout::lock().write_str(s);
-  }
+  auto is_terminal() -> bool;
+  void flush();
+  void write_str(Str s);
 };
 
 class Stderr {
   class Inn;
-  using LockGuard = sync::ReentrantLock::Guard;
 
  public:
-  class Lock {
-    Inn& _inn;
-    LockGuard _lock;
+  static auto is_terminal() -> bool;
+  static void flush();
+  static void write_str(Str s);
 
-   public:
-    explicit Lock(Inn&);
-    ~Lock();
-
-    static auto is_tty() -> bool;
-    void flush();
-    void write_str(Str s);
-  };
-
+  class Lock;
   static auto lock() -> Lock;
+};
 
-  static auto is_tty() -> bool {
-    return Stderr::lock().is_tty();
-  }
+class Stderr::Lock {
+  Inn& _inn;
+  sync::ReentrantLock::Guard _lock;
 
-  static void flush() {
-    return Stderr::lock().flush();
-  }
+ public:
+  explicit Lock(Inn&);
+  ~Lock();
 
-  static void write_str(Str s) {
-    return Stderr::lock().write_str(s);
-  }
+  auto is_terminal() -> bool;
+  void flush();
+  void write_str(Str s);
 };
 
 void print(fmt::Fmts fmts, const auto&... args) {

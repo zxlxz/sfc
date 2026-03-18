@@ -6,6 +6,73 @@ namespace sfc::sys::unix {
 
 using stat_t = struct stat;
 
+class File {
+  int _fd = -1;
+
+ public:
+  File(int fd = -1) : _fd(fd) {}
+
+  ~File() {
+    if (_fd == -1) return;
+    ::close(_fd);
+  }
+
+  File(File&& other) noexcept : _fd(other._fd) {
+    other._fd = -1;
+  }
+
+  File& operator=(File&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_fd, other._fd);
+    }
+    return *this;
+  }
+
+  auto is_valid() const -> bool {
+    return _fd != -1;
+  }
+
+  auto is_terminal() const -> bool {
+    const auto ret = ::isatty(_fd);
+    return ret != 0;
+  }
+
+  auto flush() -> io::Result<> {
+    const auto ret = ::fsync(_fd);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return {};
+  }
+
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto ret = ::read(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(ret);
+  }
+
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto ret = ::write(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(ret);
+  }
+
+  auto seek(off_t offset, int whence) -> io::Result<usize> {
+    static_assert(SEEK_SET == 0);
+    static_assert(SEEK_CUR == 1);
+    static_assert(SEEK_END == 2);
+    const auto ret = ::lseek(_fd, offset, whence);
+    if (ret == -1) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(ret);
+  }
+};
+
 struct OpenOptions {
   bool _append = false;
   bool _create = false;
@@ -15,6 +82,7 @@ struct OpenOptions {
   bool _truncate = false;
   mode_t _mode = 0666;
 
+ public:
   auto open(const char* path) const -> io::Result<int> {
     const auto access_flags = _write ? _read ? O_RDWR : O_WRONLY : O_RDONLY;
     const auto create_flags = _create_new ? O_CREAT | O_EXCL : (_create ? O_CREAT : 0);
@@ -30,26 +98,26 @@ struct OpenOptions {
   }
 };
 
-static inline auto is_dir(int attr) -> bool {
-  return (attr & S_IFMT) == S_IFDIR;
-}
+struct Metadata {
+  uint32_t _attr;
+  size_t _size;
 
-static inline auto is_file(int attr) -> bool {
-  return (attr & S_IFMT) == S_IFREG;
-}
+ public:
+  auto is_dir() const -> bool {
+    return S_ISDIR(_attr);
+  }
 
-template <class Meta>
-static inline auto lstat(const char* path) -> io::Result<Meta> {
-  auto st = stat_t{};
+  auto is_file() const -> bool {
+    return S_ISREG(_attr);
+  }
+};
+
+static inline auto lstat(const char* path) -> io::Result<Metadata> {
+  struct stat st{};
   if (::lstat(path, &st) == -1) {
     return io::last_os_error();
   }
-
-  const auto res = Meta{
-      ._attr = static_cast<unsigned>(st.st_mode),
-      ._size = static_cast<size_t>(st.st_size),
-  };
-  return res;
+  return Metadata{st.st_mode, static_cast<size_t>(st.st_size)};
 }
 
 static inline auto unlink(const char* path) -> io::Result<> {

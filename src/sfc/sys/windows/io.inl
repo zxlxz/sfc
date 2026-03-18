@@ -4,89 +4,6 @@
 
 namespace sfc::sys::windows {
 
-struct File {
-  HANDLE _fd{nullptr};
-
- public:
-  File(HANDLE fd = nullptr) : _fd(fd) {}
-
-  ~File() {
-    if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) return;
-    ::CloseHandle(_fd);
-  }
-
-  File(File&& other) noexcept : _fd(other._fd) {
-    other._fd = nullptr;
-  }
-
-  File& operator=(File&& other) noexcept {
-    if (this != &other) {
-      mem::swap(_fd, other._fd);
-    }
-    return *this;
-  }
-
-  auto is_valid() const -> bool {
-    return _fd != nullptr && _fd != INVALID_HANDLE_VALUE;
-  }
-
-  auto is_tty() const -> bool {
-    auto mode = 0UL;
-    if (!::GetConsoleMode(_fd, &mode)) {
-      return false;
-    }
-    return mode != 0;
-  }
-
-  auto flush() -> io::Result<> {
-    const auto ret = ::FlushFileBuffers(_fd);
-    if (!ret) {
-      return io::last_os_error();
-    }
-    return {};
-  }
-
-  auto read(Slice<u8> buf) -> io::Result<usize> {
-    auto bytes_read = 0UL;
-    if (!::ReadFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_read, nullptr)) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(bytes_read);
-  }
-
-  auto write(Slice<const u8> buf) -> io::Result<usize> {
-    auto bytes_written = 0UL;
-    if (!::WriteFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_written, nullptr)) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(bytes_written);
-  }
-
-  auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
-    const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
-    auto new_offset = LARGE_INTEGER{};
-    if (!::SetFilePointerEx(_fd, old_offset, &new_offset, whence)) {
-      return io::last_os_error();
-    }
-    return static_cast<usize>(new_offset.QuadPart);
-  }
-};
-
-static inline auto stdout() -> File& {
-  static auto file = File{::GetStdHandle(STD_OUTPUT_HANDLE)};
-  return file;
-}
-
-static inline auto stderr() -> File& {
-  static auto file = File{::GetStdHandle(STD_ERROR_HANDLE)};
-  return file;
-}
-
-static inline auto stdin() -> File& {
-  static auto file = File{::GetStdHandle(STD_INPUT_HANDLE)};
-  return file;
-}
-
 static inline auto io_error(DWORD code) -> io::Error {
   switch (code) {
     case ERROR_FILE_NOT_FOUND:
@@ -122,5 +39,131 @@ static inline auto io_error(DWORD code) -> io::Error {
     default:                      return io::Error::Other;
   }
 }
+
+struct StdIo {
+  static constexpr auto MAX_BUF_LEN = 4096U;
+  HANDLE _handle;
+
+ public:
+  auto is_console() const -> bool {
+    auto mode = DWORD{};
+    return ::GetConsoleMode(_handle, &mode);
+  }
+
+  auto is_utf8_console() const -> bool {
+    return ::GetConsoleCP() == CP_UTF8;
+  }
+
+  auto write_u8(Slice<const u8> data) -> io::Result<usize> {
+    auto nwrite = DWORD{};
+    if (!::WriteFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nwrite, nullptr)) {
+      return io::last_os_error();
+    }
+    return nwrite;
+  }
+
+  auto write_u16(Slice<const u8> data) -> io::Result<usize> {
+    const auto u8_ptr = reinterpret_cast<const char*>(data._ptr);
+    const auto u8_len = static_cast<DWORD>(data._len);
+
+    // convert u8 to u16
+    wchar_t u16_buf[MAX_BUF_LEN];
+    const auto u16_len = ::MultiByteToWideChar(CP_UTF8, 0, u8_ptr, u8_len, u16_buf, MAX_BUF_LEN);
+    if (u16_len == 0) {
+      return io::last_os_error();
+    }
+
+    auto nwrite = DWORD{};
+    if (!::WriteConsoleW(_handle, u16_buf, u16_len, &nwrite, nullptr)) {
+      return io::last_os_error();
+    }
+    return static_cast<usize>(nwrite);
+  }
+
+  auto write(Slice<const u8> data) -> io::Result<usize> {
+    if (!this->is_console() || this->is_utf8_console()) {
+      return this->write_u8(data);
+    } else {
+      return this->write_u16(data);
+    }
+  }
+
+  auto read_u8(Slice<u8> data) -> io::Result<usize> {
+    auto nread = DWORD{};
+    if (!::ReadFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nread, nullptr)) {
+      return io::last_os_error();
+    }
+    return nread;
+  }
+
+  auto read_u16(Slice<u8> data) -> io::Result<usize> {
+    // in the worst case, each u16 character takes 3 u8 bytes
+    const auto amount = cmp::min(static_cast<u32>(data.len() / 3), MAX_BUF_LEN);
+
+    // read u16
+    wchar_t u16_buf[MAX_BUF_LEN];
+    auto u16_len = DWORD{};
+    if (!::ReadConsoleW(_handle, u16_buf, amount, &u16_len, nullptr)) {
+      return io::last_os_error();
+    }
+
+    // convert u16 to u8
+    const auto u8_ptr = reinterpret_cast<char*>(data._ptr);
+    const auto u8_cap = static_cast<DWORD>(data._len);
+    const auto u8_len = ::WideCharToMultiByte(CP_UTF8, 0, u16_buf, u16_len, u8_ptr, u8_cap, nullptr, nullptr);
+    if (u8_len == 0) {
+      return io::last_os_error();
+    }
+
+    return static_cast<usize>(u8_len);
+  }
+
+  auto read(Slice<u8> data) -> io::Result<usize> {
+    if (!this->is_console() || this->is_utf8_console()) {
+      return this->read_u8(data);
+    } else {
+      return this->read_u16(data);
+    }
+  }
+};
+
+struct StdIn {
+  static auto read(Slice<u8> data) -> io::Result<usize> {
+    const auto handle = ::GetStdHandle(STD_INPUT_HANDLE);
+    return StdIo{handle}.read(data);
+  }
+};
+
+struct Stdout {
+  static auto is_console() -> bool {
+    const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+    return StdIo{handle}.is_console();
+  }
+
+  static auto write(Slice<const u8> data) -> io::Result<usize> {
+    const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+    return StdIo{handle}.write(data);
+  }
+
+  static auto flush() -> io::Result<> {
+    return {};
+  }
+};
+
+struct Stderr {
+  static auto is_console() -> bool {
+    const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
+    return StdIo{handle}.is_console();
+  }
+
+  static auto write(Slice<const u8> data) -> io::Result<usize> {
+    const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
+    return StdIo{handle}.write(data);
+  }
+
+  static auto flush() -> io::Result<> {
+    return {};
+  }
+};
 
 }  // namespace sfc::sys::windows
