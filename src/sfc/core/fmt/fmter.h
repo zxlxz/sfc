@@ -5,6 +5,23 @@
 
 namespace sfc::fmt {
 
+template <usize N>
+struct FixedBuf {
+  usize _len = 0;
+  char _buf[N] = {};
+
+ public:
+  auto as_str() const -> Str {
+    return Str{_buf, _len};
+  }
+
+  void write_str(Str s) {
+    if (s._len == 0 || _len + s._len > N) return;
+    __builtin_memcpy(_buf + _len, s._ptr, s._len);
+    _len += s._len;
+  }
+};
+
 template <class W>
 struct Fmter {
   W& _buf;
@@ -29,9 +46,8 @@ struct Fmter {
   }
 
   void write_str(Str s) {
-    if (s.is_empty()) {
-      return;
-    }
+    if (s._len == 0) return;
+
     if constexpr (requires { _buf.push_str(s); }) {
       (void)_buf.push_str(s);
     } else {
@@ -127,7 +143,8 @@ struct Fmter {
     }
   }
 
-  void write_fmt(Fmts fmts, const auto&... args) {
+  template <class... T>
+  void write_fmt(Fmts<T...> fmts, const T&... args) {
     Args{fmts, args...}.fmt(*this);
   }
 
@@ -326,26 +343,8 @@ struct Fmter<W>::DebugStruct {
   }
 };
 
-struct Buffer {
-  using buf_t = u8*;
-  const buf_t _buf;
-  const usize _cap;
-  usize _len = 0;
-
- public:
-  auto as_bytes() const -> Slice<const u8> {
-    return {_buf, _len};
-  }
-
-  void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > _cap) return;
-    __builtin_memcpy(_buf + _len, s._ptr, s._len);
-    _len += s._len;
-  }
-};
-
-void write(auto& out, Fmts fmts, const auto&... args) {
-  static_assert(requires { out.write_str(""); });
+template <class... T>
+void write(auto& out, Fmts<T...> fmts, const T&... args) {
   auto fmter = Fmter{out};
   fmter.write_fmt(fmts, args...);
 }
@@ -354,13 +353,13 @@ void write(auto& out, Fmts fmts, const auto&... args) {
 
 namespace sfc::panic {
 
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args) {
+template <class... T>
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts<T...> fmts, const T&... args) {
   if constexpr (sizeof...(args) == 0) {
     const auto s = fmts._str;
     panic::panic_imp(loc, s._ptr, s._len);
   } else {
-    u8 buf[256];
-    auto out = fmt::Buffer{buf, sizeof(buf)};
+    auto out = fmt::FixedBuf<256>{};
     fmt::write(out, fmts, args...);
     panic::panic_imp(loc, out._buf, out._len);
   }

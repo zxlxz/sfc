@@ -37,9 +37,9 @@ SFC_TEST(bin_to_str) {
 
 SFC_TEST(int_from_str) {
   // dec
-  sfc::expect(Int<int>::from_str("0"), Option{0});
-  sfc::expect(Int<int>::from_str("+123"), Option{123});
-  sfc::expect(Int<int>::from_str("-123"), Option{-123});
+  sfc::expect_eq(Int<int>::from_str("0"), Option{0});
+  sfc::expect_eq(Int<int>::from_str("+123"), Option{123});
+  sfc::expect_eq(Int<int>::from_str("-123"), Option{-123});
 
   // neg
   sfc::expect_eq(Int<i8>::from_str("-128"), Option<i8>{-128});
@@ -61,25 +61,25 @@ SFC_TEST(int_from_str) {
 
 SFC_TEST(bin_from_str) {
   // dec
-  sfc::expect(Int<int>::from_str("0"), Option{0});
-  sfc::expect(Int<int>::from_str("+123"), Option{123});
-  sfc::expect(Int<int>::from_str("-123"), Option{-123});
+  sfc::expect_eq(Int<int>::from_str("0"), Option{0});
+  sfc::expect_eq(Int<int>::from_str("+123"), Option{123});
+  sfc::expect_eq(Int<int>::from_str("-123"), Option{-123});
 
   // bin
-  sfc::expect(Int<int>::from_str("0", 2), Option{0b0});
-  sfc::expect(Int<int>::from_str("10", 2), Option{0b10});
-  sfc::expect(Int<int>::from_str("-10", 2), Option{-0b10});
+  sfc::expect_eq(Int<int>::from_str("0", 2), Option{0b0});
+  sfc::expect_eq(Int<int>::from_str("10", 2), Option{0b10});
+  sfc::expect_eq(Int<int>::from_str("-10", 2), Option{-0b10});
 
   // oct
-  sfc::expect(Int<int>::from_str("0", 8), Option{0});
-  sfc::expect(Int<int>::from_str("10", 8), Option{010});
-  sfc::expect(Int<int>::from_str("-10", 8), Option{-010});
+  sfc::expect_eq(Int<int>::from_str("0", 8), Option{0});
+  sfc::expect_eq(Int<int>::from_str("10", 8), Option{010});
+  sfc::expect_eq(Int<int>::from_str("-10", 8), Option{-010});
 
   // hex
-  sfc::expect(Int<int>::from_str("0", 16), Option{0x0});
-  sfc::expect(Int<int>::from_str("ff", 16), Option{0xff});
-  sfc::expect(Int<int>::from_str("FF", 16), Option{0xFF});
-  sfc::expect(Int<int>::from_str("-ff", 16), Option{-0xff});
+  sfc::expect_eq(Int<int>::from_str("0", 16), Option{0x0});
+  sfc::expect_eq(Int<int>::from_str("ff", 16), Option{0xff});
+  sfc::expect_eq(Int<int>::from_str("FF", 16), Option{0xFF});
+  sfc::expect_eq(Int<int>::from_str("-ff", 16), Option{-0xff});
 
   // auto-radix
   sfc::expect_eq(Int<int>::from_str("+0b101"), Option{+0b101});

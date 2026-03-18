@@ -33,9 +33,7 @@ static auto utf8_encode(u8 (&buf)[4], char32_t c) -> Slice<const u8> {
 }
 
 void String::push_str(Str s) noexcept {
-  if (s._len == 0) {
-    return;
-  }
+  if (s._len == 0) return;
   _vec.extend_from_slice(s.as_bytes());
 }
 

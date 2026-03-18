@@ -47,7 +47,7 @@ SFC_TEST(fmt) {
   sfc::expect_eq(fmt::format("{#?}", Str{""}), R"("")");
 
   sfc::expect_eq(fmt::format("{}", "abc"), "abc");
-  sfc::expect_eq(fmt::format("{#?}", "abc"), R"("abc")");
+  sfc::expect_eq(fmt::format("{#?}", Str{"abc"}), R"("abc")");
 }
 
 SFC_TEST(find) {

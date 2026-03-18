@@ -19,7 +19,9 @@ struct Error {
 };
 
 [[noreturn]] void panic_imp(Location loc, const void* buf, usize buf_len);
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts fmts, const auto&... args);
+
+template <class... T>
+[[noreturn]] void panic_fmt(Location loc, fmt::Fmts<T...> fmts, const T&... args);
 
 struct Condition {
   bool val;
@@ -27,9 +29,10 @@ struct Condition {
   [[gnu::always_inline]] Condition(const auto& val, Location loc = Location::current()) : val{val}, loc{loc} {}
 };
 
-void expect(Condition cond, const auto& fmts, const auto&... args) {
+template <class... T>
+void expect(Condition cond, fmt::Fmts<T...> fmts, const T&... args) {
   if (cond.val) return;
-  panic::panic_fmt(cond.loc, "sfc::expect(`{}`) failed", fmts, args...);
+  panic::panic_fmt(cond.loc, fmts, args...);
 }
 
 void expect_true(const auto& x, Location loc = Location::current()) {
@@ -66,11 +69,11 @@ void expect_flt_ne(auto a, auto b, u32 ulp = 4, Location loc = Location::current
 
 namespace sfc {
 using panic::expect;
-using panic::expect_true;
 using panic::expect_false;
+using panic::expect_true;
 
 using panic::expect_eq;
-using panic::expect_ne;
 using panic::expect_flt_eq;
 using panic::expect_flt_ne;
+using panic::expect_ne;
 }  // namespace sfc

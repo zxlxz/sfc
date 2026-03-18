@@ -8,7 +8,7 @@ namespace sfc::log {
 class LogTime {
   char _buf[24] = "0000-00-00T00:00:00.000";
 
-  time::SysTime _sys_time{};
+  time::SystemTime _sys_time{};
   time::DateTime _day_time{};
 
  public:
@@ -17,9 +17,9 @@ class LogTime {
   }
 
   void update() {
-    const auto cur_time = time::SysTime::now();
+    const auto cur_time = time::SystemTime::now();
 
-    if (cur_time.secs() != _sys_time.secs()) {
+    if (cur_time.as_secs() != _sys_time.as_secs()) {
       _day_time = time::DateTime::from_local(cur_time);
       this->fill_date();
       this->fill_time();
@@ -72,7 +72,7 @@ Logger& global() {
     logger.add_backend(ConsoleBackend{});
     return logger;
   };
-  
+
   static auto res = make_logger();
   return res;
 }

@@ -6,7 +6,11 @@ namespace sfc::fmt {
 
 struct Debug {
   static void fmt(bool val, auto& f) {
-    f.write_str(val ? Str{"true"} : Str{"false"});
+    if (val) {
+      f.write_str("true");
+    } else {
+      f.write_str("false");
+    }
   }
 
   static void fmt(char val, auto& f) {
@@ -60,17 +64,24 @@ struct Debug {
       f.write_str(")");
     }
   }
+
+  template <class T, usize N>
+  static void fmt(const T (&val)[N], auto& f) {
+    auto imp = f.debug_list();
+    for (auto& element : val) {
+      imp.entry(element);
+    }
+  }
+
+  template <usize N>
+  static void fmt(const char (&val)[N], auto& f) {
+    f.pad(val);
+  }
 };
 
 void Display::fmt(const auto& self, auto& f) {
   if constexpr (requires { self.fmt(f); }) {
     self.fmt(f);
-  } else if constexpr (requires { Slice{self}; }) {
-    if constexpr (requires { Str{self}; }) {
-      Str{self}.fmt(f);
-    } else {
-      Slice{self}.fmt(f);
-    }
   } else {
     fmt::Debug::fmt(self, f);
   }
