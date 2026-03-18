@@ -76,7 +76,7 @@ class PathBuf {
   }
 };
 
-struct Meta {
+struct Metadata {
   u32 _attr = 0;
   u64 _size = 0;
 
@@ -87,7 +87,7 @@ struct Meta {
   auto is_file() const noexcept -> bool;
 };
 
-auto meta(Path path) -> io::Result<Meta>;
+auto metadata(Path path) -> io::Result<Metadata>;
 
 auto create_dir(Path path) -> io::Result<>;
 auto create_dir_all(Path path) -> io::Result<>;

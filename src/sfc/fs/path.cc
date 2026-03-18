@@ -159,17 +159,17 @@ auto Path::is_relative() const noexcept -> bool {
 }
 
 auto Path::exists() const noexcept -> bool {
-  const auto m = fs::meta(*this);
+  const auto m = fs::metadata(*this);
   return m.is_ok();
 }
 
 auto Path::is_file() const noexcept -> bool {
-  const auto t = fs::meta(*this).ok();
+  const auto t = fs::metadata(*this).ok();
   return t && (*t).is_file();
 }
 
 auto Path::is_dir() const noexcept -> bool {
-  const auto t = fs::meta(*this).ok();
+  const auto t = fs::metadata(*this).ok();
   return t && (*t).is_dir();
 }
 
@@ -269,25 +269,26 @@ auto PathBuf::join(Path path) const -> PathBuf {
   return res;
 }
 
-auto Meta::exists() const noexcept -> bool {
+auto Metadata::exists() const noexcept -> bool {
   return _attr != 0;
 }
 
-auto Meta::file_len() const noexcept -> u64 {
+auto Metadata::file_len() const noexcept -> u64 {
   return _size;
 }
 
-auto Meta::is_dir() const noexcept -> bool {
-  return sys::is_dir(_attr);
+auto Metadata::is_dir() const noexcept -> bool {
+  return sys::Metadata{_attr, _size}.is_dir();
 }
 
-auto Meta::is_file() const noexcept -> bool {
-  return sys::is_file(_attr);
+auto Metadata::is_file() const noexcept -> bool {
+  return sys::Metadata{_attr, _size}.is_file();
 }
 
-auto meta(Path path) -> io::Result<Meta> {
+auto metadata(Path path) -> io::Result<Metadata> {
   const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::lstat<Meta>(os_path.ptr());
+  const auto sys_meta = _TRY(sys::lstat(os_path.ptr()));
+  return Metadata{sys_meta._attr, sys_meta._size};
 }
 
 auto create_dir(Path path) -> io::Result<> {
