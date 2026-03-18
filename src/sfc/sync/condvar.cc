@@ -25,13 +25,13 @@ void Condvar::notify_all() noexcept {
 }
 
 auto Condvar::wait(Mutex::Guard& guard) noexcept -> bool {
-  auto& lock = guard._lock._inn;
+  auto& lock = guard.inner();
   _inn.wait(lock);
   return true;
 }
 
 auto Condvar::wait_timeout(Mutex::Guard& guard, time::Duration dur) noexcept -> bool {
-  auto& lock = guard._lock._inn;
+  auto& lock = guard.inner();
   const auto millis = static_cast<u32>(dur.as_millis());
   return _inn.wait_timeout(lock, millis);
 }

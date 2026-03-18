@@ -70,6 +70,11 @@ auto current() -> Thread {
   return Thread{id};
 }
 
+auto current_id() -> u32 {
+  const auto id = sys::Thread::current();
+  return id;
+}
+
 void yield_now() {
   sys::Thread::yield_now();
 }

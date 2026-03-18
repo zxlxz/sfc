@@ -26,13 +26,17 @@ auto Mutex::try_lock() noexcept -> Option<Guard> {
   if (!_inn.try_lock()) {
     return {};
   }
-  return {option::Some{}, trait::passkey_t{*this}};
+  return {option::Some{}, *this};
 }
 
-Mutex::Guard::Guard(trait::passkey_t<Mutex> lock) : _lock{lock._val} {}
+Mutex::Guard::Guard(Mutex& lock, passkey_t) : _lock{lock} {}
 
 Mutex::Guard::~Guard() noexcept {
   _lock._inn.unlock();
+}
+
+auto Mutex::Guard::inner() -> sys::Mutex& {
+  return _lock._inn;
 }
 
 ReentrantLock::ReentrantLock() noexcept : _mutex{}, _owner{0}, _count{0} {}
@@ -47,43 +51,44 @@ auto ReentrantLock::lock() noexcept -> Guard {
   const auto thr = thread::current();
 
   if (_owner.load(Ordering::Acquire) == thr.id) {
-    _count.fetch_add(1, sync::Ordering::Relaxed);
+    _count.fetch_add(1, Ordering::Relaxed);
     return Guard{{*this}};
   }
 
   _mutex.lock();
-  _owner.store(thr.id, sync::Ordering::Release);
-  _count.store(1, sync::Ordering::Relaxed);
+  _owner.store(thr.id, Ordering::Release);
+  _count.store(1, Ordering::Relaxed);
   return Guard{*this};
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
-  const auto thr = thread::current();
+  const auto thread_id = thread::current_id();
 
-  if (_owner.load(Ordering::Acquire) == thr.id) {
-    _count.fetch_add(1, sync::Ordering::Relaxed);
-    return {option::Some{}, trait::passkey_t{*this}};
+  if (_owner.load(Ordering::Acquire) == thread_id) {
+    _count.fetch_add(1, Ordering::Relaxed);
+    return {option::Some{}, *this};
   }
 
   if (!_mutex.try_lock()) {
     return {};
   }
-  _owner.store(thr.id, sync::Ordering::Release);
-  _count.store(1, sync::Ordering::Relaxed);
-  return {option::Some{}, trait::passkey_t{*this}};
+
+  _owner.store(thread_id, Ordering::Release);
+  _count.store(1, Ordering::Relaxed);
+  return {option::Some{}, *this};
 }
 
-ReentrantLock::Guard::Guard(trait::passkey_t<ReentrantLock> lock) : _lock{lock._val} {}
+ReentrantLock::Guard::Guard(ReentrantLock& lock, passkey_t) : _lock{lock} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  const auto thr = thread::current();
+  const auto thread_id = thread::current_id();
 
-  if (_lock._owner.load(sync::Ordering::Acquire) != thr.id) {
+  if (_lock._owner.load(Ordering::Acquire) != thread_id) {
     return;
   }
 
-  if (_lock._count.fetch_sub(1, sync::Ordering::AcqRel) == 1) {
-    _lock._owner.store(0, sync::Ordering::Release);
+  if (_lock._count.fetch_sub(1, Ordering::AcqRel) == 1) {
+    _lock._owner.store(0, Ordering::Release);
     _lock._mutex.unlock();
   }
 }

@@ -12,7 +12,7 @@ struct Thread {
   HANDLE _handle = nullptr;
 
  public:
-  static auto current_id() -> DWORD {
+  static auto current() -> DWORD {
     const auto tid = ::GetCurrentThreadId();
     return tid;
   }
@@ -33,7 +33,9 @@ struct Thread {
 
   static auto set_name(const wchar_t* name) -> bool {
     if (name == nullptr) return true;
-    const auto hres = ::SetThreadDescription(::GetCurrentThread(), name);
+
+    const auto thrd = ::GetCurrentThread();
+    const auto hres = ::SetThreadDescription(thrd, name);
     return SUCCEEDED(hres);
   }
 

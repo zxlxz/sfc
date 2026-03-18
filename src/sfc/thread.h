@@ -7,7 +7,7 @@
 namespace sfc::thread {
 
 struct Thread {
-  u64 id;
+  u32 id;
 };
 
 class JoinHandle {
@@ -31,6 +31,7 @@ struct Builder {
 };
 
 auto current() -> Thread;
+auto current_id() -> u32;
 
 void yield_now();
 
