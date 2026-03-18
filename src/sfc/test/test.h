@@ -4,10 +4,19 @@
 
 namespace sfc::test {
 
+struct SourceLoc {
+  const char* file;
+  int line;
+
+  static auto current(const char* file = __builtin_FILE(), int line = __builtin_LINE()) -> SourceLoc {
+    return {file, line};
+  }
+};
+
 struct Test {
   void (*_fun)();
   Str _type;
-  panic::Location _loc;
+  SourceLoc _loc;
 
  public:
   auto suite() const -> Str;
@@ -18,10 +27,9 @@ struct Test {
 
  public:
   template <class T>
-  static auto of(panic::Location loc = {}) -> Test {
-    static constexpr auto full_name = reflect::type_name<T>();
-    static constexpr auto type_name = full_name[{0, full_name.len() - 4}];
-    return Test{&T::test, type_name, loc};
+  static constexpr auto of(SourceLoc loc = SourceLoc::current()) -> Test {
+    static constinit auto type_name = reflect::type_name<T>();
+    return Test{&T::test, type_name[{0, type_name.len() - 4}], loc};
   }
 };
 
@@ -39,7 +47,6 @@ struct Suite {
   auto match(Str pat) const -> bool;
   auto filter(Slice<const Str> pats) const -> Suite;
 };
-
 
 auto regist(Test test) -> bool;
 auto suites() -> Slice<const Suite>;
