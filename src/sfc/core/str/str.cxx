@@ -43,11 +43,11 @@ SFC_TEST(cmp) {
 }
 
 SFC_TEST(fmt) {
-  sfc::expect_eq(fmt::format("{}", ""), "");
-  sfc::expect_eq(fmt::format("{#?}", Str{""}), R"("")");
+  sfc::expect_eq(string::format("{}", ""), "");
+  sfc::expect_eq(string::format("{#?}", Str{""}), R"("")");
 
-  sfc::expect_eq(fmt::format("{}", "abc"), "abc");
-  sfc::expect_eq(fmt::format("{#?}", Str{"abc"}), R"("abc")");
+  sfc::expect_eq(string::format("{}", "abc"), "abc");
+  sfc::expect_eq(string::format("{#?}", Str{"abc"}), R"("abc")");
 }
 
 SFC_TEST(find) {

@@ -2,6 +2,8 @@
 
 namespace sfc::fmt::test {
 
+using string::format;
+
 SFC_TEST(bool) {
   sfc::expect_eq(format("{}", true), "true");
   sfc::expect_eq(format("{}", false), "false");

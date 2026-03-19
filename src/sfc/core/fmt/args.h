@@ -154,12 +154,7 @@ struct Fmts<> {
   }
 };
 
-#ifdef __INTELLISENSE__
-template <class... T>
-using fmts_t = Fmts<T...>;
-#else
 template <class... T>
 using fmts_t = trait::identity_t<Fmts<T...>>;
-#endif
 
 }  // namespace sfc::fmt

@@ -139,16 +139,13 @@ class [[nodiscard]] String {
   }
 };
 
-}  // namespace sfc::string
-
-namespace sfc::fmt {
 template <class... T>
-auto format(fmt::fmts_t<T...> fmts, const T&... args) -> string::String {
-  auto buf = string::String{};
-  Fmter{buf}.write_fmt(fmts, args...);
-  return buf;
+auto format(fmt::fmts_t<T...> fmts, const T&... args) -> String {
+  auto out = String{};
+  fmt::write(out, fmts, args...);
+  return out;
 }
-}  // namespace sfc::fmt
+}  // namespace sfc::string
 
 namespace sfc {
 using string::String;
