@@ -20,12 +20,8 @@ SFC_TEST(copy_ctor) {
   using Option = option::Option<int>;
   const auto none = Option{};
   const auto some = Option{10};
-
-  const auto a = none;
-  const auto b = some;
-  sfc::expect_true(a.is_none());
-  sfc::expect_true(b.is_some());
-  sfc::expect_eq(*b, 10);
+  sfc::expect_eq(auto{none}, Option{});
+  sfc::expect_eq(auto{some}, Option{10});
 }
 
 SFC_TEST(copy_assign) {
@@ -48,12 +44,8 @@ SFC_TEST(move_ctor) {
   auto a = Option{};
   auto b = Option{String::from("hello")};
 
-  auto x = mem::move(a);
-  sfc::expect_true(x.is_none());
-
-  auto y = mem::move(b);
-  sfc::expect_true(y.is_some());
-  sfc::expect_eq(*y, "hello");
+  sfc::expect_eq(mem::move(a), Option{});
+  sfc::expect_eq(mem::move(b), Option{String::from("hello")});
 }
 
 SFC_TEST(move_assign) {
@@ -110,7 +102,9 @@ SFC_TEST(and_or) {
 
 SFC_TEST(and_then) {
   using Option = option::Option<int>;
-  auto add1 = [](auto x) { return Option{x + 1}; };
+  auto add1 = [](auto x) {
+    return Option{x + 1};
+  };
 
   sfc::expect_eq(Option{10}.and_then(add1), Option{11});
   sfc::expect_eq(Option{}.and_then(add1), Option{});
@@ -118,7 +112,9 @@ SFC_TEST(and_then) {
 
 SFC_TEST(or_else) {
   using Option = option::Option<int>;
-  auto make_opt = [] { return Option{1}; };
+  auto make_opt = [] {
+    return Option{1};
+  };
 
   sfc::expect_eq(Option{}.or_else(make_opt), Option{1});
   sfc::expect_eq(Option{10}.or_else(make_opt), Option{10});
@@ -126,7 +122,9 @@ SFC_TEST(or_else) {
 
 SFC_TEST(map) {
   using Option = option::Option<int>;
-  auto add1 = [](auto x) { return x + 1; };
+  auto add1 = [](auto x) {
+    return x + 1;
+  };
 
   sfc::expect_eq(Option{}.map(add1), Option{});
   sfc::expect_eq(Option{10}.map(add1), Option{11});
@@ -134,7 +132,9 @@ SFC_TEST(map) {
 
 SFC_TEST(map_or) {
   using Option = option::Option<int>;
-  auto add1 = [](auto x) { return x + 1; };
+  auto add1 = [](auto x) {
+    return x + 1;
+  };
 
   sfc::expect_eq(Option{}.map_or(5, add1), 5);
   sfc::expect_eq(Option{10}.map_or(5, add1), 11);
