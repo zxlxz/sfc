@@ -56,7 +56,7 @@ struct Str {
 
  public:
   constexpr auto operator[](usize idx) const noexcept -> char {
-    if (!_ptr || idx > _len) {
+    if (!_ptr || idx >= _len) {
       return 0;
     }
     return _ptr[idx];
