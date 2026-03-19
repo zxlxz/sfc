@@ -221,7 +221,7 @@ namespace sfc {
 using result::Result;
 }  // namespace sfc
 
-#ifdef __INTELLISENSE__
+#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
 #define _TRY(expr) expr.unwrap()
 #else
 #define _TRY(expr)                        \
