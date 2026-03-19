@@ -54,9 +54,10 @@ struct Spec {
     constexpr auto extract_int() -> u32 {
       auto res = 0U;
       while (_pos < _str._len) {
-        const auto ch = _str._ptr[_pos++];
+        const auto ch = _str._ptr[_pos];
         if (!(ch >= '0' && ch <= '9')) break;
         res = res * 10 + static_cast<u32>(ch - '0');
+        ++_pos;
       }
       return res;
     };
@@ -108,7 +109,7 @@ struct Fmts {
   static constexpr auto N = sizeof...(T);
   RawStr _str;
   Spec _specs[N];
-  u32 _fills[N + 1][2];
+  RawStr _fills[N + 1];
 
  public:
   consteval Fmts(const auto& s) : _str{RawStr::from(s)} {
@@ -119,28 +120,26 @@ struct Fmts {
       if (b >= _str._len) {
         throw "sfc::fmt::Fmts: not enough format args!";
       }
-      _fills[i][0] = static_cast<u32>(p);
-      _fills[i][1] = static_cast<u32>(a - p);
-      _specs[i] = Spec::from({_str._ptr + a, b - a});
+      _fills[i] = {_str._ptr + p, a - p};
+      _specs[i] = Spec::from({_str._ptr + a + 1, b - a - 1});
       p = b + 1;
     }
     if (_str.find('{', p) != _str._len) {
       throw "sfc::fmt::Fmts: too many format args!";
     }
 
-    _fills[N][0] = p;
-    _fills[N][1] = _str._len - p;
+    _fills[N] = {_str._ptr + p, _str._len - p};
   }
 
   void fmt_args(auto& f, const T&... args) {
     auto idx = 0U;
     (void)(this->fmt_imp(f, idx++, args), ...);
-    f.write_str({_str._ptr + _fills[N][0], _fills[N][1]});
+    f.write_str({_fills[N]._ptr, _fills[N]._len});
   }
 
   void fmt_imp(auto& f, u32 idx, const auto& arg) const {
     if (idx >= N) return;
-    f.write_str({_str._ptr + _fills[idx][0], _fills[idx][1]});
+    f.write_str({_fills[idx]._ptr, _fills[idx]._len});
     f.write_arg(_specs[idx], arg);
   }
 };
