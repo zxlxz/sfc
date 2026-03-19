@@ -52,6 +52,14 @@ struct idxs_t {
   }
 };
 
+template <class T>
+struct Identity {
+  using Type = T;
+};
+
+template <class T>
+using identity_t = typename Identity<T>::Type;
+
 #if defined(__GNUC__) && !defined(__clang__)
 template <auto N>
 using idxs_seq_t = idxs_t<__integer_pack(N)...>;

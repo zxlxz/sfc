@@ -50,7 +50,7 @@ static auto idx2str(u32 idx) -> Str {
   return Str{idx_ptr, 2};
 }
 
-void panic_imp(Location loc, const void* buf, usize buf_len) {
+void panic_imp(SourceLoc loc, const void* buf, usize buf_len) {
   char line_buf[8] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 

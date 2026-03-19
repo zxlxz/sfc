@@ -25,7 +25,7 @@ struct FixedBuf {
 template <class W>
 struct Fmter {
   W& _buf;
-  Specifier _spec = {};
+  Spec _spec = {};
   u32 _depth = 0;
 
  public:
@@ -47,11 +47,23 @@ struct Fmter {
 
   void write_str(Str s) {
     if (s._len == 0) return;
+    (void)_buf.write_str(s);
+  }
 
-    if constexpr (requires { _buf.push_str(s); }) {
-      (void)_buf.push_str(s);
+  void write_val(const auto& val) {
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
     } else {
-      (void)_buf.write_str(s);
+      fmt::Debug::fmt(val, *this);
+    }
+  }
+
+  void write_arg(Spec spec, const auto& val) {
+    _spec = spec;
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
+    } else {
+      fmt::Debug::fmt(val, *this);
     }
   }
 
@@ -144,8 +156,8 @@ struct Fmter {
   }
 
   template <class... T>
-  void write_fmt(Fmts<T...> fmts, const T&... args) {
-    Args{fmts, args...}.fmt(*this);
+  void write_fmt(fmts_t<T...> f, const T&... args) {
+    f.fmt_args(*this, args...);
   }
 
  public:
@@ -219,7 +231,7 @@ struct Fmter<W>::DebugTuple {
 
   auto entry(const auto& value) -> DebugTuple& {
     _fmt.node_item(_cnt++);
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 
@@ -246,7 +258,7 @@ struct Fmter<W>::DebugList {
 
   void entry(const auto& value) {
     _fmt.node_item(_cnt++);
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
   }
 
   void entries(auto&& iter) {
@@ -272,7 +284,7 @@ struct Fmter<W>::DebugSet {
 
   void entry(const auto& value) {
     _fmt.node_item(_cnt++);
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
   }
 
   void entries(auto&& iter) {
@@ -301,7 +313,7 @@ struct Fmter<W>::DebugMap {
     _fmt.write_str('"');
     _fmt.write_str(key);
     _fmt.write_str("\": ");
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
   }
 
   void entries(auto&& iter) {
@@ -332,7 +344,7 @@ struct Fmter<W>::DebugStruct {
     _fmt.node_item(_cnt++);
     _fmt.write_str(key);
     _fmt.write_str(": ");
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
   }
 
   void fields(auto&& iter) {
@@ -344,7 +356,7 @@ struct Fmter<W>::DebugStruct {
 };
 
 template <class... T>
-void write(auto& out, Fmts<T...> fmts, const T&... args) {
+void write(auto& out, fmts_t<T...> fmts, const T&... args) {
   auto fmter = Fmter{out};
   fmter.write_fmt(fmts, args...);
 }
@@ -354,7 +366,7 @@ void write(auto& out, Fmts<T...> fmts, const T&... args) {
 namespace sfc::panic {
 
 template <class... T>
-[[noreturn]] void panic_fmt(Location loc, fmt::Fmts<T...> fmts, const T&... args) {
+[[noreturn]] void panic_fmt(SourceLoc loc, fmt::fmts_t<T...> fmts, const T&... args) {
   if constexpr (sizeof...(args) == 0) {
     const auto s = fmts._str;
     panic::panic_imp(loc, s._ptr, s._len);

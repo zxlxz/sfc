@@ -194,7 +194,7 @@ class Variant {
   }
 
   void fmt(auto& f) const {
-    _inn.map(_tag, [&](const auto& val) { fmt::Display::fmt(val, f); });
+    _inn.map(_tag, [&](const auto& val) { f.write_val(val); });
   }
 };
 

@@ -143,7 +143,7 @@ class [[nodiscard]] String {
 
 namespace sfc::fmt {
 template <class... T>
-auto format(fmt::Fmts<T...> fmts, const T&... args) -> string::String {
+auto format(fmt::fmts_t<T...> fmts, const T&... args) -> string::String {
   auto buf = string::String{};
   Fmter{buf}.write_fmt(fmts, args...);
   return buf;

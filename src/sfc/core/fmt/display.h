@@ -79,12 +79,4 @@ struct Debug {
   }
 };
 
-void Display::fmt(const auto& self, auto& f) {
-  if constexpr (requires { self.fmt(f); }) {
-    self.fmt(f);
-  } else {
-    fmt::Debug::fmt(self, f);
-  }
-}
-
 }  // namespace sfc::fmt

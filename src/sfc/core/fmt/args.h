@@ -1,36 +1,27 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::fmt {
 
-struct Display {
-  static void fmt(const auto& self, auto& f);
-};
-
 struct RawStr {
   const char* _ptr;
-  u32 _len;
+  usize _len;
 
-  template <u32 N>
-  constexpr RawStr(const char (&s)[N]) : _ptr{s}, _len{N - 1} {}
+  template <usize N>
+  consteval static auto from(const char (&s)[N]) -> RawStr {
+    return {s, N - 1};
+  };
 
-  constexpr RawStr(const char* ptr, u32 len) : _ptr{ptr}, _len{len} {}
-
-  constexpr auto find(char c, u32 pos) const -> u32 {
+  consteval auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
     }
     return pos;
   }
-
-  constexpr auto operator[](const u32 (&ids)[2]) const -> RawStr {
-    const auto len = ids[1] > ids[0] ? ids[1] - ids[0] : 0U;
-    return RawStr{_ptr + ids[0], len};
-  }
 };
 
-struct Specifier {
+struct Spec {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
@@ -43,43 +34,48 @@ struct Specifier {
 
  public:
   struct Parser {
-    const char* _ptr;
-    const char* _end;
+    RawStr _str;
+    usize _pos = 0;
+
+    constexpr auto match(auto... c) const -> bool {
+      if (_pos >= _str._len) return false;
+      return ((_str._ptr[_pos] == c) || ...);
+    }
+
+    constexpr auto pop() -> char {
+      if (_pos >= _str._len) return 0;
+      return _str._ptr[_pos++];
+    }
 
     constexpr auto extract(auto... c) -> char {
-      if (_ptr >= _end) {
-        return 0;
-      }
-      if (((sizeof...(c) == 0) || ... || (*_ptr == c))) {
-        return *_ptr++;
-      }
-      return 0;
+      return this->match(c...) ? this->pop() : 0;
     }
 
     constexpr auto extract_int() -> u32 {
       auto res = 0U;
-      for (; _ptr < _end; ++_ptr) {
-        if (*_ptr < '0' || *_ptr > '9') break;
-        res = res * 10 + static_cast<u32>(*_ptr - '0');
+      while (_pos < _str._len) {
+        const auto ch = _str._ptr[_pos++];
+        if (!(ch >= '0' && ch <= '9')) break;
+        res = res * 10 + static_cast<u32>(ch - '0');
       }
       return res;
     };
   };
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  constexpr static auto from(RawStr s) noexcept -> Specifier {
+  constexpr static auto from(RawStr s) noexcept -> Spec {
     if (s._len == 0) {
       return {};
     }
 
-    auto parser = Parser{s._ptr, s._ptr + s._len};
-    auto res = Specifier{};
+    auto parser = Parser{s, 0};
+    auto res = Spec{};
     parser.extract(':');
 
-    res._fill = parser.extract();
+    res._fill = parser.pop();
     res._align = parser.extract('<', '>', '=', '^');
     if (res._fill && !res._align) {
-      parser._ptr -= 1;
+      parser._pos -= 1;
       res._fill = 0;
       res._align = parser.extract('<', '>', '=', '^');
     }
@@ -94,7 +90,7 @@ struct Specifier {
     if ((res._point = parser.extract('.'))) {
       res._precision = static_cast<u8>(parser.extract_int());
     }
-    res._type = parser.extract();
+    res._type = parser.pop();
     return res;
   }
 
@@ -108,85 +104,63 @@ struct Specifier {
 };
 
 template <class... T>
-struct Fmts_ {
+struct Fmts {
   static constexpr auto N = sizeof...(T);
   RawStr _str;
+  Spec _specs[N];
   u32 _fills[N + 1][2];
-  Specifier _specs[N];
 
  public:
-  consteval Fmts_(const auto& s) : _str{s} {
-    _fills[0][0] = 0;
-    _fills[N][1] = _str._len;
+  consteval Fmts(const auto& s) : _str{RawStr::from(s)} {
+    auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
-      const auto a = _str.find('{', _fills[i][0]);
+      const auto a = _str.find('{', p);
       const auto b = _str.find('}', a);
-      const auto spec = Specifier::from(_str[{a + 1, b}]);
-      _fills[i + 0][1] = a;
-      _fills[i + 1][0] = b + 1;
-      _specs[i] = spec;
+      if (b >= _str._len) {
+        throw "sfc::fmt::Fmts: not enough format args!";
+      }
+      _fills[i][0] = static_cast<u32>(p);
+      _fills[i][1] = static_cast<u32>(a - p);
+      _specs[i] = Spec::from({_str._ptr + a, b - a});
+      p = b + 1;
     }
+    if (_str.find('{', p) != _str._len) {
+      throw "sfc::fmt::Fmts: too many format args!";
+    }
+
+    _fills[N][0] = p;
+    _fills[N][1] = _str._len - p;
+  }
+
+  void fmt_args(auto& f, const T&... args) {
+    auto idx = 0U;
+    (void)(this->fmt_imp(f, idx++, args), ...);
+    f.write_str({_str._ptr + _fills[N][0], _fills[N][1]});
+  }
+
+  void fmt_imp(auto& f, u32 idx, const auto& arg) const {
+    if (idx >= N) return;
+    f.write_str({_str._ptr + _fills[idx][0], _fills[idx][1]});
+    f.write_arg(_specs[idx], arg);
   }
 };
 
 template <>
-struct Fmts_<> {
+struct Fmts<> {
   RawStr _str;
-  consteval Fmts_(const auto& s) : _str{s} {}
-};
+  consteval Fmts(const auto& s) : _str{RawStr::from(s)} {}
 
-template <class T>
-struct TypeIdenty {
-  using Type = T;
-};
-
-template <class... T>
-using Fmts = Fmts_<typename TypeIdenty<T>::Type...>;
-
-template <class... T>
-struct Args {
-  Fmts<T...> _fmts;
-  const void* _args[sizeof...(T)];
-
- public:
-  explicit Args(Fmts<T...> fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
-
-  void fmt(auto& f) const noexcept {
-    this->fmt_next<T...>(f, 0);
-
-    const auto str = _fmts._str[_fmts._fills[sizeof...(T)]];
-    f.write_str({str._ptr, str._len});
-  }
-
- private:
-  template <class U, class... S>
-  void fmt_next(auto& f, u32 I) const {
-    const auto str = _fmts._str[_fmts._fills[I]];
-    const auto& val = *static_cast<const U*>(_args[I]);
-
-    f.write_str({str._ptr, str._len});
-    f._spec = _fmts._specs[I];
-    Display::fmt(val, f);
-
-    if constexpr (sizeof...(S)) {
-      this->fmt_next<S...>(f, I + 1);
-    }
+  void fmt_args(auto& f) const {
+    f.write_str({_str._ptr, _str._len});
   }
 };
 
-template <>
-struct Args<> {
-  RawStr _str;
-
- public:
-  explicit Args(Fmts<> fmts) : _str{fmts._str} {}
-
-  void fmt(auto& f) const noexcept {
-    f.pad({_str._ptr, _str._len});
-  }
-};
-
+#ifdef __INTELLISENSE__
 template <class... T>
-Args(const auto&, const T&...) -> Args<T...>;
+using fmts_t = Fmts<T...>;
+#else
+template <class... T>
+using fmts_t = trait::identity_t<Fmts<T...>>;
+#endif
 
 }  // namespace sfc::fmt
