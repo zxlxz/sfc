@@ -16,6 +16,7 @@ class [[nodiscard]] Result {
 
  public:
   constexpr Result(T val) noexcept : _tag{Tag::Ok}, _ok{static_cast<T&&>(val)} {}
+
   constexpr Result(E val) noexcept : _tag{Tag::Err}, _err{static_cast<E&&>(val)} {}
 
   ~Result() noexcept {
@@ -27,11 +28,19 @@ class [[nodiscard]] Result {
   }
 
   Result(Result&& other) noexcept : _tag{other._tag} {
-    _tag == Tag::Ok ? ptr::write(&_ok, static_cast<T&&>(other._ok)) : ptr::write(&_err, static_cast<E&&>(other._err));
+    if (_tag == Tag::Ok) {
+      ptr::write(&_ok, static_cast<T&&>(other._ok));
+    } else {
+      ptr::write(&_err, static_cast<E&&>(other._err));
+    }
   }
 
   Result(const Result& other) noexcept : _tag{other._tag} {
-    _tag == Tag::Ok ? ptr::write(&_ok, other._ok) : ptr::write(&_err, other._err);
+    if (_tag == Tag::Ok) {
+      ptr::write(&_ok, other._ok);
+    } else {
+      ptr::write(&_err, other._err);
+    }
   }
 
   Result& operator=(Result&& other) noexcept {

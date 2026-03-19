@@ -24,21 +24,28 @@ class Option {
   constexpr Option(Some, auto&&... args) noexcept : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
 
   constexpr Option(Option&& other) noexcept : _tag{other._tag} {
-    if (_tag) ptr::write(&_val, static_cast<T&&>(other._val));
+    if (_tag) {
+      ptr::write(&_val, static_cast<T&&>(other._val));
+    }
   }
 
   constexpr Option(const Option& other) noexcept : _tag{other._tag} {
-    if (_tag) ptr::write(&_val, other._val);
+    if (_tag) {
+      ptr::write(&_val, other._val);
+    }
   }
 
   ~Option() noexcept {
-    if (_tag) _val.~T();
+    if (_tag) {
+      _val.~T();
+    }
   }
 
   Option& operator=(const Option& other) noexcept {
     if (this != &other) {
       if (_tag) _val.~T();
-      if ((_tag = other._tag)) ptr::write(&_val, other._val);
+      _tag = other._tag;
+      if (_tag) ptr::write(&_val, other._val);
     }
     return *this;
   }
@@ -46,7 +53,8 @@ class Option {
   Option& operator=(Option&& other) noexcept {
     if (this != &other) {
       if (_tag) _val.~T();
-      if ((_tag = other._tag)) ptr::write(&_val, static_cast<T&&>(other._val));
+      _tag = other._tag;
+      if (_tag) ptr::write(&_val, static_cast<T&&>(other._val));
     }
     return *this;
   }
