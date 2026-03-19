@@ -5,7 +5,8 @@
 
 namespace sfc::sys::unix {
 
-using timespec_t = struct ::timespec;
+static constexpr auto MILLIS_PER_SEC = 1000U;
+static constexpr auto NANOS_PER_MILLI = 1000000U;
 
 class Mutex {
   friend class Condvar;
@@ -13,14 +14,14 @@ class Mutex {
 
  public:
   explicit Mutex() {
-    _raw = static_cast<pthread_mutex_t*>(malloc(sizeof(pthread_mutex_t)));
+    _raw = new pthread_mutex_t{};
     ::pthread_mutex_init(_raw, nullptr);
   }
 
   ~Mutex() {
     if (!_raw) return;
     ::pthread_mutex_destroy(_raw);
-    ::free(_raw);
+    delete _raw;
   }
 
   Mutex(Mutex&& other) noexcept : _raw{other._raw} {
@@ -94,10 +95,8 @@ class Condvar {
 
   bool wait_timeout(Mutex& mtx, u32 millis) {
     if (!_cond) return false;
-    static constexpr auto MILLIS_PER_SEC = 1000U;
-    static constexpr auto NANOS_PER_MILLI = 1000000U;
 
-    auto ts = timespec_t{};
+    struct timespec ts{};
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
     ts.tv_sec += millis / MILLIS_PER_SEC;
     ts.tv_nsec += (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI;
