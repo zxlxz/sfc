@@ -15,9 +15,7 @@ static void writeln(const auto&... args) {
   auto out = fmt::FixedBuf<256>{};
   (void)(out.write_str(args), ...);
   (void)(out.write_str("\n"));
-
-  const auto bytes = out.as_str().as_bytes();
-  (void)(sys::Stderr::write(bytes));
+  (void)(sys::Stderr::write(out.as_bytes()));
 }
 
 template <u32 N>

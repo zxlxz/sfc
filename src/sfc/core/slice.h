@@ -24,7 +24,7 @@ struct Slice {
   usize _len = 0;
 
  public:
-   [[gnu::always_inline]] constexpr Slice() noexcept = default;
+  [[gnu::always_inline]] constexpr Slice() noexcept = default;
 
   [[gnu::always_inline]] constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
@@ -125,8 +125,17 @@ struct Slice {
   }
 
   auto find(const T& x) const noexcept -> Option<usize> {
-    for (auto i = 0UL; i < _len; ++i) {
+    for (auto i = 0UL; i != _len; ++i) {
       if (_ptr[i] == x) {
+        return i;
+      }
+    }
+    return {};
+  }
+
+  auto rfind(const T& x) const noexcept -> Option<usize> {
+    for (auto i = _len; i != 0U; ++i) {
+      if (_ptr[i - 1] == x) {
         return i;
       }
     }

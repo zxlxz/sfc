@@ -17,7 +17,6 @@ AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortLambdasOnASingleLine: Inline
 
 BinPackArguments: false
 BinPackParameters: false

@@ -1,26 +1,9 @@
 #pragma once
 
 #include "sfc/core/fmt/args.h"
-#include "sfc/core/fmt/display.h"
+#include "sfc/core/fmt/debug.h"
 
 namespace sfc::fmt {
-
-template <usize N>
-struct FixedBuf {
-  usize _len = 0;
-  char _buf[N] = {};
-
- public:
-  auto as_str() const -> Str {
-    return Str{_buf, _len};
-  }
-
-  void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > N) return;
-    __builtin_memcpy(_buf + _len, s._ptr, s._len);
-    _len += s._len;
-  }
-};
 
 template <class W>
 struct Fmter {
@@ -33,21 +16,28 @@ struct Fmter {
     if constexpr (requires { _buf.push(c); }) {
       (void)_buf.push(c);
     } else {
-      (void)_buf.write_str(Str{&c, 1});
+      this->write_str(Str{&c, 1});
     }
   }
 
   void write_chars(char c, usize n) {
-    const char v[] = {c, c, c, c, c, c, c, c};
-    for (auto i = 0U; i < n; i += sizeof(v)) {
-      const auto w = n - i < sizeof(v) ? n - i : sizeof(v);
-      this->write_str({v, w});
+    if (n <= 8) {
+      char buf[8] = {c, c, c, c, c, c, c, c};
+      this->write_str({buf, n});
+    } else if (n <= 256) {
+      char* buf = static_cast<char*>(__builtin_alloca(n));
+      __builtin_memset(buf, c, n);
+      this->write_str({buf, n});
     }
   }
 
   void write_str(Str s) {
     if (s._len == 0) return;
-    (void)_buf.write_str(s);
+    if constexpr (requires { _buf.write_str(""); }) {
+      (void)_buf.write_str(s);
+    } else {
+      (void)_buf.write(s.as_bytes());
+    }
   }
 
   void write_val(const auto& val) {
@@ -157,7 +147,11 @@ struct Fmter {
 
   template <class... T>
   void write_fmt(fmts_t<T...> f, const T&... args) {
-    f.fmt_args(*this, args...);
+    if constexpr (sizeof...(T) == 0) {
+      this->write_str(f._str);
+    } else {
+      f.bind(args...).fmt(*this);
+    }
   }
 
  public:
@@ -355,10 +349,31 @@ struct Fmter<W>::DebugStruct {
   }
 };
 
+template <usize N>
+struct FixedBuf {
+  static constexpr auto CAPACITY = N;
+  u8 _buf[N];
+  usize _len{0};
+
+ public:
+  [[gnu::always_inline]] auto as_bytes() const -> Slice<const u8> {
+    return {_buf, _len};
+  }
+
+  [[gnu::always_inline]] void clear() {
+    _len = 0;
+  }
+
+  [[gnu::always_inline]] void write_str(Str s) {
+    if (s._len == 0 || _len + s._len > CAPACITY) return;
+    __builtin_memcpy(_buf + _len, s._ptr, s._len);
+    _len += s._len;
+  }
+};
+
 template <class... T>
-void write(auto& out, fmts_t<T...> fmts, const T&... args) {
-  auto fmter = Fmter{out};
-  fmter.write_fmt(fmts, args...);
+void write(auto&& out, fmts_t<T...> fmts, const T&... args) {
+  Fmter{out}.write_fmt(fmts, args...);
 }
 
 }  // namespace sfc::fmt
@@ -371,9 +386,9 @@ template <class... T>
     const auto s = fmts._str;
     panic::panic_imp(loc, s._ptr, s._len);
   } else {
-    auto out = fmt::FixedBuf<256>{};
-    fmt::write(out, fmts, args...);
-    panic::panic_imp(loc, out._buf, out._len);
+    auto buf = fmt::FixedBuf<1024U>{};
+    fmt::write(buf, fmts, args...);
+    panic::panic_imp(loc, buf._buf, buf._len);
   }
 }
 

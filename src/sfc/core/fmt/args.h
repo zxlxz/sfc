@@ -19,6 +19,11 @@ struct RawStr {
     }
     return pos;
   }
+
+  template <class S>
+  [[gnu::always_inline]] operator S() const noexcept {
+    return S{_ptr, _len};
+  }
 };
 
 struct Spec {
@@ -104,6 +109,16 @@ struct Spec {
   }
 };
 
+template <class X>
+struct Args {
+  X _imp;
+
+ public:
+  void fmt(auto& f) const {
+    _imp(f);
+  }
+};
+
 template <class... T>
 struct Fmts {
   static constexpr auto N = sizeof...(T);
@@ -131,16 +146,13 @@ struct Fmts {
     _fills[N] = {_str._ptr + p, _str._len - p};
   }
 
-  void fmt_args(auto& f, const T&... args) {
-    auto idx = 0U;
-    (void)(this->fmt_imp(f, idx++, args), ...);
-    f.write_str({_fills[N]._ptr, _fills[N]._len});
-  }
-
-  void fmt_imp(auto& f, u32 idx, const auto& arg) const {
-    if (idx >= N) return;
-    f.write_str({_fills[idx]._ptr, _fills[idx]._len});
-    f.write_arg(_specs[idx], arg);
+  auto bind(const T&... args) const {
+    auto fmt = [&, *this](auto& f) {
+      auto idx = 0U;
+      (void)((f.write_str(_fills[idx]), f.write_arg(_specs[idx], args), ++idx), ...);
+      f.write_str(_fills[N]);
+    };
+    return Args{fmt};
   }
 };
 
@@ -148,10 +160,6 @@ template <>
 struct Fmts<> {
   RawStr _str;
   consteval Fmts(const auto& s) : _str{RawStr::from(s)} {}
-
-  void fmt_args(auto& f) const {
-    f.write_str({_str._ptr, _str._len});
-  }
 };
 
 template <class... T>
