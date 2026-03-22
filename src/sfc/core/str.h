@@ -7,6 +7,11 @@
 
 namespace sfc::str {
 
+template <class T>
+struct FromStr {
+  static auto from_str(Str) -> Option<T>;
+};
+
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -94,23 +99,17 @@ struct Str {
   auto trim_matches(auto&& pat) const -> Str;
 
   auto trim_start() const noexcept -> Str {
-    const auto is_space = [](char c) {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    };
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
     return this->trim_start_matches(is_space);
   }
 
   auto trim_end() const noexcept -> Str {
-    const auto is_space = [](char c) {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    };
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
     return this->trim_end_matches(is_space);
   }
 
   auto trim() const noexcept -> Str {
-    const auto is_space = [](char c) {
-      return c == ' ' || ('\x09' <= c && c <= '\x0d');
-    };
+    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
     return this->trim_matches(is_space);
   }
 
@@ -147,12 +146,8 @@ struct Str {
   auto parse() const -> Option<T> {
     if constexpr (requires { T::from_str(*this); }) {
       return T::from_str(*this);
-    } else if constexpr (trait::int_<T>) {
-      return num::Int<T>::from_str(*this);
-    } else if constexpr (trait::flt_<T>) {
-      return num::Flt<T>::from_str(*this);
     } else {
-      static_assert(false, "Str::parse: unsupported type");
+      return FromStr<T>::from_str(*this);
     }
   }
 
@@ -180,7 +175,7 @@ struct Chars : iter::Iterator<char32_t> {
   auto next_back() noexcept -> Option<char32_t>;
 };
 
-inline auto Str::chars() const noexcept -> struct Chars {
+inline auto Str::chars() const noexcept -> Chars {
   return {{}, _ptr, _ptr + _len};
 }
 

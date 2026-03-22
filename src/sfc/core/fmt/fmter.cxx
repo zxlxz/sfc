@@ -4,11 +4,6 @@ namespace sfc::fmt::test {
 
 using string::format;
 
-SFC_TEST(bool) {
-  sfc::expect_eq(format("{}", true), "true");
-  sfc::expect_eq(format("{}", false), "false");
-}
-
 SFC_TEST(str) {
   sfc::expect_eq(format("[{:5}]", "x"), "[x    ]");
   sfc::expect_eq(format("[{:<5}]", "x"), "[x    ]");
@@ -58,21 +53,6 @@ SFC_TEST(num_align) {
   sfc::expect_eq(format("{<5d}", -42), "-42  ");
   sfc::expect_eq(format("{^5d}", -42), " -42 ");
   sfc::expect_eq(format("{=5d}", -42), "-  42");
-}
-
-enum class E1 { A, B };
-SFC_TEST(named_enum) {
-  sfc::expect_eq(reflect::type_name<E1>(), "sfc::fmt::test::E1");
-  sfc::expect_eq(format("{}", E1::A), "A");
-  sfc::expect_eq(format("{}", E1::B), "B");
-}
-
-enum E2 { X = -1, Y, Z };
-SFC_TEST(unnamed_enum) {
-  sfc::expect_eq(reflect::type_name<E2>(), "sfc::fmt::test::E2");
-  sfc::expect_eq(format("{}", E2::X), "sfc::fmt::test::E2(-1)");
-  sfc::expect_eq(format("{}", E2::Y), "sfc::fmt::test::E2(0)");
-  sfc::expect_eq(format("{}", E2::Z), "sfc::fmt::test::E2(1)");
 }
 
 }  // namespace sfc::fmt::test

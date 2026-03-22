@@ -4,23 +4,23 @@
 
 namespace sfc::num {
 
-template <class T>
-struct Int {
-  T _val;
+template <trait::int_ T>
+static constexpr auto max_value() -> T {
+  if constexpr (trait::uint_<T>) {
+    return static_cast<T>(~T{0});
+  } else {
+    return static_cast<T>(~T{0} >> 1);
+  }
+}
 
- public:
-  static auto from_str(str::Str buf, u32 radix = 0) noexcept -> option::Option<T>;
-  auto to_str(slice::Slice<char> buf, char type = 0) const noexcept -> str::Str;
-};
-
-template <class T>
-struct Flt {
-  T _val;
-
- public:
-  static auto from_str(str::Str buf) noexcept -> option::Option<T>;
-  auto to_str(slice::Slice<char> buf, u32 prec = 6, char type = 0) const noexcept -> str::Str;
-};
+template <trait::int_ T>
+static constexpr auto min_value() -> T {
+  if constexpr (trait::uint_<T>) {
+    return 0;
+  } else {
+    return static_cast<T>(T{1} << (sizeof(T)*8));
+  }
+}
 
 template <class T>
 constexpr auto abs(T val) -> T {
