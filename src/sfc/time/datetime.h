@@ -18,7 +18,7 @@ struct DateTime {
   static auto from_local(SystemTime local_time) noexcept -> DateTime;
 
   void fmt(auto& f) const {
-    f.write_fmt("{04}-{02}-{02}T{02}:{02}:{02}.{06}", year, month, day, hour, minute, second, micros);
+    f.write_fmt("{04}-{02}-{02} {02}:{02}:{02}.{06}", year, month, day, hour, minute, second, micros);
   }
 };
 

@@ -1,14 +1,46 @@
 #pragma once
 
-#include "sfc/log/backend.h"
+#include "sfc/time.h"
+#include "sfc/alloc.h"
 
 namespace sfc::log {
 
-class Logger {
-  Level _level{Level::Info};
-  Vec<Box<IBackend>> _backends = {};
+enum class Level {
+  Trace,
+  Debug,
+  Info,
+  Warn,
+  Error,
+  Fatal,
+};
+
+struct Record {
+  time::SystemTime time;
+  Level level;
+  Str message;
 
  public:
+  auto time_str() const -> Str;
+  auto level_str() const -> Str;
+
+  void fmt(auto& f) const {
+    const auto time_str = this->time_str();
+    const auto level_str = this->level_str();
+    fmt::write(f, "[{}] [{}] {}\n", time_str, level_str, message);
+  }
+};
+
+template <class Backend>
+class Logger {
+  Backend& _backend;
+  Level _level{Level::Info};
+
+ public:
+  Logger(Backend& backend) noexcept : _backend{backend} {}
+  ~Logger() noexcept {}
+  Logger(Logger&&) = delete;
+  Logger& operator=(Logger&&) = delete;
+
   auto level() const -> Level {
     return _level;
   }
@@ -17,70 +49,37 @@ class Logger {
     _level = level;
   }
 
-  template <class B>
-  void add_backend(B backend) {
-    _backends.push(box(static_cast<B&&>(backend)).template cast<IBackend>());
+  auto backend() -> Backend& {
+    return _backend;
   }
 
   void flush() {
-    for (auto& backend : _backends.as_mut_slice()) {
-      backend->flush();
-    }
+    _backend.flush();
   }
 
-  void write_str(Level level, Str msg) {
-    if (_backends.is_empty() || level < _level) {
+  void write_str(Level level, Str message) {
+    if (level < _level) {
       return;
     }
 
-    const auto entry = Record{level, Record::time_str(), msg};
-    for (auto& backend : _backends.as_mut_slice()) {
-      backend->write(entry);
-    }
+    const auto time = time::SystemTime::now();
+    _backend.push({time, level, message});
   }
 
-  template<class ...T>
-  void write_fmt(Level level, fmt::fmts_t<T...> fmts, const T& ...args) {
-    if (_backends.is_empty() && level < _level) {
+  template <class... T>
+  void write_fmt(Level level, fmt::fmts_t<T...> fmts, const T&... args) {
+    if (level < _level) {
       return;
     }
-
-    auto& buf = Record::tls_buf();
-    fmt::write(buf, fmts, args...);
-    this->write_str(level, buf.as_str());
+    const auto time = time::SystemTime::now();
+    if constexpr (sizeof...(args) == 0) {
+      _backend.push({time, level, fmts._str});
+    } else {
+      auto buf = fmt::FixedBuf<1024>{};
+      fmt::write(buf, fmts, args...);
+      _backend.push({time, level, Str::from_utf8(buf.as_bytes())});
+    }
   }
 };
-
-auto global() -> Logger&;
-
-template<class ...T>
-void trace(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Trace, fmts, args...);
-}
-
-template<class ...T>
-void debug(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Debug, fmts, args...);
-}
-
-template<class ...T>
-void info(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Info, fmts, args...);
-}
-
-template<class ...T>
-void warn(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Warn, fmts, args...);
-}
-
-template<class ...T>
-void error(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Error, fmts, args...);
-}
-
-template<class ...T>
-void fatal(fmt::fmts_t<T...> fmts, const T& ...args) {
-  log::global().write_fmt(Level::Fatal, fmts, args...);
-}
 
 }  // namespace sfc::log

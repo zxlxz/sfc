@@ -1,0 +1,51 @@
+#include "sfc/log/backend.h"
+#include "sfc/core/fmt.h"
+
+namespace sfc::log {
+
+void ConsoleBackend::push(Record record) noexcept {
+  io::println("{} [{}] {}", record.time_str(), record.level_str(), record.message);
+}
+
+void ConsoleBackend::flush() noexcept {}
+
+FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
+
+FileBackend::~FileBackend() noexcept {}
+
+void FileBackend::push(Record record) noexcept {
+  auto buf = fmt::FixedBuf<1024>{};
+  fmt::write(buf, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
+  (void)_file.write(buf.as_bytes());
+}
+
+void FileBackend::flush() noexcept {
+  (void)_file.flush();
+}
+
+GlobalBackend::GlobalBackend() noexcept {}
+
+GlobalBackend::~GlobalBackend() noexcept {}
+
+void GlobalBackend::set_file(fs::File file) noexcept {
+  _file = mem::move(file);
+}
+
+void GlobalBackend::push(Record record) noexcept {
+  auto buf = fmt::FixedBuf<1024>{};
+  const auto time_str = record.time_str();
+  const auto level_str = record.level_str();
+  fmt::write(buf, "{} [{}] {}\n", time_str, level_str, record.message);
+
+  if (_file.is_valid()) {
+    (void)_file.write(buf.as_bytes());
+  } else {
+    io::Stdout::write_str(Str::from_utf8(buf.as_bytes()));
+  }
+}
+
+void GlobalBackend::flush() noexcept {
+  (void)_file.flush();
+}
+
+}  // namespace sfc::log

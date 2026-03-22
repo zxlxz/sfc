@@ -1,35 +1,38 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/log/logger.h"
+#include "sfc/io/stdio.h"
+#include "sfc/fs/file.h"
 
 namespace sfc::log {
 
-enum class Level {
-  Trace,
-  Debug,
-  Info,
-  Warn,
-  Error,
-  Fatal,
+class ConsoleBackend {
+ public:
+  void push(Record record) noexcept;
+  void flush() noexcept;
 };
 
-struct Record {
-  Level level;
-  Str time;
-  Str msg;
+class FileBackend {
+  fs::File _file;
 
  public:
-  static auto tls_buf() -> String&;
-  static auto time_str() -> Str;
+  FileBackend(fs::File file) noexcept;
+  ~FileBackend() noexcept;
+
+  void push(Record record) noexcept;
+  void flush() noexcept;
 };
 
-class IBackend {
- public:
-  IBackend() = default;
-  virtual ~IBackend() = default;
+class GlobalBackend {
+  fs::File _file;
 
-  virtual void flush() = 0;
-  virtual void write(Record entry) = 0;
+ public:
+  explicit GlobalBackend() noexcept;
+  ~GlobalBackend() noexcept;
+
+  void set_file(fs::File file) noexcept;
+  void push(Record record) noexcept;
+  void flush() noexcept;
 };
 
 }  // namespace sfc::log
