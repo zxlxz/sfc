@@ -36,6 +36,10 @@ auto File::create(Path path) noexcept -> io::Result<File> {
   return opts.open(path);
 }
 
+auto File::is_valid() const -> bool {
+  return _inn.is_valid();
+}
+
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (buf.is_empty()) {
     return 0UL;
@@ -48,6 +52,13 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
     return 0UL;
   }
   return _inn.write(buf);
+}
+
+auto File::flush() -> io::Result<> {
+  if (!_inn.is_valid()) {
+    return {};
+  }
+  return _inn.flush();
 }
 
 auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {

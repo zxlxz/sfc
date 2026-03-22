@@ -20,24 +20,19 @@ class Stdout::Inn {
     return res;
   }
 
-  auto is_terminal() const noexcept -> bool {
-    return sys::Stdout::is_console();
-  }
-
   void flush() noexcept {
     (void)_inn.flush();
   }
 
   auto write(Slice<const u8> s) -> Result<usize> {
-    const auto p = s.iter().rposition([](char c) { return c == '\n'; });
-    if (!p) {
-      return _inn.write(s);
-    }
+    const auto p = s.rfind('\n').unwrap_or(s._len);
+    const auto [a, b] = s.split_at(p);
 
-    const auto [a, b] = s.split_at(*p + 1);
     _TRY(_inn.write(a));
-    _TRY(_inn.flush());
-    _TRY(_inn.write(b));
+    if (!b.is_empty()) {
+      _TRY(_inn.flush());
+      _TRY(_inn.write(b));
+    }
     return s.len();
   }
 
@@ -56,15 +51,9 @@ class Stderr::Inn {
     return res;
   }
 
-  auto is_terminal() const -> bool {
-    return _inn.is_console();
-  }
-
   auto write(Slice<const u8> s) -> Result<usize> {
     return _inn.write(s);
   }
-
-  void flush() noexcept {}
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
     return _mtx.lock();
@@ -72,9 +61,7 @@ class Stderr::Inn {
 };
 
 auto Stdout::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  auto lock = inn.lock();
-  return inn.is_terminal();
+  return sys::Stdout::is_console();
 }
 
 void Stdout::flush() {
@@ -100,11 +87,6 @@ Stdout::Lock::~Lock() noexcept {
   _inn.flush();
 }
 
-auto Stdout::Lock::is_terminal() -> bool {
-  static auto& inn = Inn::instance();
-  return inn.is_terminal();
-}
-
 void Stdout::Lock::flush() {
   return _inn.flush();
 }
@@ -115,14 +97,10 @@ void Stdout::Lock::write_str(Str s) {
 }
 
 auto Stderr::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  return inn.is_terminal();
+  return sys::Stdout::is_console();
 }
 
-void Stderr::flush() {
-  auto& inn = Inn::instance();
-  return inn.flush();
-}
+void Stderr::flush() {}
 
 void Stderr::write_str(Str s) {
   auto& inn = Inn::instance();
@@ -135,17 +113,9 @@ auto Stderr::lock() -> Lock {
 
 Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
 
-Stderr::Lock::~Lock() {
-  _inn.flush();
-}
+Stderr::Lock::~Lock() {}
 
-auto Stderr::Lock::is_terminal() -> bool {
-  return _inn.is_terminal();
-}
-
-void Stderr::Lock::flush() {
-  return _inn.flush();
-}
+void Stderr::Lock::flush() {}
 
 void Stderr::Lock::write_str(Str s) {
   (void)_inn.write(s.as_bytes());

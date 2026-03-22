@@ -25,7 +25,6 @@ class Stdout::Lock {
   explicit Lock(Inn&);
   ~Lock() noexcept;
 
-  auto is_terminal() -> bool;
   void flush();
   void write_str(Str s);
 };
@@ -50,7 +49,6 @@ class Stderr::Lock {
   explicit Lock(Inn&);
   ~Lock();
 
-  auto is_terminal() -> bool;
   void flush();
   void write_str(Str s);
 };
