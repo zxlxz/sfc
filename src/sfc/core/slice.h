@@ -60,6 +60,11 @@ struct Slice {
     return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
   }
 
+  [[gnu::always_inline]] auto as_mut_bytes() noexcept -> Slice<u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
+  }
+
  public:
   auto operator[](usize idx) const noexcept -> const T& {
     sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);

@@ -42,19 +42,19 @@ class RawVec {
     return res;
   }
 
-  auto ptr() const noexcept -> T* {
+  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  auto cap() const noexcept -> usize {
+  [[gnu::always_inline]] auto cap() const noexcept -> usize {
     return _cap;
   }
 
-  auto operator[](usize idx) const noexcept -> const T& {
+  [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
     return _ptr[idx];
   }
 
-  auto operator[](usize idx) noexcept -> T& {
+  [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
     return _ptr[idx];
   }
 
@@ -145,6 +145,16 @@ class [[nodiscard]] Vec {
 
   auto as_mut_slice() noexcept -> Slice<T> {
     return Slice<T>{_buf.ptr(), _len};
+  }
+
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<const u8*>(_buf.ptr()), _len * sizeof(T)};
+  }
+
+  auto as_mut_bytes() noexcept -> Slice<u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<u8*>(_buf.ptr()), _len * sizeof(T)};
   }
 
   void set_len(usize new_len) noexcept {
@@ -351,16 +361,6 @@ class [[nodiscard]] Vec {
   }
 
  public:
-  // trait: Deref<[const T]>
-  auto operator*() const noexcept -> Slice<const T> {
-    return Slice<const T>{_buf.ptr(), _len};
-  }
-
-  // trait: Deref<[T]>
-  auto operator*() noexcept -> Slice<T> {
-    return Slice{_buf.ptr(), _len};
-  }
-
   // trait: Clone
   auto clone() const noexcept -> Vec {
     auto res = Vec{};

@@ -56,7 +56,7 @@ template <trait::tv_copy_ T>
 }
 
 template <trait::tv_copy_ T>
-[[gnu::always_inline]] inline auto as_bytes_mut(T& x) noexcept -> u8 (&)[sizeof(T)] {
+[[gnu::always_inline]] inline auto as_mut_bytes(T& x) noexcept -> u8 (&)[sizeof(T)] {
   return reinterpret_cast<u8(&)[sizeof(T)]>(x);
 }
 
