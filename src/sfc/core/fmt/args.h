@@ -8,21 +8,18 @@ struct RawStr {
   const char* _ptr;
   usize _len;
 
-  template <usize N>
-  consteval static auto from(const char (&s)[N]) -> RawStr {
-    return {s, N - 1};
+  constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
+  consteval RawStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
+
+  [[gnu::always_inline]] constexpr static auto from(const char* s) -> RawStr {
+    return {s, __builtin_strlen(s)};
   };
 
-  consteval auto find(char c, u32 pos) const -> u32 {
+  [[gnu::always_inline]] constexpr auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
     }
     return pos;
-  }
-
-  template <class S>
-  [[gnu::always_inline]] operator S() const noexcept {
-    return S{_ptr, _len};
   }
 };
 
@@ -69,7 +66,7 @@ struct Spec {
   };
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  constexpr static auto from(RawStr s) noexcept -> Spec {
+  consteval static auto from(RawStr s) noexcept -> Spec {
     if (s._len == 0) {
       return {};
     }
@@ -109,60 +106,91 @@ struct Spec {
   }
 };
 
-template <class X>
-struct Args {
-  X _imp;
-
- public:
-  void fmt(auto& f) const {
-    _imp(f);
-  }
-};
-
-template <class... T>
+template <usize N>
 struct Fmts {
-  static constexpr auto N = sizeof...(T);
-  RawStr _str;
-  Spec _specs[N];
-  RawStr _fills[N + 1];
+  const char* _ptr;
+  usize _len;
+  u32 _locs[N + 1] = {0};
+  u32 _lens[N + 1] = {0};
+  Spec _specs[N] = {};
 
  public:
-  consteval Fmts(const auto& s) : _str{RawStr::from(s)} {
+  consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    const auto ss = RawStr{_ptr, _len};
     auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
-      const auto a = _str.find('{', p);
-      const auto b = _str.find('}', a);
-      if (b >= _str._len) {
-        throw "sfc::fmt::Fmts: not enough format args!";
+      const auto a = ss.find('{', p);
+      const auto b = ss.find('}', a);
+      if (b == ss._len) {
+        throw "sfc::fmt::Fmts: not enough format specs!";
       }
-      _fills[i] = {_str._ptr + p, a - p};
-      _specs[i] = Spec::from({_str._ptr + a + 1, b - a - 1});
+      const auto f = Spec::from({ss._ptr + a + 1, b - a - 1});
+      _lens[i + 0] = a - p;
+      _locs[i + 1] = b + 1;
+      _specs[i] = f;
       p = b + 1;
     }
-    if (_str.find('{', p) != _str._len) {
-      throw "sfc::fmt::Fmts: too many format args!";
+    _locs[N] = p;
+    _lens[N] = ss._len - p;
+    if (ss.find('{', p) != ss._len) {
+      throw "sfc::fmt::Fmts: too many format specs!";
     }
-
-    _fills[N] = {_str._ptr + p, _str._len - p};
-  }
-
-  auto bind(const T&... args) const {
-    auto fmt = [&, *this](auto& f) {
-      auto idx = 0U;
-      (void)((f.write_str(_fills[idx]), f.write_arg(_specs[idx], args), ++idx), ...);
-      f.write_str(_fills[N]);
-    };
-    return Args{fmt};
+#endif
   }
 };
 
 template <>
-struct Fmts<> {
-  RawStr _str;
-  consteval Fmts(const auto& s) : _str{RawStr::from(s)} {}
+struct Fmts<0> {
+  const char* _ptr;
+  usize _len;
+  consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
 };
 
 template <class... T>
-using fmts_t = trait::identity_t<Fmts<T...>>;
+using fmts_t = trait::identity_t<Fmts<sizeof...(T)>>;
+
+template <class... T>
+struct Args {
+  static constexpr auto N = sizeof...(T);
+  const fmts_t<T...>& _fmts;
+  const void* _args[N];
+
+ public:
+  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
+
+  void fmt(auto& f) const {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    const auto g = [&](u32 i, auto& x) {
+      const auto loc = _fmts._locs[i];
+      const auto len = _fmts._lens[i];
+      if (len != 0) f.write_str({_fmts._ptr + loc, len});
+      f.write_arg(_fmts._specs[i], x);
+    };
+
+    auto i = 0U;
+    ((g(i, *static_cast<const T*>(_args[i])), i++), ...);
+#endif
+    f.write_str({_fmts._ptr + _fmts._locs[N], _fmts._lens[N]});
+  }
+};
+
+template <>
+struct Args<> {
+  const fmts_t<>& _fmts;
+
+ public:
+  [[gnu::always_inline]] Args(const fmts_t<>& fmts) : _fmts{fmts} {}
+
+  void fmt(auto& f) const {
+    f.write_str({_fmts._ptr, _fmts._len});
+  }
+};
+
+template <class... T>
+Args(const auto&, const T&...) -> Args<T...>;
+
+template <class... T>
+void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args);
 
 }  // namespace sfc::fmt

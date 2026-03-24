@@ -67,13 +67,13 @@ class Logger {
   }
 
   template <class... T>
-  void write_fmt(Level level, fmt::fmts_t<T...> fmts, const T&... args) {
+  void write_fmt(Level level, const fmt::fmts_t<T...>& fmts, const T&... args) {
     if (level < _level) {
       return;
     }
     const auto time = time::SystemTime::now();
     if constexpr (sizeof...(args) == 0) {
-      _backend.push({time, level, fmts._str});
+      _backend.push({time, level, {fmts._ptr, fmts._ptr}});
     } else {
       auto buf = fmt::FixedBuf<1024>{};
       fmt::write(buf, fmts, args...);

@@ -46,6 +46,10 @@ concept polymorphic_ = __is_polymorphic(T);
 
 template <auto... I>
 struct idxs_t {
+  static void run(auto& f) {
+    (void)(f(I), ...);
+  }
+
   template <class T>
   static auto collect(auto&& v) -> T {
     return T{v[I]...};

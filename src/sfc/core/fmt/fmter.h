@@ -146,12 +146,8 @@ struct Fmter {
   }
 
   template <class... T>
-  void write_fmt(fmts_t<T...> f, const T&... args) {
-    if constexpr (sizeof...(T) == 0) {
-      this->write_str(f._str);
-    } else {
-      f.bind(args...).fmt(*this);
-    }
+  void write_fmt(const fmt::fmts_t<T...>& fmts, const T& ...args) {
+    Args{fmts, args...}.fmt(*this);
   }
 
  public:
@@ -372,24 +368,8 @@ struct FixedBuf {
 };
 
 template <class... T>
-void write(auto&& out, fmts_t<T...> fmts, const T&... args) {
+void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args) {
   Fmter{out}.write_fmt(fmts, args...);
 }
 
 }  // namespace sfc::fmt
-
-namespace sfc::panic {
-
-template <class... T>
-[[noreturn]] void panic_fmt(SourceLoc loc, fmt::fmts_t<T...> fmts, const T&... args) {
-  if constexpr (sizeof...(args) == 0) {
-    const auto s = fmts._str;
-    panic::panic_imp(loc, s._ptr, s._len);
-  } else {
-    auto buf = fmt::FixedBuf<1024U>{};
-    fmt::write(buf, fmts, args...);
-    panic::panic_imp(loc, buf._buf, buf._len);
-  }
-}
-
-}  // namespace sfc::panic
