@@ -6,21 +6,21 @@ namespace sfc::num {
 
 template <trait::int_ T>
 static constexpr auto max_value() -> T {
-  static constexpr auto NBITS = sizeof(T) * 8;
+  static constexpr auto SHIFT = sizeof(T) * 8 - 1;
   if constexpr (trait::uint_<T>) {
     return static_cast<T>(~T{0});
   } else {
-    return static_cast<T>(~(T{1} << NBITS - 1));
+    return static_cast<T>(~(T{1} << SHIFT));
   }
 }
 
 template <trait::int_ T>
 static constexpr auto min_value() -> T {
-  static constexpr auto NBITS = sizeof(T) * 8;
+  static constexpr auto SHIFT = sizeof(T) * 8 - 1;
   if constexpr (trait::uint_<T>) {
     return 0;
   } else {
-    return static_cast<T>(T{1} << NBITS - 1);
+    return static_cast<T>(T{1} << SHIFT);
   }
 }
 

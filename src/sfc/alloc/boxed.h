@@ -14,10 +14,9 @@ class Box {
  public:
   Box() noexcept = default;
 
-  ~Box() {
-    if (_ptr) {
-      delete _ptr;
-    }
+  ~Box() noexcept {
+    if (!_ptr) return;
+    delete _ptr;
   }
 
   Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {}
@@ -91,9 +90,9 @@ class Box<T[]> {
   Box() noexcept = default;
 
   ~Box() {
-    if (_inn._ptr != nullptr) {
-      delete[] _inn._ptr;
-    }
+    if (!_inn._ptr) return;
+    __builtin_operator_delete(_inn._ptr);
+    ptr::drop_in_place(_inn._ptr, _inn._len);
   }
 
   Box(Box&& other) noexcept : _inn{mem::take(other._inn)} {}
@@ -112,7 +111,7 @@ class Box<T[]> {
   }
 
   static auto xnew_uninit_slice(usize len) -> Box {
-    const auto p = static_cast<T*>(::operator new[](sizeof(T) * len));
+    const auto p = static_cast<T*>(__builtin_operator_new(sizeof(T) * len));
     return Box::from_raw(Slice<T>{p, len});
   }
 

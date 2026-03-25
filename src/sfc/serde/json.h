@@ -148,7 +148,8 @@ struct Serializer {
       }
       _ser._buf.push('"');
       _ser._buf.push_str(key);
-      _ser._buf.push_str("\":");
+      _ser._buf.push('"');
+      _ser._buf.push(':');
       _ser.serialize_any(val);
     }
   };
