@@ -66,12 +66,12 @@ void expect_false(const auto& x, SourceLoc loc = SourceLoc::current()) {
 }
 
 void expect_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (ops::eq(a, b)) return;
+  if (a == b) return;
   panic::panic_fmt(loc, "sfc::expect(`{}`==`{}`) failed", a, b);
 }
 
 void expect_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (ops::ne(a, b)) return;
+  if (a != b) return;
   panic::panic_fmt(loc, "sfc::expect(`{}`!=`{}`) failed", a, b);
 }
 

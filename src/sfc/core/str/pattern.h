@@ -213,31 +213,37 @@ struct Pattern {
 namespace sfc::str {
 
 auto Str::find(auto&& pat) const -> Option<usize> {
+  if (_len == 0) return {};
   auto s = pattern::Pattern::into_searcher(pat, *this);
   return s.next_match().pos();
 }
 
 auto Str::rfind(auto&& pat) const -> Option<usize> {
+  if (_len == 0) return {};
   auto s = pattern::Pattern::into_searcher(pat, *this);
   return s.next_match_back().pos();
 }
 
 auto Str::contains(auto&& pat) const -> bool {
+  if (_len == 0) return false;
   auto s = pattern::Pattern::into_searcher(pat, *this);
   return s.next_match()._type == pattern::SearchStep::Match;
 }
 
 auto Str::starts_with(auto&& pat) const -> bool {
+  if (_len == 0) return false;
   auto s = pattern::Pattern::into_searcher(pat, *this);
   return s.next()._type == pattern::SearchStep::Match;
 }
 
 auto Str::ends_with(auto&& pat) const -> bool {
+  if (_len == 0) return false;
   auto s = pattern::Pattern::into_searcher(pat, *this);
   return s.next_back()._type == pattern::SearchStep::Match;
 }
 
 auto Str::trim_start_matches(auto&& pat) const -> Str {
+  if (_len == 0) return {};
   auto s = pattern::Pattern::into_searcher(pat, *this);
   auto i = _len;
   if (auto m = s.next_reject()) {
