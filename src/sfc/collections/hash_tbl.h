@@ -42,7 +42,7 @@ struct Iter : iter::Iterator<T&> {
 template <class T>
 class HashTbl {
   u8* _ptr = nullptr;
-  usize _cap = 0;
+  usize _msk = 0;
   usize _len = 0;
   usize _remain = 0;
 
@@ -60,14 +60,14 @@ class HashTbl {
 
   HashTbl(HashTbl&& other) noexcept
       : _ptr{mem::take(other._ptr)}
-      , _cap{mem::take(other._cap)}
+      , _msk{mem::take(other._msk)}
       , _len{mem::take(other._len)}
       , _remain{mem::take(other._remain)} {}
 
   HashTbl& operator=(HashTbl&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
-      mem::swap(_cap, other._cap);
+      mem::swap(_msk, other._msk);
       mem::swap(_len, other._len);
       mem::swap(_remain, other._remain);
     }
@@ -79,7 +79,7 @@ class HashTbl {
   }
 
   auto capacity() const noexcept -> usize {
-    return _cap;
+    return _msk ? _msk + 1 : 0U;
   }
 
   auto search(const auto& key) const -> const T* {
@@ -109,7 +109,7 @@ class HashTbl {
   auto try_erase(T* dst) noexcept -> bool {
     const auto data = this->data();
     const auto idx = static_cast<usize>(dst - data);
-    if (idx >= _cap) {  // check if dst belongs to this table
+    if (idx >= _msk) {  // check if dst belongs to this table
       return false;
     }
 
@@ -136,19 +136,19 @@ class HashTbl {
       return;
     }
     this->iter_mut().for_each([](T& entry) { entry.~T(); });
-    ptr::write_bytes(_ptr, CTRL_NUL, _cap);
+    ptr::write_bytes(_ptr, CTRL_NUL, this->capacity());
     _len = 0;
-    _remain = _cap * 3 / 4;
+    _remain = this->capacity() * 3 / 4;
   }
 
   using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
-    return Iter{{}, _ptr, this->data(), _cap - 1};
+    return Iter{{}, _ptr, this->data(), _msk};
   }
 
   using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
-    return IterMut{{}, _ptr, this->data(), _cap - 1};
+    return IterMut{{}, _ptr, this->data(), _msk};
   }
 
  private:
@@ -221,21 +221,21 @@ class HashTbl {
   };
 
   auto bucket(usize h1) const -> Bucket {
-    const auto offset = num::align_up(_cap, CTRL_ALIGN);
+    const auto offset = num::align_up(_msk + 1, CTRL_ALIGN);
     const auto data = reinterpret_cast<T*>(_ptr + offset);
-    return {_ptr, data, _cap - 1, h1};
+    return {_ptr, data, _msk, h1};
   }
 
   auto hidx(const auto& key) const noexcept -> HIdx {
     const auto hx = Hasher::hash(key);
-    const auto h1 = hx & (_cap - 1);
+    const auto h1 = hx & (_msk);
     const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
     return {h1, h2};
   }
 
   auto data() const noexcept -> T* {
-    const auto offset = num::align_up(_cap, CTRL_ALIGN);
-    return reinterpret_cast<T*>(_ptr + offset);
+    const auto offset = num::align_up(_msk + 1, CTRL_ALIGN);
+    return _ptr ? reinterpret_cast<T*>(_ptr + offset) : nullptr;
   }
 
   auto realloc(usize new_cap) -> bool {
@@ -252,9 +252,9 @@ class HashTbl {
     // save old state
     auto old_iter = this->iter_mut();
     const auto old_ptr = mem::replace(_ptr, new_ptr);
-    const auto old_cap = mem::replace(_cap, new_cap);
     const auto old_len = mem::replace(_len, 0);
-    _remain = _cap * 3 / 4;
+    _msk = new_cap - 1;
+    _remain = this->capacity() * 3 / 4;
 
     // old->new
     if (old_len != 0) {
