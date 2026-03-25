@@ -66,12 +66,12 @@ struct Slice {
   }
 
  public:
-  auto operator[](usize idx) const noexcept -> const T& {
+  [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
     sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
-  auto operator[](usize idx) noexcept -> T& {
+  [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
     sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
@@ -139,7 +139,7 @@ struct Slice {
   }
 
   auto rfind(const T& x) const noexcept -> Option<usize> {
-    for (auto i = _len; i != 0U; ++i) {
+    for (auto i = _len; i != 0U; --i) {
       if (_ptr[i - 1] == x) {
         return i;
       }
@@ -148,66 +148,61 @@ struct Slice {
   }
 
   auto starts_with(Slice<const T> needle) const noexcept -> bool {
-    if (_len < needle._len) {
-      return false;
-    }
+    if (_len < needle._len) return false;
     return needle == Slice{_ptr, needle._len};
   }
 
   auto ends_with(Slice<const T> needle) const -> bool {
-    if (_len < needle._len) {
-      return false;
-    }
+    if (_len < needle._len) return false;
     return needle == Slice{_ptr + _len - needle._len, needle._len};
   }
 
  public:
-  auto begin() const noexcept -> const T* {
+  [[gnu::always_inline]] auto begin() const noexcept -> const T* {
     return _ptr;
   }
 
-  auto begin() noexcept -> T* {
+  [[gnu::always_inline]] auto begin() noexcept -> T* {
     return _ptr;
   }
 
-  auto end() const noexcept -> const T* {
+  [[gnu::always_inline]] auto end() const noexcept -> const T* {
     return _ptr + _len;
   }
 
-  auto end() noexcept -> T* {
+  [[gnu::always_inline]] auto end() noexcept -> T* {
     return _ptr + _len;
   }
 
-  auto iter() const noexcept -> Iter<const T> {
+  [[gnu::always_inline]] auto iter() const noexcept -> Iter<const T> {
     return {{}, _ptr, _ptr + _len};
   }
 
-  auto iter_mut() noexcept -> Iter<T> {
+  [[gnu::always_inline]] auto iter_mut() noexcept -> Iter<T> {
     return {{}, _ptr, _ptr + _len};
   }
 
-  auto windows(usize n) const noexcept -> Windows<const T> {
+  [[gnu::always_inline]] auto windows(usize n) const noexcept -> Windows<const T> {
     return {{}, *this, n};
   }
 
-  auto windows_mut(usize n) noexcept -> Windows<T> {
+  [[gnu::always_inline]] auto windows_mut(usize n) noexcept -> Windows<T> {
     return {{}, *this, n};
   }
 
-  auto chunks(usize n) const noexcept -> Chunks<const T> {
+  [[gnu::always_inline]] auto chunks(usize n) const noexcept -> Chunks<const T> {
     return {{}, *this, n};
   }
 
-  auto chunks_mut(usize n) noexcept -> Chunks<T> {
+  [[gnu::always_inline]] auto chunks_mut(usize n) noexcept -> Chunks<T> {
     return {{}, *this, n};
   }
 
  public:
   // trait: ops::Eq
   constexpr auto operator==(Slice<const T> other) const noexcept -> bool {
-    if (_len != other._len) {
-      return false;
-    }
+    if (_len != other._len) return false;
+
     for (auto i = 0UL; i < _len; ++i) {
       if (_ptr[i] != other._ptr[i]) {
         return false;
@@ -260,16 +255,12 @@ struct Iter : iter::Iterator<T&> {
   }
 
   auto next() noexcept -> Option<T&> {
-    if (_ptr >= _end) {
-      return {};
-    }
+    if (_ptr >= _end) return {};
     return *_ptr++;
   }
 
   auto next_back() noexcept -> Option<T&> {
-    if (_ptr >= _end) {
-      return {};
-    }
+    if (_ptr >= _end) return {};
     return *--_end;
   }
 };
@@ -281,9 +272,7 @@ struct Windows : iter::Iterator<Slice<T>> {
 
  public:
   auto next() noexcept -> Option<Slice<T>> {
-    if (_buf._len < _len) {
-      return {};
-    }
+    if (_buf._len < _len) return {};
 
     const auto res = Slice<T>{_buf._ptr, _len};
     _buf._ptr += 1;
@@ -292,9 +281,7 @@ struct Windows : iter::Iterator<Slice<T>> {
   }
 
   auto next_back() noexcept -> Option<Slice<T>> {
-    if (_buf._len < _len) {
-      return {};
-    }
+    if (_buf._len < _len) return {};
 
     const auto res = Slice<T>{_buf._ptr + _buf._len - _len, _len};
     _buf._len -= 1;
@@ -309,9 +296,8 @@ struct Chunks : iter::Iterator<Slice<T>> {
 
  public:
   auto next() noexcept -> Option<Slice<T>> {
-    if (_buf._len == 0) {
-      return {};
-    }
+    if (_buf._len == 0) return {};
+
     const auto pos = _len < _buf._len ? _len : _buf._len;
     const auto res = Slice<T>{_buf._ptr, pos};
     _buf._ptr += pos;
