@@ -23,68 +23,105 @@ struct NumParser {
   const char* _end;
 
  public:
-  auto is_empty() const -> bool {
+  [[gnu::always_inline]] auto is_empty() const -> bool {
     return _ptr == _end;
   }
 
   template <class T>
-  auto parse_int() -> Option<T> {
+  auto parse_uint() -> Option<T> {
     static constexpr auto MAX_VAL = static_cast<u64>(num::max_value<T>());
 
-    const auto is_neg = this->extract_sign();
-    if constexpr (trait::uint_<T>) {
-      if (is_neg) return {};
-    }
+    const auto sign = this->extract_sign();
+    if (sign == -1) return {};
 
     const auto radix = this->extract_radix();
-    const auto uval = this->extract_bin(radix);
+    const auto uval = radix == 10 ? this->extract_int() : this->extract_bin(radix);
     if (uval > MAX_VAL) return {};
 
-    if constexpr (trait::uint_<T>) {
-      return static_cast<T>(uval);
+    return static_cast<T>(uval);
+  }
+
+  template <class T>
+  auto parse_sint() -> Option<T> {
+    static constexpr auto MAX_VAL = static_cast<u64>(num::max_value<T>());
+
+    const auto sign = this->extract_sign();
+    const auto radix = this->extract_radix();
+    const auto uval = radix == 10 ? this->extract_int() : this->extract_bin(radix);
+
+    if (sign == 1) {
+      if (uval > MAX_VAL) return {};
+      return +static_cast<T>(uval);
     } else {
-      if (is_neg && uval && (uval - 1 > MAX_VAL)) return {};
-      const auto sval = static_cast<T>(uval);
-      return is_neg ? -sval : sval;
+      if (uval > MAX_VAL + 1) return {};
+      return -static_cast<T>(uval);
     }
   }
 
   template <class T>
   auto parse_flt() -> Option<T> {
-    const auto is_neg = this->extract_sign();
+    const auto sign = this->extract_sign();
     const auto int_part = this->extract_int();
     const auto flt_part = this->extract_flt();
     const auto exp_part = this->extract_exp();
 
     const auto uval = (static_cast<f64>(int_part) + flt_part) * exp_part;
-    const auto sval = static_cast<T>(uval);
-    return is_neg ? -sval : +sval;
+    return static_cast<T>(sign * uval);
   }
 
   template <class T>
   auto parse_num() -> Option<T> {
     if constexpr (trait::flt_<T>) {
       return this->parse_flt<T>();
-    } else if constexpr (trait::int_<T>) {
-      return this->parse_int<T>();
+    } else if constexpr (trait::uint_<T>) {
+      return this->parse_uint<T>();
+    } else if constexpr (trait::sint_<T>) {
+      return this->parse_sint<T>();
     } else {
-      return {};
+      static_assert(false, "NumParser::parse_num: unsupported type");
     }
   }
 
  private:
-  auto extract_sign() -> bool {
-    if (_ptr == _end) {
-      return false;
-    }
-    switch (*_ptr) {
-      default:  return false;
-      case '+': ++_ptr; return false;
-      case '-': ++_ptr; return true;
-    }
+  [[gnu::always_inline]] auto pop() -> char {
+    return _ptr < _end ? *_ptr++ : '\0';
   }
 
-  auto extract_radix() -> u32 {
+  [[gnu::always_inline]] auto pop_if(auto... c) -> char {
+    if (_ptr < _end && ((*_ptr == c) || ...)) {
+      return *_ptr++;
+    }
+    return 0;
+  }
+
+  [[gnu::always_inline]] auto pop_digit() -> char {
+    if (_ptr >= _end) return 0;
+
+    const auto c = *_ptr;
+    return ('0' <= c && c <= '9') ? *_ptr++ : 0;
+  }
+
+  [[gnu::always_inline]] auto pop_xdigit(i32 radix) -> char {
+    if (_ptr >= _end) return 0;
+
+    const auto c = *_ptr | 32;
+    if ('0' <= c && c <= '0' + radix) {
+      return *_ptr++;
+    }
+
+    if (radix == 16 && c >= 'a' && c <= 'z') {
+      _ptr++;
+      return c - 'a' + '0' + 10;
+    }
+    return 0;
+  }
+
+  auto extract_sign() -> int {
+    const auto ch = this->pop_if('+', '-');
+    return ch == '-' ? -1 : 1;
+  }
+
+  auto extract_radix() -> u16 {
     const auto cnt = _end - _ptr;
     // 1. single value will be decimal
     // 2. not with leading '0', will be decimal
@@ -109,46 +146,33 @@ struct NumParser {
     }
   }
 
-  auto extract_bin(u32 radix) -> u64 {
-    auto val = u64{0};
-    for (; _ptr != _end; ++_ptr) {
-      const auto c = *_ptr;
-      const auto n = static_cast<u32>(c <= '9' ? c - '0' : (c | 32) - ('a' - 10));
-      if (n >= radix) {
-        break;
-      }
-      val = radix * val + n;
-    }
-    return val;
-  }
-
   auto extract_int() -> u64 {
     auto val = u64{0};
-    for (; _ptr != _end; ++_ptr) {
-      const auto c = *_ptr;
+    while (auto c = this->pop_digit()) {
       const auto n = static_cast<u32>(c - '0');
-      if (n >= 10) {
-        break;
-      }
       val = 10 * val + n;
     }
     return val;
   }
 
+  auto extract_bin(u32 radix) -> u64 {
+    auto val = u64{0};
+    while (auto c = this->pop_xdigit(radix)) {
+      const auto n = static_cast<u32>(c - '0');
+      val = radix * val + n;
+    }
+    return val;
+  }
+
   auto extract_flt() -> f64 {
-    if (_ptr == _end || *_ptr != '.') {
+    if (!this->pop_if('.')) {
       return 0.0;
     }
-    ++_ptr;
 
     i64 uval = 0;
     i64 base = 1;
-    for (; _ptr != _end; ++_ptr) {
-      const auto c = *_ptr;
-      const auto n = static_cast<u8>(c - '0');
-      if (n >= 10) {
-        break;
-      }
+    while (auto c = this->pop_digit()) {
+      const auto n = c - '0';
       base *= 10;
       uval = 10 * uval + n;
     }
@@ -159,12 +183,11 @@ struct NumParser {
     if (_end - _ptr < 2) {
       return 1e0;
     }
-    if (auto c = *_ptr; c != 'e' && c != 'E') {
+    if (!this->pop_if('e', 'E')) {
       return 1e0;
     }
-    ++_ptr;
 
-    const auto sign = this->extract_sign() ? -1 : 1;
+    const auto sign = this->extract_sign();
     const auto scnt = static_cast<i32>(this->extract_int());
     return fast_exp10(sign * scnt);
   }
