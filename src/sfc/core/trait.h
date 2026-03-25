@@ -26,7 +26,7 @@ template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept flt_ = any_<T, float, double, long double>;
+concept flt_ = any_<T, float, double>;
 
 template <class T>
 concept copy_ = __is_constructible(T, const T&);

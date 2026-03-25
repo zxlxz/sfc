@@ -29,8 +29,8 @@ struct Tuple {
   Inner<trait::idxs_seq_t<sizeof...(T)>, T...> _inn;
 
  public:
-  Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
-  ~Tuple() = default;
+  [[gnu::always_inline]] Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
+  [[gnu::always_inline]] ~Tuple() = default;
 
   template <usize I>
   using element_t = T...[I];
@@ -39,17 +39,17 @@ struct Tuple {
   using entry_t = Entry<I, element_t<I>>;
 
   template <usize I>
-  auto get() const {
+  [[gnu::always_inline]] auto get() const {
     return _inn.entry_t<I>::_0;
   }
 
   template <usize I>
-  auto get() {
+  [[gnu::always_inline]] auto get() {
     return _inn.entry_t<I>::_0;
   }
 
   template <usize I>
-  auto get_mut() {
+  [[gnu::always_inline]] auto get_mut() {
     return _inn.entry_t<I>::_0;
   }
 

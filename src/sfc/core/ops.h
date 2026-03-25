@@ -58,4 +58,5 @@ auto ne(const auto& a, const auto& b) -> bool {
 
 namespace sfc {
 using ops::$;
+using ops::Range;
 }  // namespace sfc

@@ -21,13 +21,10 @@ struct Fmter {
   }
 
   void write_chars(char c, usize n) {
-    if (n <= 8) {
-      char buf[8] = {c, c, c, c, c, c, c, c};
-      this->write_str({buf, n});
-    } else if (n <= 256) {
-      char* buf = static_cast<char*>(__builtin_alloca(n));
-      __builtin_memset(buf, c, n);
-      this->write_str({buf, n});
+    static constexpr auto BUF_LEN = 8U;
+    const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
+    for (auto i = 0U; i < n; i += BUF_LEN) {
+      this->write_str(Str{buf, i + BUF_LEN < n ? BUF_LEN : n - i});
     }
   }
 
@@ -146,7 +143,7 @@ struct Fmter {
   }
 
   template <class... T>
-  void write_fmt(const fmt::fmts_t<T...>& fmts, const T& ...args) {
+  void write_fmt(const fmt::fmts_t<T...>& fmts, const T&... args) {
     Args{fmts, args...}.fmt(*this);
   }
 

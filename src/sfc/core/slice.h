@@ -251,7 +251,7 @@ struct Iter : iter::Iterator<T&> {
 
  public:
   auto len() const noexcept -> usize {
-    return _ptr < _end ? static_cast<usize>(_end - _ptr) : 0U;
+    return _end - _ptr;
   }
 
   auto next() noexcept -> Option<T&> {
