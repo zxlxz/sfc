@@ -127,8 +127,8 @@ class HashTbl {
 
     // alloc new
     const auto min_cap = (_len + additional) * 4 / 3;
-    const auto new_cap = num::next_power_of_two<usize>(min_cap, 8);
-    this->realloc(new_cap);
+    const auto new_cap = num::next_power_of_two<usize>(min_cap);
+    this->realloc(cmp::max<usize>(new_cap, 8U));
   }
 
   void clear() noexcept {
