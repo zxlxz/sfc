@@ -57,7 +57,7 @@ auto String::pop() noexcept -> Option<char32_t> {
   auto chars = this->as_str().chars();
 
   const auto ret = chars.next_back();
-  _vec.truncate(static_cast<u32>(chars._end - chars._ptr));
+  _vec.truncate(static_cast<usize>(chars._end - chars._ptr));
   return ret;
 }
 
