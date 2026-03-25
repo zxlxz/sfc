@@ -5,18 +5,17 @@
 namespace sfc::sync {
 
 enum class Ordering {
-  Relaxed,
-  Consume,
-  Acquire,
-  Release,
-  AcqRel,
-  SeqCst,
+  Relaxed = __ATOMIC_RELAXED,
+  Consume = __ATOMIC_CONSUME,
+  Acquire = __ATOMIC_ACQUIRE,
+  Release = __ATOMIC_RELEASE,
+  AcqRel = __ATOMIC_ACQ_REL,
+  SeqCst = __ATOMIC_SEQ_CST,
 };
 
 template <class T>
 struct Atomic {
   static_assert(!__is_class(T) && !__is_union(T));
-
   T _val;
 
  public:
