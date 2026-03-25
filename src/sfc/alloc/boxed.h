@@ -91,8 +91,8 @@ class Box<T[]> {
 
   ~Box() {
     if (!_inn._ptr) return;
-    __builtin_operator_delete(_inn._ptr);
     ptr::drop_in_place(_inn._ptr, _inn._len);
+    __builtin_operator_delete(_inn._ptr);
   }
 
   Box(Box&& other) noexcept : _inn{mem::take(other._inn)} {}
