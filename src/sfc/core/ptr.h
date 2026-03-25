@@ -159,7 +159,7 @@ inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
     __builtin_memmove(ptr - offset, ptr, len * sizeof(T));
   } else {
     for (auto p = ptr; p != ptr + len; ++p) {
-      ptr::write(p + offset, static_cast<T&&>(*p));
+      ptr::write(p - offset, static_cast<T&&>(*p));
       p->~T();
     }
   }
@@ -175,7 +175,7 @@ inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
     __builtin_memmove(ptr + offset, ptr, len * sizeof(T));
   } else {
     for (auto p = ptr + len - 1; p != ptr - 1; --p) {
-      ptr::write(p - offset, static_cast<T&&>(*p));
+      ptr::write(p + offset, static_cast<T&&>(*p));
       p->~T();
     }
   }
