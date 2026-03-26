@@ -3,15 +3,15 @@
 namespace sfc::num::test {
 
 SFC_TEST(max_value) {
-  static_assert(num::max_value<u8>() == 0xFFU);
-  static_assert(num::max_value<u16>() == 0xFFFFU);
-  static_assert(num::max_value<u32>() == 0xFFFFFFFFU);
-  static_assert(num::max_value<u64>() == 0xFFFFFFFFFFFFFFFFULL);
+  static_assert(num::max_value<u8>() == __UINT8_MAX__);
+  static_assert(num::max_value<u16>() == __UINT16_MAX__);
+  static_assert(num::max_value<u32>() == __UINT32_MAX__);
+  static_assert(num::max_value<u64>() == __UINT64_MAX__);
 
-  static_assert(num::max_value<i8>() == 0x7F);
-  static_assert(num::max_value<i16>() == 0x7FFF);
-  static_assert(num::max_value<i32>() == 0x7FFFFFFF);
-  static_assert(num::max_value<i64>() == 0x7FFFFFFFFFFFFFFFULL);
+  static_assert(num::max_value<i8>() == __INT8_MAX__);
+  static_assert(num::max_value<i16>() == __INT16_MAX__);
+  static_assert(num::max_value<i32>() == __INT32_MAX__);
+  static_assert(num::max_value<i64>() == __INT64_MAX__);
 }
 
 SFC_TEST(min_value) {
@@ -20,10 +20,10 @@ SFC_TEST(min_value) {
   static_assert(num::min_value<u32>() == 0U);
   static_assert(num::min_value<u64>() == 0U);
 
-  static_assert(num::max_value<i8>() + num::min_value<i8>() == -1);
-  static_assert(num::max_value<i16>() + num::min_value<i16>() == -1);
-  static_assert(num::max_value<i32>() + num::min_value<i32>() == -1);
-  static_assert(num::max_value<i64>() + num::min_value<i64>() == -1);
+  static_assert(num::min_value<i8>() == -__INT8_MAX__ - 1);
+  static_assert(num::min_value<i16>() == -__INT16_MAX__ - 1);
+  static_assert(num::min_value<i32>() == -__INT32_MAX__ - 1);
+  static_assert(num::min_value<i64>() == -__INT64_MAX__ - 1);
 }
 
 SFC_TEST(satruating_sub) {

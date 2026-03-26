@@ -14,9 +14,7 @@ class RawVec {
   RawVec() noexcept = default;
 
   ~RawVec() noexcept {
-    if (_ptr == nullptr) {
-      return;
-    }
+    if (!_ptr) return;
     _a.dealloc_array(_ptr, _cap);
   }
 
