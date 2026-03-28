@@ -83,8 +83,7 @@ class [[nodiscard]] Box<T[]> {
 
   ~Box() {
     if (!_inn._ptr) return;
-    ptr::drop_in_place(_inn._ptr, _inn._len);
-    __builtin_operator_delete(_inn._ptr);
+    delete[] _inn._ptr;
   }
 
   Box(Box&& other) noexcept : _inn{mem::take(other._inn)} {}
@@ -99,17 +98,6 @@ class [[nodiscard]] Box<T[]> {
   static auto from_raw(Slice<T> raw) -> Box {
     auto res = Box{};
     res._inn = raw;
-    return res;
-  }
-
-  static auto xnew_uninit_slice(usize len) -> Box {
-    const auto p = static_cast<T*>(__builtin_operator_new(sizeof(T) * len));
-    return Box::from_raw(Slice<T>{p, len});
-  }
-
-  static auto xnew(Slice<const T> x) -> Box {
-    auto res = Box::xnew_uninit_slice(x._len);
-    ptr::uninit_copy(x._ptr, res._inn._ptr, x._len);
     return res;
   }
 
@@ -128,12 +116,21 @@ class [[nodiscard]] Box<T[]> {
 
 template <class R, class... T>
 class [[nodiscard]] Box<R(T...)> {
- public:
   using dtor_t = void (*)(void*);
   using call_t = R (*)(void*, T&&...);
+
   struct Meta {
     dtor_t _dtor = nullptr;
     call_t _call = nullptr;
+
+    template <class X>
+    static constexpr auto of() -> const Meta& {
+      static const auto res = Meta{
+          [](void* p) { delete static_cast<X*>(p); },
+          [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
+      };
+      return res;
+    }
   };
 
   void* _data{nullptr};
@@ -142,8 +139,15 @@ class [[nodiscard]] Box<R(T...)> {
  public:
   Box() noexcept = default;
 
+  explicit Box(auto fn) noexcept {
+    using Fn = decltype(fn);
+    this->_data = new auto{mem::move(fn)};
+    this->_meta = &Meta::template of<Fn>();
+  }
+
   ~Box() noexcept {
-    _data ? (_meta->_dtor)(_data) : void();
+    if (!_data) return;
+    (_meta->_dtor)(_data);
   }
 
   Box(Box&& other) noexcept : _data{mem::take(other._data)}, _meta{mem::take(other._meta)} {}
@@ -156,19 +160,6 @@ class [[nodiscard]] Box<R(T...)> {
     return *this;
   }
 
-  template <class X>
-  static auto xnew(X x) noexcept -> Box {
-    static const auto meta = Meta{
-        [](void* p) { delete static_cast<X*>(p); },
-        [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
-    };
-
-    auto res = Box{};
-    res._data = new auto{mem::move(x)};
-    res._meta = &meta;
-    return res;
-  }
-
   auto ptr() const noexcept -> void* {
     return _data;
   }
@@ -178,14 +169,8 @@ class [[nodiscard]] Box<R(T...)> {
   }
 };
 
-template <class B>
-auto box(B&& b) -> Box<B> {
-  return Box<B>::xnew(static_cast<B&&>(b));
-}
-
 }  // namespace sfc::boxed
 
 namespace sfc {
 using boxed::Box;
-using boxed::box;
 }  // namespace sfc
