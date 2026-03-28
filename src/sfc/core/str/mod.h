@@ -7,11 +7,6 @@
 
 namespace sfc::str {
 
-template <class T>
-struct FromStr {
-  static auto from_str(Str) -> Option<T>;
-};
-
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -115,16 +110,9 @@ struct Str {
   // trait: ops::Eq
   constexpr auto operator==(Str other) const noexcept -> bool {
     if (_len != other._len) return false;
-
-    if (_len != 0) {
-      return __builtin_memcmp(_ptr, other._ptr, _len) == 0;
-    }
-    return true;
-  }
-
-  // trait: option
-  auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
+    if (_len == 0) return true;
+    const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
+    return ret == 0;
   }
 
   // trait: fmt::Display
@@ -140,13 +128,7 @@ struct Str {
 
   // trait: str::FromStr
   template <class T>
-  auto parse() const -> Option<T> {
-    if constexpr (requires { T::from_str(*this); }) {
-      return T::from_str(*this);
-    } else {
-      return FromStr<T>::from_str(*this);
-    }
-  }
+  auto parse() const -> Option<T>;
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
@@ -162,6 +144,20 @@ struct Str {
     return imp.finish();
   }
 };
+
+template <class T>
+struct FromStr {
+  static auto from_str(Str) -> Option<T>;
+};
+
+template <class T>
+auto Str::parse() const -> Option<T> {
+  if constexpr (requires { T::from_str(*this); }) {
+    return T::from_str(*this);
+  } else {
+    return FromStr<T>::from_str(*this);
+  }
+}
 
 }  // namespace sfc::str
 
