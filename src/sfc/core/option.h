@@ -10,6 +10,9 @@ struct None {};
 struct Some {};
 
 template <class T>
+concept option_ = requires(const T& x) { x.ptr(); };
+
+template <class T>
 class Option {
   bool _tag;
   union {
@@ -185,9 +188,6 @@ class Option {
     }
   }
 };
-
-template <class T>
-concept option_ = requires(const T& x) { x.ptr(); };
 
 template <option_ T>
 class Option<T> {
