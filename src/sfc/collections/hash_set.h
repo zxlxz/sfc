@@ -2,7 +2,9 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections::hash {
+namespace sfc::collections::hash_set {
+
+using hash_tbl::HashTbl;
 
 template <class T>
 class HashSet {
@@ -23,7 +25,7 @@ class HashSet {
   }
 
   auto capacity() const noexcept -> usize {
-    return _inn.capacity();
+    return _inn.cap();
   }
 
   void reserve(usize additional) {
@@ -32,23 +34,17 @@ class HashSet {
 
  public:
   auto contains(const auto& val) const noexcept -> bool {
-    const auto p = _inn.search(val);
-    return p != nullptr;
+    return _inn.search(val) != nullptr;
   }
 
   // Returns whether the value was newly inserted.
   auto insert(T val) noexcept -> bool {
-    const auto p = _inn.try_insert({static_cast<T&&>(val)});
-    return p == nullptr;
+    return _inn.try_insert({static_cast<T&&>(val)}) == nullptr;
   }
 
   // Returns whether the value was present in the set.
   auto remove(const auto& val) noexcept -> bool {
-    if (auto p = const_cast<Entry*>(_inn.search(val))) {
-      (void)_inn.try_erase(p);
-      return true;
-    }
-    return false;
+    return bool(_inn.remove(val));
   }
 
   void clear() {
@@ -63,8 +59,8 @@ class HashSet {
   }
 };
 
-}  // namespace sfc::collections::hash
+}  // namespace sfc::collections::hash_set
 
 namespace sfc::collections {
-using hash::HashSet;
+using hash_set::HashSet;
 }

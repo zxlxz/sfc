@@ -4,8 +4,6 @@
 
 namespace sfc::collections::hash_set::test {
 
-using namespace sfc::collections::hash;
-
 SFC_TEST(set_contains) {
   auto t = HashSet<int>{};
   sfc::expect_false(t.contains(1));

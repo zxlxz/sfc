@@ -4,8 +4,6 @@
 
 namespace sfc::collections::hash_map::test {
 
-using namespace sfc::collections::hash;
-
 SFC_TEST(get) {
   auto t = HashMap<int, int>{};
   t.insert(1, 10);

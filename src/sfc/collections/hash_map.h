@@ -2,7 +2,9 @@
 
 #include "sfc/collections/hash_tbl.h"
 
-namespace sfc::collections::hash {
+namespace sfc::collections::hash_map {
+
+using hash_tbl::HashTbl;
 
 template <class K, class V>
 class HashMap {
@@ -24,7 +26,7 @@ class HashMap {
   }
 
   auto capacity() const noexcept -> usize {
-    return _inn.capacity();
+    return _inn.cap();
   }
 
   void reserve(usize additional) {
@@ -66,17 +68,13 @@ class HashMap {
     if (!p) {
       return {};
     }
-    return Option<V>{mem::replace(p->val, static_cast<V&&>(val))};
+    return mem::replace(p->val, static_cast<V&&>(val));
   }
 
   auto remove(const K& key) -> Option<V> {
-    const auto p = const_cast<Entry*>(_inn.search(key));
-    if (!p) {
-      return {};
-    }
-    auto res = Option{static_cast<V&&>(p->val)};
-    (void)_inn.try_erase(p);
-    return res;
+    auto x = _inn.remove(key);
+    if (!x) return {};
+    return static_cast<V&&>(x->val);
   }
 
   void clear() {
@@ -104,7 +102,7 @@ class HashMap {
       while (map.has_next()) {
         auto key = _TRY(map.template next_key<K>());
         auto val = _TRY(map.template next_value<V>());
-        res.insert(key, static_cast<V&&>(val));
+        res.try_insert(key, static_cast<V&&>(val));
       }
       return {};
     };
@@ -113,8 +111,8 @@ class HashMap {
   }
 };
 
-}  // namespace sfc::collections::hash
+}  // namespace sfc::collections::hash_map
 
 namespace sfc::collections {
-using hash::HashMap;
+using hash_map::HashMap;
 }
