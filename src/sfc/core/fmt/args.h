@@ -148,16 +148,13 @@ struct Fmts<0> {
 };
 
 template <class... T>
-using fmts_t = trait::identity_t<Fmts<sizeof...(T)>>;
-
-template <class... T>
 struct Args {
   static constexpr auto N = sizeof...(T);
-  const fmts_t<T...>& _fmts;
+  const Fmts<sizeof...(T)>& _fmts;
   const void* _args[N];
 
  public:
-  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
+  Args(const auto& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
 
   void fmt(auto& f) const {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
@@ -177,10 +174,10 @@ struct Args {
 
 template <>
 struct Args<> {
-  const fmts_t<>& _fmts;
+  const Fmts<0>& _fmts;
 
  public:
-  [[gnu::always_inline]] Args(const fmts_t<>& fmts) : _fmts{fmts} {}
+  [[gnu::always_inline]] Args(const auto& fmts) : _fmts{fmts} {}
 
   void fmt(auto& f) const {
     f.write_str({_fmts._ptr, _fmts._len});
@@ -191,6 +188,9 @@ template <class... T>
 Args(const auto&, const T&...) -> Args<T...>;
 
 template <class... T>
-void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args);
+using fmts_t = Fmts<sizeof...(T)>;
+
+template <class... T>
+void write(auto&& out, fmts_t<T...> fmts, const T&... args);
 
 }  // namespace sfc::fmt
