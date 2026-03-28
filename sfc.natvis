@@ -66,15 +66,22 @@
   </Type>
 
   <!-- sfc::result::Result<T,E> -->
-  <Type Name="sfc::result::Result&lt;*,*;&gt;">
+  <Type Name="sfc::result::Result&lt;*,*&gt;">
     <DisplayString Condition="!_inn._err">Ok({_inn._ok})</DisplayString>
     <DisplayString Condition="_inn._err">Err({_inn._err})</DisplayString>
   </Type>
 
   <!-- sfc::result::Result<void,E> -->
-  <Type Name="sfc::result::Result&lt;void,*;&gt;">
+  <Type Name="sfc::result::Result&lt;void,*&gt;">
     <DisplayString Condition="!_inn._err">Ok()</DisplayString>
     <DisplayString Condition="_inn._err">Err({_inn._err})</DisplayString>
   </Type>
 
+  <!-- sfc::collections::hash_tbl::HashTbl-->
+  <Type Name="sfc::collections::hash_tbl::HashTbl&lt;*,*&gt;">
+    <Expand>
+      <Item Name="[_len]">_len</Item>
+      <Item Name="[_cap]">_buf._cap</Item>
+    </Expand>
+  </Type>
 </AutoVisualizer>
