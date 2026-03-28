@@ -20,9 +20,12 @@ class [[nodiscard]] Rc {
   ~Rc() noexcept {
     if (!_ptr) return;
 
-    if (_ptr->_cnt.fetch_sub(1) == 1) {
+#ifndef __clang_analyzer__
+    const auto cnt = _ptr->_cnt.fetch_sub(1, sync::Ordering::AcqRel);
+    if (cnt == 1) {
       delete _ptr;
     }
+#endif
   }
 
   Rc(Rc&& other) noexcept : _ptr{other._ptr} {
@@ -62,7 +65,7 @@ class [[nodiscard]] Rc {
   auto clone() const noexcept -> Rc {
     if (!_ptr) return {};
 
-    _ptr->_cnt.fetch_add(1);
+    _ptr->_cnt.fetch_add(1, sync::Ordering::Relaxed);
     auto res = Rc{};
     res._ptr = _ptr;
     return res;
