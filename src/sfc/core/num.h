@@ -24,29 +24,31 @@ static constexpr auto min_value() -> T {
   }
 }
 
-template <class T>
+template <trait::int_ T>
 constexpr auto abs(T val) -> T {
   return val >= 0 ? val : 0 - val;
 }
 
 template <trait::uint_ T>
-constexpr auto saturating_sub(T a, T b) -> T {
-  return a < b ? 0 : a - b;
-}
-
-template <trait::int_ T>
-constexpr auto next_power_of_two(T n) -> T {
-  auto x = T{1};
-  while (x < n) {
-    x *= 2;
-  }
-  return x;
+constexpr auto ctlz(T val) -> u32 {
+  static constexpr auto EXT_CNT = (sizeof(u64) - sizeof(T)) * 8;
+  if (val == 0) return sizeof(T) * 8;
+  return static_cast<u32>(__builtin_clzll(val) - EXT_CNT);
 }
 
 template <trait::uint_ T>
-constexpr auto align_up(T n, u64 align) -> T {
-  const auto mask = align - 1;
-  return static_cast<T>((n + mask) & ~mask);
+constexpr auto next_power_of_two(T n) -> T {
+  if ((n & (n - 1)) == 0) {
+    return n;
+  } else {
+    const auto shift = sizeof(T) * 8 - num::ctlz(n);
+    return static_cast<T>(T{1} << shift);
+  }
+}
+
+template <trait::uint_ T>
+constexpr auto saturating_sub(T a, T b) -> T {
+  return a < b ? 0 : a - b;
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;

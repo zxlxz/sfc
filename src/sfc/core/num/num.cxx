@@ -26,15 +26,25 @@ SFC_TEST(min_value) {
   static_assert(num::min_value<i64>() == -__INT64_MAX__ - 1);
 }
 
+SFC_TEST(ctlz) {
+  static_assert(num::ctlz(0U) == 32U);
+  static_assert(num::ctlz(1U) == 31U);
+  static_assert(num::ctlz(2U) == 30U);
+  static_assert(num::ctlz(3U) == 30U);
+  static_assert(num::ctlz(0x80000000U) == 0U);
+}
+
 SFC_TEST(satruating_sub) {
   static_assert(num::saturating_sub(1U, 2U) == 0);
   static_assert(num::saturating_sub(2U, 1U) == 1);
 }
 
 SFC_TEST(next_power_of_two) {
-  static_assert(num::next_power_of_two(1) == 1);
-  static_assert(num::next_power_of_two(2) == 2);
-  static_assert(num::next_power_of_two(3) == 4);
+  static_assert(num::next_power_of_two(1U) == 1);
+  static_assert(num::next_power_of_two(2U) == 2);
+  static_assert(num::next_power_of_two(3U) == 4);
+  static_assert(num::next_power_of_two(0x80000000U) == 0x80000000U);
+  static_assert(num::next_power_of_two(0x7FFFFFFFFU) == 0x800000000);
 }
 
 SFC_TEST(flt_eq) {
