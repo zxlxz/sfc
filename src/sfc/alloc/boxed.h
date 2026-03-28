@@ -5,14 +5,13 @@
 namespace sfc::boxed {
 
 template <class T>
-class [[nodiscard]] Box;
-
-template <class T>
-class Box {
+class [[nodiscard]] Box {
   T* _ptr = nullptr;
 
  public:
   Box() noexcept = default;
+
+  explicit Box(T val) noexcept : _ptr{new T{static_cast<T&&>(val)}} {}
 
   ~Box() noexcept {
     if (!_ptr) return;
@@ -31,13 +30,6 @@ class Box {
   static auto from_raw(T* ptr) noexcept -> Box {
     auto res = Box{};
     res._ptr = ptr;
-    return res;
-  }
-
-  template <class... U>
-  static auto xnew(U&&... args) -> Box {
-    auto res = Box{};
-    res._ptr = new T{static_cast<U&&>(args)...};
     return res;
   }
 
@@ -83,7 +75,7 @@ class Box {
 };
 
 template <class T>
-class Box<T[]> {
+class [[nodiscard]] Box<T[]> {
   Slice<T> _inn;
 
  public:
@@ -135,7 +127,7 @@ class Box<T[]> {
 };
 
 template <class R, class... T>
-class Box<R(T...)> {
+class [[nodiscard]] Box<R(T...)> {
  public:
   using dtor_t = void (*)(void*);
   using call_t = R (*)(void*, T&&...);

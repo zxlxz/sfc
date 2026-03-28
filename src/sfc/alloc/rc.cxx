@@ -3,42 +3,47 @@
 namespace sfc::rc::test {
 
 struct Foo {
-  int _val;
+  int* _cnt;
 
  public:
-  static auto obj_cnt() -> int& {
-    static auto res = 0;
-    return res;
-  }
-
-  explicit Foo(int value) : _val{value} {
-    obj_cnt() += 1;
+  Foo(int& cnt) : _cnt{&cnt} {
+    *_cnt += 1;
   }
 
   ~Foo() {
-    obj_cnt() -= 1;
+    if (!_cnt) return;
+    *_cnt -= 1;
   }
 
-  Foo(const Foo&) = delete;
+  Foo(Foo&& other) noexcept : _cnt{mem::take(other._cnt)} {}
 };
 
-SFC_TEST(rc) {
-  Foo::obj_cnt() = 0;
+SFC_TEST(own) {
+  auto cnt = 0;
+
   {
-    auto a = Rc<Foo>::xnew(1);
-    sfc::expect_eq(a->_val, 1);
-    sfc::expect_eq(Foo::obj_cnt(), 1);
+    auto ra = Rc{Foo{cnt}};
+    sfc::expect_eq(cnt, 1);
 
-    {
-      auto b = a.clone();
-      sfc::expect_eq(b->_val, 1);
-      sfc::expect_eq(Foo::obj_cnt(), 1);
-    }
-
-    sfc::expect_eq(Foo::obj_cnt(), 1);
+    auto rb = mem::move(ra);
+    sfc::expect_eq(cnt, 1);
   }
 
-  sfc::expect_eq(Foo::obj_cnt(), 0);
+  sfc::expect_eq(cnt, 0);
+}
+
+SFC_TEST(clone) {
+  auto cnt = 0;
+
+  {
+    auto ra = Rc{Foo{cnt}};
+    sfc::expect_eq(cnt, 1);
+
+    auto rb = ra.clone();
+    sfc::expect_eq(cnt, 1);
+  }
+
+  sfc::expect_eq(cnt, 0);
 }
 
 }  // namespace sfc::rc::test

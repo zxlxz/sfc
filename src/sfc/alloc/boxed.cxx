@@ -3,10 +3,10 @@
 namespace sfc::boxed::test {
 
 SFC_TEST(obj) {
-  auto b1 = Box<int>::xnew(42);
+  auto b1 = Box{42};
   sfc::expect_eq(*b1, 42);
 
-  auto b2 = Box<int>::xnew(43);
+  auto b2 = Box{43};
   sfc::expect_eq(*b2, 43);
 
   mem::swap(b1, b2);

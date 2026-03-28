@@ -6,23 +6,28 @@ namespace sfc::rc {
 
 template <class T>
 class [[nodiscard]] Rc {
- public:
   struct Inn {
-    T _val;
     sync::Atomic<int> _cnt{1};
+    T _val;
   };
-  Inn* _ptr = nullptr;
+  Inn* _ptr{nullptr};
 
  public:
   Rc() noexcept = default;
 
+  explicit Rc(T val) : _ptr{new Inn{1, static_cast<T&&>(val)}} {}
+
   ~Rc() noexcept {
-    if (_ptr && _ptr->_cnt.fetch_sub(1) == 1) {
+    if (!_ptr) return;
+
+    if (_ptr->_cnt.fetch_sub(1) == 1) {
       delete _ptr;
     }
   }
 
-  Rc(Rc&& other) noexcept : _ptr{mem::take(other._ptr)} {}
+  Rc(Rc&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = nullptr;
+  }
 
   Rc& operator=(Rc&& other) noexcept {
     if (this != &other) {
@@ -31,14 +36,9 @@ class [[nodiscard]] Rc {
     return *this;
   }
 
-  static auto xnew(auto&&... args) noexcept -> Rc {
-    auto res = Rc{};
-    res._ptr = new Inn{T{static_cast<decltype(args)&&>(args)...}};
-    return res;
-  }
-
   auto as_ptr() const noexcept -> T* {
-    return _ptr ? &_ptr->_val : nullptr;
+    if (!_ptr) return nullptr;
+    return &_ptr->_val;
   }
 
   auto operator->() const noexcept -> const T* {
@@ -60,9 +60,9 @@ class [[nodiscard]] Rc {
  public:
   // trait: Clone
   auto clone() const noexcept -> Rc {
-    if (_ptr) {
-      _ptr->_cnt.fetch_add(1);
-    }
+    if (!_ptr) return {};
+
+    _ptr->_cnt.fetch_add(1);
     auto res = Rc{};
     res._ptr = _ptr;
     return res;
