@@ -84,14 +84,14 @@ struct Iterator {
     return accum;
   }
 
-  template <class F, class B = ops::invoke_t<F(Item, Item)>>
-  auto reduce(this auto self, F&& f) -> Option<B> {
+  template <class F>
+  auto reduce(this auto self, F&& f) -> Option<Item> {
     auto opt = self.next();
     if (!opt) {
       return {};
     }
 
-    if constexpr (!trait::same_<const B, const B&>) {
+    if constexpr (!trait::same_<Item, Item&>) {
       auto res_val = mem::move(opt).unwrap();
       while (auto x = self.next()) {
         res_val = f(res_val, *x);
