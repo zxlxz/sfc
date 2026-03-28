@@ -69,28 +69,28 @@ class [[nodiscard]] Result {
     return _tag == Tag::Err;
   }
 
-  auto ok(this auto self) noexcept -> Option<T> {
-    if (self._tag == Tag::Err) return {};
-    return static_cast<T&&>(self._ok);
+  auto ok() && noexcept -> Option<T> {
+    if (_tag == Tag::Err) return {};
+    return static_cast<T&&>(_ok);
   }
 
-  auto err(this auto self) noexcept -> Option<E> {
-    if (self._tag == Tag::Ok) return {};
-    return static_cast<E&&>(self._err);
+  auto err() && noexcept -> Option<E> {
+    if (_tag == Tag::Ok) return {};
+    return static_cast<E&&>(_err);
   }
 
-  auto unwrap(this auto self) noexcept -> T {
-    sfc::expect(self._tag == Tag::Ok, "Result::unwrap: not Ok()");
-    return static_cast<T&&>(self._ok);
+  auto unwrap() && noexcept -> T {
+    sfc::expect(_tag == Tag::Ok, "Result::unwrap: not Ok()");
+    return static_cast<T&&>(_ok);
   }
 
-  auto unwrap_err(this auto self) noexcept -> E {
-    sfc::expect(self._tag == Tag::Err, "Result::unwrap_err: not Err()");
-    return static_cast<E&&>(self._err);
+  auto unwrap_err() && noexcept -> E {
+    sfc::expect(_tag == Tag::Err, "Result::unwrap_err: not Err()");
+    return static_cast<E&&>(_err);
   }
 
-  auto unwrap_or(this auto self, T default_val) noexcept -> T {
-    if (self._tag == Tag::Ok) return static_cast<T&&>(self._ok);
+  auto unwrap_or(T default_val) && noexcept -> T {
+    if (_tag == Tag::Ok) return static_cast<T&&>(_ok);
     return static_cast<T&&>(default_val);
   }
 
@@ -103,51 +103,51 @@ class [[nodiscard]] Result {
   }
 
   template <class U>
-  auto operator&(this auto self, Result<U, E> res) noexcept -> Result<U, E> {
-    if (self._tag == Tag::Ok) {
+  auto operator&(Result<U, E> res) && noexcept -> Result<U, E> {
+    if (_tag == Tag::Ok) {
       return static_cast<Result<U, E>&&>(res);
     }
-    return static_cast<E&&>(self._err);
+    return static_cast<E&&>(_err);
   }
 
   template <class F>
-  auto operator|(this auto self, Result<T, F> res) noexcept -> Result<T, F> {
-    if (self._tag == Tag::Ok) {
-      return static_cast<T&&>(self._ok);
+  auto operator|(Result<T, F> res) && noexcept -> Result<T, F> {
+    if (_tag == Tag::Ok) {
+      return static_cast<T&&>(_ok);
     }
     return static_cast<Result<T, F>&&>(res);
   }
 
   template <class F>
-  auto and_then(this auto self, F&& op) -> ops::invoke_t<F(T)> {
-    if (self._tag == Tag::Ok) {
-      return op(static_cast<T&&>(self._ok));
+  auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
+    if (_tag == Tag::Ok) {
+      return op(static_cast<T&&>(_ok));
     }
-    return static_cast<E&&>(self._err);
+    return static_cast<E&&>(_err);
   }
 
   template <class O>
-  auto or_else(this auto self, O&& op) -> ops::invoke_t<O()> {
-    if (self._tag == Tag::Ok) {
-      return static_cast<T&&>(self._ok);
+  auto or_else(O&& op) && -> ops::invoke_t<O()> {
+    if (_tag == Tag::Ok) {
+      return static_cast<T&&>(_ok);
     }
     return op();
   }
 
   template <class F>
-  auto map(this auto self, F&& op) -> Result<ops::invoke_t<F(T)>, E> {
-    if (self._tag == Tag::Ok) {
-      return op(static_cast<T&&>(self._ok));
+  auto map(F&& op) && -> Result<ops::invoke_t<F(T)>, E> {
+    if (_tag == Tag::Ok) {
+      return op(static_cast<T&&>(_ok));
     }
-    return static_cast<E&&>(self._err);
+    return static_cast<E&&>(_err);
   }
 
   template <class O>
-  auto map_err(this auto self, O&& op) -> Result<T, ops::invoke_t<O(E)>> {
-    if (self._tag == Tag::Ok) {
-      return static_cast<T&&>(self._ok);
+  auto map_err(O&& op) && -> Result<T, ops::invoke_t<O(E)>> {
+    if (_tag == Tag::Ok) {
+      return static_cast<T&&>(_ok);
     }
-    return op(static_cast<E&&>(self._err));
+    return op(static_cast<E&&>(_err));
   }
 
  public:
