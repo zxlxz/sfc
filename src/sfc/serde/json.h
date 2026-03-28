@@ -54,13 +54,13 @@ struct Serializer {
     _buf.push_str({s, 3});
   }
 
-  void serialize_int(trait::int_ auto val) noexcept {
+  void serialize_int(num::int_ auto val) noexcept {
     char buf[32];
     const auto s = fmt::Debug::format_int(buf, val);
     _buf.push_str(s);
   }
 
-  void serialize_flt(trait::flt_ auto val) noexcept {
+  void serialize_flt(num::flt_ auto val) noexcept {
     char buf[32];
     const auto s = fmt::Debug::format_flt(buf, val, 6);
     _buf.push_str(s);
@@ -76,13 +76,13 @@ struct Serializer {
   void serialize_any(const T& val) {
     if constexpr (requires { val.serialize(*this); }) {
       return val.serialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
+    } else if constexpr (same_<T, bool>) {
       return this->serialize_bool(val);
-    } else if constexpr (trait::same_<T, char>) {
+    } else if constexpr (same_<T, char>) {
       return this->serialize_char(val);
-    } else if constexpr (trait::int_<T>) {
+    } else if constexpr (num::int_<T>) {
       return this->serialize_int(val);
-    } else if constexpr (trait::flt_<T>) {
+    } else if constexpr (num::flt_<T>) {
       return this->serialize_flt(val);
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
@@ -185,7 +185,7 @@ struct Deserializer {
     return s[0];
   }
 
-  template <trait::int_ T>
+  template <num::int_ T>
   auto deserialize_int() noexcept -> Result<T> {
     const auto num_str = _TRY(this->extract_num());
     const auto num_val = num_str.template parse<T>();
@@ -195,7 +195,7 @@ struct Deserializer {
     return *num_val;
   }
 
-  template <trait::flt_ T>
+  template <num::flt_ T>
   auto deserialize_flt() -> Result<T> {
     const auto num_str = _TRY(this->extract_num());
     const auto num_val = num_str.template parse<T>();
@@ -213,13 +213,13 @@ struct Deserializer {
   auto deserialize_any() noexcept -> Result<T> {
     if constexpr (requires { T::deserialize(*this); }) {
       return T::deserialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
+    } else if constexpr (same_<T, bool>) {
       return this->deserialize_bool();
-    } else if constexpr (trait::same_<T, char>) {
+    } else if constexpr (same_<T, char>) {
       return this->deserialize_char();
-    } else if constexpr (trait::int_<T>) {
+    } else if constexpr (num::int_<T>) {
       return this->template deserialize_int<T>();
-    } else if constexpr (trait::flt_<T>) {
+    } else if constexpr (num::flt_<T>) {
       return this->template deserialize_flt<T>();
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });
@@ -263,7 +263,7 @@ struct Deserializer {
 
     template <class K>
     auto next_key() noexcept -> Result<K> {
-      static_assert(trait::same_<K, Str>, "DesObject::next_key: key type must be Str");
+      static_assert(same_<K, Str>, "DesObject::next_key: key type must be Str");
 
       if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
         return Error::ExpectedComma;

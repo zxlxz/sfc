@@ -218,7 +218,7 @@ struct Slice {
 
   // trait: io::Read
   auto read(Slice<u8> buf) noexcept -> io::Result<usize> {
-    static_assert(trait::same_<const T, const u8>);
+    static_assert(same_<const T, const u8>);
     if (_len == 0 || buf._len == 0) {
       return 0uz;
     }

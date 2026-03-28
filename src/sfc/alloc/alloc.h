@@ -28,7 +28,7 @@ struct GlobalAlloc {
 
   template <class T>
   auto realloc_array(this auto& self, T* ptr, usize len, usize new_len, usize used) -> T* {
-    if constexpr (trait::tv_copy_<T>) {
+    if constexpr (__is_trivially_copyable(T)) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));
     } else if (used == 0) {
       return static_cast<T*>(self.realloc(ptr, Layout::array<T>(len), new_len * sizeof(T)));

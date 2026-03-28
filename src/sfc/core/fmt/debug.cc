@@ -42,7 +42,7 @@ struct RevBuff {
     }
 
     // write sign
-    if constexpr (trait::sint_<decltype(val)>) {
+    if constexpr (num::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
   }
@@ -66,7 +66,7 @@ struct RevBuff {
     }
 
     // write sign
-    if constexpr (trait::sint_<decltype(val)>) {
+    if constexpr (num::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
   }

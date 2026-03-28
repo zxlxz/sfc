@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/trait.h"
+#include "sfc/core/mod.h"
 
 namespace sfc::tuple {
 
@@ -14,7 +14,7 @@ template <class I, class... T>
 struct Inner;
 
 template <auto... I, class... T>
-struct Inner<trait::idxs_t<I...>, T...> : Entry<I, T>... {
+struct Inner<idxs_t<I...>, T...> : Entry<I, T>... {
   void map(auto&& f) const {
     (void)(f(Entry<I, T>::_0), ...);
   }
@@ -26,7 +26,7 @@ struct Inner<trait::idxs_t<I...>, T...> : Entry<I, T>... {
 
 template <class... T>
 struct Tuple {
-  Inner<trait::idxs_seq_t<sizeof...(T)>, T...> _inn;
+  Inner<seq_t<sizeof...(T)>, T...> _inn;
 
  public:
   [[gnu::always_inline]] Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}

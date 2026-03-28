@@ -23,19 +23,19 @@ struct Debug {
     f.write_str(s);
   }
 
-  static void fmt(trait::uint_ auto val, auto& f) {
+  static void fmt(num::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
     const auto s = format_int(buf, val + 0, f._spec._type);
     f.pad_num(false, s);
   }
 
-  static void fmt(trait::sint_ auto val, auto& f) {
+  static void fmt(num::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
     const auto s = format_int(buf, val < 0 ? -val : val, f._spec._type);
     f.pad_num(val < 0, s);
   }
 
-  static void fmt(trait::flt_ auto val, auto& f) {
+  static void fmt(num::flt_ auto val, auto& f) {
     static constexpr auto DEFAULT_PRECISION = sizeof(val) == 4 ? 4U : 6U;
     char buf[8 * sizeof(val) + 16];
 
@@ -44,7 +44,7 @@ struct Debug {
     f.pad_num(val < 0, s);
   }
 
-  template <trait::enum_ T>
+  template <enum_ T>
   static void fmt(T val, auto& f) {
     if (const auto name = reflect::to_str(val); !name.is_empty()) {
       name.fmt(f);

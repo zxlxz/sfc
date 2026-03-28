@@ -52,7 +52,7 @@ struct Unique {
 
 template <class T>
 [[gnu::always_inline]] inline auto read(T* src) noexcept -> T {
-  if constexpr (trait::tv_copy_<T>) {
+  if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
     auto val = static_cast<T&&>(*src);
@@ -79,7 +79,7 @@ template <class T>
 
 template <class T>
 [[gnu::always_inline]] inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
-  if constexpr (!trait::tv_dtor_<T>) {
+  if constexpr (!__is_trivially_copyable(T)) {
     for (auto end = ptr + cnt; ptr != end; ++ptr) {
       ptr->~T();
     }

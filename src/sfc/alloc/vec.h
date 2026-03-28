@@ -317,7 +317,6 @@ class [[nodiscard]] Vec {
   }
 
   void extend_from_slice(Slice<const T> other) noexcept {
-    static_assert(trait::copy_<T>);
     this->reserve(other._len);
     ptr::uninit_copy(other._ptr, _buf.ptr() + _len, other._len);
     _len += other._len;
@@ -367,7 +366,7 @@ class [[nodiscard]] Vec {
 
   // trait: io::Write
   auto write(Slice<const u8> buf) -> io::Result<usize> {
-    static_assert(trait::same_<T, u8>);
+    static_assert(same_<T, u8>);
     this->extend_from_slice(buf);
     return buf.len();
   }

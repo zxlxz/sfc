@@ -35,6 +35,34 @@ using f64 = double;
 
 using cstr_t = const char*;
 
+template <class T, class U>
+concept same_ = __is_same(T, U);
+
+template <class T>
+concept enum_ = __is_enum(T);
+
+template <class T>
+concept class_ = __is_class(T);
+
+template <class T>
+concept polymorphic_ = __is_polymorphic(T);
+
+template <auto... I>
+struct idxs_t {};
+
+#if defined(__GNUC__) && !defined(__clang__)
+template <auto N>
+using idxs_seq_t = idxs_t<__integer_pack(N)...>;
+#else
+template <class, auto... I>
+struct _IntSeq {
+  using Type = idxs_t<I...>;
+};
+
+template <auto N>
+using seq_t = typename __make_integer_seq<_IntSeq, decltype(N), N>::Type;
+#endif
+
 namespace str {
 struct Str;
 }

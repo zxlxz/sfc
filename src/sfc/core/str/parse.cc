@@ -71,11 +71,11 @@ struct NumParser {
 
   template <class T>
   auto parse_num() -> Option<T> {
-    if constexpr (trait::flt_<T>) {
+    if constexpr (num::flt_<T>) {
       return this->parse_flt<T>();
-    } else if constexpr (trait::uint_<T>) {
+    } else if constexpr (num::uint_<T>) {
       return this->parse_uint<T>();
-    } else if constexpr (trait::sint_<T>) {
+    } else if constexpr (num::sint_<T>) {
       return this->parse_sint<T>();
     } else {
       static_assert(false, "NumParser::parse_num: unsupported type");

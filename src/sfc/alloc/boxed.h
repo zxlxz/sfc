@@ -57,7 +57,7 @@ class [[nodiscard]] Box {
     return mem::take(_ptr);
   }
 
-  template <trait::polymorphic_ B>
+  template <polymorphic_ B>
   auto cast() && noexcept -> Box<B> {
     const auto p = static_cast<B*>(mem::take(_ptr));
     return Box<B>::from_raw(p);

@@ -31,7 +31,7 @@ consteval Str enum_name() {
   return Str{__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__)};
 }
 
-template <trait::enum_ E, u32 I = 0, u32 N = 64>
+template <enum_ E, u32 I = 0, u32 N = 64>
 consteval auto enum_count() -> u32 {
   if constexpr (I + 1 == N) {
     return N;
@@ -47,20 +47,20 @@ consteval auto enum_count() -> u32 {
   }
 }
 
-template <trait::enum_ E, u32 N = enum_count<E>()>
+template <enum_ E, u32 N = enum_count<E>()>
 consteval auto enum_names() -> Slice<const Str> {
   if constexpr (N == 0 || !__is_scoped_enum(E)) {
     return {};
   } else {
-    static constexpr auto names = []<auto... I>(trait::idxs_t<I...>) {
+    static constexpr auto names = []<auto... I>(idxs_t<I...>) {
       static constexpr Str s[N] = {reflect::enum_name<static_cast<E>(I)>()...};
       return Slice{s};
-    }(trait::idxs_seq_t<N>());
+    }(seq_t<N>());
     return names;
   }
 }
 
-template <trait::enum_ E>
+template <enum_ E>
 constexpr auto to_str(E val) -> Str {
   static constexpr auto names = reflect::enum_names<E>();
   if (static_cast<u32>(val) >= names._len) {

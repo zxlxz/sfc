@@ -2,7 +2,6 @@
 
 #include "sfc/core/mem.h"
 #include "sfc/core/option.h"
-#include "sfc/core/trait.h"
 #include "sfc/core/tuple.h"
 
 namespace sfc::iter {
@@ -91,7 +90,7 @@ struct Iterator {
       return {};
     }
 
-    if constexpr (!trait::same_<Item, Item&>) {
+    if constexpr (!same_<Item, Item&>) {
       auto res_val = mem::move(opt).unwrap();
       while (auto x = self.next()) {
         res_val = f(res_val, *x);

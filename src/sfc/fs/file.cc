@@ -10,7 +10,6 @@
 namespace sfc::fs {
 
 File::File() noexcept : _inn{} {}
-
 File::~File() noexcept {}
 
 File::File(File&&) noexcept = default;

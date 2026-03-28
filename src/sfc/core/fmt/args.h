@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/trait.h"
+#include "sfc/core/mod.h"
 
 namespace sfc::fmt {
 
@@ -116,7 +116,6 @@ struct Fmts {
 
  public:
   consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     const auto ss = RawStr{_ptr, _len};
     auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
@@ -136,7 +135,6 @@ struct Fmts {
     if (ss.find('{', p) != ss._len) {
       throw "sfc::fmt::Fmts: too many format specs!";
     }
-#endif
   }
 };
 
@@ -147,10 +145,18 @@ struct Fmts<0> {
   consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
 };
 
+#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
+template <class... T>
+using fmts_t = RawStr;
+#else
+template <class... T>
+using fmts_t = Fmts<sizeof...(T)>;
+#endif
+
 template <class... T>
 struct Args {
   static constexpr auto N = sizeof...(T);
-  const Fmts<sizeof...(T)>& _fmts;
+  const fmts_t<T...>& _fmts;
   const void* _args[N];
 
  public:
@@ -167,14 +173,14 @@ struct Args {
 
     auto i = 0U;
     ((g(i, *static_cast<const T*>(_args[i])), i++), ...);
-#endif
     f.write_str({_fmts._ptr + _fmts._locs[N], _fmts._lens[N]});
+#endif
   }
 };
 
 template <>
 struct Args<> {
-  const Fmts<0>& _fmts;
+  const fmts_t<>& _fmts;
 
  public:
   [[gnu::always_inline]] Args(const auto& fmts) : _fmts{fmts} {}
@@ -186,9 +192,6 @@ struct Args<> {
 
 template <class... T>
 Args(const auto&, const T&...) -> Args<T...>;
-
-template <class... T>
-using fmts_t = Fmts<sizeof...(T)>;
 
 template <class... T>
 void write(auto&& out, fmts_t<T...> fmts, const T&... args);

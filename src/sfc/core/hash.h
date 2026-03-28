@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/trait.h"
+#include "sfc/core/num.h"
 
 namespace sfc::hash {
 
@@ -19,7 +19,7 @@ struct FNVHasher {
     _state *= PRIME;
   }
 
-  void write_int(trait::int_ auto val) noexcept {
+  void write_int(num::int_ auto val) noexcept {
     const auto p = reinterpret_cast<const u8*>(&val);
     for (auto i = 0U; i < sizeof(val); ++i) {
       _state ^= p[i];
