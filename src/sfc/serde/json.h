@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/serde/base64.h"
+#include "sfc/alloc/string.h"
 
 namespace sfc::serde::json {
 
@@ -72,13 +72,6 @@ struct Serializer {
     _buf.push('"');
   }
 
-  void serialize_bin(Slice<const u8> val) noexcept {
-    const auto s = base64::encode(val);
-    _buf.push('"');
-    _buf.push_str(s.as_str());
-    _buf.push('"');
-  }
-
   template <class T>
   void serialize_any(const T& val) {
     if constexpr (requires { val.serialize(*this); }) {
@@ -139,8 +132,7 @@ struct Serializer {
     }
 
     SerObject(const SerObject&) = delete;
-
-    void operator=(const SerObject&) = delete;
+    SerObject& operator=(const SerObject&) = delete;
 
     void serialize_entry(Str key, const auto& val) noexcept {
       if (_cnt++ != 0) {
@@ -243,7 +235,7 @@ struct Deserializer {
     usize _idx = 0;
 
    public:
-    auto has_next() noexcept -> bool {
+    auto next() noexcept -> bool {
       const auto next_tok = _inn.next_token();
       return next_tok != Token::ArrayEnd;
     }
@@ -264,7 +256,7 @@ struct Deserializer {
     usize _idx = 0;
 
    public:
-    auto has_next() noexcept -> bool {
+    auto next() noexcept -> bool {
       const auto next_tok = _inn.next_token();
       return next_tok != Token::ObjectEnd;
     }

@@ -384,7 +384,7 @@ class [[nodiscard]] Vec {
     auto res = Vec{};
 
     auto visit = [&](auto&& seq) -> Result<void, E> {
-      while (seq.has_next()) {
+      while (seq.next()) {
         auto item = seq.template next_element<T>();
         if (item.is_err()) {
           return ~item;

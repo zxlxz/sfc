@@ -77,7 +77,7 @@ SFC_TEST(deserialize_seq) {
       const auto val = seq.template next_element<int>();
       sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
     }
-    sfc::expect_false(seq.has_next());
+    sfc::expect_false(seq.next());
     return {};
   };
 
@@ -98,7 +98,7 @@ SFC_TEST(deserialize_map) {
       const auto val = map.template next_value<int>();
       sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
     }
-    sfc::expect_false(map.has_next());
+    sfc::expect_false(map.next());
     return {};
   };
 

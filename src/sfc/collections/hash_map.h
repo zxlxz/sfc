@@ -99,7 +99,7 @@ class HashMap {
   static auto deserialize(D& des) -> Result<HashMap, E> {
     auto res = HashMap{};
     auto visit = [&](auto& map) -> Result<void, E> {
-      while (map.has_next()) {
+      while (map.next()) {
         auto key = _TRY(map.template next_key<K>());
         auto val = _TRY(map.template next_value<V>());
         res.try_insert(key, static_cast<V&&>(val));
