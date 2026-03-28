@@ -11,19 +11,17 @@ class RawVec {
   [[no_unique_address]] A _a{};
 
  public:
-  RawVec() noexcept = default;
+  [[gnu::always_inline]] RawVec() noexcept = default;
 
-  ~RawVec() noexcept {
+  [[gnu::always_inline]] ~RawVec() noexcept {
     if (!_ptr) return;
     _a.dealloc_array(_ptr, _cap);
   }
 
-  RawVec(RawVec&& other) noexcept : _ptr{other._ptr}, _cap{other._cap}, _a{static_cast<A&&>(other._a)} {
-    other._ptr = nullptr;
-    other._cap = 0;
-  }
+  [[gnu::always_inline]] RawVec(RawVec&& other) noexcept
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
-  RawVec& operator=(RawVec&& other) noexcept {
+  [[gnu::always_inline]] RawVec& operator=(RawVec&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
@@ -32,7 +30,7 @@ class RawVec {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = A{}) noexcept -> RawVec {
+  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> RawVec {
     auto res = RawVec{};
     res._ptr = alloc.template alloc_array<T>(capacity);
     res._cap = capacity;
@@ -56,22 +54,10 @@ class RawVec {
     return _ptr[idx];
   }
 
-  void reserve(usize used, usize additional) {
-    if (used + additional <= _cap) {
-      return;
-    }
-    const auto new_cap = cmp::max(_cap * 2, used + additional);
-    this->realloc(used, new_cap);
-  }
-
-  void reserve_exact(usize used, usize additional) {
-    if (used + additional <= _cap) {
-      return;
-    }
-    this->realloc(used, used + additional);
-  }
-
   void realloc(usize used, usize new_cap) noexcept {
+    if (used > new_cap) {
+      return;
+    }
     _ptr = _a.realloc_array(_ptr, _cap, new_cap, used);
     _cap = new_cap;
   }
@@ -236,15 +222,23 @@ class [[nodiscard]] Vec {
   }
 
   void reserve(usize additional) noexcept {
-    _buf.reserve(_len, additional);
+    if (_len + additional <= _buf.cap()) {
+      return;
+    }
+
+    const auto min_cap = _len + additional;
+    const auto req_cap = cmp::max(_buf.cap() * 2, usize{8});
+    const auto new_cap = cmp::max(min_cap, req_cap);
+    _buf.realloc(_len, new_cap);
   }
 
   void reserve_exact(usize additional) noexcept {
-    _buf.reserve_exact(_len, additional);
+    const auto new_cap = _len + additional;
+    _buf.realloc(_len, new_cap);
   }
 
   void shrink_to(usize min_cap) noexcept {
-    if (min_cap < _len || min_cap >= _buf.cap()) {
+    if (min_cap >= _buf.cap()) {
       return;
     }
     _buf.realloc(_len, min_cap);
