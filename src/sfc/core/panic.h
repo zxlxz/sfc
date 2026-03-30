@@ -89,11 +89,12 @@ void expect_flt_ne(auto a, auto b, u32 ulp = 4, SourceLoc loc = SourceLoc::curre
 
 namespace sfc {
 using panic::expect;
-using panic::expect_false;
 using panic::expect_true;
+using panic::expect_false;
 
 using panic::expect_eq;
+using panic::expect_ne;
+
 using panic::expect_flt_eq;
 using panic::expect_flt_ne;
-using panic::expect_ne;
 }  // namespace sfc

@@ -31,3 +31,4 @@ PenaltyBreakAssignment: 19
 
 # Sort
 SortIncludes: false
+SortUsingDeclarations: false
