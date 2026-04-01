@@ -4,6 +4,17 @@
 
 namespace sfc::mem {
 
+struct Layout {
+  usize size{0};
+  usize align{1};
+
+ public:
+  template <class T>
+  [[gnu::always_inline]] static auto array(usize n) noexcept -> Layout {
+    return {n * sizeof(T), alignof(T)};
+  }
+};
+
 template <class T>
 [[gnu::always_inline]] inline void forget(T& x) noexcept {
   alignas(T) char tmp[sizeof(T)];

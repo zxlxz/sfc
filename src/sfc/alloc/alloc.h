@@ -4,16 +4,7 @@
 
 namespace sfc::alloc {
 
-struct Layout {
-  usize size{0};
-  usize align{1};
-
- public:
-  template <class T>
-  [[gnu::always_inline]] static auto array(usize n) noexcept -> Layout {
-    return Layout{n * sizeof(T), alignof(T)};
-  }
-};
+using mem::Layout;
 
 struct GlobalAlloc {
   template <class T>
