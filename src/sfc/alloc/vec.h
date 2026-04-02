@@ -15,7 +15,9 @@ class RawVec {
 
   [[gnu::always_inline]] ~RawVec() noexcept {
     if (!_ptr) return;
-    _a.dealloc_array(_ptr, _cap);
+
+    const auto layout = alloc::Layout::template array<T>(_cap);
+    _a.dealloc(_ptr, layout);
   }
 
   [[gnu::always_inline]] RawVec(RawVec&& other) noexcept
@@ -31,8 +33,10 @@ class RawVec {
   }
 
   static auto with_capacity(usize capacity, A alloc = {}) noexcept -> RawVec {
+    const auto layout = alloc::Layout::template array<T>(capacity);
+
     auto res = RawVec{};
-    res._ptr = alloc.template alloc_array<T>(capacity);
+    res._ptr = static_cast<T*>(alloc.alloc(layout));
     res._cap = capacity;
     res._a = alloc;
     return res;
@@ -58,7 +62,17 @@ class RawVec {
     if (used > new_cap) {
       return;
     }
-    _ptr = _a.realloc_array(_ptr, _cap, new_cap, used);
+
+    const auto old_ptr = _ptr;
+    const auto old_layout = alloc::Layout::template array<T>(_cap);
+    const auto new_layout = alloc::Layout::template array<T>(new_cap);
+    if (__is_trivially_copyable(T) || used == 0) {
+      _ptr = static_cast<T*>(_a.realloc(old_ptr, old_layout, new_cap * sizeof(T)));
+    } else {
+      _ptr = static_cast<T*>(_a.alloc(new_layout));
+      ptr::uninit_move(old_ptr, _ptr, used);
+      _a.dealloc(old_ptr, old_layout);
+    }
     _cap = new_cap;
   }
 };
