@@ -58,6 +58,10 @@ class RawVec {
     return _ptr[idx];
   }
 
+  auto allocator() -> A& {
+    return _a;
+  }
+
   void realloc(usize used, usize new_cap) noexcept {
     if (used > new_cap) {
       return;
