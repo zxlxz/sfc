@@ -83,7 +83,7 @@ struct Spec {
       res._align = parser.extract('<', '>', '=', '^');
     }
 
-    res._sign = parser.extract('+', '-', ' ');
+    res._sign = parser.extract('+', '-');
     res._prefix = parser.extract('#');
     if (!res._fill) {
       res._fill = parser.extract('0');
@@ -106,7 +106,7 @@ struct Spec {
   }
 };
 
-template <usize N>
+template <u32 N>
 struct Fmts {
   const char* _ptr;
   usize _len;
@@ -131,7 +131,7 @@ struct Fmts {
       p = b + 1;
     }
     _locs[N] = p;
-    _lens[N] = ss._len - p;
+    _lens[N] = static_cast<u32>(ss._len - p);
     if (ss.find('{', p) != ss._len) {
       throw "sfc::fmt::Fmts: too many format specs!";
     }

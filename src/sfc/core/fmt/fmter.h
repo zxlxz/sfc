@@ -87,7 +87,6 @@ struct Fmter {
       switch (sign) {
         case '+': return Str{"+"};
         case '-': return Str{" "};
-        case ' ': return Str{" "};
         default:  return Str{""};
       }
     };
@@ -358,8 +357,10 @@ struct FixedBuf {
   }
 
   [[gnu::always_inline]] void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > CAPACITY) return;
-    __builtin_memcpy(_buf + _len, s._ptr, s._len);
+    if (s._len == 0 || _len + s._len > CAPACITY) {
+      return;
+    }
+    ptr::copy_nonoverlapping(reinterpret_cast<const u8*>(s._ptr), _buf + _len, s._len);
     _len += s._len;
   }
 };
