@@ -15,11 +15,13 @@ struct Iter : iter::Iterator<T&> {
   }
 
   auto next() noexcept -> Option<T&> {
-    return _iter1.next() ?: _iter2.next();
+    if (auto t = _iter1.next()) return t;
+    return _iter2.next();
   }
 
   auto next_back() noexcept -> Option<T> {
-    return _iter2.next_back() ?: _iter1.next_back();
+    if (auto t = _iter1.next_back()) return t;
+    return _iter2.next_back();
   }
 };
 

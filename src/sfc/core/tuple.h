@@ -4,116 +4,63 @@
 
 namespace sfc::tuple {
 
-template <usize I, class T>
-struct Entry {
-  using Type = T;
-  T _0;
-};
-
-template <class I, class... T>
-struct Inner;
-
-template <auto... I, class... T>
-struct Inner<idxs_t<I...>, T...> : Entry<I, T>... {
-  void map(auto&& f) const {
-    (void)(f(Entry<I, T>::_0), ...);
-  }
-
-  void map_mut(auto&& f) {
-    (void)(f(Entry<I, T>::_0), ...);
-  }
-};
-
 template <class... T>
-struct Tuple {
-  Inner<seq_t<sizeof...(T)>, T...> _inn;
+struct Tuple;
 
- public:
-  [[gnu::always_inline]] Tuple(T... args) : _inn{{static_cast<T&&>(args)}...} {}
-  [[gnu::always_inline]] ~Tuple() = default;
-
-  template <usize I>
-  using element_t = T...[I];
-
-  template <usize I>
-  using entry_t = Entry<I, element_t<I>>;
-
-  template <usize I>
-  [[gnu::always_inline]] auto get() const {
-    return _inn.entry_t<I>::_0;
-  }
-
-  template <usize I>
-  [[gnu::always_inline]] auto get() {
-    return _inn.entry_t<I>::_0;
-  }
-
-  template <usize I>
-  [[gnu::always_inline]] auto get_mut() {
-    return _inn.entry_t<I>::_0;
-  }
-
-  void map(auto&& f) const {
-    return _inn.map(f);
-  }
-
-  void map_mut(auto&& f) {
-    _inn.map_mut(f);
-  }
-
- public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    auto x = f.debug_tuple();
-    _inn.map([&](const auto& e) { x.entry(e); });
-  }
-
-  // trait: serde::Serialize
-  void serialize(auto& ser) const {
-    auto imp = ser.serialize_tuple();
-    this->map([&](const auto& e) { imp.serialize_element(e); });
-    imp.end();
-  }
-};
+void map(auto& self, auto&& f) {
+  if constexpr (requires { self._0; }) f(self._0);
+  if constexpr (requires { self._1; }) f(self._1);
+  if constexpr (requires { self._2; }) f(self._2);
+  if constexpr (requires { self._3; }) f(self._3);
+  if constexpr (requires { self._4; }) f(self._4);
+  if constexpr (requires { self._5; }) f(self._5);
+  if constexpr (requires { self._6; }) f(self._6);
+  if constexpr (requires { self._7; }) f(self._7);
+  if constexpr (requires { self._8; }) f(self._8);
+  if constexpr (requires { self._9; }) f(self._9);
+}
 
 template <>
 struct Tuple<> {};
 
+template <class A>
+struct Tuple<A> {
+  A _0;
+
+ public:
+  void map(auto&& f) const {
+    tuple::map(*this, f);
+  }
+};
+
+template <class A, class B>
+struct Tuple<A, B> {
+  A _0;
+  B _1;
+
+ public:
+  void map(auto&& f) const {
+    tuple::map(*this, f);
+  }
+};
+
+template <class A, class B, class C>
+struct Tuple<A, B, C> {
+  A _0;
+  B _1;
+  C _2;
+
+ public:
+  void map(auto&& f) const {
+    tuple::map(*this, f);
+  }
+};
+
 template <class... T>
-Tuple(T...) -> Tuple<T...>;
+Tuple(const T&...) -> Tuple<T...>;
 
 }  // namespace sfc::tuple
 
 namespace sfc {
 using tuple::Tuple;
 }  // namespace sfc
-
-namespace std {
-
-template <class>
-struct tuple_size;
-
-template <class... T>
-struct tuple_size<sfc::Tuple<T...>> {
-  static constexpr auto value = sizeof...(T);
-};
-
-template <class... T>
-struct tuple_size<const sfc::Tuple<T...>> {
-  static constexpr auto value = sizeof...(T);
-};
-
-template <sfc::usize, class>
-struct tuple_element;
-
-template <sfc::usize I, class... T>
-struct tuple_element<I, sfc::Tuple<T...>> {
-  using type = sfc::Tuple<T...>::template element_t<I>;
-};
-
-template <sfc::usize I, class... T>
-struct tuple_element<I, const sfc::Tuple<T...>> {
-  using type = const sfc::Tuple<T...>::template element_t<I>;
-};
-
-}  // namespace std
