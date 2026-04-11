@@ -5,122 +5,76 @@
 
 namespace sfc::variant {
 
-template <u32 I>
-struct tag_t {};
-
 template <class... T>
 union Inner;
 
-template <class T>
-union Inner<T> {
-  T _0;
+// clang-format off
+template<>
+union Inner<> { };
+
+template <class A>
+union Inner<A>{ A _0; };
+
+template <class A, class B>
+union Inner<A,B>{ A _0; B _1;};
+
+template <class A, class B, class C>
+union Inner<A,B,C> { A _0; B _1; C _2; };
+
+template <class A, class B, class C, class D>
+union Inner<A,B,C,D> { A _0; B _1; C _2; D _3; };
+
+template <class A, class B, class C, class D, class E>
+union Inner<A,B,C,D,E> { A _0; B _1; C _2; D _3; E _4; };
+
+template <class A, class B, class C, class D, class E, class F>
+union Inner<A,B,C,D,E,F> { A _0; B _1; C _2; D _3; E _4; F _5; };
+
+template <class A, class B, class C, class D, class E, class F, class G>
+union Inner<A,B,C,D,E,F,G> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H>
+union Inner<A,B,C,D,E,F,G,H> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I>
+union Inner<A,B,C,D,E,F,G,H,I> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J>
+union Inner<A,B,C,D,E,F,G,H,I,J> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; };
+// clang-format on
+
+template <u32 I>
+struct Tag {
+  static constexpr u32 VALUE = I;
 
  public:
-  template <u32 I, class... U>
-  Inner(tag_t<I>, U&&... u) noexcept : _0{static_cast<U&&>(u)...} {}
-
-  Inner(u32 tag, Inner&& other) noexcept {
-    if (tag == 0) {
-      ptr::write(&_0, mem::move(other._0));
-    }
-  }
-
-  Inner(u32 tag, const Inner& other) noexcept {
-    if (tag == 0) {
-      ptr::write(&_0, other._0);
-    }
-  }
-
-  ~Inner() noexcept {}
-
-  template <class U>
-  static constexpr auto tag() -> u32 {
-    return same_<T, U> ? 0U : 1U;
-  }
-
-  template <class U>
-  auto as() const -> const U& {
-    return _0;
-  }
-
-  template <class U>
-  auto as_mut() -> U& {
-    return _0;
-  }
-
-  auto map([[maybe_unused]] u32 tag, auto&& f) const {
-    return f(_0);
-  }
-
-  auto map_mut([[maybe_unused]] u32 tag, auto&& f) {
-    return f(_0);
+  auto operator[](auto&& inn) const noexcept -> auto& {
+    if constexpr (I == 0) return inn._0;
+    if constexpr (I == 1) return inn._1;
+    if constexpr (I == 2) return inn._2;
+    if constexpr (I == 3) return inn._3;
+    if constexpr (I == 4) return inn._4;
+    if constexpr (I == 5) return inn._5;
+    if constexpr (I == 6) return inn._6;
+    if constexpr (I == 7) return inn._7;
+    if constexpr (I == 8) return inn._8;
+    if constexpr (I == 9) return inn._9;
   }
 };
 
-template <class T0, class... Ts>
-union Inner<T0, Ts...> {
-  T0 _0;
-  Inner<Ts...> _1;
-
- public:
-  template <class... U>
-  Inner(tag_t<0>, U&&... u) : _0{static_cast<U&&>(u)...} {}
-
-  template <u32 I, class... U>
-  Inner(tag_t<I>, U&&... u) : _1{tag_t<I - 1>{}, static_cast<U&&>(u)...} {}
-
-  Inner(u32 tag, Inner&& other) : _1{tag - 1, mem::move(other._1)} {
-    if (tag == 0) {
-      ptr::write(&_0, mem::move(other._0));
-    }
+template <class U, class T, class... S>
+constexpr auto type_idx() -> u32 {
+  if constexpr (sfc::same_<const U&, const T&>) {
+    return 0;
+  } else {
+    static_assert(sizeof...(S) != 0);
+    return 1 + type_idx<U, S...>();
   }
-
-  Inner(u32 tag, const Inner& other) : _1{tag - 1, other._1} {
-    if (tag == 0) {
-      ptr::write(&_0, other._0);
-    }
-  }
-
-  ~Inner() noexcept {}
-
-  template <class U>
-  static constexpr auto tag() -> u32 {
-    if constexpr (same_<T0, U>) {
-      return 0;
-    } else {
-      return Inner<Ts...>::template tag<U>() + 1;
-    }
-  }
-
-  template <class U>
-  auto as() const -> const U& {
-    if constexpr (same_<T0, U>) {
-      return _0;
-    } else {
-      return _1.template as<U>();
-    }
-  }
-
-  template <class U>
-  auto as_mut() -> U& {
-    if constexpr (same_<T0, U>) {
-      return _0;
-    } else {
-      return _1.template as_mut<U>();
-    }
-  }
-
-  auto map(u32 tag, auto&& f) const {
-    return tag == 0 ? f(_0) : _1.map(tag - 1, f);
-  }
-
-  auto map_mut(u32 tag, auto&& f) {
-    return tag == 0 ? f(_0) : _1.map_mut(tag - 1, f);
-  }
-};
+}
 
 template <class... T>
 class Variant {
+  static constexpr u32 N = sizeof...(T);
   using Inn = Inner<T...>;
 
   u8 _tag;
@@ -128,73 +82,95 @@ class Variant {
 
  public:
   template <u32 I, class... U>
-  Variant(tag_t<I>, U&&... u) : _tag{I}, _inn{tag_t<I>{}, static_cast<U&&>(u)...} {
-    static_assert(I < sizeof...(T), "variant::Variant: invalid tag");
+  Variant(Tag<I> tag, U&&... u) : _tag{I}, _inn{} {
+    ptr::write(&tag[_inn], static_cast<U&&>(u)...);
   }
 
-  template <class U, u32 I = Inn::template tag<U>()>
-  Variant(U val) : _tag{I}, _inn{tag_t<I>{}, mem::move(val)} {
-    static_assert(I < sizeof...(T), "variant::Variant: invalid type");
-  }
+  template <class U>
+  Variant(U val) noexcept : Variant{Tag<type_idx<U, T...>()>{}, static_cast<U&&>(val)} {}
 
   ~Variant() {
-    _inn.map(_tag, [](auto& x) { mem::drop(x); });
+    this->map_mut([&](auto& x) { mem::drop(x); });
   }
 
-  Variant(Variant&& other) noexcept : _tag{other._tag}, _inn{_tag, mem::move(other._inn)} {}
+  Variant(Variant&& other) noexcept : _tag{other._tag} {
+    this->imap([&](auto tag) { tag[_inn] = mem::move(other[tag]); });
+  }
 
-  Variant(const Variant& other) : _tag{other._tag}, _inn{other._tag, other._inn} {}
+  Variant(const Variant& other) : _tag{other._tag} {
+    this->imap([&](auto tag) { tag[_inn] = other[tag]; });
+  }
 
   Variant& operator=(Variant&& other) noexcept {
     if (this != &other) {
-      _inn.map_mut(_tag, [](auto& x) { mem::drop(x); });
-      _inn.map_mut(other._tag, [&]<class U>(U& x) { ptr::write(&x, mem::move(other._inn.template as_mut<U>())); });
+      this->map_mut([&](auto& y) { mem::drop(y); });
       _tag = other._tag;
+      this->imap([&](auto tag) { tag[_inn] = mem::move(other[tag]); });
     }
     return *this;
   }
 
   Variant& operator=(const Variant& other) {
-    if (this == &other) {
-      return *this;
+    if (this != &other) {
+      this->map_mut([&](auto& y) { mem::drop(y); });
+      _tag = other._tag;
+      this->imap([&](auto tag) { tag[_inn] = other[tag]; });
     }
-    _inn.map_mut(_tag, [](auto& x) { mem::drop(x); });
-    _tag = other._tag;
-    _inn = {other._tag, other._inn};
     return *this;
   }
 
   template <class U>
   auto is() const noexcept -> bool {
-    return _tag == _inn.template tag<U>();
+    static constexpr auto IDX = type_idx<U, T...>();
+    return _tag == IDX;
   }
 
   template <class U>
-  auto as() const noexcept -> option::Option<const U&> {
-    if (_tag != _inn.template tag<U>()) {
+  auto as() const noexcept -> Option<const U&> {
+    static constexpr auto tag = Tag<type_idx<U, T...>()>{};
+    if (_tag != tag.VALUE) {
       return {};
     }
-    return _inn.template as<U>();
+    return tag[_inn];
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
-    if (_tag != _inn.template tag<U>()) {
+    static constexpr auto tag = Tag<type_idx<U, T...>()>{};
+    if (_tag != tag.VALUE) {
       return {};
     }
-    return _inn.template as_mut<U>();
+    return tag[_inn];
+  }
+
+ public:
+  void imap(auto&& f) const {
+    switch (_tag) {
+        // clang-format off
+      case 0: if constexpr (N > 0) f(Tag<0>{}); break;
+      case 1: if constexpr (N > 1) f(Tag<1>{}); break;
+      case 2: if constexpr (N > 2) f(Tag<2>{}); break;
+      case 3: if constexpr (N > 3) f(Tag<3>{}); break;
+      case 4: if constexpr (N > 4) f(Tag<4>{}); break;
+      case 5: if constexpr (N > 5) f(Tag<5>{}); break;
+      case 6: if constexpr (N > 6) f(Tag<6>{}); break;
+      case 7: if constexpr (N > 7) f(Tag<7>{}); break;
+      case 8: if constexpr (N > 8) f(Tag<8>{}); break;
+      case 9: if constexpr (N > 9) f(Tag<9>{}); break;
+        // clang-format on
+    }
   }
 
   void map(auto&& f) const {
-    return _inn.map(_tag, f);
+    this->imap([&](auto tag) { f(tag[_inn]); });
   }
 
   void map_mut(auto&& f) {
-    return _inn.map_mut(_tag, f);
+    this->imap([&](auto tag) { f(tag[_inn]); });
   }
 
   void fmt(auto& f) const {
-    _inn.map(_tag, [&](const auto& val) { f.write_val(val); });
+    this->imap([&](auto tag) { f.write_val(tag[_inn]); });
   }
 };
 
