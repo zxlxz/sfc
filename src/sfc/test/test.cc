@@ -22,11 +22,11 @@ static auto unpack_pat(Str pat) -> Tuple<Str, Str> {
 }
 
 auto Test::suite() const -> Str {
-  return unpack_type(_type).get<0>();
+  return unpack_type(_type)._0;
 }
 
 auto Test::name() const -> Str {
-  return unpack_type(_type).get<1>();
+  return unpack_type(_type)._1;
 }
 
 auto Test::match(Str pat) const -> bool {

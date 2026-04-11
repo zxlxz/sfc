@@ -5,9 +5,9 @@ namespace sfc::tuple::test {
 
 SFC_TEST(tuple_get) {
   const auto t = Tuple{1, 2.0, Str{"abc"}};
-  sfc::expect_eq(t.get<0>(), 1);
-  sfc::expect_eq(t.get<1>(), 2.0);
-  sfc::expect_eq(t.get<2>(), Str{"abc"});
+  sfc::expect_eq(t._0, 1);
+  sfc::expect_eq(t._1, 2.0);
+  sfc::expect_eq(t._2, Str{"abc"});
 }
 
 SFC_TEST(tuple_unbind) {

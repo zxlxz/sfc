@@ -26,12 +26,14 @@ struct Bool {
 
 struct Buffer {
   static constexpr auto BUF_LEN = 1024U;
-  u8 _buf[BUF_LEN];
+  char _buf[BUF_LEN];
   usize _len;
 
   void write_str(auto s) {
-    if (s._len == 0 || _len + s._len > BUF_LEN) return;
-    __builtin_memcpy(_buf + _len, s._ptr, s._len);
+    if (s._len == 0 || _len + s._len > BUF_LEN) {
+      return;
+    }
+    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
     _len += s._len;
   }
 };
