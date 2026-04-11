@@ -73,14 +73,17 @@ consteval auto enum_count() -> u32 {
 
 template <enum_ T>
 constexpr auto enum_name(T val) -> Str {
-  static constexpr i64 N = reflect::enum_count<T>();
-  static constexpr auto names = []<auto... I>(idxs_t<I...>) {
+  static constexpr auto N = reflect::enum_count<T>();
+  static constexpr auto& names = []<auto... I>(idxs_t<I...>) -> auto& {
     static constexpr Str s[] = {reflect::value_name<static_cast<T>(I)>()..., {}};
-    return Slice{s, N};
+    return s;
   }(seq_t<N>());
 
-  const auto idx = static_cast<i64>(val);
-  return idx < N ? names[idx] : Str{};
+  if (__is_scoped_enum(T)) {
+    const auto idx = static_cast<u32>(val);
+    return idx < N ? names[idx] : Str{};
+  }
+  return {};
 }
 
 }  // namespace sfc::reflect
