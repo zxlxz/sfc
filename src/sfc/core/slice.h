@@ -220,7 +220,7 @@ struct Slice {
   auto read(Slice<u8> buf) noexcept -> io::Result<usize> {
     static_assert(same_<const T, const u8>);
     if (_len == 0 || buf._len == 0) {
-      return 0uz;
+      return usize{0};
     }
     const auto amt = _len < buf._len ? _len : buf._len;
     ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);

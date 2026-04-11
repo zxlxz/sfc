@@ -35,7 +35,7 @@ struct Debug {
     f.pad_num(val < 0, s);
   }
 
-  static void fmt(num::flt_ auto val, auto& f) {
+  static void fmt(num::float_ auto val, auto& f) {
     static constexpr auto DEFAULT_PRECISION = sizeof(val) == 4 ? 4U : 6U;
     char buf[8 * sizeof(val) + 16];
 

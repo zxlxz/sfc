@@ -60,7 +60,7 @@ struct Serializer {
     _buf.push_str(s);
   }
 
-  void serialize_flt(num::flt_ auto val) noexcept {
+  void serialize_flt(num::float_ auto val) noexcept {
     char buf[32];
     const auto s = fmt::Debug::format_flt(buf, val, 6);
     _buf.push_str(s);
@@ -82,7 +82,7 @@ struct Serializer {
       return this->serialize_char(val);
     } else if constexpr (num::int_<T>) {
       return this->serialize_int(val);
-    } else if constexpr (num::flt_<T>) {
+    } else if constexpr (num::float_<T>) {
       return this->serialize_flt(val);
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
@@ -195,7 +195,7 @@ struct Deserializer {
     return *num_val;
   }
 
-  template <num::flt_ T>
+  template <num::float_ T>
   auto deserialize_flt() -> Result<T> {
     const auto num_str = _TRY(this->extract_num());
     const auto num_val = num_str.template parse<T>();
@@ -219,7 +219,7 @@ struct Deserializer {
       return this->deserialize_char();
     } else if constexpr (num::int_<T>) {
       return this->template deserialize_int<T>();
-    } else if constexpr (num::flt_<T>) {
+    } else if constexpr (num::float_<T>) {
       return this->template deserialize_flt<T>();
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });

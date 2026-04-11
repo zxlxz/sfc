@@ -72,8 +72,9 @@ struct Searcher {
 struct CharSearcher : Searcher {
   char _needle;
   u32 _finger = 0;
-  u32 _finger_back = _haystack._len;
+  u32 _finger_back = static_cast<u32>(_haystack._len);
 
+ public:
   auto next() -> SearchStep {
     if (_finger >= _haystack._len) {
       return {SearchStep::Done, 0, 0};
@@ -107,8 +108,9 @@ template <class F>
 struct CharPredicateSearcher : Searcher {
   F& _match;
   u32 _finger = 0;
-  u32 _finger_back = _haystack._len;
+  u32 _finger_back = static_cast<u32>(_haystack._len);
 
+ public:
   auto next() -> SearchStep {
     if (_finger >= _haystack._len) {
       return {SearchStep::Done, 0, 0};
@@ -139,7 +141,7 @@ struct CharPredicateSearcher : Searcher {
 struct StrSearcher : Searcher {
   Str _needle;
   u32 _finger = 0;
-  u32 _finger_back = _haystack._len;
+  u32 _finger_back = static_cast<u32>(_haystack._len);
 
   auto match() const -> bool {
     if (_needle._len == 0) return true;
@@ -170,7 +172,7 @@ struct StrSearcher : Searcher {
       if (_finger + _needle._len < _haystack._len) {
         _finger += 1;
       } else {
-        _finger = _haystack._len;
+        _finger = static_cast<u32>(_haystack._len);
       }
       return {SearchStep::Reject, old_finger, _finger};
     }

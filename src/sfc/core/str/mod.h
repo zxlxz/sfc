@@ -7,6 +7,8 @@
 
 namespace sfc::str {
 
+struct Chars;
+
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -77,7 +79,7 @@ struct Str {
     return Iter{{}, _ptr, _ptr + _len};
   }
 
-  auto chars() const noexcept -> struct Chars;
+  auto chars() const noexcept -> Chars;
 
  public:
   auto find(auto&& pat) const -> Option<usize>;

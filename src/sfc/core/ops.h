@@ -22,17 +22,16 @@ struct Invoke<F(T...)> {
 template <class X>
 using invoke_t = Invoke<X>::Output;
 
-struct End {
-  consteval operator usize() const noexcept {
-    return static_cast<usize>(-1);
-  }
-};
+struct End {};
 
 static constexpr auto $ = End{};
 
 struct Range {
-  usize start = 0;
-  usize end = usize{$};
+  usize start;
+  usize end;
+
+  Range(usize start, usize end) : start{start}, end{end} {}
+  Range(usize start, End) : start{start}, end{usize(-1)} {}
 };
 
 }  // namespace sfc::ops

@@ -15,11 +15,11 @@ template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept flt_ = same_<T, float> || same_<T, double>;
+concept float_ = same_<T, float> || same_<T, double>;
 
 template <int_ T>
 static constexpr auto max_value() -> T {
-  static constexpr auto SHIFT = sizeof(T) * 8 - 1;
+  constexpr auto SHIFT = sizeof(T) * 8 - 1;
   if constexpr (uint_<T>) {
     return static_cast<T>(~T{0});
   } else {
@@ -29,7 +29,7 @@ static constexpr auto max_value() -> T {
 
 template <int_ T>
 static constexpr auto min_value() -> T {
-  static constexpr auto SHIFT = sizeof(T) * 8 - 1;
+  constexpr auto SHIFT = sizeof(T) * 8 - 1;
   if constexpr (uint_<T>) {
     return 0;
   } else {
@@ -44,8 +44,11 @@ constexpr auto abs(T val) -> T {
 
 template <uint_ T>
 constexpr auto ctlz(T val) -> u32 {
-  static constexpr auto EXT_CNT = (sizeof(u64) - sizeof(T)) * 8;
-  if (val == 0) return sizeof(T) * 8;
+  constexpr auto EXT_CNT = (sizeof(u64) - sizeof(T)) * 8;
+
+  if (val == 0) {
+    return sizeof(T) * 8;
+  }
   return static_cast<u32>(__builtin_clzll(val) - EXT_CNT);
 }
 

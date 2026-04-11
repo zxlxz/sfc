@@ -71,7 +71,7 @@ struct NumParser {
 
   template <class T>
   auto parse_num() -> Option<T> {
-    if constexpr (num::flt_<T>) {
+    if constexpr (num::float_<T>) {
       return this->parse_flt<T>();
     } else if constexpr (num::uint_<T>) {
       return this->parse_uint<T>();
