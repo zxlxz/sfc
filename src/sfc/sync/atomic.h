@@ -5,12 +5,12 @@
 namespace sfc::sync {
 
 enum class Ordering {
-  Relaxed = __ATOMIC_RELAXED,
-  Consume = __ATOMIC_CONSUME,
-  Acquire = __ATOMIC_ACQUIRE,
-  Release = __ATOMIC_RELEASE,
-  AcqRel = __ATOMIC_ACQ_REL,
-  SeqCst = __ATOMIC_SEQ_CST,
+  Relaxed,
+  Consume,
+  Acquire,
+  Release,
+  AcqRel,
+  SeqCst,
 };
 
 template <class T>
