@@ -28,18 +28,18 @@ consteval Str type_name() {
 }
 
 template <auto X>
-consteval Str enum_name() {
+consteval Str value_name() {
 #if defined(__clang__) || defined(__GNUC__)
-  // str::Str sfc::reflect::enum_name() [with X = $]
+  // str::Str sfc::reflect::value_name() [with X = $]
   static constexpr auto P = __PRETTY_FUNCTION__;
   static constexpr auto N = sizeof(__PRETTY_FUNCTION__) - 1;
-  static constexpr auto A = sizeof("str::Str sfc::reflect::enum_name() [with X = ") - 1;
+  static constexpr auto A = sizeof("str::Str sfc::reflect::value_name() [with X = ") - 1;
   static constexpr auto E = sizeof("]") - 1;
 #else
-  // struct sfc::str::Str __cdecl sfc::reflect::enum_name<$>(void)
+  // struct sfc::str::Str __cdecl sfc::reflect::value_name<$>(void)
   static constexpr auto P = __FUNCSIG__;
   static constexpr auto N = sizeof(__FUNCSIG__) - 1;
-  static constexpr auto A = sizeof("struct sfc::str::Str __cdecl sfc::reflect::enum_name<") - 1;
+  static constexpr auto A = sizeof("struct sfc::str::Str __cdecl sfc::reflect::value_name<") - 1;
   static constexpr auto E = sizeof(">(void)") - 1;
 #endif
   for (auto I = N - E; I != A; --I) {
@@ -48,42 +48,39 @@ consteval Str enum_name() {
   return {P + A, N - A - E};
 }
 
-template <enum_ E, u32 I = 0, u32 N = 64>
+template <enum_ T, u32 I>
+consteval auto enum_valid() -> bool {
+  if constexpr (!__is_scoped_enum(T)) {
+    return false;
+  } else if constexpr (requires { static_cast<T>(I); }) {
+    static constexpr auto E = static_cast<T>(I);
+    return reflect::value_name<E>()._len != 0;
+  }
+  return false;
+}
+
+template <enum_ T, u32 I = 0, u32 N = 64>
 consteval auto enum_count() -> u32 {
   if constexpr (I + 1 == N) {
     return N;
-  } else if constexpr (requires { reflect::enum_name<static_cast<E>(I)>(); }) {
-    static constexpr auto name = reflect::enum_name<static_cast<E>(I)>();
-    if constexpr (name._len == 0) {
-      return reflect::enum_count<E, I, I + (N - I) / 2>();
-    } else {
-      return reflect::enum_count<E, I + (N - I) / 2, N>();
-    }
+  }
+  if constexpr (reflect::enum_valid<T, I + (N - I) / 2>()) {
+    return reflect::enum_count<T, I + (N - I) / 2, N>();
   } else {
-    return 0;
+    return reflect::enum_count<T, I, I + (N - I) / 2>();
   }
 }
 
-template <enum_ E, u32 N = enum_count<E>()>
-consteval auto enum_names() -> Slice<const Str> {
-  if constexpr (N == 0) {
-    return {};
-  } else {
-    static constexpr auto names = []<auto... I>(idxs_t<I...>) {
-      static constexpr Str s[N] = {reflect::enum_name<static_cast<E>(I)>()...};
-      return Slice{s};
-    }(seq_t<N>());
-    return names;
-  }
-}
+template <enum_ T>
+constexpr auto enum_name(T val) -> Str {
+  static constexpr i64 N = reflect::enum_count<T>();
+  static constexpr auto names = []<auto... I>(idxs_t<I...>) {
+    static constexpr Str s[] = {reflect::value_name<static_cast<T>(I)>()..., {}};
+    return Slice{s, N};
+  }(seq_t<N>());
 
-template <enum_ E>
-constexpr auto to_str(E val) -> Str {
-  static constexpr auto names = reflect::enum_names<E>();
-  if (static_cast<u32>(val) >= names._len) {
-    return {};
-  }
-  return names[static_cast<u32>(val)];
+  const auto idx = static_cast<i64>(val);
+  return idx < N ? names[idx] : Str{};
 }
 
 }  // namespace sfc::reflect

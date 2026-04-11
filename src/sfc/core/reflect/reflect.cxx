@@ -11,9 +11,9 @@ static void test_name() {
 
 enum class E { A, B, C };
 static void test_enum() {
-  static_assert(reflect::enum_name<E::A>() == "A");
-  static_assert(reflect::enum_name<E::B>() == "B");
-  static_assert(reflect::enum_name<E::C>() == "C");
+  static_assert(reflect::value_name<E::A>() == "A");
+  static_assert(reflect::value_name<E::B>() == "B");
+  static_assert(reflect::value_name<E::C>() == "C");
 }
 
 }  // namespace sfc::reflect::test

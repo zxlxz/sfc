@@ -44,13 +44,12 @@ struct Debug {
     f.pad_num(val < 0, s);
   }
 
-  template <enum_ T>
-  static void fmt(T val, auto& f) {
-    if (const auto name = reflect::to_str(val); !name.is_empty()) {
-      name.fmt(f);
+  static void fmt(enum_ auto val, auto& f) {
+    const auto s = reflect::enum_name(val);
+    if (!s.is_empty()) {
+      f.pad(s);
     } else {
-      using E = decltype(val);
-      f.write_fmt("{}({})", reflect::type_name<E>(), static_cast<int>(val));
+      f.write_fmt("{}({})", reflect::type_name<decltype(val)>(), static_cast<i64>(val));
     }
   }
 
