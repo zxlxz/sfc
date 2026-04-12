@@ -60,7 +60,7 @@ concept same_ = same_t<T, U>::value;
 template <auto... I>
 struct idxs_t {};
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
 template <auto N>
 using seq_t = idxs_t<__integer_pack(N)...>;
 #else

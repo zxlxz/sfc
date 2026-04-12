@@ -94,18 +94,18 @@ class Variant {
   }
 
   Variant(Variant&& other) noexcept : _tag{other._tag} {
-    this->imap([&](auto tag) { tag[_inn] = mem::move(other[tag]); });
+    this->imap([&](auto tag) { tag[_inn] = mem::move(tag[other._inn]); });
   }
 
   Variant(const Variant& other) : _tag{other._tag} {
-    this->imap([&](auto tag) { tag[_inn] = other[tag]; });
+    this->imap([&](auto tag) { tag[_inn] = tag[other._inn]; });
   }
 
   Variant& operator=(Variant&& other) noexcept {
     if (this != &other) {
       this->map_mut([&](auto& y) { mem::drop(y); });
       _tag = other._tag;
-      this->imap([&](auto tag) { tag[_inn] = mem::move(other[tag]); });
+      this->imap([&](auto tag) { tag[_inn] = mem::move(tag[other._inn]); });
     }
     return *this;
   }
@@ -114,7 +114,7 @@ class Variant {
     if (this != &other) {
       this->map_mut([&](auto& y) { mem::drop(y); });
       _tag = other._tag;
-      this->imap([&](auto tag) { tag[_inn] = other[tag]; });
+      this->imap([&](auto tag) { tag[_inn] = tag[other._inn]; });
     }
     return *this;
   }
