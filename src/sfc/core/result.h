@@ -102,6 +102,11 @@ class [[nodiscard]] Result {
     return static_cast<E&&>(_err);
   }
 
+  auto expect(const auto& msg) && noexcept -> T {
+    sfc::expect(_tag == Tag::Ok, "{}: {}", msg, _err);
+    return static_cast<T&&>(_ok);
+  }
+
   template <class U>
   auto operator&(Result<U, E> res) && noexcept -> Result<U, E> {
     if (_tag == Tag::Ok) {

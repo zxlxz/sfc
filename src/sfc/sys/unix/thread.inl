@@ -5,8 +5,6 @@
 
 namespace sfc::sys::unix {
 
-using thrd_ret_t = void*;
-
 struct Thread {
   using func_t = void* (*)(void*);
   pthread_t _thr = 0;
@@ -22,7 +20,12 @@ struct Thread {
     return static_cast<u32>(tid);
   }
 
-  static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
+  template <class Fn>
+  static auto spawn(size_t stack_size, Fn* func) -> Thread {
+    auto callback = [](void* p) -> void* {
+      return Fn::run(p) ? nullptr: reinterpret_cast<void*>(-1LL);
+    };
+
     // thread attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -32,7 +35,7 @@ struct Thread {
 
     // create
     auto thr = pthread_t{};
-    const auto ret = ::pthread_create(&thr, &attr, func, data);
+    const auto ret = ::pthread_create(&thr, &attr, callback, func);
     ::pthread_attr_destroy(&attr);
     if (ret != 0) {
       return {};

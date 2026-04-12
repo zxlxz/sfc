@@ -1,5 +1,3 @@
-
-
 #include "sfc/core/fmt/debug.h"
 
 namespace sfc::fmt {
@@ -108,6 +106,16 @@ struct Float {
   u64 _flt;
 
  public:
+  static auto ifinf(f64 val) noexcept -> bool {
+    const auto uval = __builtin_bit_cast(u64, val);
+    return (uval & 0x7FFFFFFFFFFFFFFF) == 0x7FF0000000000000;
+  }
+
+  static auto isnan(f64 val) noexcept -> bool {
+    const auto uval = __builtin_bit_cast(u64, val);
+    return (uval & 0x7FFFFFFFFFFFFFFF) > 0x7FF0000000000000;
+  }
+
   static auto pow10(u32 val) noexcept -> u64 {
     auto res = u64{1U};
     while (val > 0) {
@@ -125,7 +133,7 @@ struct Float {
     // extract fractional part
     const auto exp_val = pow10(precision);
     auto int_part = int_val;
-    auto flt_part = static_cast<u64>(__builtin_round(flt_val * exp_val));
+    auto flt_part = static_cast<u64>(flt_val * exp_val + 0.5);
     if (flt_part >= exp_val) {
       flt_part -= exp_val;
       ++int_part;
@@ -134,6 +142,19 @@ struct Float {
     return {int_part, flt_part};
   }
 };
+
+static auto extract_exp(auto& val) -> i32 {
+  auto exp = 0;
+  while (val >= 10.0) {
+    val /= 10.0;
+    ++exp;
+  }
+  while (val < 1.0) {
+    val *= 10.0;
+    --exp;
+  }
+  return exp;
+}
 
 auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'd'};
@@ -164,27 +185,17 @@ auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
 }
 
 auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
-  if (__builtin_isnan(val)) {
+  if (Float::isnan(val)) {
     return "nan";
   }
-  if (__builtin_isinf(val)) {
+  if (Float::ifinf(val)) {
     return val > 0 ? Str{"inf"} : Str{"-inf"};
   }
-  auto uval = val >= 0 ? val : -val;
 
+  auto uval = val >= 0 ? val : -val;
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'f'};
   if (type == 'e' || type == 'E') {
-    auto exp = 0;
-    if (uval != 0) {
-      while (uval >= 10.0) {
-        uval /= 10.0;
-        ++exp;
-      }
-      while (uval < 1.0) {
-        uval *= 10.0;
-        --exp;
-      }
-    }
+    const auto exp = fmt::extract_exp(uval);
     rbuf.write_exp(exp);
   }
 

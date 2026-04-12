@@ -87,11 +87,14 @@ SFC_TEST(flt_nan) {
 }
 
 SFC_TEST(flt_inf) {
-  sfc::expect_eq(format("{}", +__builtin_inf()), "inf");
-  sfc::expect_eq(format("{}", -__builtin_inf()), "-inf");
+  static constexpr auto posinf = __builtin_bit_cast(f64, 0x7FF0000000000000);
+  static constexpr auto neginf = __builtin_bit_cast(f64, 0xFFF0000000000000);
 
-  sfc::expect_eq(format("{e}", +__builtin_inf()), "inf");
-  sfc::expect_eq(format("{e}", -__builtin_inf()), "-inf");
+  sfc::expect_eq(format("{}", posinf), "inf");
+  sfc::expect_eq(format("{}", neginf), "-inf");
+
+  sfc::expect_eq(format("{e}", posinf), "inf");
+  sfc::expect_eq(format("{e}", neginf), "-inf");
 }
 
 enum class E1 { A, B };

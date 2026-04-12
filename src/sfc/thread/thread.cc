@@ -15,23 +15,24 @@ struct ThreadData {
 
  public:
   void run() noexcept {
-    const auto name_ptr = _name.ptr();
-    if (name_ptr != nullptr) {
-      sys::Thread::set_name(name_ptr);
+    const auto os_name = _name.ptr();
+    if (os_name != nullptr) {
+      sys::Thread::set_name(os_name);
     }
-
-    try {
-      _func();
-    } catch (...) {
-      __builtin_abort();
-    }
+    _func();
   }
 
-  static auto callback(void* ptr) -> sys::thrd_ret_t {
+  static auto run(void* ptr) noexcept -> bool {
     auto dat = static_cast<ThreadData*>(ptr);
     auto obj = Box<ThreadData>::from_raw(dat);
-    obj->run();
-    return {};
+
+    try {
+      obj->run();
+    } catch (...) {
+      return false;
+    }
+
+    return true;
   }
 };
 
@@ -55,7 +56,7 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
   auto data = Box{ThreadData{mem::move(fun), ffi::OsString::from(name)}};
-  auto thrd = sys::Thread::spawn(stack_size, &ThreadData::callback, data.ptr());
+  auto thrd = sys::Thread::spawn(stack_size, data.ptr());
   if (thrd.is_valid()) {
     mem::forget(data);
   }

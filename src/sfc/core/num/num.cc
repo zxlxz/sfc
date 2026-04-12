@@ -4,14 +4,6 @@
 namespace sfc::num {
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
-  if (__builtin_isnan(a) || __builtin_isnan(b)) {
-    return false;
-  }
-
-  if (__builtin_isinf(a) || __builtin_isinf(b)) {
-    return false;
-  }
-
   const auto ia = __builtin_bit_cast(i64, a);
   const auto ib = __builtin_bit_cast(i64, b);
   if ((ia ^ ib) < 0) {

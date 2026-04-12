@@ -101,14 +101,7 @@ void App::list_xml(Str path) const {
 
   const auto pos = path.find(':');
   const auto xml_path = path[{pos ? (*pos + 1U) : 0, $}];
-  auto xml_file = ({
-    auto tmp = fs::File::create(xml_path);
-    if (tmp.is_err()) {
-      io::println("Failed to create file '{}'", xml_path);
-      return;
-    }
-    tmp.unwrap_unchecked();
-  });
+  auto xml_file = fs::File::create(xml_path).expect("create file failed");
   (void)xml_file.write_str(xml_str.as_str());
 }
 

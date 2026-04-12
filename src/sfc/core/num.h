@@ -19,22 +19,16 @@ concept float_ = same_<T, float> || same_<T, double>;
 
 template <int_ T>
 static constexpr auto max_value() -> T {
-  constexpr auto SHIFT = sizeof(T) * 8 - 1;
   if constexpr (uint_<T>) {
     return static_cast<T>(~T{0});
   } else {
-    return static_cast<T>(~(T{1} << SHIFT));
+    return static_cast<T>(~(T{1} << (sizeof(T) * 8 - 1)));
   }
 }
 
-template <int_ T>
+template <sint_ T>
 static constexpr auto min_value() -> T {
-  constexpr auto SHIFT = sizeof(T) * 8 - 1;
-  if constexpr (uint_<T>) {
-    return 0;
-  } else {
-    return static_cast<T>(T{1} << SHIFT);
-  }
+  return static_cast<T>(T{1} << (sizeof(T) * 8 - 1));
 }
 
 template <int_ T>
@@ -43,23 +37,15 @@ constexpr auto abs(T val) -> T {
 }
 
 template <uint_ T>
-constexpr auto ctlz(T val) -> u32 {
-  constexpr auto EXT_CNT = (sizeof(u64) - sizeof(T)) * 8;
-
-  if (val == 0) {
-    return sizeof(T) * 8;
-  }
-  return static_cast<u32>(__builtin_clzll(val) - EXT_CNT);
-}
-
-template <uint_ T>
 constexpr auto next_power_of_two(T n) -> T {
   if ((n & (n - 1)) == 0) {
     return n;
-  } else {
-    const auto shift = sizeof(T) * 8 - num::ctlz(n);
-    return static_cast<T>(T{1} << shift);
   }
+  auto res = T{1U};
+  while (res < n) {
+    res <<= 1;
+  }
+  return res;
 }
 
 template <uint_ T>

@@ -72,9 +72,8 @@ template <class T>
 
 template <class T>
 [[gnu::always_inline]] inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
-  if (cnt != 0) {
-    __builtin_memset(dst, val, cnt * sizeof(T));
-  }
+  if (cnt == 0) return;
+  __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
 template <class T>
@@ -88,10 +87,10 @@ template <class T>
 
 template <class T>
 [[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
+  if (cnt == 0) return;
+
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memmove(dst, src, cnt * sizeof(T));
-    }
+    __builtin_memmove(dst, src, cnt * sizeof(T));
   } else {
     if (dst < src) {
       for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
@@ -107,10 +106,10 @@ template <class T>
 
 template <class T>
 [[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
+  if (cnt == 0) return;
+
   if constexpr (__is_trivially_copyable(T)) {
-    if (cnt != 0) {
-      __builtin_memcpy(dst, src, cnt * sizeof(T));
-    }
+    __builtin_memcpy(dst, src, cnt * sizeof(T));
   } else {
     for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
       *pd = *ps;
@@ -120,9 +119,7 @@ template <class T>
 
 template <class T>
 inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
-  }
+  if (cnt == 0) return;
 
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
@@ -135,9 +132,7 @@ inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
 
 template <class T>
 inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) {
-    return;
-  }
+  if (cnt == 0) return;
 
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memcpy(dst, src, cnt * sizeof(T));
@@ -151,9 +146,7 @@ inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
 
 template <class T>
 inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
-  if (len == 0) {
-    return;
-  }
+  if (len == 0) return;
 
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(ptr - offset, ptr, len * sizeof(T));
@@ -167,9 +160,7 @@ inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
 
 template <class T>
 inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
-  if (len == 0) {
-    return;
-  }
+  if (len == 0) return;
 
   if constexpr (__is_trivially_copyable(T)) {
     __builtin_memmove(ptr + offset, ptr, len * sizeof(T));

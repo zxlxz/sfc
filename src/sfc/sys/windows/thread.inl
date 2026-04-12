@@ -5,8 +5,6 @@
 
 namespace sfc::sys::windows {
 
-using thrd_ret_t = DWORD;
-
 struct Thread {
   using func_t = DWORD (*)(void*);
   HANDLE _handle = nullptr;
@@ -17,9 +15,12 @@ struct Thread {
     return tid;
   }
 
-  static auto spawn(size_t stack_size, func_t func, void* data) -> Thread {
+  template <class Fn>
+  static auto spawn(size_t stack_size, Fn* func) -> Thread {
+    auto callback = [](void* p) -> DWORD { return Fn::run(p) ? 0 : 1; };
+
     auto tid = DWORD{0};
-    auto handle = ::CreateThread(nullptr, stack_size, func, data, 0, &tid);
+    auto handle = ::CreateThread(nullptr, stack_size, callback, func, 0, &tid);
     if (handle == nullptr) {
       return {};
     }

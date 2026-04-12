@@ -31,12 +31,12 @@ SFC_TEST(reserve) {
   q.push(0);
   q.reserve(10);
 
-  auto [sa, _] = q.as_slices();
+  auto sa = q.as_slices();
   for (auto i = 1; i < 10; ++i) {
     q.push(i);
   }
-  auto [sb, _] = q.as_slices();
-  sfc::expect_eq(sa._ptr, sb._ptr);
+  auto sb = q.as_slices();
+  sfc::expect_eq(sa._0._ptr, sb._0._ptr);
 }
 
 SFC_TEST(iter) {

@@ -5,7 +5,7 @@
 #pragma clang diagnostic ignored "-Wgnu-statement-expression"
 #endif
 
-#if defined __clang__ && defined(_WIN32)
+#if defined(__clang__) && defined(_WIN32)
 #define no_unique_address msvc::no_unique_address
 #endif
 
@@ -60,9 +60,9 @@ concept same_ = same_t<T, U>::value;
 template <auto... I>
 struct idxs_t {};
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__)
 template <auto N>
-using idxs_seq_t = idxs_t<__integer_pack(N)...>;
+using seq_t = idxs_t<__integer_pack(N)...>;
 #else
 template <class, auto... I>
 struct _IntSeq {

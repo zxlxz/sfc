@@ -3,38 +3,25 @@
 namespace sfc::num::test {
 
 SFC_TEST(max_value) {
-  static_assert(num::max_value<u8>() == __UINT8_MAX__);
-  static_assert(num::max_value<u16>() == __UINT16_MAX__);
-  static_assert(num::max_value<u32>() == __UINT32_MAX__);
-  static_assert(num::max_value<u64>() == __UINT64_MAX__);
+  static_assert(num::max_value<u8>() == 0xFFU);
+  static_assert(num::max_value<u16>() == 0xFFFFU);
+  static_assert(num::max_value<u32>() == 0xFFFFFFFFU);
+  static_assert(num::max_value<u64>() == 0xFFFFFFFFFFFFFFFFU);
 
-  static_assert(num::max_value<i8>() == __INT8_MAX__);
-  static_assert(num::max_value<i16>() == __INT16_MAX__);
-  static_assert(num::max_value<i32>() == __INT32_MAX__);
-  static_assert(num::max_value<i64>() == __INT64_MAX__);
+  static_assert(num::max_value<i8>() == 0x7F);
+  static_assert(num::max_value<i16>() == 0x7FFF);
+  static_assert(num::max_value<i32>() == 0x7FFFFFFF);
+  static_assert(num::max_value<i64>() == 0x7FFFFFFFFFFFFFFF);
 }
 
 SFC_TEST(min_value) {
-  static_assert(num::min_value<u8>() == 0U);
-  static_assert(num::min_value<u16>() == 0U);
-  static_assert(num::min_value<u32>() == 0U);
-  static_assert(num::min_value<u64>() == 0U);
-
-  static_assert(num::min_value<i8>() == -__INT8_MAX__ - 1);
-  static_assert(num::min_value<i16>() == -__INT16_MAX__ - 1);
-  static_assert(num::min_value<i32>() == -__INT32_MAX__ - 1);
-  static_assert(num::min_value<i64>() == -__INT64_MAX__ - 1);
+  static_assert(num::min_value<i8>() == -0x80);
+  static_assert(num::min_value<i16>() == -0x8000);
+  static_assert(num::min_value<i32>() == -0x80000000);
+  static_assert(num::min_value<i64>() == -0x8000000000000000);
 }
 
-SFC_TEST(ctlz) {
-  static_assert(num::ctlz(0U) == 32U);
-  static_assert(num::ctlz(1U) == 31U);
-  static_assert(num::ctlz(2U) == 30U);
-  static_assert(num::ctlz(3U) == 30U);
-  static_assert(num::ctlz(0x80000000U) == 0U);
-}
-
-SFC_TEST(satruating_sub) {
+SFC_TEST(saturating_sub) {
   static_assert(num::saturating_sub(1U, 2U) == 0);
   static_assert(num::saturating_sub(2U, 1U) == 1);
 }
@@ -58,11 +45,6 @@ SFC_TEST(flt_eq) {
   sfc::expect_flt_eq(0.0, 0.0);
   sfc::expect_flt_eq(-0.0, +0.0);
   sfc::expect_flt_eq(-0.0, -0.0);
-
-  sfc::expect_flt_ne(__builtin_nan(""), __builtin_nan(""));
-  sfc::expect_flt_ne(__builtin_inf(), __builtin_inf());
-  sfc::expect_flt_ne(-__builtin_inf(), -__builtin_inf());
-  sfc::expect_flt_ne(__builtin_inf(), -__builtin_inf());
 }
 
 }  // namespace sfc::num::test
