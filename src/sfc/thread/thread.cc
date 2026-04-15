@@ -55,7 +55,7 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 }
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
-  auto data = Box{ThreadData{mem::move(fun), ffi::OsString::from(name)}};
+  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::OsString::from(name));
   auto thrd = sys::Thread::spawn(stack_size, data.ptr());
   if (thrd.is_valid()) {
     mem::forget(data);

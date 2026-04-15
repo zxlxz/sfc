@@ -12,15 +12,15 @@ SFC_TEST(worker) {
 
   auto add = [&](int val) { return [&, val]() { cnt += val; }; };
 
-  sfc::expect_true(worker.post(Task{add(1)}));
+  sfc::expect_true(worker.post(Task::xnew(add(1))));
   worker.wait();
   sfc::expect_eq(cnt, 1);
 
-  sfc::expect_true(worker.post(Task{add(2)}));
+  sfc::expect_true(worker.post(Task::xnew(add(2))));
   worker.wait();
   sfc::expect_eq(cnt, 3);
 
-  sfc::expect_true(worker.post(Task{add(3)}));
+  sfc::expect_true(worker.post(Task::xnew(add(3))));
   worker.wait();
   sfc::expect_eq(cnt, 6);
 

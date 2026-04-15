@@ -39,7 +39,7 @@ void sleep(time::Duration dur);
 void sleep_ms(u32 ms);
 
 auto spawn(auto f) -> JoinHandle {
-  return Builder{}.spawn(Box<void()>{mem::move(f)});
+  return Builder{}.spawn(Box<void()>::xnew(mem::move(f)));
 }
 
 }  // namespace sfc::thread

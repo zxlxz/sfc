@@ -11,8 +11,6 @@ class [[nodiscard]] Box {
  public:
   Box() noexcept = default;
 
-  explicit Box(T val) noexcept : _ptr{new T{static_cast<T&&>(val)}} {}
-
   ~Box() noexcept {
     if (!_ptr) return;
     delete _ptr;
@@ -33,37 +31,50 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  auto ptr() const noexcept -> T* {
+  static auto xnew(auto&&... args) -> Box {
+    auto res = Box{};
+    res._ptr = new T{static_cast<decltype(args)&&>(args)...};
+    return res;
+  }
+
+  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  auto operator->() const noexcept -> const T* {
-    return _ptr;
-  }
-
-  auto operator->() noexcept -> T* {
-    return _ptr;
-  }
-
-  auto operator*() const noexcept -> const T& {
-    return *_ptr;
-  }
-
-  auto operator*() noexcept -> T& {
-    return *_ptr;
-  }
-
-  auto into_raw() && noexcept -> T* {
-    return mem::take(_ptr);
+  [[gnu::always_inline]] auto into_raw() && noexcept -> T* {
+    const auto p = _ptr;
+    _ptr = nullptr;
+    return p;
   }
 
   template <class B>
   auto cast() && noexcept -> Box<B> {
+    static_assert(__has_virtual_destructor(B));
     const auto p = static_cast<B*>(mem::take(_ptr));
     return Box<B>::from_raw(p);
   }
 
  public:
+  // trait: Deref<const T*>
+  [[gnu::always_inline]] auto operator->() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  // trait: Deref<T*>
+  [[gnu::always_inline]] auto operator->() noexcept -> T* {
+    return _ptr;
+  }
+
+  // trait: Deref<const T&>
+  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+    return *_ptr;
+  }
+
+  // trait: Deref<T&>
+  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+    return *_ptr;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (_ptr == nullptr) {
@@ -124,7 +135,7 @@ class [[nodiscard]] Box<R(T...)> {
     call_t _call = nullptr;
 
     template <class X>
-    static constexpr auto of() -> const Meta& {
+    static constexpr auto of(const X&) -> const Meta& {
       static const auto res = Meta{
           [](void* p) { delete static_cast<X*>(p); },
           [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
@@ -138,12 +149,6 @@ class [[nodiscard]] Box<R(T...)> {
 
  public:
   Box() noexcept = default;
-
-  explicit Box(auto fn) noexcept {
-    using Fn = decltype(fn);
-    this->_data = new auto{mem::move(fn)};
-    this->_meta = &Meta::template of<Fn>();
-  }
 
   ~Box() noexcept {
     if (!_data) return;
@@ -160,6 +165,13 @@ class [[nodiscard]] Box<R(T...)> {
     return *this;
   }
 
+  static auto xnew(auto fn) noexcept -> Box {
+    auto res = Box{};
+    res._data = new auto{mem::move(fn)};
+    res._meta = &Meta::of(fn);
+    return res;
+  }
+
   auto ptr() const noexcept -> void* {
     return _data;
   }
@@ -168,6 +180,11 @@ class [[nodiscard]] Box<R(T...)> {
     return (_meta->_call)(_data, static_cast<T&&>(args)...);
   }
 };
+
+template <class T>
+auto box(T val) -> Box<T> {
+  return Box<T>::xnew(static_cast<T&&>(val));
+}
 
 }  // namespace sfc::boxed
 
