@@ -1,6 +1,7 @@
 #include "sfc/test/test.h"
+#include "sfc/sync/arc.h"
 
-namespace sfc::rc::test {
+namespace sfc::sync::test {
 
 struct Foo {
   int* _cnt;
@@ -15,14 +16,15 @@ struct Foo {
     *_cnt -= 1;
   }
 
-  Foo(Foo&& other) noexcept : _cnt{mem::take(other._cnt)} {}
+  Foo(const Foo& other) = delete;
+  Foo& operator=(const Foo& other) = delete;
 };
 
 SFC_TEST(own) {
   auto cnt = 0;
 
   {
-    auto ra = Rc{Foo{cnt}};
+    auto ra = Arc<Foo>::xnew(cnt);
     sfc::expect_eq(cnt, 1);
 
     auto rb = mem::move(ra);
@@ -36,14 +38,14 @@ SFC_TEST(clone) {
   auto cnt = 0;
 
   {
-    auto ra = Rc{Foo{cnt}};
+    const auto ra = Arc<Foo>::xnew(cnt);
     sfc::expect_eq(cnt, 1);
 
-    auto rb = ra.clone();
+    const auto rb = ra.clone();
     sfc::expect_eq(cnt, 1);
   }
 
   sfc::expect_eq(cnt, 0);
 }
 
-}  // namespace sfc::rc::test
+}  // namespace sfc::sync::test
