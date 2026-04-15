@@ -5,20 +5,22 @@
 namespace sfc::variant::test {
 
 SFC_TEST(variant_basic) {
-  auto a = Variant<i32, f32>{2};
+  const auto a = Variant<i32, f32>{2};
   sfc::expect_true(a.is<i32>());
   sfc::expect_eq(a.as<i32>(), Option<i32>{2});
   sfc::expect_eq(a.as<f32>(), Option<f32>{});
 
-  auto b = Variant<i32, f32>{3.0f};
+  const auto b = Variant<i32, f32>{3.0f};
   sfc::expect_true(b.is<f32>());
   sfc::expect_eq(b.as<i32>(), Option<i32>{});
   sfc::expect_eq(b.as<f32>(), Option<f32>{3.0f});
 }
 
 SFC_TEST(variant_copy) {
-  auto a = Variant<i32, f32>{2};
-  auto b = a;
+  const auto a = Variant<i32, f32>{2};
+  sfc::expect_eq(a.as<i32>(), Option{i32{2}});
+
+  const auto b = a;
   sfc::expect_eq(a.as<i32>(), Option{i32{2}});
   sfc::expect_eq(b.as<i32>(), Option{i32{2}});
 }
