@@ -52,11 +52,16 @@ template <uint_ T>
   if ((n & (n - 1)) == 0) {
     return n;
   }
+#if defined(__GNUC__) || defined(__clang__)
+  const auto nbits = 64U - __builtin_clzll(n);
+  return static_cast<T>(1ULL << nbits);
+#else
   auto res = T{1U};
   while (res < n) {
     res <<= 1;
   }
   return res;
+#endif
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
