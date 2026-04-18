@@ -4,9 +4,9 @@
 
 namespace sfc::collections::hash_tbl {
 
-static constexpr u32 CTRL_ALIGN = 128UL;
-static constexpr u8 CTRL_NUL = 0x80U;
-static constexpr u8 CTRL_DEL = 0xFFU;
+static constexpr auto CTRL_ALIGN = 16UL;
+static constexpr auto CTRL_NUL = u8{0x80U};
+static constexpr auto CTRL_DEL = u8{0xFFU};
 
 struct Hasher {
   [[gnu::always_inline]] static auto hash(const auto& key) noexcept -> u64 {
@@ -141,7 +141,9 @@ struct Bucket {
 
 template <class T, class A = alloc::Global>
 class HashTbl {
+  static constexpr auto kMaxSize = num::max_value<usize>() >> 8U;
   static constexpr auto kLoadFactor = 4U;
+
   struct HIdx {
     u64 h1;
     u8 h2;
@@ -160,11 +162,9 @@ class HashTbl {
     if (_ptr == nullptr) {
       return;
     }
-
     this->clear();
 
-    const auto layout = alloc::Layout{_cap + _cap * sizeof(T), alignof(T)};
-    _a.dealloc(_ptr, layout);
+    _a.dealloc(_ptr, this->layout());
   }
 
   HashTbl(HashTbl&& other) noexcept
@@ -188,7 +188,9 @@ class HashTbl {
 
   static auto with_capacity(usize min_cap, A a = {}) -> HashTbl {
     const auto cap = num::next_power_of_two(min_cap);
-    const auto layout = alloc::Layout{cap + cap * sizeof(T), alignof(T)};
+    const auto ctrl_size = num::align_up(cap, CTRL_ALIGN);
+    const auto data_size = cap * sizeof(T);
+    const auto layout = alloc::Layout{ctrl_size + data_size, alignof(T)};
 
     auto res = HashTbl{};
     res._ptr = static_cast<u8*>(a.alloc(layout));
@@ -259,9 +261,10 @@ class HashTbl {
   void clear() noexcept {
     this->iter_mut().for_each([&](T& entry) { entry.~T(); });
     _len = 0;
-
     _rem = _cap - _cap / kLoadFactor;
-    ptr::write_bytes(_ptr, CTRL_NUL, _cap);
+
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
   }
 
   void reserve(usize additional) {
@@ -272,45 +275,54 @@ class HashTbl {
     this->rehash(_len + additional);
   }
 
-  void rehash(u32 min_cap) {
-    if (min_cap < _len) return;
+  void rehash(usize min_cap) {
+    if (min_cap < _len) {
+      return;
+    }
+    sfc::expect(min_cap < kMaxSize, "HashTbl::rehash: requested capacity(={}) too large", min_cap);
 
-    // caculate new capacity
-    auto new_cap = usize{1};
-    while (new_cap - new_cap / kLoadFactor < min_cap) {
+    // calculate new capacity
+    auto new_cap = num::next_power_of_two(min_cap);
+    if (new_cap - new_cap / kLoadFactor < min_cap) {
       new_cap *= 2;
     }
 
-    auto new_tbl = HashTbl::with_capacity(new_cap, _a);
-    this->iter_mut().for_each([&](T& entry) {
-      const auto [h1, h2] = new_tbl.hash(entry.key);
-      new_tbl.bucket(h1).insert_new(h2, static_cast<T&&>(entry));
-      new_tbl._len += 1;
-      new_tbl._rem -= 1;
-    });
-
-    this->swap(new_tbl);
-  }
-
-  auto bucket(usize h1) const -> Bucket<T> {
-    const auto ctrl = _ptr;
-    const auto data = reinterpret_cast<T*>(_ptr + _cap);
-    const auto mask = _cap - 1;
-    return Bucket{ctrl, data, mask, h1};
+    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, _a));
+    tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(static_cast<T&&>(entry)); });
   }
 
   using Iter = hash_tbl::Iter<const T>;
   auto iter() const -> Iter {
-    const auto ctrl = _ptr;
-    const auto data = reinterpret_cast<T*>(_ptr + _cap);
-    return {{}, ctrl, data, _cap};
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto data = reinterpret_cast<const T*>(_ptr + ctrl_size);
+    return {{}, _ptr, data, _cap};
   }
 
   using IterMut = hash_tbl::Iter<T>;
   auto iter_mut() -> IterMut {
-    const auto ctrl = _ptr;
-    const auto data = reinterpret_cast<T*>(_ptr + _cap);
-    return {{}, ctrl, data, _cap};
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto data = reinterpret_cast<T*>(_ptr + ctrl_size);
+    return {{}, _ptr, data, _cap};
+  }
+
+ private:
+  [[gnu::always_inline]] auto layout() const -> alloc::Layout {
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto data_size = _cap * sizeof(T);
+    return alloc::Layout{ctrl_size + data_size, alignof(T)};
+  }
+
+  [[gnu::always_inline]] auto bucket(usize h1) const -> Bucket<T> {
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto data = reinterpret_cast<T*>(_ptr + ctrl_size);
+    return Bucket{_ptr, data, _cap - 1, h1};
+  }
+
+  void rehash_insert(T&& entry) {
+    const auto [h1, h2] = this->hash(entry.key);
+    this->bucket(h1).insert_new(h2, static_cast<T&&>(entry));
+    _len += 1;
+    _rem -= 1;
   }
 };
 

@@ -52,7 +52,7 @@ class HashMap {
     if (!p) {
       return {};
     }
-    return const_cast<V&>(p->val);
+    return p->val;
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
