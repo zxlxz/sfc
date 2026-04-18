@@ -249,6 +249,7 @@ class [[nodiscard]] Vec {
 
     const auto req_cap = cmp::max(_len + additional, _buf.cap() * 2);
     const auto new_cap = cmp::max(req_cap, usize{8UL});
+    sfc::expect(new_cap < MAX_SIZE, "Vec::reserve: required capacity(={}) too large", new_cap);
     _buf.realloc(_len, new_cap);
   }
 
@@ -314,7 +315,7 @@ class [[nodiscard]] Vec {
   }
 
   void append(Vec& other) noexcept {
-    if (other._len == 0) {
+    if (this == &other || other._len == 0) {
       return;
     }
     this->reserve(other._len);
