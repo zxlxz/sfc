@@ -4,6 +4,8 @@
 
 namespace sfc::vec {
 
+static constexpr auto MAX_SIZE = num::max_value<usize>() >> 8U;
+
 template <class T, class A = alloc::Global>
 class RawVec {
   T* _ptr{nullptr};
@@ -240,13 +242,13 @@ class [[nodiscard]] Vec {
   }
 
   void reserve(usize additional) noexcept {
-    if (_len + additional <= _buf.cap()) {
+    if (additional <= _buf.cap() - _len) {
       return;
     }
+    sfc::expect(additional < MAX_SIZE, "Vec::reserve: additional(={}) too large", additional);
 
-    const auto min_cap = _len + additional;
-    const auto req_cap = cmp::max(_buf.cap() * 2, usize{8});
-    const auto new_cap = cmp::max(min_cap, req_cap);
+    const auto req_cap = cmp::max(_len + additional, _buf.cap() * 2);
+    const auto new_cap = cmp::max(req_cap, usize{8UL});
     _buf.realloc(_len, new_cap);
   }
 
@@ -318,6 +320,7 @@ class [[nodiscard]] Vec {
     this->reserve(other._len);
     ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
+    other._len = 0;
   }
 
   void extend(auto&& iter) noexcept {
