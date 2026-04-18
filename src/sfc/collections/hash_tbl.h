@@ -318,11 +318,16 @@ class HashTbl {
     return Bucket{_ptr, data, _cap - 1, h1};
   }
 
-  void rehash_insert(T&& entry) {
+  auto rehash_insert(T&& entry) -> bool {
+    if (_rem == 0) {
+      return false;
+    }
+
     const auto [h1, h2] = this->hash(entry.key);
     this->bucket(h1).insert_new(h2, static_cast<T&&>(entry));
     _len += 1;
     _rem -= 1;
+    return true;
   }
 };
 
