@@ -52,7 +52,11 @@ class [[nodiscard]] Box {
   template <class B>
   auto cast() && noexcept -> Box<B> {
     static_assert(__has_virtual_destructor(B));
-    const auto p = static_cast<B*>(mem::take(_ptr));
+    const auto p = dynamic_cast<B*>(_ptr);
+    if (p == nullptr) {
+      return {};
+    }
+    _ptr = nullptr;
     return Box<B>::from_raw(p);
   }
 
