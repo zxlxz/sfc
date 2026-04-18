@@ -19,10 +19,7 @@ SFC_TEST(variant_basic) {
 SFC_TEST(variant_copy) {
   const auto a = Variant<i32, f32>{2};
   sfc::expect_eq(a.as<i32>(), Option{i32{2}});
-
-  const auto b = a;
-  sfc::expect_eq(a.as<i32>(), Option{i32{2}});
-  sfc::expect_eq(b.as<i32>(), Option{i32{2}});
+  sfc::expect_eq(auto{a}.as<i32>(), Option{i32{2}});
 }
 
 SFC_TEST(variant_move) {
