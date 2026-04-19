@@ -97,12 +97,15 @@ class Condvar {
     if (!_cond) return false;
 
     struct timespec ts{};
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    ::clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += dur.as_secs();
     ts.tv_nsec += dur.subsec_nanos();
 
     const auto err = ::pthread_cond_timedwait(_cond, mtx._raw, &ts);
-    return err == 0;
+    if (err == 0) {
+      return true;
+    }
+    return false;
   }
 };
 
