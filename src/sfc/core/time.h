@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/core/mod.h"
 
 namespace sfc::time {
 

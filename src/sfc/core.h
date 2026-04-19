@@ -12,6 +12,7 @@
 #include "sfc/core/str.h"
 #include "sfc/core/fmt.h"
 #include "sfc/core/iter.h"
+#include "sfc/core/time.h"
 #include "sfc/core/panic.h"
 
 #include "sfc/core/slice.h"
