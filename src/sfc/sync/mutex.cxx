@@ -1,7 +1,7 @@
-#include "sfc/log.h"
-#include "sfc/sync.h"
 #include "sfc/test/test.h"
+#include "sfc/log.h"
 #include "sfc/thread.h"
+#include "sfc/sync/mutex.h"
 
 namespace sfc::sync::test {
 

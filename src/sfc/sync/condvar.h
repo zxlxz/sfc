@@ -6,11 +6,7 @@
 namespace sfc::sync {
 
 class Condvar {
-#ifdef _SFC_SYS_SYNC_
   sys::Condvar _inn;
-#else
-  void* _raw;
-#endif
 
  public:
   explicit Condvar() noexcept;

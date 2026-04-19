@@ -1,6 +1,6 @@
-#include "sfc/sync.h"
 #include "sfc/test/test.h"
 #include "sfc/thread.h"
+#include "sfc/sync/condvar.h"
 
 namespace sfc::sync::test {
 
