@@ -77,15 +77,13 @@ struct Slice {
   }
 
   auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
-    const auto end = ids.end < _len ? ids.end : _len;
-    const auto len = ids.start < end ? end - ids.start : 0UL;
-    return Slice<const T>{_ptr + ids.start, len};
+    ids = ids % _len;
+    return Slice<const T>{_ptr + ids.start, ids.len()};
   }
 
   auto operator[](ops::Range ids) noexcept -> Slice<T> {
-    const auto end = ids.end < _len ? ids.end : _len;
-    const auto len = ids.start < end ? end - ids.start : 0UL;
-    return Slice<T>{_ptr + ids.start, len};
+    ids = ids % _len;
+    return Slice<T>{_ptr + ids.start, ids.len()};
   }
 
   auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {

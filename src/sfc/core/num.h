@@ -31,11 +31,6 @@ consteval auto min_value() -> T {
   return static_cast<T>(T{1} << (sizeof(T) * 8 - 1));
 }
 
-template <int_ T>
-[[gnu::always_inline]] constexpr auto abs(T val) -> T {
-  return val >= 0 ? val : 0 - val;
-}
-
 template <uint_ T>
 [[gnu::always_inline]] constexpr auto saturating_sub(T a, T b) -> T {
   return a < b ? 0U : a - b;
@@ -49,6 +44,7 @@ template <uint_ T>
 
 template <uint_ T>
 [[gnu::always_inline]] constexpr auto next_power_of_two(T n) -> T {
+  // if n==2^k or n == 0, return n
   if ((n & (n - 1)) == 0) {
     return n;
   }
