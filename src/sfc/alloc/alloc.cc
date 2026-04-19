@@ -34,10 +34,13 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
   if (layout.align == 0 || (layout.align & (layout.align - 1)) != 0) {
     return ptr;
   }
-  if (layout.size == 0 || layout.size % layout.align != 0) {
+  if (layout.size % layout.align != 0 || new_size % layout.align != 0) {
     return ptr;
   }
-  if (new_size == layout.size || new_size % layout.align != 0) {
+
+  // if new_size == old_size:
+  //   just return the same block, no need to realloc
+  if (new_size == layout.size) {
     return ptr;
   }
 
