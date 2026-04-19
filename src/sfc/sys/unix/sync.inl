@@ -93,13 +93,13 @@ class Condvar {
     ::pthread_cond_wait(_cond, mtx._raw);
   }
 
-  bool wait_timeout(Mutex& mtx, u32 millis) {
+  bool wait_timeout(Mutex& mtx, time::Duration dur) {
     if (!_cond) return false;
 
     struct timespec ts{};
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    ts.tv_sec += millis / MILLIS_PER_SEC;
-    ts.tv_nsec += (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI;
+    ts.tv_sec += dur.as_secs();
+    ts.tv_nsec += dur.subsec_nanos();
 
     const auto err = ::pthread_cond_timedwait(_cond, mtx._raw, &ts);
     return err == 0;

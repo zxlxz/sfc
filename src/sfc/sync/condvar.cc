@@ -32,8 +32,7 @@ auto Condvar::wait(Mutex::Guard& guard) noexcept -> bool {
 
 auto Condvar::wait_timeout(Mutex::Guard& guard, time::Duration dur) noexcept -> bool {
   auto& lock = guard.inner();
-  const auto millis = static_cast<u32>(dur.as_millis());
-  return _inn.wait_timeout(lock, millis);
+  return _inn.wait_timeout(lock, dur);
 }
 
 }  // namespace sfc::sync
