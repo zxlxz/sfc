@@ -62,13 +62,20 @@ auto String::pop() noexcept -> Option<char32_t> {
 }
 
 void String::push(char32_t c) noexcept {
+  // ansii code point, just push as u8
   if (c < 0x80) {
     _vec.push(static_cast<u8>(c));
-  } else {
-    u8 buf[4] = {};
-    const auto bytes = utf8_encode(buf, c);
-    _vec.extend_from_slice(bytes);
+    return;
   }
+
+  // invalid utf8 code point, just ignore
+  if (c > 0x10FFFF) {
+    return;
+  }
+
+  u8 buf[4] = {};
+  const auto bytes = utf8_encode(buf, c);
+  _vec.extend_from_slice(bytes);
 }
 
 }  // namespace sfc::string
