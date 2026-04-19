@@ -68,6 +68,7 @@ class RawVec {
     if (used > new_cap) {
       return;
     }
+    sfc::expect(new_cap < MAX_SIZE, "RawVec::realloc: new capacity(={}) too large", new_cap);
 
     const auto old_ptr = _ptr;
     const auto old_layout = alloc::Layout::template array<T>(_cap);
@@ -249,11 +250,15 @@ class [[nodiscard]] Vec {
 
     const auto req_cap = cmp::max(_len + additional, _buf.cap() * 2);
     const auto new_cap = cmp::max(req_cap, usize{8UL});
-    sfc::expect(new_cap < MAX_SIZE, "Vec::reserve: required capacity(={}) too large", new_cap);
     _buf.realloc(_len, new_cap);
   }
 
   void reserve_exact(usize additional) noexcept {
+    if (additional <= _buf.cap() - _len) {
+      return;
+    }
+    sfc::expect(additional < MAX_SIZE, "Vec::reserve_exact: additional(={}) too large", additional);
+
     const auto new_cap = _len + additional;
     _buf.realloc(_len, new_cap);
   }
