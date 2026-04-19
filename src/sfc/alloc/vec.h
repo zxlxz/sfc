@@ -281,7 +281,9 @@ class [[nodiscard]] Vec {
     sfc::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
-    ptr::shift_elements_right(_buf.ptr() + idx, _len - idx, 1);
+    const auto tail_ptr = _buf.ptr() + idx;
+    const auto tail_len = _len - idx;
+    ptr::shift_elements_right(tail_ptr, tail_len, 1);
     ptr::write(_buf.ptr() + idx, static_cast<T&&>(val));
     _len += 1;
   }
@@ -289,22 +291,25 @@ class [[nodiscard]] Vec {
   auto remove(usize idx) noexcept -> T {
     sfc::expect(idx < _len, "Vec::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
-    auto dst = _buf.ptr() + idx;
-    auto res = ptr::read(dst);
-    ptr::shift_elements_left(dst + 1, _len - idx - 1, 1);
+    const auto hole_ptr = _buf.ptr() + idx;
+    const auto tail_ptr = hole_ptr + 1;
+    const auto tail_len = _len - idx - 1;
+    auto res = ptr::read(hole_ptr);
+    ptr::shift_elements_left(tail_ptr, tail_len, 1);
     _len -= 1;
     return res;
   }
 
   void drain(ops::Range ids) noexcept {
-    auto tmp = (*this)[ids];
-    if (tmp._len == 0) {
-      return;
-    }
-    const auto tmp_tail = tmp._ptr + tmp._len;
-    const auto tail_len = _buf.ptr() + _len - tmp_tail;
-    ptr::shift_elements_left(tmp_tail, tail_len, tmp._len);
-    _len -= tmp._len;
+    ids = ids % _len;
+
+    const auto hole_ptr = _buf.ptr() + ids.start;
+    const auto hole_len = ids.len();
+    const auto tail_ptr = hole_ptr + hole_len;
+    const auto tail_len = _len - ids.end;
+    ptr::drop_in_place(hole_ptr, hole_len);
+    ptr::shift_elements_left(tail_ptr, tail_len, hole_len);
+    _len -= ids.len();
   }
 
   void resize(usize new_len, T value) noexcept {

@@ -22,6 +22,7 @@ class [[nodiscard]] Box {
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
+      // just swap to other, and let other destruct old data
       mem::swap(_ptr, other._ptr);
     }
     return *this;
