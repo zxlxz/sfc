@@ -192,20 +192,19 @@ class BufWriter : Write {
  public:
   // triat:: io::Read
   auto write(Slice<const u8> buf) -> Result<usize> {
-    // write to fuffer
-    if (buf.len() < this->spare_capacity()) {
-      _buf.extend_from_slice(buf);
-      return buf.len();
-    }
-    // write cold
-    if (buf.len() > this->spare_capacity()) {
+    const auto buf_len = buf.len();
+    if (buf_len > this->spare_capacity()) {
       _TRY(this->flush());
     }
-    if (buf.len() >= _buf.capacity()) {
+
+    // _buf is empty or buf is small enough to fit into _buf
+    // just write cold to _buf
+    if (buf_len <= _buf.capacity()) {
+      _buf.extend_from_slice(buf);
+    } else {
       _TRY(_inn.write(buf));
     }
-    _buf.extend_from_slice(buf);
-    return buf.len();
+    return buf_len;
   }
 
   // triat:: io::Read
