@@ -32,17 +32,11 @@ class Channel {
     if (_msgs.is_empty()) {
       _cnd.wait_timeout(lock, dur);
     }
-    if (_msgs.is_empty()) {
-      return {};
-    }
     return _msgs.pop();
   }
 
   auto try_recv() noexcept -> Option<T> {
     auto lock = _mtx.lock();
-    if (_msgs.is_empty()) {
-      return {};
-    }
     return _msgs.pop();
   }
 };

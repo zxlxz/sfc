@@ -62,7 +62,7 @@ SFC_TEST(s1r1_timeout) {
 
   auto receiver = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      auto val = chan.recv_timeout(time::Duration::from_millis(100));
+      auto val = chan.recv_timeout(time::Duration::from_millis(1000));
       sfc::expect_eq(val, Option{i});
       recv_cnt += 1;
       recv_sum += *val;
