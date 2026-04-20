@@ -3,20 +3,36 @@
 
 namespace sfc::sys::windows {
 
-static inline void* malloc(mem::Layout layout) {
+using mem::Layout;
+
+static inline auto alloc(Layout layout) -> void* {
   if (layout.size == 0) {
     return nullptr;
   }
-
-  return ::HeapAlloc(::GetProcessHeap(), 0, layout.size);
+  if (layout.align <= alignof(max_align_t)) {
+    return ::malloc(layout.size);
+  }
+  return ::_aligned_malloc(layout.size, layout.align);
 }
 
-static inline void dealloc(void* addr, [[maybe_unused]] mem::Layout layout) noexcept {
-  (void)::HeapFree(::GetProcessHeap(), 0, addr);
+
+static inline void dealloc(void* ptr, Layout layout) noexcept {
+  if (ptr == nullptr) {
+    return;
+  }
+  if (layout.align <= alignof(max_align_t)) {
+    ::free(ptr);
+  } else {
+    ::_aligned_free(ptr);
+  }
 }
 
-static inline void* realloc(void* ptr, mem::Layout layout, SIZE_T new_size) {
-  return ::HeapReAlloc(::GetProcessHeap(), 0, ptr, new_size);
+static inline auto realloc(void* ptr, Layout layout, usize new_size) -> void* {
+  if (layout.align <= alignof(max_align_t)) {
+    return ::realloc(ptr, new_size);
+  }
+
+  return ::_aligned_realloc(ptr, new_size, layout.align);
 }
 
 }  // namespace sfc::sys::windows
