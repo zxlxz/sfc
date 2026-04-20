@@ -16,9 +16,7 @@ class [[nodiscard]] Arc {
   ~Arc() noexcept {
     const auto p = _inn.ptr();
     if (p && p->dec_count() != 1) {
-      // ref-count not zero
-      // just forget _inn, don't destroy data
-      (void)mem::move(_inn).into_raw();
+      mem::forget(_inn);
     }
   }
 
