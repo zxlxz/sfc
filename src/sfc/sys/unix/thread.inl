@@ -15,17 +15,19 @@ struct Thread {
     auto tid = ino_t{0};
     ::pthread_threadid_np(nullptr, &tid);
 #else
-    const auto tid = ::syscall(SYS_gettid);
+    static thread_local const auto tid = ::syscall(SYS_gettid);
 #endif
     return static_cast<u32>(tid);
   }
 
+  template<class Fn>
+  static auto callback(void* p) -> void* {
+    const auto ret = Fn::run(p);
+    return ret ? nullptr : reinterpret_cast<void*>(-1LL);
+  }
+
   template <class Fn>
   static auto spawn(size_t stack_size, Fn* func) -> Thread {
-    auto callback = [](void* p) -> void* {
-      return Fn::run(p) ? nullptr: reinterpret_cast<void*>(-1LL);
-    };
-
     // thread attr
     auto attr = ::pthread_attr_t{};
     ::pthread_attr_init(&attr);
@@ -35,7 +37,7 @@ struct Thread {
 
     // create
     auto thr = pthread_t{};
-    const auto ret = ::pthread_create(&thr, &attr, callback, func);
+    const auto ret = ::pthread_create(&thr, &attr, callback<Fn>, func);
     ::pthread_attr_destroy(&attr);
     if (ret != 0) {
       return {};
@@ -64,14 +66,20 @@ struct Thread {
   }
 
   auto join() -> bool {
-    if (_thr == 0) return true;
+    if (_thr == 0) {
+      return true;
+    }
     const auto err = ::pthread_join(_thr, nullptr);
+    _thr = 0;
     return err == 0;
   }
 
   auto detach() -> bool {
-    if (_thr == 0) return true;
+    if (_thr == 0) {
+      return true;
+    }
     const auto err = ::pthread_detach(_thr);
+    _thr = 0;
     return err == 0;
   }
 };

@@ -39,8 +39,9 @@ struct Condvar : CONDITION_VARIABLE {
     ::SleepConditionVariableSRW(this, &mtx, INFINITE, 0);
   }
 
-  bool wait_timeout(Mutex& mtx, DWORD millis) {
-    const auto ret = ::SleepConditionVariableSRW(this, &mtx, millis, 0);
+  bool wait_timeout(Mutex& mtx, time::Duration dur) {
+    const auto ms = static_cast<u32>(dur.as_millis());
+    const auto ret = ::SleepConditionVariableSRW(this, &mtx, ms, 0);
     return bool(ret);
   }
 };

@@ -6,8 +6,7 @@
 namespace sfc::sys::windows {
 
 struct Thread {
-  using func_t = DWORD (*)(void*);
-  HANDLE _handle = nullptr;
+  HANDLE _thrd = nullptr;
 
  public:
   static auto current() -> DWORD {
@@ -16,15 +15,17 @@ struct Thread {
   }
 
   template <class Fn>
-  static auto spawn(size_t stack_size, Fn* func) -> Thread {
-    auto callback = [](void* p) -> DWORD { return Fn::run(p) ? 0 : 1; };
+  static unsigned __stdcall callback(void* p) {
+    return Fn::run(p) ? 0 : 1;
+  }
 
-    auto tid = DWORD{0};
-    auto handle = ::CreateThread(nullptr, stack_size, callback, func, 0, &tid);
-    if (handle == nullptr) {
+  template <class Fn>
+  static auto spawn(size_t stack_size, Fn* func) -> Thread {
+    const auto thrd = _beginthreadex(nullptr, stack_size, callback<Fn>, func, 0, nullptr);
+    if (thrd == 0) {
       return {};
     }
-    return Thread{handle};
+    return Thread{reinterpret_cast<HANDLE>(thrd)};
   }
 
   static auto yield_now() -> bool {
@@ -33,7 +34,9 @@ struct Thread {
   }
 
   static auto set_name(const wchar_t* name) -> bool {
-    if (name == nullptr) return true;
+    if (name == nullptr) {
+      return true;
+    }
 
     const auto thrd = ::GetCurrentThread();
     const auto hres = ::SetThreadDescription(thrd, name);
@@ -41,25 +44,35 @@ struct Thread {
   }
 
   auto is_valid() const -> bool {
-    return _handle != nullptr && _handle != INVALID_HANDLE_VALUE;
+    return _thrd != nullptr && _thrd != INVALID_HANDLE_VALUE;
   }
 
   auto join() -> bool {
-    if (_handle == nullptr) return true;
-    const auto ret = ::WaitForSingleObject(_handle, INFINITE);
+    if (_thrd == nullptr) {
+      return true;
+    }
+
+    const auto ret = ::WaitForSingleObject(_thrd, INFINITE);
+    ::CloseHandle(_thrd);
+    _thrd = nullptr;
     return ret == WAIT_OBJECT_0;
   }
 
   auto detach() -> bool {
-    if (_handle == nullptr) return true;
-    return ::CloseHandle(_handle);
+    if (_thrd == nullptr) {
+      return true;
+    }
+    const auto ret = ::CloseHandle(_thrd);
+    _thrd = nullptr;
+    return bool(ret);
   }
 };
 
 inline auto sleep_ms(unsigned millis) -> bool {
-  if (millis <= 1) {
-    return ::SwitchToThread();
+  if (millis == 0) {
+    return bool(::SwitchToThread());
   }
+
   ::Sleep(millis);
   return true;
 }
