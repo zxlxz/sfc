@@ -13,4 +13,15 @@ auto Instant::now() noexcept -> Instant {
   return Instant{ts.nanos()};
 }
 
+auto Instant::elapsed() const noexcept -> Duration {
+  const auto now = Instant::now();
+  const auto dur = num::saturating_sub(now._nanos, _nanos);
+  return Duration::from_nanos(dur);
+}
+
+auto Instant::duration_since(Instant earlier) const noexcept -> Duration {
+  const auto dur = num::saturating_sub(_nanos, earlier._nanos);
+  return Duration::from_nanos(dur);
+}
+
 }  // namespace sfc::time

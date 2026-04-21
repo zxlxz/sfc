@@ -10,14 +10,8 @@ struct Instant {
  public:
   static auto now() noexcept -> Instant;
 
-  auto duration_since(Instant earlier) const noexcept -> Duration {
-    return {_nanos - earlier._nanos};
-  }
-
-  auto elapsed() const noexcept -> Duration {
-    const auto now = Instant::now();
-    return {now._nanos - _nanos};
-  }
+  auto elapsed() const noexcept -> Duration;
+  auto duration_since(Instant earlier) const noexcept -> Duration;
 
  public:
   // trait: ops::Eq
@@ -27,12 +21,14 @@ struct Instant {
 
   // trait: ops::Add
   auto operator+(const Duration& dur) const noexcept -> Instant {
-    return Instant{_nanos + dur._nanos};
+    const auto ns = _nanos + dur.as_nanos();
+    return Instant{ns};
   }
 
   // trait: ops::Sub
   auto operator-(const Duration& dur) const noexcept -> Instant {
-    return Instant{_nanos - dur._nanos};
+    const auto ns = num::saturating_sub(_nanos, dur.as_nanos());
+    return Instant{ns};
   }
 
   // trait: fmt::Display

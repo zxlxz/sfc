@@ -10,10 +10,8 @@ struct SystemTime {
  public:
   static auto now() noexcept -> SystemTime;
 
-  auto elapsed() const noexcept -> Duration {
-    const auto now = SystemTime::now();
-    return Duration::from_micros(now._micros - _micros);
-  }
+  auto elapsed() const noexcept -> Duration;
+  auto duration_since(SystemTime earlier) const noexcept -> Duration;
 
   auto as_secs() const noexcept -> u64 {
     return _micros / MICROS_PER_SEC;
@@ -35,6 +33,23 @@ struct SystemTime {
   // trait:: ops::Eq
   auto operator==(const SystemTime& other) const noexcept -> bool {
     return _micros == other._micros;
+  }
+
+  // trait: ops::Add
+  auto operator+(const Duration& dur) const noexcept -> SystemTime {
+    const auto us = _micros + dur.as_micros();
+    return SystemTime{us};
+  }
+
+  // trait: ops::Sub
+  auto operator-(const Duration& dur) const noexcept -> SystemTime {
+    const auto us = num::saturating_sub(_micros, dur.as_micros());
+    return SystemTime{us};
+  }
+
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    f.write_fmt("{}us", _micros);
   }
 };
 

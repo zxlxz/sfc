@@ -13,4 +13,15 @@ auto SystemTime::now() noexcept -> SystemTime {
   return SystemTime{sys_imp.as_micros()};
 }
 
+auto SystemTime::elapsed() const noexcept -> Duration {
+  const auto now = SystemTime::now();
+  const auto dur = num::saturating_sub(now._micros, _micros);
+  return Duration::from_micros(dur);
+}
+
+auto SystemTime::duration_since(SystemTime earlier) const noexcept -> Duration {
+  const auto dur = num::saturating_sub(_micros, earlier._micros);
+  return Duration::from_micros(dur);
+}
+
 }  // namespace sfc::time
