@@ -44,6 +44,7 @@ struct Inner<A,B,C,D,E,F,G,H,I,J> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H 
 
 template <class... T>
 struct Tuple : Inner<T...> {
+  static_assert(sizeof...(T) <= 10, "Tuple: only support up to 10 elements");
   static constexpr u32 N = sizeof...(T);
 
  public:

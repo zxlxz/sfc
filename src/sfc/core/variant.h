@@ -74,7 +74,9 @@ constexpr auto type_idx() -> u32 {
 
 template <class... T>
 class Variant {
+  static_assert(sizeof...(T) <= 10, "Variant: only support up to 10 types");
   static constexpr u32 N = sizeof...(T);
+
   using Inn = Inner<T...>;
 
   u8 _tag;
@@ -97,7 +99,7 @@ class Variant {
     this->imap([&](auto tag) { tag[_inn] = mem::move(tag[other._inn]); });
   }
 
-  Variant(const Variant& other) : _tag{other._tag} {
+  Variant(const Variant& other) noexcept : _tag{other._tag} {
     this->imap([&](auto tag) { tag[_inn] = tag[other._inn]; });
   }
 
@@ -110,7 +112,7 @@ class Variant {
     return *this;
   }
 
-  Variant& operator=(const Variant& other) {
+  Variant& operator=(const Variant& other) noexcept {
     if (this != &other) {
       this->map_mut([&](auto& y) { mem::drop(y); });
       _tag = other._tag;
