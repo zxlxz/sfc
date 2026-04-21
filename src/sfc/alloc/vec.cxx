@@ -92,4 +92,48 @@ SFC_TEST(drain) {
   sfc::expect_eq(v[2], 4);
   sfc::expect_eq(v[3], 5);
 }
+
+struct AutoConter {
+  int* _cnt;
+  AutoConter(int& cnt) : _cnt{&cnt} {
+    *_cnt += 1;
+  }
+
+  ~AutoConter() {
+    if (!_cnt) return;
+    *_cnt -= 1;
+  }
+
+  AutoConter(AutoConter&& other) noexcept : _cnt{other._cnt} {
+    other._cnt = nullptr;
+  }
+};
+SFC_TEST(memory) {
+  auto v = Vec<AutoConter>{};
+
+  auto cnt = 0;
+
+  // push
+  for (auto i = 0; i < 10; ++i) {
+    v.push(AutoConter{cnt});
+    sfc::expect_eq(cnt, i + 1);
+  }
+
+  // pop
+  v.pop();
+  sfc::expect_eq(cnt, 9);
+
+  // insert
+  v.insert(5, AutoConter{cnt});
+  sfc::expect_eq(cnt, 10);
+
+  // remove
+  v.remove(5);
+  sfc::expect_eq(cnt, 9);
+
+  // drain
+  v.drain(ops::Range{0, 5});
+  sfc::expect_eq(cnt, 4);
+}
+
 }  // namespace sfc::vec::test

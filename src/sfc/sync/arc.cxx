@@ -3,28 +3,28 @@
 
 namespace sfc::sync::test {
 
-struct Foo {
+struct Cnter {
   int* _cnt;
 
  public:
-  Foo(int& cnt) : _cnt{&cnt} {
+  Cnter(int& cnt) : _cnt{&cnt} {
     *_cnt += 1;
   }
 
-  ~Foo() {
+  ~Cnter() {
     if (!_cnt) return;
     *_cnt -= 1;
   }
 
-  Foo(const Foo& other) = delete;
-  Foo& operator=(const Foo& other) = delete;
+  Cnter(const Cnter& other) = delete;
+  Cnter& operator=(const Cnter& other) = delete;
 };
 
 SFC_TEST(own) {
   auto cnt = 0;
 
   {
-    auto ra = Arc<Foo>::xnew(cnt);
+    auto ra = Arc<Cnter>::xnew(cnt);
     sfc::expect_eq(cnt, 1);
 
     auto rb = mem::move(ra);
@@ -38,7 +38,7 @@ SFC_TEST(clone) {
   auto cnt = 0;
 
   {
-    const auto ra = Arc<Foo>::xnew(cnt);
+    const auto ra = Arc<Cnter>::xnew(cnt);
     sfc::expect_eq(cnt, 1);
 
     const auto rb = ra.clone();
