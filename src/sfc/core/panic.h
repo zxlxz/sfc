@@ -64,7 +64,7 @@ void expect_true(const auto& x, SourceLoc loc = SourceLoc::current()) {
 
 void expect_false(const auto& x, SourceLoc loc = SourceLoc::current()) {
   if (!x) return;
-  panic::panic_fmt(loc, "sfc::expect_true(`{}`) failed", x);
+  panic::panic_fmt(loc, "sfc::expect_false(`{}`) failed", x);
 }
 
 void expect_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
