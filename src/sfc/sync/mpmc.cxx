@@ -19,9 +19,9 @@ SFC_TEST(s1r1) {
   auto receiver = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
       auto val = chan.recv();
-      sfc::expect_eq(val, static_cast<u32>(i));
+      sfc::expect_eq(val, Option{i});
       recv_cnt += 1;
-      recv_sum += val;
+      recv_sum += *val;
     }
   };
 
@@ -117,7 +117,7 @@ SFC_TEST(s2r1) {
     for (auto i = 0U; i < 2 * CNT; ++i) {
       auto val = chan.recv();
       recv_cnt += 1;
-      recv_sum += val;
+      recv_sum += *val;
     }
   };
 
@@ -145,7 +145,7 @@ SFC_TEST(s1r2) {
 
   auto receiver = [&](unsigned limit) {
     for (auto i = 0U; i < limit; ++i) {
-      auto val = chan.recv();
+      auto val = chan.recv().unwrap();
       recv_sum.fetch_add(val);
       recv_cnt.fetch_add(1);
     }
@@ -175,7 +175,7 @@ SFC_TEST(s2r2) {
 
   auto receiver = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      auto val = chan.recv();
+      auto val = chan.recv().unwrap();
       recv_cnt.fetch_add(1);
       recv_sum.fetch_add(val);
     }

@@ -68,6 +68,10 @@ class [[nodiscard]] Queue {
     return _len == 0;
   }
 
+  auto is_full() const noexcept -> bool {
+    return _len == _buf.cap();
+  }
+
  public:
   auto top() const noexcept -> Option<const T&> {
     if (_len == 0) {
