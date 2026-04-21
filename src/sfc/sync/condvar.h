@@ -18,7 +18,7 @@ class Condvar {
   void notify_one() noexcept;
   void notify_all() noexcept;
 
-  auto wait(Mutex::Guard& lock) noexcept -> bool;
+  void wait(Mutex::Guard& lock) noexcept;
   auto wait_timeout(Mutex::Guard& lock, time::Duration dur) noexcept -> bool;
 
   void wait_while(Mutex::Guard& lock, auto&& cond) {

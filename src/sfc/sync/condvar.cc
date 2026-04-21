@@ -24,10 +24,9 @@ void Condvar::notify_all() noexcept {
   _inn.notify_all();
 }
 
-auto Condvar::wait(Mutex::Guard& guard) noexcept -> bool {
+void Condvar::wait(Mutex::Guard& guard) noexcept {
   auto& lock = guard.inner();
   _inn.wait(lock);
-  return true;
 }
 
 auto Condvar::wait_timeout(Mutex::Guard& guard, time::Duration dur) noexcept -> bool {
