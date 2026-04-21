@@ -41,6 +41,8 @@ enum class Error : i8 {
   Other,
 };
 
+auto from_raw_os_error(i32 err) noexcept -> Error;
+
 auto last_os_error() noexcept -> Error;
 
 template <class T = void>
