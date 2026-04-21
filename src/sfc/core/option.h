@@ -43,18 +43,28 @@ class Option {
 
   Option& operator=(const Option& other) noexcept {
     if (this != &other) {
-      if (_tag) _val.~T();
-      _tag = other._tag;
-      if (_tag) ptr::write(&_val, other._val);
+      if (_tag) {
+        _val.~T();
+        _tag = false;
+      }
+      if (other._tag) {
+        ptr::write(&_val, other._val);
+        _tag = other._tag;
+      }
     }
     return *this;
   }
 
   Option& operator=(Option&& other) noexcept {
     if (this != &other) {
-      if (_tag) _val.~T();
-      _tag = other._tag;
-      if (_tag) ptr::write(&_val, static_cast<T&&>(other._val));
+      if (_tag) {
+        _val.~T();
+        _tag = false;
+      }
+      if (other._tag) {
+        ptr::write(&_val, static_cast<T&&>(other._val));
+        _tag = other._tag;
+      }
     }
     return *this;
   }

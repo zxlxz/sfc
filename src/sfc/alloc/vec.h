@@ -4,7 +4,7 @@
 
 namespace sfc::vec {
 
-static constexpr auto MAX_SIZE = num::max_value<usize>() >> 8U;
+static constexpr auto MAX_SIZE = num::max_value<usize>() / 4;
 
 template <class T, class A = alloc::Global>
 class RawVec {

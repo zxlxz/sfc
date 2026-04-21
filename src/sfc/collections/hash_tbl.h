@@ -4,7 +4,7 @@
 
 namespace sfc::collections::hash_tbl {
 
-static constexpr auto CTRL_ALIGN = usize{16UL};
+static constexpr auto CTRL_ALIGN = usize{128UL};
 static constexpr auto CTRL_NUL = u8{0x80U};
 static constexpr auto CTRL_DEL = u8{0xFFU};
 
