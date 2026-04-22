@@ -37,17 +37,19 @@ struct Fmter {
     }
   }
 
-  void write_val(const auto& val) {
-    if constexpr (requires { val.fmt(*this); }) {
+  template <class T>
+  void write_val(const T& val) {
+    if constexpr (__is_class(T)) {
       val.fmt(*this);
     } else {
       fmt::Debug::fmt(val, *this);
     }
   }
 
-  void write_arg(Spec spec, const auto& val) {
+  template <class T>
+  void write_arg(Spec spec, const T& val) {
     _spec = spec;
-    if constexpr (requires { val.fmt(*this); }) {
+    if constexpr (__is_class(T)) {
       val.fmt(*this);
     } else {
       fmt::Debug::fmt(val, *this);

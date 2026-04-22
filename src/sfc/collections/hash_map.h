@@ -95,19 +95,10 @@ class HashMap {
   }
 
   // trait: serde::Deserialize
-  template <class D, class E = typename D::Error>
-  static auto deserialize(D& des) -> Result<HashMap, E> {
-    auto res = HashMap{};
-    auto visit = [&](auto& map) -> Result<void, E> {
-      while (map.next()) {
-        auto key = _TRY(map.template next_key<K>());
-        auto val = _TRY(map.template next_value<V>());
-        res.try_insert(key, static_cast<V&&>(val));
-      }
-      return {};
-    };
-    _TRY(des.deserialize_map(visit));
-    return res;
+  template <class D>
+  static auto deserialize(D& des) {
+    auto visit = [&](auto& map) { return map.template collect<HashMap, K, V>(); };
+    return des.deserialize_map(visit);
   }
 };
 

@@ -224,7 +224,7 @@ struct Deserializer {
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });
     } else {
-      static_assert(false, "Deserialize::deserialize: not deserializable");
+      static_assert(false, "json::Deserializer::deserialize: not deserializable");
     }
   }
 
@@ -235,7 +235,7 @@ struct Deserializer {
     usize _idx = 0;
 
    public:
-    auto next() noexcept -> bool {
+    auto has_next() noexcept -> bool {
       const auto next_tok = _inn.next_token();
       return next_tok != Token::ArrayEnd;
     }
@@ -248,6 +248,16 @@ struct Deserializer {
       _idx += 1;
       return _inn.deserialize_any<T>();
     }
+
+    template <class V, class T>
+    auto collect() noexcept -> Result<V> {
+      auto res = V{};
+      while (this->has_next()) {
+        auto elem = _TRY(this->next_element<T>());
+        res.push(static_cast<T&&>(elem));
+      }
+      return {};
+    }
   };
 
   struct DesObject {
@@ -256,14 +266,14 @@ struct Deserializer {
     usize _idx = 0;
 
    public:
-    auto next() noexcept -> bool {
+    auto has_next() noexcept -> bool {
       const auto next_tok = _inn.next_token();
       return next_tok != Token::ObjectEnd;
     }
 
     template <class K>
     auto next_key() noexcept -> Result<K> {
-      static_assert(same_<K, Str>, "DesObject::next_key: key type must be Str");
+      static_assert(same_<K, Str>, "json::DesObject::next_key: key type must be Str");
 
       if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
         return Error::ExpectedComma;
@@ -279,33 +289,41 @@ struct Deserializer {
       }
       return _inn.deserialize_any<T>();
     }
+
+    template <class M, class K, class V>
+    auto collect() noexcept -> Result<M> {
+      auto res = M{};
+      while (this->has_next()) {
+        auto key = _TRY(this->next_key<K>());
+        auto val = _TRY(this->next_value<V>());
+        res.insert(static_cast<K&&>(key), static_cast<V&&>(val));
+      }
+      return {};
+    }
   };
 
-  auto deserialize_seq(auto&& visit) -> Result<> {
-    if (this->extract_tok(Token::ArrayBegin).is_err()) {
-      return Error::ExpectedArrayBegin;
-    }
+  auto deserialize_seq(auto&& visit) -> decltype(visit(ops::declval<DesArray&>())) {
+    _TRY(this->extract_tok(Token::ArrayBegin));
     auto imp = DesArray{*this};
-    _TRY(visit(imp));
-    return this->extract_tok(Token::ArrayEnd);
+    auto res = visit(imp);
+    _TRY(this->extract_tok(Token::ArrayEnd));
+    return res;
   }
 
-  auto deserialize_obj(auto&& visit) -> Result<> {
-    if (this->extract_tok(Token::ObjectBegin).is_err()) {
-      return Error::ExpectedObjectBegin;
-    }
+  auto deserialize_obj(auto&& visit) -> decltype(visit(ops::declval<DesObject&>())) {
+    _TRY(this->extract_tok(Token::ObjectBegin));
     auto imp = DesObject{*this};
-    _TRY(visit(imp));
-    return this->extract_tok(Token::ObjectEnd);
+    auto res = visit(imp);
+    _TRY(this->extract_tok(Token::ObjectEnd));
+    return res;
   }
 
-  auto deserialize_map(auto&& visit) -> Result<> {
-    if (this->extract_tok(Token::ObjectBegin).is_err()) {
-      return Error::ExpectedObjectBegin;
-    }
+  auto deserialize_map(auto&& visit) -> decltype(visit(ops::declval<DesObject&>())) {
+    _TRY(this->extract_tok(Token::ObjectBegin));
     auto imp = DesObject{*this};
-    _TRY(visit(imp));
-    return this->extract_tok(Token::ObjectEnd);
+    auto res = visit(imp);
+    _TRY(this->extract_tok(Token::ObjectEnd));
+    return res;
   }
 
  private:

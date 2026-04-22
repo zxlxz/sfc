@@ -397,11 +397,7 @@ class [[nodiscard]] Vec {
   }
 
   // trait: io::Write
-  auto write(Slice<const u8> buf) -> io::Result<usize> {
-    static_assert(same_<T, u8>);
-    this->extend_from_slice(buf);
-    return buf.len();
-  }
+  auto write(Slice<const u8> buf) -> result::Result<usize, io::Error>;
 
   // trait: serde::Serialize
   auto serialize(auto& ser) const {
@@ -410,20 +406,9 @@ class [[nodiscard]] Vec {
   }
 
   // trait:: serde::Deserialize
-  template <class D, class E = typename D::Error>
-  static auto deserialize(D& des) -> Result<void, E> {
-    auto res = Vec{};
-
-    auto visit = [&](auto&& seq) -> Result<void, E> {
-      while (seq.next()) {
-        auto item = seq.template next_element<T>();
-        if (item.is_err()) {
-          return ~item;
-        }
-        res.push(mem::move(*item));
-      }
-      return {};
-    };
+  template <class D>
+  static auto deserialize(D& des) {
+    auto visit = [&](auto&& seq) { return seq.template collect<Vec, T>(); };
     return des.deserialize_seq(visit);
   }
 };
