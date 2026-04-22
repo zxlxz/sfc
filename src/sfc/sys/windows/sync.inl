@@ -4,44 +4,50 @@
 
 namespace sfc::sys::windows {
 
-struct Mutex : SRWLOCK {
+struct Mutex {
+  SRWLOCK _raw;
+
+ public:
   explicit Mutex() {
-    ::InitializeSRWLock(this);
+    ::InitializeSRWLock(&_raw);
   }
 
   void lock() {
-    ::AcquireSRWLockExclusive(this);
+    ::AcquireSRWLockExclusive(&_raw);
   }
 
   void unlock() {
-    ReleaseSRWLockExclusive(this);
+    ::ReleaseSRWLockExclusive(&_raw);
   }
 
   auto try_lock() -> bool {
-    return ::TryAcquireSRWLockExclusive(this);
+    return ::TryAcquireSRWLockExclusive(&_raw);
   }
 };
 
-struct Condvar : CONDITION_VARIABLE {
+struct Condvar {
+  CONDITION_VARIABLE _raw;
+
+ public:
   explicit Condvar() {
-    ::InitializeConditionVariable(this);
+    ::InitializeConditionVariable(&_raw);
   }
 
   void notify_one() {
-    ::WakeConditionVariable(this);
+    ::WakeConditionVariable(&_raw);
   }
 
   void notify_all() {
-    ::WakeAllConditionVariable(this);
+    ::WakeAllConditionVariable(&_raw);
   }
 
   void wait(Mutex& mtx) {
-    ::SleepConditionVariableSRW(this, &mtx, INFINITE, 0);
+    ::SleepConditionVariableSRW(&_raw, &mtx._raw, INFINITE, 0);
   }
 
   bool wait_timeout(Mutex& mtx, time::Duration dur) {
     const auto ms = static_cast<u32>(dur.as_millis());
-    const auto ret = ::SleepConditionVariableSRW(this, &mtx, ms, 0);
+    const auto ret = ::SleepConditionVariableSRW(&_raw, &mtx._raw, ms, 0);
     return bool(ret);
   }
 };
