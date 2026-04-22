@@ -1,10 +1,12 @@
 #pragma once
 
-#include "sfc/core/result.h"
+#include "sfc/sys.h"
 
 namespace sfc::io {
 
-enum class Error : i8 {
+using sys::ErrCode;
+
+enum class ErrorKind {
   Success,
   NotFound,
   PermissionDenied,
@@ -41,9 +43,26 @@ enum class Error : i8 {
   Other,
 };
 
-auto from_raw_os_error(i32 err) noexcept -> Error;
+struct Error {
+  ErrorKind _kind;
+  ErrCode _code = 0;
 
-auto last_os_error() noexcept -> Error;
+ public:
+  static auto from_raw_os_error(ErrCode err) noexcept -> Error;
+  static auto last_os_error() noexcept -> Error;
+
+  auto kind() const noexcept -> ErrorKind {
+    return _kind;
+  }
+
+  auto raw_os_err() const noexcept -> ErrCode {
+    return _code;
+  }
+
+  void fmt(auto& f) const {
+    f.write_val(_kind);
+  }
+};
 
 template <class T = void>
 using Result = result::Result<T, Error>;

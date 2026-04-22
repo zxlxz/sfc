@@ -1,19 +1,29 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/unix/io.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/io.inl"
-#endif
+#include "sfc/io/mod.h"
+#include "sfc/alloc/vec.h"
 
-namespace sfc::io {
+namespace sfc {
 
-auto from_raw_os_error(i32 err) noexcept -> Error{
-  const auto io_err = sys::io_error(err);
-  return io_err;
+template <class T>
+auto slice::Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+  if (_len == 0 || buf._len == 0) {
+    return usize{0};
+  }
+  const auto amt = _len < buf._len ? _len : buf._len;
+  ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
+  _ptr += amt;
+  _len -= amt;
+  return amt;
 }
 
-auto last_os_error() noexcept -> Error {
-  const auto os_err = sys::os_error();
-  const auto io_err = sys::io_error(os_err);
-  return io_err;
+template <class T, class A>
+auto vec::Vec<T, A>::write(Slice<const u8> buf) -> io::Result<usize> {
+  this->extend_from_slice(buf);
+  return buf.len();
 }
-}  // namespace sfc::io
+
+template auto slice::Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
+template auto slice::Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
+
+template auto vec::Vec<u8>::write(Slice<const u8> buf) -> io::Result<usize>;
+
+}  // namespace sfc

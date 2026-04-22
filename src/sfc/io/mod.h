@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/alloc.h"
+#include "sfc/io/error.h"
 
 namespace sfc::io {
 
@@ -9,7 +10,7 @@ struct Read {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
-        return Error::UnexpectedEof;
+        return Error{ErrorKind::UnexpectedEof};
       }
       buf = buf[{cnt, $}];
     }
@@ -44,7 +45,7 @@ struct Write {
     while (!buf.is_empty()) {
       const auto write_cnt = _TRY(self.write(buf));
       if (write_cnt == 0) {
-        return Error::WriteZero;
+        return Error{ErrorKind::WriteZero};
       }
       buf = buf[{write_cnt, $}];
     }

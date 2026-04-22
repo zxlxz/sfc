@@ -3,43 +3,45 @@
 #include "sfc/sys/unix/mod.inl"
 #define _SFC_SYS_IO_
 
+#include "sfc/io/error.h"
+
 namespace sfc::sys::unix {
 
-static inline auto io_error(int code) -> io::Error {
+static inline auto io_error(int code) -> io::ErrorKind {
   switch (code) {
-    case 0:             return io::Error::Success;
-    case ENOENT:        return io::Error::NotFound;
+    case 0:             return io::ErrorKind::Success;
+    case ENOENT:        return io::ErrorKind::NotFound;
     case EACCES:
-    case EPERM:         return io::Error::PermissionDenied;
-    case ECONNREFUSED:  return io::Error::ConnectionRefused;
-    case ECONNRESET:    return io::Error::ConnectionReset;
-    case ECONNABORTED:  return io::Error::ConnectionAborted;
-    case ENOTCONN:      return io::Error::NotConnected;
-    case EADDRINUSE:    return io::Error::AddrInUse;
-    case EADDRNOTAVAIL: return io::Error::AddrNotAvailable;
-    case ENETUNREACH:   return io::Error::NetworkUnreachable;
-    case EHOSTUNREACH:  return io::Error::HostUnreachable;
-    case ENETDOWN:      return io::Error::NetworkDown;
-    case EPIPE:         return io::Error::BrokenPipe;
-    case EEXIST:        return io::Error::AlreadyExists;
-    case EWOULDBLOCK:   return io::Error::WouldBlock;
-    case EINVAL:        return io::Error::InvalidInput;
-    case EBADMSG:       return io::Error::InvalidData;
-    case ENOTSUP:       return io::Error::InvalidOperation;
-    case EINTR:         return io::Error::Interrupted;
-    case ENOSYS:        return io::Error::Unsupported;
-    case ENOSPC:        return io::Error::WriteZero;
-    case ETIMEDOUT:     return io::Error::TimedOut;
-    case EISDIR:        return io::Error::IsADirectory;
-    case ENOTDIR:       return io::Error::NotADirectory;
-    case ENOTEMPTY:     return io::Error::DirectoryNotEmpty;
-    case ESPIPE:        return io::Error::NotSeekable;
-    case EFBIG:         return io::Error::FileTooLarge;
-    case EBUSY:         return io::Error::ResourceBusy;
-    case EDEADLK:       return io::Error::Deadlock;
-    case ENOMEM:        return io::Error::OutOfMemory;
-    case EINPROGRESS:   return io::Error::InProgress;
-    default:            return io::Error::Other;
+    case EPERM:         return io::ErrorKind::PermissionDenied;
+    case ECONNREFUSED:  return io::ErrorKind::ConnectionRefused;
+    case ECONNRESET:    return io::ErrorKind::ConnectionReset;
+    case ECONNABORTED:  return io::ErrorKind::ConnectionAborted;
+    case ENOTCONN:      return io::ErrorKind::NotConnected;
+    case EADDRINUSE:    return io::ErrorKind::AddrInUse;
+    case EADDRNOTAVAIL: return io::ErrorKind::AddrNotAvailable;
+    case ENETUNREACH:   return io::ErrorKind::NetworkUnreachable;
+    case EHOSTUNREACH:  return io::ErrorKind::HostUnreachable;
+    case ENETDOWN:      return io::ErrorKind::NetworkDown;
+    case EPIPE:         return io::ErrorKind::BrokenPipe;
+    case EEXIST:        return io::ErrorKind::AlreadyExists;
+    case EWOULDBLOCK:   return io::ErrorKind::WouldBlock;
+    case EINVAL:        return io::ErrorKind::InvalidInput;
+    case EBADMSG:       return io::ErrorKind::InvalidData;
+    case ENOTSUP:       return io::ErrorKind::InvalidOperation;
+    case EINTR:         return io::ErrorKind::Interrupted;
+    case ENOSYS:        return io::ErrorKind::Unsupported;
+    case ENOSPC:        return io::ErrorKind::WriteZero;
+    case ETIMEDOUT:     return io::ErrorKind::TimedOut;
+    case EISDIR:        return io::ErrorKind::IsADirectory;
+    case ENOTDIR:       return io::ErrorKind::NotADirectory;
+    case ENOTEMPTY:     return io::ErrorKind::DirectoryNotEmpty;
+    case ESPIPE:        return io::ErrorKind::NotSeekable;
+    case EFBIG:         return io::ErrorKind::FileTooLarge;
+    case EBUSY:         return io::ErrorKind::ResourceBusy;
+    case EDEADLK:       return io::ErrorKind::Deadlock;
+    case ENOMEM:        return io::ErrorKind::OutOfMemory;
+    case EINPROGRESS:   return io::ErrorKind::InProgress;
+    default:            return io::ErrorKind::Other;
   }
 }
 

@@ -293,7 +293,7 @@ auto metadata(Path path) -> io::Result<Metadata> {
 
 auto create_dir(Path path) -> io::Result<> {
   if (path._inn.is_empty() || path.is_root()) {
-    return io::Error::InvalidInput;
+    return io::Error{io::ErrorKind::InvalidInput};
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
@@ -302,7 +302,7 @@ auto create_dir(Path path) -> io::Result<> {
 
 auto create_dir_all(Path path) -> io::Result<> {
   const auto err = fs::create_dir(path).err();
-  if (!err || *err == io::Error::AlreadyExists) {
+  if (!err || err->kind() == io::ErrorKind::AlreadyExists) {
     return {};
   }
 

@@ -22,7 +22,7 @@ struct WBuf : io::Write {
 
   auto write(Slice<const u8> buf) -> Result<usize> {
     if (_buf.is_empty()) {
-      return Error::UnexpectedEof;
+      return Error{ErrorKind::UnexpectedEof};
     }
     const auto len = cmp::min(_buf._len, buf._len);
     ptr::copy_nonoverlapping(buf._ptr, _buf._ptr, len);

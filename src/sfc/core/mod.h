@@ -96,4 +96,8 @@ template <class T, class E>
 class Result;
 }
 
+namespace io {
+struct Error;
+}
+
 }  // namespace sfc
