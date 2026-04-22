@@ -221,7 +221,8 @@ namespace sfc {
 using result::Result;
 }  // namespace sfc
 
-#if defined(__GNUC__) || (defined(__clang__) && !defined(__clang_analyzer__)) && !defined(__INTELLISENSE__)
+#if !defined(__clang_analyzer__) && !defined(__INTELLISENSE__)
+#if defined(__GNUC__) || defined(__clang__)
 #define _TRY(expr)                        \
   ({                                      \
     auto _res = (expr);                   \
@@ -230,6 +231,9 @@ using result::Result;
     }                                     \
     _res.unwrap_unchecked();              \
   })
-#else
+#endif
+#endif
+
+#ifndef _TRY
 #define _TRY(expr) expr.unwrap()
 #endif

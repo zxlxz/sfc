@@ -138,7 +138,7 @@ struct Slice {
   auto rfind(const T& x) const noexcept -> Option<usize> {
     for (auto i = _len; i != 0U; --i) {
       if (_ptr[i - 1] == x) {
-        return i;
+        return i - 1;
       }
     }
     return {};
