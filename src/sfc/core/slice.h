@@ -106,8 +106,12 @@ struct Slice {
   }
 
   void fill(T val) noexcept {
-    for (auto p = _ptr, e = p + _len; p != e; ++p) {
-      *p = val;
+    if constexpr (sizeof(T) == 1) {
+      ptr::write_bytes(_ptr, static_cast<u8>(val), _len);
+    } else {
+      for (auto p = _ptr, e = p + _len; p != e; ++p) {
+        *p = val;
+      }
     }
   }
 
