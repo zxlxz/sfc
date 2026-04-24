@@ -3,8 +3,10 @@
 
 namespace sfc {
 
+namespace slice {
+
 template <class T>
-auto slice::Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+auto Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (_len == 0 || buf._len == 0) {
     return usize{0};
   }
@@ -15,15 +17,19 @@ auto slice::Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   return amt;
 }
 
+template auto Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
+template auto Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
+}  // namespace slice
+
+namespace vec {
+
 template <class T, class A>
-auto vec::Vec<T, A>::write(Slice<const u8> buf) -> io::Result<usize> {
+auto Vec<T, A>::write(Slice<const u8> buf) -> io::Result<usize> {
   this->extend_from_slice(buf);
   return buf.len();
 }
 
-template auto slice::Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
-template auto slice::Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
-
-template auto vec::Vec<u8>::write(Slice<const u8> buf) -> io::Result<usize>;
+template auto Vec<u8>::write(Slice<const u8> buf) -> io::Result<usize>;
+}  // namespace vec
 
 }  // namespace sfc

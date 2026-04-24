@@ -51,16 +51,13 @@ struct Error {
   static auto from_raw_os_error(ErrCode err) noexcept -> Error;
   static auto last_os_error() noexcept -> Error;
 
-  auto kind() const noexcept -> ErrorKind {
-    return _kind;
-  }
-
-  auto raw_os_err() const noexcept -> ErrCode {
-    return _code;
-  }
+  auto kind() const noexcept -> ErrorKind;
+  auto raw_os_err() const noexcept -> ErrCode;
+  auto to_str() const noexcept -> Str;
 
   void fmt(auto& f) const {
-    f.write_val(_kind);
+    const auto s = this->to_str();
+    f.write_str(s);
   }
 };
 
