@@ -3,7 +3,7 @@ BasedOnStyle: Google
 ---
 Language: Cpp
 Standard: Latest
-ColumnLimit: 120
+ColumnLimit: 100
 
 AlignConsecutiveDeclarations: false
 AlignConsecutiveAssignments: false
