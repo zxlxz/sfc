@@ -45,7 +45,10 @@ class Buffer {
   }
 
   auto read_more(auto& read) -> io::Result<usize> {
-    return read.read(_buf.spare_capacity_mut());
+    auto buf = _buf.spare_capacity_mut();
+    const auto nread = _TRY(read.read(buf));
+    _buf.set_len(_buf.len() + nread);
+    return nread;
   }
 
   auto fill_buf(auto& read) -> Result<Slice<const u8>> {
@@ -100,14 +103,14 @@ struct BufRead : Read {
 };
 
 template <class R>
-class BufReader : BufRead {
+class BufReader : public BufRead {
   static constexpr usize DEFAULT_BUFF_SIZE = 1024U;
 
   R _inn;
   Buffer _buf = Buffer::with_capacity(DEFAULT_BUFF_SIZE);
 
  public:
-  explicit BufReader(R&& inn) noexcept : _inn{static_cast<R&&>(inn)} {}
+  explicit BufReader(R inn) noexcept : _inn{static_cast<R&&>(inn)} {}
   ~BufReader() noexcept = default;
 
   BufReader(BufReader&&) noexcept = default;
@@ -134,12 +137,13 @@ class BufReader : BufRead {
   auto peak(usize n) -> Result<Slice<const u8>> {
     if (n > _buf.len()) {
       _buf.backshift();
-      _TRY(_buf.read_more(_inn));
+      _TRY(_buf.fill_buf(_inn));
     }
-    return _buf.buffer()[{0, n}];
+    const auto buf = _buf.buffer();
+    return buf[{0, n}];
   }
 
-  // trait:: io::Read
+  // trait: io::Read
   auto read(Slice<u8> buf) -> Result<usize> {
     // if we dont't have any buffered data
     // read directly into the user's buffer
@@ -156,14 +160,14 @@ class BufReader : BufRead {
 };
 
 template <class W>
-class BufWriter : Write {
+class BufWriter : public Write {
   static constexpr usize BUFF_SIZE = 1024U;
 
   W _inn;
   Vec<u8> _buf{Vec<u8>::with_capacity(BUFF_SIZE)};
 
  public:
-  explicit BufWriter(W&& inn) noexcept : _inn{static_cast<W&&>(inn)} {}
+  explicit BufWriter(W inn) noexcept : _inn{static_cast<W&&>(inn)} {}
 
   ~BufWriter() noexcept {
     (void)this->flush();
@@ -190,7 +194,7 @@ class BufWriter : Write {
   }
 
  public:
-  // triat:: io::Read
+  // trait: io::Read
   auto write(Slice<const u8> buf) -> Result<usize> {
     const auto buf_len = buf.len();
     if (buf_len > this->spare_capacity()) {

@@ -7,7 +7,7 @@ struct RBuf : io::Read {
   Slice<const u8> _buf;
 
  public:
-  RBuf(Str s) : _buf{s.as_bytes()} {}
+  explicit RBuf(Str s) : _buf{s.as_bytes()} {}
 
   auto read(Slice<u8> buf) {
     return _buf.read(buf);
@@ -18,7 +18,7 @@ struct WBuf : io::Write {
   Slice<u8> _buf;
 
  public:
-  WBuf(Slice<u8> buf) : _buf{buf} {}
+  explicit WBuf(Slice<u8> buf) : _buf{buf} {}
 
   auto write(Slice<const u8> buf) -> Result<usize> {
     if (_buf.is_empty()) {
