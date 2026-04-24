@@ -6,33 +6,43 @@ namespace sfc::sys::windows {
 using mem::Layout;
 
 static inline auto alloc(Layout layout) -> void* {
-  if (layout.size == 0) {
+  const auto size = layout.size;
+  const auto align = layout.align;
+
+  if (size == 0) {
     return nullptr;
   }
-  if (layout.align <= alignof(max_align_t)) {
-    return ::malloc(layout.size);
+
+  if (align <= alignof(max_align_t)) {
+    return ::malloc(size);
   }
+
   return ::_aligned_malloc(layout.size, layout.align);
 }
 
-
 static inline void dealloc(void* ptr, Layout layout) noexcept {
+  const auto align = layout.align;
+
   if (ptr == nullptr) {
     return;
   }
-  if (layout.align <= alignof(max_align_t)) {
+
+  if (align <= alignof(max_align_t)) {
     ::free(ptr);
-  } else {
-    ::_aligned_free(ptr);
+    return;
   }
+
+  ::_aligned_free(ptr);
 }
 
 static inline auto realloc(void* ptr, Layout layout, usize new_size) -> void* {
-  if (layout.align <= alignof(max_align_t)) {
+  const auto align = layout.align;
+
+  if (align <= alignof(max_align_t)) {
     return ::realloc(ptr, new_size);
   }
 
-  return ::_aligned_realloc(ptr, new_size, layout.align);
+  return ::_aligned_realloc(ptr, new_size, align);
 }
 
 }  // namespace sfc::sys::windows

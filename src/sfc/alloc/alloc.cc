@@ -12,34 +12,34 @@ auto Global::alloc(Layout layout) noexcept -> void* {
   if (layout.align == 0 || (layout.align & (layout.align - 1)) != 0) {
     return nullptr;
   }
+
   if (layout.size == 0 || layout.size % layout.align != 0) {
     return nullptr;
   }
 
-  const auto p = sys::alloc(layout);
-  sfc::expect(p, "Global::alloc(size={}, align={}): failed", layout.size, layout.align);
-  return p;
+  // no need to check if ptr is nullptr here
+  // the caller should handle it
+  const auto ptr = sys::alloc(layout);
+  return ptr;
 }
 
-void Global::dealloc(void* ptr, [[maybe_unused]] Layout layout) noexcept {
+void Global::dealloc(void* ptr, Layout layout) noexcept {
   if (ptr == nullptr) {
     return;
   }
+
   sys::dealloc(ptr, layout);
 }
 
 auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
-  // since the old ptr will always be valid
-  // we can just return it when the new layout is invalid
   if (layout.align == 0 || (layout.align & (layout.align - 1)) != 0) {
     return ptr;
   }
+
   if (layout.size % layout.align != 0 || new_size % layout.align != 0) {
     return ptr;
   }
 
-  // if new_size == old_size:
-  //   just return the same block, no need to realloc
   if (new_size == layout.size) {
     return ptr;
   }
@@ -52,6 +52,7 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
   if (ptr == nullptr) {
     return sys::alloc({new_size, layout.align});
   }
+
   return sys::realloc(ptr, layout, new_size);
 }
 

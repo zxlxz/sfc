@@ -5,41 +5,49 @@
 namespace sfc::sys::unix {
 
 auto alloc(mem::Layout layout) -> void* {
-  if (layout.size == 0) {
+  const auto size = layout.size;
+  const auto align = layout.align;
+
+  if (size == 0) {
     return nullptr;
   }
 
-  if (layout.align <= alignof(max_align_t)) {
-    return ::malloc(layout.size);
+  if (align <= alignof(max_align_t)) {
+    return ::malloc(size);
   }
 
-  return ::aligned_alloc(layout.align, layout.size);
+  return ::aligned_alloc(align, size);
 }
 
 void dealloc(void* ptr, [[maybe_unused]] mem::Layout layout) noexcept {
   if (ptr == nullptr) {
     return;
   }
+
   ::free(ptr);
 }
 
 auto realloc(void* ptr, mem::Layout layout, usize new_size) -> void* {
-  // if (alignment <= system alignment): use realloc directly
-  if (layout.align <= alignof(max_align_t)) {
-    return ::realloc(ptr, new_size);
-  }
+  const auto align = layout.align;
+  const auto old_size = layout.size;
 
-  // if new_size <= old_size:
-  //    just return the same block, no need to realloc
-  if (new_size <= layout.size) {
+  // if old_size == new_size: return old ptr
+  if (old_size == new_size) {
     return ptr;
   }
 
-  // (new_size > old_size):
-  //    need to alloc new block and copy
-  const auto new_ptr = ::aligned_alloc(layout.align, new_size);
-  if (new_ptr) ::memcpy(new_ptr, ptr, layout.size);
+  // if align <= max_align: use realloc
+  if (align <= alignof(max_align_t)) {
+    return ::realloc(ptr, new_size);
+  }
+
+  const auto new_ptr = ::aligned_alloc(align, new_size);
+  const auto copy_size = old_size < new_size ? old_size : new_size;
+  if (new_ptr && ptr && copy_size != 0) {
+    ::memcpy(new_ptr, ptr, copy_size);
+  }
   ::free(ptr);
+
   return new_ptr;
 }
 
