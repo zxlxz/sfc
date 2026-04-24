@@ -6,7 +6,7 @@
 namespace sfc::sys::windows {
 
 struct Thread {
-  HANDLE _thrd = nullptr;
+  HANDLE _raw = nullptr;
 
  public:
   static auto current() -> DWORD {
@@ -28,9 +28,8 @@ struct Thread {
     return Thread{reinterpret_cast<HANDLE>(thrd)};
   }
 
-  static auto yield_now() -> bool {
-    const auto ret = ::SwitchToThread();
-    return bool(ret);
+  static void yield_now() {
+    (void)::SwitchToThread();
   }
 
   static auto set_name(const wchar_t* name) -> bool {
@@ -44,37 +43,34 @@ struct Thread {
   }
 
   auto is_valid() const -> bool {
-    return _thrd != nullptr && _thrd != INVALID_HANDLE_VALUE;
+    return _raw != nullptr && _raw != INVALID_HANDLE_VALUE;
   }
 
-  auto join() -> bool {
-    if (_thrd == nullptr) {
-      return true;
-    }
+  void join() {
+    sfc::expect(this->is_valid(), "Thread::join: invalid thread");
 
-    const auto ret = ::WaitForSingleObject(_thrd, INFINITE);
-    ::CloseHandle(_thrd);
-    _thrd = nullptr;
-    return ret == WAIT_OBJECT_0;
+    const auto ret = ::WaitForSingleObject(_raw, INFINITE);
+    ::CloseHandle(_raw);
+    sfc::expect(ret == WAIT_OBJECT_0,
+                "Thread::join: WaitForSingleObject failed, err={}",
+                ::GetLastError());
   }
 
-  auto detach() -> bool {
-    if (_thrd == nullptr) {
-      return true;
-    }
-    const auto ret = ::CloseHandle(_thrd);
-    _thrd = nullptr;
-    return bool(ret);
+  void detach() {
+    sfc::expect(this->is_valid(), "Thread::detach: invalid thread");
+    (void)::CloseHandle(_raw);
   }
 };
 
-inline auto sleep_ms(unsigned millis) -> bool {
+inline void sleep(time::Duration dur) {
+  const auto millis = static_cast<DWORD>(dur.as_millis());
+
   if (millis == 0) {
-    return bool(::SwitchToThread());
+    ::SwitchToThread();
+    return;
   }
 
   ::Sleep(millis);
-  return true;
 }
 
 }  // namespace sfc::sys::windows

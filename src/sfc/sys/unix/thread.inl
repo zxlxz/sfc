@@ -5,9 +5,26 @@
 
 namespace sfc::sys::unix {
 
+struct ThreadAttr {
+  pthread_attr_t _raw;
+
+  ThreadAttr() {
+    ::pthread_attr_init(&_raw);
+  }
+
+  ~ThreadAttr() {
+    ::pthread_attr_destroy(&_raw);
+  }
+
+  void set_stack_size(size_t stack_size) {
+    if (stack_size == 0) return;
+    ::pthread_attr_setstacksize(&_raw, stack_size);
+  }
+};
+
 struct Thread {
   using func_t = void* (*)(void*);
-  pthread_t _thr = 0;
+  pthread_t _raw = {};
 
  public:
   static auto current() -> u32 {
@@ -20,7 +37,7 @@ struct Thread {
     return static_cast<u32>(tid);
   }
 
-  template<class Fn>
+  template <class Fn>
   static auto callback(void* p) -> void* {
     const auto ret = Fn::run(p);
     return ret ? nullptr : reinterpret_cast<void*>(-1LL);
@@ -29,26 +46,20 @@ struct Thread {
   template <class Fn>
   static auto spawn(size_t stack_size, Fn* func) -> Thread {
     // thread attr
-    auto attr = ::pthread_attr_t{};
-    ::pthread_attr_init(&attr);
-    if (stack_size != 0) {
-      ::pthread_attr_setstacksize(&attr, stack_size);
-    }
+    auto attr = ThreadAttr{};
+    attr.set_stack_size(stack_size);
 
     // create
     auto thr = pthread_t{};
-    const auto ret = ::pthread_create(&thr, &attr, callback<Fn>, func);
-    ::pthread_attr_destroy(&attr);
-    if (ret != 0) {
+    if (auto err = ::pthread_create(&thr, &attr._raw, callback<Fn>, func); err != 0) {
       return {};
     }
 
     return Thread{thr};
   }
 
-  static auto yield_now() -> bool {
-    const auto err = ::sched_yield();
-    return err == 0;
+  static void yield_now() {
+    (void)::sched_yield();
   }
 
   static auto set_name(const char* name) -> bool {
@@ -62,39 +73,38 @@ struct Thread {
   }
 
   auto is_valid() const -> bool {
-    return _thr != 0;
+    return _raw != 0;
   }
 
-  auto join() -> bool {
-    if (_thr == 0) {
-      return true;
-    }
-    const auto err = ::pthread_join(_thr, nullptr);
-    _thr = 0;
-    return err == 0;
+  void join() {
+    sfc::expect(this->is_valid(), "Thread::join: invalid thread");
+    // just join, don't change thrd, the caller should handle it
+    const auto err = ::pthread_join(_raw, nullptr);
+    sfc::expect(err == 0, "Thread::join: pthread_join failed, err={}", err);
   }
 
-  auto detach() -> bool {
-    if (_thr == 0) {
-      return true;
-    }
-    const auto err = ::pthread_detach(_thr);
-    _thr = 0;
-    return err == 0;
+  void detach() {
+    sfc::expect(this->is_valid(), "Thread::detach: invalid thread");
+    // just detach, don't change thrd, the caller should handle it
+    const auto err = ::pthread_detach(_raw);
+    sfc::expect(err == 0, "Thread::detach: pthread_detach failed, err={}", err);
   }
 };
 
-inline auto sleep_ms(unsigned millis) -> bool {
-  static constexpr auto MILLIS_PER_SEC = 1000U;
-  static constexpr auto NANOS_PER_MILLI = 1000000U;
+inline void sleep(time::Duration dur) noexcept {
+  using namespace time;
 
-  auto ts = ::timespec{
-      .tv_sec = millis / MILLIS_PER_SEC,
-      .tv_nsec = (millis % MILLIS_PER_SEC) * NANOS_PER_MILLI,
+  if (dur._nanos <= NANOS_PER_MILLI) {
+    ::sched_yield();
+    return;
+  }
+
+  const auto ts = ::timespec{
+      .tv_sec = static_cast<time_t>(dur.as_secs()),
+      .tv_nsec = dur.subsec_nanos(),
   };
 
-  const auto err = ::nanosleep(&ts, nullptr);
-  return err == 0;
+  (void)::nanosleep(&ts, nullptr);
 }
 
 }  // namespace sfc::sys::unix

@@ -23,12 +23,12 @@ void yield_now() {
 }
 
 void sleep(time::Duration dur) {
-  const auto millis = static_cast<u32>(dur.as_millis());
-  sys::sleep_ms(millis);
+  sys::sleep(dur);
 }
 
 void sleep_ms(u32 ms) {
-  sys::sleep_ms(ms);
+  const auto dur = time::Duration::from_millis(ms);
+  sys::sleep(dur);
 }
 
 }  // namespace sfc::thread
