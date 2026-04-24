@@ -11,14 +11,14 @@ static auto getenv(const char* key) -> ffi::CString {
 
 static auto setenv(const char* key, const char* val) -> bool {
   if (val == nullptr) {
-    return ::unsetenv(key) == 0;
+    return ::unsetenv(key) != -1;
   }
 
-  return ::setenv(key, val, 1) == 0;
+  return ::setenv(key, val, 1) != -1;
 }
 
 static auto unsetenv(const char* key) -> bool {
-  return ::unsetenv(key) == 0;
+  return ::unsetenv(key) != -1;
 }
 
 static auto home_dir() -> ffi::CString {
@@ -64,8 +64,7 @@ static auto getcwd() -> ffi::CString {
 }
 
 static auto chdir(const char* path) -> bool {
-  const auto ret = ::chdir(path);
-  return ret == 0;
+  return ::chdir(path) != -1;
 }
 
 }  // namespace sfc::sys::unix

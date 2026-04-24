@@ -13,7 +13,7 @@ struct Instant {
 
   static auto now() noexcept -> Instant {
     auto ts = timespec{};
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    (void)::clock_gettime(CLOCK_MONOTONIC, &ts);
     return Instant{ts};
   }
 
@@ -28,7 +28,7 @@ struct SystemTime {
 
   static auto now() noexcept -> SystemTime {
     struct timespec ts{};
-    ::clock_gettime(CLOCK_REALTIME, &ts);
+    (void)::clock_gettime(CLOCK_REALTIME, &ts);
     return SystemTime{ts};
   }
 

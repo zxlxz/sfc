@@ -43,43 +43,25 @@ class Mutex {
   }
 
   void lock() {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
     const auto err = ::pthread_mutex_lock(_raw);
-    if (err != 0) {
-      throw io::from_raw_os_error(err);
-    }
+    sfc::expect(err == 0, "sync::Mutex::lock: failed, err={}", err);
   }
 
   void unlock() {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
     const auto err = ::pthread_mutex_unlock(_raw);
-    if (err != 0) {
-      throw io::from_raw_os_error(err);
-    }
+    sfc::expect(err == 0, "sync::Mutex::unlock: failed, err={}", err);
   }
 
   auto try_lock() -> bool {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
-    const auto ret = ::pthread_mutex_trylock(_raw);
-    if (ret != 0 && ret != EBUSY) {
-      throw io::from_raw_os_error(ret);
-    }
-    return ret == 0;
+    const auto err = ::pthread_mutex_trylock(_raw);
+    sfc::expect(err == 0 || err == EBUSY, "sync::Mutex::try_lock: failed, err={}", err);
+    return err == 0;
   }
 };
 
 class Condvar {
 #ifdef __APPLE__
-  // macOS's pthread_cond_t does not support CLOCK_MONOTONIC, and it always uses CLOCK_REALTIME internally
+  // macOS's pthread_cond_t does not support CLOCK_MONOTONIC
   static constexpr auto CLOCK_ID = CLOCK_REALTIME;
 #else
   static constexpr auto CLOCK_ID = CLOCK_MONOTONIC;
@@ -90,26 +72,33 @@ class Condvar {
   pthread_cond_t* _raw{nullptr};
 
  public:
-  explicit Condvar() {
-    auto attr = pthread_condattr_t{};
-    if (::pthread_condattr_init(&attr) != 0) {
-      return;
+  struct CondAttr {
+    pthread_condattr_t _raw;
+
+    CondAttr() {
+      (void)pthread_condattr_init(&_raw);
     }
 
-#ifdef __linux__
-    if (::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) != 0) {
-      return;
+    ~CondAttr() {
+      (void)pthread_condattr_destroy(&_raw);
     }
+
+    void set_clock(u32 clock_id) {
+#ifdef __linux__
+      (void)pthread_condattr_setclock(&_raw, clock_id);
 #endif
+    }
+  };
+
+  explicit Condvar() {
+    auto attr = CondAttr{};
+    attr.set_clock(CLOCK_ID);
 
     _raw = static_cast<pthread_cond_t*>(::malloc(sizeof(pthread_cond_t)));
-    if (auto err = ::pthread_cond_init(_raw, &attr); err != 0) {
+    if (auto err = ::pthread_cond_init(_raw, &attr._raw); err != 0) {
       ::free(_raw);
       _raw = nullptr;
     }
-
-    // no need to check error here, since even if attr destruction fails, it won't affect the condvar
-    (void)::pthread_condattr_destroy(&attr);
   }
 
   ~Condvar() {
@@ -134,43 +123,25 @@ class Condvar {
   }
 
   void notify_one() {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
-    if (auto err = ::pthread_cond_signal(_raw); err != 0) {
-      throw io::from_raw_os_error(err);
-    }
+    const auto err = ::pthread_cond_signal(_raw);
+    sfc::expect(err == 0, "sync::Condvar::notify_one: failed, err={}", err);
   }
 
   void notify_all() {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
-    if (auto err = ::pthread_cond_broadcast(_raw); err != 0) {
-      throw io::from_raw_os_error(err);
-    }
+    const auto err = ::pthread_cond_broadcast(_raw);
+    sfc::expect(err == 0, "sync::Condvar::notify_all: failed, err={}", err);
   }
 
   void wait(Mutex& mtx) {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
-    if (auto err = ::pthread_cond_wait(_raw, mtx._raw); err != 0) {
-      throw io::from_raw_os_error(err);
-    }
+    const auto err = ::pthread_cond_wait(_raw, mtx._raw);
+    sfc::expect(err == 0, "sync::Condvar::wait: failed, err={}", err);
   }
 
-  bool wait_timeout(Mutex& mtx, time::Duration dur) {
-    if (_raw == nullptr) {
-      throw io::Error::InvalidData;
-    }
-
+  auto wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
     struct timespec ts{};
     if (::clock_gettime(CLOCK_ID, &ts) == -1) {
-      throw io::last_os_error();
+      const auto err = errno;
+      sfc::expect(false, "sync::Condvar::wait_timeout: clock_gettime failed, err={}", err);
     }
 
     ts.tv_sec += dur.as_secs();
@@ -181,9 +152,7 @@ class Condvar {
     }
 
     const auto err = ::pthread_cond_timedwait(_raw, mtx._raw, &ts);
-    if (err != 0 && err != ETIMEDOUT) {
-      throw io::from_raw_os_error(err);
-    }
+    sfc::expect(err == 0 || err == ETIMEDOUT, "sync::Condvar::wait_timeout: failed, err={}", err);
     return err == 0;
   }
 };
