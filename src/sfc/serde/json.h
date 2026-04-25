@@ -56,13 +56,13 @@ struct Serializer {
 
   void serialize_int(num::int_ auto val) noexcept {
     char buf[32];
-    const auto s = fmt::Debug::format_int(buf, val);
+    const auto s = fmt::Display::format_int(buf, val);
     _buf.push_str(s);
   }
 
   void serialize_flt(num::float_ auto val) noexcept {
     char buf[32];
-    const auto s = fmt::Debug::format_flt(buf, val, 6);
+    const auto s = fmt::Display::format_flt(buf, val, 6);
     _buf.push_str(s);
   }
 
