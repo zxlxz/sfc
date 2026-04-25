@@ -56,4 +56,43 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
   return sys::realloc(ptr, layout, new_size);
 }
 
+auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
+  if (old_layout.align != new_layout.align) {
+    panic::expect(false,
+                  "alloc::Global::grow: alignment cannot be changed (old={}, new={})",
+                  old_layout.align,
+                  new_layout.align);
+  }
+
+  if (old_layout.size >= new_layout.size) {
+    return ptr;
+  }
+
+  if (old_layout.size == 0) {
+    return this->alloc(new_layout);
+  }
+
+  return sys::realloc(ptr, old_layout, new_layout.size);
+}
+
+auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
+  if (old_layout.align != new_layout.align) {
+    panic::expect(false,
+                  "alloc::Global::shrink: alignment cannot be changed (old={}, new={})",
+                  old_layout.align,
+                  new_layout.align);
+  }
+
+  if (old_layout.size <= new_layout.size) {
+    return ptr;
+  }
+
+  if (new_layout.size == 0) {
+    this->dealloc(ptr, old_layout);
+    return nullptr;
+  }
+
+  return this->realloc(ptr, old_layout, new_layout.size);
+}
+
 }  // namespace sfc::alloc
