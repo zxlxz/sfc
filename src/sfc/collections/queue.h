@@ -72,6 +72,10 @@ class [[nodiscard]] Queue {
     return _len == _buf.cap();
   }
 
+  auto is_contiguous() const noexcept -> bool {
+    return _head + _len <= _buf.cap();
+  }
+
  public:
   auto top() const noexcept -> Option<const T&> {
     if (_len == 0) {
@@ -92,7 +96,7 @@ class [[nodiscard]] Queue {
       this->reserve(1);
     }
 
-    const auto new_tail = this->to_physical_index(_len);
+    const auto new_tail = this->to_physical_idx(_len);
     ptr::write(&_buf[new_tail], static_cast<T&&>(value));
     _len += 1;
   }
@@ -103,55 +107,45 @@ class [[nodiscard]] Queue {
     }
 
     const auto old_head = _head;
-    _head = this->to_physical_index(1);
+    _head = this->to_physical_idx(1);
     _len -= 1;
     return ptr::read(&_buf[old_head]);
   }
 
- public:
   void clear() noexcept {
     if (_len == 0) {
       return;
     }
     auto [s1, s2] = this->as_mut_slices();
-    ptr::drop_in_place(s1._ptr, s1._len);
-    ptr::drop_in_place(s2._ptr, s2._len);
+    ptr::drop(s1._ptr, s1._len);
+    ptr::drop(s2._ptr, s2._len);
     _len = 0;
     _head = 0;
   }
 
   void reserve(usize additional) noexcept {
-    if (_len + additional <= _buf.cap()) {
+    const auto new_cap = _len + additional;
+    const auto old_cap = _buf.cap();
+    if (new_cap <= old_cap) {
       return;
     }
-    const auto new_cap = num::next_power_of_two(_len + additional);
-    this->reserve_exact(new_cap - _len);
+
+    _buf.reserve(_len, additional);
+    this->handle_capacity_increase(old_cap);
   }
 
   void reserve_exact(usize additional) noexcept {
-    if (_len + additional <= _buf.cap()) {
+    const auto new_cap = _len + additional;
+    const auto old_cap = _buf.cap();
+    if (new_cap <= old_cap) {
       return;
     }
 
-    const auto new_cap = _len + additional;
-    if (_head == 0) {
-      _buf.realloc(_len, new_cap);
-    } else {
-      auto [s1, s2] = this->as_mut_slices();
-      auto new_buf = RawVec<T, A>::with_capacity(new_cap);
-      ptr::uninit_move(s1._ptr, new_buf.ptr(), s1._len);
-      ptr::uninit_move(s2._ptr, new_buf.ptr() + s1._len, s2._len);
-      _head = 0;
-      _buf = mem::move(new_buf);
-    }
+    _buf.reserve_exact(_len, additional);
+    this->handle_capacity_increase(old_cap);
   }
 
  public:
-  auto to_physical_index(usize idx) const noexcept -> usize {
-    const auto logic_idx = _head + idx;
-    return logic_idx < _buf.cap() ? logic_idx : logic_idx - _buf.cap();
-  }
-
   auto as_slices() const -> Tuple<Slice<const T>, Slice<const T>> {
     const auto p = const_cast<const T*>(_buf.ptr());
     if (_head + _len <= _buf.cap()) {
@@ -188,6 +182,35 @@ class [[nodiscard]] Queue {
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
+  }
+
+ private:
+  auto to_physical_idx(usize idx) const noexcept -> usize {
+    const auto cap = _buf.cap();
+    const auto pos = idx + _head;
+    return pos < cap ? pos : pos - cap;
+  }
+
+  void handle_capacity_increase(usize old_cap) noexcept {
+    if (_len == 0) {
+      return;
+    }
+
+    if (_head <= old_cap - _len) {
+      return;
+    }
+
+    const auto ptr = _buf.ptr();
+    const auto new_cap = _buf.cap();
+    const auto head_len = old_cap - _head;
+    const auto tail_len = _len - head_len;
+    if (head_len > tail_len && old_cap + tail_len <= new_cap) {
+      ptr::copy_nonoverlapping(ptr, ptr + old_cap, tail_len);
+    } else {
+      const auto new_head = new_cap - head_len;
+      ptr::copy(ptr + _head, ptr + new_head, head_len);
+      _head = new_head;
+    }
   }
 };
 
