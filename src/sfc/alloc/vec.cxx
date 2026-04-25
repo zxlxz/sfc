@@ -2,6 +2,24 @@
 
 namespace sfc::vec::test {
 
+struct RefCnt {
+  int* _cnt;
+
+ public:
+  RefCnt(int& cnt) : _cnt{&cnt} {
+    *_cnt += 1;
+  }
+
+  ~RefCnt() {
+    if (!_cnt) return;
+    *_cnt -= 1;
+  }
+
+  RefCnt(RefCnt&& other) noexcept : _cnt{other._cnt} {
+    other._cnt = nullptr;
+  }
+};
+
 SFC_TEST(index) {
   int tmp[] = {0, 1, 2, 3};
 
@@ -93,29 +111,13 @@ SFC_TEST(drain) {
   sfc::expect_eq(v[3], 5);
 }
 
-struct AutoConter {
-  int* _cnt;
-  AutoConter(int& cnt) : _cnt{&cnt} {
-    *_cnt += 1;
-  }
-
-  ~AutoConter() {
-    if (!_cnt) return;
-    *_cnt -= 1;
-  }
-
-  AutoConter(AutoConter&& other) noexcept : _cnt{other._cnt} {
-    other._cnt = nullptr;
-  }
-};
 SFC_TEST(memory) {
-  auto v = Vec<AutoConter>{};
-
   auto cnt = 0;
+  auto v = Vec<RefCnt>{};
 
   // push
   for (auto i = 0; i < 10; ++i) {
-    v.push(AutoConter{cnt});
+    v.push(RefCnt{cnt});
     sfc::expect_eq(cnt, i + 1);
   }
 
@@ -124,7 +126,7 @@ SFC_TEST(memory) {
   sfc::expect_eq(cnt, 9);
 
   // insert
-  v.insert(5, AutoConter{cnt});
+  v.insert(5, RefCnt{cnt});
   sfc::expect_eq(cnt, 10);
 
   // remove

@@ -8,6 +8,8 @@ static constexpr auto MAX_SIZE = num::max_value<usize>() / 4;
 
 template <class T, class A = alloc::Global>
 class RawVec {
+  static constexpr usize kMinCap = sizeof(T) == 1 ? 8UL : sizeof(T) <= 256 ? 4UL : 1UL;
+
   T* _ptr{nullptr};
   usize _cap{0};
   [[no_unique_address]] A _a{};
@@ -64,22 +66,41 @@ class RawVec {
     return _a;
   }
 
-  void realloc(usize used, usize new_cap) noexcept {
-    if (used > new_cap) {
+  void reserve(usize len, usize additional) noexcept {
+    if (additional < _cap - len) {
       return;
     }
-    sfc::expect(new_cap < MAX_SIZE, "RawVec::realloc: new capacity(={}) too large", new_cap);
 
-    const auto old_ptr = _ptr;
+    const auto req_cap = len + additional;
+    const auto fit_cap = cmp::max(req_cap, _cap * 2);
+    const auto new_cap = cmp::max(fit_cap, kMinCap);
+
     const auto old_layout = alloc::Layout::template array<T>(_cap);
     const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    if (__is_trivially_copyable(T) || used == 0) {
-      _ptr = static_cast<T*>(_a.realloc(old_ptr, old_layout, new_cap * sizeof(T)));
-    } else {
-      _ptr = static_cast<T*>(_a.alloc(new_layout));
-      ptr::uninit_move(old_ptr, _ptr, used);
-      _a.dealloc(old_ptr, old_layout);
+    _ptr = static_cast<T*>(_a.grow(_ptr, old_layout, new_layout));
+    _cap = new_cap;
+  }
+
+  void reserve_exact(usize len, usize additional) noexcept {
+    if (additional < _cap - len) {
+      return;
     }
+
+    const auto new_cap = len + additional;
+    const auto old_layout = alloc::Layout::template array<T>(_cap);
+    const auto new_layout = alloc::Layout::template array<T>(new_cap);
+    _ptr = static_cast<T*>(_a.grow(_ptr, old_layout, new_layout));
+    _cap = new_cap;
+  }
+
+  void shrink_to(usize new_cap) noexcept {
+    if (new_cap >= _cap) {
+      return;
+    }
+
+    const auto old_layout = alloc::Layout::template array<T>(_cap);
+    const auto new_layout = alloc::Layout::template array<T>(new_cap);
+    _ptr = static_cast<T*>(_a.shrink(_ptr, old_layout, new_layout));
     _cap = new_cap;
   }
 };
@@ -238,47 +259,28 @@ class [[nodiscard]] Vec {
     if (len >= _len) {
       return;
     }
-    ptr::drop_in_place(_buf.ptr() + len, _len - len);
+    ptr::drop(_buf.ptr() + len, _len - len);
     _len = len;
   }
 
   void reserve(usize additional) noexcept {
-    if (additional <= _buf.cap() - _len) {
-      return;
-    }
-    sfc::expect(additional < MAX_SIZE, "Vec::reserve: additional(={}) too large", additional);
-
-    const auto req_cap = cmp::max(_len + additional, _buf.cap() * 2);
-    const auto new_cap = cmp::max(req_cap, usize{8UL});
-    _buf.realloc(_len, new_cap);
+    _buf.reserve(_len, additional);
   }
 
   void reserve_exact(usize additional) noexcept {
-    if (additional <= _buf.cap() - _len) {
-      return;
-    }
-    sfc::expect(additional < MAX_SIZE, "Vec::reserve_exact: additional(={}) too large", additional);
-
-    const auto new_cap = _len + additional;
-    _buf.realloc(_len, new_cap);
+    _buf.reserve_exact(_len, additional);
   }
 
-  void shrink_to(usize min_cap) noexcept {
-    if (min_cap >= _buf.cap()) {
-      return;
-    }
-    _buf.realloc(_len, min_cap);
+  void shrink_to(usize cap) noexcept {
+    _buf.shrink_to(cap);
   }
 
   void shrink_to_fit() noexcept {
-    if (_len == _buf.cap()) {
-      return;
-    }
-    _buf.realloc(_len, _len);
+    _buf.shrink_to(_len);
   }
 
   void clear() noexcept {
-    ptr::drop_in_place(_buf.ptr(), _len);
+    ptr::drop(_buf.ptr(), _len);
     _len = 0;
   }
 
@@ -312,7 +314,7 @@ class [[nodiscard]] Vec {
     const auto hole_len = ids.len();
     const auto tail_ptr = hole_ptr + hole_len;
     const auto tail_len = _len - ids.end;
-    ptr::drop_in_place(hole_ptr, hole_len);
+    ptr::drop(hole_ptr, hole_len);
     ptr::shift_elements_left(tail_ptr, tail_len, hole_len);
     _len -= ids.len();
   }
@@ -349,8 +351,9 @@ class [[nodiscard]] Vec {
   }
 
   void extend_from_slice(Slice<const T> other) noexcept {
+    static_assert(__is_trivially_copyable(T));
     this->reserve(other._len);
-    ptr::uninit_copy(other._ptr, _buf.ptr() + _len, other._len);
+    ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
     _len += other._len;
   }
 
