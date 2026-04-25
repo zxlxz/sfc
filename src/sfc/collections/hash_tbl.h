@@ -279,7 +279,7 @@ class HashTbl {
     if (min_cap < _len) {
       return;
     }
-    sfc::expect(min_cap < kMaxSize, "HashTbl::rehash: requested capacity(={}) too large", min_cap);
+    sfc::expect(min_cap < kMaxSize, fmt::Args{"HashTbl::rehash: requested capacity(={}) too large", min_cap});
 
     // calculate new capacity
     auto new_cap = num::next_power_of_two(min_cap);

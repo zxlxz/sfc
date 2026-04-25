@@ -57,12 +57,10 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
 }
 
 auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  if (old_layout.align != new_layout.align) {
-    panic::expect(false,
-                  "alloc::Global::grow: alignment cannot be changed (old={}, new={})",
-                  old_layout.align,
-                  new_layout.align);
-  }
+  panic::expect(old_layout.align == new_layout.align,
+                fmt::Args{"alloc::Global::grow: alignment not match (old={}, new={})",
+                          old_layout.align,
+                          new_layout.align});
 
   if (old_layout.size >= new_layout.size) {
     return ptr;
@@ -76,12 +74,10 @@ auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> v
 }
 
 auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  if (old_layout.align != new_layout.align) {
-    panic::expect(false,
-                  "alloc::Global::shrink: alignment cannot be changed (old={}, new={})",
-                  old_layout.align,
-                  new_layout.align);
-  }
+  panic::expect(old_layout.align == new_layout.align,
+                fmt::Args{"alloc::Global::shrink: alignment not match (old={}, new={})",
+                          old_layout.align,
+                          new_layout.align});
 
   if (old_layout.size <= new_layout.size) {
     return ptr;

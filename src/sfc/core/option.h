@@ -24,7 +24,8 @@ class Option {
   constexpr Option(T val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
 
   constexpr Option(None) noexcept : _tag{false} {}
-  constexpr Option(Some, auto&&... args) noexcept : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
+  constexpr Option(Some, auto&&... args) noexcept
+      : _tag{true}, _val{static_cast<decltype(args)&&>(args)...} {}
 
   constexpr Option(Option&& other) noexcept : _tag{other._tag} {
     if (!_tag) return;
@@ -82,27 +83,27 @@ class Option {
   }
 
   auto operator->() const noexcept -> const T* {
-    sfc::expect(_tag, "Option::operator->: not Some()");
+    sfc::expect(_tag, fmt::Args{"Option::operator->: not Some()"});
     return &_val;
   }
 
   auto operator->() noexcept -> T* {
-    sfc::expect(_tag, "Option::operator->: not Some()");
+    sfc::expect(_tag, fmt::Args{"Option::operator->: not Some()"});
     return &_val;
   }
 
   auto operator*() const noexcept -> const T& {
-    sfc::expect(_tag, "Option::operator*: not Some()");
+    sfc::expect(_tag, fmt::Args{"Option::operator*: not Some()"});
     return _val;
   }
 
   auto operator*() noexcept -> T& {
-    sfc::expect(_tag, "Option::operator*: not Some()");
+    sfc::expect(_tag, fmt::Args{"Option::operator*: not Some()"});
     return _val;
   }
 
   auto unwrap() && noexcept -> T {
-    sfc::expect(_tag, "Option::unwrap: not Some()");
+    sfc::expect(_tag, fmt::Args{"Option::unwrap: not Some()"});
     return static_cast<T&&>(_val);
   }
 
@@ -115,7 +116,7 @@ class Option {
   }
 
   auto expect(const auto& msg) && noexcept -> T {
-    sfc::expect(bool(_tag), "Option::expect: {}", msg);
+    sfc::expect(_tag, fmt::Args{"Option::expect: {}", msg});
     return static_cast<T&&>(_val);
   }
 
@@ -220,27 +221,27 @@ class Option<T> {
   }
 
   auto operator->() const noexcept -> const T* {
-    sfc::expect(bool(_inn.ptr()), "Option::operator->: None()");
+    sfc::expect(bool(_inn.ptr()), fmt::Args{"Option::operator->: None()"});
     return &_inn;
   }
 
   auto operator->() noexcept -> T* {
-    sfc::expect(bool(_inn.ptr()), "Option::operator->: None()");
+    sfc::expect(bool(_inn.ptr()), fmt::Args{"Option::operator->: None()"});
     return &_inn;
   }
 
   auto operator*() const noexcept -> const T& {
-    sfc::expect(bool(_inn.ptr()), "Option::operator*: None()");
+    sfc::expect(bool(_inn.ptr()), fmt::Args{"Option::operator*: None()"});
     return _inn;
   }
 
   auto operator*() noexcept -> T& {
-    sfc::expect(bool(_inn.ptr()), "Option::operator*: None()");
+    sfc::expect(bool(_inn.ptr()), fmt::Args{"Option::operator*: None()"});
     return _inn;
   }
 
   auto unwrap() noexcept -> T {
-    sfc::expect(bool(_inn.ptr()), "Option::unwrap: None()");
+    sfc::expect(bool(_inn.ptr()), fmt::Args{"Option::unwrap: None()"});
     return static_cast<T&&>(_inn);
   }
 
@@ -253,7 +254,7 @@ class Option<T> {
   }
 
   auto expect(const auto& msg) && noexcept -> T {
-    sfc::expect(bool(_inn.ptr()), "Option::expect: {}", msg);
+    sfc::expect(_inn.ptr() != nullptr, fmt::Args{"Option::expect: {}", msg});
     return static_cast<T&&>(_inn);
   }
 
@@ -355,27 +356,27 @@ class Option<T&> {
   }
 
   auto operator->() const -> const T* {
-    sfc::expect(_ptr != nullptr, "Option<T&>::deref: nullptr");
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option<T&>::deref: nullptr"});
     return _ptr;
   }
 
   auto operator->() -> T* {
-    sfc::expect(_ptr != nullptr, "Option<T&>::deref: nullptr");
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option<T&>::deref: nullptr"});
     return _ptr;
   }
 
   auto operator*() const -> const T& {
-    sfc::expect(_ptr != nullptr, "Option<T&>::deref: nullptr");
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option<T&>::deref: nullptr"});
     return *_ptr;
   }
 
   auto operator*() -> T& {
-    sfc::expect(_ptr != nullptr, "Option<T&>::deref: nullptr");
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option<T&>::deref: nullptr"});
     return *_ptr;
   }
 
   auto unwrap() const -> T& {
-    sfc::expect(_ptr != nullptr, "Option<T&>::unwrap: nullptr");
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option<T&>::unwrap: nullptr"});
     return *_ptr;
   }
 
@@ -388,7 +389,7 @@ class Option<T&> {
   }
 
   auto expect(const auto& msg) const -> T& {
-    sfc::expect(_ptr != nullptr, "Option::expect: {}", msg);
+    sfc::expect(_ptr != nullptr, fmt::Args{"Option::expect: {}", msg});
     return *_ptr;
   }
 

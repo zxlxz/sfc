@@ -11,10 +11,6 @@ struct RawStr {
   constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
   consteval RawStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
 
-  [[gnu::always_inline]] constexpr static auto from(const char* s) -> RawStr {
-    return {s, __builtin_strlen(s)};
-  };
-
   [[gnu::always_inline]] constexpr auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
@@ -108,31 +104,29 @@ struct Spec {
 
 template <u32 N>
 struct Fmts {
-  const char* _ptr;
-  usize _len;
+  RawStr _str;
   u32 _locs[N + 1] = {0};
   u32 _lens[N + 1] = {0};
   Spec _specs[N] = {};
 
  public:
-  consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {
-    const auto ss = RawStr{_ptr, _len};
+  consteval Fmts(const char* s) : _str{s} {
     auto p = 0U;
     for (auto i = 0U; i < N; ++i) {
-      const auto a = ss.find('{', p);
-      const auto b = ss.find('}', a);
-      if (b == ss._len) {
+      const auto a = _str.find('{', p);
+      const auto b = _str.find('}', a);
+      if (b == _str._len) {
         throw "sfc::fmt::Fmts: not enough format specs!";
       }
-      const auto f = Spec::from({ss._ptr + a + 1, b - a - 1});
+      const auto f = Spec::from({_str._ptr + a + 1, b - a - 1});
       _lens[i + 0] = a - p;
       _locs[i + 1] = b + 1;
       _specs[i] = f;
       p = b + 1;
     }
     _locs[N] = p;
-    _lens[N] = static_cast<u32>(ss._len - p);
-    if (ss.find('{', p) != ss._len) {
+    _lens[N] = static_cast<u32>(_str._len - p);
+    if (_str.find('{', p) != _str._len) {
       throw "sfc::fmt::Fmts: too many format specs!";
     }
   }
@@ -140,9 +134,8 @@ struct Fmts {
 
 template <>
 struct Fmts<0> {
-  const char* _ptr;
-  usize _len;
-  consteval Fmts(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
+  RawStr _str;
+  consteval Fmts(const char* s) : _str{s} {}
 };
 
 #if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
@@ -160,20 +153,21 @@ struct Args {
   const void* _args[N];
 
  public:
-  Args(const auto& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
+  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
 
   void fmt(auto& f) const {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    const auto s = _fmts._str;
     const auto g = [&](u32 i, auto& x) {
       const auto loc = _fmts._locs[i];
       const auto len = _fmts._lens[i];
-      if (len != 0) f.write_str({_fmts._ptr + loc, len});
+      if (len != 0) f.write_str({s._ptr + loc, len});
       f.write_arg(_fmts._specs[i], x);
     };
 
     auto i = 0U;
     ((g(i, *static_cast<const T*>(_args[i])), i++), ...);
-    f.write_str({_fmts._ptr + _fmts._locs[N], _fmts._lens[N]});
+    f.write_str({s._ptr + _fmts._locs[N], s._len - _fmts._locs[N]});
 #endif
   }
 };
@@ -183,10 +177,8 @@ struct Args<> {
   const fmts_t<>& _fmts;
 
  public:
-  [[gnu::always_inline]] Args(const auto& fmts) : _fmts{fmts} {}
-
   void fmt(auto& f) const {
-    f.write_str({_fmts._ptr, _fmts._len});
+    f.write_str({_fmts._str._ptr, _fmts._str._len});
   }
 };
 

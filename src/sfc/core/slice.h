@@ -66,12 +66,12 @@ struct Slice {
 
  public:
   [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
-    sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Slice::[]: idx(={}) out of range(={})", idx, _len});
     return _ptr[idx];
   }
 
   [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
-    sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Slice::[]: idx(={}) out of range(={})", idx, _len});
     return _ptr[idx];
   }
 
@@ -97,8 +97,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) noexcept {
-    sfc::expect(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
-    sfc::expect(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
+    sfc::expect(i < _len, fmt::Args{"Slice::[]: i(={}), out of range(={})", i, _len});
+    sfc::expect(j < _len, fmt::Args{"Slice::[]: j(={}), out of range(={})", j, _len});
 
     if (i != j) {
       mem::swap(_ptr[i], _ptr[j]);

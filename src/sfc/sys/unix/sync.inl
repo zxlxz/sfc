@@ -44,17 +44,17 @@ class Mutex {
 
   void lock() {
     const auto err = ::pthread_mutex_lock(_raw);
-    sfc::expect(err == 0, "sync::Mutex::lock: failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"sync::Mutex::lock: failed, err={}", err});
   }
 
   void unlock() {
     const auto err = ::pthread_mutex_unlock(_raw);
-    sfc::expect(err == 0, "sync::Mutex::unlock: failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"sync::Mutex::unlock: failed, err={}", err});
   }
 
   auto try_lock() -> bool {
     const auto err = ::pthread_mutex_trylock(_raw);
-    sfc::expect(err == 0 || err == EBUSY, "sync::Mutex::try_lock: failed, err={}", err);
+    sfc::expect(err == 0 || err == EBUSY, fmt::Args{"sync::Mutex::try_lock: failed, err={}", err});
     return err == 0;
   }
 };
@@ -124,24 +124,24 @@ class Condvar {
 
   void notify_one() {
     const auto err = ::pthread_cond_signal(_raw);
-    sfc::expect(err == 0, "sync::Condvar::notify_one: failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"sync::Condvar::notify_one: failed, err={}", err});
   }
 
   void notify_all() {
     const auto err = ::pthread_cond_broadcast(_raw);
-    sfc::expect(err == 0, "sync::Condvar::notify_all: failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"sync::Condvar::notify_all: failed, err={}", err});
   }
 
   void wait(Mutex& mtx) {
     const auto err = ::pthread_cond_wait(_raw, mtx._raw);
-    sfc::expect(err == 0, "sync::Condvar::wait: failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"sync::Condvar::wait: failed, err={}", err});
   }
 
   auto wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
     struct timespec ts{};
     if (::clock_gettime(CLOCK_ID, &ts) == -1) {
       const auto err = errno;
-      sfc::expect(false, "sync::Condvar::wait_timeout: clock_gettime failed, err={}", err);
+      sfc::expect(false, fmt::Args{"sync::Condvar::wait_timeout: clock_gettime failed, err={}", err});
     }
 
     ts.tv_sec += dur.as_secs();
@@ -152,7 +152,7 @@ class Condvar {
     }
 
     const auto err = ::pthread_cond_timedwait(_raw, mtx._raw, &ts);
-    sfc::expect(err == 0 || err == ETIMEDOUT, "sync::Condvar::wait_timeout: failed, err={}", err);
+    sfc::expect(err == 0 || err == ETIMEDOUT, fmt::Args{"sync::Condvar::wait_timeout: failed, err={}", err});
     return err == 0;
   }
 };

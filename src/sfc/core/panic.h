@@ -19,73 +19,45 @@ struct Error {
   SourceLoc _loc;
 };
 
-struct Bool {
-  bool _val;
-  SourceLoc _loc;
-  Bool(bool val, SourceLoc loc = SourceLoc::current()) : _val{val}, _loc{loc} {}
-};
-
-struct Buffer {
-  static constexpr auto BUF_LEN = 1024U;
-  char _buf[BUF_LEN];
-  usize _len;
-
-  void write_str(auto s) {
-    if (s._len == 0 || _len + s._len > BUF_LEN) {
-      return;
-    }
-    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
-    _len += s._len;
-  }
-};
-
-[[noreturn]] void panic_imp(SourceLoc loc, const void* buf, usize buf_len);
+[[noreturn]] void panic_imp(fmt::RawStr msg, SourceLoc loc = SourceLoc::current());
 
 template <class... T>
-[[noreturn]] void panic_fmt(SourceLoc loc, fmt::fmts_t<T...> fmt, const T&... args) {
-  if constexpr (sizeof...(args) == 0) {
-    panic::panic_imp(loc, fmt._ptr, fmt._len);
-  } else {
-    auto buf = Buffer{};
-    fmt::write(buf, fmt, args...);
-    panic::panic_imp(loc, buf._buf, buf._len);
-  }
-}
+[[noreturn]] void panic_fmt(fmt::Args<T...> args, SourceLoc loc = SourceLoc::current());
 
 template <class... T>
-void expect(Bool val, fmt::fmts_t<T...> fmt, const T&... args) {
-  if (val._val) return;
-  panic::panic_fmt(val._loc, fmt, args...);
+void expect(const auto& cond, fmt::Args<T...> args, SourceLoc loc = SourceLoc::current()) {
+  if (cond) return;
+  panic::panic_fmt(args, loc);
 }
 
 void expect_true(const auto& x, SourceLoc loc = SourceLoc::current()) {
   if (x) return;
-  panic::panic_fmt(loc, "sfc::expect_true(`{}`) failed", x);
+  panic::panic_fmt(fmt::Args{"sfc::expect_true(`{}`) failed", x}, loc);
 }
 
 void expect_false(const auto& x, SourceLoc loc = SourceLoc::current()) {
   if (!x) return;
-  panic::panic_fmt(loc, "sfc::expect_false(`{}`) failed", x);
+  panic::panic_fmt(fmt::Args{"sfc::expect_false(`{}`) failed", x}, loc);
 }
 
 void expect_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a == b) return;
-  panic::panic_fmt(loc, "sfc::expect(`{}`==`{}`) failed", a, b);
+  panic::panic_fmt(fmt::Args{"sfc::expect(`{}`==`{}`) failed", a, b}, loc);
 }
 
 void expect_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a != b) return;
-  panic::panic_fmt(loc, "sfc::expect(`{}`!=`{}`) failed", a, b);
+  panic::panic_fmt(fmt::Args{"sfc::expect(`{}`!=`{}`) failed", a, b}, loc);
 }
 
 void expect_flt_eq(auto a, auto b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (num::flt_eq_ulp(a, b, ulp)) return;
-  panic::panic_fmt(loc, "sfc::expect_flt(`{}`==`{}`) failed", a, b);
+  panic::panic_fmt(fmt::Args{"sfc::expect_flt(`{}`==`{}`) failed", a, b}, loc);
 }
 
 void expect_flt_ne(auto a, auto b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (!num::flt_eq_ulp(a, b, ulp)) return;
-  panic::panic_fmt(loc, "sfc::expect_flt(`{}`!=`{}`) failed", a, b);
+  panic::panic_fmt(fmt::Args{"sfc::expect_flt(`{}`!=`{}`) failed", a, b}, loc);
 }
 
 }  // namespace sfc::panic

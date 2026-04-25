@@ -77,17 +77,17 @@ struct Thread {
   }
 
   void join() {
-    sfc::expect(this->is_valid(), "Thread::join: invalid thread");
+    sfc::expect(this->is_valid(), fmt::Args{"Thread::join: invalid thread"});
     // just join, don't change thrd, the caller should handle it
     const auto err = ::pthread_join(_raw, nullptr);
-    sfc::expect(err == 0, "Thread::join: pthread_join failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"Thread::join: pthread_join failed, err={}", err});
   }
 
   void detach() {
-    sfc::expect(this->is_valid(), "Thread::detach: invalid thread");
+    sfc::expect(this->is_valid(), fmt::Args{"Thread::detach: invalid thread"});
     // just detach, don't change thrd, the caller should handle it
     const auto err = ::pthread_detach(_raw);
-    sfc::expect(err == 0, "Thread::detach: pthread_detach failed, err={}", err);
+    sfc::expect(err == 0, fmt::Args{"Thread::detach: pthread_detach failed, err={}", err});
   }
 };
 

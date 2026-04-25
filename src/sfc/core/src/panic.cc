@@ -48,11 +48,11 @@ static auto idx2str(u32 idx) -> Str {
   return Str{idx_ptr, 2};
 }
 
-void panic_imp(SourceLoc loc, const void* buf, usize buf_len) {
+void panic_imp(fmt::RawStr msg, SourceLoc loc) {
   char line_buf[8] = {};
   const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
 
-  panic::writeln(Str{static_cast<const char*>(buf), buf_len});
+  panic::writeln(Str{msg._ptr, msg._len});
   panic::writeln(" > ", Str{loc.file}, ":", line_str);
 
   auto bt = sys::Backtrace::capture();

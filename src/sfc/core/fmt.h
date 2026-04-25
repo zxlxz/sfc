@@ -119,6 +119,11 @@ struct Fmter {
     }
   }
 
+  template <class... T>
+  void write_fmt(const fmt::fmts_t<T...>& fmts, const T&... args) {
+    Args{fmts, args...}.fmt(*this);
+  }
+
   void pad(Str s) {
     if (_spec._width <= s._len) {
       this->write_str(s);
@@ -204,11 +209,6 @@ struct Fmter {
         this->write_str(body);
         this->write_chars(fill, (npad + 1) / 2);
     }
-  }
-
-  template <class... T>
-  void write_fmt(const fmt::fmts_t<T...>& fmts, const T&... args) {
-    Args{fmts, args...}.fmt(*this);
   }
 
  public:
@@ -432,7 +432,35 @@ struct FixedBuf {
 
 template <class... T>
 void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args) {
-  Fmter{out}.write_fmt(fmts, args...);
+  Fmter{out}.write_val(fmt::Args{fmts, args...});
 }
 
 }  // namespace sfc::fmt
+
+namespace sfc::panic {
+
+struct Buffer {
+  static constexpr auto BUF_LEN = 1024U;
+  char _buf[BUF_LEN];
+  usize _len;
+
+  void write_str(auto s) {
+    if (s._len == 0 || _len + s._len > BUF_LEN) {
+      return;
+    }
+    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
+    _len += s._len;
+  }
+};
+
+template <class... T>
+[[noreturn]] void panic_fmt(fmt::Args<T...> args, SourceLoc loc) {
+  if constexpr (sizeof...(T) == 0) {
+    panic::panic_imp(args._fmts._str, loc);
+  } else {
+    auto buf = Buffer{};
+    fmt::Fmter{buf}.write_val(args);
+    panic::panic_imp({buf._buf, buf._len}, loc);
+  }
+}
+}  // namespace sfc::panic

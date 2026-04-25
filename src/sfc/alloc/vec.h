@@ -197,12 +197,12 @@ class [[nodiscard]] Vec {
   }
 
   auto operator[](usize idx) const noexcept -> const T& {
-    sfc::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Vec::[]: idx(={}) out of ids(={})", idx, _len});
     return _buf[idx];
   }
 
   auto operator[](usize idx) noexcept -> T& {
-    sfc::expect(idx < _len, "Vec::[]: idx(={}) out of ids(={})", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Vec::[]: idx(={}) out of ids(={})", idx, _len});
     return _buf[idx];
   }
 
@@ -285,7 +285,7 @@ class [[nodiscard]] Vec {
   }
 
   void insert(usize idx, T val) noexcept {
-    sfc::expect(idx <= _len, "Vec::insert: idx(={}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx <= _len, fmt::Args{"Vec::insert: idx(={}) out of ids([0,{}))", idx, _len});
 
     this->reserve(1);
     const auto tail_ptr = _buf.ptr() + idx;
@@ -296,7 +296,7 @@ class [[nodiscard]] Vec {
   }
 
   auto remove(usize idx) noexcept -> T {
-    sfc::expect(idx < _len, "Vec::remove: idx(={}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Vec::remove: idx(={}) out of ids([0,{}))", idx, _len});
 
     const auto hole_ptr = _buf.ptr() + idx;
     const auto tail_ptr = hole_ptr + 1;
