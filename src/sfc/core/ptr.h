@@ -55,18 +55,16 @@ template <class T>
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
-    auto val = static_cast<T&&>(*src);
-    src->~T();
-    return val;
+    return static_cast<T&&>(*src);
   }
 }
 
 template <class T>
-[[gnu::always_inline]] inline void write(T* dst, auto&& val) noexcept {
+[[gnu::always_inline]] inline void write(T* dst, T val) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
-    *dst = static_cast<decltype(val)&&>(val);
+    *dst = val;
   } else {
-    new (dst) T{static_cast<decltype(val)&&>(val)};
+    new (dst) T(static_cast<T&&>(val));
   }
 }
 
@@ -77,99 +75,43 @@ template <class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline void drop_in_place([[maybe_unused]] T* ptr, [[maybe_unused]] usize cnt) noexcept {
-  if constexpr (!__is_trivially_copyable(T)) {
-    for (auto end = ptr + cnt; ptr != end; ++ptr) {
-      ptr->~T();
-    }
+[[gnu::always_inline]] inline void drop(T* ptr, usize cnt = 1) noexcept {
+  for (auto i = 0UL; i < cnt; ++i) {
+    ptr[i].~T();
   }
 }
 
 template <class T>
 [[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(dst, src, cnt * sizeof(T));
-  } else {
-    if (dst < src) {
-      for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
-        *pd = *ps;
-      }
-    } else if (dst > src) {
-      for (auto ps = src + cnt - 1, pd = dst + cnt - 1; ps != src - 1; --ps, --pd) {
-        *pd = *ps;
-      }
-    }
-  }
+  __builtin_memmove(dst, src, cnt * sizeof(T));
 }
 
 template <class T>
 [[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, cnt * sizeof(T));
-  } else {
-    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
-      *pd = *ps;
-    }
-  }
+  __builtin_memcpy(static_cast<void*>(dst), static_cast<const void*>(src), cnt * sizeof(T));
 }
 
 template <class T>
-inline void uninit_copy(const T* src, T* dst, usize cnt) noexcept {
+[[gnu::always_inline]] inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, cnt * sizeof(T));
-  } else {
-    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
-      ptr::write(pd, *ps);
-    }
-  }
+  // all sfc object is memoveable, so we can just copy the bytes and forget the source
+  ptr::copy_nonoverlapping(src, dst, cnt);
 }
 
 template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memcpy(dst, src, cnt * sizeof(T));
-  } else {
-    for (auto ps = src, pd = dst; ps != src + cnt; ++ps, ++pd) {
-      ptr::write(pd, static_cast<T&&>(*ps));
-      ps->~T();
-    }
-  }
+[[gnu::always_inline]] inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
+  if (len == 0 || offset == 0) return;
+  // all sfc object is memoveable, so we can just copy the bytes
+  ptr::copy(ptr, ptr - offset, len);
 }
 
 template <class T>
-inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
-  if (len == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(ptr - offset, ptr, len * sizeof(T));
-  } else {
-    for (auto p = ptr; p != ptr + len; ++p) {
-      ptr::write(p - offset, static_cast<T&&>(*p));
-      p->~T();
-    }
-  }
-}
-
-template <class T>
-inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
-  if (len == 0) return;
-
-  if constexpr (__is_trivially_copyable(T)) {
-    __builtin_memmove(ptr + offset, ptr, len * sizeof(T));
-  } else {
-    for (auto p = ptr + len - 1; p != ptr - 1; --p) {
-      ptr::write(p + offset, static_cast<T&&>(*p));
-      p->~T();
-    }
-  }
+[[gnu::always_inline]] inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
+  if (len == 0 || offset == 0) return;
+  // all sfc object is memoveable, so we can just copy the bytes
+  ptr::copy(ptr, ptr + offset, len);
 }
 
 }  // namespace sfc::ptr

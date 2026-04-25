@@ -2,20 +2,116 @@
 
 namespace sfc::str {
 
-static auto fast_exp10(i32 val) -> f64 {
-  if (val == 0) return 1.0;
+static constexpr auto kInvalidChar = char32_t{0xFFFD};
 
-  auto res = 1.0;
-  if (val > 0) {
-    for (auto i = 0; i < val; ++i) {
-      res *= 10.0;
+static auto utf8_codelen(u8 h) -> u32 {
+  if ((h & 0x80) == 0) {
+    return 1;
+  } else if ((h & 0xE0) == 0xC0) {
+    return 2;
+  } else if ((h & 0xF0) == 0xE0) {
+    return 3;
+  } else if ((h & 0xF8) == 0xF0) {
+    return 4;
+  }
+  return 0;
+}
+
+static auto utf8_codepoint_prev(const char* begin, const char* end) -> const char* {
+  static constexpr auto kMaxUtf8CodeLen = 4U;
+
+  if (begin + kMaxUtf8CodeLen > end) {
+    begin = end - kMaxUtf8CodeLen;
+  }
+
+  auto p = end - 1;
+  while (p > begin && (p[0] & 0xC0) == 0x80) {
+    p--;
+  }
+
+  return p;
+}
+
+static auto utf8_decode(const char* p, u32 n) -> char32_t {
+  switch (n) {
+    case 1: {
+      const auto a = p[0];
+      return static_cast<char32_t>(a);
     }
-  } else {
-    for (auto i = 0; i > val; --i) {
-      res /= 10.0;
+    case 2: {
+      const auto a = p[0] & 0x1F;
+      const auto b = p[1] & 0x3F;
+      return static_cast<char32_t>((a << 6) | b);
+    }
+    case 3: {
+      const auto a = p[0] & 0x0F;
+      const auto b = p[1] & 0x3F;
+      const auto c = p[2] & 0x3F;
+      return static_cast<char32_t>((a << 12) | (b << 6) | c);
+    }
+    case 4: {
+      const auto a = p[0] & 0x07;
+      const auto b = p[1] & 0x3F;
+      const auto c = p[2] & 0x3F;
+      const auto d = p[3] & 0x3F;
+      return static_cast<char32_t>((a << 18) | (b << 12) | (c << 6) | d);
     }
   }
-  return res;
+  return kInvalidChar;
+}
+
+auto Chars::next() noexcept -> Option<char32_t> {
+  if (_ptr >= _end) {
+    return {};
+  }
+
+  const auto cnt = utf8_codelen(*_ptr);
+  // invalid utf8 code-point
+  if (cnt == 0) {
+    _ptr += 1;
+    return kInvalidChar;
+  }
+
+  // not enough bytes
+  if (_ptr + cnt > _end) {
+    _ptr = _end;
+    return kInvalidChar;
+  }
+
+  const auto ch = utf8_decode(_ptr, cnt);
+  _ptr += cnt;
+
+  return ch;
+}
+
+auto Chars::next_back() noexcept -> Option<char32_t> {
+  if (_ptr >= _end) {
+    return {};
+  }
+
+  const auto p = str::utf8_codepoint_prev(_ptr, _end);
+
+  // invalid utf8, cannot find code-point
+  if (p == nullptr) {
+    _end -= 1;
+    return kInvalidChar;
+  }
+
+  const auto n = str::utf8_codelen(*p);
+  if (n == 0) {
+    _end -= 1;
+    return kInvalidChar;
+  }
+
+  // not enough bytes
+  if (p + n > _end) {
+    _ptr = _end;
+    return kInvalidChar;
+  }
+
+  const auto ch = str::utf8_decode(p, n);
+  _ptr = p + n;
+  return ch;
 }
 
 struct NumParser {
@@ -23,7 +119,23 @@ struct NumParser {
   const char* _end;
 
  public:
-  [[gnu::always_inline]] auto is_empty() const -> bool {
+  static auto fast_exp10(i32 val) -> f64 {
+    if (val == 0) return 1.0;
+
+    auto res = 1.0;
+    if (val > 0) {
+      for (auto i = 0; i < val; ++i) {
+        res *= 10.0;
+      }
+    } else {
+      for (auto i = 0; i > val; --i) {
+        res /= 10.0;
+      }
+    }
+    return res;
+  }
+
+  auto is_empty() const -> bool {
     return _ptr == _end;
   }
 
@@ -94,26 +206,49 @@ struct NumParser {
     return 0;
   }
 
-  [[gnu::always_inline]] auto pop_digit() -> char {
-    if (_ptr >= _end) return 0;
+  // returns:
+  //  [0+] : valid
+  //  [-1] : not a valid digit
+  [[gnu::always_inline]] auto pop_digit() -> int {
+    if (_ptr >= _end) {
+      return -1;
+    }
 
     const auto c = *_ptr;
-    return ('0' <= c && c <= '9') ? *_ptr++ : 0;
+    if (c < '0' || c > '9') {
+      return -1;
+    }
+
+    _ptr += 1;
+    return c - '0';
   }
 
-  [[gnu::always_inline]] auto pop_xdigit(i32 radix) -> char {
-    if (_ptr >= _end) return 0;
-
-    const auto c = *_ptr | 32;
-    if ('0' <= c && c <= '0' + radix) {
-      return *_ptr++;
+  // @return
+  //  [0+] : valid
+  //  [-1] : not a valid digit
+  [[gnu::always_inline]] auto pop_xdigit(i32 radix) -> int {
+    if (_ptr >= _end) {
+      return -1;
     }
 
-    if (radix == 16 && c >= 'a' && c <= 'z') {
-      _ptr++;
-      return c - 'a' + '0' + 10;
+    const auto c = *_ptr;
+    const auto n = c - '0';
+    if (0 <= n && n < radix) {
+      _ptr += 1;
+      return n;
     }
-    return 0;
+
+    if (radix < 16) {
+      return -1;
+    }
+
+    const auto x = (*_ptr | 32) - 'a' + 10;
+    if (0 <= x && x < radix) {
+      _ptr += 1;
+      return x;
+    }
+
+    return -1;
   }
 
   auto extract_sign() -> int {
@@ -148,19 +283,21 @@ struct NumParser {
 
   auto extract_int() -> u64 {
     auto val = u64{0};
-    while (auto c = this->pop_digit()) {
-      const auto n = static_cast<u32>(c - '0');
-      val = 10 * val + n;
+    while (true) {
+      const auto n = this->pop_digit();
+      if (n == -1) break;
+      val = 10 * val + static_cast<u32>(n);
     }
     return val;
   }
 
   auto extract_bin(u32 radix) -> u64 {
     auto val = u64{0};
-    while (auto c = this->pop_xdigit(radix)) {
-      const auto n = static_cast<u32>(c - '0');
+    while (true) {
+      const auto n = this->pop_xdigit(radix);
+      if (n == -1) break;
       val = radix * val + n;
-    }
+    };
     return val;
   }
 
@@ -171,8 +308,9 @@ struct NumParser {
 
     i64 uval = 0;
     i64 base = 1;
-    while (auto c = this->pop_digit()) {
-      const auto n = c - '0';
+    while (true) {
+      const auto n = this->pop_digit();
+      if (n == -1) break;
       base *= 10;
       uval = 10 * uval + n;
     }

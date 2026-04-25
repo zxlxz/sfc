@@ -1,4 +1,4 @@
-#include "sfc/core/fmt/debug.h"
+#include "sfc/core/fmt.h"
 
 namespace sfc::fmt {
 
@@ -101,7 +101,7 @@ struct RevBuff {
   }
 };
 
-struct Float {
+struct Decimal {
   u64 _int;
   u64 _flt;
 
@@ -125,7 +125,7 @@ struct Float {
     return res;
   }
 
-  static auto from(f64 uval, u32 precision) -> Float {
+  static auto from(f64 uval, u32 precision) -> Decimal {
     // extract integer part
     const auto int_val = static_cast<u64>(uval);
     const auto flt_val = uval - static_cast<f64>(int_val);
@@ -156,7 +156,7 @@ static auto extract_exp(auto& val) -> i32 {
   return exp;
 }
 
-auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
+auto Display::format_int(Slice<char> buf, auto val, char type) -> Str {
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'd'};
   switch (type) {
     default:  rbuf.write_dec(val + 0); break;
@@ -170,7 +170,7 @@ auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
   return rbuf.as_str();
 }
 
-auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
+auto Display::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
   const auto uval = reinterpret_cast<usize>(ptr);
 
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'p'};
@@ -184,11 +184,11 @@ auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
   return rbuf.as_str();
 }
 
-auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
-  if (Float::isnan(val)) {
+auto Display::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
+  if (Decimal::isnan(val)) {
     return "nan";
   }
-  if (Float::ifinf(val)) {
+  if (Decimal::ifinf(val)) {
     return val > 0 ? Str{"inf"} : Str{"-inf"};
   }
 
@@ -199,7 +199,7 @@ auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> S
     rbuf.write_exp(exp);
   }
 
-  const auto u = Float::from(uval, precision);
+  const auto u = Decimal::from(uval, precision);
   rbuf.write_flt(u._int, u._flt);
   if (val < 0) {
     rbuf.push('-');
@@ -207,17 +207,17 @@ auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> S
   return rbuf.as_str();
 }
 
-template auto Debug::format_int(Slice<char> buf, int val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, long val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, long long val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, int val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, long val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, long long val, char type) -> Str;
 
-template auto Debug::format_int(Slice<char> buf, unsigned val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, unsigned val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
+template auto Display::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
 
-template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
+template auto Display::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
 
-template auto Debug::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
-template auto Debug::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
+template auto Display::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
+template auto Display::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
 
 }  // namespace sfc::fmt

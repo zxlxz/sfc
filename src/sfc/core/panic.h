@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sfc/core/num.h"
-#include "sfc/core/fmt/args.h"
+#include "sfc/core/fmts.h"
 
 namespace sfc::panic {
 
@@ -9,7 +9,8 @@ struct SourceLoc {
   const char* file;
   int line;
 
-  consteval static auto current(const char* file = __builtin_FILE(), int line = __builtin_LINE()) -> SourceLoc {
+  consteval static auto current(const char* file = __builtin_FILE(), int line = __builtin_LINE())
+      -> SourceLoc {
     return {file, line};
   }
 };
