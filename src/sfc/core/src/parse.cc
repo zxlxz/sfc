@@ -2,116 +2,28 @@
 
 namespace sfc::str {
 
-static constexpr auto kInvalidChar = char32_t{0xFFFD};
+static auto fast_exp10(i32 cnt) -> f64 {
+  static constexpr auto kLen = 16U;
+  static constexpr f64 TBL[kLen] =
+      {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};
 
-static auto utf8_codelen(u8 h) -> u32 {
-  if ((h & 0x80) == 0) {
-    return 1;
-  } else if ((h & 0xE0) == 0xC0) {
-    return 2;
-  } else if ((h & 0xF0) == 0xE0) {
-    return 3;
-  } else if ((h & 0xF8) == 0xF0) {
-    return 4;
-  }
-  return 0;
-}
-
-static auto utf8_codepoint_prev(const char* begin, const char* end) -> const char* {
-  static constexpr auto kMaxUtf8CodeLen = 4U;
-
-  if (begin + kMaxUtf8CodeLen > end) {
-    begin = end - kMaxUtf8CodeLen;
-  }
-
-  auto p = end - 1;
-  while (p > begin && (p[0] & 0xC0) == 0x80) {
-    p--;
-  }
-
-  return p;
-}
-
-static auto utf8_decode(const char* p, u32 n) -> char32_t {
-  switch (n) {
-    case 1: {
-      const auto a = p[0];
-      return static_cast<char32_t>(a);
-    }
-    case 2: {
-      const auto a = p[0] & 0x1F;
-      const auto b = p[1] & 0x3F;
-      return static_cast<char32_t>((a << 6) | b);
-    }
-    case 3: {
-      const auto a = p[0] & 0x0F;
-      const auto b = p[1] & 0x3F;
-      const auto c = p[2] & 0x3F;
-      return static_cast<char32_t>((a << 12) | (b << 6) | c);
-    }
-    case 4: {
-      const auto a = p[0] & 0x07;
-      const auto b = p[1] & 0x3F;
-      const auto c = p[2] & 0x3F;
-      const auto d = p[3] & 0x3F;
-      return static_cast<char32_t>((a << 18) | (b << 12) | (c << 6) | d);
-    }
-  }
-  return kInvalidChar;
-}
-
-auto Chars::next() noexcept -> Option<char32_t> {
-  if (_ptr >= _end) {
-    return {};
-  }
-
-  const auto cnt = utf8_codelen(*_ptr);
-  // invalid utf8 code-point
   if (cnt == 0) {
-    _ptr += 1;
-    return kInvalidChar;
+    return 1.0;
   }
 
-  // not enough bytes
-  if (_ptr + cnt > _end) {
-    _ptr = _end;
-    return kInvalidChar;
+  auto res = 1.0;
+  auto n = cnt > 0 ? cnt : -cnt;
+  for (; n >= 256; n -= 256) {
+    res *= 1e256;
   }
-
-  const auto ch = utf8_decode(_ptr, cnt);
-  _ptr += cnt;
-
-  return ch;
-}
-
-auto Chars::next_back() noexcept -> Option<char32_t> {
-  if (_ptr >= _end) {
-    return {};
+  for (; n >= 16; n -= 16) {
+    res *= 1e16;
   }
-
-  const auto p = str::utf8_codepoint_prev(_ptr, _end);
-
-  // invalid utf8, cannot find code-point
-  if (p == nullptr) {
-    _end -= 1;
-    return kInvalidChar;
+  res *= TBL[n];
+  if (cnt < 0) {
+    res = 1.0 / res;
   }
-
-  const auto n = str::utf8_codelen(*p);
-  if (n == 0) {
-    _end -= 1;
-    return kInvalidChar;
-  }
-
-  // not enough bytes
-  if (p + n > _end) {
-    _ptr = _end;
-    return kInvalidChar;
-  }
-
-  const auto ch = str::utf8_decode(p, n);
-  _ptr = p + n;
-  return ch;
+  return res;
 }
 
 struct NumParser {
@@ -119,21 +31,7 @@ struct NumParser {
   const char* _end;
 
  public:
-  static auto fast_exp10(i32 val) -> f64 {
-    if (val == 0) return 1.0;
-
-    auto res = 1.0;
-    if (val > 0) {
-      for (auto i = 0; i < val; ++i) {
-        res *= 10.0;
-      }
-    } else {
-      for (auto i = 0; i > val; --i) {
-        res /= 10.0;
-      }
-    }
-    return res;
-  }
+  NumParser(Str s) noexcept : _ptr{s._ptr}, _end{s._ptr + s._len} {}
 
   auto is_empty() const -> bool {
     return _ptr == _end;
@@ -141,14 +39,14 @@ struct NumParser {
 
   template <class T>
   auto parse_uint() -> Option<T> {
-    static constexpr auto MAX_VAL = static_cast<u64>(num::max_value<T>());
+    static constexpr auto kMaxVal = static_cast<u64>(num::max_value<T>());
 
     const auto sign = this->extract_sign();
     if (sign == -1) return {};
 
     const auto radix = this->extract_radix();
-    const auto uval = radix == 10 ? this->extract_int() : this->extract_bin(radix);
-    if (uval > MAX_VAL) return {};
+    const auto uval = radix == 10 ? this->extract_dec() : this->extract_bin(radix);
+    if (uval > kMaxVal) return {};
 
     return static_cast<T>(uval);
   }
@@ -159,7 +57,7 @@ struct NumParser {
 
     const auto sign = this->extract_sign();
     const auto radix = this->extract_radix();
-    const auto uval = radix == 10 ? this->extract_int() : this->extract_bin(radix);
+    const auto uval = radix == 10 ? this->extract_dec() : this->extract_bin(radix);
 
     if (sign == 1) {
       if (uval > MAX_VAL) return {};
@@ -173,7 +71,7 @@ struct NumParser {
   template <class T>
   auto parse_flt() -> Option<T> {
     const auto sign = this->extract_sign();
-    const auto int_part = this->extract_int();
+    const auto int_part = this->extract_dec();
     const auto flt_part = this->extract_flt();
     const auto exp_part = this->extract_exp();
 
@@ -183,56 +81,59 @@ struct NumParser {
 
   template <class T>
   auto parse_num() -> Option<T> {
+    if (_ptr >= _end) {
+      return {};
+    }
+
     if constexpr (num::float_<T>) {
       return this->parse_flt<T>();
     } else if constexpr (num::uint_<T>) {
       return this->parse_uint<T>();
     } else if constexpr (num::sint_<T>) {
       return this->parse_sint<T>();
-    } else {
-      static_assert(false, "NumParser::parse_num: unsupported type");
     }
   }
 
  private:
+  // 0: end of input
+  // *: the char
   [[gnu::always_inline]] auto pop() -> char {
-    return _ptr < _end ? *_ptr++ : '\0';
+    if (_ptr >= _end) return 0;
+    return *_ptr++;
   }
 
+  // 0: end of input, or not matched
+  // *: the char
   [[gnu::always_inline]] auto pop_if(auto... c) -> char {
-    if (_ptr < _end && ((*_ptr == c) || ...)) {
-      return *_ptr++;
-    }
-    return 0;
+    if (_ptr >= _end) return 0;
+    if (((*_ptr != c) && ...)) return 0;
+    return *_ptr++;
   }
 
-  // returns:
-  //  [0+] : valid
-  //  [-1] : not a valid digit
+  //  [0+] : int number
+  //  [-1] : failed
   [[gnu::always_inline]] auto pop_digit() -> int {
     if (_ptr >= _end) {
       return -1;
     }
 
-    const auto c = *_ptr;
-    if (c < '0' || c > '9') {
+    const auto n = *_ptr - '0';
+    if (n < 0 || n > 9) {
       return -1;
     }
 
     _ptr += 1;
-    return c - '0';
+    return n;
   }
 
-  // @return
-  //  [0+] : valid
-  //  [-1] : not a valid digit
+  // [0+] : int number
+  // [-1] : failed
   [[gnu::always_inline]] auto pop_xdigit(i32 radix) -> int {
     if (_ptr >= _end) {
       return -1;
     }
 
-    const auto c = *_ptr;
-    const auto n = c - '0';
+    const auto n = *_ptr - '0';
     if (0 <= n && n < radix) {
       _ptr += 1;
       return n;
@@ -242,7 +143,7 @@ struct NumParser {
       return -1;
     }
 
-    const auto x = (*_ptr | 32) - 'a' + 10;
+    const auto x = 10 + ((*_ptr | 32) - 'a');
     if (0 <= x && x < radix) {
       _ptr += 1;
       return x;
@@ -251,6 +152,8 @@ struct NumParser {
     return -1;
   }
 
+  // +1:  positive
+  // -1:  negative
   auto extract_sign() -> int {
     const auto ch = this->pop_if('+', '-');
     return ch == '-' ? -1 : 1;
@@ -281,7 +184,7 @@ struct NumParser {
     }
   }
 
-  auto extract_int() -> u64 {
+  auto extract_dec() -> u64 {
     auto val = u64{0};
     while (true) {
       const auto n = this->pop_digit();
@@ -326,18 +229,14 @@ struct NumParser {
     }
 
     const auto sign = this->extract_sign();
-    const auto scnt = static_cast<i32>(this->extract_int());
+    const auto scnt = static_cast<i32>(this->extract_dec());
     return fast_exp10(sign * scnt);
   }
 };
 
 template <class T>
 auto FromStr<T>::from_str(Str s) -> Option<T> {
-  if (s.is_empty()) {
-    return {};
-  }
-
-  auto imp = NumParser{s._ptr, s._ptr + s._len};
+  auto imp = NumParser{s};
   auto res = imp.parse_num<T>();
   if (!imp.is_empty()) {
     return {};

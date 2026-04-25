@@ -2,6 +2,38 @@
 
 namespace sfc::fmt {
 
+static auto ifinf(f64 val) noexcept -> bool {
+  const auto uval = __builtin_bit_cast(u64, val);
+  return (uval & 0x7FFFFFFFFFFFFFFF) == 0x7FF0000000000000;
+}
+
+static auto isnan(f64 val) noexcept -> bool {
+  const auto uval = __builtin_bit_cast(u64, val);
+  return (uval & 0x7FFFFFFFFFFFFFFF) > 0x7FF0000000000000;
+}
+
+static auto pow10(u32 val) noexcept -> u64 {
+  auto res = u64{1U};
+  while (val > 0) {
+    res *= 10U;
+    --val;
+  }
+  return res;
+}
+
+static auto frexp10(f64 val, int& exp) -> f64 {
+  exp = 0;
+  while (val >= 10.0) {
+    val /= 10.0;
+    ++exp;
+  }
+  while (val < 1.0) {
+    val *= 10.0;
+    --exp;
+  }
+  return val;
+}
+
 struct RevBuff {
   char* _buf;
   usize _cap;
@@ -106,32 +138,13 @@ struct Decimal {
   u64 _flt;
 
  public:
-  static auto ifinf(f64 val) noexcept -> bool {
-    const auto uval = __builtin_bit_cast(u64, val);
-    return (uval & 0x7FFFFFFFFFFFFFFF) == 0x7FF0000000000000;
-  }
-
-  static auto isnan(f64 val) noexcept -> bool {
-    const auto uval = __builtin_bit_cast(u64, val);
-    return (uval & 0x7FFFFFFFFFFFFFFF) > 0x7FF0000000000000;
-  }
-
-  static auto pow10(u32 val) noexcept -> u64 {
-    auto res = u64{1U};
-    while (val > 0) {
-      res *= 10U;
-      --val;
-    }
-    return res;
-  }
-
   static auto from(f64 uval, u32 precision) -> Decimal {
     // extract integer part
     const auto int_val = static_cast<u64>(uval);
     const auto flt_val = uval - static_cast<f64>(int_val);
 
     // extract fractional part
-    const auto exp_val = pow10(precision);
+    const auto exp_val = fmt::pow10(precision);
     auto int_part = int_val;
     auto flt_part = static_cast<u64>(flt_val * exp_val + 0.5);
     if (flt_part >= exp_val) {
@@ -142,19 +155,6 @@ struct Decimal {
     return {int_part, flt_part};
   }
 };
-
-static auto extract_exp(auto& val) -> i32 {
-  auto exp = 0;
-  while (val >= 10.0) {
-    val /= 10.0;
-    ++exp;
-  }
-  while (val < 1.0) {
-    val *= 10.0;
-    --exp;
-  }
-  return exp;
-}
 
 auto Display::format_int(Slice<char> buf, auto val, char type) -> Str {
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'd'};
@@ -185,17 +185,18 @@ auto Display::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
 }
 
 auto Display::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
-  if (Decimal::isnan(val)) {
+  if (fmt::isnan(val)) {
     return "nan";
   }
-  if (Decimal::ifinf(val)) {
+  if (fmt::ifinf(val)) {
     return val > 0 ? Str{"inf"} : Str{"-inf"};
   }
 
   auto uval = val >= 0 ? val : -val;
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'f'};
   if (type == 'e' || type == 'E') {
-    const auto exp = fmt::extract_exp(uval);
+    auto exp = 0;
+    uval = fmt::frexp10(uval, exp);
     rbuf.write_exp(exp);
   }
 
