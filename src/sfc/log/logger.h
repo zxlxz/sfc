@@ -63,7 +63,7 @@ class Logger {
     }
 
     const auto time = time::SystemTime::now();
-    _backend.push({time, level, message});
+    _backend.push(Record{time, level, message});
   }
 
   template <class... T>
@@ -75,7 +75,7 @@ class Logger {
     const auto time = time::SystemTime::now();
     auto buf = fmt::FixedBuf<1024>{};
     fmt::write(buf, fmts, args...);
-    _backend.push({time, level, buf.as_str()});
+    _backend.push(Record{time, level, buf.as_str()});
   }
 };
 

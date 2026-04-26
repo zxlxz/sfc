@@ -16,7 +16,7 @@ FileBackend::~FileBackend() noexcept {}
 void FileBackend::push(Record record) noexcept {
   auto buf = fmt::FixedBuf<1024>{};
   fmt::write(buf, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
-  (void)_file.write(buf.as_bytes());
+  (void)_file.write_str(buf.as_str());
 }
 
 void FileBackend::flush() noexcept {
@@ -38,9 +38,9 @@ void GlobalBackend::push(Record record) noexcept {
   fmt::write(buf, "{} [{}] {}\n", time_str, level_str, record.message);
 
   if (_file.is_valid()) {
-    (void)_file.write(buf.as_bytes());
+    (void)_file.write_str(buf.as_str());
   } else {
-    io::Stdout::write_str(Str::from_utf8(buf.as_bytes()));
+    io::Stdout::write_str(buf.as_str());
   }
 }
 

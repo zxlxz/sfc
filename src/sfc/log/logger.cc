@@ -7,12 +7,21 @@ auto Record::time_str() const -> Str {
   static thread_local auto buf = fmt::FixedBuf<32>{};
 
   if (time.as_secs() != prev_sec) {
-    buf.clear();
+    prev_sec = time.as_secs();
+
     const auto t = time::DateTime::from_local(time);
-    fmt::write(buf, "{04}-{02}-{02} {02}:{02}:{02}.", t.year, t.month, t.day, t.hour, t.minute, t.second);
+    buf.clear();
+    fmt::write(buf,
+               "{04}-{02}-{02} {02}:{02}:{02}.",
+               t.year,
+               t.month,
+               t.day,
+               t.hour,
+               t.minute,
+               t.second);
   }
   fmt::write(buf, "{03}", time.subsec_millis());
-  return Str::from_utf8(buf.as_bytes());
+  return buf.as_str();
 }
 
 auto Record::level_str() const -> Str {
