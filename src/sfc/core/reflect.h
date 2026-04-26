@@ -58,7 +58,9 @@ consteval auto enum_valid() -> bool {
 
 template <enum_ T, u32 I = 0, u32 N = 64>
 consteval auto enum_count() -> u32 {
-  if constexpr (I + 1 == N) {
+  if constexpr (!__is_scoped_enum(T)) {
+    return 0;
+  } else if constexpr (I + 1 == N) {
     return N;
   } else if constexpr (reflect::enum_valid<T, I + (N - I) / 2>()) {
     return reflect::enum_count<T, I + (N - I) / 2, N>();
@@ -69,21 +71,14 @@ consteval auto enum_count() -> u32 {
 
 template <enum_ T>
 constexpr auto enum_name(T val) -> Str {
-#if defined(__clang__) || defined(__GNUC__)
-  static constexpr auto IS_SCOPED_ENUM = __is_scoped_enum(T);
-#else
-  static constexpr auto IS_SCOPED_ENUM = !__is_convertible_to(T, int);
-#endif
-  if constexpr (IS_SCOPED_ENUM) {
-    static constexpr auto N = reflect::enum_count<T>();
-    static constexpr auto& names = []<auto... I>(idxs_t<I...>) -> auto& {
-      static constexpr Str s[] = {reflect::value_name<static_cast<T>(I)>()..., {}};
-      return s;
-    }(sfc::seq_t<N>());
-    const auto idx = static_cast<u32>(val);
-    return idx < N ? names[idx] : Str{};
-  }
-  return {};
+  static constexpr auto N = reflect::enum_count<T>();
+
+  auto s = Str{};
+  tuple::seq_t<N>::map([&](auto I) {
+    if (static_cast<u32>(val) != I.VALUE) return;
+    s = reflect::value_name<static_cast<T>(I.VALUE)>();
+  });
+  return s;
 }
 
 }  // namespace sfc::reflect

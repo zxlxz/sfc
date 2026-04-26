@@ -57,22 +57,6 @@ template <class T, class U>
 concept same_ = same_t<T, U>::value;
 #endif
 
-template <auto... I>
-struct idxs_t {};
-
-#if defined(__GNUC__) && !defined(__clang__)
-template <auto N>
-using seq_t = idxs_t<__integer_pack(N)...>;
-#else
-template <class, auto... I>
-struct _IntSeq {
-  using Type = idxs_t<I...>;
-};
-
-template <auto N>
-using seq_t = typename __make_integer_seq<_IntSeq, decltype(N), N>::Type;
-#endif
-
 namespace str {
 struct Str;
 }
