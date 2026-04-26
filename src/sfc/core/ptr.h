@@ -81,12 +81,14 @@ template <class T>
   }
 }
 
+// all sfc object is memoveable, so we can just copy the bytes
 template <class T>
 [[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
-  __builtin_memmove(dst, src, cnt * sizeof(T));
+  __builtin_memmove(static_cast<void*>(dst), static_cast<const void*>(src), cnt * sizeof(T));
 }
 
+// all sfc object is memoveable, so we can just copy the bytes
 template <class T>
 [[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
@@ -95,22 +97,18 @@ template <class T>
 
 template <class T>
 [[gnu::always_inline]] inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) return;
-  // all sfc object is memoveable, so we can just copy the bytes and forget the source
   ptr::copy_nonoverlapping(src, dst, cnt);
 }
 
 template <class T>
 [[gnu::always_inline]] inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
-  // all sfc object is memoveable, so we can just copy the bytes
   ptr::copy(ptr, ptr - offset, len);
 }
 
 template <class T>
 [[gnu::always_inline]] inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
-  // all sfc object is memoveable, so we can just copy the bytes
   ptr::copy(ptr, ptr + offset, len);
 }
 
