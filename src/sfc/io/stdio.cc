@@ -24,16 +24,16 @@ class Stdout::Inn {
     (void)_inn.flush();
   }
 
-  auto write(Slice<const u8> s) -> Result<usize> {
-    const auto p = s.rfind('\n').unwrap_or(s._len);
-    const auto [a, b] = s.split_at(p);
-
-    _TRY(_inn.write(a));
-    if (!b.is_empty()) {
-      _TRY(_inn.flush());
-      _TRY(_inn.write(b));
+  auto write_str(Str s) -> Result<> {
+    const auto p = s.rfind('\n');
+    if (!p) {
+      return _inn.write_str(s);
     }
-    return s.len();
+
+    const auto [a, b] = s.split_at(*p);
+    _TRY(_inn.write_str(a));
+    _TRY(_inn.flush());
+    return _inn.write_str(b);
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
@@ -51,8 +51,21 @@ class Stderr::Inn {
     return res;
   }
 
-  auto write(Slice<const u8> s) -> Result<usize> {
-    return _inn.write(s);
+  void flush() {
+    // Stderr is unbuffered, so just do nothing here.
+    return;
+  }
+
+  auto write_str(Str s) -> Result<> {
+    auto buf = s.as_bytes();
+    while (!buf.is_empty()) {
+      const auto nwrite = _TRY(_inn.write(buf));
+      if (nwrite == 0) {
+        return Error{ErrorKind::WriteZero};
+      }
+      buf = buf[{nwrite, $}];
+    }
+    return {};
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
@@ -62,19 +75,6 @@ class Stderr::Inn {
 
 auto Stdout::is_terminal() -> bool {
   return sys::Stdout::is_console();
-}
-
-void Stdout::flush() {
-  auto& inn = Inn::instance();
-  auto lock = inn.lock();
-  return inn.flush();
-}
-
-void Stdout::write_str(Str s) {
-  auto& inn = Inn::instance();
-  auto lock = inn.lock();
-  const auto bytes = s.as_bytes();
-  (void)inn.write(bytes);
 }
 
 auto Stdout::lock() -> Lock {
@@ -88,23 +88,15 @@ Stdout::Lock::~Lock() noexcept {
 }
 
 void Stdout::Lock::flush() {
-  return _inn.flush();
+  _inn.flush();
 }
 
 void Stdout::Lock::write_str(Str s) {
-  const auto bytes = s.as_bytes();
-  (void)_inn.write(bytes);
+  (void)_inn.write_str(s);
 }
 
 auto Stderr::is_terminal() -> bool {
   return sys::Stdout::is_console();
-}
-
-void Stderr::flush() {}
-
-void Stderr::write_str(Str s) {
-  auto& inn = Inn::instance();
-  (void)inn.write(s.as_bytes());
 }
 
 auto Stderr::lock() -> Lock {
@@ -115,10 +107,12 @@ Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
 
 Stderr::Lock::~Lock() {}
 
-void Stderr::Lock::flush() {}
+void Stderr::Lock::flush() {
+  _inn.flush();
+}
 
 void Stderr::Lock::write_str(Str s) {
-  (void)_inn.write(s.as_bytes());
+  (void)_inn.write_str(s);
 }
 
 }  // namespace sfc::io
