@@ -71,14 +71,11 @@ class Logger {
     if (level < _level) {
       return;
     }
+
     const auto time = time::SystemTime::now();
-    if constexpr (sizeof...(args) == 0) {
-      _backend.push({time, level, {fmts._ptr, fmts._ptr}});
-    } else {
-      auto buf = fmt::FixedBuf<1024>{};
-      fmt::write(buf, fmts, args...);
-      _backend.push({time, level, Str::from_utf8(buf.as_bytes())});
-    }
+    auto buf = fmt::FixedBuf<1024>{};
+    fmt::write(buf, fmts, args...);
+    _backend.push({time, level, buf.as_str()});
   }
 };
 

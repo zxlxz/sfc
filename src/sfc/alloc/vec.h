@@ -245,7 +245,7 @@ class [[nodiscard]] Vec {
   }
 
   auto swap_remove(usize idx) noexcept -> T {
-    sfc::expect(idx < _len, "Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    sfc::expect(idx < _len, fmt::Args{"Vec::swap_remove: idx({}) out of ids([0,{}))", idx, _len});
 
     _len -= 1;
     auto tmp = ptr::read(_buf.ptr() + _len);

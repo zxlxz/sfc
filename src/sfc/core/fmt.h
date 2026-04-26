@@ -409,11 +409,15 @@ struct Fmter<W>::DebugStruct {
 template <usize N>
 struct FixedBuf {
   static constexpr auto CAPACITY = N;
-  u8 _buf[N];
+  char _buf[N];
   usize _len{0};
 
  public:
   [[gnu::always_inline]] auto as_bytes() const -> Slice<const u8> {
+    return {reinterpret_cast<const u8*>(_buf), _len};
+  }
+
+  [[gnu::always_inline]] auto as_str() const -> Str {
     return {_buf, _len};
   }
 
@@ -422,10 +426,8 @@ struct FixedBuf {
   }
 
   [[gnu::always_inline]] void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > CAPACITY) {
-      return;
-    }
-    ptr::copy_nonoverlapping(reinterpret_cast<const u8*>(s._ptr), _buf + _len, s._len);
+    if (s._len == 0 || _len + s._len > CAPACITY) return;
+    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
     _len += s._len;
   }
 };
@@ -439,28 +441,11 @@ void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args) {
 
 namespace sfc::panic {
 
-struct Buffer {
-  static constexpr auto BUF_LEN = 1024U;
-  char _buf[BUF_LEN];
-  usize _len;
-
-  void write_str(auto s) {
-    if (s._len == 0 || _len + s._len > BUF_LEN) {
-      return;
-    }
-    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
-    _len += s._len;
-  }
-};
-
 template <class... T>
-[[noreturn]] void panic_fmt(fmt::Args<T...> args, SourceLoc loc) {
-  if constexpr (sizeof...(T) == 0) {
-    panic::panic_imp(args._fmts._str, loc);
-  } else {
-    auto buf = Buffer{};
-    fmt::Fmter{buf}.write_val(args);
-    panic::panic_imp({buf._buf, buf._len}, loc);
-  }
+[[noreturn]] void panic_fmt(fmt::Args<T...> args, panic::SourceLoc loc) {
+  auto buf = fmt::FixedBuf<1024>{};
+  fmt::Fmter{buf}.write_val(args);
+  const auto s = fmt::RawStr{buf._buf, buf._len};
+  panic::panic_imp(s, loc);
 }
 }  // namespace sfc::panic

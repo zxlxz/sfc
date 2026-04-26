@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/tuple.h"
 
 namespace sfc::fmt {
 
@@ -11,10 +11,11 @@ struct RawStr {
   constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
   consteval RawStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
 
-  [[gnu::always_inline]] constexpr auto find(char c, u32 pos) const -> u32 {
+  consteval auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
     }
+    if (pos >= _len) throw "sfc::fmt::RawStr: char not found!";
     return pos;
   }
 };
@@ -105,30 +106,38 @@ struct Spec {
 template <u32 N>
 struct Fmts {
   RawStr _str;
-  u32 _locs[N + 1] = {0};
-  u32 _lens[N + 1] = {0};
+  u32 _idxs[N] = {};
+  u32 _ends[N] = {};
   Spec _specs[N] = {};
 
  public:
-  consteval Fmts(const char* s) : _str{s} {
-    auto p = 0U;
+  consteval Fmts(const char* s) noexcept : _str{s} {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     for (auto i = 0U; i < N; ++i) {
-      const auto a = _str.find('{', p);
+      const auto a = _str.find('{', i == 0 ? 0U : _ends[i - 1]);
       const auto b = _str.find('}', a);
-      if (b == _str._len) {
-        throw "sfc::fmt::Fmts: not enough format specs!";
-      }
-      const auto f = Spec::from({_str._ptr + a + 1, b - a - 1});
-      _lens[i + 0] = a - p;
-      _locs[i + 1] = b + 1;
-      _specs[i] = f;
-      p = b + 1;
+      _idxs[i] = a;
+      _ends[i] = b + 1;
+      _specs[i] = Spec::from({_str._ptr + a + 1, b - a - 1});
     }
-    _locs[N] = p;
-    _lens[N] = static_cast<u32>(_str._len - p);
-    if (_str.find('{', p) != _str._len) {
-      throw "sfc::fmt::Fmts: too many format specs!";
-    }
+#endif
+  }
+
+  struct Item {
+    RawStr fill;
+    Spec spec;
+  };
+  auto operator[](u32 idx) const -> Item {
+    if (idx >= N) return {"", {}};
+    const auto i = idx == 0 ? 0 : _ends[idx - 1];
+    const auto e = _idxs[idx];
+    const auto s = RawStr{_str._ptr + i, e - i};
+    return {s, _specs[idx]};
+  }
+
+  auto tail() const -> RawStr {
+    const auto idx = _ends[N - 1];
+    return {_str._ptr + idx, _str._len - idx};
   }
 };
 
@@ -139,8 +148,9 @@ struct Fmts<0> {
 };
 
 #if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
+// make IntelliSense and clang-tidy happy
 template <class... T>
-using fmts_t = RawStr;
+using fmts_t = Fmts<0>;
 #else
 template <class... T>
 using fmts_t = Fmts<sizeof...(T)>;
@@ -148,44 +158,40 @@ using fmts_t = Fmts<sizeof...(T)>;
 
 template <class... T>
 struct Args {
-  static constexpr auto N = sizeof...(T);
-  const fmts_t<T...>& _fmts;
-  const void* _args[N];
+  fmts_t<T...> _fmts;
+  Tuple<const T&...> _args;
 
  public:
-  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {}
+  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
 
   void fmt(auto& f) const {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    const auto s = _fmts._str;
-    const auto g = [&](u32 i, auto& x) {
-      const auto loc = _fmts._locs[i];
-      const auto len = _fmts._lens[i];
-      if (len != 0) f.write_str({s._ptr + loc, len});
-      f.write_arg(_fmts._specs[i], x);
-    };
-
-    auto i = 0U;
-    ((g(i, *static_cast<const T*>(_args[i])), i++), ...);
-    f.write_str({s._ptr + _fmts._locs[N], s._len - _fmts._locs[N]});
+    _args.map([&, idx = 0U](const auto& val) mutable {
+      const auto [fill, spec] = _fmts[idx];
+      f.write_str({fill._ptr, fill._len});
+      f.write_arg(spec, val);
+      ++idx;
+    });
+    const auto s = _fmts.tail();
+    f.write_str({s._ptr, s._len});
 #endif
   }
 };
 
 template <>
 struct Args<> {
-  const fmts_t<>& _fmts;
+  fmts_t<> _fmts;
 
  public:
   void fmt(auto& f) const {
-    f.write_str({_fmts._str._ptr, _fmts._str._len});
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    const auto s = _fmts._str;
+    f.write_str({s._ptr, s._len});
+#endif
   }
 };
 
 template <class... T>
 Args(const auto&, const T&...) -> Args<T...>;
-
-template <class... T>
-void write(auto&& out, fmts_t<T...> fmts, const T&... args);
 
 }  // namespace sfc::fmt
