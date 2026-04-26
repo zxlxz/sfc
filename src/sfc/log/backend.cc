@@ -33,9 +33,7 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 
 void GlobalBackend::push(Record record) noexcept {
   auto buf = fmt::FixedBuf<1024>{};
-  const auto time_str = record.time_str();
-  const auto level_str = record.level_str();
-  fmt::write(buf, "{} [{}] {}\n", time_str, level_str, record.message);
+  fmt::write(buf, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
 
   if (_file.is_valid()) {
     (void)_file.write_str(buf.as_str());
@@ -46,6 +44,12 @@ void GlobalBackend::push(Record record) noexcept {
 
 void GlobalBackend::flush() noexcept {
   (void)_file.flush();
+}
+
+auto global() -> Logger<GlobalBackend>& {
+  static auto backend = GlobalBackend{};
+  static auto logger = Logger<GlobalBackend>{backend};
+  return logger;
 }
 
 }  // namespace sfc::log

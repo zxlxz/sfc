@@ -53,7 +53,6 @@ class Stderr::Inn {
 
   void flush() {
     // Stderr is unbuffered, so just do nothing here.
-    return;
   }
 
   auto write_str(Str s) -> Result<> {

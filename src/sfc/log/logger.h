@@ -5,14 +5,7 @@
 
 namespace sfc::log {
 
-enum class Level {
-  Trace,
-  Debug,
-  Info,
-  Warn,
-  Error,
-  Fatal,
-};
+enum class Level { Trace, Debug, Info, Warn, Error, Fatal };
 
 struct Record {
   time::SystemTime time;
@@ -22,12 +15,6 @@ struct Record {
  public:
   auto time_str() const -> Str;
   auto level_str() const -> Str;
-
-  void fmt(auto& f) const {
-    const auto time_str = this->time_str();
-    const auto level_str = this->level_str();
-    fmt::write(f, "[{}] [{}] {}\n", time_str, level_str, message);
-  }
 };
 
 template <class Backend>
@@ -72,10 +59,9 @@ class Logger {
       return;
     }
 
-    const auto time = time::SystemTime::now();
     auto buf = fmt::FixedBuf<1024>{};
     fmt::write(buf, fmts, args...);
-    _backend.push(Record{time, level, buf.as_str()});
+    this->write_str(level, buf.as_str());
   }
 };
 
