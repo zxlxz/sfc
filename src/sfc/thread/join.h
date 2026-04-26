@@ -15,6 +15,9 @@ class JoinHandle {
 
   JoinHandle(JoinHandle&& other) noexcept;
   JoinHandle& operator=(JoinHandle&& other) noexcept;
+
+  auto is_finished() const -> bool;
+  void join();
 };
 
 struct Builder {
@@ -24,14 +27,6 @@ struct Builder {
  public:
   auto spawn(Box<void()> f) -> JoinHandle;
 };
-
-auto current() -> Thread;
-auto current_id() -> u32;
-
-void yield_now();
-
-void sleep(time::Duration dur);
-void sleep_ms(u32 ms);
 
 auto spawn(auto f) -> JoinHandle {
   return Builder{}.spawn(Box<void()>::xnew(mem::move(f)));

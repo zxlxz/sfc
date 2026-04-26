@@ -39,8 +39,7 @@ struct ThreadData {
 JoinHandle::JoinHandle() noexcept {}
 
 JoinHandle::~JoinHandle() noexcept {
-  if (!_thread.is_valid()) return;
-  _thread.join();
+  this->join();
 }
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thread{other._thread} {
@@ -52,6 +51,16 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
     mem::swap(_thread, other._thread);
   }
   return *this;
+}
+
+auto JoinHandle::is_finished() const -> bool {
+  return !_thread.is_valid();
+}
+
+void JoinHandle::join() {
+  if (!_thread.is_valid()) return;
+  _thread.join();
+  _thread = {};
 }
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
