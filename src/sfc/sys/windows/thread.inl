@@ -47,17 +47,16 @@ struct Thread {
   }
 
   void join() {
-    sfc::expect(this->is_valid(), "Thread::join: invalid thread");
+    sfc::expect(this->is_valid(), fmt::Args{"Thread::join: invalid thread"});
 
     const auto ret = ::WaitForSingleObject(_raw, INFINITE);
     ::CloseHandle(_raw);
     sfc::expect(ret == WAIT_OBJECT_0,
-                "Thread::join: WaitForSingleObject failed, err={}",
-                ::GetLastError());
+                fmt::Args{"Thread::join: WaitForSingleObject failed, err={}", ::GetLastError()});
   }
 
   void detach() {
-    sfc::expect(this->is_valid(), "Thread::detach: invalid thread");
+    sfc::expect(this->is_valid(), fmt::Args{"Thread::detach: invalid thread"});
     (void)::CloseHandle(_raw);
   }
 };
