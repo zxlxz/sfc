@@ -10,7 +10,6 @@ class CString {
 
  public:
   static auto from(Str s) -> CString;
-  static auto from_buf(Buf buf) -> CString;
 
   auto ptr() const -> const char*;
   auto into_string() && -> String;

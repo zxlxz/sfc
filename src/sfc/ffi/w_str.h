@@ -18,7 +18,6 @@ class WString {
 
  public:
   static auto from(Str s) -> WString;
-  static auto from_buf(Buf buf) -> WString;
 
   auto ptr() const -> const wchar_t*;
   auto chars() const -> WChars;

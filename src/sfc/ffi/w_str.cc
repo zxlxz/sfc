@@ -50,27 +50,19 @@ auto WString::from(Str s) -> WString {
     return {};
   }
 
-  auto chars = s.chars();
-
-  auto v = List<wchar_t>::with_capacity(s.len());
-  while (auto x = chars.next()) {
-    const auto ch = *x;
+  auto res = WString{};
+  auto& buf = res._buf;
+  s.chars().for_each([&](char32_t ch) {
     if (ch <= 0xFFFF) {
-      v.push(static_cast<wchar_t>(ch));
+      buf.push(static_cast<wchar_t>(ch));
     } else {
       const auto t = ch - 0x10000;
-      v.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
-      v.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
+      buf.push(static_cast<wchar_t>(0xD800 + (t >> 10)));
+      buf.push(static_cast<wchar_t>(0xDC00 + (t & 0x3FF)));
     }
-  }
-  v.push(0);
+  });
+  buf.push(0);
 
-  return WString::from_buf(mem::move(v));
-}
-
-auto WString::from_buf(Buf buf) -> WString {
-  auto res = WString{};
-  res._buf = mem::move(buf);
   return res;
 }
 

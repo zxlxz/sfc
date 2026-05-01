@@ -3,21 +3,17 @@
 
 namespace sfc::ffi {
 
-auto CString::from_buf(Buf buf) -> CString {
-  auto res = CString{};
-  res._buf = mem::move(buf);
-  return res;
-}
-
 auto CString::from(Str s) -> CString {
   if (s.is_empty()) {
     return {};
   }
 
-  auto list = List<char>::with_capacity(s.len() + 1);
-  list.extend_from_slice({s._ptr, s._len});
-  list.push(0);
-  return CString::from_buf(mem::move(list));
+  auto res = CString{};
+  auto& buf = res._buf;
+  buf.reserve(s.len() + 1);
+  buf.extend_from_slice({s._ptr, s._len});
+  buf.push(0);
+  return res;
 }
 
 auto CString::ptr() const -> const char* {
