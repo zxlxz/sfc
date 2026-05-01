@@ -1,10 +1,8 @@
 #pragma once
 
-#include "sfc/collections/hash_tbl.h"
+#include "sfc/collections/hash/hash_tbl.h"
 
-namespace sfc::collections::hash_map {
-
-using hash_tbl::HashTbl;
+namespace sfc::collections::hash {
 
 template <class K, class V>
 class HashMap {
@@ -102,8 +100,8 @@ class HashMap {
   }
 };
 
-}  // namespace sfc::collections::hash_map
+}  // namespace sfc::collections::hash
 
 namespace sfc::collections {
-using hash_map::HashMap;
+using hash::HashMap;
 }

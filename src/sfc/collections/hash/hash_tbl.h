@@ -2,7 +2,7 @@
 
 #include "sfc/alloc/alloc.h"
 
-namespace sfc::collections::hash_tbl {
+namespace sfc::collections::hash {
 
 static constexpr auto CTRL_ALIGN = usize{128UL};
 static constexpr auto CTRL_NUL = u8{0x80U};
@@ -279,7 +279,8 @@ class HashTbl {
     if (min_cap < _len) {
       return;
     }
-    sfc::expect(min_cap < kMaxSize, fmt::Args{"HashTbl::rehash: requested capacity(={}) too large", min_cap});
+    sfc::expect(min_cap < kMaxSize,
+                fmt::Args{"HashTbl::rehash: requested capacity(={}) too large", min_cap});
 
     // calculate new capacity
     auto new_cap = num::next_power_of_two(min_cap);
@@ -291,14 +292,14 @@ class HashTbl {
     tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(static_cast<T&&>(entry)); });
   }
 
-  using Iter = hash_tbl::Iter<const T>;
+  using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data = reinterpret_cast<const T*>(_ptr + ctrl_size);
     return {{}, _ptr, data, _cap};
   }
 
-  using IterMut = hash_tbl::Iter<T>;
+  using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data = reinterpret_cast<T*>(_ptr + ctrl_size);
@@ -331,4 +332,4 @@ class HashTbl {
   }
 };
 
-}  // namespace sfc::collections::hash_tbl
+}  // namespace sfc::collections::hash

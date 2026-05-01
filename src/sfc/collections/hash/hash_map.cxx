@@ -1,10 +1,9 @@
-#include "sfc/collections/hash_map.h"
-
+#include "sfc/collections/hash/hash_map.h"
 #include "sfc/test/test.h"
 
-namespace sfc::collections::hash_map::test {
+namespace sfc::collections::hash::test {
 
-SFC_TEST(get) {
+SFC_TEST(map_get) {
   auto t = HashMap<int, int>{};
   t.insert(1, 10);
   auto v = t.get_mut(1);
@@ -14,7 +13,7 @@ SFC_TEST(get) {
   sfc::expect_eq(t.get(1).unwrap(), 11);
 }
 
-SFC_TEST(try_insert) {
+SFC_TEST(map_try_insert) {
   auto t = HashMap<int, int>{};
 
   for (auto i = 0; i < 5; ++i) {
@@ -48,7 +47,7 @@ SFC_TEST(try_insert) {
   sfc::expect_true(t.capacity() < t.len() * 4);
 }
 
-SFC_TEST(insert) {
+SFC_TEST(map_insert) {
   auto t = HashMap<int, int>{};
   for (auto i = 0; i < 10; ++i) {
     t.insert(i, i * 10);
@@ -62,7 +61,7 @@ SFC_TEST(insert) {
   sfc::expect_eq(t.len(), 10U);
 }
 
-SFC_TEST(remove) {
+SFC_TEST(map_remove) {
   auto t = HashMap<int, int>{};
   for (auto i = 0; i < 3; ++i) {
     t.insert(i, i * 10);
@@ -85,4 +84,4 @@ SFC_TEST(remove) {
   sfc::expect_eq(t.len(), 0U);
 }
 
-}  // namespace sfc::collections::hash_map::test
+}  // namespace sfc::collections::hash::test

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "sfc/collections/hash_tbl.h"
+#include "sfc/collections/hash/hash_tbl.h"
 
-namespace sfc::collections::hash_set {
-
-using hash_tbl::HashTbl;
+namespace sfc::collections::hash {
 
 template <class T>
 class HashSet {
@@ -59,8 +57,8 @@ class HashSet {
   }
 };
 
-}  // namespace sfc::collections::hash_set
+}  // namespace sfc::collections::hash
 
 namespace sfc::collections {
-using hash_set::HashSet;
+using hash::HashSet;
 }

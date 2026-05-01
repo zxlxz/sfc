@@ -1,8 +1,7 @@
-#include "sfc/collections/hash_set.h"
-
+#include "sfc/collections/hash.h"
 #include "sfc/test/test.h"
 
-namespace sfc::collections::hash_set::test {
+namespace sfc::collections::hash::test {
 
 SFC_TEST(set_contains) {
   auto t = HashSet<int>{};
@@ -43,7 +42,7 @@ SFC_TEST(set_insert) {
   sfc::expect_true(t.contains(3));
 }
 
-SFC_TEST(remove) {
+SFC_TEST(set_remove) {
   auto t = HashSet<int>{};
 
   // Remove from empty set
@@ -72,7 +71,7 @@ SFC_TEST(remove) {
   sfc::expect_false(t.remove(2));
 }
 
-SFC_TEST(clear) {
+SFC_TEST(set_clear) {
   auto t = HashSet<int>{};
 
   for (auto i = 0; i < 100; ++i) {
@@ -94,7 +93,7 @@ SFC_TEST(clear) {
   sfc::expect_eq(t.len(), 1U);
 }
 
-SFC_TEST(with_capacity) {
+SFC_TEST(set_with_capacity) {
   auto t = HashSet<int>::with_capacity(50);
   sfc::expect_eq(t.len(), 0U);
   sfc::expect_true(t.capacity() >= 50);
@@ -105,7 +104,7 @@ SFC_TEST(with_capacity) {
   sfc::expect_eq(t.len(), 100U);
 }
 
-SFC_TEST(reserve) {
+SFC_TEST(set_reserve) {
   auto t = HashSet<int>{};
   sfc::expect_eq(t.capacity(), 0U);
 
@@ -120,7 +119,7 @@ SFC_TEST(reserve) {
   sfc::expect_eq(t.capacity(), cap_before);
 }
 
-SFC_TEST(duplicate_inserts) {
+SFC_TEST(set_duplicate_inserts) {
   auto t = HashSet<int>{};
 
   // Insert same value multiple times
@@ -137,4 +136,4 @@ SFC_TEST(duplicate_inserts) {
   sfc::expect_true(t.contains(42));
 }
 
-}  // namespace sfc::collections::hash_set::test
+}  // namespace sfc::collections::hash::test
