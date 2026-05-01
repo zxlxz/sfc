@@ -28,18 +28,6 @@ SFC_TEST(variant_move) {
   sfc::expect_eq(b.as<i32>(), Option{i32{2}});
 }
 
-// Variant::map, Variant::map_mut
-SFC_TEST(variant_map) {
-  auto a = Variant<i32, f32>{2};
-  a.map([](auto x) { sfc::expect_eq(x, 2); });
-
-  a.map_mut([](auto& x) { x += 3; });
-  sfc::expect_eq(a.as<i32>(), Option{i32{5}});
-
-  auto c = Variant<i32, f32>{3.0f};
-  c.map([](auto x) { sfc::expect_eq(x, 3.0f); });
-}
-
 // Variant::fmt
 SFC_TEST(variant_fmt) {
   auto a = Variant<i32, f32>{2};

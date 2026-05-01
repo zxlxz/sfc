@@ -68,12 +68,12 @@ class [[nodiscard]] Result {
   }
 
   auto unwrap() && noexcept -> T {
-    sfc::expect(_tag, fmt::Args{"Result::unwrap: not Ok()"});
+    sfc::expect(_tag, "Result::unwrap: not Ok()");
     return static_cast<T&&>(_ok);
   }
 
   auto unwrap_err() && noexcept -> E {
-    sfc::expect(!_tag, fmt::Args{"Result::unwrap_err: not Err()"});
+    sfc::expect(!_tag, "Result::unwrap_err: not Err()");
     return static_cast<E&&>(_err);
   }
 
@@ -91,7 +91,7 @@ class [[nodiscard]] Result {
   }
 
   auto expect(const auto& msg) && noexcept -> T {
-    sfc::expect(_tag, fmt::Args{"{}: {}", msg, _err});
+    sfc::expect(_tag, "{}: {}", msg, _err);
     return static_cast<T&&>(_ok);
   }
 
@@ -187,11 +187,11 @@ class [[nodiscard]] Result<void, E> {
   }
 
   void unwrap() const noexcept {
-    sfc::expect(_tag, fmt::Args{"Result::unwrap: not Ok()"});
+    sfc::expect(_tag, "Result::unwrap: not Ok()");
   }
 
   auto unwrap_err() const noexcept -> E {
-    sfc::expect(!_tag, fmt::Args{"Result::unwrap_err: not Err()"});
+    sfc::expect(!_tag, "Result::unwrap_err: not Err()");
     return _err;
   }
 

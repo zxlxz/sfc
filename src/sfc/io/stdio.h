@@ -63,27 +63,23 @@ class Stderr {
   }
 };
 
-template <class... T>
-void print(const fmt::Fmts& fmts, const T&... args) {
+void print(const fmt::Fmts& fmts, const auto&... args) {
   auto out = Stdout::lock();
   fmt::write(out, fmts, args...);
 }
 
-template <class... T>
-void println(const fmt::Fmts& fmts, const T&... args) {
+void println(const fmt::Fmts& fmts, const auto&... args) {
   auto out = Stdout::lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");
 }
 
-template <class... T>
-void eprint(const fmt::Fmts& fmts, const T&... args) {
+void eprint(const fmt::Fmts& fmts, const auto&... args) {
   auto out = Stderr::lock();
   fmt::write(out, fmts, args...);
 }
 
-template <class... T>
-void eprintln(const fmt::Fmts& fmts, const T&... args) {
+void eprintln(const fmt::Fmts& fmts, const auto&... args) {
   auto out = Stderr::lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");

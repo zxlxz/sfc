@@ -53,8 +53,7 @@ class Logger {
     _backend.push(Record{time, level, message});
   }
 
-  template <class... T>
-  void write_fmt(Level level, const fmt::Fmts& fmts, const T&... args) {
+  void write_fmt(Level level, const fmt::Fmts& fmts, const auto&... args) {
     if (level < _level) {
       return;
     }

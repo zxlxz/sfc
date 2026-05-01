@@ -133,54 +133,16 @@ struct Fmts {
   };
   auto operator[](u32 idx) const -> Item {
     if (idx >= _cnt) return {"", {}};
-    const auto a = idx == 0 ? 0 : _ends[idx - 1] + 1;
-    const auto b = idx == _cnt ? _str._len : _idxs[idx];
+    const auto a = idx == 0 ? 0UL : _ends[idx - 1] + 1;
+    const auto b = _idxs[idx];
     const auto s = RawStr{_str._ptr + a, b - a};
     return {s, _specs[idx]};
   }
 
   auto tail() const -> RawStr {
-    const auto i = _cnt == 0 ? 0 : _idxs[_cnt - 1] + 1;
+    const auto i = _cnt == 0 ? 0 : _ends[_cnt - 1] + 1;
     return {_str._ptr + i, _str._len - i};
   }
 };
-
-template <class... T>
-struct Args {
-  const Fmts& _fmts;
-  Tuple<const T&...> _args;
-
- public:
-  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
-
-  void fmt(auto& f) const {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    _args.map([&, idx = 0U](const auto& val) mutable {
-      const auto [fill, spec] = _fmts[idx];
-      f.write_str({fill._ptr, fill._len});
-      f.write_arg(spec, val);
-      ++idx;
-    });
-    const auto s = _fmts.tail();
-    f.write_str({s._ptr, s._len});
-#endif
-  }
-};
-
-template <>
-struct Args<> {
-  const Fmts& _fmts;
-
- public:
-  void fmt(auto& f) const {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    const auto s = _fmts._str;
-    f.write_str({s._ptr, s._len});
-#endif
-  }
-};
-
-template <class... T>
-Args(const auto&, const T&...) -> Args<T...>;
 
 }  // namespace sfc::fmt

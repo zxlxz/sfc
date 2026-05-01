@@ -69,7 +69,7 @@ struct Display {
 };
 
 template <class W>
-struct Fmter {
+struct Formatter {
   W& _buf;
   Spec _spec = {};
   u32 _depth = 0;
@@ -119,9 +119,17 @@ struct Fmter {
     }
   }
 
-  template <class... T>
-  void write_fmt(const fmt::Fmts& fmts, const T&... args) {
-    Args{fmts, args...}.fmt(*this);
+  void write_fmt(const fmt::Fmts& fmts, const auto&... args) {
+    const auto u = tuple::bind(args...);
+    u.map([&, idx = 0U](const auto& val) mutable {
+      const auto [fill, spec] = fmts[idx];
+      this->write_str({fill._ptr, fill._len});
+      this->write_arg(spec, val);
+      ++idx;
+    });
+
+    const auto s = fmts.tail();
+    this->write_str({s._ptr, s._len});
   }
 
   void pad(Str s) {
@@ -265,12 +273,12 @@ struct Fmter {
 };
 
 template <class W>
-struct Fmter<W>::DebugTuple {
-  Fmter& _fmt;
+struct Formatter<W>::DebugTuple {
+  Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugTuple(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugTuple(Formatter& fmt) : _fmt{fmt} {
     _fmt.node_begin("(");
   }
 
@@ -292,12 +300,12 @@ struct Fmter<W>::DebugTuple {
 };
 
 template <class W>
-struct Fmter<W>::DebugList {
-  Fmter& _fmt;
+struct Formatter<W>::DebugList {
+  Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugList(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugList(Formatter& fmt) : _fmt{fmt} {
     _fmt.node_begin("[");
   }
 
@@ -318,12 +326,12 @@ struct Fmter<W>::DebugList {
 };
 
 template <class W>
-struct Fmter<W>::DebugSet {
-  Fmter& _fmt;
+struct Formatter<W>::DebugSet {
+  Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugSet(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugSet(Formatter& fmt) : _fmt{fmt} {
     _fmt.node_begin("{");
   }
 
@@ -344,12 +352,12 @@ struct Fmter<W>::DebugSet {
 };
 
 template <class W>
-struct Fmter<W>::DebugMap {
-  Fmter& _fmt;
+struct Formatter<W>::DebugMap {
+  Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugMap(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugMap(Formatter& fmt) : _fmt{fmt} {
     _fmt.node_begin("{");
   }
 
@@ -376,12 +384,12 @@ struct Fmter<W>::DebugMap {
 };
 
 template <class W>
-struct Fmter<W>::DebugStruct {
-  Fmter& _fmt;
+struct Formatter<W>::DebugStruct {
+  Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugStruct(Fmter& fmt) : _fmt{fmt} {
+  explicit DebugStruct(Formatter& fmt) : _fmt{fmt} {
     _fmt.node_begin("{");
   }
 
@@ -432,20 +440,18 @@ struct FixedBuf {
   }
 };
 
-template <class... T>
-void write(auto&& out, const fmt::Fmts& fmts, const T&... args) {
-  Fmter{out}.write_val(fmt::Args{fmts, args...});
+void write(auto&& out, const fmt::Fmts& fmts, const auto&... args) {
+  Formatter{out}.write_fmt(fmts, args...);
 }
 
 }  // namespace sfc::fmt
 
 namespace sfc::panic {
 
-template <class... T>
-[[noreturn]] void panic_fmt(fmt::Args<T...> args, panic::SourceLoc loc) {
+[[noreturn]] void panic_fmt(const XFmt& fmts, const auto&... args) {
   auto buf = fmt::FixedBuf<1024>{};
-  fmt::Fmter{buf}.write_val(args);
+  fmt::write(buf, fmts._fmts, args...);
   const auto s = fmt::RawStr{buf._buf, buf._len};
-  panic::panic_imp(s, loc);
+  panic::panic_imp(s, fmts._loc);
 }
 }  // namespace sfc::panic

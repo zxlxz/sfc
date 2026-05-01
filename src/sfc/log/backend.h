@@ -37,33 +37,27 @@ class GlobalBackend {
 class GlobalBackend;
 auto global() -> Logger<GlobalBackend>&;
 
-template <class... T>
-void trace(const fmt::Fmts& fmts, const T&... args) {
+void trace(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Trace, fmts, args...);
 }
 
-template <class... T>
-void debug(const fmt::Fmts& fmts, const T&... args) {
+void debug(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Debug, fmts, args...);
 }
 
-template <class... T>
-void info(const fmt::Fmts& fmts, const T&... args) {
+void info(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Info, fmts, args...);
 }
 
-template <class... T>
-void warn(const fmt::Fmts& fmts, const T&... args) {
+void warn(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Warn, fmts, args...);
 }
 
-template <class... T>
-void error(const fmt::Fmts& fmts, const T&... args) {
+void error(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Error, fmts, args...);
 }
 
-template <class... T>
-void fatal(const fmt::Fmts& fmts, const T&... args) {
+void fatal(const fmt::Fmts& fmts, const auto&... args) {
   log::global().write_fmt(Level::Fatal, fmts, args...);
 }
 

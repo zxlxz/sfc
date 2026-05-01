@@ -99,12 +99,12 @@ class [[nodiscard]] List {
   }
 
   auto operator[](usize idx) const noexcept -> const T& {
-    sfc::expect(idx < _len, fmt::Args{"List::[]: idx(={}) out of ids(={})", idx, _len});
+    sfc::expect(idx < _len, "List::[]: idx(={}) out of ids(={})", idx, _len);
     return _inn[idx];
   }
 
   auto operator[](usize idx) noexcept -> T& {
-    sfc::expect(idx < _len, fmt::Args{"List::[]: idx(={}) out of ids(={})", idx, _len});
+    sfc::expect(idx < _len, "List::[]: idx(={}) out of ids(={})", idx, _len);
     return _inn[idx];
   }
 
@@ -147,7 +147,7 @@ class [[nodiscard]] List {
   }
 
   auto swap_remove(usize idx) noexcept -> T {
-    sfc::expect(idx < _len, fmt::Args{"List::swap_remove: idx({}) out of ids([0,{}))", idx, _len});
+    sfc::expect(idx < _len, "List::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     _len -= 1;
     auto tmp = ptr::read(_inn.ptr() + _len);
@@ -187,7 +187,7 @@ class [[nodiscard]] List {
   }
 
   void insert(usize idx, T val) noexcept {
-    sfc::expect(idx <= _len, fmt::Args{"List::insert: idx(={}) out of ids([0,{}))", idx, _len});
+    sfc::expect(idx <= _len, "List::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
     const auto tail_ptr = _inn.ptr() + idx;
@@ -198,7 +198,7 @@ class [[nodiscard]] List {
   }
 
   auto remove(usize idx) noexcept -> T {
-    sfc::expect(idx < _len, fmt::Args{"List::remove: idx(={}) out of ids([0,{}))", idx, _len});
+    sfc::expect(idx < _len, "List::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
     const auto hole_ptr = _inn.ptr() + idx;
     const auto tail_ptr = hole_ptr + 1;

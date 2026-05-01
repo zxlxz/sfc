@@ -38,7 +38,7 @@ static auto format_xml(Slice<const Suite> suites) -> String {
   }
 
   auto buf = String{};
-  auto out = fmt::Fmter{buf};
+  auto out = fmt::Formatter{buf};
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt);
   for (auto& suite : suites) {
