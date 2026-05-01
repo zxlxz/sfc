@@ -15,7 +15,6 @@ struct RawStr {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
     }
-    if (pos >= _len) throw "sfc::fmt::RawStr: char not found!";
     return pos;
   }
 };
@@ -103,66 +102,56 @@ struct Spec {
   }
 };
 
-template <u32 N>
 struct Fmts {
+  static constexpr auto kMaxLen = 16U;
   RawStr _str;
-  u32 _idxs[N] = {};
-  u32 _ends[N] = {};
-  Spec _specs[N] = {};
+  u32 _cnt = 0;
+  u16 _idxs[kMaxLen] = {};
+  u16 _ends[kMaxLen] = {};
+  Spec _specs[kMaxLen] = {};
 
  public:
   consteval Fmts(const char* s) noexcept : _str{s} {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    for (auto i = 0U; i < N; ++i) {
-      const auto a = _str.find('{', i == 0 ? 0U : _ends[i - 1]);
+    auto p = 0U;
+    for (auto i = 0U; i < kMaxLen; ++i) {
+      const auto a = _str.find('{', p);
       const auto b = _str.find('}', a);
-      _idxs[i] = a;
-      _ends[i] = b + 1;
-      _specs[i] = Spec::from({_str._ptr + a + 1, b - a - 1});
+      if (b == _str._len) break;
+      _idxs[_cnt] = static_cast<u16>(a);
+      _ends[_cnt] = static_cast<u16>(b);
+      _specs[_cnt] = Spec::from({_str._ptr + a + 1, b - a - 1});
+      p = b + 1;
+      _cnt += 1;
     }
 #endif
   }
 
   struct Item {
-    RawStr fill;
-    Spec spec;
+    RawStr _fill;
+    Spec _spec;
   };
   auto operator[](u32 idx) const -> Item {
-    if (idx >= N) return {"", {}};
-    const auto i = idx == 0 ? 0 : _ends[idx - 1];
-    const auto e = _idxs[idx];
-    const auto s = RawStr{_str._ptr + i, e - i};
+    if (idx >= _cnt) return {"", {}};
+    const auto a = idx == 0 ? 0 : _ends[idx - 1] + 1;
+    const auto b = idx == _cnt ? _str._len : _idxs[idx];
+    const auto s = RawStr{_str._ptr + a, b - a};
     return {s, _specs[idx]};
   }
 
   auto tail() const -> RawStr {
-    const auto idx = _ends[N - 1];
-    return {_str._ptr + idx, _str._len - idx};
+    const auto i = _cnt == 0 ? 0 : _idxs[_cnt - 1] + 1;
+    return {_str._ptr + i, _str._len - i};
   }
 };
 
-template <>
-struct Fmts<0> {
-  RawStr _str;
-  consteval Fmts(const char* s) : _str{s} {}
-};
-
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-// make IntelliSense and clang-tidy happy
-template <class... T>
-using fmts_t = Fmts<0>;
-#else
-template <class... T>
-using fmts_t = Fmts<sizeof...(T)>;
-#endif
-
 template <class... T>
 struct Args {
-  fmts_t<T...> _fmts;
+  const Fmts& _fmts;
   Tuple<const T&...> _args;
 
  public:
-  Args(const fmts_t<T...>& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
+  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
 
   void fmt(auto& f) const {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
@@ -180,7 +169,7 @@ struct Args {
 
 template <>
 struct Args<> {
-  fmts_t<> _fmts;
+  const Fmts& _fmts;
 
  public:
   void fmt(auto& f) const {

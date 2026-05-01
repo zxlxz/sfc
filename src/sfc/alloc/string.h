@@ -141,7 +141,7 @@ class [[nodiscard]] String {
 };
 
 template <class... T>
-auto format(fmt::fmts_t<T...> fmts, const T&... args) -> String {
+auto format(const fmt::Fmts& fmts, const T&... args) -> String {
   auto out = String{};
   fmt::Fmter{out}.write_fmt(fmts, args...);
   return out;

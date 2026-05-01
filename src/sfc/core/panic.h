@@ -24,10 +24,9 @@ struct Error {
 template <class... T>
 [[noreturn]] void panic_fmt(fmt::Args<T...> args, SourceLoc loc = SourceLoc::current());
 
-template <class... T>
-void expect(const auto& cond, fmt::Args<T...> args, SourceLoc loc = SourceLoc::current()) {
-  if (cond) return;
-  panic::panic_fmt(args, loc);
+void expect(bool x, const auto& msg, SourceLoc loc = SourceLoc::current()) {
+  if (x) return;
+  panic::panic_fmt(msg, loc);
 }
 
 void expect_true(const auto& x, SourceLoc loc = SourceLoc::current()) {

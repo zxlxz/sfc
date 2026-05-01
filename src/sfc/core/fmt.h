@@ -120,7 +120,7 @@ struct Fmter {
   }
 
   template <class... T>
-  void write_fmt(const fmt::fmts_t<T...>& fmts, const T&... args) {
+  void write_fmt(const fmt::Fmts& fmts, const T&... args) {
     Args{fmts, args...}.fmt(*this);
   }
 
@@ -433,7 +433,7 @@ struct FixedBuf {
 };
 
 template <class... T>
-void write(auto&& out, fmt::fmts_t<T...> fmts, const T&... args) {
+void write(auto&& out, const fmt::Fmts& fmts, const T&... args) {
   Fmter{out}.write_val(fmt::Args{fmts, args...});
 }
 
