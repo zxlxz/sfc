@@ -100,6 +100,11 @@ class Option {
     return _val;
   }
 
+  auto expect(const auto& msg) && noexcept -> T {
+    sfc::expect(_tag, "Option::expect: {}", msg);
+    return static_cast<T&&>(_val);
+  }
+
   auto unwrap() && noexcept -> T {
     sfc::expect(_tag, "Option::unwrap: not Some()");
     return static_cast<T&&>(_val);
@@ -107,15 +112,6 @@ class Option {
 
   auto unwrap_or(T default_val) && noexcept -> T {
     return _tag ? static_cast<T&&>(_val) : static_cast<T&&>(default_val);
-  }
-
-  auto unwrap_unchecked() noexcept -> T {
-    return static_cast<T&&>(_val);
-  }
-
-  auto expect(const auto& msg) && noexcept -> T {
-    sfc::expect(_tag, "Option::expect: {}", msg);
-    return static_cast<T&&>(_val);
   }
 
   template <class U>
@@ -238,6 +234,11 @@ class Option<T> {
     return _inn;
   }
 
+  auto expect(const auto& msg) && noexcept -> T {
+    sfc::expect(_inn != nullptr, "Option::expect: {}", msg);
+    return static_cast<T&&>(_inn);
+  }
+
   auto unwrap() noexcept -> T {
     sfc::expect(_inn != nullptr, "Option::unwrap: None()");
     return static_cast<T&&>(_inn);
@@ -245,15 +246,6 @@ class Option<T> {
 
   auto unwrap_or(T default_val) noexcept -> T {
     return _inn != nullptr ? static_cast<T&&>(_inn) : static_cast<T&&>(default_val);
-  }
-
-  auto unwrap_unchecked() noexcept -> T {
-    return static_cast<T&&>(_inn);
-  }
-
-  auto expect(const auto& msg) && noexcept -> T {
-    sfc::expect(_inn != nullptr, "Option::expect: {}", msg);
-    return static_cast<T&&>(_inn);
   }
 
   template <class U>
@@ -371,10 +363,6 @@ class Option<T&> {
 
   auto unwrap_or(T& default_val) noexcept -> T& {
     return _ptr ? *_ptr : default_val;
-  }
-
-  auto unwrap_unchecked() noexcept -> T& {
-    return *_ptr;
   }
 
   auto expect(const auto& msg) const -> T& {
