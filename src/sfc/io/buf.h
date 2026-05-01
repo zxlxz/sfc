@@ -5,7 +5,7 @@
 namespace sfc::io {
 
 class Buffer {
-  Vec<u8> _buf{};
+  List<u8> _buf{};
   usize _pos = 0;
 
  public:
@@ -83,7 +83,7 @@ struct BufRead : Read {
     return nread;
   }
 
-  auto read_until(this auto& r, u8 delim, Vec<u8>& buf) -> Result<usize> {
+  auto read_until(this auto& r, u8 delim, List<u8>& buf) -> Result<usize> {
     auto nread = 0UL;
 
     while (true) {
@@ -164,7 +164,7 @@ class BufWriter : public Write {
   static constexpr usize BUFF_SIZE = 1024U;
 
   W _inn;
-  Vec<u8> _buf{Vec<u8>::with_capacity(BUFF_SIZE)};
+  List<u8> _buf{List<u8>::with_capacity(BUFF_SIZE)};
 
  public:
   explicit BufWriter(W inn) noexcept : _inn{static_cast<W&&>(inn)} {}

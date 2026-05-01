@@ -105,7 +105,7 @@ auto encode(Slice<const u8> data) -> String {
   return text;
 }
 
-auto decode(Str text) -> Vec<u8> {
+auto decode(Str text) -> List<u8> {
   if (text.is_empty()) {
     return {};
   }
@@ -115,7 +115,7 @@ auto decode(Str text) -> Vec<u8> {
     return {};
   }
 
-  auto out = Vec<u8>{};
+  auto out = List<u8>{};
   out.reserve((text_len / 4) * 3);
 
   const auto in_ptr = text.as_bytes().as_ptr();

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "sfc/alloc/vec.h"
+#include "sfc/alloc/list.h"
 
 namespace sfc::string {
 
 class [[nodiscard]] String {
-  Vec<u8> _vec = {};
+  using Buf = List<u8>;
+  Buf _buf = {};
 
  public:
   static auto with_capacity(usize capacity) noexcept -> String {
@@ -20,38 +21,38 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from_utf8(Vec<u8> vec) -> String {
+  static auto from_utf8(List<u8> list) -> String {
     auto res = String{};
-    res._vec = mem::move(vec);
+    res._buf = mem::move(list);
     return res;
   }
 
   auto as_ptr() const noexcept -> const u8* {
-    return _vec.as_ptr();
+    return _buf.as_ptr();
   }
 
   auto capacity() const noexcept -> usize {
-    return _vec.capacity();
+    return _buf.capacity();
   }
 
   auto len() const noexcept -> usize {
-    return _vec.len();
+    return _buf.len();
   }
 
   auto is_empty() const noexcept -> bool {
-    return _vec.is_empty();
+    return _buf.is_empty();
   }
 
   auto as_slice() const noexcept -> Slice<const u8> {
-    return {_vec.as_ptr(), _vec.len()};
+    return {_buf.as_ptr(), _buf.len()};
   }
 
   auto as_mut_slice() noexcept -> Slice<u8> {
-    return {_vec.as_mut_ptr(), _vec.len()};
+    return {_buf.as_mut_ptr(), _buf.len()};
   }
 
-  auto as_mut_vec() noexcept -> Vec<u8>& {
-    return _vec;
+  auto as_mut_vec() noexcept -> List<u8>& {
+    return _buf;
   }
 
   auto as_str() const noexcept -> Str {
@@ -59,7 +60,7 @@ class [[nodiscard]] String {
   }
 
   auto operator[](ops::Range ids) const noexcept -> Str {
-    const auto v = _vec[ids];
+    const auto v = _buf[ids];
     return Str::from_utf8(v);
   }
 
@@ -75,11 +76,11 @@ class [[nodiscard]] String {
 
  public:
   auto iter() const noexcept {
-    return _vec.iter();
+    return _buf.iter();
   }
 
   auto iter_mut() noexcept {
-    return _vec.iter_mut();
+    return _buf.iter_mut();
   }
 
   auto find(auto&& p) const -> Option<usize> {

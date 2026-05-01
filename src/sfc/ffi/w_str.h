@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/alloc/vec.h"
 #include "sfc/alloc/string.h"
 
 namespace sfc::ffi {
@@ -14,11 +13,11 @@ struct WChars {
 };
 
 class WString {
-  Vec<wchar_t> _vec;
+  List<wchar_t> _buf;
 
  public:
   static auto from(Str s) -> WString;
-  static auto from_vec(Vec<wchar_t> v) -> WString;
+  static auto from_vec(List<wchar_t> v) -> WString;
 
   auto ptr() const -> const wchar_t*;
   auto chars() const -> WChars;

@@ -1,5 +1,4 @@
 #include "sfc/io/mod.h"
-#include "sfc/alloc/vec.h"
 
 namespace sfc {
 
@@ -21,15 +20,15 @@ template auto Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
 template auto Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
 }  // namespace slice
 
-namespace vec {
+namespace list {
 
 template <class T, class A>
-auto Vec<T, A>::write(Slice<const u8> buf) -> io::Result<usize> {
+auto List<T, A>::write(Slice<const u8> buf) -> io::Result<usize> {
   this->extend_from_slice(buf);
   return buf.len();
 }
 
-template auto Vec<u8>::write(Slice<const u8> buf) -> io::Result<usize>;
-}  // namespace vec
+template auto List<u8>::write(Slice<const u8> buf) -> io::Result<usize>;
+}  // namespace list
 
 }  // namespace sfc

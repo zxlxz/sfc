@@ -18,7 +18,7 @@ struct Read {
     return {};
   }
 
-  auto read_to_end(this auto& self, Vec<u8>& buf) -> Result<usize> {
+  auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
     static constexpr auto PROBE_SIZE = 1024U;
 
     const auto old_len = buf.len();

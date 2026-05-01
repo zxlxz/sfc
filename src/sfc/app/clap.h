@@ -10,7 +10,7 @@ class Clap {
   String _version;
   String _author;
   String _about;
-  Vec<Item> _items;
+  List<Item> _items;
 
  public:
   Clap(Str name) noexcept;

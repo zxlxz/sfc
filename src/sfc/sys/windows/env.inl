@@ -13,10 +13,10 @@ static auto build_wstring(auto&& f, unsigned capacity = 0) -> ffi::WString {
     return {};
   }
 
-  auto vec = Vec<wchar_t>::with_capacity(capacity);
-  const auto len = f(vec.as_mut_ptr(), capacity);
-  vec.set_len(len + 1);
-  return ffi::WString::from_vec(mem::move(vec));
+  auto list = List<wchar_t>::with_capacity(capacity);
+  const auto len = f(list.as_mut_ptr(), capacity);
+  list.set_len(len + 1);
+  return ffi::WString::from_vec(mem::move(list));
 }
 
 static auto getenv(const wchar_t* key) -> ffi::WString {

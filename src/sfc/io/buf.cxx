@@ -35,8 +35,8 @@ SFC_TEST(buf_read) {
 }
 
 SFC_TEST(buf_write) {
-  auto out = Vec<u8>{};
-  auto w = BufWriter<Vec<u8>&>{out};
+  auto out = List<u8>{};
+  auto w = BufWriter<List<u8>&>{out};
 
   sfc::expect_eq(w.write(Str{"0123"}.as_bytes()).ok(), Option{4U});
   sfc::expect_eq(out.len(), 0);

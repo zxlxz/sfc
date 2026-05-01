@@ -34,37 +34,37 @@ static auto utf8_encode(u8 (&buf)[4], char32_t c) -> Slice<const u8> {
 
 void String::push_str(Str s) noexcept {
   if (s._len == 0) return;
-  _vec.extend_from_slice(s.as_bytes());
+  _buf.extend_from_slice(s.as_bytes());
 }
 
 void String::reserve(usize amt) noexcept {
-  _vec.reserve(amt);
+  _buf.reserve(amt);
 }
 
 void String::truncate(usize len) noexcept {
-  _vec.truncate(len);
+  _buf.truncate(len);
 }
 
 void String::clear() noexcept {
-  _vec.clear();
+  _buf.clear();
 }
 
 auto String::pop() noexcept -> Option<char32_t> {
-  if (_vec.is_empty()) {
+  if (_buf.is_empty()) {
     return {};
   }
 
   auto chars = this->as_str().chars();
 
   const auto ret = chars.next_back();
-  _vec.truncate(static_cast<usize>(chars._end - chars._ptr));
+  _buf.truncate(static_cast<usize>(chars._end - chars._ptr));
   return ret;
 }
 
 void String::push(char32_t c) noexcept {
   // ansii code point, just push as u8
   if (c < 0x80) {
-    _vec.push(static_cast<u8>(c));
+    _buf.push(static_cast<u8>(c));
     return;
   }
 
@@ -75,7 +75,7 @@ void String::push(char32_t c) noexcept {
 
   u8 buf[4] = {};
   const auto bytes = utf8_encode(buf, c);
-  _vec.extend_from_slice(bytes);
+  _buf.extend_from_slice(bytes);
 }
 
 }  // namespace sfc::string

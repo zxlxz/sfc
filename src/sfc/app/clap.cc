@@ -200,8 +200,8 @@ struct Clap::Parser {
     return nullptr;
   }
 
-  auto parse_opts(Slice<const Str> vals) -> Vec<Str> {
-    auto pos_args = Vec<Str>{};
+  auto parse_opts(Slice<const Str> vals) -> List<Str> {
+    auto pos_args = List<Str>{};
     auto end_of_opts = false;
 
     auto prev_item = static_cast<Item*>(nullptr);
@@ -337,7 +337,7 @@ auto Clap::parse(Slice<const Str> args) -> bool {
 }
 
 auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
-  auto args = Vec<Str>::with_capacity(static_cast<usize>(argc - 1));
+  auto args = List<Str>::with_capacity(static_cast<usize>(argc - 1));
   for (auto i = 1; i < argc; i++) {
     args.push(Str{argv[i]});
   }

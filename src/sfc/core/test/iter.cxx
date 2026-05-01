@@ -103,7 +103,7 @@ SFC_TEST(max_by_key) {
 SFC_TEST(collect) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
-  auto collected = Slice{v}.iter().collect<Vec<int>>();
+  auto collected = Slice{v}.iter().collect<List<int>>();
   sfc::expect_eq(collected.len(), 6);
   for (auto i : v) {
     sfc::expect_eq(collected[i], i);

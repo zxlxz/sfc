@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/vec.h"
+#include "sfc/alloc/alloc.h"
 
 namespace sfc::collections::hash_tbl {
 

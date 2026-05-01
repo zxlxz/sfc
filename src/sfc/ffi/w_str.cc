@@ -52,7 +52,7 @@ auto WString::from(Str s) -> WString {
 
   auto chars = s.chars();
 
-  auto v = Vec<wchar_t>::with_capacity(s.len());
+  auto v = List<wchar_t>::with_capacity(s.len());
   while (auto x = chars.next()) {
     const auto ch = *x;
     if (ch <= 0xFFFF) {
@@ -68,27 +68,27 @@ auto WString::from(Str s) -> WString {
   return WString::from_vec(mem::move(v));
 }
 
-auto WString::from_vec(Vec<wchar_t> v) -> WString {
+auto WString::from_vec(List<wchar_t> v) -> WString {
   auto res = WString{};
-  res._vec = mem::move(v);
+  res._buf = mem::move(v);
   return res;
 }
 
 auto WString::ptr() const -> const wchar_t* {
-  return _vec.as_ptr();
+  return _buf.as_ptr();
 }
 
 auto WString::chars() const -> WChars {
-  const auto v = _vec.as_slice();
+  const auto v = _buf.as_slice();
   return WChars{v._ptr, v._ptr + v._len - 1};
 }
 
 auto WString::into_string() const -> String {
-  if (_vec.len() <= 1) {
+  if (_buf.len() <= 1) {
     return {};
   }
 
-  auto res = String::with_capacity(_vec.len());
+  auto res = String::with_capacity(_buf.len());
   auto chars = this->chars();
   while (auto ch = chars.next()) {
     res.push(*ch);

@@ -37,7 +37,7 @@ struct OpenOptions {
   auto open(Path path) const noexcept -> io::Result<File>;
 };
 
-auto read(Path path) noexcept -> io::Result<Vec<u8>>;
+auto read(Path path) noexcept -> io::Result<List<u8>>;
 auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<>;
 
 }  // namespace sfc::fs

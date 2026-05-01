@@ -7,7 +7,7 @@
 
 namespace sfc::test {
 
-static auto parse_filter(Str filter) -> Vec<Str> {
+static auto parse_filter(Str filter) -> List<Str> {
   auto find_pos = [](Str s) -> usize {
     for (auto p = 0U; p < s._len; p++) {
       switch (s[p]) {
@@ -22,7 +22,7 @@ static auto parse_filter(Str filter) -> Vec<Str> {
     return s._len;
   };
 
-  auto v = Vec<Str>{};
+  auto v = List<Str>{};
   while (!filter.is_empty()) {
     const auto pos = find_pos(filter);
     v.push(filter[{0, pos}]);

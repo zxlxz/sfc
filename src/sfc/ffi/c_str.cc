@@ -3,9 +3,9 @@
 
 namespace sfc::ffi {
 
-auto CString::from_vec(Vec<char> v) -> CString {
+auto CString::from_vec(List<char> v) -> CString {
   auto res = CString{};
-  res._vec = mem::move(v);
+  res._buf = mem::move(v);
   return res;
 }
 
@@ -14,22 +14,22 @@ auto CString::from(Str s) -> CString {
     return {};
   }
 
-  auto vec = Vec<char>::with_capacity(s.len() + 1);
-  vec.extend_from_slice({s._ptr, s._len});
-  vec.push(0);
-  return CString::from_vec(mem::move(vec));
+  auto list = List<char>::with_capacity(s.len() + 1);
+  list.extend_from_slice({s._ptr, s._len});
+  list.push(0);
+  return CString::from_vec(mem::move(list));
 }
 
 auto CString::ptr() const -> const char* {
-  return _vec.as_ptr();
+  return _buf.as_ptr();
 }
 
 auto CString::into_string() && -> String {
-  auto vec = reinterpret_cast<Vec<u8>&&>(_vec);
-  if (!vec.is_empty()) {
-    vec.pop();
+  auto list = reinterpret_cast<List<u8>&&>(_buf);
+  if (!list.is_empty()) {
+    list.pop();
   }
-  return String::from_utf8(mem::move(vec));
+  return String::from_utf8(mem::move(list));
 }
 
 }  // namespace sfc::ffi

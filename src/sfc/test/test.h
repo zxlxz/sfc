@@ -35,7 +35,7 @@ struct Test {
 
 struct Suite {
   Str _name{};
-  Vec<Test> _tests{};
+  List<Test> _tests{};
 
  public:
   auto name() const -> Str;
@@ -52,7 +52,7 @@ auto regist(Test test) -> bool;
 auto suites() -> Slice<const Suite>;
 void run(Slice<const Suite> suites, bool color = false);
 
-auto filter(Slice<const Str> pats) -> Vec<Suite>;
+auto filter(Slice<const Str> pats) -> List<Suite>;
 
 }  // namespace sfc::test
 

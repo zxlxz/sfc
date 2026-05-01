@@ -32,7 +32,7 @@ SFC_TEST(condvar_notify_all) {
   auto ready = false;
   auto finished = 0U;
 
-  auto threads = Vec<thread::JoinHandle>{};
+  auto threads = List<thread::JoinHandle>{};
   for (auto i = 0U; i < kThreadCnt; ++i) {
     threads.push(thread::spawn([&]() {
       auto lock = mtx.lock();
@@ -115,7 +115,7 @@ SFC_TEST(condvar_producer_consumer) {
   auto mtx = Mutex{};
   auto cv = Condvar{};
 
-  auto vec = Vec<int>::with_capacity(CNT);
+  auto list = List<int>::with_capacity(CNT);
   auto produced = 0U;
   auto consumed = 0U;
 
@@ -123,8 +123,8 @@ SFC_TEST(condvar_producer_consumer) {
     auto producer = thread::spawn([&]() {
       for (auto i = 0; i < (int)CNT; ++i) {
         auto lock = mtx.lock();
-        cv.wait_while(lock, [&]() { return vec.len() >= 5U; });
-        vec.push(i);
+        cv.wait_while(lock, [&]() { return list.len() >= 5U; });
+        list.push(i);
         ++produced;
         cv.notify_one();
       }
@@ -133,15 +133,15 @@ SFC_TEST(condvar_producer_consumer) {
     auto consumer = thread::spawn([&]() {
       for (auto i = 0; i < (int)CNT; ++i) {
         auto lock = mtx.lock();
-        cv.wait_while(lock, [&]() { return vec.is_empty(); });
-        vec.remove(0);
+        cv.wait_while(lock, [&]() { return list.is_empty(); });
+        list.remove(0);
         ++consumed;
         cv.notify_one();
       }
     });
   }
 
-  sfc::expect_true(vec.is_empty());
+  sfc::expect_true(list.is_empty());
   sfc::expect_eq(produced, CNT);
   sfc::expect_eq(consumed, CNT);
 }

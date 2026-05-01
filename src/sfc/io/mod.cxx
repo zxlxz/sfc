@@ -61,7 +61,7 @@ SFC_TEST(read_exact) {
 SFC_TEST(read_to_end) {
   auto sb = RBuf{"0123456789"};
 
-  auto v = Vec<u8>{};
+  auto v = List<u8>{};
   sfc::expect_true(sb.read_to_end(v).is_ok());
   sfc::expect_eq(Str::from_utf8(v.as_slice()), "0123456789");
 }

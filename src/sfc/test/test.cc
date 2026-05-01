@@ -117,8 +117,8 @@ auto Suite::filter(Slice<const Str> pats) const -> Suite {
   return res;
 }
 
-static auto _all_suites() -> Vec<Suite>& {
-  static auto s_suites = Vec<Suite>{};
+static auto _all_suites() -> List<Suite>& {
+  static auto s_suites = List<Suite>{};
   return s_suites;
 }
 
@@ -169,8 +169,8 @@ void run(Slice<const Suite> suites, bool color) {
   io::println("{} {} tests ran. ({} ms total)", title, tests_cnt, dur_ms);
 }
 
-auto filter(Slice<const Str> pats) -> Vec<Suite> {
-  auto res = Vec<Suite>{};
+auto filter(Slice<const Str> pats) -> List<Suite> {
+  auto res = List<Suite>{};
 
   for (auto& suite : _all_suites().as_slice()) {
     auto filtered_suite = suite.filter(pats);

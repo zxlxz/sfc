@@ -81,9 +81,9 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   return File::from_raw_fd(fd);
 }
 
-auto read(Path path) noexcept -> io::Result<Vec<u8>> {
+auto read(Path path) noexcept -> io::Result<List<u8>> {
   auto file = _TRY(File::open(path));
-  auto buf = Vec<u8>{};
+  auto buf = List<u8>{};
   _TRY(file.read_to_end(buf));
   return buf;
 }
