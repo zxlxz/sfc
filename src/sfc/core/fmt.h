@@ -72,7 +72,6 @@ template <class W>
 struct Formatter {
   W& _buf;
   Spec _spec = {};
-  u32 _depth = 0;
 
  public:
   void write_char(char c) {
@@ -100,36 +99,30 @@ struct Formatter {
     }
   }
 
-  template <class T>
-  void write_val(const T& val) {
-    if constexpr (__is_class(T)) {
+  void write_val(const auto& val) {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else {
       fmt::Display::fmt(val, *this);
     }
-  }
-
-  template <class T>
-  void write_arg(Spec spec, const T& val) {
-    _spec = spec;
-    if constexpr (__is_class(T)) {
-      val.fmt(*this);
-    } else {
-      fmt::Display::fmt(val, *this);
-    }
+#endif
   }
 
   void write_fmt(const fmt::Fmts& fmts, const auto&... args) {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     const auto u = tuple::bind(args...);
     u.map([&, idx = 0U](const auto& val) mutable {
       const auto [fill, spec] = fmts[idx];
       this->write_str({fill._ptr, fill._len});
-      this->write_arg(spec, val);
+      _spec = spec;
+      this->write_val(val);
       ++idx;
     });
 
     const auto s = fmts.tail();
     this->write_str({s._ptr, s._len});
+#endif
   }
 
   void pad(Str s) {
@@ -246,28 +239,20 @@ struct Formatter {
   }
 
  private:
-  void node_begin(Str s) noexcept {
+  void block_open(Str s) noexcept {
     this->write_str(s);
-    _depth += 1;
   }
 
-  void node_end(Str s, u32 cnt) noexcept {
-    _depth -= 1;
+  void block_close(Str s, u32 cnt) noexcept {
     if (cnt != 0) {
-      this->node_item(0);
+      this->block_entry(0);
     }
     this->write_str(s);
   }
 
-  void node_item(u32 idx) {
-    const auto pretty = _spec._prefix == '#';
+  void block_entry(u32 idx) {
     if (idx != 0) {
-      this->write_str(pretty ? Str{","} : Str{", "});
-    }
-    if (pretty) {
-      for (auto i = 0U; i < _depth; ++i) {
-        this->write_str("    ");
-      }
+      this->write_str(", ");
     }
   }
 };
@@ -279,17 +264,17 @@ struct Formatter<W>::DebugTuple {
 
  public:
   explicit DebugTuple(Formatter& fmt) : _fmt{fmt} {
-    _fmt.node_begin("(");
+    _fmt.block_open("(");
   }
 
   ~DebugTuple() {
-    _fmt.node_end(")", _cnt);
+    _fmt.block_close(")", _cnt);
   }
 
   DebugTuple(const DebugTuple&) = delete;
 
   auto entry(const auto& value) -> DebugTuple& {
-    _fmt.node_item(_cnt++);
+    _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
     return *this;
   }
@@ -306,17 +291,17 @@ struct Formatter<W>::DebugList {
 
  public:
   explicit DebugList(Formatter& fmt) : _fmt{fmt} {
-    _fmt.node_begin("[");
+    _fmt.block_open("[");
   }
 
   ~DebugList() {
-    _fmt.node_end("]", _cnt);
+    _fmt.block_close("]", _cnt);
   }
 
   DebugList(const DebugList&) = delete;
 
   void entry(const auto& value) {
-    _fmt.node_item(_cnt++);
+    _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
   }
 
@@ -332,17 +317,17 @@ struct Formatter<W>::DebugSet {
 
  public:
   explicit DebugSet(Formatter& fmt) : _fmt{fmt} {
-    _fmt.node_begin("{");
+    _fmt.block_open("{");
   }
 
   ~DebugSet() {
-    _fmt.node_end("}", _cnt);
+    _fmt.block_close("}", _cnt);
   }
 
   DebugSet(const DebugSet&) = delete;
 
   void entry(const auto& value) {
-    _fmt.node_item(_cnt++);
+    _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
   }
 
@@ -358,17 +343,17 @@ struct Formatter<W>::DebugMap {
 
  public:
   explicit DebugMap(Formatter& fmt) : _fmt{fmt} {
-    _fmt.node_begin("{");
+    _fmt.block_open("{");
   }
 
   ~DebugMap() {
-    _fmt.node_end("}", _cnt);
+    _fmt.block_close("}", _cnt);
   }
 
   DebugMap(const DebugMap&) = delete;
 
   void entry(Str key, const auto& value) {
-    _fmt.node_item(_cnt++);
+    _fmt.block_entry(_cnt++);
     _fmt.write_str('"');
     _fmt.write_str(key);
     _fmt.write_str("\": ");
@@ -390,17 +375,17 @@ struct Formatter<W>::DebugStruct {
 
  public:
   explicit DebugStruct(Formatter& fmt) : _fmt{fmt} {
-    _fmt.node_begin("{");
+    _fmt.block_open("{");
   }
 
   ~DebugStruct() {
-    _fmt.node_end("}", _cnt);
+    _fmt.block_close("}", _cnt);
   }
 
   DebugStruct(const DebugStruct&) = delete;
 
   void field(Str key, const auto& value) {
-    _fmt.node_item(_cnt++);
+    _fmt.block_entry(_cnt++);
     _fmt.write_str(key);
     _fmt.write_str(": ");
     _fmt.write_val(value);
