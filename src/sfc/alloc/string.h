@@ -21,9 +21,9 @@ class [[nodiscard]] String {
     return res;
   }
 
-  static auto from_utf8(List<u8> list) -> String {
+  static auto from_buf(Buf buf) -> String {
     auto res = String{};
-    res._buf = mem::move(list);
+    res._buf = mem::move(buf);
     return res;
   }
 
@@ -39,6 +39,10 @@ class [[nodiscard]] String {
     return _buf.len();
   }
 
+  auto buf() noexcept -> List<u8>& {
+    return _buf;
+  }
+
   auto is_empty() const noexcept -> bool {
     return _buf.is_empty();
   }
@@ -49,10 +53,6 @@ class [[nodiscard]] String {
 
   auto as_mut_slice() noexcept -> Slice<u8> {
     return {_buf.as_mut_ptr(), _buf.len()};
-  }
-
-  auto as_mut_vec() noexcept -> List<u8>& {
-    return _buf;
   }
 
   auto as_str() const noexcept -> Str {

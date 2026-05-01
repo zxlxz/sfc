@@ -91,7 +91,7 @@ auto encode(Slice<const u8> data) -> String {
   auto text = String{};
   text.reserve(text_len);
 
-  auto& text_buf = text.as_mut_vec();
+  auto& text_buf = text.buf();
   for (auto i = 0u; i < data_len; i += 3) {
     const auto in_blk = data._ptr + i;
     const auto in_len = i + 3 <= data_len ? 3 : data_len - i;

@@ -30,7 +30,7 @@ SFC re-imagines the “stdlib” surface for C++23 with explicit design: minimal
 | Core Types | `Option<T>`, `Result<T,E>`, `Tuple`, `Variant`, iter utilities | Error handling & composition first |
 | Ownership | `Box<T>`, `Rc<T>` | Deterministic lifetimes, no STL smart ptrs |
 | Memory | Custom allocator hooks, slices, raw pointer helpers | Fine-grained control |
-| Collections | `Vec<T>`, `BTree<K,V>`, `HashMap<K,V>` | Purpose-built, STL-free |
+| Collections | `List<T>`, `BTree<K,V>`, `HashMap<K,V>` | Purpose-built, STL-free |
 | Concurrency | `Mutex`, `Condvar`, atomics, MPMC queue, threads | Portable & lean |
 | Tasking | Lightweight async/task primitives (WIP) | Foundation for schedulers |
 | I/O & FS | Paths, files, buffered stdio, platform bridges | Unified Windows / POSIX |
@@ -74,7 +74,7 @@ Minimal example:
 using namespace sfc;
 
 int main() {
-    auto v = Vec<int>{};
+    auto v = List<int>{};
     for(auto i = 0; i < 10; ++i) {
         v.push(i);
     }
@@ -96,9 +96,6 @@ cmake --build build -j
 # Run all tests
 ./build/src/sfc_test[.exe]
 
-# Run specific test suite(s)
-./build/src/sfc_test --gtest_filter=VecTest.*
-
 # List all tests
 ./build/src/sfc_test --gtest_list_tests
 
@@ -115,8 +112,8 @@ Test expectations use `sfc::expect_*` functions; a failure aborts fast with cont
 ## 🧩 Module Map (High Level)
 
 ```
-alloc/        Box, Rc, String, Vec, allocation hooks
-collections/  BTree, Hash, VecMap, queues
+alloc/        Box, Rc, String, List, allocation hooks
+collections/  HashMap, HashSet, Queue
 core/         Option, Result, iterators, future scaffolding, formatting traits
 io/           File, stdio, error model
 fs/           Path, file system wrappers

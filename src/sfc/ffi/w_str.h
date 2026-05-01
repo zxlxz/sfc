@@ -13,11 +13,12 @@ struct WChars {
 };
 
 class WString {
-  List<wchar_t> _buf;
+  using Buf = List<wchar_t>;
+  Buf _buf;
 
  public:
   static auto from(Str s) -> WString;
-  static auto from_vec(List<wchar_t> v) -> WString;
+  static auto from_buf(Buf buf) -> WString;
 
   auto ptr() const -> const wchar_t*;
   auto chars() const -> WChars;

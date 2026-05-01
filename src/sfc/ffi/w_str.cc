@@ -65,12 +65,12 @@ auto WString::from(Str s) -> WString {
   }
   v.push(0);
 
-  return WString::from_vec(mem::move(v));
+  return WString::from_buf(mem::move(v));
 }
 
-auto WString::from_vec(List<wchar_t> v) -> WString {
+auto WString::from_buf(Buf buf) -> WString {
   auto res = WString{};
-  res._buf = mem::move(v);
+  res._buf = mem::move(buf);
   return res;
 }
 
