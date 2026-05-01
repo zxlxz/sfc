@@ -4,6 +4,26 @@
 
 namespace sfc::reflect {
 
+template <u32 I>
+struct idx_t {
+  static constexpr auto VALUE = I;
+};
+
+template <class T, T... I>
+struct idxs_t {
+  static void map(auto&& f) {
+    (void)(f(idx_t<I>{}), ...);
+  }
+};
+
+#if defined(__GNUC__) && !defined(__clang__)
+template <auto N>
+using seq_t = idxs_t<decltype(N), __integer_pack(N)...>;
+#else
+template <auto N>
+using seq_t = __make_integer_seq<idxs_t, decltype(N), N>;
+#endif
+
 template <class T>
 consteval Str TYPE_NAME() {
 #if defined(_MSC_VER) && !defined(__clang__)
@@ -74,7 +94,7 @@ constexpr auto enum_name(T val) -> Str {
   static constexpr auto N = reflect::enum_count<T>();
 
   auto s = Str{};
-  tuple::seq_t<N>::map([&](auto I) {
+  reflect::seq_t<N>::map([&](auto I) {
     if (static_cast<u32>(val) != I.VALUE) return;
     s = reflect::value_name<static_cast<T>(I.VALUE)>();
   });
