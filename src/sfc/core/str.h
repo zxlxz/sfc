@@ -118,6 +118,11 @@ struct Str {
     return ret == 0;
   }
 
+  // trait: option::Nullable
+  constexpr auto operator==(null_t) const noexcept -> bool {
+    return _ptr == nullptr;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (auto t = f._spec.type(); t == '?' || t == 's') {

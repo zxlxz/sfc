@@ -50,10 +50,6 @@ struct Slice {
     return _len == 0;
   }
 
-  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
-    return {_ptr, _len};
-  }
-
   [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
     return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
@@ -62,6 +58,10 @@ struct Slice {
   [[gnu::always_inline]] auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
     return {reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
+  }
+
+  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
+    return {_ptr, _len};
   }
 
  public:
@@ -210,6 +210,11 @@ struct Slice {
       }
     }
     return true;
+  }
+
+  // trait: option::Nullable
+  constexpr auto operator==(null_t) const noexcept -> bool {
+    return _ptr == nullptr;
   }
 
   // trait: fmt::Display

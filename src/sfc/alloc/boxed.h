@@ -62,6 +62,11 @@ class [[nodiscard]] Box {
   }
 
  public:
+  // trait: option::Nullable
+  [[gnu::always_inline]] auto operator==(null_t) const noexcept -> bool {
+    return _ptr == nullptr;
+  }
+
   // trait: Deref<const T*>
   [[gnu::always_inline]] auto operator->() const noexcept -> const T* {
     return _ptr;
@@ -89,46 +94,6 @@ class [[nodiscard]] Box {
     } else {
       f.write_fmt("Box({})", *_ptr);
     }
-  }
-};
-
-template <class T>
-class [[nodiscard]] Box<T[]> {
-  Slice<T> _inn;
-
- public:
-  Box() noexcept = default;
-
-  ~Box() {
-    if (!_inn._ptr) return;
-    delete[] _inn._ptr;
-  }
-
-  Box(Box&& other) noexcept : _inn{mem::take(other._inn)} {}
-
-  Box& operator=(Box&& other) noexcept {
-    if (this != &other) {
-      mem::swap(_inn, other._inn);
-    }
-    return *this;
-  }
-
-  static auto from_raw(Slice<T> raw) -> Box {
-    auto res = Box{};
-    res._inn = raw;
-    return res;
-  }
-
-  auto ptr() const noexcept -> T* {
-    return _inn._ptr;
-  }
-
-  auto len() const noexcept -> usize {
-    return _inn._len;
-  }
-
-  auto as_slice() const noexcept -> Slice<T> {
-    return Slice<T>{_inn._ptr, _inn._len};
   }
 };
 
@@ -179,12 +144,14 @@ class [[nodiscard]] Box<R(T...)> {
     return res;
   }
 
-  auto ptr() const noexcept -> void* {
-    return _data;
-  }
-
   auto operator()(T... args) -> R {
     return (_meta->_call)(_data, static_cast<T&&>(args)...);
+  }
+
+ public:
+  // trait: option::Nullable
+  [[gnu::always_inline]] auto operator==(null_t) const noexcept -> bool {
+    return _data == nullptr;
   }
 };
 
