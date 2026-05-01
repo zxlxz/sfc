@@ -27,9 +27,10 @@ struct Iter : iter::Iterator<T&> {
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
+  using Buf = RawBuf<T, A>;
   usize _head{0};
   usize _len{0};
-  RawVec<T, A> _buf{};
+  Buf _buf{};
 
  public:
   Queue() noexcept = default;
