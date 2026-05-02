@@ -9,13 +9,13 @@
 namespace sfc::thread {
 
 auto current() -> Thread {
-  const auto id = sys::Thread::current();
-  return Thread{id};
+  const auto tid = thread::current_id();
+  return Thread{tid};
 }
 
 auto current_id() -> u32 {
-  const auto id = sys::Thread::current();
-  return id;
+  static thread_local const auto tid = sys::Thread::current();
+  return tid;
 }
 
 void yield_now() {

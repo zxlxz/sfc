@@ -32,9 +32,9 @@ struct Thread {
     auto tid = ino_t{0};
     ::pthread_threadid_np(nullptr, &tid);
 #else
-    static thread_local const auto tid = ::syscall(SYS_gettid);
+    const auto tid = ::syscall(SYS_gettid);
 #endif
-    return static_cast<u32>(tid);
+    return static_cast<pid_t>(tid);
   }
 
   template <class Fn>
