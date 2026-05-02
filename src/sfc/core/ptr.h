@@ -44,9 +44,8 @@ struct Unique {
   }
 
  public:
-  // trait: Clone
-  [[gnu::always_inline]] auto clone() const noexcept -> Unique {
-    return Unique{_ptr};
+  [[gnu::always_inline]] auto operator==(T* ptr) const noexcept -> bool {
+    return _ptr == ptr;
   }
 };
 

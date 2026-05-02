@@ -44,8 +44,6 @@ SFC_TEST(unique) {
   auto u2 = UPtr{&val};
   auto& u2_ptr = u2._ptr;
   sfc::expect_eq(u2.ptr(), &val);
-
-  sfc::expect_eq(u2.clone().ptr(), &val);
   sfc::expect_eq(u2.ptr(), &val);
 
   auto u3 = static_cast<UPtr&&>(u2);
