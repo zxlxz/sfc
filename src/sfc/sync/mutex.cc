@@ -26,17 +26,18 @@ auto Mutex::try_lock() noexcept -> Option<Guard> {
   if (!_inn.try_lock()) {
     return {};
   }
-  return {option::Some{}, *this};
+  return Guard{*this};
 }
 
-Mutex::Guard::Guard(Mutex& lock, passkey_t) : _lock{lock} {}
+Mutex::Guard::Guard(Mutex& lock, passkey_t) : _lock{&lock} {}
 
 Mutex::Guard::~Guard() noexcept {
-  _lock._inn.unlock();
+  if (_lock == nullptr) return;
+  _lock->_inn.unlock();
 }
 
 auto Mutex::Guard::inner() -> sys::Mutex& {
-  return _lock._inn;
+  return _lock->_inn;
 }
 
 ReentrantLock::ReentrantLock() noexcept : _mutex{}, _owner{0}, _count{0} {}
@@ -47,49 +48,55 @@ ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 
 ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
+auto ReentrantLock::Tid::contains(u32 tid) const -> bool {
+  return _id.load(Ordering::Acquire) == tid;
+}
+
+void ReentrantLock::Tid::set(u32 tid) {
+  _id.store(tid, Ordering::Release);
+}
+
 auto ReentrantLock::lock() noexcept -> Guard {
-  const auto thr = thread::current();
+  const auto this_id = thread::current_id();
 
-  if (_owner.load(Ordering::Acquire) == thr.id) {
-    _count.fetch_add(1, Ordering::Relaxed);
-    return Guard{{*this}};
+  if (_owner.contains(this_id)) {
+    _count += 1;
+  } else {
+    _mutex.lock();
+    _owner.set(this_id);
+    _count = 1;
   }
-
-  _mutex.lock();
-  _owner.store(thr.id, Ordering::Release);
-  _count.store(1, Ordering::Relaxed);
   return Guard{*this};
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
-  const auto thread_id = thread::current_id();
+  const auto this_id = thread::current_id();
 
-  if (_owner.load(Ordering::Acquire) == thread_id) {
-    _count.fetch_add(1, Ordering::Relaxed);
-    return {option::Some{}, *this};
+  if (_owner.contains(this_id)) {
+    _count += 1;
+    return Guard{*this};
   }
 
-  if (!_mutex.try_lock()) {
-    return {};
+  if (_mutex.try_lock()) {
+    _owner.set(this_id);
+    _count = 1;
+    return Guard{*this};
   }
 
-  _owner.store(thread_id, Ordering::Release);
-  _count.store(1, Ordering::Relaxed);
-  return {option::Some{}, *this};
+  return {};
 }
 
-ReentrantLock::Guard::Guard(ReentrantLock& lock, passkey_t) : _lock{lock} {}
+ReentrantLock::Guard::Guard(ReentrantLock& lock, passkey_t) : _lock{&lock} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  const auto thread_id = thread::current_id();
+  if (_lock == nullptr) return;
 
-  if (_lock._owner.load(Ordering::Acquire) != thread_id) {
-    return;
-  }
-
-  if (_lock._count.fetch_sub(1, Ordering::AcqRel) == 1) {
-    _lock._owner.store(0, Ordering::Release);
-    _lock._mutex.unlock();
+  // Safety: we own the lock
+  auto& lock = *_lock;
+  lock._count -= 1;
+  if (lock._count == 0) {
+    lock._owner.set(0);
+    lock._mutex.unlock();
   }
 }
 
