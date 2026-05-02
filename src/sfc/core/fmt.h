@@ -18,6 +18,18 @@ struct Display {
     f.write_char(val);
   }
 
+  static void fmt(char16_t val, auto& f) {
+    u8 u8_buf[4] = {};
+    const auto u8_len = chr::utf8_encode(val, u8_buf);
+    f.write_str(Str::from_utf8({u8_buf, u8_len}));
+  }
+
+  static void fmt(char32_t val, auto& f) {
+    u8 u8_buf[4] = {};
+    const auto u8_len = chr::utf8_encode(val, u8_buf);
+    f.write_str(Str::from_utf8({u8_buf, u8_len}));
+  }
+
   static void fmt(const void* val, auto& f) {
     char buf[16];
     const auto s = format_ptr(buf, val, f._spec._type);

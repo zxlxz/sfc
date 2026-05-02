@@ -4,10 +4,9 @@
 #include "sfc/core/hash.h"
 #include "sfc/core/num.h"
 #include "sfc/core/slice.h"
+#include "sfc/core/chr.h"
 
 namespace sfc::str {
-
-struct Chars;
 
 struct Str {
   const char* _ptr = nullptr;
@@ -80,7 +79,10 @@ struct Str {
     return Iter{{}, _ptr, _ptr + _len};
   }
 
-  auto chars() const noexcept -> Chars;
+  auto chars() const noexcept -> chr::Chars {
+    const auto p = reinterpret_cast<const u8*>(_ptr);
+    return chr::Chars{{}, p, p + _len};
+  }
 
  public:
   auto find(auto&& pat) const -> Option<usize>;
@@ -165,19 +167,6 @@ auto Str::parse() const -> Option<T> {
   } else {
     return FromStr<T>::from_str(*this);
   }
-}
-
-struct Chars : iter::Iterator<char32_t> {
-  const char* _ptr;
-  const char* _end;
-
- public:
-  auto next() noexcept -> Option<char32_t>;
-  auto next_back() noexcept -> Option<char32_t>;
-};
-
-inline auto Str::chars() const noexcept -> Chars {
-  return {{}, _ptr, _ptr + _len};
 }
 
 struct SearchStep {

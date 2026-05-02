@@ -1,36 +1,7 @@
 #include "sfc/alloc/string.h"
+#include "sfc/core/chr.h"
 
 namespace sfc::string {
-
-static auto utf8_encode(u8 (&buf)[4], char32_t c) -> Slice<const u8> {
-  if (c <= 0x7F) {
-    buf[0] = static_cast<u8>(c);
-    return {buf, 1};
-  }
-
-  if (c <= 0x7FF) {
-    buf[0] = static_cast<u8>(0xC0 | (c >> 6));
-    buf[1] = static_cast<u8>(0x80 | (c & 0x3F));
-    return {buf, 2};
-  }
-
-  if (c <= 0xFFFF) {
-    buf[0] = static_cast<u8>(0xE0 | (c >> 12));
-    buf[1] = static_cast<u8>(0x80 | ((c >> 6) & 0x3F));
-    buf[2] = static_cast<u8>(0x80 | (c & 0x3F));
-    return {buf, 3};
-  }
-
-  if (c <= 0x10FFFF) {
-    buf[0] = static_cast<u8>(0xF0 | (c >> 18));
-    buf[1] = static_cast<u8>(0x80 | ((c >> 12) & 0x3F));
-    buf[2] = static_cast<u8>(0x80 | ((c >> 6) & 0x3F));
-    buf[3] = static_cast<u8>(0x80 | (c & 0x3F));
-    return {buf, 4};
-  }
-
-  return {buf, 0};
-}
 
 void String::push_str(Str s) noexcept {
   if (s._len == 0) return;
@@ -55,9 +26,9 @@ auto String::pop() noexcept -> Option<char32_t> {
   }
 
   auto chars = this->as_str().chars();
-
   const auto ret = chars.next_back();
-  _buf.truncate(static_cast<usize>(chars._end - chars._ptr));
+  const auto len = static_cast<usize>(chars._end - chars._ptr);
+  _buf.truncate(len);
   return ret;
 }
 
@@ -68,14 +39,9 @@ void String::push(char32_t c) noexcept {
     return;
   }
 
-  // invalid utf8 code point, just ignore
-  if (c > 0x10FFFF) {
-    return;
-  }
-
   u8 buf[4] = {};
-  const auto bytes = utf8_encode(buf, c);
-  _buf.extend_from_slice(bytes);
+  const auto code_len = chr::utf8_encode(c, buf);
+  _buf.extend_from_slice({buf, code_len});
 }
 
 }  // namespace sfc::string
