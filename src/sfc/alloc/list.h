@@ -260,20 +260,19 @@ class [[nodiscard]] List {
   }
 
   void retain(auto&& f) noexcept {
-    auto pdst = _inn.ptr();
-    auto pend = _inn.ptr() + _len;
-    while (pdst != pend && f(*pdst)) {
-      ++pdst;
-    }
-    if (pdst == pend) {
+    const auto idx = this->iter().position([&](const T& x) { return !f(x); }).unwrap_or(_len);
+    if (idx == _len) {
       return;
     }
-    for (auto psrc = pdst + 1; psrc != pend; ++psrc) {
-      if (f(*psrc)) {
-        *pdst++ = static_cast<T&&>(*psrc);
+
+    auto cnt = idx;
+    const auto ptr = _inn.ptr();
+    for (auto i = idx + 1; i < _len; ++i) {
+      if (f(ptr[i])) {
+        ptr[cnt++] = static_cast<T&&>(ptr[i]);
       }
     }
-    this->truncate(static_cast<usize>(pdst - _inn.ptr()));
+    this->truncate(cnt);
   }
 
  public:

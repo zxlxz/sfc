@@ -138,4 +138,43 @@ SFC_TEST(memory) {
   sfc::expect_eq(cnt, 4);
 }
 
+SFC_TEST(retain) {
+  // empty
+  {
+    auto v = List<int>{};
+    v.retain([](int) { return false; });
+    sfc::expect_eq(v.len(), 0U);
+  }
+
+  // normal
+  {
+    int tmp[] = {0, 1, 2, 3, 4, 5};
+    auto v = List<int>::from(tmp);
+    v.retain([](int x) { return x % 2 == 0; });
+    sfc::expect_eq(v.len(), 3U);
+    for (auto i = 0U; i < v.len(); ++i) {
+      sfc::expect_eq(v[i], i * 2);
+    }
+  }
+
+  // all
+  {
+    int tmp[] = {0, 1, 2, 3, 4, 5};
+    auto v = List<int>::from(tmp);
+    v.retain([](int) { return true; });
+    sfc::expect_eq(v.len(), 6U);
+    for (auto i = 0U; i < v.len(); ++i) {
+      sfc::expect_eq(v[i], i);
+    }
+  }
+
+  // none
+  {
+    int tmp[] = {0, 1, 2, 3, 4, 5};
+    auto v = List<int>::from(tmp);
+    v.retain([](int) { return false; });
+    sfc::expect_eq(v.len(), 0U);
+  }
+}
+
 }  // namespace sfc::list::test
