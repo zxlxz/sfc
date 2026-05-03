@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/alloc.h"
-#include "sfc/io/error.h"
 
 namespace sfc::io {
 

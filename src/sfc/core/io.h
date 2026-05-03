@@ -1,10 +1,14 @@
 #pragma once
 
-#include "sfc/sys.h"
+#include "sfc/core/str.h"
 
 namespace sfc::io {
 
-using sys::ErrCode;
+#ifdef _WIN32
+using ErrCode = u32;
+#else
+using ErrCode = int;
+#endif
 
 enum class ErrorKind {
   Success,
@@ -53,8 +57,11 @@ struct Error {
 
   auto kind() const noexcept -> ErrorKind;
   auto raw_os_err() const noexcept -> ErrCode;
+
   auto to_str() const noexcept -> Str;
 
+ public:
+  // trait: fmt::Display
   void fmt(auto& f) const {
     const auto s = this->to_str();
     f.write_str(s);

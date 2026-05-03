@@ -3,8 +3,6 @@
 #include "sfc/sys/unix/mod.inl"
 #define _SFC_SYS_IO_
 
-#include "sfc/io/error.h"
-
 namespace sfc::sys::unix {
 
 static inline auto io_error(int code) -> io::ErrorKind {

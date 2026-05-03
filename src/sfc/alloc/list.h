@@ -278,12 +278,11 @@ class [[nodiscard]] List {
 
  public:
   using Iter = slice::Iter<const T>;
-  using IterMut = slice::Iter<T>;
-
   auto iter() const noexcept -> Iter {
     return Slice{_inn.ptr(), _len}.iter();
   }
 
+  using IterMut = slice::Iter<T>;
   auto iter_mut() noexcept -> IterMut {
     return Slice{_inn.ptr(), _len}.iter_mut();
   }
@@ -302,7 +301,10 @@ class [[nodiscard]] List {
   }
 
   // trait: io::Write
-  auto write(Slice<const u8> buf) -> result::Result<usize, io::Error>;
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    this->extend_from_slice(buf);
+    return buf.len();
+  }
 
   // trait: serde::Serialize
   auto serialize(auto& ser) const {
@@ -311,8 +313,7 @@ class [[nodiscard]] List {
   }
 
   // trait:: serde::Deserialize
-  template <class D>
-  static auto deserialize(D& des) {
+  static auto deserialize(auto& des) {
     auto visit = [&](auto&& seq) { return seq.template collect<List, T>(); };
     return des.deserialize_seq(visit);
   }

@@ -9,6 +9,7 @@
 #include "sfc/core/tuple.h"
 
 #ifndef __CUDACC__
+#include "sfc/core/io.h"
 #include "sfc/core/str.h"
 #include "sfc/core/fmt.h"
 #include "sfc/core/iter.h"
