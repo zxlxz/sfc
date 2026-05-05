@@ -115,3 +115,11 @@ void Stderr::Lock::write_str(Str s) {
 }
 
 }  // namespace sfc::io
+
+namespace sfc::fmt {
+template struct Formatter<io::Stdout>;
+template struct Formatter<io::Stdout::Lock>;
+
+template struct Formatter<io::Stderr>;
+template struct Formatter<io::Stderr::Lock>;
+}  // namespace sfc::fmt

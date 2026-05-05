@@ -9,40 +9,15 @@ class Buffer {
   usize _pos = 0;
 
  public:
-  static auto with_capacity(usize capacity) -> Buffer {
-    auto res = Buffer{};
-    res._buf.reserve(capacity);
-    return res;
-  }
+  static auto with_capacity(usize capacity) -> Buffer;
 
-  auto len() const -> usize {
-    return _buf.len() - _pos;
-  }
+  auto len() const -> usize;
+  auto capacity() const -> usize;
+  auto buffer() const -> Slice<const u8>;
 
-  auto capacity() const -> usize {
-    return _buf.capacity();
-  }
-
-  auto buffer() const -> Slice<const u8> {
-    return _buf[{_pos, $}];
-  }
-
-  void backshift() {
-    if (_pos == 0) {
-      return;
-    }
-    _buf.drain({0, _pos});
-    _pos = 0;
-  }
-
-  void discard_buffer() {
-    _buf.set_len(0);
-    _pos = 0;
-  }
-
-  void consume(usize amount) {
-    _pos = cmp::min(_pos + amount, _buf.len());
-  }
+  void backshift();
+  void discard_buffer();
+  void consume(usize amount);
 
   auto read_more(auto& read) -> io::Result<usize> {
     auto buf = _buf.spare_capacity_mut();

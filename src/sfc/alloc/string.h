@@ -9,23 +9,9 @@ class [[nodiscard]] String {
   Buf _buf = {};
 
  public:
-  static auto with_capacity(usize capacity) noexcept -> String {
-    auto res = String{};
-    res.reserve(capacity);
-    return res;
-  }
-
-  static auto from(Str s) noexcept -> String {
-    auto res = String{};
-    res.push_str(s);
-    return res;
-  }
-
-  static auto from_buf(Buf buf) -> String {
-    auto res = String{};
-    res._buf = mem::move(buf);
-    return res;
-  }
+  static auto with_capacity(usize capacity) noexcept -> String;
+  static auto from(Str s) noexcept -> String;
+  static auto from_buf(Buf buf) -> String;
 
   auto as_ptr() const noexcept -> const u8* {
     return _buf.as_ptr();
@@ -146,6 +132,10 @@ auto format(const fmt::Fmts& fmts, const auto&... args) -> String {
   return out;
 }
 }  // namespace sfc::string
+
+namespace sfc::fmt {
+extern template struct Formatter<string::String>;
+}
 
 namespace sfc {
 using string::String;

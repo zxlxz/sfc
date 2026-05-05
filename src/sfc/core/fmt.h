@@ -80,6 +80,32 @@ struct Display {
   }
 };
 
+template <usize N>
+struct FixedBuf {
+  static constexpr auto CAPACITY = N;
+  char _buf[N];
+  usize _len{0};
+
+ public:
+  [[gnu::always_inline]] auto as_bytes() const -> Slice<const u8> {
+    return {reinterpret_cast<const u8*>(_buf), _len};
+  }
+
+  [[gnu::always_inline]] auto as_str() const -> Str {
+    return {_buf, _len};
+  }
+
+  [[gnu::always_inline]] void clear() {
+    _len = 0;
+  }
+
+  [[gnu::always_inline]] void write_str(Str s) {
+    if (s._len == 0 || _len + s._len > CAPACITY) return;
+    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
+    _len += s._len;
+  }
+};
+
 template <class W>
 struct Formatter {
   W& _buf;
@@ -269,6 +295,9 @@ struct Formatter {
   }
 };
 
+extern template struct Formatter<FixedBuf<1024>>;
+extern template struct Formatter<FixedBuf<4096>>;
+
 template <class W>
 struct Formatter<W>::DebugTuple {
   Formatter& _fmt;
@@ -408,32 +437,6 @@ struct Formatter<W>::DebugStruct {
       const auto& [k, v] = item;
       this->field(k, v);
     });
-  }
-};
-
-template <usize N>
-struct FixedBuf {
-  static constexpr auto CAPACITY = N;
-  char _buf[N];
-  usize _len{0};
-
- public:
-  [[gnu::always_inline]] auto as_bytes() const -> Slice<const u8> {
-    return {reinterpret_cast<const u8*>(_buf), _len};
-  }
-
-  [[gnu::always_inline]] auto as_str() const -> Str {
-    return {_buf, _len};
-  }
-
-  [[gnu::always_inline]] void clear() {
-    _len = 0;
-  }
-
-  [[gnu::always_inline]] void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > CAPACITY) return;
-    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
-    _len += s._len;
   }
 };
 

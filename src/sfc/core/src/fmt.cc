@@ -221,4 +221,7 @@ template auto Display::format_ptr(Slice<char> buf, const void* val, char type) -
 template auto Display::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
 template auto Display::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
 
+template struct Formatter<FixedBuf<1024>>;
+template struct Formatter<FixedBuf<4096>>;
+
 }  // namespace sfc::fmt

@@ -3,6 +3,24 @@
 
 namespace sfc::string {
 
+auto String::with_capacity(usize capacity) noexcept -> String {
+  auto res = String{};
+  res.reserve(capacity);
+  return res;
+}
+
+auto String::from(Str s) noexcept -> String {
+  auto res = String{};
+  res.push_str(s);
+  return res;
+}
+
+auto String::from_buf(Buf buf) -> String {
+  auto res = String{};
+  res._buf = mem::move(buf);
+  return res;
+}
+
 void String::push_str(Str s) noexcept {
   if (s._len == 0) return;
   _buf.extend_from_slice(s.as_bytes());
@@ -45,3 +63,7 @@ void String::push(char32_t c) noexcept {
 }
 
 }  // namespace sfc::string
+
+namespace sfc::fmt {
+template struct Formatter<string::String>;
+}
