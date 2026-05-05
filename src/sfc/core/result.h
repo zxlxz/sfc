@@ -212,7 +212,7 @@ class [[nodiscard]] Result<void, E> {
 
   Result(const Result& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
-      case 0:  break;
+      case 0:  _tag = 0; break;
       case 1:  ptr::write(&_1, other._1), _tag = 1; break;
       default: break;
     }
@@ -220,7 +220,7 @@ class [[nodiscard]] Result<void, E> {
 
   Result(Result&& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
-      case 0:  break;
+      case 0:  _tag = 0; break;
       case 1:  ptr::write(&_1, static_cast<E&&>(other._1)), _tag = 1; break;
       default: break;
     }
