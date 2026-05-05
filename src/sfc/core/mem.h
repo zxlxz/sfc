@@ -47,10 +47,10 @@ template <class T, class U>
   dst = static_cast<U&&>(src);
 }
 
-template <class T, class U>
-[[gnu::always_inline]] inline auto replace(T& dst, U&& src) noexcept -> T {
+template <class T>
+[[gnu::always_inline]] inline auto replace(T& dst, T src) noexcept -> T {
   auto tmp = static_cast<T&&>(dst);
-  dst = static_cast<U&&>(src);
+  dst = static_cast<T&&>(src);
   return tmp;
 }
 
