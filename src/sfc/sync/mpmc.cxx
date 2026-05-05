@@ -6,20 +6,20 @@
 namespace sfc::sync::mpmc::test {
 
 SFC_TEST(s1r1) {
-  static const auto CNT = 100U;
+  static const auto CNT = 100;
   auto chan = Channel<u32>::with_capacity(16);
 
   auto recv_cnt = 0U;
   auto recv_sum = 0U;
   auto sender = [&]() {
-    for (auto i = 0U; i < CNT; ++i) {
-      chan.send(static_cast<u32>(i));
+    for (auto i = 0; i < CNT; ++i) {
+      sfc::expect_true(chan.send(i).is_ok());
       io::println("sent {}", i);
     }
   };
 
   auto receiver = [&]() {
-    for (auto i = 0U; i < CNT; ++i) {
+    for (auto i = 0; i < CNT; ++i) {
       auto val = chan.recv();
       sfc::expect_eq(val, Option{i});
       io::println("received {}", *val);
@@ -48,7 +48,7 @@ SFC_TEST(s1r1_try) {
 
   // try_recv returns value when available
   {
-    chan.send(7);
+    sfc::expect_true(chan.send(7).is_ok());
     auto val = chan.try_recv();
     sfc::expect_eq(val, Option{7U});
   }
@@ -61,20 +61,21 @@ SFC_TEST(s1r1_try) {
 }
 
 SFC_TEST(s2r1) {
-  static const auto CNT = 50U;
+  static const auto CNT = 50;
   auto chan = Channel<int>::with_capacity(16);
 
   auto recv_cnt = 0U;
   auto recv_sum = 0;
   auto sender = [&](int k) {
-    for (auto i = 0U; i < CNT; ++i) {
-      chan.send(static_cast<int>(k * i));
+    for (auto i = 0; i < CNT; ++i) {
+      sfc::expect_true(chan.send(k * i).is_ok());
     }
   };
 
   auto receiver = [&]() {
-    for (auto i = 0U; i < 2 * CNT; ++i) {
+    for (auto i = 0; i < 2 * CNT; ++i) {
       auto val = chan.recv();
+      sfc::expect_true(val.is_some());
       recv_cnt += 1;
       recv_sum += *val;
     }
@@ -98,7 +99,7 @@ SFC_TEST(s1r2) {
   auto recv_sum = Atomic{0U};
   auto sender = [&]() {
     for (auto i = 0U; i < 2 * CNT; ++i) {
-      chan.send(1U);
+      sfc::expect_true(chan.send(1U).is_ok());
     }
   };
 
@@ -121,22 +122,23 @@ SFC_TEST(s1r2) {
 }
 
 SFC_TEST(s2r2) {
-  static const auto CNT = 50U;
+  static const auto CNT = 50;
   auto chan = Channel<int>::with_capacity(16);
 
   auto recv_cnt = Atomic{0U};
   auto recv_sum = Atomic{0};
   auto sender = [&](int k) {
-    for (auto i = 0U; i < CNT; ++i) {
-      chan.send(static_cast<int>(k * i));
+    for (auto i = 0; i < CNT; ++i) {
+      sfc::expect_true(chan.send(k * i).is_ok());
     }
   };
 
   auto receiver = [&]() {
-    for (auto i = 0U; i < CNT; ++i) {
-      auto val = chan.recv().unwrap();
+    for (auto i = 0; i < CNT; ++i) {
+      auto val = chan.recv();
+      sfc::expect_true(val.is_some());
       recv_cnt.fetch_add(1);
-      recv_sum.fetch_add(val);
+      recv_sum.fetch_add(*val);
     }
   };
 

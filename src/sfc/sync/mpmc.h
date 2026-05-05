@@ -38,17 +38,17 @@ class Channel {
     return _closed.load(Ordering::Acquire);
   }
 
-  auto send(T val) noexcept -> bool {
+  auto send(T val) noexcept -> Result<void, T> {
     while (true) {
       if (this->is_closed()) {
         break;
       }
-      if (_buff.push(static_cast<T&&>(val))) {
-        return true;
+      if (_buff.try_push(val)) {
+        return Ok{};
       }
       sfc::thread::yield_now();
     }
-    return false;
+    return Err{static_cast<T&&>(val)};
   }
 
   auto recv() noexcept -> Option<T> {
@@ -74,7 +74,7 @@ struct Sender {
   Channel<T>& _chan;
 
  public:
-  auto send(T val) noexcept -> bool {
+  auto send(T val) noexcept -> Result<void, T> {
     return _chan.send(static_cast<T&&>(val));
   }
 };
@@ -86,10 +86,6 @@ struct Receiver {
  public:
   auto recv() noexcept -> Option<T> {
     return _chan.recv();
-  }
-
-  auto recv_timeout(time::Duration dur) noexcept -> Option<T> {
-    return _chan.recv_timeout(dur);
   }
 
   auto try_recv() noexcept -> Option<T> {
