@@ -55,26 +55,26 @@
 
   <!-- sfc::option::Option<T> -->
   <Type Name="sfc::option::Option&lt;*&gt;">
-    <DisplayString Condition="_inn._tag">Some({_inn._val})</DisplayString>
-    <DisplayString Condition="!_inn._tag">None()</DisplayString>
+    <DisplayString Condition="_tag==0">None()</DisplayString>
+    <DisplayString Condition="_tag==1">Some({_1})</DisplayString>
   </Type>
 
   <!-- sfc::option::Option<T&> -->
   <Type Name="sfc::option::Option&lt;*&gt;">
-    <DisplayString Condition="_inn._ptr">Some({*_inn._ptr})</DisplayString>
-    <DisplayString Condition="!_inn._ptr">None()</DisplayString>
+    <DisplayString Condition="_tag==0">None()</DisplayString>
+    <DisplayString Condition="_tag==1">Some({*_1})</DisplayString>
   </Type>
 
   <!-- sfc::result::Result<T,E> -->
   <Type Name="sfc::result::Result&lt;*,*&gt;">
-    <DisplayString Condition="!_inn._err">Ok({_inn._ok})</DisplayString>
-    <DisplayString Condition="_inn._err">Err({_inn._err})</DisplayString>
+    <DisplayString Condition="_tag==0">Ok({_0})</DisplayString>
+    <DisplayString Condition="_tag==1">Err({_1})</DisplayString>
   </Type>
 
   <!-- sfc::result::Result<void,E> -->
   <Type Name="sfc::result::Result&lt;void,*&gt;">
-    <DisplayString Condition="!_inn._err">Ok()</DisplayString>
-    <DisplayString Condition="_inn._err">Err({_inn._err})</DisplayString>
+    <DisplayString Condition="_tag==0">Ok()</DisplayString>
+    <DisplayString Condition="_tag==1">Err({_1})</DisplayString>
   </Type>
 
   <!-- sfc::collections::hash_tbl::HashTbl-->
