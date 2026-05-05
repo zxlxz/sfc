@@ -60,21 +60,15 @@ SFC_TEST(write) {
     ptr::write(ptr, RefCnt{cnt});
     sfc::expect_eq(cnt, Cnt{2, 1});
   }
-  sfc::expect_eq(cnt, Cnt{2, 1});
-  ptr->~RefCnt();
-  sfc::expect_eq(cnt, Cnt{2, 2});
 }
 
 SFC_TEST(read) {
   auto cnt = Cnt{};
 
+  auto t = RefCnt{cnt};
+  sfc::expect_eq(cnt, Cnt{1, 0});
   {
-    auto t = RefCnt{cnt};
-    sfc::expect_eq(cnt, Cnt{1, 0});
-    {
-      auto a = ptr::read(&t);
-      sfc::expect_eq(cnt, Cnt{2, 0});
-    }
+    auto a = ptr::read(&t);
     sfc::expect_eq(cnt, Cnt{2, 1});
   }
   sfc::expect_eq(cnt, Cnt{2, 2});

@@ -54,7 +54,9 @@ template <class T>
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
-    return static_cast<T&&>(*src);
+    auto ret = static_cast<T&&>(*src);
+    src->~T();
+    return ret;
   }
 }
 
