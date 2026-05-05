@@ -86,6 +86,9 @@ class Condvar {
     void set_clock(u32 clock_id) {
 #ifdef __linux__
       (void)pthread_condattr_setclock(&_raw, clock_id);
+#else
+      // macos system does not support setting clock for condvar, so just ignore the argument
+      (void)clock_id;
 #endif
     }
   };
@@ -146,9 +149,9 @@ class Condvar {
 
     ts.tv_sec += dur.as_secs();
     ts.tv_nsec += dur.subsec_nanos();
-    if (ts.tv_nsec >= time::NANOS_PER_SEC) {
+    if (ts.tv_nsec >= long(time::NANOS_PER_SEC)) {
       ts.tv_sec += 1;
-      ts.tv_nsec -= time::NANOS_PER_SEC;
+      ts.tv_nsec -= long(time::NANOS_PER_SEC);
     }
 
     const auto err = ::pthread_cond_timedwait(_raw, mtx._raw, &ts);
