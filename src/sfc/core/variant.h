@@ -95,7 +95,7 @@ consteval auto type_idx() -> u32 {
 }
 
 struct Tag {
-  u8 _idx;
+  u8 _idx;  // 0xFF for invalid
 
  public:
   template <u32 N>
@@ -138,7 +138,7 @@ class Variant {
   }
 
   template <class U>
-  Variant(U val) noexcept : Variant{idx_t<type_idx<U, T...>()>{}, static_cast<U&&>(val)} {}
+  explicit Variant(U val) noexcept : Variant{idx_t<type_idx<U, T...>()>{}, static_cast<U&&>(val)} {}
 
   ~Variant() {
     _tag.map<N>([&](auto I) { mem::drop(I[_inn]); });
@@ -193,14 +193,14 @@ class Variant {
   template <class U>
   auto as() const noexcept -> Option<const U&> {
     static constexpr auto IDX = variant::type_idx<U, T...>();
-    if (_tag._idx != IDX) return {};
+    if (_tag._idx != IDX) return None{};
     return idx_t<IDX>::operator[](_inn);
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
     static constexpr auto IDX = variant::type_idx<U, T...>();
-    if (_tag._idx != IDX) return {};
+    if (_tag._idx != IDX) return None{};
     return idx_t<IDX>::operator[](_inn);
   }
 
