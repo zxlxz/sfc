@@ -50,6 +50,10 @@ auto WString::ptr() const -> const wchar_t* {
   return _buf.as_ptr();
 }
 
+auto WString::buf() -> Buf& {
+  return _buf;
+}
+
 // using this name, just make CString and WString have the same API
 // even though WString::into_string() is not consuming self.
 auto WString::into_string() const -> String {

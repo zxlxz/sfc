@@ -23,7 +23,7 @@ class WString {
   static auto from(Str s) -> WString;
 
   auto ptr() const -> const wchar_t*;
-
+  auto buf() -> Buf&;
   auto into_string() const -> String;
 };
 
