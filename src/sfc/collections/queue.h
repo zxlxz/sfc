@@ -28,7 +28,7 @@ struct Iter : iter::Iterator<T&> {
 template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
   using Buf = RawBuf<T, A>;
-  usize _head{0};
+  usize _pos{0};
   usize _len{0};
   Buf _buf{};
 
@@ -40,11 +40,11 @@ class [[nodiscard]] Queue {
   }
 
   Queue(Queue&& other) noexcept
-      : _head{mem::take(other._head)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
+      : _pos{mem::take(other._pos)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
 
   Queue& operator=(Queue&& other) noexcept {
     if (this != &other) {
-      mem::swap(_head, other._head);
+      mem::swap(_pos, other._pos);
       mem::swap(_len, other._len);
       mem::swap(_buf, other._buf);
     }
@@ -74,7 +74,7 @@ class [[nodiscard]] Queue {
   }
 
   auto is_contiguous() const noexcept -> bool {
-    return _head + _len <= _buf.cap();
+    return _pos + _len <= _buf.cap();
   }
 
  public:
@@ -82,14 +82,14 @@ class [[nodiscard]] Queue {
     if (_len == 0) {
       return {};
     }
-    return _buf[_head];
+    return _buf[_pos];
   }
 
   auto top_mut() noexcept -> Option<T&> {
     if (_len == 0) {
       return {};
     }
-    return _buf[_head];
+    return _buf[_pos];
   }
 
   void push(T value) noexcept {
@@ -107,8 +107,8 @@ class [[nodiscard]] Queue {
       return {};
     }
 
-    const auto old_head = _head;
-    _head = this->to_physical_idx(1);
+    const auto old_head = _pos;
+    _pos = this->to_physical_idx(1);
     _len -= 1;
     return ptr::read(&_buf[old_head]);
   }
@@ -121,7 +121,7 @@ class [[nodiscard]] Queue {
     ptr::drop(s1._ptr, s1._len);
     ptr::drop(s2._ptr, s2._len);
     _len = 0;
-    _head = 0;
+    _pos = 0;
   }
 
   void reserve(usize additional) noexcept {
@@ -149,21 +149,21 @@ class [[nodiscard]] Queue {
  public:
   auto as_slices() const -> Tuple<Slice<const T>, Slice<const T>> {
     const auto p = const_cast<const T*>(_buf.ptr());
-    if (_head + _len <= _buf.cap()) {
-      return {Slice{p + _head, _len}, {}};
+    if (_pos + _len <= _buf.cap()) {
+      return {Slice{p + _pos, _len}, {}};
     } else {
-      const auto n = _buf.cap() - _head;
-      return {Slice{p + _head, n}, Slice{p, _len - n}};
+      const auto n = _buf.cap() - _pos;
+      return {Slice{p + _pos, n}, Slice{p, _len - n}};
     }
   }
 
   auto as_mut_slices() -> Tuple<Slice<T>, Slice<T>> {
     const auto p = _buf.ptr();
-    if (_head + _len <= _buf.cap()) {
-      return {Slice{p + _head, _len}, {}};
+    if (_pos + _len <= _buf.cap()) {
+      return {Slice{p + _pos, _len}, {}};
     } else {
-      const auto n = _buf.cap() - _head;
-      return {Slice{p + _head, n}, Slice{p, _len - n}};
+      const auto n = _buf.cap() - _pos;
+      return {Slice{p + _pos, n}, Slice{p, _len - n}};
     }
   }
 
@@ -188,7 +188,7 @@ class [[nodiscard]] Queue {
  private:
   auto to_physical_idx(usize idx) const noexcept -> usize {
     const auto cap = _buf.cap();
-    const auto pos = idx + _head;
+    const auto pos = idx + _pos;
     return pos < cap ? pos : pos - cap;
   }
 
@@ -197,20 +197,20 @@ class [[nodiscard]] Queue {
       return;
     }
 
-    if (_head <= old_cap - _len) {
+    if (_pos <= old_cap - _len) {
       return;
     }
 
     const auto ptr = _buf.ptr();
     const auto new_cap = _buf.cap();
-    const auto head_len = old_cap - _head;
+    const auto head_len = old_cap - _pos;
     const auto tail_len = _len - head_len;
     if (head_len > tail_len && old_cap + tail_len <= new_cap) {
       ptr::copy_nonoverlapping(ptr, ptr + old_cap, tail_len);
     } else {
       const auto new_head = new_cap - head_len;
-      ptr::copy(ptr + _head, ptr + new_head, head_len);
-      _head = new_head;
+      ptr::copy(ptr + _pos, ptr + new_head, head_len);
+      _pos = new_head;
     }
   }
 };

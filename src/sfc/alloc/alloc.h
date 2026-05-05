@@ -117,5 +117,6 @@ class RawBuf {
 }  // namespace sfc::alloc
 
 namespace sfc {
+using alloc::Layout;
 using alloc::RawBuf;
-}
+}  // namespace sfc

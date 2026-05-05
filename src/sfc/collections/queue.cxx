@@ -12,14 +12,14 @@ SFC_TEST(push_pop) {
   sfc::expect_eq(q.len(), 6U);
   sfc::expect_eq(q.top(), Option{0});
 
-  for (auto i = 0U; i < 2; ++i) {
+  for (auto i = 0; i < 2; ++i) {
     const auto x = q.pop();
     sfc::expect_eq(x, Option{i});
   }
   sfc::expect_eq(q.len(), 4U);
   sfc::expect_eq(q.top(), Option{2});
 
-  for (auto i = 6U; i < 8U; ++i) {
+  for (auto i = 6; i < 8; ++i) {
     q.push(i);
   }
   sfc::expect_eq(q.len(), 6U);
