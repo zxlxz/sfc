@@ -34,13 +34,13 @@ SFC_TEST(read) {
   auto sb = RBuf{"0123456789"};
 
   u8 tmp[4] = {};
-  sfc::expect_eq(sb.read(tmp).ok(), Option{4U});
+  sfc::expect_eq(sb.read(tmp).ok(), Option{4UZ});
   sfc::expect_eq(Str::from_utf8(tmp), "0123");
 
-  sfc::expect_eq(sb.read(tmp).ok(), Option{4U});
+  sfc::expect_eq(sb.read(tmp).ok(), Option{4UZ});
   sfc::expect_eq(Str::from_utf8(tmp), "4567");
 
-  sfc::expect_eq(sb.read(tmp).ok(), Option{2U});
+  sfc::expect_eq(sb.read(tmp).ok(), Option{2UZ});
   sfc::expect_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
@@ -80,7 +80,7 @@ SFC_TEST(write) {
 
   // Test basic write
   const auto data = Str{"abcd"}.as_bytes();
-  sfc::expect_eq(wbuf.write(data).ok(), Option{4U});
+  sfc::expect_eq(wbuf.write(data).ok(), Option{4UZ});
   sfc::expect_eq(Str::from_utf8({buf, 4}), "abcd");
 
   // Test partial write (buffer full)
