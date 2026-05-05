@@ -37,40 +37,17 @@ enum class Error {
 template <class T = void>
 using Result = result::Result<T, Error>;
 
-struct Serializer {
+class Serializer {
   String& _buf;
 
  public:
-  void serialize_null() noexcept {
-    _buf.push_str("null");
-  }
+  explicit Serializer(String& buf) : _buf{buf} {}
 
-  void serialize_bool(bool val) noexcept {
-    _buf.push_str(val ? Str{"true"} : Str{"false"});
-  }
-
-  void serialize_char(char val) noexcept {
-    const char s[] = {'"', val, '"'};
-    _buf.push_str({s, 3});
-  }
-
-  void serialize_int(num::int_ auto val) noexcept {
-    char buf[32];
-    const auto s = fmt::Display::format_int(buf, val);
-    _buf.push_str(s);
-  }
-
-  void serialize_flt(num::float_ auto val) noexcept {
-    char buf[32];
-    const auto s = fmt::Display::format_flt(buf, val, 6);
-    _buf.push_str(s);
-  }
-
-  void serialize_str(Str val) noexcept {
-    _buf.push('"');
-    _buf.push_str(val);
-    _buf.push('"');
-  }
+  void serialize_null() noexcept;
+  void serialize_bool(bool val) noexcept;
+  void serialize_int(i64 val) noexcept;
+  void serialize_flt(f64 val) noexcept;
+  void serialize_str(Str val) noexcept;
 
   template <class T>
   void serialize_any(const T& val) {
@@ -78,12 +55,10 @@ struct Serializer {
       return val.serialize(*this);
     } else if constexpr (same_<T, bool>) {
       return this->serialize_bool(val);
-    } else if constexpr (same_<T, char>) {
-      return this->serialize_char(val);
     } else if constexpr (num::int_<T>) {
-      return this->serialize_int(val);
+      return this->serialize_int(static_cast<i64>(val));
     } else if constexpr (num::float_<T>) {
-      return this->serialize_flt(val);
+      return this->serialize_flt(static_cast<f64>(val));
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
     } else if constexpr (requires { Slice{val}; }) {
@@ -96,118 +71,55 @@ struct Serializer {
  public:
   struct SerArray {
     Serializer& _ser;
-    u32 _cnt = 0;
+    usize _cnt = 0;
 
    public:
-    explicit SerArray(Serializer& ser) : _ser{ser} {
-      _ser._buf.push('[');
-    }
-
-    ~SerArray() {
-      _ser._buf.push(']');
-    }
-
+    explicit SerArray(Serializer& ser);
+    ~SerArray();
     SerArray(const SerArray&) = delete;
     void operator=(const SerArray&) = delete;
 
     void serialize_element(const auto& item) noexcept {
-      if (_cnt++ != 0) {
-        _ser._buf.push(',');
-      }
+      if (_cnt++ != 0) _ser.write_comma();
       _ser.serialize_any(item);
     }
   };
 
   struct SerObject {
     Serializer& _ser;
-    u32 _cnt = 0;
+    usize _cnt = 0;
 
    public:
-    SerObject(Serializer& ser) : _ser{ser} {
-      _ser._buf.push('{');
-    }
-
-    ~SerObject() {
-      _ser._buf.push('}');
-    }
-
+    explicit SerObject(Serializer& ser);
+    ~SerObject();
     SerObject(const SerObject&) = delete;
     SerObject& operator=(const SerObject&) = delete;
 
     void serialize_entry(Str key, const auto& val) noexcept {
-      if (_cnt++ != 0) {
-        _ser._buf.push(',');
-      }
-      _ser._buf.push('"');
-      _ser._buf.push_str(key);
-      _ser._buf.push('"');
-      _ser._buf.push(':');
+      if (_cnt++ != 0) _ser.write_comma();
+      _ser.serialize_key(key);
       _ser.serialize_any(val);
     }
   };
 
-  auto serialize_seq() noexcept -> SerArray {
-    return SerArray{*this};
-  }
+  auto serialize_seq() noexcept -> SerArray;
+  auto serialize_obj() noexcept -> SerObject;
+  auto serialize_map() noexcept -> SerObject;
 
-  auto serialize_obj() noexcept -> SerObject {
-    return SerObject{*this};
-  }
-
-  auto serialize_map() noexcept -> SerObject {
-    return SerObject{*this};
-  }
+ private:
+  void write_comma() noexcept;
+  void serialize_key(Str key) noexcept;
 };
 
 struct Deserializer {
   Str _buf;
 
  public:
-  auto deserialize_null() noexcept -> Result<> {
-    return this->extract_tok(Token::Null);
-  }
-
-  auto deserialize_bool() noexcept -> Result<bool> {
-    const auto next_tok = this->next_token();
-    switch (next_tok) {
-      case Token::True:  this->consume(4); return Ok{true};
-      case Token::False: this->consume(5); return Ok{false};
-      case Token::Eof:   return Err{Error::EofWhileParsing};
-      default:           return Err{Error::InvalidKeyword};
-    }
-  }
-
-  auto deserialize_char() noexcept -> Result<char> {
-    const auto s = _TRY(this->extract_str());
-    if (s.len() != 1) {
-      return Err{Error::InvalidString};
-    }
-    return Ok{s[0]};
-  }
-
-  template <num::int_ T>
-  auto deserialize_int() noexcept -> Result<T> {
-    const auto num_str = _TRY(this->extract_num());
-    const auto num_val = num_str.template parse<T>();
-    if (!num_val) {
-      return Err{Error::InvalidNumber};
-    }
-    return Ok{*num_val};
-  }
-
-  template <num::float_ T>
-  auto deserialize_flt() -> Result<T> {
-    const auto num_str = _TRY(this->extract_num());
-    const auto num_val = num_str.template parse<T>();
-    if (!num_val) {
-      return Err{Error::InvalidNumber};
-    }
-    return Ok{*num_val};
-  }
-
-  auto deserialize_str() noexcept -> Result<Str> {
-    return this->extract_str();
-  }
+  auto deserialize_null() noexcept -> Result<>;
+  auto deserialize_bool() noexcept -> Result<bool>;
+  auto deserialize_str() noexcept -> Result<Str>;
+  auto deserialize_int() noexcept -> Result<i64>;
+  auto deserialize_flt() noexcept -> Result<f64>;
 
   template <class T>
   auto deserialize_any() noexcept -> Result<T> {
@@ -215,12 +127,10 @@ struct Deserializer {
       return T::deserialize(*this);
     } else if constexpr (same_<T, bool>) {
       return this->deserialize_bool();
-    } else if constexpr (same_<T, char>) {
-      return this->deserialize_char();
     } else if constexpr (num::int_<T>) {
-      return this->template deserialize_int<T>();
+      return this->deserialize_int().map([](i64 v) { return static_cast<T>(v); });
     } else if constexpr (num::float_<T>) {
-      return this->template deserialize_flt<T>();
+      return this->deserialize_flt().map([](f64 v) { return static_cast<T>(v); });
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });
     } else {
@@ -242,10 +152,7 @@ struct Deserializer {
 
     template <class T>
     auto next_element() noexcept -> Result<T> {
-      if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-        return Err{Error::ExpectedComma};
-      }
-      _idx += 1;
+      if (_idx++ != 0) _TRY(_inn.extract_tok(Token::Comma));
       return _inn.deserialize_any<T>();
     }
 
@@ -271,22 +178,13 @@ struct Deserializer {
       return next_tok != Token::ObjectEnd;
     }
 
-    template <class K>
-    auto next_key() noexcept -> Result<K> {
-      static_assert(same_<K, Str>, "json::DesObject::next_key: key type must be Str");
-
-      if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-        return Err{Error::ExpectedComma};
-      }
-      _idx += 1;
-      return _inn.extract_str();
+    auto next_key() noexcept -> Result<Str> {
+      if (_idx++ != 0) _TRY(_inn.extract_tok(Token::Comma));
+      return _inn.deserialize_key();
     }
 
     template <class T>
     auto next_value() noexcept -> Result<T> {
-      if (_inn.extract_tok(Token::Colon).is_err()) {
-        return Err{Error::ExpectedColon};
-      }
       return _inn.deserialize_any<T>();
     }
 
@@ -294,9 +192,9 @@ struct Deserializer {
     auto collect() noexcept -> Result<M> {
       auto res = M{};
       while (this->has_next()) {
-        auto key = _TRY(this->next_key<K>());
+        auto key = _TRY(this->next_key());
         auto val = _TRY(this->next_value<V>());
-        res.insert(static_cast<K&&>(key), static_cast<V&&>(val));
+        res.insert(key, static_cast<V&&>(val));
       }
       return Ok{res};
     }
@@ -306,6 +204,7 @@ struct Deserializer {
     _TRY(this->extract_tok(Token::ArrayBegin));
     auto imp = DesArray{*this};
     auto res = visit(imp);
+    if (res.is_err()) return res;
     _TRY(this->extract_tok(Token::ArrayEnd));
     return res;
   }
@@ -314,6 +213,7 @@ struct Deserializer {
     _TRY(this->extract_tok(Token::ObjectBegin));
     auto imp = DesObject{*this};
     auto res = visit(imp);
+    if (res.is_err()) return res;
     _TRY(this->extract_tok(Token::ObjectEnd));
     return res;
   }
@@ -329,10 +229,9 @@ struct Deserializer {
  private:
   void consume(usize n) noexcept;
   auto next_token() noexcept -> Token;
-
   auto extract_tok(Token tok) noexcept -> Result<>;
-  auto extract_num() noexcept -> Result<Str>;
-  auto extract_str() noexcept -> Result<Str>;
+  auto deserialize_key() noexcept -> Result<Str>;
+  auto deserialize_num() noexcept -> Result<Str>;
 };
 
 void to_writer(auto& writer, const auto& val) {

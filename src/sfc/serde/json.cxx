@@ -50,16 +50,16 @@ SFC_TEST(deserialize_simple) {
 
   // int
   {
-    sfc::expect_eq(Deserializer{"0"}.deserialize_int<int>().ok(), Option{0});
-    sfc::expect_eq(Deserializer{"123"}.deserialize_int<int>().ok(), Option{123});
-    sfc::expect_eq(Deserializer{"-123"}.deserialize_int<int>().ok(), Option{-123});
+    sfc::expect_eq(Deserializer{"0"}.deserialize_int().ok(), Option{0});
+    sfc::expect_eq(Deserializer{"123"}.deserialize_int().ok(), Option{123});
+    sfc::expect_eq(Deserializer{"-123"}.deserialize_int().ok(), Option{-123});
   }
 
   // float
   {
-    sfc::expect_eq(Deserializer{"0.0"}.deserialize_flt<double>().ok(), Option{0.0});
-    sfc::expect_eq(Deserializer{"1.23"}.deserialize_flt<double>().ok(), Option{1.23});
-    sfc::expect_eq(Deserializer{"-1.23"}.deserialize_flt<double>().ok(), Option{-1.23});
+    sfc::expect_eq(Deserializer{"0.0"}.deserialize_flt().ok(), Option{0.0});
+    sfc::expect_eq(Deserializer{"1.23"}.deserialize_flt().ok(), Option{1.23});
+    sfc::expect_eq(Deserializer{"-1.23"}.deserialize_flt().ok(), Option{-1.23});
   }
 
   // str
@@ -74,15 +74,17 @@ SFC_TEST(deserialize_seq) {
   const int vals[] = {0, 1, 2};
   auto visit = [&](auto& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
-      const auto val = seq.template next_element<int>();
-      sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
+      sfc::expect_eq(seq.has_next(), true);
+      const auto val = seq.template next_element<int>().ok();
+      sfc::expect_eq(val, Option{vals[i]});
     }
     sfc::expect_false(seq.has_next());
     return Ok{};
   };
 
   auto des = Deserializer{s};
-  sfc::expect_true(des.deserialize_seq(visit).is_ok());
+  auto ret = des.deserialize_seq(visit);
+  sfc::expect_true(ret.is_ok());
 }
 
 SFC_TEST(deserialize_map) {
@@ -92,7 +94,7 @@ SFC_TEST(deserialize_map) {
 
   auto visit = [&](auto& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
-      const auto key = map.template next_key<Str>();
+      const auto key = map.next_key();
       sfc::expect_eq(auto{key}.ok(), Option{keys[i]});
 
       const auto val = map.template next_value<int>();
