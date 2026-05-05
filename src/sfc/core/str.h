@@ -96,20 +96,9 @@ struct Str {
   auto trim_end_matches(auto&& pat) const -> Str;
   auto trim_matches(auto&& pat) const -> Str;
 
-  auto trim_start() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-    return this->trim_start_matches(is_space);
-  }
-
-  auto trim_end() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-    return this->trim_end_matches(is_space);
-  }
-
-  auto trim() const noexcept -> Str {
-    const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-    return this->trim_matches(is_space);
-  }
+  auto trim_start() const noexcept -> Str;
+  auto trim_end() const noexcept -> Str;
+  auto trim() const noexcept -> Str;
 
  public:
   // trait: ops::Eq
@@ -127,9 +116,10 @@ struct Str {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (auto t = f._spec.type(); t == '?' || t == 's') {
+    const auto dbg_mode = f._spec._type == 's' || f._spec._type == '?';
+    if (dbg_mode) {
       f.write_char('"');
-      f.pad(*this);
+      f.write_str(*this);
       f.write_char('"');
     } else {
       f.pad(*this);
@@ -146,13 +136,7 @@ struct Str {
   }
 
   // trait: hash::Hash
-  auto hash() const noexcept -> usize {
-    auto imp = hash::Hasher{};
-    for (auto i = 0UL; i < _len; ++i) {
-      imp.write_byte(_ptr[i]);
-    }
-    return imp.finish();
-  }
+  auto hash() const noexcept -> usize;
 };
 
 template <class T>
@@ -240,33 +224,19 @@ struct CharSearcher : Searcher {
   u32 _finger_back = static_cast<u32>(_haystack._len);
 
  public:
-  auto next() -> SearchStep {
-    if (_finger >= _haystack._len) {
-      return {SearchStep::Done, 0, 0};
-    }
+  auto next() -> SearchStep;
+  auto next_back() -> SearchStep;
+};
 
-    const auto ch = _haystack[_finger++];
-    if (ch == _needle) {
-      return {SearchStep::Match, _finger - 1, _finger};
-    } else {
-      return {SearchStep::Reject, _finger - 1, _finger};
-    }
-  }
+struct StrSearcher : Searcher {
+  Str _needle;
+  u32 _finger = 0;
+  u32 _finger_back = static_cast<u32>(_haystack._len);
 
-  auto next_back() -> SearchStep {
-    if (_finger_back == 0) {
-      return {SearchStep::Done, 0, 0};
-    }
-
-    const auto ch = _haystack[_finger_back - 1];
-    if (ch == _needle) {
-      _finger_back -= 1;
-      return {SearchStep::Match, _finger_back, _finger_back + 1};
-    } else {
-      _finger_back -= 1;
-      return {SearchStep::Reject, _finger_back, _finger_back + 1};
-    }
-  }
+  auto match() const -> bool;
+  auto match_back() const -> bool;
+  auto next() -> SearchStep;
+  auto next_back() -> SearchStep;
 };
 
 template <class F>
@@ -303,68 +273,8 @@ struct CharPredicateSearcher : Searcher {
   }
 };
 
-struct StrSearcher : Searcher {
-  Str _needle;
-  u32 _finger = 0;
-  u32 _finger_back = static_cast<u32>(_haystack._len);
-
-  auto match() const -> bool {
-    if (_needle._len == 0) return true;
-    if (_finger + _needle._len > _haystack._len) return false;
-
-    const auto p = _haystack._ptr + _finger;
-    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-  }
-
-  auto match_back() const -> bool {
-    if (_needle._len == 0) return true;
-    if (_finger_back < _needle._len) return false;
-
-    const auto p = _haystack._ptr + _finger_back - _needle._len;
-    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-  }
-
-  auto next() -> SearchStep {
-    if (_finger >= _haystack._len) {
-      return {SearchStep::Done, 0, 0};
-    }
-
-    const auto old_finger = _finger;
-    if (this->match()) {
-      _finger += static_cast<u32>(_needle._len);
-      return {SearchStep::Match, old_finger, _finger};
-    } else {
-      if (_finger + _needle._len < _haystack._len) {
-        _finger += 1;
-      } else {
-        _finger = static_cast<u32>(_haystack._len);
-      }
-      return {SearchStep::Reject, old_finger, _finger};
-    }
-  }
-
-  auto next_back() -> SearchStep {
-    if (_finger_back == 0) {
-      return {SearchStep::Done, 0, 0};
-    }
-
-    const auto old_finger_back = _finger_back;
-    if (this->match_back()) {
-      _finger_back -= static_cast<u32>(_needle._len);
-      return {SearchStep::Match, _finger_back, old_finger_back};
-    } else {
-      if (_finger_back >= _needle._len) {
-        _finger_back -= static_cast<u32>(_needle._len);
-      } else {
-        _finger_back = 0;
-      }
-      return {SearchStep::Reject, _finger_back, old_finger_back};
-    }
-  }
-};
-
 struct Pattern {
-  static auto into_searcher(auto& self, Str haystack) {
+  static auto into_searcher(auto&& self, Str haystack) {
     if constexpr (requires { char{self}; }) {
       return CharSearcher{{haystack}, self};
     } else if constexpr (requires { Str{self}; }) {
