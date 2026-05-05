@@ -42,7 +42,7 @@ struct BufRead : Read {
 
  public:
   auto skip(this auto& r, auto&& delim) -> Result<usize> {
-    auto nread = usize{0UL};
+    auto nread = 0UZ;
 
     while (true) {
       const auto available = _TRY(r.fill_buf());
@@ -59,7 +59,7 @@ struct BufRead : Read {
   }
 
   auto read_until(this auto& r, u8 delim, List<u8>& buf) -> Result<usize> {
-    auto nread = 0UL;
+    auto nread = 0UZ;
 
     while (true) {
       const auto available = _TRY(r.fill_buf());

@@ -13,10 +13,12 @@ static auto build_wstring(auto&& f, unsigned capacity = 0) -> ffi::WString {
     return {};
   }
 
-  auto list = List<wchar_t>::with_capacity(capacity);
-  const auto len = f(list.as_mut_ptr(), capacity);
-  list.set_len(len + 1);
-  return ffi::WString::from_buf(mem::move(list));
+  auto res = ffi::WString{};
+  auto& buf = res.buf();
+  buf.reserve(capacity + 1);
+  auto len = f(buf.as_mut_ptr(), capacity);
+  buf.set_len(len + 1);
+  return res;
 }
 
 static auto getenv(const wchar_t* key) -> ffi::WString {
@@ -44,23 +46,17 @@ static auto home_dir() -> ffi::WString {
 }
 
 static auto temp_dir() -> ffi::WString {
-  auto f = [](wchar_t* buf, auto buf_len) {
-    return ::GetTempPathW(buf_len, buf);
-  };
+  auto f = [](wchar_t* buf, auto buf_len) { return ::GetTempPathW(buf_len, buf); };
   return sys::build_wstring(f);
 }
 
 static auto current_exe() -> ffi::WString {
-  auto f = [](wchar_t* buf, DWORD buf_len) {
-    return ::GetModuleFileNameW(nullptr, buf, buf_len);
-  };
+  auto f = [](wchar_t* buf, DWORD buf_len) { return ::GetModuleFileNameW(nullptr, buf, buf_len); };
   return sys::build_wstring(f, MAX_PATH);
 }
 
 static auto getcwd() -> ffi::WString {
-  auto f = [](wchar_t* buf, auto buf_len) {
-    return ::GetCurrentDirectoryW(buf_len, buf);
-  };
+  auto f = [](wchar_t* buf, auto buf_len) { return ::GetCurrentDirectoryW(buf_len, buf); };
   return sys::build_wstring(f);
 }
 

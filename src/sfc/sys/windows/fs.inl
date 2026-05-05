@@ -41,34 +41,34 @@ struct File {
   auto flush() -> io::Result<> {
     const auto ret = ::FlushFileBuffers(_fd);
     if (!ret) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return {};
+    return Ok{};
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
     auto bytes_read = 0UL;
     if (!::ReadFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_read, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return static_cast<usize>(bytes_read);
+    return Ok{static_cast<usize>(bytes_read)};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     auto bytes_written = 0UL;
     if (!::WriteFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_written, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return static_cast<usize>(bytes_written);
+    return Ok{static_cast<usize>(bytes_written)};
   }
 
   auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
     const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
     auto new_offset = LARGE_INTEGER{};
     if (!::SetFilePointerEx(_fd, old_offset, &new_offset, whence)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return static_cast<usize>(new_offset.QuadPart);
+    return Ok{static_cast<usize>(new_offset.QuadPart)};
   }
 };
 
@@ -97,9 +97,9 @@ struct OpenOptions {
 
     const auto handle = ::CreateFileW(path, access_mode, _share_mode, nullptr, create_mode, _flags, nullptr);
     if (handle == INVALID_HANDLE_VALUE) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return handle;
+    return Ok{handle};
   }
 };
 
@@ -132,43 +132,44 @@ struct Metadata {
 static inline auto lstat(const wchar_t* path) -> io::Result<Metadata> {
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
   if (!::GetFileAttributesExW(path, GetFileExInfoStandard, &attr)) {
-    return io::Error::last_os_error();
+    return Err{io::Error::last_os_error()};
   }
 
   const auto size = (SIZE_T(attr.nFileSizeHigh) << 32U) | attr.nFileSizeLow;
-  return Metadata{attr.dwFileAttributes, size};
+  const auto meta = Metadata{attr.dwFileAttributes, size};
+  return Ok{meta};
 }
 
 static inline auto unlink(const wchar_t* path) -> io::Result<> {
   const auto ret = ::DeleteFileW(path);
   if (!ret) {
-    return io::Error::last_os_error();
+    return Err{io::Error::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<> {
   const auto ret = ::MoveFileW(old_path, new_path);
   if (!ret) {
-    return io::Error::last_os_error();
+    return Err{io::Error::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto mkdir(const wchar_t* path) -> io::Result<> {
   const auto ret = ::CreateDirectoryW(path, nullptr);
   if (!ret) {
-    return io::Error::last_os_error();
+    return Err{io::Error::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto rmdir(const wchar_t* path) -> io::Result<> {
   const auto ret = ::RemoveDirectoryW(path);
   if (!ret) {
-    return io::Error::last_os_error();
+    return Err{io::Error::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 }  // namespace sfc::sys::windows

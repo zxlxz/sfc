@@ -41,14 +41,14 @@ auto File::is_valid() const -> bool {
 
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (buf.is_empty()) {
-    return Ok{0UL};
+    return Ok{0UZ};
   }
   return _inn.read(buf);
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   if (buf.is_empty()) {
-    return Ok{0UL};
+    return Ok{0UZ};
   }
   return _inn.write(buf);
 }

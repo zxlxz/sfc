@@ -2,8 +2,6 @@
 #include "sfc/sys/windows/mod.inl"
 #define _SFC_SYS_IO_
 
-#include "sfc/io/error.h"
-
 namespace sfc::sys::windows {
 
 static inline auto io_error(DWORD code) -> io::ErrorKind {
@@ -59,9 +57,9 @@ struct StdIo {
   auto write_u8(Slice<const u8> data) -> io::Result<usize> {
     auto nwrite = DWORD{};
     if (!::WriteFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nwrite, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return nwrite;
+    return Ok{usize{nwrite}};
   }
 
   auto write_u16(Slice<const u8> data) -> io::Result<usize> {
@@ -72,14 +70,14 @@ struct StdIo {
     wchar_t u16_buf[MAX_BUF_LEN];
     const auto u16_len = ::MultiByteToWideChar(CP_UTF8, 0, u8_ptr, u8_len, u16_buf, MAX_BUF_LEN);
     if (u16_len == 0) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
 
     auto nwrite = DWORD{};
     if (!::WriteConsoleW(_handle, u16_buf, u16_len, &nwrite, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return static_cast<usize>(nwrite);
+    return Ok{usize{nwrite}};
   }
 
   auto write(Slice<const u8> data) -> io::Result<usize> {
@@ -93,9 +91,9 @@ struct StdIo {
   auto read_u8(Slice<u8> data) -> io::Result<usize> {
     auto nread = DWORD{};
     if (!::ReadFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nread, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return nread;
+    return Ok{usize{nread}};
   }
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
@@ -106,7 +104,7 @@ struct StdIo {
     wchar_t u16_buf[MAX_BUF_LEN];
     auto u16_len = DWORD{};
     if (!::ReadConsoleW(_handle, u16_buf, amount, &u16_len, nullptr)) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
 
     // convert u16 to u8
@@ -114,10 +112,10 @@ struct StdIo {
     const auto u8_cap = static_cast<DWORD>(data._len);
     const auto u8_len = ::WideCharToMultiByte(CP_UTF8, 0, u16_buf, u16_len, u8_ptr, u8_cap, nullptr, nullptr);
     if (u8_len == 0) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
 
-    return static_cast<usize>(u8_len);
+    return Ok{static_cast<usize>(u8_len)};
   }
 
   auto read(Slice<u8> data) -> io::Result<usize> {
@@ -148,7 +146,7 @@ struct Stdout {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 
@@ -164,7 +162,7 @@ struct Stderr {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 
