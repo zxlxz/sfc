@@ -108,9 +108,9 @@ class RingBuf {
   }
 
  public:
-  auto push(T val) noexcept -> Option<T> {
+  auto push(auto&& val) noexcept -> bool {
     if (_inn._cap == 0) {
-      return static_cast<T&&>(val);
+      return false;
     }
 
     while (true) {
@@ -118,14 +118,14 @@ class RingBuf {
       auto& cell = _inn[head];
       const auto seq = cell.seq();
       if (seq < head) {  // full
-        return static_cast<T&&>(val);
+        return false;
       }
       if (seq > head) {  // stale
         continue;
       }
       if (_head.compare_exchange(head, head + 1, Ordering::Relaxed, Ordering::Relaxed)) {
         cell.set(head + 1, static_cast<T&&>(val));
-        return {};
+        return true;
       }
     }
   }

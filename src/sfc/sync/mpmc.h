@@ -1,22 +1,15 @@
 #pragma once
 
 #include "sfc/sync/atomic.h"
-#include "sfc/sync/mutex.h"
-#include "sfc/sync/condvar.h"
-#include "sfc/collections/queue.h"
+#include "sfc/sync/ringbuf.h"
 
 namespace sfc::sync::mpmc {
 
 template <class T>
 class Channel {
-  static constexpr auto DEFAULT_CAPACITY = usize{16};
-  using MsgQueue = collections::Queue<T>;
-
-  Mutex _mtx{};
-  Condvar _send_evt{};
-  Condvar _recv_evt{};
-  Atomic<bool> _closed{false};
-  MsgQueue _msgs{};
+  using RingBuf = ringbuf::RingBuf<T>;
+  RingBuf _buff{};
+  Atomic<bool> _closed{true};
 
  public:
   Channel() noexcept {}
@@ -29,18 +22,16 @@ class Channel {
   Channel& operator=(Channel&&) noexcept = default;
 
   static auto with_capacity(usize capacity) -> Channel {
+    if (capacity == 0) return {};
     auto res = Channel{};
-    res._msgs.reserve(capacity);
+    res._buff = RingBuf::with_capacity(capacity);
+    res._closed.store(false);
     return res;
   }
 
  public:
   void close() {
-    if (_closed.exchange(true, Ordering::AcqRel)) {
-      return;
-    }
-    _send_evt.notify_all();
-    _recv_evt.notify_all();
+    _closed.exchange(true, Ordering::AcqRel);
   }
 
   auto is_closed() const noexcept -> bool {
@@ -48,52 +39,33 @@ class Channel {
   }
 
   auto send(T val) noexcept -> bool {
-    if (this->is_closed()) {
-      return false;
+    while (true) {
+      if (this->is_closed()) {
+        break;
+      }
+      if (_buff.push(static_cast<T&&>(val))) {
+        return true;
+      }
+      sfc::thread::yield_now();
     }
-    auto lock = _mtx.lock();
-    if (_msgs.capacity() == 0) {
-      _msgs.reserve(DEFAULT_CAPACITY);
-    }
-    _send_evt.wait_while(lock, [&]() { return _msgs.is_full() && !this->is_closed(); });
-    return this->push_imp(static_cast<T&&>(val));
+    return false;
   }
 
   auto recv() noexcept -> Option<T> {
-    auto lock = _mtx.lock();
-    _recv_evt.wait_while(lock, [&]() { return _msgs.is_empty() && !this->is_closed(); });
-    return this->pop_imp();
-  }
-
-  auto recv_timeout(time::Duration dur) noexcept -> Option<T> {
-    auto lock = _mtx.lock();
-    if (_msgs.is_empty() && !this->is_closed()) {
-      _recv_evt.wait_timeout(lock, dur);
+    while (true) {
+      if (auto ret = _buff.pop()) {
+        return ret;
+      }
+      if (this->is_closed()) {
+        break;
+      }
+      sfc::thread::yield_now();
     }
-    return this->pop_imp();
+    return {};
   }
 
   auto try_recv() noexcept -> Option<T> {
-    auto lock = _mtx.lock();
-    return this->pop_imp();
-  }
-
- private:
-  auto push_imp(T val) noexcept -> bool {
-    if (_msgs.is_full()) {
-      return false;
-    }
-    _msgs.push(static_cast<T&&>(val));
-    _recv_evt.notify_one();
-    return true;
-  }
-
-  auto pop_imp() noexcept -> Option<T> {
-    auto res = _msgs.pop();
-    if (res.is_some()) {
-      _send_evt.notify_one();
-    }
-    return res;
+    return _buff.pop();
   }
 };
 

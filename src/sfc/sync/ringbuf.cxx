@@ -11,8 +11,7 @@ SFC_TEST(push_pop_u32) {
   sfc::expect_eq(r0, None{});
 
   for (auto i = 0U; i < 4U; ++i) {
-    const auto r = rb.push(i);
-    sfc::expect_false(r);
+    sfc::expect_eq(rb.push(i), true);
   }
 
   for (auto i = 0U; i < 4U; ++i) {
@@ -20,20 +19,17 @@ SFC_TEST(push_pop_u32) {
     sfc::expect_eq(val, Option{i});
   }
 
-  const auto r1 = rb.pop();
-  sfc::expect_false(r1);
+  sfc::expect_eq(rb.pop(), None{});
 }
 
 SFC_TEST(push_overflow) {
   auto rb = RingBuf<u32>::with_capacity(8);
 
   for (auto i = 0U; i < 8U; ++i) {
-    const auto r = rb.push(i);
-    sfc::expect_eq(r, None{});
+    sfc::expect_eq(rb.push(i), true);
   }
 
-  const auto overflow = rb.push(99U);
-  sfc::expect_eq(overflow, Option{99U});
+  sfc::expect_eq(rb.push(99U), false);
 }
 
 SFC_TEST(fifo_order) {
@@ -115,7 +111,7 @@ SFC_TEST(mpmc_s1r1) {
 
   auto sender = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      while (rb.push(i)) {
+      while (!rb.push(i)) {
         thread::yield_now();
       }
     }
