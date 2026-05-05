@@ -17,134 +17,148 @@ struct None {
 
 template <class T>
 class Option {
-  bool _tag;
+  u8 _tag;
   union {
-    T _val;
+    T _1;
   };
 
  public:
-  constexpr Option() noexcept : _tag{false} {}
-  constexpr Option(None) noexcept : _tag{false} {}
-  constexpr Option(T val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
+  constexpr Option() noexcept : _tag{0} {}
+  constexpr Option(None) noexcept : _tag{0} {}
+  constexpr Option(T val) noexcept : _tag{1}, _1{static_cast<T&&>(val)} {}
 
-  constexpr Option(Option&& other) noexcept : _tag{other._tag} {
-    if (!_tag) return;
-    ptr::write(&_val, static_cast<T&&>(other._val));
+  constexpr Option(Option&& other) noexcept : _tag{0} {
+    switch (other._tag) {
+      case 0:  break;
+      case 1:  ptr::write(&_1, static_cast<T&&>(other._1)), _tag = 1; break;
+      default: break;
+    }
   }
 
-  constexpr Option(const Option& other) noexcept : _tag{other._tag} {
-    if (!_tag) return;
-    ptr::write(&_val, other._val);
+  constexpr Option(const Option& other) noexcept : _tag{0} {
+    switch (other._tag) {
+      case 0:  break;
+      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
+      default: break;
+    }
   }
 
   ~Option() noexcept {
-    if (!_tag) return;
-    _val.~T();
+    switch (_tag) {
+      case 0:  break;
+      case 1:  mem::drop(_1); break;
+      default: break;
+    }
   }
 
   Option& operator=(const Option& other) noexcept {
     if (this == &other) return *this;
-    if (_tag) {
-      _val.~T();
-      _tag = false;
+    switch (_tag) {
+      case 0:  break;
+      case 1:  mem::drop(_1), _tag = 0; break;
+      default: break;
     }
-    if (other._tag) {
-      ptr::write(&_val, other._val);
-      _tag = other._tag;
+    switch (other._tag) {
+      case 0:  break;
+      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
+      default: break;
     }
     return *this;
   }
 
   Option& operator=(Option&& other) noexcept {
     if (this == &other) return *this;
-    if (_tag) {
-      _val.~T();
-      _tag = false;
+    switch (_tag) {
+      case 0:  break;
+      case 1:  mem::drop(_1), _tag = 0; break;
+      default: break;
     }
-    if (other._tag) {
-      ptr::write(&_val, static_cast<T&&>(other._val));
-      _tag = other._tag;
+    switch (other._tag) {
+      case 0:  break;
+      case 1:  ptr::write(&_1, static_cast<T&&>(other._1)), _tag = 1; break;
+      default: break;
     }
     return *this;
   }
 
   constexpr auto is_some() const noexcept -> bool {
-    return _tag;
+    return _tag == 1;
   }
 
   constexpr auto is_none() const noexcept -> bool {
-    return !_tag;
+    return _tag == 0;
   }
 
   constexpr explicit operator bool() const noexcept {
-    return _tag;
+    return _tag == 1;
   }
 
   auto operator->() const -> const T* {
-    sfc::expect(_tag, "Option::operator->: not Some()");
-    return &_val;
+    sfc::expect(_tag == 1, "Option::operator->: not Some()");
+    return &_1;
   }
 
   auto operator->() -> T* {
-    sfc::expect(_tag, "Option::operator->: not Some()");
-    return &_val;
+    sfc::expect(_tag == 1, "Option::operator->: not Some()");
+    return &_1;
   }
 
   auto operator*() const -> const T& {
-    sfc::expect(_tag, "Option::operator*: not Some()");
-    return _val;
+    sfc::expect(_tag == 1, "Option::operator*: not Some()");
+    return _1;
   }
 
   auto operator*() -> T& {
-    sfc::expect(_tag, "Option::operator*: not Some()");
-    return _val;
+    sfc::expect(_tag == 1, "Option::operator*: not Some()");
+    return _1;
   }
 
   auto expect(const auto& msg) && -> T {
-    sfc::expect(_tag, "Option::expect: {}", msg);
-    return static_cast<T&&>(_val);
+    sfc::expect(_tag == 1, "Option::expect: {}", msg);
+    return static_cast<T&&>(_1);
   }
 
   auto unwrap() && -> T {
-    sfc::expect(_tag, "Option::unwrap: not Some()");
-    return static_cast<T&&>(_val);
+    sfc::expect(_tag == 1, "Option::unwrap: not Some()");
+    return static_cast<T&&>(_1);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    return _tag ? static_cast<T&&>(_val) : static_cast<T&&>(default_val);
+    if (_tag == 1) return static_cast<T&&>(_1);
+    return static_cast<T&&>(default_val);
   }
 
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
-    if (_tag) return static_cast<Option<U>&&>(optb);
-    return {};
+    if (_tag == 1) return static_cast<Option<U>&&>(optb);
+    return None{};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
-    if (_tag) return static_cast<Option<T>&&>(*this);
+    if (_tag == 1) return static_cast<Option<T>&&>(*this);
     return static_cast<Option<T>&&>(optb);
   }
 
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_tag) return op(static_cast<T&&>(_val));
-    return {};
+    if (_tag == 1) return op(static_cast<T&&>(_1));
+    return None{};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
-    if (_tag) return static_cast<Option<T>&&>(*this);
+    if (_tag == 1) return static_cast<Option<T>&&>(*this);
     return f();
   }
 
   template <class F>
   auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
-    if (_tag) return f(static_cast<T&&>(_val));
-    return {};
+    if (_tag == 1) return f(static_cast<T&&>(_1));
+    return None{};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) && -> U {
-    if (_tag) return f(static_cast<T&&>(_val));
+    if (_tag == 1) return f(static_cast<T&&>(_1));
     return static_cast<U&&>(default_val);
   }
 
@@ -152,17 +166,17 @@ class Option {
   // to result
   template <class E>
   auto ok_or(E err) && -> result::Result<T, E> {
-    if (_tag) return static_cast<T&&>(_val);
+    if (_tag == 1) return static_cast<T&&>(_1);
     return static_cast<E&&>(err);
   }
 
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    if (!_tag) {
+    if (_tag == 0) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", _val);
+      f.write_fmt("Some({})", _1);
     }
   }
 };
@@ -224,8 +238,8 @@ class Option<T> {
 
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
-    if (_inn == nullptr) return {};
-    return static_cast<Option<U>&&>(optb);
+    if (_inn != nullptr) return static_cast<Option<U>&&>(optb);
+    return None{};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
@@ -236,7 +250,7 @@ class Option<T> {
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
     if (_inn != nullptr) return op(static_cast<T&&>(_inn));
-    return {};
+    return None{};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
@@ -328,7 +342,7 @@ class Option<T&> {
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
     if (_ptr) return static_cast<Option<U>&&>(optb);
-    return {};
+    return None{};
   }
 
   auto operator|(Option optb) const -> Option {
@@ -339,7 +353,7 @@ class Option<T&> {
   template <class F>
   auto and_then(F&& op) -> ops::invoke_t<F(T&)> {
     if (_ptr) return op(*_ptr);
-    return {};
+    return None{};
   }
 
   auto or_else(auto&& f) -> Option {
@@ -350,7 +364,7 @@ class Option<T&> {
   template <class F>
   auto map(F&& f) -> Option<ops::invoke_t<F(T&)>> {
     if (_ptr) return {f(*_ptr)};
-    return {};
+    return None{};
   }
 
   template <class U>
@@ -422,7 +436,7 @@ class Option<const T&> {
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
     if (_ptr) return static_cast<Option<U>&&>(optb);
-    return {};
+    return None{};
   }
 
   auto operator|(Option<const T&> optb) const -> Option<const T&> {
@@ -433,7 +447,7 @@ class Option<const T&> {
   template <class F>
   auto and_then(F&& op) const -> ops::invoke_t<F(const T&)> {
     if (_ptr) return op(*_ptr);
-    return {};
+    return None{};
   }
 
   auto or_else(auto&& f) const -> Option<const T&> {
@@ -444,7 +458,7 @@ class Option<const T&> {
   template <class F>
   auto map(F&& f) const -> Option<ops::invoke_t<F(const T&)>> {
     if (_ptr) return {f(*_ptr)};
-    return {};
+    return None{};
   }
 
   template <class U>
