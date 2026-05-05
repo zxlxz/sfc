@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/sync/atomic.h"
 #include "sfc/sync/ringbuf.h"
 
 namespace sfc::sync::mpmc {

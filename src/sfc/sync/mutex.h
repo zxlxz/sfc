@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/sys.h"
-#include "sfc/sync/atomic.h"
 
 namespace sfc::sync {
 
