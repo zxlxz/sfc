@@ -24,6 +24,7 @@ class Option {
 
  public:
   constexpr Option() noexcept : _tag{false} {}
+  constexpr Option(None) noexcept : _tag{false} {}
   constexpr Option(T val) noexcept : _tag{true}, _val{static_cast<T&&>(val)} {}
 
   constexpr Option(Option&& other) noexcept : _tag{other._tag} {
@@ -172,6 +173,7 @@ class Option<T> {
 
  public:
   constexpr Option() noexcept : _inn{} {}
+  constexpr Option(None) noexcept : _inn{} {}
   constexpr Option(T val) noexcept : _inn{static_cast<T&&>(val)} {}
 
   constexpr auto is_some() const noexcept -> bool {
@@ -279,6 +281,7 @@ class Option<T&> {
 
  public:
   constexpr Option() noexcept : _ptr{nullptr} {}
+  constexpr Option(None) noexcept : _ptr{nullptr} {}
   constexpr Option(T& val) noexcept : _ptr{&val} {}
 
   constexpr auto is_some() const noexcept -> bool {
@@ -381,6 +384,7 @@ class Option<const T&> {
 
  public:
   constexpr Option() noexcept : _ptr{nullptr} {}
+  constexpr Option(None) noexcept : _ptr{nullptr} {}
   constexpr Option(const T& val) noexcept : _ptr{&val} {}
 
   constexpr auto is_some() const noexcept -> bool {

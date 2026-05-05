@@ -3,90 +3,90 @@
 
 namespace sfc::result::test {
 
-enum class Error : i8 {
-  Success = 0,
+enum E {
+  E0,
   EA,
   EB,
 };
 
 SFC_TEST(simple) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
 
   {
-    const auto res = Result{1};
+    const auto res = Res{1};
     sfc::expect_true(res.is_ok());
     sfc::expect_false(res.is_err());
   }
 
   {
-    const auto res = Result{Error::EA};
+    const auto res = Res{EA};
     sfc::expect_false(res.is_ok());
     sfc::expect_true(res.is_err());
   }
 }
 
 SFC_TEST(to_option) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
 
-  sfc::expect_eq(Result{1}.ok(), Option{1});
-  sfc::expect_eq(Result{1}.err(), Option<Error>{});
+  sfc::expect_eq(Res{1}.ok(), Option{1});
+  sfc::expect_eq(Res{1}.err(), Option<E>{});
 
-  const auto res = Result{Error::EA};
-  sfc::expect_eq(Result{Error::EA}.ok(), Option<int>{});
-  sfc::expect_eq(Result{Error::EA}.err(), Option{Error::EA});
+  const auto res = Res{EA};
+  sfc::expect_eq(Res{EA}.ok(), Option<int>{});
+  sfc::expect_eq(Res{EA}.err(), Option{EA});
 }
 
 SFC_TEST(unwrap) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
 
-  sfc::expect_eq(Result{1}.unwrap(), 1);
-  sfc::expect_eq(Result{1}.unwrap_or(2), 1);
+  sfc::expect_eq(Res{1}.unwrap(), 1);
+  sfc::expect_eq(Res{1}.unwrap_or(2), 1);
 
-  sfc::expect_eq(Result{Error::EA}.unwrap_or(2), 2);
-  sfc::expect_eq(Result{Error::EA}.unwrap_err(), Error::EA);
+  sfc::expect_eq(Res{EA}.unwrap_or(2), 2);
+  sfc::expect_eq(Res{EA}.unwrap_err(), EA);
 }
 
 SFC_TEST(and_or) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
 
-  sfc::expect_eq((Result{1} & Result{2}), Result{2});
-  sfc::expect_eq((Result{Error::EA} & Result{2}), Result{Error::EA});
+  sfc::expect_eq((Res{1} & Res{2}), Res{2});
+  sfc::expect_eq((Res{EA} & Res{2}), Res{EA});
 
-  sfc::expect_eq((Result{1} | Result{2}), Result{1});
-  sfc::expect_eq((Result{Error::EA} | Result{2}), Result{2});
+  sfc::expect_eq((Res{1} | Res{2}), Res{1});
+  sfc::expect_eq((Res{EA} | Res{2}), Res{2});
 }
 
 SFC_TEST(and_then) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
 
-  auto add1 = [](auto x) { return Result{x + 1}; };
+  auto add1 = [](auto x) { return Res{x + 1}; };
 
-  sfc::expect_eq(Result{10}.and_then(add1), Result{11});
-  sfc::expect_eq(Result{Error::EA}.and_then(add1), Result{Error::EA});
+  sfc::expect_eq(Res{10}.and_then(add1), Res{11});
+  sfc::expect_eq(Res{EA}.and_then(add1), Res{EA});
 }
 
 SFC_TEST(or_else) {
-  using Result = result::Result<int, Error>;
-  auto ret1 = [] { return Result{1}; };
+  using Res = result::Result<int, E>;
+  auto ret1 = [] { return Res{1}; };
 
-  sfc::expect_eq(Result{10}.or_else(ret1), Result{10});
-  sfc::expect_eq(Result{Error::EA}.or_else(ret1), Result{1});
+  sfc::expect_eq(Res{10}.or_else(ret1), Res{10});
+  sfc::expect_eq(Res{EA}.or_else(ret1), Res{1});
 }
 
 SFC_TEST(map) {
-  using Result = result::Result<int, Error>;
+  using Res = result::Result<int, E>;
   auto add1 = [](auto x) { return x + 1; };
 
-  sfc::expect_eq(Result{10}.map(add1), Result{11});
-  sfc::expect_eq(Result{Error::EA}.map(add1), Result{Error::EA});
+  sfc::expect_eq(Res{10}.map(add1), Res{11});
+  sfc::expect_eq(Res{EA}.map(add1), Res{EA});
 }
 
 SFC_TEST(map_err) {
-  using Result = result::Result<int, Error>;
-  auto toEB = [](auto) { return Error::EB; };
+  using Res = result::Result<int, E>;
+  auto toEB = [](auto) { return EB; };
 
-  sfc::expect_eq(Result{10}.map_err(toEB), Result{10});
-  sfc::expect_eq(Result{Error::EA}.map_err(toEB), Result{Error::EB});
+  sfc::expect_eq(Res{10}.map_err(toEB), Res{10});
+  sfc::expect_eq(Res{EA}.map_err(toEB), Res{EB});
 }
 
 }  // namespace sfc::result::test

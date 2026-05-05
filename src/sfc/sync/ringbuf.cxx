@@ -11,7 +11,7 @@ SFC_TEST(push_pop_u32) {
   sfc::expect_eq(r0, None{});
 
   for (auto i = 0U; i < 4U; ++i) {
-    sfc::expect_eq(rb.push(i), true);
+    sfc::expect_true(rb.push(i).is_ok());
   }
 
   for (auto i = 0U; i < 4U; ++i) {
@@ -26,17 +26,17 @@ SFC_TEST(push_overflow) {
   auto rb = RingBuf<u32>::with_capacity(8);
 
   for (auto i = 0U; i < 8U; ++i) {
-    sfc::expect_eq(rb.push(i), true);
+    sfc::expect_true(rb.push(i).is_ok());
   }
 
-  sfc::expect_eq(rb.push(99U), false);
+  sfc::expect_false(rb.push(99U).is_ok());
 }
 
 SFC_TEST(fifo_order) {
   auto rb = RingBuf<int>::with_capacity(16);
 
   for (auto i = 0; i < 10; ++i) {
-    rb.push(i);
+    (void)rb.push(i);
   }
 
   for (auto i = 0; i < 10; ++i) {
@@ -50,7 +50,7 @@ SFC_TEST(interleaved_push_pop) {
 
   for (auto round = 0; round < 5; ++round) {
     for (auto i = 0; i < 3; ++i) {
-      rb.push(round * 3 + i);
+      (void)rb.push(round * 3 + i);
     }
 
     for (auto i = 0; i < 3; ++i) {
@@ -63,8 +63,8 @@ SFC_TEST(interleaved_push_pop) {
 SFC_TEST(move_semantics) {
   auto rb = RingBuf<String>::with_capacity(4);
 
-  rb.push(String::from("hello"));
-  rb.push(String::from("world"));
+  (void)rb.push(String::from("hello"));
+  (void)rb.push(String::from("world"));
 
   const auto v0 = rb.pop();
   sfc::expect_eq(v0, Option{"hello"});
@@ -76,7 +76,7 @@ SFC_TEST(move_semantics) {
 SFC_TEST(move_ringbuf) {
   auto rb1 = RingBuf<int>::with_capacity(5);
   for (auto i = 0; i < 5; ++i) {
-    rb1.push(i);
+    (void)rb1.push(i);
   }
 
   auto rb2 = static_cast<RingBuf<int>&&>(rb1);
@@ -91,13 +91,13 @@ SFC_TEST(move_ringbuf) {
 SFC_TEST(clear) {
   auto rb = RingBuf<int>::with_capacity(5);
   for (auto i = 0; i < 5; ++i) {
-    rb.push(i);
+    (void)rb.push(i);
   }
 
   rb.clear();
   sfc::expect_false(rb.pop());
 
-  rb.push(42);
+  sfc::expect_true(rb.push(42).is_ok());
   const auto val = rb.pop();
   sfc::expect_eq(val, Option{42});
 }
@@ -111,7 +111,7 @@ SFC_TEST(mpmc_s1r1) {
 
   auto sender = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      while (!rb.push(i)) {
+      while (!rb.push(i).is_ok()) {
         thread::yield_now();
       }
     }
@@ -147,7 +147,7 @@ SFC_TEST(mpmc_s2r2) {
 
   auto sender = [&](int k) {
     for (auto i = 0U; i < CNT; ++i) {
-      while (rb.push(static_cast<int>(k * i))) {
+      while (!rb.push(static_cast<int>(k * i)).is_ok()) {
         thread::yield_now();
       }
     }

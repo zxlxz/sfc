@@ -78,7 +78,7 @@ SFC_TEST(deserialize_seq) {
       sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
     }
     sfc::expect_false(seq.has_next());
-    return {};
+    return Ok{};
   };
 
   auto des = Deserializer{s};
@@ -99,7 +99,7 @@ SFC_TEST(deserialize_map) {
       sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
     }
     sfc::expect_false(map.has_next());
-    return {};
+    return Ok{};
   };
 
   auto des = Deserializer{s};

@@ -41,21 +41,21 @@ auto File::is_valid() const -> bool {
 
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (buf.is_empty()) {
-    return 0UL;
+    return Ok{0UL};
   }
   return _inn.read(buf);
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   if (buf.is_empty()) {
-    return 0UL;
+    return Ok{0UL};
   }
   return _inn.write(buf);
 }
 
 auto File::flush() -> io::Result<> {
   if (!_inn.is_valid()) {
-    return {};
+    return Ok{};
   }
   return _inn.flush();
 }
@@ -78,20 +78,20 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   };
 
   const auto fd = _TRY(sys_opts.open(os_path.ptr()));
-  return File::from_raw_fd(fd);
+  return Ok{File::from_raw_fd(fd)};
 }
 
 auto read(Path path) noexcept -> io::Result<List<u8>> {
   auto file = _TRY(File::open(path));
   auto buf = List<u8>{};
   _TRY(file.read_to_end(buf));
-  return buf;
+  return Ok{mem::move(buf)};
 }
 
 auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
   auto file = _TRY(File::create(path));
   _TRY(file.write_all(buf));
-  return {};
+  return Ok{};
 }
 
 }  // namespace sfc::fs

@@ -9,12 +9,12 @@ struct Read {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
-        return Error{ErrorKind::UnexpectedEof};
+        return Err{io::Error{io::ErrorKind::UnexpectedEof}};
       }
       buf = buf[{cnt, $}];
     }
 
-    return {};
+    return Ok{};
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
@@ -31,7 +31,7 @@ struct Read {
       }
       buf.set_len(buf.len() + read_cnt);
     }
-    return buf.len() - old_len;
+    return Ok{buf.len() - old_len};
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
@@ -44,11 +44,11 @@ struct Write {
     while (!buf.is_empty()) {
       const auto write_cnt = _TRY(self.write(buf));
       if (write_cnt == 0) {
-        return Error{ErrorKind::WriteZero};
+        return Err{Error{ErrorKind::WriteZero}};
       }
       buf = buf[{write_cnt, $}];
     }
-    return {};
+    return Ok{};
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {

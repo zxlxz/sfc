@@ -170,19 +170,19 @@ struct Deserializer {
   auto deserialize_bool() noexcept -> Result<bool> {
     const auto next_tok = this->next_token();
     switch (next_tok) {
-      case Token::True:  this->consume(4); return true;
-      case Token::False: this->consume(5); return false;
-      case Token::Eof:   return Error::EofWhileParsing;
-      default:           return Error::InvalidKeyword;
+      case Token::True:  this->consume(4); return Ok{true};
+      case Token::False: this->consume(5); return Ok{false};
+      case Token::Eof:   return Err{Error::EofWhileParsing};
+      default:           return Err{Error::InvalidKeyword};
     }
   }
 
   auto deserialize_char() noexcept -> Result<char> {
     const auto s = _TRY(this->extract_str());
     if (s.len() != 1) {
-      return Error::InvalidString;
+      return Err{Error::InvalidString};
     }
-    return s[0];
+    return Ok{s[0]};
   }
 
   template <num::int_ T>
@@ -190,9 +190,9 @@ struct Deserializer {
     const auto num_str = _TRY(this->extract_num());
     const auto num_val = num_str.template parse<T>();
     if (!num_val) {
-      return Error::InvalidNumber;
+      return Err{Error::InvalidNumber};
     }
-    return *num_val;
+    return Ok{*num_val};
   }
 
   template <num::float_ T>
@@ -200,9 +200,9 @@ struct Deserializer {
     const auto num_str = _TRY(this->extract_num());
     const auto num_val = num_str.template parse<T>();
     if (!num_val) {
-      return Error::InvalidNumber;
+      return Err{Error::InvalidNumber};
     }
-    return *num_val;
+    return Ok{*num_val};
   }
 
   auto deserialize_str() noexcept -> Result<Str> {
@@ -243,7 +243,7 @@ struct Deserializer {
     template <class T>
     auto next_element() noexcept -> Result<T> {
       if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-        return Error::ExpectedComma;
+        return Err{Error::ExpectedComma};
       }
       _idx += 1;
       return _inn.deserialize_any<T>();
@@ -256,7 +256,7 @@ struct Deserializer {
         auto elem = _TRY(this->next_element<T>());
         res.push(static_cast<T&&>(elem));
       }
-      return {};
+      return Ok{res};
     }
   };
 
@@ -276,7 +276,7 @@ struct Deserializer {
       static_assert(same_<K, Str>, "json::DesObject::next_key: key type must be Str");
 
       if (_idx != 0 && _inn.extract_tok(Token::Comma).is_err()) {
-        return Error::ExpectedComma;
+        return Err{Error::ExpectedComma};
       }
       _idx += 1;
       return _inn.extract_str();
@@ -285,7 +285,7 @@ struct Deserializer {
     template <class T>
     auto next_value() noexcept -> Result<T> {
       if (_inn.extract_tok(Token::Colon).is_err()) {
-        return Error::ExpectedColon;
+        return Err{Error::ExpectedColon};
       }
       return _inn.deserialize_any<T>();
     }
@@ -298,7 +298,7 @@ struct Deserializer {
         auto val = _TRY(this->next_value<V>());
         res.insert(static_cast<K&&>(key), static_cast<V&&>(val));
       }
-      return {};
+      return Ok{res};
     }
   };
 

@@ -60,11 +60,11 @@ class Stderr::Inn {
     while (!buf.is_empty()) {
       const auto nwrite = _TRY(_inn.write(buf));
       if (nwrite == 0) {
-        return Error{ErrorKind::WriteZero};
+        return Err{Error{ErrorKind::WriteZero}};
       }
-      buf = buf[{nwrite, $}];
+      buf = buf[{nwrite, buf._len}];
     }
-    return {};
+    return Ok{};
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
@@ -95,7 +95,7 @@ void Stdout::Lock::write_str(Str s) {
 }
 
 auto Stderr::is_terminal() -> bool {
-  return sys::Stdout::is_console();
+  return sys::Stderr::is_console();
 }
 
 auto Stderr::lock() -> Lock {

@@ -54,17 +54,17 @@ struct StdIo {
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto nread = ::read(_fd, buf._ptr, buf._len);
     if (nread == -1) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return nread;
+    return Ok{static_cast<usize>(nread)};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     const auto nwrite = ::write(_fd, buf._ptr, buf._len);
     if (nwrite == -1) {
-      return io::Error::last_os_error();
+      return Err{io::Error::last_os_error()};
     }
-    return nwrite;
+    return Ok{static_cast<usize>(nwrite)};
   }
 };
 
@@ -84,7 +84,7 @@ struct Stdout {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 
@@ -98,7 +98,7 @@ struct Stderr {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 

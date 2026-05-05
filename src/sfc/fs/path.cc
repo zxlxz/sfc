@@ -288,12 +288,13 @@ auto Metadata::is_file() const noexcept -> bool {
 auto metadata(Path path) -> io::Result<Metadata> {
   const auto os_path = ffi::OsString::from(path.as_str());
   const auto sys_meta = _TRY(sys::lstat(os_path.ptr()));
-  return Metadata{sys_meta._attr, sys_meta._size};
+  const auto meta = Metadata{sys_meta._attr, sys_meta._size};
+  return Ok{meta};
 }
 
 auto create_dir(Path path) -> io::Result<> {
   if (path._inn.is_empty() || path.is_root()) {
-    return io::Error{io::ErrorKind::InvalidInput};
+    return Err{io::Error{io::ErrorKind::InvalidInput}};
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
@@ -303,7 +304,7 @@ auto create_dir(Path path) -> io::Result<> {
 auto create_dir_all(Path path) -> io::Result<> {
   const auto err = fs::create_dir(path).err();
   if (!err || err->kind() == io::ErrorKind::AlreadyExists) {
-    return {};
+    return Ok{};
   }
 
   const auto parent = path.parent();

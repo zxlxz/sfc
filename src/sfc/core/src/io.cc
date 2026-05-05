@@ -60,13 +60,13 @@ namespace sfc::slice {
 template <class T>
 auto Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (_len == 0 || buf._len == 0) {
-    return usize{0};
+    return Ok{0UZ};
   }
   const auto amt = _len < buf._len ? _len : buf._len;
   ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
   _ptr += amt;
   _len -= amt;
-  return amt;
+  return Ok{amt};
 }
 
 template auto Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;

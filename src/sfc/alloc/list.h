@@ -302,7 +302,7 @@ class [[nodiscard]] List {
   // trait: io::Write
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     this->extend_from_slice(buf);
-    return buf.len();
+    return Ok{buf.len()};
   }
 
   // trait: serde::Serialize
