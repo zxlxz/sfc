@@ -172,8 +172,8 @@ class [[nodiscard]] Result {
 
   template <class O, class F = ops::invoke_t<O(E)>>
   auto map_err(O&& op) && -> Result<T, F> {
-    if (_tag == 1) return Result<T, F>{static_cast<T&&>(_0)};
-    return Result<T, F>{op(static_cast<E&&>(_1))};
+    if (_tag == 1) return Result<T, F>{op(static_cast<E&&>(_1))};
+    return Result<T, F>{static_cast<T&&>(_0)};
   }
 
  public:
