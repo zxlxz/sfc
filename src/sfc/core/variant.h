@@ -86,11 +86,11 @@ struct idx_t {
 };
 
 template <class U, class T, class... Ts>
-consteval auto type_id() -> u32 {
+consteval auto type_idx() -> u32 {
   if constexpr (sfc::same_<U, T>) {
     return 0U;
   } else {
-    return 1U + variant::type_id<U, Ts...>();
+    return 1U + variant::type_idx<U, Ts...>();
   }
 }
 
@@ -118,6 +118,7 @@ struct Tag {
       case 13: if constexpr (N > 13)  return f(idx_t<13>{});
       case 14: if constexpr (N > 14)  return f(idx_t<14>{});
       case 15: if constexpr (N > 15)  return f(idx_t<15>{});
+      default: break; // for 0xFF
     }
     // clang-format on
   }
@@ -137,59 +138,69 @@ class Variant {
   }
 
   template <class U>
-  Variant(U val) noexcept : Variant{idx_t<type_id<U, T...>()>{}, static_cast<U&&>(val)} {}
+  Variant(U val) noexcept : Variant{idx_t<type_idx<U, T...>()>{}, static_cast<U&&>(val)} {}
 
   ~Variant() {
     _tag.map<N>([&](auto I) { mem::drop(I[_inn]); });
   }
 
-  Variant(Variant&& other) noexcept : _tag{other._tag} {
-    _tag.map<N>([&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
+  Variant(Variant&& other) noexcept : _tag{0xFF} {
+    other._tag.map<N>([&](auto I) {
+      ptr::write(&I[_inn], mem::move(I[other._inn]));
+      _tag = other._tag;
+    });
   }
 
-  Variant(const Variant& other) noexcept : _tag{other._tag} {
-    _tag.map<N>([&](auto I) { ptr::write(&I[_inn], I[other._inn]); });
+  Variant(const Variant& other) noexcept : _tag{0xFF} {
+    other._tag.map<N>([&](auto I) {
+      ptr::write(&I[_inn], I[other._inn]);
+      _tag = other._tag;
+    });
   }
 
   Variant& operator=(Variant&& other) noexcept {
-    if (this != &other) {
-      _tag.map<N>([&](auto I) { mem::drop(I[_inn]); });
+    if (this == &other) return;
+    _tag.map<N>([&](auto I) {
+      mem::drop(I[_inn]);
+      _tag = Tag{0xFF};
+    });
+    other._tag.map<N>([&](auto I) {
+      ptr::write(&I[_inn], mem::move(I[other._inn]));
       _tag = other._tag;
-      _tag.map<N>([&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
-    }
+    });
     return *this;
   }
 
   Variant& operator=(const Variant& other) noexcept {
-    if (this != &other) {
-      _tag.map<N>([&](auto I) { mem::drop(I[_inn]); });
+    if (this == &other) return;
+    _tag.map<N>([&](auto I) {
+      mem::drop(I[_inn]);
+      _tag = Tag{0xFF};
+    });
+    other._tag.map<N>([&](auto I) {
+      ptr::write(&I[_inn], I[other._inn]);
       _tag = other._tag;
-      _tag.map<N>([&](auto I) { ptr::write(&I[_inn], I[other._inn]); });
-    }
+    });
     return *this;
   }
 
   template <class U>
   auto is() const noexcept -> bool {
-    static constexpr auto IDX = variant::type_id<U, T...>();
+    static constexpr auto IDX = variant::type_idx<U, T...>();
     return _tag._idx == IDX;
   }
 
   template <class U>
   auto as() const noexcept -> Option<const U&> {
-    static constexpr auto IDX = variant::type_id<U, T...>();
-    if (_tag._idx != IDX) {
-      return {};
-    }
+    static constexpr auto IDX = variant::type_idx<U, T...>();
+    if (_tag._idx != IDX) return {};
     return idx_t<IDX>::operator[](_inn);
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
-    static constexpr auto IDX = variant::type_id<U, T...>();
-    if (_tag._idx != IDX) {
-      return {};
-    }
+    static constexpr auto IDX = variant::type_idx<U, T...>();
+    if (_tag._idx != IDX) return {};
     return idx_t<IDX>::operator[](_inn);
   }
 
