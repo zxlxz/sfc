@@ -32,6 +32,16 @@ SFC_TEST(push_overflow) {
   sfc::expect_false(rb.push(99U).is_ok());
 }
 
+SFC_TEST(try_push_full) {
+  auto rb = RingBuf<int>::with_capacity(2);
+  (void)rb.push(1);
+  (void)rb.push(2);
+
+  int val = 3;
+  sfc::expect_false(rb.try_push(val));  // full
+  sfc::expect_eq(val, 3);               // val not consumed
+}
+
 SFC_TEST(fifo_order) {
   auto rb = RingBuf<int>::with_capacity(16);
 
