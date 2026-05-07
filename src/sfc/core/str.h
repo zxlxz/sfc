@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/convert.h"
 #include "sfc/core/hash.h"
 #include "sfc/core/num.h"
 #include "sfc/core/slice.h"
