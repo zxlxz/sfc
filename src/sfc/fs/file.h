@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/sys.h"
+#include "sfc/io/mod.h"
 #include "sfc/fs/path.h"
 
 namespace sfc::fs {
@@ -43,8 +44,6 @@ auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<>;
 }  // namespace sfc::fs
 
 namespace sfc::io {
-extern template class BufReader<fs::File>;
-extern template class BufWriter<fs::File>;
 
 extern template auto Read::read_exact(this fs::File&, Slice<u8>) -> Result<>;
 extern template auto Read::read_to_end(this fs::File&, List<u8>&) -> Result<usize>;

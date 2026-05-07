@@ -98,9 +98,6 @@ auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
 
 namespace sfc::io {
 
-template class BufReader<fs::File>;
-template class BufWriter<fs::File>;
-
 template auto Read::read_exact(this fs::File&, Slice<u8>) -> Result<>;
 template auto Read::read_to_end(this fs::File&, List<u8>&) -> Result<usize>;
 template auto Read::read_to_string(this fs::File&, String&) -> Result<usize>;
