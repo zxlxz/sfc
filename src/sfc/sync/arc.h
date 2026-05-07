@@ -6,7 +6,19 @@ namespace sfc::sync {
 
 template <class T>
 class [[nodiscard]] Arc {
-  struct Inn;
+  struct Inn {
+    sync::Atomic<int> _cnt{1};
+    T _val;
+
+    auto inc_count() noexcept -> int {
+      return _cnt.fetch_add(1, sync::Ordering::Relaxed);
+    }
+
+    auto dec_count() noexcept -> int {
+      return _cnt.fetch_sub(1, sync::Ordering::AcqRel);
+    }
+  };
+
   Box<Inn> _inn{};
 
  public:
@@ -14,7 +26,9 @@ class [[nodiscard]] Arc {
 
   ~Arc() noexcept {
     const auto p = _inn.ptr();
-    if (p && p->dec_count() != 1) {
+    if (p == nullptr) return;
+    if (p->dec_count() > 1) {
+      // don't need to drop, just forget to avoid double drop
       mem::forget(_inn);
     }
   }
@@ -64,20 +78,6 @@ class [[nodiscard]] Arc {
       res._inn = Box<Inn>::from_raw(ptr);
     }
     return res;
-  }
-};
-
-template <class T>
-struct Arc<T>::Inn {
-  sync::Atomic<int> _cnt{1};
-  T _val;
-
-  auto inc_count() noexcept -> int {
-    return _cnt.fetch_add(1, sync::Ordering::AcqRel);
-  }
-
-  auto dec_count() noexcept -> int {
-    return _cnt.fetch_sub(1, sync::Ordering::AcqRel);
   }
 };
 
