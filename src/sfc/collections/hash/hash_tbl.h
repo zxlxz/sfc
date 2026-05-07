@@ -9,7 +9,7 @@ static constexpr auto CTRL_NUL = u8{0x80U};
 static constexpr auto CTRL_DEL = u8{0xFFU};
 
 struct Hasher {
-  [[gnu::always_inline]] static auto hash(const auto& key) noexcept -> u64 {
+  static auto hash(const auto& key) noexcept -> u64 {
     if constexpr (requires { key.hash(); }) {
       return key.hash();
     } else if constexpr (requires { static_cast<u64>(key); }) {
@@ -176,13 +176,8 @@ class HashTbl {
   }
 
   HashTbl& operator=(HashTbl&& other) noexcept {
-    if (this != &other) {
-      mem::swap(_ptr, other._ptr);
-      mem::swap(_cap, other._cap);
-      mem::swap(_len, other._len);
-      mem::swap(_rem, other._rem);
-      mem::swap(_a, other._a);
-    }
+    if (this == &other) return *this;
+    this->swap(other);
     return *this;
   }
 
@@ -208,13 +203,12 @@ class HashTbl {
   }
 
   void swap(HashTbl& other) noexcept {
-    if (this != &other) {
-      mem::swap(_ptr, other._ptr);
-      mem::swap(_cap, other._cap);
-      mem::swap(_len, other._len);
-      mem::swap(_rem, other._rem);
-      mem::swap(_a, other._a);
-    }
+    if (this == &other) return;
+    mem::swap(_ptr, other._ptr);
+    mem::swap(_cap, other._cap);
+    mem::swap(_len, other._len);
+    mem::swap(_rem, other._rem);
+    mem::swap(_a, other._a);
   }
 
   auto hash(const auto& key) const noexcept -> HIdx {
@@ -306,13 +300,13 @@ class HashTbl {
   }
 
  private:
-  [[gnu::always_inline]] auto layout() const -> alloc::Layout {
+  auto layout() const -> alloc::Layout {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data_size = _cap * sizeof(T);
     return alloc::Layout{ctrl_size + data_size, alignof(T)};
   }
 
-  [[gnu::always_inline]] auto bucket(usize h1) const -> Bucket<T> {
+  auto bucket(usize h1) const -> Bucket<T> {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data = reinterpret_cast<T*>(_ptr + ctrl_size);
     return Bucket{_ptr, data, _cap - 1, h1};

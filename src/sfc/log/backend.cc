@@ -1,5 +1,5 @@
 #include "sfc/log/backend.h"
-#include "sfc/core/fmt.h"
+#include "sfc/io/stdio.h"
 
 namespace sfc::log {
 

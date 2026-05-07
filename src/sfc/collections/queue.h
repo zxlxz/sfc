@@ -43,11 +43,10 @@ class [[nodiscard]] Queue {
       : _pos{mem::take(other._pos)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
 
   Queue& operator=(Queue&& other) noexcept {
-    if (this != &other) {
-      mem::swap(_pos, other._pos);
-      mem::swap(_len, other._len);
-      mem::swap(_buf, other._buf);
-    }
+    if (this == &other) return;
+    mem::swap(_pos, other._pos);
+    mem::swap(_len, other._len);
+    mem::swap(_buf, other._buf);
     return *this;
   }
 
