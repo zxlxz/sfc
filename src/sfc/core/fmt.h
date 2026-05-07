@@ -141,10 +141,17 @@ struct Formatter {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
-    } else {
+    } else if constexpr (requires { fmt::Display::fmt(val, *this); }) {
       fmt::Display::fmt(val, *this);
+    } else {
+      static_assert(false, "sfc::fmt: type not impl fmt::Display");
     }
 #endif
+  }
+
+  void write_arg(Spec spec, const auto& arg) {
+    _spec = spec;
+    this->write_val(arg);
   }
 
   void write_fmt(const fmt::Fmts& fmts, const auto&... args) {
@@ -153,8 +160,7 @@ struct Formatter {
     u.map([&, idx = 0U](const auto& val) mutable {
       const auto [fill, spec] = fmts[idx];
       this->write_str({fill._ptr, fill._len});
-      _spec = spec;
-      this->write_val(val);
+      this->write_arg(spec, val);
       ++idx;
     });
 
