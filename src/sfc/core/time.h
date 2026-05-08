@@ -42,7 +42,19 @@ struct Duration {
   // trait: fmt::Display
   void fmt(auto& f) const {
     const auto secs = this->as_secs_f64();
-    f.write_fmt("{.3}s", secs);
+    if (secs >= 1.0) {
+      f.write_val(secs);
+      f.write_str("s");
+    } else if (secs >= 1e-3) {
+      f.write_val(secs * 1e3);
+      f.write_str("ms");
+    } else if (secs >= 1e-6) {
+      f.write_val(secs * 1e6);
+      f.write_str("µs");
+    } else {
+      f.write_val(secs * 1e9);
+      f.write_str("ns");
+    }
   }
 };
 
