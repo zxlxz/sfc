@@ -116,13 +116,12 @@ struct Iterator {
   auto count(this auto self) -> usize {
     if constexpr (requires { self.len(); }) {
       return self.len();
-    } else {
-      auto cnt = 0UL;
-      while (auto x = self.next()) {
-        ++cnt;
-      }
-      return cnt;
     }
+    auto cnt = 0UL;
+    while (auto x = self.next()) {
+      ++cnt;
+    }
+    return cnt;
   }
 
   auto min(this auto self) -> Option<Item> {

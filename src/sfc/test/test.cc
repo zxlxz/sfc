@@ -25,7 +25,7 @@ void Test::run() const {
   _func();
 }
 
-Module::Module(Str name) : _name(name) {}
+Module::Module(Str name) : _name{name} {}
 
 Module::~Module() {}
 
@@ -49,33 +49,38 @@ void Module::regist(Test test) {
   _tests.push(test);
 }
 
-struct Ctx {
+struct TestManager {
   List<Module> _mods;
 
-  static auto instance() -> Ctx& {
-    static auto ctx = Ctx{};
+ public:
+  static auto instance() -> TestManager& {
+    static auto ctx = TestManager{};
     return ctx;
   }
 
-  auto get_mod(Str name) -> Module& {
-    return _mods.iter_mut()
-        .find([&](Module& m) { return m._name == name; })
-        .unwrap_or_else([&] -> Module& { return _mods.push(Module{name}); });
+  auto mods() const -> Slice<const Module> {
+    return _mods.as_slice();
   }
 
+  auto regist_mod(Str mod) -> Module& {
+    for (auto& m : _mods.as_mut_slice()) {
+      if (m._name == mod) return m;
+    }
+    return _mods.push(Module{mod});
+  }
   void regist(Test test) {
-    auto& mod = this->get_mod(test.mod());
+    auto& mod = this->regist_mod(test._mod);
     mod.regist(test);
   }
 };
 
 auto modules() noexcept -> Slice<const Module> {
-  static auto& ctx = Ctx::instance();
-  return ctx._mods.as_slice();
+  static auto& ctx = TestManager::instance();
+  return ctx.mods();
 }
 
 auto regist(Test test) noexcept -> bool {
-  static auto& ctx = Ctx::instance();
+  static auto& ctx = TestManager::instance();
   ctx.regist(test);
   return true;
 }

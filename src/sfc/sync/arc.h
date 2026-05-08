@@ -26,8 +26,7 @@ class [[nodiscard]] Arc {
 
   ~Arc() noexcept {
     const auto p = _inn.ptr();
-    if (p == nullptr) return;
-    if (p->dec_count() > 1) {
+    if (p && p->dec_count() > 1) {
       // don't need to drop, just forget to avoid double drop
       mem::forget(_inn);
     }
@@ -71,9 +70,8 @@ class [[nodiscard]] Arc {
 
   // trait: Clone
   auto clone() const noexcept -> Arc {
-    auto ptr = _inn.ptr();
     auto res = Arc{};
-    if (ptr) {
+    if (auto ptr = _inn.ptr()) {
       ptr->inc_count();
       res._inn = Box<Inn>::from_raw(ptr);
     }
