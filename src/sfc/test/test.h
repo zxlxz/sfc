@@ -47,8 +47,8 @@ auto regist(Test test) noexcept -> bool;
 
 }  // namespace sfc::test
 
-#ifdef __INTELLISENSE__
-#define SFC_TEST(X) void X()
+#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
+#define SFC_TEST(X) void _##X()
 #else
 #define SFC_TEST(X)                                                       \
   struct _##X {                                                           \
