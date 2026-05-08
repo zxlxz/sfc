@@ -19,10 +19,10 @@ struct FNVHasher {
     _state *= PRIME;
   }
 
-  void write_int(num::int_ auto val) noexcept {
-    const auto p = reinterpret_cast<const u8*>(&val);
-    for (auto i = 0U; i < sizeof(val); ++i) {
-      _state ^= p[i];
+  template <u32 N>
+  void write_bytes(const u8 (&bytes)[N]) noexcept {
+    for (auto byte : bytes) {
+      _state ^= byte;
       _state *= PRIME;
     }
   }
