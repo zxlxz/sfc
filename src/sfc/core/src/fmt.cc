@@ -156,7 +156,7 @@ struct Decimal {
   }
 };
 
-auto Display::format_int(Slice<char> buf, auto val, char type) -> Str {
+auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'd'};
   switch (type) {
     default:  rbuf.write_dec(val + 0); break;
@@ -170,7 +170,7 @@ auto Display::format_int(Slice<char> buf, auto val, char type) -> Str {
   return rbuf.as_str();
 }
 
-auto Display::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
+auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
   const auto uval = reinterpret_cast<usize>(ptr);
 
   auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'p'};
@@ -184,7 +184,7 @@ auto Display::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
   return rbuf.as_str();
 }
 
-auto Display::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
+auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
   if (fmt::isnan(val)) {
     return "nan";
   }
@@ -208,18 +208,18 @@ auto Display::format_flt(Slice<char> buf, auto val, u32 precision, char type) ->
   return rbuf.as_str();
 }
 
-template auto Display::format_int(Slice<char> buf, int val, char type) -> Str;
-template auto Display::format_int(Slice<char> buf, long val, char type) -> Str;
-template auto Display::format_int(Slice<char> buf, long long val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, int val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, long val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, long long val, char type) -> Str;
 
-template auto Display::format_int(Slice<char> buf, unsigned val, char type) -> Str;
-template auto Display::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
-template auto Display::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
 
-template auto Display::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
+template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
 
-template auto Display::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
-template auto Display::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
+template auto Debug::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
+template auto Debug::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
 
 template struct Formatter<FixedBuf<1024>>;
 template struct Formatter<FixedBuf<4096>>;

@@ -66,7 +66,8 @@ SFC_TEST(char) {
 }
 
 SFC_TEST(ptr) {
-  sfc::expect_eq(format("{}", nullptr), "0x000000000000");
+  const void* p = nullptr;
+  sfc::expect_eq(format("{}", p), "0x000000000000");
 }
 
 SFC_TEST(uint) {
