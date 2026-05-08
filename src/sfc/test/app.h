@@ -9,7 +9,7 @@ class App {
   void help();
   void list() const;
   void list_xml(Str path) const;
-  void exec(Str filters, Option<bool> color = {});
+  void exec(Str filters, bool use_color = false);
 };
 
 auto main(int argc, const char* argv[]) -> int;

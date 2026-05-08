@@ -4,62 +4,57 @@
 
 namespace sfc::test {
 
-struct SourceLoc {
-  const char* file;
-  int line;
-
-  static auto current(const char* file = __builtin_FILE(), int line = __builtin_LINE()) -> SourceLoc {
-    return {file, line};
-  }
-};
+using panic::SourceLoc;
 
 struct Test {
-  void (*_fun)();
-  Str _type;
+  using func_t = void (*)();
+  Str _mod;
+  Str _name;
+  func_t _func;
   SourceLoc _loc;
 
  public:
-  auto suite() const -> Str;
-  auto name() const -> Str;
-
-  auto match(Str pat) const -> bool;
-  auto run(bool color = false) const -> bool;
+  static auto from(Str type, func_t func, SourceLoc loc) -> Test;
+  auto mod() const noexcept -> Str;
+  auto name() const noexcept -> Str;
+  void run() const;
 
  public:
   template <class T>
   static constexpr auto of(SourceLoc loc = SourceLoc::current()) -> Test {
-    static constinit auto type_name = reflect::type_name<T>();
-    return Test{&T::test, type_name[{0, type_name.len() - 4}], loc};
+    return Test::from(reflect::type_name<T>(), &T::test, loc);
   }
 };
 
-struct Suite {
-  Str _name{};
-  List<Test> _tests{};
+struct Module {
+  Str _name;
+  List<Test> _tests;
 
  public:
-  auto name() const -> Str;
-  auto tests() const -> Slice<const Test>;
+  explicit Module(Str name);
+  ~Module();
+  Module(Module&&) noexcept;
+  Module& operator=(Module&&) noexcept;
 
-  void push(Test test);
-  void run(bool color = false) const;
-
-  auto match(Str pat) const -> bool;
-  auto filter(Slice<const Str> pats) const -> Suite;
+  auto name() const noexcept -> Str;
+  auto count() const noexcept -> usize;
+  auto tests() const noexcept -> Slice<const Test>;
+  void regist(Test test);
 };
 
-auto regist(Test test) -> bool;
-auto suites() -> Slice<const Suite>;
-void run(Slice<const Suite> suites, bool color = false);
-
-auto filter(Slice<const Str> pats) -> List<Suite>;
+auto modules() noexcept -> Slice<const Module>;
+auto regist(Test test) noexcept -> bool;
 
 }  // namespace sfc::test
 
-#define SFC_TEST(X)                                                             \
-  struct X##_UT_ {                                                              \
-    static const bool _UT_;                                                     \
-    static void test();                                                         \
-  };                                                                            \
-  const bool X##_UT_::_UT_ = sfc::test::regist(sfc::test::Test::of<X##_UT_>()); \
-  void X##_UT_::test()
+#ifdef __INTELLISENSE__
+#define SFC_TEST(X) void X()
+#else
+#define SFC_TEST(X)                                                       \
+  struct _##X {                                                           \
+    static const bool _UT_;                                               \
+    static void test();                                                   \
+  };                                                                      \
+  const bool _##X::_UT_ = sfc::test::regist(sfc::test::Test::of<_##X>()); \
+  void _##X::test()
+#endif
