@@ -310,6 +310,16 @@ class Option<T&> {
     return _1 != nullptr;
   }
 
+  auto operator->() const -> const T* {
+    sfc::expect(_1 != nullptr, "Option::operator->: None()");
+    return _1;
+  }
+
+  auto operator->() -> T* {
+    sfc::expect(_1 != nullptr, "Option::operator->: None()");
+    return _1;
+  }
+
   auto operator*() const -> const T& {
     sfc::expect(_1 != nullptr, "Option::deref: nullptr");
     return *_1;
@@ -327,6 +337,11 @@ class Option<T&> {
 
   auto unwrap_or(T& default_val) -> T& {
     return _1 ? *_1 : default_val;
+  }
+
+  auto unwrap_or_else(auto&& f) -> T& {
+    if (_1) return *_1;
+    return f();
   }
 
   auto expect(const auto& msg) const -> T& {
@@ -356,7 +371,7 @@ class Option<T&> {
     return None{};
   }
 
-  auto or_else(auto&& f) -> Option {
+  auto or_else(auto&& f) -> Option<T&> {
     if (_1) return *this;
     return f();
   }
@@ -411,6 +426,11 @@ class Option<const T&> {
 
   constexpr explicit operator bool() const noexcept {
     return _ptr != nullptr;
+  }
+
+  auto operator->() const -> const T* {
+    sfc::expect(_ptr != nullptr, "Option::operator->: None()");
+    return _ptr;
   }
 
   auto operator*() const -> const T& {
