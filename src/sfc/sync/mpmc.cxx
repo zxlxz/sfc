@@ -14,7 +14,6 @@ SFC_TEST(s1r1) {
   auto sender = [&]() {
     for (auto i = 0; i < CNT; ++i) {
       sfc::expect_true(chan.send(i).is_ok());
-      io::println("sent {}", i);
     }
   };
 
@@ -22,7 +21,6 @@ SFC_TEST(s1r1) {
     for (auto i = 0; i < CNT; ++i) {
       auto val = chan.recv();
       sfc::expect_eq(val, Option{i});
-      io::println("received {}", *val);
       recv_cnt += 1;
       recv_sum += *val;
     }
