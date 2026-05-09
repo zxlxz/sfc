@@ -6,12 +6,14 @@
 namespace sfc::panic {
 
 struct SourceLoc {
+  const char* func;
   const char* file;
   int line;
 
-  consteval static auto current(const char* file = __builtin_FILE(), int line = __builtin_LINE())
-      -> SourceLoc {
-    return {file, line};
+  consteval static auto current(const char* func = __builtin_FUNCTION(),
+                                const char* file = __builtin_FILE(),
+                                int line = __builtin_LINE()) -> SourceLoc {
+    return {func, file, line};
   }
 };
 
