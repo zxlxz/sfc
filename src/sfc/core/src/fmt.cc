@@ -245,11 +245,15 @@ auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> S
   return rbuf.as_str();
 }
 
+template auto Debug::format_int(Slice<char> buf, signed char val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, short val, char type) -> Str;
 template auto Debug::format_int(Slice<char> buf, int val, char type) -> Str;
 template auto Debug::format_int(Slice<char> buf, long val, char type) -> Str;
 template auto Debug::format_int(Slice<char> buf, long long val, char type) -> Str;
 
-template auto Debug::format_int(Slice<char> buf, unsigned val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned char val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned short val, char type) -> Str;
+template auto Debug::format_int(Slice<char> buf, unsigned int val, char type) -> Str;
 template auto Debug::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
 template auto Debug::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
 
@@ -258,7 +262,11 @@ template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> 
 template auto Debug::format_flt(Slice<char> buf, f32 val, u32 precision, char type) -> Str;
 template auto Debug::format_flt(Slice<char> buf, f64 val, u32 precision, char type) -> Str;
 
+template struct Formatter<FixedBuf<64>>;
+template struct Formatter<FixedBuf<128>>;
+template struct Formatter<FixedBuf<256>>;
 template struct Formatter<FixedBuf<1024>>;
+template struct Formatter<FixedBuf<2048>>;
 template struct Formatter<FixedBuf<4096>>;
 
 }  // namespace sfc::fmt
