@@ -38,7 +38,8 @@ struct Debug {
 
   static void fmt(num::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
-    const auto s = Debug::format_int(buf, val < 0 ? -val : val, f._spec._type);
+    const auto u = num::uabs(val);
+    const auto s = Debug::format_int(buf, u, f._spec._type);
     f.pad_num(val < 0, s);
   }
 
@@ -46,8 +47,9 @@ struct Debug {
     static constexpr auto DEFAULT_PRECISION = sizeof(val) == 4 ? 4U : 6U;
     char buf[8 * sizeof(val) + 16];
 
-    const auto p = f._spec.precision(DEFAULT_PRECISION);
-    const auto s = Debug::format_flt(buf, val < 0 ? -val : val, p, f._spec._type);
+    const auto uval = val < 0 ? -val : val;
+    const auto prec = f._spec.precision(DEFAULT_PRECISION);
+    const auto s = Debug::format_flt(buf, uval, prec, f._spec._type);
     f.pad_num(val < 0, s);
   }
 

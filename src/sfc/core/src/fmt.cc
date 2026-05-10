@@ -1,46 +1,16 @@
 #include "sfc/core/fmt.h"
+#include "sfc/core/num.h"
 
 namespace sfc::fmt {
 
-static auto ifinf(f64 val) noexcept -> bool {
-  const auto uval = __builtin_bit_cast(u64, val);
-  return (uval & 0x7FFFFFFFFFFFFFFF) == 0x7FF0000000000000;
-}
-
-static auto isnan(f64 val) noexcept -> bool {
-  const auto uval = __builtin_bit_cast(u64, val);
-  return (uval & 0x7FFFFFFFFFFFFFFF) > 0x7FF0000000000000;
-}
-
-static auto pow10(u32 val) noexcept -> u64 {
-  auto res = u64{1U};
-  while (val > 0) {
-    res *= 10U;
-    --val;
-  }
-  return res;
-}
-
-static auto frexp10(f64 val, int& exp) -> f64 {
-  exp = 0;
-  while (val >= 10.0) {
-    val /= 10.0;
-    ++exp;
-  }
-  while (val < 1.0) {
-    val *= 10.0;
-    --exp;
-  }
-  return val;
-}
-
-struct RevBuff {
+struct RevBuf {
   char* _buf;
   usize _cap;
-  char _type = 0;
   usize _pos = _cap;
 
  public:
+  RevBuf(Slice<char> buf) noexcept : _buf{buf._ptr}, _cap{buf._len} {}
+
   auto as_str() const -> Str {
     return Str{_buf + _pos, _cap - _pos};
   }
@@ -80,14 +50,14 @@ struct RevBuff {
   }
 
   template <u32 RADIX>
-  void write_bin(auto val) noexcept {
+  void write_bin(auto val, bool upcase = false) noexcept {
     static constexpr auto UPCASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static constexpr auto LOWCASE = "0123456789abcdefghijklmnopqrstuvwxyz";
     static constexpr auto MASK = RADIX - 1;
     static_assert((RADIX & (RADIX - 1)) == 0, "radix must be power of 2");
 
     // write digits
-    const auto DIGITS = _type < 'a' ? UPCASE : LOWCASE;
+    const auto DIGITS = upcase ? UPCASE : LOWCASE;
     auto uval = val > 0 ? val : 0 - val;
     if (uval == 0) {
       this->push('0');
@@ -103,14 +73,14 @@ struct RevBuff {
     }
   }
 
-  void write_ptr(usize uval) noexcept {
+  void write_ptr(usize uval, bool upcase = false) noexcept {
     static const auto MIN_LEN = 12L;
 
     this->write_bin<16>(uval);
     while (_cap - _pos < MIN_LEN) {
       this->push('0');
     }
-    this->push(_type < 'a' ? 'X' : 'x');
+    this->push(upcase ? 'X' : 'x');
     this->push('0');
   }
 
@@ -122,89 +92,156 @@ struct RevBuff {
     this->write_dec(int_part);
   }
 
-  void write_exp(i32 exp_part) noexcept {
+  void write_exp(i32 exp_part, char type = 'e') noexcept {
     const auto uexp = exp_part > 0 ? exp_part : -exp_part;
     this->write_dec(uexp);
     if (uexp < 10) {
       this->push('0');
     }
     this->push(exp_part < 0 ? '-' : '+');
-    this->push(_type < 'a' ? 'E' : 'e');
+    this->push(type);
   }
 };
 
 struct Decimal {
   u64 _int;
   u64 _flt;
+  i32 _exp = 0;
 
  public:
-  static auto from(f64 uval, u32 precision) -> Decimal {
-    // extract integer part
-    const auto int_val = static_cast<u64>(uval);
-    const auto flt_val = uval - static_cast<f64>(int_val);
+  static auto unpack_exp(f64* pu) -> i32 {
+    if (pu == nullptr) {
+      return 0;
+    }
 
-    // extract fractional part
-    const auto exp_val = fmt::pow10(precision);
-    auto int_part = int_val;
+    auto& u = *pu;
+    if (u == 0.0) {
+      return 0;
+    }
+
+    auto n = 0;
+    if (u >= 1e1) {
+      for (; u >= 1e4; n += 4) {
+        u /= 1e4;
+      }
+      for (; u >= 1e1; n += 1) {
+        u /= 1e1;
+      }
+      return n;
+    }
+
+    if (u < 1e0) {
+      for (; u < 1e-4; n -= 4) {
+        u *= 1e4;
+      }
+      for (; u < 1e0; n -= 1) {
+        u *= 1e1;
+      }
+      return n;
+    }
+
+    return 0;
+  }
+
+  static constexpr u32 kPow10Len = 20U;
+  static constexpr f64 kPow10Tbl[] = {
+      1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,
+      1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+  };
+
+  static auto unpack(f64 uval, u32 precision, bool use_exp = false) -> Decimal {
+    // limit precision to 20, otherwise may overflow u64
+    if (precision >= kPow10Len) {
+      precision = kPow10Len - 1;
+    }
+
+    // extract integer part
+    auto exp_part = use_exp ? unpack_exp(&uval) : 0;
+    auto int_part = static_cast<u64>(uval);
+
+    const auto flt_val = uval - static_cast<f64>(int_part);
+    const auto exp_val = kPow10Tbl[precision];
     auto flt_part = static_cast<u64>(flt_val * exp_val + 0.5);
+
     if (flt_part >= exp_val) {
       flt_part -= exp_val;
-      ++int_part;
+      int_part += 1;
+
+      // in exp format, if int_part becomes 10
+      // it should be converted to 1 and exp_part should be increased by 1
+      if (use_exp && int_part == 10) {
+        int_part = 1;
+        exp_part += 1;
+      }
     }
+
+    // add 100..00 to flt_part,
+    // to ensure it has leading zeros when converted to string
     flt_part += exp_val;
-    return {int_part, flt_part};
+    return {int_part, flt_part, exp_part};
   }
 };
 
 auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
-  auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'd'};
+  const auto uval = num::uabs(val) + 0U;
+
+  auto rbuf = RevBuf{buf};
   switch (type) {
-    default:  rbuf.write_dec(val + 0); break;
-    case 'B': rbuf.write_bin<2>(val + 0); break;
-    case 'b': rbuf.write_bin<2>(val + 0); break;
-    case 'O': rbuf.write_bin<8>(val + 0); break;
-    case 'o': rbuf.write_bin<8>(val + 0); break;
-    case 'X': rbuf.write_bin<16>(val + 0); break;
-    case 'x': rbuf.write_bin<16>(val + 0); break;
+    default:  rbuf.write_dec(uval); break;
+    case 'B': rbuf.write_bin<2>(uval); break;
+    case 'b': rbuf.write_bin<2>(uval); break;
+    case 'O': rbuf.write_bin<8>(uval); break;
+    case 'o': rbuf.write_bin<8>(uval); break;
+    case 'X': rbuf.write_bin<16>(uval, true); break;
+    case 'x': rbuf.write_bin<16>(uval, false); break;
   }
+
+  if constexpr (num::sint_<decltype(val)>) {
+    if (val < 0) {
+      rbuf.push('-');
+    }
+  }
+
   return rbuf.as_str();
 }
 
 auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
   const auto uval = reinterpret_cast<usize>(ptr);
 
-  auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'p'};
+  auto rbuf = RevBuf{buf};
   switch (type) {
     default:  rbuf.write_ptr(uval); break;
-    case 'X': rbuf.write_bin<16>(uval); break;
-    case 'x': rbuf.write_bin<16>(uval); break;
-    case 'p': rbuf.write_ptr(uval); break;
-    case 'P': rbuf.write_ptr(uval); break;
+    case 'X': rbuf.write_bin<16>(uval, true); break;
+    case 'x': rbuf.write_bin<16>(uval, false); break;
+    case 'P': rbuf.write_ptr(uval, true); break;
+    case 'p': rbuf.write_ptr(uval, false); break;
   }
   return rbuf.as_str();
 }
 
 auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
-  if (fmt::isnan(val)) {
+  static constexpr auto kMaxFlt = 1e30;
+
+  if (__builtin_isnan(val)) {
     return "nan";
   }
-  if (fmt::ifinf(val)) {
+  if (__builtin_isinf(val)) {
     return val > 0 ? Str{"inf"} : Str{"-inf"};
   }
 
   auto uval = val >= 0 ? val : -val;
-  auto rbuf = RevBuff{buf._ptr, buf._len, type ? type : 'f'};
-  if (type == 'e' || type == 'E') {
-    auto exp = 0;
-    uval = fmt::frexp10(uval, exp);
-    rbuf.write_exp(exp);
-  }
+  auto enable_exp = type == 'E' || type == 'e' || val > kMaxFlt;
+  const auto dcm = Decimal::unpack(uval, precision, enable_exp);
 
-  const auto u = Decimal::from(uval, precision);
-  rbuf.write_flt(u._int, u._flt);
+  auto rbuf = RevBuf{buf};
+  if (enable_exp) {
+    rbuf.write_exp(dcm._exp, type == 'E' ? 'E' : 'e');
+  }
+  rbuf.write_flt(dcm._int, dcm._flt);
   if (val < 0) {
     rbuf.push('-');
   }
+
   return rbuf.as_str();
 }
 
@@ -218,8 +255,8 @@ template auto Debug::format_int(Slice<char> buf, unsigned long long val, char ty
 
 template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
 
-template auto Debug::format_flt(Slice<char> buf, float val, u32 precision, char type) -> Str;
-template auto Debug::format_flt(Slice<char> buf, double val, u32 precision, char type) -> Str;
+template auto Debug::format_flt(Slice<char> buf, f32 val, u32 precision, char type) -> Str;
+template auto Debug::format_flt(Slice<char> buf, f64 val, u32 precision, char type) -> Str;
 
 template struct Formatter<FixedBuf<1024>>;
 template struct Formatter<FixedBuf<4096>>;

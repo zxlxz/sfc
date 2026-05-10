@@ -75,6 +75,10 @@ SFC_TEST(uint) {
   sfc::expect_eq(format("{}", 42U), "42");
   sfc::expect_eq(format("{}", 255U), "255");
 
+  // max
+  sfc::expect_eq(format("{}", u32{0xFFFFFFFFU}), "4294967295");
+  sfc::expect_eq(format("{}", u64{0xFFFFFFFFFFFFFFFFULL}), "18446744073709551615");
+
   // hex
   sfc::expect_eq(format("{x}", 255U), "ff");
   sfc::expect_eq(format("{X}", 255U), "FF");
@@ -92,6 +96,10 @@ SFC_TEST(sint) {
   sfc::expect_eq(format("{}", 0), "0");
   sfc::expect_eq(format("{}", 42), "42");
   sfc::expect_eq(format("{}", -42), "-42");
+
+  // min
+  sfc::expect_eq(format("{}", static_cast<i32>(0x80000000U)), "-2147483648");
+  sfc::expect_eq(format("{}", static_cast<i64>(0x8000000000000000ULL)), "-9223372036854775808");
 
   // hex
   sfc::expect_eq(format("{x}", 255), "ff");
