@@ -21,6 +21,28 @@ SFC_TEST(min_value) {
   static_assert(num::min_value<i64>() == -0x8000000000000000);
 }
 
+SFC_TEST(uabs) {
+  static_assert(num::uabs(i8{0}) == 0);
+  static_assert(num::uabs(i8{42}) == 42);
+  static_assert(num::uabs(i8{-42}) == 42);
+  static_assert(num::uabs(i8{-128}) == 128);
+
+  static_assert(num::uabs(i16{0}) == 0);
+  static_assert(num::uabs(i16{42}) == 42);
+  static_assert(num::uabs(i16{-42}) == 42);
+  static_assert(num::uabs(i16{-32768}) == 32768);
+
+  static_assert(num::uabs(i32{0}) == 0);
+  static_assert(num::uabs(i32{42}) == 42);
+  static_assert(num::uabs(i32{-42}) == 42);
+  static_assert(num::uabs(i32{-2147483648}) == 2147483648U);
+
+  static_assert(num::uabs(i64{0}) == 0);
+  static_assert(num::uabs(i64{42}) == 42);
+  static_assert(num::uabs(i64{-42}) == 42);
+  static_assert(num::uabs(i64{-9223372036854775807LL - 1}) == 9223372036854775808ULL);
+}
+
 SFC_TEST(saturating_sub) {
   static_assert(num::saturating_sub(1U, 2U) == 0);
   static_assert(num::saturating_sub(2U, 1U) == 1);

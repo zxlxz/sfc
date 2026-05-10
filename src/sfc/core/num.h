@@ -5,7 +5,8 @@
 namespace sfc::num {
 
 template <class T>
-concept sint_ = same_<T, signed char> || same_<T, short> || same_<T, int> || same_<T, long> || same_<T, long long>;
+concept sint_ = same_<T, signed char> || same_<T, short> || same_<T, int> || same_<T, long> ||
+                same_<T, long long>;
 
 template <class T>
 concept uint_ = same_<T, unsigned char> || same_<T, unsigned short> || same_<T, unsigned int> ||
@@ -32,18 +33,18 @@ consteval auto min_value() -> T {
 }
 
 template <uint_ T>
-[[gnu::always_inline]] constexpr auto saturating_sub(T a, T b) -> T {
+constexpr auto saturating_sub(T a, T b) -> T {
   return a < b ? 0U : a - b;
 }
 
 template <uint_ T>
-[[gnu::always_inline]] constexpr auto align_up(T val, T align) -> T {
+constexpr auto align_up(T val, T align) -> T {
   const auto mask = T{align - 1};
   return (val + mask) & ~mask;
 }
 
 template <uint_ T>
-[[gnu::always_inline]] constexpr auto next_power_of_two(T n) -> T {
+constexpr auto next_power_of_two(T n) -> T {
   // if n==2^k or n == 0, return n
   if ((n & (n - 1)) == 0) {
     return n;
@@ -58,6 +59,28 @@ template <uint_ T>
   }
   return res;
 #endif
+}
+
+template <int_ T>
+constexpr auto uabs(T x) {
+  static_assert(sizeof(T) <= sizeof(i64), "uabs: type is too large");
+
+  const auto f = []<typename U>(U u, auto s) {
+    if (u << 1 == 0) return u;  // handle min value
+    return static_cast<U>(s >= 0 ? u : 0 - u);
+  };
+
+  if constexpr (sizeof(T) == sizeof(i8)) {
+    return f(static_cast<u8>(x), x);
+  } else if constexpr (sizeof(T) == sizeof(i16)) {
+    return f(static_cast<u16>(x), x);
+  } else if constexpr (sizeof(T) == sizeof(i32)) {
+    return f(static_cast<u32>(x), x);
+  } else if constexpr (sizeof(T) == sizeof(i64)) {
+    return f(static_cast<u64>(x), x);
+  } else {
+    return x;
+  }
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
