@@ -14,9 +14,10 @@ FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
 FileBackend::~FileBackend() noexcept {}
 
 void FileBackend::push(Record record) noexcept {
-  auto buf = fmt::FixedBuf<1024>{};
-  fmt::write(buf, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
-  (void)_file.write_str(buf.as_str());
+  char buf[1024];
+  auto out = fmt::SBuf{buf};
+  fmt::write(out, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
+  (void)_file.write_str(out.as_str());
 }
 
 void FileBackend::flush() noexcept {
@@ -32,13 +33,14 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 }
 
 void GlobalBackend::push(Record record) noexcept {
-  auto buf = fmt::FixedBuf<1024>{};
-  fmt::write(buf, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
+  char buf[1024];
+  auto out = fmt::SBuf{buf};
+  fmt::write(out, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
 
   if (_file.is_valid()) {
-    (void)_file.write_str(buf.as_str());
+    (void)_file.write_str(out.as_str());
   } else {
-    io::Stdout::write_str(buf.as_str());
+    io::Stdout::write_str(out.as_str());
   }
 }
 

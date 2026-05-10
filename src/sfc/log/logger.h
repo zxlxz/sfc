@@ -58,9 +58,10 @@ class Logger {
       return;
     }
 
-    auto buf = fmt::FixedBuf<1024>{};
-    fmt::write(buf, fmts, args...);
-    this->write_str(level, buf.as_str());
+    char buf[1024];
+    auto out = fmt::SBuf{buf};
+    fmt::write(out, fmts, args...);
+    this->write_str(level, out.as_str());
   }
 };
 

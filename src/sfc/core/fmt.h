@@ -5,6 +5,30 @@
 
 namespace sfc::fmt {
 
+struct SBuf {
+  char* const _ptr;
+  usize const _cap;
+  usize _len = 0;
+
+ public:
+  template <usize N>
+  SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
+
+  auto as_str() const -> Str {
+    return {_ptr, _len};
+  }
+
+  void clear() {
+    _len = 0;
+  }
+
+  void write_str(Str s) {
+    if (s._len == 0 || _len + s._len > _cap) return;
+    __builtin_memcpy(_ptr + _len, s._ptr, s._len);
+    _len += s._len;
+  }
+};
+
 struct Debug {
   static auto format_int(Slice<char> buf, auto val, char type = 0) -> Str;
   static auto format_ptr(Slice<char> buf, auto val, char type = 0) -> Str;
@@ -66,32 +90,6 @@ struct Debug {
     char buf[16];
     const auto s = Debug::format_ptr(buf, val, f._spec._type);
     f.write_str(s);
-  }
-};
-
-template <usize N>
-struct FixedBuf {
-  static constexpr auto CAPACITY = N;
-  char _buf[N];
-  usize _len{0};
-
- public:
-  [[gnu::always_inline]] auto as_bytes() const -> Slice<const u8> {
-    return {reinterpret_cast<const u8*>(_buf), _len};
-  }
-
-  [[gnu::always_inline]] auto as_str() const -> Str {
-    return {_buf, _len};
-  }
-
-  [[gnu::always_inline]] void clear() {
-    _len = 0;
-  }
-
-  [[gnu::always_inline]] void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > CAPACITY) return;
-    ptr::copy_nonoverlapping(s._ptr, _buf + _len, s._len);
-    _len += s._len;
   }
 };
 
@@ -292,9 +290,6 @@ struct Formatter {
   }
 };
 
-extern template struct Formatter<FixedBuf<1024>>;
-extern template struct Formatter<FixedBuf<4096>>;
-
 template <class W>
 struct Formatter<W>::DebugTuple {
   Formatter& _fmt;
@@ -445,9 +440,10 @@ void write(auto&& out, const fmt::Fmts& fmts, const auto&... args) {
 
 namespace sfc::panic {
 [[noreturn]] void panic_fmt(const XFmt& fmts, const auto&... args) {
-  auto buf = fmt::FixedBuf<1024>{};
-  fmt::write(buf, fmts._fmts, args...);
-  const auto s = fmt::RawStr{buf._buf, buf._len};
+  char buf[1024];
+  auto out = fmt::SBuf{buf};
+  fmt::write(out, fmts._fmts, args...);
+  const auto s = fmt::RawStr{out._ptr, out._len};
   panic::panic_imp(s, fmts._loc);
 }
 }  // namespace sfc::panic

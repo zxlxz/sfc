@@ -4,17 +4,18 @@ namespace sfc::log {
 
 auto Record::time_str() const -> Str {
   static constexpr auto kStrLen = sizeof("0000-00-00 00:00:00.000") - 1;
-
   static thread_local auto prev_sec = u64{0};
-  static thread_local auto buf = fmt::FixedBuf<32>{};
+
+  static thread_local char buf[32];
+  static thread_local auto out = fmt::SBuf{buf};
 
   const auto millis = time.subsec_millis();
   if (time.as_secs() != prev_sec) {
     prev_sec = time.as_secs();
 
     const auto t = time::DateTime::from_local(time);
-    buf.clear();
-    fmt::write(buf,
+    out.clear();
+    fmt::write(out,
                "{04}-{02}-{02} {02}:{02}:{02}.{03}",
                t.year,
                t.month,
@@ -24,10 +25,10 @@ auto Record::time_str() const -> Str {
                t.second,
                millis);
   } else {
-    buf._len = kStrLen - 3;  // trim off the old millis
-    fmt::write(buf, "{03}", millis);
+    out._len = kStrLen - 3;  // trim off the old millis
+    fmt::write(out, "{03}", millis);
   }
-  return buf.as_str();
+  return out.as_str();
 }
 
 auto Record::level_str() const -> Str {
