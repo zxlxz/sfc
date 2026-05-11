@@ -43,21 +43,8 @@ concept enum_ = __is_enum(T);
 template <class T>
 concept class_ = __is_class(T);
 
-#if defined(__GNUC__) || defined(__clang__)
 template <class T, class U>
 concept same_ = __is_same(T, U);
-#else
-template <class T, class U>
-struct same_t {
-  static constexpr bool value = false;
-};
-template <class T>
-struct same_t<T, T> {
-  static constexpr bool value = true;
-};
-template <class T, class U>
-concept same_ = same_t<T, U>::value;
-#endif
 
 namespace str {
 struct Str;
