@@ -30,20 +30,21 @@ SFC re-imagines the “stdlib” surface for C++23 with explicit design: minimal
 | Core Types | `Option<T>`, `Result<T,E>`, `Tuple`, `Variant`, iter utilities | Error handling & composition first |
 | Ownership | `Box<T>`, `Rc<T>` | Deterministic lifetimes, no STL smart ptrs |
 | Memory | Custom allocator hooks, slices, raw pointer helpers | Fine-grained control |
-| Collections | `List<T>`, `BTree<K,V>`, `HashMap<K,V>` | Purpose-built, STL-free |
+| Collections | `List<T>`, `HashMap<K,V>`, `HashSet<T>`, `Queue<T>` | Purpose-built, STL-free |
 | Concurrency | `Mutex`, `Condvar`, atomics, MPMC queue, threads | Portable & lean |
 | Tasking | Lightweight async/task primitives (WIP) | Foundation for schedulers |
 | I/O & FS | Paths, files, buffered stdio, platform bridges | Unified Windows / POSIX |
 | Time | Steady + system clocks, duration types | Clear conversions |
 | Logging | Pluggable backend-friendly logging core | Minimal formatting now, richer later |
-| Ser/De | JSON, XML (early stage) | Extensible traits design |
+| Ser/De | JSON, Base64 | Compile-time format checked |
+| CLI | Command-line argument parsing (`clap`) | Structured arg definitions |
 
 ---
 
 ## 🔍 Design Principles
 
 1. Zero STL dependency – everything is internally defined.
-2. Fail fast: panic expections and explicit `Result`/`Option` return types.
+2. Fail fast: panic assertions and explicit `Result`/`Option` return types.
 3. No hidden allocations: APIs surface ownership & lifetime.
 4. Cross-platform parity: identical semantic contracts on Win/macOS/Linux.
 5. Small & auditable: each module stays focused; headers avoid template bloat.
@@ -113,16 +114,19 @@ Test expectations use `sfc::expect_*` functions; a failure aborts fast with cont
 
 ```
 alloc/        Box, Rc, String, List, allocation hooks
+app/          CLI argument parsing (clap)
 collections/  HashMap, HashSet, Queue
-core/         Option, Result, iterators, future scaffolding, formatting traits
-io/           File, stdio, error model
+core/         Option, Result, Tuple, Variant, iterators, compile-time formatting, panics
+env/          Environment variable access
+ffi/          C strings, OS strings, platform string bridging
 fs/           Path, file system wrappers
+io/           File, stdio, buffered I/O, error model
+log/          Core logging & pluggable backend structure
+serde/        JSON, Base64
 sync/         Mutex, Condvar, Atomics, MPMC queue
+sys/          System-level abstractions
 thread/       Thread creation & join primitives
 time/         Clocks, durations
-serde/        JSON, XML (early), serialization traits
-log/          Core logging & pluggable backend structure
-task/         Task primitives (emerging)
 ```
 
 ---
@@ -136,18 +140,16 @@ task/         Task primitives (emerging)
 | Strings | `std::string` (allocator-heavy) | Explicit owned vs view types |
 | Collections | Broad, legacy semantics | Purpose-built, STL-free, predictable |
 | ABI / linkage | Vendor & version sensitive | Self-contained static library |
-| Formatting | `<format>` heavy machinery | Lightweight evolving `fmt` traits |
+| Formatting | `<format>` heavy machinery | Lightweight compile-time checked `fmt` traits |
 | Hidden allocations | Possible in algorithms | Surfaced / explicit |
 
 ---
 
 ## 🗺️ Roadmap (Indicative)
 
-* [ ] Richer formatting & compile-time format checking
 * [ ] Arena / bump allocator
 * [ ] Async executor + IO integration
 * [ ] More zero-copy serde backends
-* [ ] Configurable small-vector optimization
 * [ ] Tracing + structured logging sink
 * [ ] Additional lock-free data structures
 
@@ -189,12 +191,6 @@ Central hooks allow future pluggable arenas and tracking.
 
 ---
 
-## 🧪 Internal Testing Philosophy
-
-Tests prefer deterministic, allocation-aware flows. Panics surface logic bugs early. Each collection targets: construction, boundary ops, iteration, error paths.
-
----
-
 ## 🔐 Safety Notes
 
 Where raw pointers or unsafe casts are required, they’re isolated and documented. The public surface favors value semantics + explicit ownership.
@@ -205,10 +201,9 @@ Where raw pointers or unsafe casts are required, they’re isolated and document
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Windows (MSVC / ClangCL) | ✅ | Primary CI target |
+| Windows (ClangCL) | ✅ | Unified APIs |
 | Linux (Clang/GCC) | ✅ | Glibc & musl intended |
 | macOS (Clang) | ✅ | Unified APIs |
-| arm64 | 🚧 | Most code is arch-agnostic; perf tuning later |
 
 ---
 
