@@ -31,76 +31,95 @@ struct Spec {
   u8 _precision = 0;
 
  public:
-  struct Parser {
-    RawStr _str;
-    usize _pos = 0;
-
-    constexpr auto match(auto... c) const -> bool {
-      if (_pos >= _str._len) return false;
-      return ((_str._ptr[_pos] == c) || ...);
-    }
-
-    constexpr auto pop() -> char {
-      if (_pos >= _str._len) return 0;
-      return _str._ptr[_pos++];
-    }
-
-    constexpr auto extract(auto... c) -> char {
-      return this->match(c...) ? this->pop() : 0;
-    }
-
-    constexpr auto extract_int() -> u32 {
-      auto res = 0U;
-      while (_pos < _str._len) {
-        const auto ch = _str._ptr[_pos];
-        if (!(ch >= '0' && ch <= '9')) break;
-        res = res * 10 + static_cast<u32>(ch - '0');
-        ++_pos;
-      }
-      return res;
-    };
-  };
-
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  consteval static auto from(RawStr s) noexcept -> Spec {
-    if (s._len == 0) {
-      return {};
-    }
-
-    auto parser = Parser{s, 0};
-    auto res = Spec{};
-    parser.extract(':');
-
-    res._fill = parser.pop();
-    res._align = parser.extract('<', '>', '=', '^');
-    if (res._fill && !res._align) {
-      parser._pos -= 1;
-      res._fill = 0;
-      res._align = parser.extract('<', '>', '=', '^');
-    }
-
-    res._sign = parser.extract('+', '-');
-    res._prefix = parser.extract('#');
-    if (!res._fill) {
-      res._fill = parser.extract('0');
-    }
-
-    res._width = static_cast<u8>(parser.extract_int());
-    if ((res._point = parser.extract('.'))) {
-      res._precision = static_cast<u8>(parser.extract_int());
-    }
-    res._type = parser.pop();
-    return res;
-  }
+  consteval static auto from(RawStr s) noexcept -> Spec;
 
   auto type(char default_type = 0) const -> char {
     return _type ? _type : default_type;
   }
 
+  auto align(u32 default_align = 0) const -> char {
+    return _align ? _align : default_align;
+  }
+
+  auto fill(char default_type = ' ') const -> char {
+    return _fill ? _fill : default_type;
+  }
+
+  auto width() const -> u32 {
+    return _width;
+  }
+
   auto precision(u32 default_prec = 0) const -> u32 {
     return _point ? _precision : default_prec;
   }
+
+  auto sign(bool is_neg) const -> str::Str;
+  auto prefix() const -> str::Str;
 };
+
+struct Parser {
+  const char* _ptr;
+  const char* _end;
+
+ public:
+  constexpr auto match(auto... c) const -> bool {
+    if (_ptr >= _end) return false;
+    return ((*_ptr == c) || ...);
+  }
+
+  constexpr auto pop() -> char {
+    if (_ptr >= _end) return 0;
+    return *_ptr++;
+  }
+
+  constexpr auto extract(auto... c) -> char {
+    return this->match(c...) ? this->pop() : 0;
+  }
+
+  constexpr auto extract_int() -> u32 {
+    auto res = 0U;
+    for (; _ptr < _end; ++_ptr) {
+      const auto ch = *_ptr;
+      if (!(ch >= '0' && ch <= '9')) break;
+      res = res * 10 + static_cast<u32>(ch - '0');
+    }
+    return res;
+  };
+};
+
+// [[fill]align][sign]['#'][0][width][.][precision][type]
+consteval auto Spec::from(RawStr s) noexcept -> Spec {
+  if (s._len == 0) {
+    return {};
+  }
+
+  auto res = Spec{};
+
+  auto p = Parser{s._ptr, s._ptr + s._len};
+  p.extract(':');
+
+  res._fill = p.pop();
+  res._align = p.extract('<', '>', '=', '^');
+  if (res._fill && !res._align) {
+    p._ptr -= 1;
+    res._fill = 0;
+    res._align = p.extract('<', '>', '=', '^');
+  }
+
+  res._sign = p.extract('+', '-');
+  res._prefix = p.extract('#');
+  if (!res._fill) {
+    res._fill = p.extract('0');
+  }
+
+  res._width = static_cast<u8>(p.extract_int());
+  if ((res._point = p.extract('.'))) {
+    res._precision = static_cast<u8>(p.extract_int());
+  }
+  res._type = p.pop();
+  return res;
+}
 
 struct Fmts {
   static constexpr auto kMaxLen = 16U;

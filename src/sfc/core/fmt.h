@@ -139,8 +139,10 @@ struct Formatter {
   }
 
   void write_arg(Spec spec, const auto& arg) {
+    const auto old_spec = _spec;
     _spec = spec;
     this->write_val(arg);
+    _spec = old_spec;
   }
 
   void write_fmt(const fmt::Fmts& fmts, const auto&... args) {
@@ -164,8 +166,8 @@ struct Formatter {
       return;
     }
 
-    const auto fill = _spec._fill ? _spec._fill : ' ';
-    const auto npad = usize{_spec._width} - s._len;
+    const auto fill = _spec.fill();
+    const auto npad = _spec._width - s._len;
 
     switch (_spec._align) {
       default:
@@ -187,35 +189,19 @@ struct Formatter {
   }
 
   void pad_num(bool is_neg, Str body) {
-    auto make_sign = [](char sign) -> Str {
-      switch (sign) {
-        case '+': return Str{"+"};
-        case '-': return Str{" "};
-        default:  return Str{""};
-      }
-    };
+    const auto sign = _spec.sign(is_neg);
+    const auto prefix = _spec.prefix();
+    const auto nbody = sign._len + prefix._len + body._len;
+    if (nbody >= _spec._width) {
+      this->write_str(sign);
+      this->write_str(prefix);
+      this->write_str(body);
+      return;
+    }
 
-    auto make_prefix = [](char type) -> Str {
-      switch (type) {
-        case 'O': return "0";
-        case 'o': return "0";
-        case 'B': return "0B";
-        case 'b': return "0b";
-        case 'X': return "0X";
-        case 'x': return "0x";
-        case 'P': return "0X";
-        case 'p': return "0x";
-        default:  return "";
-      }
-    };
-
-    const auto sign = is_neg ? Str{"-"} : make_sign(_spec._sign);
-    const auto prefix = _spec._prefix ? make_prefix(_spec._type) : Str{""};
-    const auto align = (_spec._prefix || _spec._fill == '0') ? '=' : _spec._align;
-    const auto nfill = sign._len + prefix._len + body._len;
-    const auto npad = _spec._width > nfill ? _spec._width - nfill : 0U;
-    const auto fill = _spec._fill ? _spec._fill : _spec._prefix ? '0' : ' ';
-
+    const auto npad = _spec._width - nbody;
+    const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
+    const auto align = _spec.align(fill == '0' ? '=' : '>');
     switch (align) {
       default:
       case '>':

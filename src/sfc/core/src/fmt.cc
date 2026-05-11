@@ -182,6 +182,36 @@ struct Decimal {
   }
 };
 
+auto Spec::sign(bool is_neg) const -> str::Str {
+  if (is_neg) {
+    return "-";
+  }
+
+  switch (_sign) {
+    case '+': return "+";
+    case '-': return " ";
+    default:  return "";
+  }
+}
+
+auto Spec::prefix() const -> str::Str {
+  if (_prefix != '#') {
+    return "";
+  }
+
+  switch (_type) {
+    case 'O': return "0";
+    case 'o': return "0";
+    case 'B': return "0B";
+    case 'b': return "0b";
+    case 'X': return "0X";
+    case 'x': return "0x";
+    case 'P': return "0X";
+    case 'p': return "0x";
+    default:  return "";
+  }
+}
+
 auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
   const auto uval = num::uabs(val) + 0U;
 
