@@ -9,11 +9,11 @@
 namespace sfc::alloc {
 
 auto Global::alloc(Layout layout) noexcept -> void* {
-  if (layout.align == 0 || (layout.align & (layout.align - 1)) != 0) {
-    return nullptr;
+  if (layout.align == 0 || !num::is_power_of_two(layout.align)) {
+    panic::panic_fmt("alloc::Global::alloc: invalid align({})", layout.align);
   }
 
-  if (layout.size == 0 || layout.size % layout.align != 0) {
+  if (layout.size == 0) {
     return nullptr;
   }
 
@@ -32,25 +32,12 @@ void Global::dealloc(void* ptr, Layout layout) noexcept {
 }
 
 auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
-  if (layout.align == 0 || (layout.align & (layout.align - 1)) != 0) {
-    return ptr;
-  }
-
-  if (layout.size % layout.align != 0 || new_size % layout.align != 0) {
-    return ptr;
+  if (layout.align == 0 || !num::is_power_of_two(layout.align)) {
+    panic::panic_fmt("alloc::Global::realloc: invalid align({})", layout.align);
   }
 
   if (new_size == layout.size) {
     return ptr;
-  }
-
-  if (new_size == 0) {
-    sys::dealloc(ptr, layout);
-    return nullptr;
-  }
-
-  if (ptr == nullptr) {
-    return sys::alloc({new_size, layout.align});
   }
 
   return sys::realloc(ptr, layout, new_size);
@@ -58,7 +45,7 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
 
 auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
   panic::expect(old_layout.align == new_layout.align,
-                "alloc::Global::grow: alignment not match (old={}, new={})",
+                "alloc::Global::grow: alignment not match (old({}), new({}))",
                 old_layout.align,
                 new_layout.align);
 
@@ -67,15 +54,15 @@ auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> v
   }
 
   if (old_layout.size == 0) {
-    return this->alloc(new_layout);
+    return Global::alloc(new_layout);
   }
 
-  return sys::realloc(ptr, old_layout, new_layout.size);
+  return Global::realloc(ptr, old_layout, new_layout.size);
 }
 
 auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
   panic::expect(old_layout.align == new_layout.align,
-                "alloc::Global::shrink: alignment not match (old={}, new={})",
+                "alloc::Global::shrink: alignment not match (old({}), new({}))",
                 old_layout.align,
                 new_layout.align);
 
@@ -84,11 +71,11 @@ auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept ->
   }
 
   if (new_layout.size == 0) {
-    this->dealloc(ptr, old_layout);
+    Global::dealloc(ptr, old_layout);
     return nullptr;
   }
 
-  return this->realloc(ptr, old_layout, new_layout.size);
+  return Global::realloc(ptr, old_layout, new_layout.size);
 }
 
 }  // namespace sfc::alloc

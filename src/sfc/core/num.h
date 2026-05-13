@@ -44,21 +44,17 @@ constexpr auto align_up(T val, T align) -> T {
 }
 
 template <uint_ T>
+constexpr auto is_power_of_two(T val) -> bool {
+  return (val & (val - 1)) == 0;
+}
+
+template <uint_ T>
 constexpr auto next_power_of_two(T n) -> T {
-  // if n==2^k or n == 0, return n
-  if ((n & (n - 1)) == 0) {
+  if (num::is_power_of_two(n)) {
     return n;
   }
-#if defined(__GNUC__) || defined(__clang__)
   const auto nbits = 64U - __builtin_clzll(n);
   return static_cast<T>(1ULL << nbits);
-#else
-  auto res = T{1U};
-  while (res < n) {
-    res <<= 1;
-  }
-  return res;
-#endif
 }
 
 template <int_ T>

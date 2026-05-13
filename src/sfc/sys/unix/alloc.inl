@@ -5,18 +5,16 @@
 namespace sfc::sys::unix {
 
 auto alloc(mem::Layout layout) -> void* {
-  const auto size = layout.size;
-  const auto align = layout.align;
-
-  if (size == 0) {
+  if (layout.size == 0) {
     return nullptr;
   }
 
-  if (align <= alignof(max_align_t)) {
-    return ::malloc(size);
+  if (layout.align <= alignof(max_align_t)) {
+    return ::malloc(layout.size);
   }
 
-  return ::aligned_alloc(align, size);
+  const auto aligned_size = num::align_up(layout.size, layout.align);
+  return ::aligned_alloc(layout.align, aligned_size);
 }
 
 void dealloc(void* ptr, [[maybe_unused]] mem::Layout layout) noexcept {
@@ -28,21 +26,22 @@ void dealloc(void* ptr, [[maybe_unused]] mem::Layout layout) noexcept {
 }
 
 auto realloc(void* ptr, mem::Layout layout, usize new_size) -> void* {
-  const auto align = layout.align;
-  const auto old_size = layout.size;
-
-  // if old_size == new_size: return old ptr
-  if (old_size == new_size) {
+  if (layout.size == new_size) {
     return ptr;
   }
 
-  // if align <= max_align: use realloc
-  if (align <= alignof(max_align_t)) {
+  if (!num::is_power_of_two(layout.align)) {
+    return ptr;
+  }
+
+  if (layout.align <= alignof(max_align_t)) {
     return ::realloc(ptr, new_size);
   }
 
-  const auto new_ptr = ::aligned_alloc(align, new_size);
-  const auto copy_size = old_size < new_size ? old_size : new_size;
+
+  const auto copy_size = cmp::min(layout.size, new_size);
+  const auto aligned_size = num::align_up(new_size, layout.align);
+  const auto new_ptr = ::aligned_alloc(layout.align, aligned_size);
   if (new_ptr && ptr && copy_size != 0) {
     ::memcpy(new_ptr, ptr, copy_size);
   }

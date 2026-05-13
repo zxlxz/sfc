@@ -9,9 +9,14 @@ struct Layout {
   usize align{1};
 
  public:
+  template<class T>
+  static auto of() noexcept -> Layout {
+    return {.size = sizeof(T), .align = alignof(T)};
+  }
+
   template <class T>
-  [[gnu::always_inline]] static auto array(usize n) noexcept -> Layout {
-    return {n * sizeof(T), alignof(T)};
+  static auto array(usize n) noexcept -> Layout {
+    return {.size = n * sizeof(T), .align = alignof(T)};
   }
 };
 

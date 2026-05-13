@@ -7,12 +7,12 @@ namespace sfc::alloc {
 using mem::Layout;
 
 struct Global {
-  auto alloc(Layout layout) noexcept -> void*;
-  void dealloc(void* ptr, Layout layout) noexcept;
-  auto realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*;
+  static auto alloc(Layout layout) noexcept -> void*;
+  static void dealloc(void* ptr, Layout layout) noexcept;
+  static auto realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*;
 
-  auto grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
-  auto shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
+  static auto grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
+  static auto shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
 };
 
 template <class T, class A = alloc::Global>
