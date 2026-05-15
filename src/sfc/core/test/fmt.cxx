@@ -158,6 +158,13 @@ SFC_TEST(flt_inf) {
 }
 
 enum class E1 { A, B };
+static auto to_str(E1 val) -> Str {
+  switch (val) {
+    case E1::A: return "A";
+    case E1::B: return "B";
+    default:    return "Unknown";
+  }
+}
 SFC_TEST(named_enum) {
   sfc::expect_eq(reflect::type_name<E1>(), "sfc::fmt::test::E1");
   sfc::expect_eq(format("{}", E1::A), "A");

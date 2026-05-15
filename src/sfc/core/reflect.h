@@ -67,44 +67,5 @@ consteval Str value_name() {
   return Str{P, N};
 }
 
-template <enum_ T, u32 I>
-consteval auto enum_valid() -> bool {
-  if constexpr (requires { static_cast<T>(I); }) {
-    static constexpr auto E = static_cast<T>(I);
-    return reflect::value_name<E>()._len != 0;
-  }
-  return false;
-}
-
-template <enum_ T, u32 I = 0, u32 N = 64>
-consteval auto enum_count() -> u32 {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-  return 0;
-#else
-  if constexpr (!__is_scoped_enum(T)) {
-    return 0;
-  } else if constexpr (I + 1 == N) {
-    return N;
-  } else if constexpr (reflect::enum_valid<T, I + (N - I) / 2>()) {
-    return reflect::enum_count<T, I + (N - I) / 2, N>();
-  } else {
-    return reflect::enum_count<T, I, I + (N - I) / 2>();
-  }
-#endif
-}
-
-template <enum_ T>
-constexpr auto enum_name(T val) -> Str {
-  static constexpr auto N = reflect::enum_count<T>();
-
-  auto s = Str{};
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-  reflect::seq_t<N>::map([&](auto I) {
-    if (static_cast<u32>(val) != I.VALUE) return;
-    s = reflect::value_name<static_cast<T>(I.VALUE)>();
-  });
-#endif
-  return s;
-}
 
 }  // namespace sfc::reflect
