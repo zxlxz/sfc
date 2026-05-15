@@ -159,11 +159,9 @@ class HashTbl {
   HashTbl() noexcept = default;
 
   ~HashTbl() noexcept {
-    if (_ptr == nullptr) {
-      return;
-    }
-    this->clear();
+    if (_ptr == nullptr) return;
 
+    this->clear();
     _a.dealloc(_ptr, this->layout());
   }
 
@@ -190,7 +188,7 @@ class HashTbl {
     auto res = HashTbl{};
     res._ptr = static_cast<u8*>(a.alloc(layout));
     res._cap = cap;
-    res.clear();
+    res.init();
     return res;
   }
 
@@ -254,11 +252,7 @@ class HashTbl {
 
   void clear() noexcept {
     this->iter_mut().for_each([&](T& entry) { entry.~T(); });
-    _len = 0;
-    _rem = _cap - _cap / kLoadFactor;
-
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
+    this->init();
   }
 
   void reserve(usize additional) {
@@ -310,6 +304,13 @@ class HashTbl {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data = reinterpret_cast<T*>(_ptr + ctrl_size);
     return Bucket{_ptr, data, _cap - 1, h1};
+  }
+
+  void init() {
+    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
+    _len = 0;
+    _rem = _cap - _cap / kLoadFactor;
   }
 
   auto rehash_insert(T&& entry) -> bool {
