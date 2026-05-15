@@ -17,8 +17,6 @@ struct Global {
 
 template <class T, class A = alloc::Global>
 class RawBuf {
-  static constexpr usize kMinCap = sizeof(T) == 1 ? 8UL : sizeof(T) <= 256 ? 4UL : 1UL;
-
   T* _ptr{nullptr};
   usize _cap{0};
   [[no_unique_address]] A _a{};
@@ -76,6 +74,7 @@ class RawBuf {
   }
 
   void reserve(usize len, usize additional) noexcept {
+    static constexpr usize kMinCap = sizeof(T) == 1 ? 8UL : sizeof(T) <= 256 ? 4UL : 1UL;
     if (additional < _cap - len) {
       return;
     }

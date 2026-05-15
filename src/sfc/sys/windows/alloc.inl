@@ -5,6 +5,9 @@ namespace sfc::sys::windows {
 
 using mem::Layout;
 
+// see <cstddef>
+using max_align_t = double;
+
 static inline auto alloc(Layout layout) -> void* {
   if (layout.size == 0) {
     return nullptr;
