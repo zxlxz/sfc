@@ -180,14 +180,13 @@ class HashTbl {
   }
 
   static auto with_capacity(usize min_cap, A a = {}) -> HashTbl {
-    const auto cap = num::next_power_of_two(min_cap);
-    const auto ctrl_size = num::align_up(cap, CTRL_ALIGN);
-    const auto data_size = cap * sizeof(T);
-    const auto layout = alloc::Layout{ctrl_size + data_size, alignof(T)};
+    if (min_cap == 0) {
+      return HashTbl{};
+    }
 
     auto res = HashTbl{};
-    res._ptr = static_cast<u8*>(a.alloc(layout));
-    res._cap = cap;
+    res._cap = num::next_power_of_two(min_cap);
+    res._ptr = static_cast<u8*>(a.alloc(res.layout()));
     res.init();
     return res;
   }
