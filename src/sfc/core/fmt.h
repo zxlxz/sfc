@@ -24,7 +24,7 @@ struct SBuf {
 
   void write_str(Str s) {
     if (s._len == 0 || _len + s._len > _cap) return;
-    __builtin_memcpy(_ptr + _len, s._ptr, s._len);
+    ptr::copy_nonoverlapping(s._ptr, _ptr + _len, s._len);
     _len += s._len;
   }
 };
@@ -78,11 +78,12 @@ struct Debug {
   }
 
   static void fmt(enum_ auto val, auto& f) {
-    const auto s = reflect::enum_name(val);
-    if (!s.is_empty()) {
-      f.pad(s);
+    using I = __underlying_type(decltype(val));
+    constexpr auto kTypeName = reflect::type_name<decltype(val)>();
+    if constexpr (requires { to_str(val); }) {
+      f.write_str(to_str(val));
     } else {
-      f.write_fmt("{}({})", reflect::type_name<decltype(val)>(), static_cast<i64>(val));
+      f.write_fmt("{}({})", kTypeName, static_cast<I>(val));
     }
   }
 

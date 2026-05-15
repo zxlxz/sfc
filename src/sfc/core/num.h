@@ -50,11 +50,10 @@ constexpr auto is_power_of_two(T val) -> bool {
 
 template <uint_ T>
 constexpr auto next_power_of_two(T n) -> T {
-  if (num::is_power_of_two(n)) {
-    return n;
-  }
-  const auto nbits = 64U - __builtin_clzll(n);
-  return static_cast<T>(1ULL << nbits);
+  auto t = T{1};
+  while (t < n)
+    t <<= 1;
+  return t;
 }
 
 template <int_ T>

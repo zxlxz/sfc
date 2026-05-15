@@ -43,8 +43,13 @@ concept enum_ = __is_enum(T);
 template <class T>
 concept class_ = __is_class(T);
 
+#if defined(__clang__) || defined(__GNUC__)
 template <class T, class U>
 concept same_ = __is_same(T, U);
+#else
+template <class T, class U>
+concept same_ = __is_convertible_to(void(*)(T), void(*)(U));
+#endif
 
 namespace str {
 struct Str;
