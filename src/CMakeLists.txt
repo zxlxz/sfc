@@ -18,7 +18,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 # test (enable only if project is top level)
-if (PROJECT_IS_TOP_LEVEL)
+if (SFC_ENABLE_TEST)
   add_executable(sfc_test)
   target_link_libraries(sfc_test sfc)
   file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "**.cxx")
