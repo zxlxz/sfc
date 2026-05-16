@@ -40,11 +40,11 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto into_raw() && noexcept -> T* {
+  auto into_raw() && noexcept -> T* {
     const auto p = _ptr;
     _ptr = nullptr;
     return p;
@@ -63,27 +63,27 @@ class [[nodiscard]] Box {
 
  public:
   // trait: option::Nullable
-  [[gnu::always_inline]] auto operator==(null_t) const noexcept -> bool {
+  auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _ptr == nullptr;
   }
 
   // trait: Deref<const T*>
-  [[gnu::always_inline]] auto operator->() const noexcept -> const T* {
+  auto operator->() const noexcept -> const T* {
     return _ptr;
   }
 
   // trait: Deref<T*>
-  [[gnu::always_inline]] auto operator->() noexcept -> T* {
+  auto operator->() noexcept -> T* {
     return _ptr;
   }
 
   // trait: Deref<const T&>
-  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+  auto operator*() const noexcept -> const T& {
     return *_ptr;
   }
 
   // trait: Deref<T&>
-  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+  auto operator*() noexcept -> T& {
     return *_ptr;
   }
 
@@ -150,7 +150,7 @@ class [[nodiscard]] Box<R(T...)> {
 
  public:
   // trait: option::Nullable
-  [[gnu::always_inline]] auto operator==(null_t) const noexcept -> bool {
+  auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _data == nullptr;
   }
 };

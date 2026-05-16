@@ -35,8 +35,6 @@ using f64 = double;
 
 using cstr_t = const char*;
 
-using null_t = decltype(nullptr);
-
 template <class T>
 concept enum_ = __is_enum(T);
 

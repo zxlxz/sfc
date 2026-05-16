@@ -213,7 +213,7 @@ struct Slice {
   }
 
   // trait: option::Nullable
-  constexpr auto operator==(null_t) const noexcept -> bool {
+  constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _ptr == nullptr;
   }
 
