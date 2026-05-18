@@ -162,6 +162,7 @@ SFC_TEST(windows) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};
 
+  // forward: 2
   {
     auto w = s.windows(2);
     sfc::expect_eq(w.next(), Option{Slice{v + 0, 2}});
@@ -169,10 +170,19 @@ SFC_TEST(windows) {
     sfc::expect_false(w.next().is_some());
   }
 
+  // forward: 3
   {
     auto w = s.windows(3);
     sfc::expect_eq(w.next(), Option{Slice{v + 0, 3}});
     sfc::expect_false(w.next().is_some());
+  }
+
+  // backward: 2
+  {
+    auto w = s.windows(2);
+    sfc::expect_eq(w.next_back(), Option{Slice{v + 1, 2}});
+    sfc::expect_eq(w.next_back(), Option{Slice{v + 0, 2}});
+    sfc::expect_false(w.next_back().is_some());
   }
 }
 

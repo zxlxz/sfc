@@ -1,10 +1,10 @@
 #pragma once
 
-#include "sfc/core/iter.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
-#include "sfc/core/result.h"
+#include "sfc/core/iter.h"
 #include "sfc/core/tuple.h"
+#include "sfc/core/result.h"
 
 namespace sfc::slice {
 
@@ -58,10 +58,6 @@ struct Slice {
   [[gnu::always_inline]] auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
     return {reinterpret_cast<u8*>(_ptr), _len * sizeof(T)};
-  }
-
-  [[gnu::always_inline]] constexpr operator Slice<const T>() const noexcept {
-    return {_ptr, _len};
   }
 
  public:
@@ -176,27 +172,27 @@ struct Slice {
   }
 
   [[gnu::always_inline]] auto iter() const noexcept -> Iter<const T> {
-    return {{}, _ptr, _ptr + _len};
+    return {_ptr, _len};
   }
 
   [[gnu::always_inline]] auto iter_mut() noexcept -> Iter<T> {
-    return {{}, _ptr, _ptr + _len};
+    return {_ptr, _len};
   }
 
   [[gnu::always_inline]] auto windows(usize n) const noexcept -> Windows<const T> {
-    return {{}, *this, n};
+    return {*this, n};
   }
 
   [[gnu::always_inline]] auto windows_mut(usize n) noexcept -> Windows<T> {
-    return {{}, *this, n};
+    return {*this, n};
   }
 
   [[gnu::always_inline]] auto chunks(usize n) const noexcept -> Chunks<const T> {
-    return {{}, *this, n};
+    return {*this, n};
   }
 
   [[gnu::always_inline]] auto chunks_mut(usize n) noexcept -> Chunks<T> {
-    return {{}, *this, n};
+    return {*this, n};
   }
 
  public:
@@ -223,7 +219,7 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) noexcept -> Result<usize, io::Error>;
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
@@ -246,6 +242,8 @@ struct Iter : iter::Iterator<T&> {
   T* _end = nullptr;
 
  public:
+  Iter(T* ptr, usize len) noexcept : _ptr{ptr}, _end{ptr + len} {}
+
   auto len() const noexcept -> usize {
     return _end - _ptr;
   }
@@ -263,42 +261,43 @@ struct Iter : iter::Iterator<T&> {
 
 template <class T>
 struct Windows : iter::Iterator<Slice<T>> {
-  Slice<T> _buf = {};
-  usize _len = 0;
+  T* _ptr;
+  T* _end;
+  usize _len;
 
  public:
-  auto next() noexcept -> Option<Slice<T>> {
-    if (_buf._len < _len) return {};
+  Windows(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
-    const auto res = Slice<T>{_buf._ptr, _len};
-    _buf._ptr += 1;
-    _buf._len -= 1;
-    return res;
+  auto next() noexcept -> Option<Slice<T>> {
+    if (_end - _ptr < _len) return {};
+
+    _ptr += 1;
+    return Slice<T>{_ptr - 1, _len};
   }
 
   auto next_back() noexcept -> Option<Slice<T>> {
-    if (_buf._len < _len) return {};
+    if (_end - _ptr < _len) return {};
 
-    const auto res = Slice<T>{_buf._ptr + _buf._len - _len, _len};
-    _buf._len -= 1;
-    return res;
+    _end -= 1;
+    return Slice<T>{_end - _len + 1, _len};
   }
 };
 
 template <class T>
 struct Chunks : iter::Iterator<Slice<T>> {
-  Slice<T> _buf = {};
-  usize _len = 0;
+  T* _ptr;
+  T* _end;
+  usize _len;
 
  public:
-  auto next() noexcept -> Option<Slice<T>> {
-    if (_buf._len == 0) return {};
+  Chunks(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
-    const auto pos = _len < _buf._len ? _len : _buf._len;
-    const auto res = Slice<T>{_buf._ptr, pos};
-    _buf._ptr += pos;
-    _buf._len -= pos;
-    return res;
+  auto next() noexcept -> Option<Slice<T>> {
+    if (_end - _ptr < 1) return {};
+
+    const auto len = _end - _ptr < _len ? _end - _ptr : _len;
+    _ptr += len;
+    return Slice<T>{_ptr - len, len};
   }
 };
 
