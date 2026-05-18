@@ -6,18 +6,18 @@
 #include "sfc/core/ptr.h"
 #include "sfc/core/num.h"
 #include "sfc/core/ops.h"
+#include "sfc/core/iter.h"
+#include "sfc/core/slice.h"
 #include "sfc/core/tuple.h"
 
 #ifndef __CUDACC__
 #include "sfc/core/io.h"
 #include "sfc/core/str.h"
 #include "sfc/core/fmt.h"
-#include "sfc/core/iter.h"
 #include "sfc/core/sync.h"
 #include "sfc/core/time.h"
 #include "sfc/core/panic.h"
 
-#include "sfc/core/slice.h"
 #include "sfc/core/option.h"
 #include "sfc/core/result.h"
 #include "sfc/core/variant.h"

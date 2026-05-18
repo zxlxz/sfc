@@ -19,6 +19,7 @@ template <class T>
 struct Iterator {
   using Item = T;
 
+#ifndef __CUDACC__
   auto find(this auto self, auto&& pred) noexcept -> Option<Item> {
     while (auto x = self.next()) {
       if (pred(*x)) {
@@ -90,7 +91,7 @@ struct Iterator {
       return {};
     }
 
-    if constexpr (!same_<Item, Item&>) {
+    if constexpr (!trait::same_<Item, Item&>) {
       auto res_val = mem::move(opt).unwrap();
       while (auto x = self.next()) {
         res_val = f(res_val, *x);
@@ -154,6 +155,7 @@ struct Iterator {
   auto filter(this Self&& self, P&& pred) -> Filter<Self, P> {
     return Filter<Self, P>{static_cast<Self&&>(self), static_cast<P&&>(pred)};
   }
+#endif
 };
 
 template <class I, class F>
