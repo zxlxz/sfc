@@ -78,12 +78,12 @@ void expect_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current(
   panic::panic_fmt({fmt::Fmts{"sfc::expect(`{}`>=`{}`) failed"}, loc}, a, b);
 }
 
-void expect_flt_eq(auto a, auto b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
+void expect_flt_eq(const auto& a, const auto& b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (num::flt_eq_ulp(a, b, ulp)) return;
   panic::panic_fmt({fmt::Fmts{"sfc::expect_flt(`{}`==`{}`) failed"}, loc}, a, b);
 }
 
-void expect_flt_ne(auto a, auto b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
+void expect_flt_ne(const auto& a, const auto& b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (!num::flt_eq_ulp(a, b, ulp)) return;
   panic::panic_fmt({fmt::Fmts{"sfc::expect_flt(`{}`!=`{}`) failed"}, loc}, a, b);
 }
