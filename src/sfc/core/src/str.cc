@@ -1,4 +1,5 @@
 #include "sfc/core/str.h"
+#include "sfc/core/hash.h"
 
 namespace sfc::str {
 

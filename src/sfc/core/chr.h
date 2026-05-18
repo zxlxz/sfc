@@ -24,6 +24,8 @@ struct Chars : iter::Iterator<char32_t> {
   const u8* _end;
 
  public:
+  Chars(const u8* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
+
   auto next() noexcept -> Option<char32_t>;
   auto next_back() noexcept -> Option<char32_t>;
 };

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "sfc/core/hash.h"
-#include "sfc/core/num.h"
 #include "sfc/core/slice.h"
 #include "sfc/core/chr.h"
 
@@ -75,12 +73,12 @@ struct Str {
  public:
   using Iter = slice::Iter<const char>;
   auto iter() const noexcept -> slice::Iter<const char> {
-    return Iter{{}, _ptr, _ptr + _len};
+    return Iter{_ptr, _len};
   }
 
   auto chars() const noexcept -> chr::Chars {
     const auto p = reinterpret_cast<const u8*>(_ptr);
-    return chr::Chars{{}, p, p + _len};
+    return chr::Chars{p, _len};
   }
 
  public:
