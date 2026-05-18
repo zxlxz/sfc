@@ -1,54 +1,40 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::num {
 
-template <class T>
-concept sint_ = same_<T, signed char> || same_<T, short> || same_<T, int> || same_<T, long> ||
-                same_<T, long long>;
-
-template <class T>
-concept uint_ = same_<T, unsigned char> || same_<T, unsigned short> || same_<T, unsigned int> ||
-                same_<T, unsigned long> || same_<T, unsigned long long>;
-
-template <class T>
-concept int_ = sint_<T> || uint_<T>;
-
-template <class T>
-concept float_ = same_<T, float> || same_<T, double>;
-
-template <int_ T>
+template <trait::int_ T>
 consteval auto max_value() -> T {
-  if constexpr (uint_<T>) {
+  if constexpr (trait::uint_<T>) {
     return static_cast<T>(~T{0});
   } else {
     return static_cast<T>(~(T{1} << (sizeof(T) * 8 - 1)));
   }
 }
 
-template <sint_ T>
+template <trait::sint_ T>
 consteval auto min_value() -> T {
   return static_cast<T>(T{1} << (sizeof(T) * 8 - 1));
 }
 
-template <uint_ T>
+template <trait::uint_ T>
 constexpr auto saturating_sub(T a, T b) -> T {
   return a < b ? 0U : a - b;
 }
 
-template <uint_ T>
+template <trait::uint_ T>
 constexpr auto align_up(T val, T align) -> T {
   const auto mask = T{align - 1};
   return (val + mask) & ~mask;
 }
 
-template <uint_ T>
+template <trait::uint_ T>
 constexpr auto is_power_of_two(T val) -> bool {
   return (val & (val - 1)) == 0;
 }
 
-template <uint_ T>
+template <trait::uint_ T>
 constexpr auto next_power_of_two(T n) -> T {
   auto t = T{1};
   while (t < n)
@@ -56,7 +42,7 @@ constexpr auto next_power_of_two(T n) -> T {
   return t;
 }
 
-template <int_ T>
+template <trait::int_ T>
 constexpr auto uabs(T x) {
   static_assert(sizeof(T) <= sizeof(i64), "uabs: type is too large");
 

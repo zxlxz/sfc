@@ -53,11 +53,11 @@ class Serializer {
   void serialize_any(const T& val) {
     if constexpr (requires { val.serialize(*this); }) {
       return val.serialize(*this);
-    } else if constexpr (same_<T, bool>) {
+    } else if constexpr (trait::same_<T, bool>) {
       return this->serialize_bool(val);
-    } else if constexpr (num::int_<T>) {
+    } else if constexpr (trait::int_<T>) {
       return this->serialize_int(static_cast<i64>(val));
-    } else if constexpr (num::float_<T>) {
+    } else if constexpr (trait::float_<T>) {
       return this->serialize_flt(static_cast<f64>(val));
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
@@ -125,11 +125,11 @@ struct Deserializer {
   auto deserialize_any() noexcept -> Result<T> {
     if constexpr (requires { T::deserialize(*this); }) {
       return T::deserialize(*this);
-    } else if constexpr (same_<T, bool>) {
+    } else if constexpr (trait::same_<T, bool>) {
       return this->deserialize_bool();
-    } else if constexpr (num::int_<T>) {
+    } else if constexpr (trait::int_<T>) {
       return this->deserialize_int().map([](i64 v) { return static_cast<T>(v); });
-    } else if constexpr (num::float_<T>) {
+    } else if constexpr (trait::float_<T>) {
       return this->deserialize_flt().map([](f64 v) { return static_cast<T>(v); });
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });

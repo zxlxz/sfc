@@ -35,23 +35,6 @@ using f64 = double;
 
 using cstr_t = const char*;
 
-template <class T>
-struct type_t {};
-
-template <class T>
-concept enum_ = __is_enum(T);
-
-template <class T>
-concept class_ = __is_class(T);
-
-#if defined(__clang__) || defined(__GNUC__)
-template <class T, class U>
-concept same_ = __is_same(T, U);
-#else
-template <class T, class U>
-concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
-#endif
-
 namespace str {
 struct Str;
 }
@@ -77,6 +60,9 @@ class Result;
 
 namespace io {
 struct Error;
+
+template<class T>
+using Result = result::Result<T, Error>;
 }
 
 }  // namespace sfc

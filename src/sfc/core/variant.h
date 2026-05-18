@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/core/option.h"
 #include "sfc/core/ptr.h"
+#include "sfc/core/option.h"
 
 namespace sfc::variant {
 
@@ -87,7 +87,7 @@ struct idx_t {
 
 template <class U, class T, class... Ts>
 consteval auto type_idx() -> u32 {
-  if constexpr (sfc::same_<U, T>) {
+  if constexpr (trait::same_<U, T>) {
     return 0U;
   } else {
     return 1U + variant::type_idx<U, Ts...>();

@@ -85,11 +85,11 @@ struct NumParser {
       return {};
     }
 
-    if constexpr (num::float_<T>) {
+    if constexpr (trait::float_<T>) {
       return this->parse_flt<T>();
-    } else if constexpr (num::uint_<T>) {
+    } else if constexpr (trait::uint_<T>) {
       return this->parse_uint<T>();
-    } else if constexpr (num::sint_<T>) {
+    } else if constexpr (trait::sint_<T>) {
       return this->parse_sint<T>();
     }
   }

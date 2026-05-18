@@ -54,20 +54,20 @@ struct Debug {
     f.write_str(Str::from_utf8({u8_buf, u8_len}));
   }
 
-  static void fmt(num::uint_ auto val, auto& f) {
+  static void fmt(trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
     const auto s = Debug::format_int(buf, val + 0, f._spec._type);
     f.pad_num(false, s);
   }
 
-  static void fmt(num::sint_ auto val, auto& f) {
+  static void fmt(trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
     const auto u = num::uabs(val);
     const auto s = Debug::format_int(buf, u, f._spec._type);
     f.pad_num(val < 0, s);
   }
 
-  static void fmt(num::float_ auto val, auto& f) {
+  static void fmt(trait::float_ auto val, auto& f) {
     static constexpr auto DEFAULT_PRECISION = sizeof(val) == 4 ? 4U : 6U;
     char buf[8 * sizeof(val) + 16];
 
@@ -77,7 +77,7 @@ struct Debug {
     f.pad_num(val < 0, s);
   }
 
-  static void fmt(enum_ auto val, auto& f) {
+  static void fmt(trait::enum_ auto val, auto& f) {
     using I = __underlying_type(decltype(val));
     constexpr auto kTypeName = reflect::type_name<decltype(val)>();
     if constexpr (requires { to_str(val); }) {

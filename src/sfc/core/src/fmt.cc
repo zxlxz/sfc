@@ -44,7 +44,7 @@ struct RevBuf {
     }
 
     // write sign
-    if constexpr (num::sint_<decltype(val)>) {
+    if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
   }
@@ -68,7 +68,7 @@ struct RevBuf {
     }
 
     // write sign
-    if constexpr (num::sint_<decltype(val)>) {
+    if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
   }
@@ -226,7 +226,7 @@ auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
     case 'x': rbuf.write_bin<16>(uval, false); break;
   }
 
-  if constexpr (num::sint_<decltype(val)>) {
+  if constexpr (trait::sint_<decltype(val)>) {
     if (val < 0) {
       rbuf.push('-');
     }
