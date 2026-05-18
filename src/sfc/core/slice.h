@@ -18,6 +18,143 @@ template <class T>
 struct Chunks;
 
 template <class T>
+struct Slice;
+
+template <class T>
+struct Slice<const T> {
+  const T* _ptr = nullptr;
+  usize _len = 0;
+
+ public:
+  [[gnu::always_inline]] constexpr Slice() noexcept = default;
+
+  [[gnu::always_inline]] constexpr Slice(const T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+
+  [[gnu::always_inline]] constexpr Slice(Slice<T> v) noexcept : _ptr{v._ptr}, _len{v._len} {}
+
+  template <usize N>
+  [[gnu::always_inline]] constexpr Slice(const T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+
+  [[gnu::always_inline]] constexpr auto ptr() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
+    return _len;
+  }
+
+  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
+    return _len == 0;
+  }
+
+  [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {reinterpret_cast<const u8*>(_ptr), _len * sizeof(T)};
+  }
+
+ public:
+  [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
+    sfc::expect(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    return _ptr[idx];
+  }
+
+  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
+    ids = ids % _len;
+    return Slice<const T>{_ptr + ids.start, ids.len()};
+  }
+
+  auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
+    const auto x = mid < _len ? mid : _len;
+    return Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
+  }
+
+ public:
+  auto contains(const T& x) const noexcept -> bool {
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  auto find(const T& x) const noexcept -> Option<usize> {
+    for (auto i = 0UL; i != _len; ++i) {
+      if (_ptr[i] == x) {
+        return i;
+      }
+    }
+    return {};
+  }
+
+  auto rfind(const T& x) const noexcept -> Option<usize> {
+    for (auto i = _len; i != 0U; --i) {
+      if (_ptr[i - 1] == x) {
+        return i - 1;
+      }
+    }
+    return {};
+  }
+
+  auto starts_with(Slice<const T> needle) const noexcept -> bool {
+    if (_len < needle._len) return false;
+    return needle == Slice{_ptr, needle._len};
+  }
+
+  auto ends_with(Slice<const T> needle) const -> bool {
+    if (_len < needle._len) return false;
+    return needle == Slice{_ptr + _len - needle._len, needle._len};
+  }
+
+ public:
+  [[gnu::always_inline]] auto begin() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  [[gnu::always_inline]] auto end() const noexcept -> const T* {
+    return _ptr + _len;
+  }
+
+  [[gnu::always_inline]] auto iter() const noexcept -> Iter<const T> {
+    return {_ptr, _len};
+  }
+
+  [[gnu::always_inline]] auto windows(usize n) const noexcept -> Windows<const T> {
+    return {*this, n};
+  }
+
+  [[gnu::always_inline]] auto chunks(usize n) const noexcept -> Chunks<const T> {
+    return {*this, n};
+  }
+
+ public:
+  // trait: option::Nullable
+  constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
+    return _ptr == nullptr;
+  }
+
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    f.debug_list().entries(this->iter());
+  }
+
+  // trait: io::Read
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
+
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_seq();
+    for (const auto& t : *this) {
+      imp.serialize_element(t);
+    }
+  }
+};
+
+template <class T>
 struct Slice {
   T* _ptr = nullptr;
   usize _len = 0;
@@ -196,18 +333,6 @@ struct Slice {
   }
 
  public:
-  // trait: ops::Eq
-  constexpr auto operator==(Slice<const T> other) const noexcept -> bool {
-    if (_len != other._len) return false;
-
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != other._ptr[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   // trait: option::Nullable
   constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _ptr == nullptr;
@@ -235,6 +360,19 @@ Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
 Slice(T*, usize) -> Slice<T>;
+
+// trait: ops::Eq
+template <class A, class B>
+constexpr auto operator==(const Slice<A>& a, const Slice<B>& b) noexcept -> bool {
+  if (a._len != b._len) return false;
+
+  for (auto i = 0UL; i < a._len; ++i) {
+    if (a._ptr[i] != b._ptr[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 template <class T>
 struct Iter : iter::Iterator<T&> {
