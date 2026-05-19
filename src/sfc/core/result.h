@@ -111,12 +111,12 @@ class [[nodiscard]] Result {
   }
 
   auto unwrap() && -> T {
-    sfc::expect(_tag == 0, "Result::unwrap: not Ok()");
+    sfc::expect(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
     return static_cast<T&&>(_0);
   }
 
   auto unwrap_err() && -> E {
-    sfc::expect(_tag == 1, "Result::unwrap_err: not Err()");
+    sfc::expect(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
     return static_cast<E&&>(_1);
   }
 
