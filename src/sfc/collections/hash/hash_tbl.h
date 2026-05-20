@@ -21,28 +21,22 @@ struct Hasher {
 };
 
 template <class T>
-struct Iter : iter::Iterator<T&> {
+struct Iter : iter::Iterator {
+  using Item = T&;
+
   const u8* _ctrl;
   T* _data;
   usize _cap = 0;
   usize _idx = 0;
 
  public:
-  auto next() -> Option<T&> {
+  auto next() -> Option<Item> {
     for (; _idx < _cap; _idx++) {
       if (_ctrl[_idx] < CTRL_NUL) {
         return _data[_idx++];
       }
     }
     return {};
-  }
-
-  void for_each(auto&& f) {
-    for (; _idx < _cap; _idx++) {
-      if (_ctrl[_idx] < CTRL_NUL) {
-        f(_data[_idx]);
-      }
-    }
   }
 };
 

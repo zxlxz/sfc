@@ -5,7 +5,8 @@
 namespace sfc::collections::queue {
 
 template <class T>
-struct Iter : iter::Iterator<T&> {
+struct Iter : iter::Iterator {
+  using Item = T&;
   slice::Iter<T> _iter1;
   slice::Iter<T> _iter2;
 
@@ -14,13 +15,17 @@ struct Iter : iter::Iterator<T&> {
     return _iter1.len() + _iter2.len();
   }
 
-  auto next() noexcept -> Option<T&> {
-    if (auto t = _iter1.next()) return t;
+  auto next() noexcept -> Option<Item> {
+    if (auto t = _iter1.next()) {
+      return t;
+    }
     return _iter2.next();
   }
 
-  auto next_back() noexcept -> Option<T> {
-    if (auto t = _iter1.next_back()) return t;
+  auto next_back() noexcept -> Option<Item> {
+    if (auto t = _iter1.next_back()) {
+      return t;
+    }
     return _iter2.next_back();
   }
 };

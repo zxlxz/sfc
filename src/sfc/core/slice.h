@@ -376,7 +376,9 @@ constexpr auto operator==(const Slice<A>& a, const Slice<B>& b) noexcept -> bool
 }
 
 template <class T>
-struct Iter : iter::Iterator<T&> {
+struct Iter : iter::Iterator {
+  using Item = T&;
+
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -387,19 +389,20 @@ struct Iter : iter::Iterator<T&> {
     return _end - _ptr;
   }
 
-  auto next() noexcept -> Option<T&> {
+  auto next() noexcept -> Option<Item> {
     if (_ptr >= _end) return {};
     return *_ptr++;
   }
 
-  auto next_back() noexcept -> Option<T&> {
+  auto next_back() noexcept -> Option<Item> {
     if (_ptr >= _end) return {};
     return *--_end;
   }
 };
 
 template <class T>
-struct Windows : iter::Iterator<Slice<T>> {
+struct Windows : iter::Iterator {
+  using Item = Slice<T>;
   T* _ptr;
   T* _end;
   usize _len;
@@ -407,23 +410,25 @@ struct Windows : iter::Iterator<Slice<T>> {
  public:
   Windows(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
-  auto next() noexcept -> Option<Slice<T>> {
+  auto next() noexcept -> Option<Item> {
     if (_end - _ptr < _len) return {};
 
     _ptr += 1;
-    return Slice<T>{_ptr - 1, _len};
+    return Item{_ptr - 1, _len};
   }
 
-  auto next_back() noexcept -> Option<Slice<T>> {
+  auto next_back() noexcept -> Option<Item> {
     if (_end - _ptr < _len) return {};
 
     _end -= 1;
-    return Slice<T>{_end - _len + 1, _len};
+    return Item{_end - _len + 1, _len};
   }
 };
 
 template <class T>
-struct Chunks : iter::Iterator<Slice<T>> {
+struct Chunks : iter::Iterator {
+  using Item = Slice<T>;
+
   T* _ptr;
   T* _end;
   usize _len;
@@ -431,12 +436,12 @@ struct Chunks : iter::Iterator<Slice<T>> {
  public:
   Chunks(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
-  auto next() noexcept -> Option<Slice<T>> {
+  auto next() noexcept -> Option<Item> {
     if (_end - _ptr < 1) return {};
 
     const auto len = _end - _ptr < _len ? _end - _ptr : _len;
     _ptr += len;
-    return Slice<T>{_ptr - len, len};
+    return Item{_ptr - len, len};
   }
 };
 

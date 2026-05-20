@@ -19,25 +19,28 @@ auto wide_codelen(wchar_t h) -> usize;
 auto wide_encode(char32_t ch, wchar_t (&buf)[2]) -> usize;
 auto wide_decode(const wchar_t p[], usize n) -> char32_t;
 
-struct Chars : iter::Iterator<char32_t> {
+struct Chars : iter::Iterator {
+  using Item = char32_t;
+
   const u8* _ptr;
   const u8* _end;
 
  public:
   Chars(const u8* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
 
-  auto next() noexcept -> Option<char32_t>;
-  auto next_back() noexcept -> Option<char32_t>;
+  auto next() noexcept -> Option<Item>;
+  auto next_back() noexcept -> Option<Item>;
 };
 
-struct WChars : iter::Iterator<char32_t> {
+struct WChars : iter::Iterator {
+  using Item = char32_t;
   const wchar_t* _ptr;
   const wchar_t* _end;
 
  public:
   WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
 
-  auto next() noexcept -> Option<char32_t>;
+  auto next() noexcept -> Option<Item>;
 };
 
 }  // namespace sfc::chr
