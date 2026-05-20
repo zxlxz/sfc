@@ -23,6 +23,8 @@ auto CString::ptr() const -> const char* {
 
 auto CString::into_string() && -> String {
   auto buf = mem::move(_buf);
+
+  // remove the trailing null character if exists
   if (!buf.is_empty()) {
     buf.pop();
   }
@@ -55,7 +57,13 @@ auto WString::ptr() const -> const wchar_t* {
 }
 
 auto WString::chars() const -> chr::WChars {
-  return chr::WChars{_buf.as_ptr(), _buf.len()};
+  const auto p = _buf.as_ptr();
+  const auto n = _buf.len();
+  if (n <= 1) {
+    return chr::WChars{nullptr, 0};
+  }
+  // exclude the trailing null character
+  return chr::WChars{p, n - 1};
 }
 
 // using this name, just make CString and WString have the same API

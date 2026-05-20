@@ -146,7 +146,7 @@ auto wide_decode(const wchar_t p[], usize n) -> char32_t {
   }
 }
 
-auto Chars::next() noexcept -> Option<char32_t> {
+auto Chars::next() noexcept -> Option<Item> {
   if (_ptr == _end) return {};
 
   const auto n = chr::utf8_codelen(*_ptr);
@@ -160,7 +160,7 @@ auto Chars::next() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto Chars::next_back() noexcept -> Option<char32_t> {
+auto Chars::next_back() noexcept -> Option<Item> {
   if (_ptr == _end) return {};
 
   // rev find the start of the last code point
@@ -180,7 +180,7 @@ auto Chars::next_back() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto WChars::next() noexcept -> Option<char32_t> {
+auto WChars::next() noexcept -> Option<Item> {
   if (_ptr == _end) return {};
 
   const auto n = chr::wide_codelen(*_ptr);

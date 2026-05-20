@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/core/slice.h"
 #include "sfc/core/chr.h"
+#include "sfc/core/slice.h"
 
 namespace sfc::str {
 

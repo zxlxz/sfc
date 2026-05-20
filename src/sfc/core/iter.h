@@ -2,7 +2,6 @@
 
 #include "sfc/core/mem.h"
 #include "sfc/core/option.h"
-#include "sfc/core/tuple.h"
 
 namespace sfc::iter {
 

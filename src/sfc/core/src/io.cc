@@ -1,5 +1,6 @@
 #include "sfc/core/io.h"
 #include "sfc/core/str.h"
+#include "sfc/core/result.h"
 
 namespace sfc::io {
 
