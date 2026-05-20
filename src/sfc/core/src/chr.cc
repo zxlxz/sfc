@@ -180,7 +180,7 @@ auto Chars::next_back() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto WChars::next() noexcept -> Option<wchar_t> {
+auto WChars::next() noexcept -> Option<char32_t> {
   if (_ptr == _end) return {};
 
   const auto n = chr::wide_codelen(*_ptr);

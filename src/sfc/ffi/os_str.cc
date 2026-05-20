@@ -46,12 +46,16 @@ auto WString::from(Str s) -> WString {
   return res;
 }
 
+auto WString::buf() -> Buf& {
+  return _buf;
+}
+
 auto WString::ptr() const -> const wchar_t* {
   return _buf.as_ptr();
 }
 
-auto WString::buf() -> Buf& {
-  return _buf;
+auto WString::chars() const -> chr::WChars {
+  return chr::WChars{_buf.as_ptr(), _buf.len()};
 }
 
 // using this name, just make CString and WString have the same API
@@ -61,11 +65,10 @@ auto WString::into_string() const -> String {
     return {};
   }
 
-  const auto p = _buf.as_ptr();
-  const auto n = _buf.len() - 1;
+  auto res = String::with_capacity(_buf.len());
 
-  auto res = String::with_capacity(n);
-  chr::WChars{{}, p, p + n}.for_each([&](wchar_t ch) { res.push(ch); });
+  auto chars = this->chars();
+  chars.for_each([&](char32_t ch) { res.push(ch); });
   return res;
 }
 

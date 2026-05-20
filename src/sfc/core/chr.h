@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sfc/core/option.h"
 #include "sfc/core/iter.h"
+#include "sfc/core/option.h"
 
 namespace sfc::chr {
 
@@ -30,12 +30,14 @@ struct Chars : iter::Iterator<char32_t> {
   auto next_back() noexcept -> Option<char32_t>;
 };
 
-struct WChars : iter::Iterator<wchar_t> {
+struct WChars : iter::Iterator<char32_t> {
   const wchar_t* _ptr;
   const wchar_t* _end;
 
  public:
-  auto next() noexcept -> Option<wchar_t>;
+  WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
+
+  auto next() noexcept -> Option<char32_t>;
 };
 
 }  // namespace sfc::chr

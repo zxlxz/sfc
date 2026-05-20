@@ -22,11 +22,12 @@ class WString {
  public:
   static auto from(Str s) -> WString;
 
-  auto ptr() const -> const wchar_t*;
   auto buf() -> Buf&;
+  auto ptr() const -> const wchar_t*;
+  auto chars() const -> chr::WChars;
+
   auto into_string() const -> String;
 };
-
 
 #ifdef _WIN32
 using OsString = WString;
