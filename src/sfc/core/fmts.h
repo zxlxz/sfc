@@ -38,7 +38,7 @@ struct Spec {
     return _type ? _type : default_type;
   }
 
-  auto align(u32 default_align = 0) const -> char {
+  auto align(char default_align = 0) const -> char {
     return _align ? _align : default_align;
   }
 
@@ -159,7 +159,7 @@ struct Fmts {
   }
 
   auto tail() const -> RawStr {
-    const auto i = _cnt == 0 ? 0 : _ends[_cnt - 1] + 1;
+    const auto i = _cnt == 0 ? 0U : _ends[_cnt - 1] + 1;
     return {_str._ptr + i, _str._len - i};
   }
 };
