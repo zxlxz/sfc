@@ -84,16 +84,15 @@ struct OpenOptions {
 
  public:
   auto open(const wchar_t* path) const -> io::Result<HANDLE> {
-    const auto read_mode = _read ? GENERIC_READ : 0;
-    const auto write_mode = _write ? GENERIC_WRITE : 0;
-    const auto append_mode = _append ? FILE_APPEND_DATA : 0;
-    const auto access_mode = read_mode | write_mode | append_mode;
-
-    const auto create_mode = _create_new            ? CREATE_NEW
-                             : _create && _truncate ? CREATE_ALWAYS
-                             : _create              ? OPEN_ALWAYS
-                             : _truncate            ? TRUNCATE_EXISTING
-                                                    : OPEN_EXISTING;
+    const DWORD read_mode = _read ? GENERIC_READ : 0U;
+    const DWORD write_mode = _write ? GENERIC_WRITE : 0U;
+    const DWORD append_mode = _append ? FILE_APPEND_DATA : 0U;
+    const DWORD access_mode = read_mode | write_mode | append_mode;
+    const DWORD create_mode = _create_new            ? CREATE_NEW
+                              : _create && _truncate ? CREATE_ALWAYS
+                              : _create              ? OPEN_ALWAYS
+                              : _truncate            ? TRUNCATE_EXISTING
+                                                     : OPEN_EXISTING;
 
     const auto handle = ::CreateFileW(path, access_mode, _share_mode, nullptr, create_mode, _flags, nullptr);
     if (handle == INVALID_HANDLE_VALUE) {

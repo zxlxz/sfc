@@ -2,33 +2,39 @@
 
 namespace sfc::serde::base64 {
 
-static auto encode_blk(const u8 in[3], u8 (&out)[4], usize in_len) -> usize {
+static constexpr auto DATA_BUF_LEN = 3U;
+static constexpr auto TEXT_BUF_LEN = 4U;
+using data_buf_t = u8[DATA_BUF_LEN];
+using text_buf_t = char[TEXT_BUF_LEN];
+
+static auto encode_blk(text_buf_t& text, Slice<const u8> data) -> Str {
   static constexpr auto ENCODE_TBL =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "abcdefghijklmnopqrstuvwxyz"
       "0123456789+/";
 
-  if (in_len <= 0 || in_len > 3) {
-    return 0;
+  const auto n = data._len;
+  if (n <= 0 || n > DATA_BUF_LEN) {
+    return {};
   }
 
   u32 val = 0;
-  for (u32 i = 0; i < 3; ++i) {
+  for (u32 i = 0; i < DATA_BUF_LEN; ++i) {
     val <<= 8;
-    if (i < in_len) {
-      val |= in[i];
+    if (i < n) {
+      val |= data[i];
     }
   }
 
-  out[0] = ENCODE_TBL[(val >> 18) & 0x3F];
-  out[1] = ENCODE_TBL[(val >> 12) & 0x3F];
-  out[2] = (in_len > 1) ? ENCODE_TBL[(val >> 6) & 0x3F] : '=';
-  out[3] = (in_len > 2) ? ENCODE_TBL[val & 0x3F] : '=';
-  return 4;
+  text[0] = ENCODE_TBL[(val >> 18) & 0x3F];
+  text[1] = ENCODE_TBL[(val >> 12) & 0x3F];
+  text[2] = (n > 1) ? ENCODE_TBL[(val >> 6) & 0x3F] : '=';
+  text[3] = (n > 2) ? ENCODE_TBL[val & 0x3F] : '=';
+  return Str{text, 4};
 }
 
 // @note: in won't contains '=' char
-static auto decode_blk(const u8 in[4], u8 (&out)[3], usize in_len) -> usize {
+static auto decode_blk(data_buf_t& data, Str text) -> Slice<const u8> {
   static constexpr u8 FF = 0xFF;
 
   static constexpr u8 DECODE_MAP[] = {
@@ -50,34 +56,28 @@ static auto decode_blk(const u8 in[4], u8 (&out)[3], usize in_len) -> usize {
       49, 50, 51, FF, FF, FF, FF, FF,  // x .. z
   };
 
-  if (in_len <= 0 || in_len > 4) {
-    return 0;
+  const auto n = text._len;
+  if (n <= 0 || n > TEXT_BUF_LEN) {
+    return {};
   }
 
   auto val = 0U;
-  for (auto i = 0U; i < 4; ++i) {
+  for (auto i = 0U; i < TEXT_BUF_LEN; ++i) {
     val <<= 6;
-    if (i < in_len) {
-      const auto c = in[i];
+    if (i < n) {
+      const auto c = static_cast<u32>(text[i]);
       const auto u = c < sizeof(DECODE_MAP) ? DECODE_MAP[c] : FF;
       if (u == FF) {
-        return 0;
+        return {};
       }
       val |= u;
     }
   }
 
-  if (in_len > 1) {
-    out[0] = (val >> 16) & 0xFF;
-  }
-  if (in_len > 2) {
-    out[1] = (val >> 8) & 0xFF;
-  }
-  if (in_len > 3) {
-    out[2] = val & 0xFF;
-  }
-
-  return in_len - 1;
+  if (n > 1) data[0] = (val >> 16) & 0xFF;
+  if (n > 2) data[1] = (val >> 8) & 0xFF;
+  if (n > 3) data[2] = val & 0xFF;
+  return Slice<const u8>{data, n - 1};
 }
 
 auto encode(Slice<const u8> data) -> String {
@@ -86,20 +86,19 @@ auto encode(Slice<const u8> data) -> String {
   }
 
   const auto data_len = data.len();
-  const auto text_len = ((data_len + 2) / 3) * 4;
+  const auto text_len = ((data_len + DATA_BUF_LEN - 1) / DATA_BUF_LEN) * TEXT_BUF_LEN;
 
   auto text = String{};
   text.reserve(text_len);
 
-  auto& text_buf = text.buf();
-  for (auto i = 0u; i < data_len; i += 3) {
-    const auto in_blk = data._ptr + i;
-    const auto in_len = i + 3 <= data_len ? 3 : data_len - i;
+  for (auto i = 0u; i < data_len; i += DATA_BUF_LEN) {
+    const auto is_end = i + DATA_BUF_LEN >= data_len;
+    const auto in_ptr = data._ptr + i;
+    const auto in_len = is_end ? data_len - i : DATA_BUF_LEN;
 
-    u8 out_blk[4] = {};
-    encode_blk(in_blk, out_blk, in_len);
-
-    text_buf.extend_from_slice({out_blk, 4});
+    text_buf_t out_buf = {};
+    const auto out_str = base64::encode_blk(out_buf, Slice{in_ptr, in_len});
+    text.push_str(out_str);
   }
 
   return text;
@@ -116,20 +115,19 @@ auto decode(Str text) -> List<u8> {
   }
 
   auto out = List<u8>{};
-  out.reserve((text_len / 4) * 3);
+  out.reserve((text_len / TEXT_BUF_LEN) * DATA_BUF_LEN);
 
-  const auto in_ptr = text.as_bytes().as_ptr();
-  for (auto i = 0u; i < text._len; i += 4) {
-    const auto in_blk = in_ptr + i;
+  for (auto i = 0u; i < text._len; i += TEXT_BUF_LEN) {
     const auto is_end = i + 4 >= text._len;
-    const auto in_len = is_end ? (in_blk[2] == '=' ? 2U : (in_blk[3] == '=' ? 3U : 4U)) : 4U;
+    const auto in_ptr = text._ptr + i;
+    const auto in_len = is_end ? (in_ptr[2] == '=' ? 2U : (in_ptr[3] == '=' ? 3U : 4U)) : TEXT_BUF_LEN;
 
-    u8 out_blk[3] = {};
-    const auto out_len = decode_blk(in_blk, out_blk, in_len);
-    if (out_len == 0) {
-      return {};
+    data_buf_t out_buf = {};
+    const auto out_data = base64::decode_blk(out_buf, Str{in_ptr, in_len});
+    if (out_data.is_empty()) {
+      break;
     }
-    out.extend_from_slice({out_blk, out_len});
+    out.extend_from_slice(out_data);
   }
 
   return out;

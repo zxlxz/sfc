@@ -15,9 +15,9 @@ struct ThreadData {
 
  public:
   void run() noexcept {
-    const auto os_name = _name.ptr();
-    if (os_name != nullptr) {
-      sys::Thread::set_name(os_name);
+    const auto name_ptr = _name.as_ptr();
+    if (name_ptr != nullptr) {
+      sys::Thread::set_name(name_ptr);
     }
     _func();
   }

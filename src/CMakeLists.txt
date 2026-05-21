@@ -9,7 +9,7 @@ target_include_directories(sfc PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 # warning
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  target_compile_options(sfc PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(sfc PRIVATE -Wall -Wmost -Wextra -Wpedantic -Wconversion)
 endif()
 
 # option: lto

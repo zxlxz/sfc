@@ -21,7 +21,9 @@ struct Thread {
 
   template <class Fn>
   static auto spawn(size_t stack_size, Fn* func) -> Thread {
-    const auto thrd = _beginthreadex(nullptr, stack_size, callback<Fn>, func, 0, nullptr);
+    const auto ss = static_cast<u32>(stack_size);
+    const auto cb = &Thread::callback<Fn>;
+    const auto thrd = ::_beginthreadex(nullptr, ss, cb, func, 0, nullptr);
     if (thrd == 0) {
       return {};
     }
@@ -52,7 +54,8 @@ struct Thread {
     const auto ret = ::WaitForSingleObject(_raw, INFINITE);
     ::CloseHandle(_raw);
     sfc::expect(ret == WAIT_OBJECT_0,
-                "Thread::join: WaitForSingleObject failed, err={}", ::GetLastError());
+                "Thread::join: WaitForSingleObject failed, err={}",
+                ::GetLastError());
   }
 
   void detach() {
