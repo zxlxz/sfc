@@ -128,25 +128,25 @@ struct NumParser {
 
   // [0+] : int number
   // [-1] : failed
-  [[gnu::always_inline]] auto pop_xdigit(i32 radix) -> int {
+  [[gnu::always_inline]] auto pop_xdigit(u32 radix) -> int {
     if (_ptr >= _end) {
       return -1;
     }
 
-    const auto n = *_ptr - '0';
-    if (0 <= n && n < radix) {
+    const auto n = static_cast<u32>(*_ptr - '0');
+    if (n < radix) {
       _ptr += 1;
-      return n;
+      return static_cast<int>(n);
     }
 
     if (radix < 16) {
       return -1;
     }
 
-    const auto x = 10 + ((*_ptr | 32) - 'a');
-    if (0 <= x && x < radix) {
+    const auto x = static_cast<u32>(10 + ((*_ptr | 32) - 'a'));
+    if (x < radix) {
       _ptr += 1;
-      return x;
+      return static_cast<int>(x);
     }
 
     return -1;
@@ -159,7 +159,7 @@ struct NumParser {
     return ch == '-' ? -1 : 1;
   }
 
-  auto extract_radix() -> u16 {
+  auto extract_radix() -> u32 {
     const auto cnt = _end - _ptr;
     // 1. single value will be decimal
     // 2. not with leading '0', will be decimal
@@ -199,7 +199,7 @@ struct NumParser {
     while (true) {
       const auto n = this->pop_xdigit(radix);
       if (n == -1) break;
-      val = radix * val + n;
+      val = radix * val + static_cast<u32>(n);
     };
     return val;
   }

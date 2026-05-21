@@ -25,10 +25,10 @@ SFC_TEST(num_sign) {
 
 SFC_TEST(num_fill) {
   sfc::expect_eq(format("{3}", +5), "  5");
-  sfc::expect_eq(format("{3}", -5), " -5");
+  sfc::expect_eq(format("{3}", -5), "  -5");
 
   sfc::expect_eq(format("{03}", +5), "005");
-  sfc::expect_eq(format("{03}", -5), "-05");
+  sfc::expect_eq(format("{03}", -5), "-005");
 }
 
 SFC_TEST(num_alt) {
@@ -37,10 +37,10 @@ SFC_TEST(num_alt) {
   sfc::expect_eq(format("{#b}", 5), "0b101");
   sfc::expect_eq(format("{#o}", 5), "05");
 
-  sfc::expect_eq(format("{#4x}", 5), "0x05");
-  sfc::expect_eq(format("{#4X}", 5), "0X05");
-  sfc::expect_eq(format("{#4b}", 5), "0b101");
-  sfc::expect_eq(format("{#4o}", 5), "0005");
+  sfc::expect_eq(format("{#2x}", 5), "0x05");
+  sfc::expect_eq(format("{#2X}", 5), "0X05");
+  sfc::expect_eq(format("{#3b}", 5), "0b101");
+  sfc::expect_eq(format("{#3o}", 5), "0005");
 }
 
 SFC_TEST(num_align) {
@@ -49,10 +49,10 @@ SFC_TEST(num_align) {
   sfc::expect_eq(format("{^5d}", 42), " 42  ");
   sfc::expect_eq(format("{=5d}", 42), "   42");
 
-  sfc::expect_eq(format("{>5d}", -42), "  -42");
-  sfc::expect_eq(format("{<5d}", -42), "-42  ");
-  sfc::expect_eq(format("{^5d}", -42), " -42 ");
-  sfc::expect_eq(format("{=5d}", -42), "-  42");
+  sfc::expect_eq(format("{>4d}", -42), "  -42");
+  sfc::expect_eq(format("{<4d}", -42), "-42  ");
+  sfc::expect_eq(format("{^4d}", -42), " -42 ");
+  sfc::expect_eq(format("{=4d}", -42), "-  42");
 }
 
 SFC_TEST(bool) {

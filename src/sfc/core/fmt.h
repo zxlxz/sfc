@@ -44,13 +44,13 @@ struct Debug {
 
   static void fmt(char16_t val, auto& f) {
     u8 u8_buf[4] = {};
-    const auto u8_len = chr::utf8_encode(val, u8_buf);
+    const auto u8_len = chr::utf8_encode(u8_buf, val);
     f.write_str(Str::from_utf8({u8_buf, u8_len}));
   }
 
   static void fmt(char32_t val, auto& f) {
     u8 u8_buf[4] = {};
-    const auto u8_len = chr::utf8_encode(val, u8_buf);
+    const auto u8_len = chr::utf8_encode(u8_buf, val);
     f.write_str(Str::from_utf8({u8_buf, u8_len}));
   }
 
@@ -101,8 +101,8 @@ struct Formatter {
 
  public:
   void write_char(char c) {
-    if constexpr (requires { _buf.push(c); }) {
-      (void)_buf.push(c);
+    if constexpr (requires { _buf.push(char32_t{0}); }) {
+      (void)_buf.push(static_cast<char32_t>(c));
     } else {
       this->write_str(Str{&c, 1});
     }
@@ -189,18 +189,17 @@ struct Formatter {
     }
   }
 
-  void pad_num(bool is_neg, Str body) {
+  void pad_num(bool is_neg, Str num_str) {
     const auto sign = _spec.sign(is_neg);
     const auto prefix = _spec.prefix();
-    const auto nbody = sign._len + prefix._len + body._len;
-    if (nbody >= _spec._width) {
+    if (num_str._len >= _spec._width) {
       this->write_str(sign);
       this->write_str(prefix);
-      this->write_str(body);
+      this->write_str(num_str);
       return;
     }
 
-    const auto npad = _spec._width - nbody;
+    const auto npad = _spec._width - num_str._len;
     const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
     const auto align = _spec.align(fill == '0' ? '=' : '>');
     switch (align) {
@@ -209,25 +208,25 @@ struct Formatter {
         this->write_chars(fill, npad);
         this->write_str(sign);
         this->write_str(prefix);
-        this->write_str(body);
+        this->write_str(num_str);
         break;
       case '<':
         this->write_str(sign);
         this->write_str(prefix);
-        this->write_str(body);
+        this->write_str(num_str);
         this->write_chars(fill, npad);
         break;
       case '=':
         this->write_str(sign);
         this->write_str(prefix);
         this->write_chars(fill, npad);
-        this->write_str(body);
+        this->write_str(num_str);
         break;
       case '^':
         this->write_chars(fill, (npad + 0) / 2);
         this->write_str(sign);
         this->write_str(prefix);
-        this->write_str(body);
+        this->write_str(num_str);
         this->write_chars(fill, (npad + 1) / 2);
     }
   }

@@ -161,7 +161,7 @@ struct Decimal {
 
     const auto flt_val = uval - static_cast<f64>(int_part);
     const auto exp_val = kPow10Tbl[precision];
-    auto flt_part = static_cast<u64>(flt_val * exp_val + 0.5);
+    auto flt_part = __builtin_floor(flt_val * exp_val + 0.5);
 
     if (flt_part >= exp_val) {
       flt_part -= exp_val;
@@ -178,7 +178,7 @@ struct Decimal {
     // add 100..00 to flt_part,
     // to ensure it has leading zeros when converted to string
     flt_part += exp_val;
-    return {int_part, flt_part, exp_part};
+    return {int_part, static_cast<u64>(flt_part), exp_part};
   }
 };
 
