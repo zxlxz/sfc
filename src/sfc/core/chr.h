@@ -8,15 +8,15 @@ namespace sfc::chr {
 static constexpr auto INVALID = char32_t{0xFFFD};
 
 auto utf8_codelen(u8 h) -> usize;
-auto utf8_encode(char32_t ch, u8 (&buf)[4]) -> usize;
+auto utf8_encode(u8 (&buf)[4], char32_t ch) -> usize;
 auto utf8_decode(const u8 p[], usize n) -> char32_t;
 
 auto utf16_codelen(u16 h) -> usize;
-auto utf16_encode(char32_t ch, u16 (&buf)[2]) -> usize;
+auto utf16_encode(u16 (&buf)[2], char32_t ch) -> usize;
 auto utf16_decode(const u16 p[], usize n) -> char32_t;
 
 auto wide_codelen(wchar_t h) -> usize;
-auto wide_encode(char32_t ch, wchar_t (&buf)[2]) -> usize;
+auto wide_encode(wchar_t (&buf)[2], char32_t ch) -> usize;
 auto wide_decode(const wchar_t p[], usize n) -> char32_t;
 
 struct Chars : iter::Iterator {

@@ -21,7 +21,7 @@ auto utf8_codelen(u8 h) -> usize {
   return 0;
 }
 
-auto utf8_encode(char32_t ch, u8 (&buf)[4]) -> usize {
+auto utf8_encode(u8 (&buf)[4], char32_t ch) -> usize {
   if (ch > 0x10FFFF) {
     return 0;
   }
@@ -90,7 +90,7 @@ auto utf16_codelen(u16 h) -> usize {
   return 1;
 }
 
-auto utf16_encode(char32_t ch, u16 (&buf)[2]) -> usize {
+auto utf16_encode(u16 (&buf)[2], char32_t ch) -> usize {
   if (ch <= 0xFFFF) {
     buf[0] = static_cast<char16_t>(ch);
     return 1;
@@ -129,12 +129,12 @@ auto wide_codelen(wchar_t h) -> usize {
   }
 }
 
-auto wide_encode(char32_t ch, wchar_t (&buf)[2]) -> usize {
+auto wide_encode(wchar_t (&buf)[2], char32_t ch) -> usize {
   if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
     buf[0] = static_cast<wchar_t>(ch);
     return 1;
   } else {
-    return chr::utf16_encode(ch, reinterpret_cast<u16(&)[2]>(buf));
+    return chr::utf16_encode(reinterpret_cast<u16(&)[2]>(buf), ch);
   }
 }
 

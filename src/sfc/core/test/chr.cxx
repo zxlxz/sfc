@@ -33,68 +33,68 @@ SFC_TEST(utf8_encode) {
   u8 buf[4] = {};
 
   // 1-byte: ASCII
-  sfc::expect_eq(chr::utf8_encode(U'A', buf), 1U);
+  sfc::expect_eq(chr::utf8_encode(buf, U'A'), 1U);
   sfc::expect_eq(buf[0], u8{'A'});
 
-  sfc::expect_eq(chr::utf8_encode(0x7F, buf), 1U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x7F), 1U);
   sfc::expect_eq(buf[0], 0x7F);
 
   // 2-byte: U+00E9 (é)
-  sfc::expect_eq(chr::utf8_encode(U'é', buf), 2U);
+  sfc::expect_eq(chr::utf8_encode(buf, U'é'), 2U);
   sfc::expect_eq(buf[0], 0xC3);
   sfc::expect_eq(buf[1], 0xA9);
 
   // 2-byte: boundary U+0080
-  sfc::expect_eq(chr::utf8_encode(0x80, buf), 2U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x80), 2U);
   sfc::expect_eq(buf[0], 0xC2);
   sfc::expect_eq(buf[1], 0x80);
 
   // 2-byte: boundary U+07FF
-  sfc::expect_eq(chr::utf8_encode(0x7FF, buf), 2U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x7FF), 2U);
   sfc::expect_eq(buf[0], 0xDF);
   sfc::expect_eq(buf[1], 0xBF);
 
   // 3-byte: U+4E2D (中)
-  sfc::expect_eq(chr::utf8_encode(U'中', buf), 3U);
+  sfc::expect_eq(chr::utf8_encode(buf, U'中'), 3U);
   sfc::expect_eq(buf[0], 0xE4);
   sfc::expect_eq(buf[1], 0xB8);
   sfc::expect_eq(buf[2], 0xAD);
 
   // 3-byte: boundary U+0800
-  sfc::expect_eq(chr::utf8_encode(0x800, buf), 3U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x800), 3U);
   sfc::expect_eq(buf[0], 0xE0);
   sfc::expect_eq(buf[1], 0xA0);
   sfc::expect_eq(buf[2], 0x80);
 
   // 3-byte: boundary U+FFFF
-  sfc::expect_eq(chr::utf8_encode(0xFFFF, buf), 3U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0xFFFF), 3U);
   sfc::expect_eq(buf[0], 0xEF);
   sfc::expect_eq(buf[1], 0xBF);
   sfc::expect_eq(buf[2], 0xBF);
 
   // 4-byte: U+1F600 (😀)
-  sfc::expect_eq(chr::utf8_encode(0x1F600, buf), 4U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x1F600), 4U);
   sfc::expect_eq(buf[0], 0xF0);
   sfc::expect_eq(buf[1], 0x9F);
   sfc::expect_eq(buf[2], 0x98);
   sfc::expect_eq(buf[3], 0x80);
 
   // 4-byte: boundary U+10000
-  sfc::expect_eq(chr::utf8_encode(0x10000, buf), 4U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x10000), 4U);
   sfc::expect_eq(buf[0], 0xF0);
   sfc::expect_eq(buf[1], 0x90);
   sfc::expect_eq(buf[2], 0x80);
   sfc::expect_eq(buf[3], 0x80);
 
   // 4-byte: boundary U+10FFFF
-  sfc::expect_eq(chr::utf8_encode(0x10FFFF, buf), 4U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x10FFFF), 4U);
   sfc::expect_eq(buf[0], 0xF4);
   sfc::expect_eq(buf[1], 0x8F);
   sfc::expect_eq(buf[2], 0xBF);
   sfc::expect_eq(buf[3], 0xBF);
 
   // Invalid: above U+10FFFF
-  sfc::expect_eq(chr::utf8_encode(0x110000, buf), 0U);
+  sfc::expect_eq(chr::utf8_encode(buf, 0x110000), 0U);
 }
 
 SFC_TEST(utf8_decode) {
@@ -142,29 +142,29 @@ SFC_TEST(utf16_encode) {
   u16 buf[2] = {};
 
   // BMP
-  sfc::expect_eq(chr::utf16_encode(U'A', buf), 1U);
+  sfc::expect_eq(chr::utf16_encode(buf, U'A'), 1U);
   sfc::expect_eq(buf[0], u16{'A'});
 
-  sfc::expect_eq(chr::utf16_encode(U'中', buf), 1U);
+  sfc::expect_eq(chr::utf16_encode(buf, U'中'), 1U);
   sfc::expect_eq(buf[0], u16{0x4E2D});
 
   // Supplementary: U+1F600 (😀)
-  sfc::expect_eq(chr::utf16_encode(0x1F600, buf), 2U);
+  sfc::expect_eq(chr::utf16_encode(buf, 0x1F600), 2U);
   sfc::expect_eq(buf[0], u16{0xD83D});
   sfc::expect_eq(buf[1], u16{0xDE00});
 
   // Boundary: U+10000
-  sfc::expect_eq(chr::utf16_encode(0x10000, buf), 2U);
+  sfc::expect_eq(chr::utf16_encode(buf, 0x10000), 2U);
   sfc::expect_eq(buf[0], u16{0xD800});
   sfc::expect_eq(buf[1], u16{0xDC00});
 
   // Boundary: U+10FFFF
-  sfc::expect_eq(chr::utf16_encode(0x10FFFF, buf), 2U);
+  sfc::expect_eq(chr::utf16_encode(buf, 0x10FFFF), 2U);
   sfc::expect_eq(buf[0], u16{0xDBFF});
   sfc::expect_eq(buf[1], u16{0xDFFF});
 
   // Invalid
-  sfc::expect_eq(chr::utf16_encode(0x110000, buf), 0U);
+  sfc::expect_eq(chr::utf16_encode(buf, 0x110000), 0U);
 }
 
 SFC_TEST(utf16_decode) {

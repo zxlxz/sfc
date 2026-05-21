@@ -58,7 +58,7 @@ void String::push(char32_t c) noexcept {
   }
 
   u8 buf[4] = {};
-  const auto code_len = chr::utf8_encode(c, buf);
+  const auto code_len = chr::utf8_encode(buf, c);
   _buf.extend_from_slice({buf, code_len});
 }
 
