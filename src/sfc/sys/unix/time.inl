@@ -18,13 +18,14 @@ struct Instant {
   }
 
   auto nanos() const -> uint64_t {
-    const auto nanos = t.tv_sec * NANOS_PER_SEC + t.tv_nsec;
-    return static_cast<uint64_t>(nanos);
+    const auto secs = static_cast<u64>(t.tv_sec);
+    const auto nsec = static_cast<u64>(t.tv_nsec);
+    return secs * NANOS_PER_SEC + nsec;
   }
 };
 
 struct SystemTime {
-  struct timespec t = {};
+  timespec t = {};
 
   static auto now() noexcept -> SystemTime {
     struct timespec ts{};
@@ -39,8 +40,9 @@ struct SystemTime {
   }
 
   auto as_micros() const -> uint64_t {
-    const auto nanos = t.tv_sec * MICROS_PER_SEC + t.tv_nsec / NANOS_PER_MICRO;
-    return static_cast<uint64_t>(nanos);
+    const auto secs = static_cast<u64>(t.tv_sec);
+    const auto nsec = static_cast<u64>(t.tv_nsec);
+    return secs * MICROS_PER_SEC + nsec / NANOS_PER_MICRO;
   }
 };
 

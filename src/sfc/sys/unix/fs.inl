@@ -59,10 +59,8 @@ class File {
     return Ok{static_cast<usize>(nwrite)};
   }
 
-  auto seek(off_t offset, int whence) -> io::Result<usize> {
-    static_assert(SEEK_SET == 0);
-    static_assert(SEEK_CUR == 1);
-    static_assert(SEEK_END == 2);
+  auto seek(off_t offset, u32 where) -> io::Result<usize> {
+    const auto whence = static_cast<int>(where);
     const auto ret = ::lseek(_fd, offset, whence);
     if (ret == -1) {
       return Err{io::Error::last_os_error()};

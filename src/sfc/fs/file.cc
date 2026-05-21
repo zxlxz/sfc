@@ -61,7 +61,7 @@ auto File::flush() -> io::Result<> {
 }
 
 auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
-  const auto where = static_cast<u32>(pos.whence);
+  const auto where = static_cast<u32>(pos._tag);
   return _inn.seek(pos.offset, where);
 }
 

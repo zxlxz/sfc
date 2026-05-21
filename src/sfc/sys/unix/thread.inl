@@ -34,7 +34,7 @@ struct Thread {
 #else
     const auto tid = ::syscall(SYS_gettid);
 #endif
-    return static_cast<pid_t>(tid);
+    return static_cast<u32>(tid);
   }
 
   template <class Fn>

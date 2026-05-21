@@ -51,7 +51,7 @@ struct File {
     if (!::ReadFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_read, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(bytes_read)};
+    return Ok{usize(bytes_read)};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
@@ -59,7 +59,7 @@ struct File {
     if (!::WriteFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_written, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(bytes_written)};
+    return Ok{usize(bytes_written)};
   }
 
   auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
@@ -68,7 +68,7 @@ struct File {
     if (!::SetFilePointerEx(_fd, old_offset, &new_offset, whence)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(new_offset.QuadPart)};
+    return Ok{usize(new_offset.QuadPart)};
   }
 };
 
