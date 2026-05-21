@@ -1,5 +1,5 @@
 
-#include "sfc/ffi/os_str.h"
+#include "sfc/ffi/wstr.h"
 
 namespace sfc::ffi {
 
