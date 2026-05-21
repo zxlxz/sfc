@@ -77,7 +77,7 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
       ._truncate = truncate,
   };
 
-  const auto fd = _TRY(sys_opts.open(os_path.ptr()));
+  const auto fd = _TRY(sys_opts.open(os_path.as_ptr()));
   return Ok{File::from_raw_fd(fd)};
 }
 

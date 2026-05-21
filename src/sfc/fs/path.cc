@@ -287,7 +287,7 @@ auto Metadata::is_file() const noexcept -> bool {
 
 auto metadata(Path path) -> io::Result<Metadata> {
   const auto os_path = ffi::OsString::from(path.as_str());
-  const auto sys_meta = _TRY(sys::lstat(os_path.ptr()));
+  const auto sys_meta = _TRY(sys::lstat(os_path.as_ptr()));
   const auto meta = Metadata{sys_meta._attr, sys_meta._size};
   return Ok{meta};
 }
@@ -298,7 +298,7 @@ auto create_dir(Path path) -> io::Result<> {
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::mkdir(os_path.ptr());
+  return sys::mkdir(os_path.as_ptr());
 }
 
 auto create_dir_all(Path path) -> io::Result<> {
@@ -315,18 +315,18 @@ auto create_dir_all(Path path) -> io::Result<> {
 
 auto remove_dir(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::rmdir(os_path.ptr());
+  return sys::rmdir(os_path.as_ptr());
 }
 
 auto remove_file(Path path) -> io::Result<> {
   const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::unlink(os_path.ptr());
+  return sys::unlink(os_path.as_ptr());
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
   const auto os_old = ffi::OsString::from(old_path.as_str());
   const auto os_new = ffi::OsString::from(new_path.as_str());
-  return sys::rename(os_old.ptr(), os_new.ptr());
+  return sys::rename(os_old.as_ptr(), os_new.as_ptr());
 }
 
 }  // namespace sfc::fs

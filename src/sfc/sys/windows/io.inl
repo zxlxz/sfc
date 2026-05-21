@@ -40,6 +40,31 @@ static inline auto io_error(DWORD code) -> io::ErrorKind {
   }
 }
 
+static inline auto wstr_encode(Slice<wchar_t> wbuf, Str cstr) -> DWORD {
+  auto wlen = 0UL;
+  cstr.chars().for_each([&](char32_t ch) {
+    wchar_t buf[2];
+    const auto cnt = chr::wide_encode(buf, ch);
+    if (wlen + cnt >= wbuf._len) return;
+    ptr::copy_nonoverlapping(buf, wbuf._ptr + wlen, cnt);
+  });
+
+  return wlen;
+}
+
+static inline auto wstr_decode(Slice<u8> cbuf, ffi::WStr wstr) -> usize {
+  auto u8_len = 0UL;
+
+  wstr.chars().for_each([&](char32_t ch) {
+    u8 buf[4];
+    const auto cnt = chr::utf8_encode(buf, ch);
+    if (u8_len + cnt >= cbuf._len) return;
+    ptr::copy_nonoverlapping(buf, reinterpret_cast<u8*>(cbuf._ptr + u8_len), cnt);
+  });
+
+  return u8_len;
+}
+
 struct StdIo {
   static constexpr auto MAX_BUF_LEN = 4096U;
   HANDLE _handle;
@@ -54,68 +79,64 @@ struct StdIo {
     return ::GetConsoleCP() == CP_UTF8;
   }
 
-  auto write_u8(Slice<const u8> data) -> io::Result<usize> {
-    auto nwrite = DWORD{};
-    if (!::WriteFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nwrite, nullptr)) {
+  auto write_u8(Str u8_str) -> io::Result<usize> {
+    const auto buf = u8_str._ptr;
+    const auto buf_len = static_cast<DWORD>(u8_str._len);
+
+    auto nret = DWORD{};
+    if (!::WriteFile(_handle, buf, buf_len, &nret, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{usize{nwrite}};
+    return Ok{usize{nret}};
   }
 
-  auto write_u16(Slice<const u8> data) -> io::Result<usize> {
-    const auto u8_ptr = reinterpret_cast<const char*>(data._ptr);
-    const auto u8_len = static_cast<DWORD>(data._len);
-
-    // convert u8 to u16
-    wchar_t u16_buf[MAX_BUF_LEN];
-    const auto u16_len = ::MultiByteToWideChar(CP_UTF8, 0, u8_ptr, u8_len, u16_buf, MAX_BUF_LEN);
-    if (u16_len == 0) {
-      return Err{io::Error::last_os_error()};
-    }
+  auto write_u16(Str u8_str) -> io::Result<usize> {
+    wchar_t buf[MAX_BUF_LEN];
+    const auto wlen = windows::wstr_encode(buf, u8_str);
 
     auto nwrite = DWORD{};
-    if (!::WriteConsoleW(_handle, u16_buf, u16_len, &nwrite, nullptr)) {
+    if (!::WriteConsoleW(_handle, buf, wlen, &nwrite, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
     return Ok{usize{nwrite}};
   }
 
   auto write(Slice<const u8> data) -> io::Result<usize> {
+    const auto u8_str = Str::from_utf8(data);
     if (!this->is_console() || this->is_utf8_console()) {
-      return this->write_u8(data);
+      return this->write_u8(u8_str);
     } else {
-      return this->write_u16(data);
+      return this->write_u16(u8_str);
     }
   }
 
   auto read_u8(Slice<u8> data) -> io::Result<usize> {
-    auto nread = DWORD{};
-    if (!::ReadFile(_handle, data._ptr, static_cast<DWORD>(data._len), &nread, nullptr)) {
+    const auto buf = data._ptr;
+    const auto buf_len = static_cast<DWORD>(data._len);
+
+    auto nret = DWORD{};
+    if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{usize{nread}};
+    return Ok{usize{nret}};
   }
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
     // in the worst case, each u16 character takes 3 u8 bytes
-    const auto amount = cmp::min(static_cast<u32>(data.len() / 3), MAX_BUF_LEN);
+    const auto max_wchar = data._len / 3;
+    const auto max_read = static_cast<DWORD>(cmp::min<usize>(max_wchar, MAX_BUF_LEN));
 
     // read u16
-    wchar_t u16_buf[MAX_BUF_LEN];
-    auto u16_len = DWORD{};
-    if (!::ReadConsoleW(_handle, u16_buf, amount, &u16_len, nullptr)) {
+    wchar_t buf[MAX_BUF_LEN];
+    auto nret = DWORD{};
+    if (!::ReadConsoleW(_handle, buf, max_read, &nret, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
 
     // convert u16 to u8
-    const auto u8_ptr = reinterpret_cast<char*>(data._ptr);
-    const auto u8_cap = static_cast<DWORD>(data._len);
-    const auto u8_len = ::WideCharToMultiByte(CP_UTF8, 0, u16_buf, u16_len, u8_ptr, u8_cap, nullptr, nullptr);
-    if (u8_len == 0) {
-      return Err{io::Error::last_os_error()};
-    }
-
-    return Ok{static_cast<usize>(u8_len)};
+    const auto ws_len = static_cast<usize>(nret);
+    const auto u8_len = windows::wstr_decode(data, {buf, ws_len});
+    return Ok{u8_len};
   }
 
   auto read(Slice<u8> data) -> io::Result<usize> {

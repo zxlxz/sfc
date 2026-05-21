@@ -1,33 +1,12 @@
 #pragma once
 
-#include "sfc/alloc/string.h"
+#ifdef _WIN32
+#include "sfc/ffi/wstr.h"
+#else
+#include "sfc/ffi/cstr.h"
+#endif
 
 namespace sfc::ffi {
-
-class CString {
-  using Buf = List<u8>;
-  Buf _buf;
-
- public:
-  static auto from(Str s) -> CString;
-
-  auto ptr() const -> const char*;
-  auto into_string() && -> String;
-};
-
-class WString {
-  using Buf = List<wchar_t>;
-  Buf _buf;
-
- public:
-  static auto from(Str s) -> WString;
-
-  auto buf() -> Buf&;
-  auto ptr() const -> const wchar_t*;
-  auto chars() const -> chr::WChars;
-
-  auto into_string() const -> String;
-};
 
 #ifdef _WIN32
 using OsString = WString;
