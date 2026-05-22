@@ -48,14 +48,14 @@ SFC_TEST(map_try_insert) {
 }
 
 SFC_TEST(map_insert) {
-  auto t = HashMap<int, int>{};
-  for (auto i = 0; i < 10; ++i) {
+  auto t = HashMap<u32, u32>{};
+  for (auto i = 0U; i < 10U; ++i) {
     t.insert(i, i * 10);
     sfc::expect_eq(*t.get(i), i * 10);
-    sfc::expect_eq(t.len(), static_cast<usize>(i + 1));
+    sfc::expect_eq(t.len(), i + 1);
     t.insert(i, i * 100);
     sfc::expect_eq(*t.get(i), i * 100);
-    sfc::expect_eq(t.len(), static_cast<usize>(i + 1));
+    sfc::expect_eq(t.len(), i + 1);
   }
 
   sfc::expect_eq(t.len(), 10U);

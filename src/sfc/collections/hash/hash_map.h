@@ -54,7 +54,7 @@ class HashMap {
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
-    const auto p = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    const auto p = _inn.try_insert({mem::move(key), mem::move(val)});
     if (!p) {
       return {};
     }
@@ -62,17 +62,17 @@ class HashMap {
   }
 
   auto insert(K key, V val) noexcept -> Option<V> {
-    const auto p = _inn.try_insert({static_cast<K&&>(key), static_cast<V&&>(val)});
+    const auto p = _inn.try_insert({mem::move(key), mem::move(val)});
     if (!p) {
       return {};
     }
-    return mem::replace(p->val, static_cast<V&&>(val));
+    return mem::replace(p->val, mem::move(val));
   }
 
   auto remove(const K& key) -> Option<V> {
     auto x = _inn.remove(key);
     if (!x) return {};
-    return static_cast<V&&>(x->val);
+    return mem::move(x->val);
   }
 
   void clear() {

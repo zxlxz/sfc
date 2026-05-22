@@ -47,7 +47,7 @@ class RawBuf {
     const auto layout = alloc::Layout::template array<T>(capacity);
 
     auto res = RawBuf{};
-    res._ptr = static_cast<T*>(alloc.alloc(layout));
+    res._ptr = ptr::cast<T>(alloc.alloc(layout));
     res._cap = capacity;
     res._a = alloc;
     return res;
@@ -85,7 +85,7 @@ class RawBuf {
 
     const auto old_layout = alloc::Layout::template array<T>(_cap);
     const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = static_cast<T*>(_a.grow(_ptr, old_layout, new_layout));
+    _ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
     _cap = new_cap;
   }
 
@@ -97,7 +97,7 @@ class RawBuf {
     const auto new_cap = len + additional;
     const auto old_layout = alloc::Layout::template array<T>(_cap);
     const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = static_cast<T*>(_a.grow(_ptr, old_layout, new_layout));
+    _ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
     _cap = new_cap;
   }
 
@@ -108,7 +108,7 @@ class RawBuf {
 
     const auto old_layout = alloc::Layout::template array<T>(_cap);
     const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = static_cast<T*>(_a.shrink(_ptr, old_layout, new_layout));
+    _ptr = ptr::cast<T>(_a.shrink(_ptr, old_layout, new_layout));
     _cap = new_cap;
   }
 };

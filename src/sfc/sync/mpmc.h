@@ -47,7 +47,7 @@ class Channel {
       }
       sfc::thread::yield_now();
     }
-    return Err{static_cast<T&&>(val)};
+    return Err{mem::move(val)};
   }
 
   auto recv() noexcept -> Option<T> {
@@ -74,7 +74,7 @@ struct Sender {
 
  public:
   auto send(T val) noexcept -> Result<void, T> {
-    return _chan.send(static_cast<T&&>(val));
+    return _chan.send(mem::move(val));
   }
 };
 

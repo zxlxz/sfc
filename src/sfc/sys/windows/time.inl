@@ -31,7 +31,7 @@ struct Instant {
     const auto q = cnt / freq;
     const auto r = cnt % freq;
     const auto nanos = q * NANOS_PER_SEC + r * NANOS_PER_SEC / freq;
-    return static_cast<ULONG64>(nanos);
+    return num::cast_unsigned(nanos);
   }
 };
 

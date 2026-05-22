@@ -44,28 +44,30 @@ class File {
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
-    const auto nread = ::read(_fd, buf._ptr, buf._len);
-    if (nread == -1) {
+    const auto nret = ::read(_fd, buf._ptr, buf._len);
+    if (nret == -1) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(nread)};
+    const auto nread = num::cast_unsigned(nret);
+    return Ok{nread};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
-    const auto nwrite = ::write(_fd, buf._ptr, buf._len);
-    if (nwrite == -1) {
+    const auto nret = ::write(_fd, buf._ptr, buf._len);
+    if (nret == -1) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(nwrite)};
+    const auto nwrite = num::cast_unsigned(nret);
+    return Ok{nwrite};
   }
 
-  auto seek(off_t offset, u32 where) -> io::Result<usize> {
-    const auto whence = static_cast<int>(where);
+  auto seek(off_t offset, int whence) -> io::Result<usize> {
     const auto ret = ::lseek(_fd, offset, whence);
     if (ret == -1) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(ret)};
+    const auto nseek = num::cast_unsigned(ret);
+    return Ok{nseek};
   }
 };
 
@@ -113,7 +115,10 @@ static inline auto lstat(const char* path) -> io::Result<Metadata> {
   if (::lstat(path, &st) == -1) {
     return Err{io::Error::last_os_error()};
   }
-  const auto meta = Metadata{st.st_mode, static_cast<size_t>(st.st_size)};
+  const auto meta = Metadata{
+      st.st_mode,
+      num::cast_unsigned(st.st_size),
+  };
   return Ok{meta};
 }
 

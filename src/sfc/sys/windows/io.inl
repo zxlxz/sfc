@@ -66,7 +66,7 @@ static inline auto wstr_decode(Slice<u8> cbuf, ffi::WStr wstr) -> usize {
 }
 
 struct StdIo {
-  static constexpr auto MAX_BUF_LEN = 4096U;
+  static constexpr auto kMaxBufLen = 4096UL;
   HANDLE _handle;
 
  public:
@@ -91,7 +91,7 @@ struct StdIo {
   }
 
   auto write_u16(Str u8_str) -> io::Result<usize> {
-    wchar_t buf[MAX_BUF_LEN];
+    wchar_t buf[kMaxBufLen];
     const auto wlen = windows::wstr_encode(buf, u8_str);
 
     auto nwrite = DWORD{};
@@ -123,18 +123,18 @@ struct StdIo {
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
     // in the worst case, each u16 character takes 3 u8 bytes
-    const auto max_wchar = data._len / 3;
-    const auto max_read = static_cast<DWORD>(cmp::min<usize>(max_wchar, MAX_BUF_LEN));
+    const auto max_wchar = static_cast<DWORD>(data._len / 3);
+    const auto max_read = cmp::min(max_wchar, kMaxBufLen);
 
     // read u16
-    wchar_t buf[MAX_BUF_LEN];
+    wchar_t buf[kMaxBufLen];
     auto nret = DWORD{};
     if (!::ReadConsoleW(_handle, buf, max_read, &nret, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
 
     // convert u16 to u8
-    const auto ws_len = static_cast<usize>(nret);
+    const auto ws_len = usize{nret};
     const auto u8_len = windows::wstr_decode(data, {buf, ws_len});
     return Ok{u8_len};
   }

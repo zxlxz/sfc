@@ -12,9 +12,9 @@ struct Backtrace {
  public:
   static auto capture() -> Backtrace {
     auto res = Backtrace{};
-    const auto cnt = ::backtrace(res._frames, kMaxFrame);
-    if (cnt >= 0) {
-      res._count = static_cast<unsigned>(cnt);
+    const auto ret = ::backtrace(res._frames, kMaxFrame);
+    if (ret>=0 && ret <= kMaxFrame) {
+      res._count = num::cast_unsigned(ret);
     }
     return res;
   }

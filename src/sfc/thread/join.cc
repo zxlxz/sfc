@@ -23,7 +23,7 @@ struct ThreadData {
   }
 
   static auto run(void* ptr) noexcept -> bool {
-    auto dat = static_cast<ThreadData*>(ptr);
+    auto dat = ptr::cast<ThreadData>(ptr);
     auto obj = Box<ThreadData>::from_raw(dat);
 
     try {

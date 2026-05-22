@@ -37,7 +37,7 @@ class HashSet {
 
   // Returns whether the value was newly inserted.
   auto insert(T val) noexcept -> bool {
-    return _inn.try_insert({static_cast<T&&>(val)}) == nullptr;
+    return _inn.try_insert({mem::move(val)}) == nullptr;
   }
 
   // Returns whether the value was present in the set.

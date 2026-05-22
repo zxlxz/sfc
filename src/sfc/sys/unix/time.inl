@@ -18,8 +18,8 @@ struct Instant {
   }
 
   auto nanos() const -> uint64_t {
-    const auto secs = static_cast<u64>(t.tv_sec);
-    const auto nsec = static_cast<u64>(t.tv_nsec);
+    const auto secs = num::cast_unsigned(t.tv_sec);
+    const auto nsec = num::cast_unsigned(t.tv_nsec);
     return secs * NANOS_PER_SEC + nsec;
   }
 };
@@ -40,8 +40,8 @@ struct SystemTime {
   }
 
   auto as_micros() const -> uint64_t {
-    const auto secs = static_cast<u64>(t.tv_sec);
-    const auto nsec = static_cast<u64>(t.tv_nsec);
+    const auto secs = num::cast_unsigned(t.tv_sec);
+    const auto nsec = num::cast_unsigned(t.tv_nsec);
     return secs * MICROS_PER_SEC + nsec / NANOS_PER_MICRO;
   }
 };

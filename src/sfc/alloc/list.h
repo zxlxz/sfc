@@ -126,7 +126,7 @@ class [[nodiscard]] List {
       this->reserve(1);
     }
     const auto end = _inn.ptr() + _len;
-    ptr::write(end, static_cast<T&&>(val));
+    ptr::write(end, mem::move(val));
     _len += 1;
     return *end;
   }
@@ -154,7 +154,7 @@ class [[nodiscard]] List {
     if (idx == _len) {
       return tmp;
     }
-    return mem::replace(_inn[idx], static_cast<T&&>(tmp));
+    return mem::replace(_inn[idx], mem::move(tmp));
   }
 
   void truncate(usize len) noexcept {
@@ -193,7 +193,7 @@ class [[nodiscard]] List {
     const auto tail_ptr = _inn.ptr() + idx;
     const auto tail_len = _len - idx;
     ptr::shift_elements_right(tail_ptr, tail_len, 1);
-    ptr::write(_inn.ptr() + idx, static_cast<T&&>(val));
+    ptr::write(_inn.ptr() + idx, mem::move(val));
     _len += 1;
   }
 
@@ -242,7 +242,7 @@ class [[nodiscard]] List {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
-    iter.for_each([&](T val) { this->push(static_cast<T&&>(val)); });
+    iter.for_each([&](T val) { this->push(mem::move(val)); });
   }
 
   void extend_with(usize cnt, const T& value) noexcept {
@@ -269,7 +269,7 @@ class [[nodiscard]] List {
     const auto ptr = _inn.ptr();
     for (auto i = idx + 1; i < _len; ++i) {
       if (f(ptr[i])) {
-        ptr[cnt++] = static_cast<T&&>(ptr[i]);
+        ptr[cnt++] = mem::move(ptr[i]);
       }
     }
     this->truncate(cnt);

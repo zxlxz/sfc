@@ -7,8 +7,11 @@ namespace sfc::sync {
 template <class T>
 class [[nodiscard]] Arc {
   struct Inn {
-    sync::Atomic<int> _cnt{1};
+    sync::Atomic<int> _cnt;
     T _val;
+
+   public:
+    explicit Inn(auto&&... args) noexcept : _cnt{1}, _val{(decltype(args)&&)(args)...} {}
 
     auto inc_count() noexcept -> int {
       return _cnt.fetch_add(1, sync::Ordering::Relaxed);
@@ -36,9 +39,10 @@ class [[nodiscard]] Arc {
 
   Arc& operator=(Arc&& other) noexcept = default;
 
-  static auto xnew(auto&&... args) -> Arc {
+  template <class... U>
+  static auto xnew(U&&... args) -> Arc {
     auto res = Arc{};
-    res._inn = Box<Inn>::xnew(1, static_cast<decltype(args)&&>(args)...);
+    res._inn = Box<Inn>::xnew(U(args)...);
     return res;
   }
 

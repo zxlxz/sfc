@@ -92,16 +92,16 @@ struct Thread {
 };
 
 inline void sleep(time::Duration dur) noexcept {
-  using namespace time;
-
-  if (dur._nanos <= NANOS_PER_MILLI) {
+  if (dur._nanos <= time::NANOS_PER_MILLI) {
     ::sched_yield();
     return;
   }
 
+  const auto secs = dur.as_secs();
+  const auto nanos = dur.subsec_nanos();
   const auto ts = ::timespec{
-      .tv_sec = static_cast<time_t>(dur.as_secs()),
-      .tv_nsec = dur.subsec_nanos(),
+      .tv_sec = static_cast<time_t>(secs),
+      .tv_nsec = static_cast<long>(nanos),
   };
 
   (void)::nanosleep(&ts, nullptr);

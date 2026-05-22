@@ -76,6 +76,29 @@ struct Components {
   }
 };
 
+struct FileName {
+  Str _str;
+
+ public:
+  auto is_empty() const noexcept -> bool {
+    return _str.is_empty();
+  }
+
+  auto dot_pos() const noexcept -> usize {
+    return _str.rfind('.').unwrap_or(_str.len());
+  }
+
+  auto file_stem() const noexcept -> Str {
+    const auto p = this->dot_pos();
+    return _str[{0, p}];
+  }
+
+  auto extension() const noexcept -> Str {
+    const auto p = this->dot_pos();
+    return _str[{p + 1, $}];
+  }
+};
+
 auto Path::as_str() const noexcept -> Str {
   return _inn;
 }
@@ -94,15 +117,13 @@ auto Path::file_name() const noexcept -> Str {
 }
 
 auto Path::extension() const noexcept -> Str {
-  const auto file_name = this->file_name();
-  const auto dot_pos = file_name.rfind('.').unwrap_or(file_name.len());
-  return file_name[{dot_pos + 1, $}];
+  const auto file_name = FileName{this->file_name()};
+  return file_name.extension();
 }
 
 auto Path::file_stem() const noexcept -> Str {
-  const auto file_name = this->file_name();
-  const auto dot_pos = file_name.rfind('.').unwrap_or(file_name.len());
-  return file_name[{0, dot_pos}];
+  const auto file_name = FileName{this->file_name()};
+  return file_name.file_stem();
 }
 
 auto Path::parent() const noexcept -> Path {
@@ -246,21 +267,18 @@ void PathBuf::set_file_name(Str new_file_name) noexcept {
 }
 
 void PathBuf::set_extension(Str new_ext) noexcept {
-  const auto old_path = this->as_path();
-  const auto file_stem = old_path.file_stem();
-  if (file_stem.is_empty()) {
+  const auto file_name = FileName{this->as_path().file_name()};
+  if (file_name.is_empty()) {
     return;
   }
 
-  // file_stem and old_path, based on same str, so we can caculate ptrdiff
-  const auto stem_pos = static_cast<usize>(file_stem.as_ptr() - old_path.as_str().as_ptr());
-  _inn.truncate(stem_pos + file_stem.len());
-
-  if (!new_ext.is_empty()) {
-    _inn.reserve(new_ext.len() + 1);
-    _inn.push('.');
-    _inn.push_str(new_ext);
+  const auto old_ext = file_name.extension();
+  if (!old_ext.is_empty()) {
+    _inn.truncate(_inn.len() - old_ext.len() - 1);
   }
+
+  _inn.push('.');
+  _inn.push_str(new_ext);
 }
 
 auto PathBuf::join(Path path) const -> PathBuf {

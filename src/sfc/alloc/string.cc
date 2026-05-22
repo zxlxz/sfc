@@ -45,7 +45,7 @@ auto String::pop() noexcept -> Option<char32_t> {
 
   auto chars = this->as_str().chars();
   const auto ret = chars.next_back();
-  const auto len = static_cast<usize>(chars._end - chars._ptr);
+  const auto len = num::cast_unsigned(chars._end - chars._ptr);
   _buf.truncate(len);
   return ret;
 }

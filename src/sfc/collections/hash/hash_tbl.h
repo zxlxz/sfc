@@ -42,6 +42,8 @@ struct Iter : iter::Iterator {
 
 template <class T>
 struct Bucket {
+  static constexpr auto kInvalidIdx = num::max_value<usize>();
+
   u8* _ctrl;
   T* _data;
   usize _mask;
@@ -61,7 +63,7 @@ struct Bucket {
         return k;
       }
     }
-    return static_cast<usize>(-1);
+    return kInvalidIdx;
   }
 
   auto search_key(u8 h2, const auto& key) const -> SearchResult {
@@ -78,8 +80,7 @@ struct Bucket {
   }
 
   auto search_for_insert(u8 h2, const auto& key) const -> SearchResult {
-    static constexpr auto INVALID_IDX = static_cast<usize>(-1);
-    auto del_idx = INVALID_IDX;
+    auto del_idx = kInvalidIdx;
 
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
@@ -87,23 +88,22 @@ struct Bucket {
       if (c == h2 && _data[k].key == key) {
         return {&_data[k], k};
       } else if (c == CTRL_NUL) {
-        const auto ins_idx = del_idx != INVALID_IDX ? del_idx : k;
+        const auto ins_idx = del_idx != kInvalidIdx ? del_idx : k;
         return {nullptr, ins_idx};
-      } else if (c == CTRL_DEL && del_idx == INVALID_IDX) {
+      } else if (c == CTRL_DEL && del_idx == kInvalidIdx) {
         del_idx = k;
       }
     }
-    return {nullptr, INVALID_IDX};
+    return {nullptr, kInvalidIdx};
   }
 
   void insert_at(usize pos, u8 h2, T&& val) {
     _ctrl[pos] = h2;
-    ptr::write(_data + pos, static_cast<T&&>(val));
+    ptr::write(_data + pos, mem::move(val));
   }
 
   auto erase_at(usize pos) -> T {
-    auto res = static_cast<T&&>(_data[pos]);
-    _data[pos].~T();
+    auto res = ptr::read(_data + pos);
     _ctrl[pos] = CTRL_DEL;
     return res;
   }
@@ -117,7 +117,7 @@ struct Bucket {
   auto try_insert(u8 h2, T&& entry) -> T* {
     const auto [ptr, idx] = this->search_for_insert(h2, entry.key);
     if (!ptr) {
-      this->insert_at(idx, h2, static_cast<T&&>(entry));
+      this->insert_at(idx, h2, mem::move(entry));
       return nullptr;
     }
     return ptr;
@@ -125,10 +125,10 @@ struct Bucket {
 
   auto insert_new(u8 h2, T&& entry) -> bool {
     const auto idx = this->search_nul();
-    if (idx == static_cast<usize>(-1)) {
+    if (idx == kInvalidIdx) {
       return false;
     }
-    this->insert_at(idx, h2, static_cast<T&&>(entry));
+    this->insert_at(idx, h2, mem::move(entry));
     return true;
   }
 };

@@ -52,19 +52,23 @@ struct StdIo {
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
-    const auto nread = ::read(_fd, buf._ptr, buf._len);
-    if (nread == -1) {
+    const auto nret = ::read(_fd, buf._ptr, buf._len);
+    if (nret == -1) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(nread)};
+
+    const auto read_bytes = num::cast_unsigned(nret);
+    return Ok{read_bytes};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
-    const auto nwrite = ::write(_fd, buf._ptr, buf._len);
-    if (nwrite == -1) {
+    const auto ret = ::write(_fd, buf._ptr, buf._len);
+    if (ret == -1) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{static_cast<usize>(nwrite)};
+
+    const auto written_bytes = num::cast_unsigned(ret);
+    return Ok{written_bytes};
   }
 };
 

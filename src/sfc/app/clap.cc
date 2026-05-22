@@ -204,7 +204,7 @@ struct Clap::Parser {
     auto pos_args = List<Str>{};
     auto end_of_opts = false;
 
-    auto prev_item = static_cast<Item*>(nullptr);
+    auto prev_item = ptr::null<Item>();
     for (auto s : vals) {
       if (s.is_empty()) {
         continue;
@@ -337,10 +337,12 @@ auto Clap::parse(Slice<const Str> args) -> bool {
 }
 
 auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
-  auto args = List<Str>::with_capacity(static_cast<usize>(argc - 1));
-  for (auto i = 1; i < argc; i++) {
-    args.push(Str{argv[i]});
+  if (argc <= 1) {
+    return true;
   }
+
+  const auto c_args = Slice{argv, num::cast_unsigned(argc)};
+  const auto args = c_args[{1, $}].iter().collect<List<Str>>();
   return this->parse(args.as_slice());
 }
 

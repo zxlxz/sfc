@@ -85,7 +85,7 @@ class BufReader : public BufRead {
   Buffer _buf = Buffer::with_capacity(DEFAULT_BUFF_SIZE);
 
  public:
-  explicit BufReader(R inn) noexcept : _inn{static_cast<R&&>(inn)} {}
+  explicit BufReader(R inn) noexcept : _inn{mem::move<R>(inn)} {}
   ~BufReader() noexcept = default;
 
   BufReader(BufReader&&) noexcept = default;
@@ -142,7 +142,7 @@ class BufWriter : public Write {
   List<u8> _buf{List<u8>::with_capacity(BUFF_SIZE)};
 
  public:
-  explicit BufWriter(W inn) noexcept : _inn{static_cast<W&&>(inn)} {}
+  explicit BufWriter(W inn) noexcept : _inn{mem::move<W>(inn)} {}
 
   ~BufWriter() noexcept {
     (void)this->flush();

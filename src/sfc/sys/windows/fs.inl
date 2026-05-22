@@ -47,28 +47,37 @@ struct File {
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto buf_ptr = buf._ptr;
+    const auto buf_len = static_cast<DWORD>(buf._len);
+
     auto bytes_read = 0UL;
-    if (!::ReadFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_read, nullptr)) {
+    if (!::ReadFile(_fd, buf_ptr, buf_len, &bytes_read, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
     return Ok{usize(bytes_read)};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto buf_ptr = buf._ptr;
+    const auto buf_len = static_cast<DWORD>(buf._len);
+
     auto bytes_written = 0UL;
-    if (!::WriteFile(_fd, buf._ptr, static_cast<DWORD>(buf._len), &bytes_written, nullptr)) {
+    if (!::WriteFile(_fd, buf_ptr, buf_len, &bytes_written, nullptr)) {
       return Err{io::Error::last_os_error()};
     }
     return Ok{usize(bytes_written)};
   }
 
   auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
-    const auto old_offset = LARGE_INTEGER{.QuadPart = offset};
-    auto new_offset = LARGE_INTEGER{};
-    if (!::SetFilePointerEx(_fd, old_offset, &new_offset, whence)) {
+    const auto old_pos = LARGE_INTEGER{.QuadPart = offset};
+
+    auto new_pos = LARGE_INTEGER{};
+    if (!::SetFilePointerEx(_fd, old_pos, &new_pos, whence)) {
       return Err{io::Error::last_os_error()};
     }
-    return Ok{usize(new_offset.QuadPart)};
+
+    const auto ret_pos = num::cast_unsigned(new_pos.QuadPart);
+    return Ok{ret_pos};
   }
 };
 

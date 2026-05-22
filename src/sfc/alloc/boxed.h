@@ -109,8 +109,8 @@ class [[nodiscard]] Box<R(T...)> {
     template <class X>
     static constexpr auto of(const X&) -> const Meta& {
       static const auto res = Meta{
-          [](void* p) { delete static_cast<X*>(p); },
-          [](void* p, T&&... t) { return (*static_cast<X*>(p))(static_cast<T&&>(t)...); },
+          [](void* p) { delete ptr::cast<X>(p); },
+          [](void* p, T&&... t) { return (*ptr::cast<X>(p))(static_cast<T&&>(t)...); },
       };
       return res;
     }
@@ -157,7 +157,7 @@ class [[nodiscard]] Box<R(T...)> {
 
 template <class T>
 auto box(T val) -> Box<T> {
-  return Box<T>::xnew(static_cast<T&&>(val));
+  return Box<T>::xnew(mem::move(val));
 }
 
 }  // namespace sfc::boxed

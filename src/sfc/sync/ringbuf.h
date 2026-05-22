@@ -27,7 +27,7 @@ struct Cell {
   }
 
   void set(usize seq, T val) noexcept {
-    ptr::write(&_val, static_cast<T&&>(val));
+    ptr::write(&_val, mem::move(val));
     _seq.store(seq, Ordering::Release);
   }
 };
@@ -66,7 +66,7 @@ struct RawBuf {
     if (cap == 0) return res;
 
     const auto layout = Layout::array<Cell>(cap);
-    auto ptr = static_cast<Cell*>(a.alloc(layout));
+    auto ptr = ptr::cast<Cell>(a.alloc(layout));
     for (auto i = 0UL; i < cap; ++i) {
       new (ptr + i) Cell{i};
     }
@@ -111,7 +111,7 @@ class RingBuf {
     if (this->try_push(val)) {
       return Ok{};
     }
-    return Err{static_cast<T&&>(val)};
+    return Err{mem::move(val)};
   }
 
   auto try_push(T& val) noexcept -> bool {
@@ -130,7 +130,7 @@ class RingBuf {
         continue;
       }
       if (_head.compare_exchange(head, head + 1, Ordering::Relaxed, Ordering::Relaxed)) {
-        cell.set(head + 1, static_cast<T&&>(val));
+        cell.set(head + 1, mem::move(val));
         return true;
       }
     }

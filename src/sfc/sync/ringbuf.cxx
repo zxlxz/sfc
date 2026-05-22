@@ -89,7 +89,7 @@ SFC_TEST(move_ringbuf) {
     (void)rb1.push(i);
   }
 
-  auto rb2 = static_cast<RingBuf<int>&&>(rb1);
+  auto rb2 = mem::move(rb1);
   sfc::expect_false(rb1.pop());
 
   for (auto i = 0; i < 5; ++i) {
@@ -149,22 +149,22 @@ SFC_TEST(mpmc_s1r1) {
 }
 
 SFC_TEST(mpmc_s2r2) {
-  static const auto CNT = 50U;
+  static const auto CNT = 50;
   auto rb = RingBuf<int>::with_capacity(100);
 
   auto recv_cnt = Atomic{0U};
   auto recv_sum = Atomic{0};
 
   auto sender = [&](int k) {
-    for (auto i = 0U; i < CNT; ++i) {
-      while (!rb.push(static_cast<int>(k * i)).is_ok()) {
+    for (auto i = 0; i < CNT; ++i) {
+      while (!rb.push(k * i).is_ok()) {
         thread::yield_now();
       }
     }
   };
 
   auto receiver = [&]() {
-    for (auto i = 0U; i < CNT; ++i) {
+    for (auto i = 0; i < CNT; ++i) {
       auto val = rb.pop();
       while (!val) {
         thread::yield_now();

@@ -58,7 +58,7 @@ class Serializer {
     } else if constexpr (trait::int_<T>) {
       return this->serialize_int(static_cast<i64>(val));
     } else if constexpr (trait::float_<T>) {
-      return this->serialize_flt(static_cast<f64>(val));
+      return this->serialize_flt(val);
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
     } else if constexpr (requires { Slice{val}; }) {
@@ -132,7 +132,7 @@ struct Deserializer {
     } else if constexpr (trait::float_<T>) {
       return this->deserialize_flt().map([](f64 v) { return static_cast<T>(v); });
     } else if constexpr (requires { T{Str{}}; }) {
-      return this->deserialize_str().and_then([](Str s) { return T{static_cast<Str&&>(s)}; });
+      return this->deserialize_str().and_then([](Str s) { return T{s}; });
     } else {
       static_assert(false, "json::Deserializer::deserialize: not deserializable");
     }
@@ -161,7 +161,7 @@ struct Deserializer {
       auto res = V{};
       while (this->has_next()) {
         auto elem = _TRY(this->next_element<T>());
-        res.push(static_cast<T&&>(elem));
+        res.push(mem::move(elem));
       }
       return Ok{res};
     }
@@ -194,7 +194,7 @@ struct Deserializer {
       while (this->has_next()) {
         auto key = _TRY(this->next_key());
         auto val = _TRY(this->next_value<V>());
-        res.insert(key, static_cast<V&&>(val));
+        res.insert(key, mem::move(val));
       }
       return Ok{res};
     }
