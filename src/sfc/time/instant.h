@@ -15,21 +15,13 @@ struct Instant {
 
  public:
   // trait: ops::Eq
-  auto operator==(const Instant& other) const noexcept -> bool {
-    return _nanos == other._nanos;
-  }
+  auto operator==(const Instant& other) const noexcept -> bool;
 
   // trait: ops::Add
-  auto operator+(const Duration& dur) const noexcept -> Instant {
-    const auto ns = _nanos + dur.as_nanos();
-    return Instant{ns};
-  }
+  auto operator+(const Duration& dur) const noexcept -> Instant;
 
   // trait: ops::Sub
-  auto operator-(const Duration& dur) const noexcept -> Instant {
-    const auto ns = num::saturating_sub(_nanos, dur.as_nanos());
-    return Instant{ns};
-  }
+  auto operator-(const Duration& dur) const noexcept -> Instant;
 
   // trait: fmt::Display
   void fmt(auto& f) const {
