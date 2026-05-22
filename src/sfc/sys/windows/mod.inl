@@ -14,6 +14,7 @@
 #undef min
 
 #include "sfc/core.h"
+#include "sfc/ffi/wstr.h"
 
 namespace sfc::sys::windows {
 
