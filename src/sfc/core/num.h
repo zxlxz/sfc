@@ -43,7 +43,41 @@ constexpr auto next_power_of_two(T n) -> T {
 }
 
 template <trait::int_ T>
-constexpr auto uabs(T x) {
+constexpr auto cast_signed(T x) {
+  if constexpr (trait::same_<T, unsigned char>) {
+    return static_cast<signed char>(x);
+  } else if constexpr (trait::same_<T, unsigned short>) {
+    return static_cast<signed short>(x);
+  } else if constexpr (trait::same_<T, unsigned int>) {
+    return static_cast<signed int>(x);
+  } else if constexpr (trait::same_<T, unsigned long>) {
+    return static_cast<signed long>(x);
+  } else if constexpr (trait::same_<T, unsigned long long>) {
+    return static_cast<signed long long>(x);
+  } else {
+    return x;
+  }
+}
+
+template <trait::int_ T>
+constexpr auto cast_unsigned(T x) {
+  if constexpr (trait::same_<T, signed char>) {
+    return static_cast<unsigned char>(x);
+  } else if constexpr (trait::same_<T, signed short>) {
+    return static_cast<unsigned short>(x);
+  } else if constexpr (trait::same_<T, signed int>) {
+    return static_cast<unsigned int>(x);
+  } else if constexpr (trait::same_<T, signed long>) {
+    return static_cast<unsigned long>(x);
+  } else if constexpr (trait::same_<T, signed long long>) {
+    return static_cast<unsigned long long>(x);
+  } else {
+    return x;
+  }
+}
+
+template <trait::int_ T>
+constexpr auto unsigned_abs(T x) {
   static_assert(sizeof(T) <= sizeof(i64), "uabs: type is too large");
 
   const auto f = []<typename U>(U u, auto s) {

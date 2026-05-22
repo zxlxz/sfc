@@ -46,7 +46,7 @@ SFC_TEST(unique) {
   sfc::expect_eq(u2.ptr(), &val);
   sfc::expect_eq(u2.ptr(), &val);
 
-  auto u3 = static_cast<UPtr&&>(u2);
+  auto u3 = mem::move(u2);
   sfc::expect_eq(u3.ptr(), &val);
   sfc::expect_eq(u2_ptr, nullptr);
 }

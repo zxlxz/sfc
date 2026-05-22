@@ -78,13 +78,13 @@ auto StrSearcher::next() -> SearchStep {
 
   const auto old_finger = _finger;
   if (this->match()) {
-    _finger += static_cast<u32>(_needle._len);
+    _finger += _needle._len;
     return {SearchStep::Match, old_finger, _finger};
   } else {
     if (_finger + _needle._len < _haystack._len) {
       _finger += 1;
     } else {
-      _finger = static_cast<u32>(_haystack._len);
+      _finger = _haystack._len;
     }
     return {SearchStep::Reject, old_finger, _finger};
   }
@@ -97,11 +97,11 @@ auto StrSearcher::next_back() -> SearchStep {
 
   const auto old_finger_back = _finger_back;
   if (this->match_back()) {
-    _finger_back -= static_cast<u32>(_needle._len);
+    _finger_back -= _needle._len;
     return {SearchStep::Match, _finger_back, old_finger_back};
   } else {
     if (_finger_back >= _needle._len) {
-      _finger_back -= static_cast<u32>(_needle._len);
+      _finger_back -= _needle._len;
     } else {
       _finger_back = 0;
     }

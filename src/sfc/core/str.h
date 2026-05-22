@@ -153,8 +153,8 @@ auto Str::parse() const -> Option<T> {
 struct SearchStep {
   enum Type { Done = 0, Match = 1, Reject = 2 };
   Type _type;
-  u32 _pos;
-  u32 _end;
+  usize _pos;
+  usize _end;
 
  public:
   [[gnu::always_inline]] operator bool() const {
@@ -217,8 +217,8 @@ struct Searcher {
 
 struct CharSearcher : Searcher {
   char _needle;
-  u32 _finger = 0;
-  u32 _finger_back = static_cast<u32>(_haystack._len);
+  usize _finger = 0;
+  usize _finger_back = _haystack._len;
 
  public:
   auto next() -> SearchStep;
@@ -227,8 +227,8 @@ struct CharSearcher : Searcher {
 
 struct StrSearcher : Searcher {
   Str _needle;
-  u32 _finger = 0;
-  u32 _finger_back = static_cast<u32>(_haystack._len);
+  usize _finger = 0;
+  usize _finger_back = _haystack._len;
 
   auto match() const -> bool;
   auto match_back() const -> bool;
@@ -346,7 +346,7 @@ auto Str::trim_end_matches(auto&& pat) const -> Str {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto j = 0U;
+  auto j = usize{0U};
   if (auto m = s.next_reject_back()) {
     j = m._end;
   }
@@ -359,8 +359,8 @@ auto Str::trim_matches(auto&& pat) const -> Str {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto i = 0U;
-  auto j = 0U;
+  auto i = usize{0U};
+  auto j = usize{0U};
   if (auto m = s.next_reject()) {
     i = m._pos;
     j = m._end;

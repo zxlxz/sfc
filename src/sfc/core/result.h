@@ -34,11 +34,11 @@ class [[nodiscard]] Result {
   };
 
  public:
-  constexpr explicit Result(T t) noexcept : _tag{0}, _0{static_cast<T&&>(t)} {}
-  constexpr explicit Result(E e) noexcept : _tag{1}, _1{static_cast<E&&>(e)} {}
+  constexpr explicit Result(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
+  constexpr explicit Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
 
-  constexpr Result(Ok t) noexcept : _tag{0}, _0{static_cast<T&&>(t._0)} {}
-  constexpr Result(Err e) noexcept : _tag{1}, _1{static_cast<E&&>(e._0)} {}
+  constexpr Result(Ok t) noexcept : _tag{0}, _0{mem::move(t._0)} {}
+  constexpr Result(Err e) noexcept : _tag{1}, _1{mem::move(e._0)} {}
 
   ~Result() noexcept {
     switch (_tag) {
@@ -50,8 +50,8 @@ class [[nodiscard]] Result {
 
   Result(Result&& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
-      case 0:  ptr::write(&_0, static_cast<T&&>(other._0)), _tag = 0; break;
-      case 1:  ptr::write(&_1, static_cast<E&&>(other._1)), _tag = 1; break;
+      case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
+      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
       default: break;
     }
   }
@@ -72,8 +72,8 @@ class [[nodiscard]] Result {
       default: break;
     }
     switch (other._tag) {
-      case 0:  ptr::write(&_0, static_cast<T&&>(other._0)), _tag = 0; break;
-      case 1:  ptr::write(&_1, static_cast<E&&>(other._1)), _tag = 1; break;
+      case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
+      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
       default: break;
     }
     return *this;
@@ -103,77 +103,77 @@ class [[nodiscard]] Result {
   }
 
   auto unwrap_unchecked() noexcept -> T {
-    return static_cast<T&&>(_0);
+    return mem::move(_0);
   }
 
   auto unwrap_err_unchecked() noexcept -> E {
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap() && -> T {
     sfc::expect(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
-    return static_cast<T&&>(_0);
+    return mem::move(_0);
   }
 
   auto unwrap_err() && -> E {
     sfc::expect(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (_tag == 0) return static_cast<T&&>(_0);
-    return static_cast<T&&>(default_val);
+    if (_tag == 0) return mem::move(_0);
+    return mem::move(default_val);
   }
 
   auto expect(const auto& msg) && -> T {
     sfc::expect(_tag == 0, "{}: Err({})", msg, _1);
-    return static_cast<T&&>(_0);
+    return mem::move(_0);
   }
 
   auto ok() && -> Option<T> {
     if (_tag != 0) return {};
-    return static_cast<T&&>(_0);
+    return mem::move(_0);
   }
 
   auto err() && -> Option<E> {
     if (_tag != 1) return {};
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
   template <class U>
   auto operator&(Result<U, E> res) && -> Result<U, E> {
-    if (_tag == 0) return static_cast<Result<U, E>&&>(res);
-    return Err{static_cast<E&&>(_1)};
+    if (_tag == 0) return mem::move(res);
+    return Err{mem::move(_1)};
   }
 
   template <class F>
   auto operator|(Result<T, F> res) && -> Result<T, F> {
-    if (_tag == 0) return Ok{static_cast<T&&>(_0)};
-    return static_cast<Result<T, F>&&>(res);
+    if (_tag == 0) return Ok{mem::move(_0)};
+    return mem::move(res);
   }
 
   template <class F, class ResultUE = ops::invoke_t<F(T)>>
   auto and_then(F&& op) && -> ResultUE {
-    if (_tag == 0) return op(static_cast<T&&>(_0));
-    return ResultUE{static_cast<E&&>(_1)};
+    if (_tag == 0) return op(mem::move(_0));
+    return ResultUE{mem::move(_1)};
   }
 
   template <class O, class ResultTF = ops::invoke_t<O()>>
   auto or_else(O&& op) && -> ResultTF {
-    if (_tag == 0) return ResultTF{static_cast<T&&>(_0)};
+    if (_tag == 0) return ResultTF{mem::move(_0)};
     return op();
   }
 
   template <class F, class U = ops::invoke_t<F(T)>>
   auto map(F&& op) && -> Result<U, E> {
-    if (_tag == 0) return Result<U, E>{op(static_cast<T&&>(_0))};
-    return Result<U, E>{static_cast<E&&>(_1)};
+    if (_tag == 0) return Result<U, E>{op(mem::move(_0))};
+    return Result<U, E>{mem::move(_1)};
   }
 
   template <class O, class F = ops::invoke_t<O(E)>>
   auto map_err(O&& op) && -> Result<T, F> {
-    if (_tag == 1) return Result<T, F>{op(static_cast<E&&>(_1))};
-    return Result<T, F>{static_cast<T&&>(_0)};
+    if (_tag == 1) return Result<T, F>{op(mem::move(_1))};
+    return Result<T, F>{mem::move(_0)};
   }
 
  public:
@@ -208,7 +208,7 @@ class [[nodiscard]] Result<void, E> {
 
  public:
   constexpr Result(Ok) noexcept : _tag{0}, _1{} {}
-  constexpr Result(Err e) noexcept : _tag{1}, _1{static_cast<E&&>(e._0)} {}
+  constexpr Result(Err e) noexcept : _tag{1}, _1{mem::move(e._0)} {}
 
   Result(const Result& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
@@ -221,7 +221,7 @@ class [[nodiscard]] Result<void, E> {
   Result(Result&& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
       case 0:  _tag = 0; break;
-      case 1:  ptr::write(&_1, static_cast<E&&>(other._1)), _tag = 1; break;
+      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
       default: break;
     }
   }
@@ -245,7 +245,7 @@ class [[nodiscard]] Result<void, E> {
   void unwrap_unchecked() const noexcept {}
 
   auto unwrap_err_unchecked() -> E {
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
   void unwrap() const noexcept {
@@ -254,12 +254,12 @@ class [[nodiscard]] Result<void, E> {
 
   auto unwrap_err() && -> E {
     sfc::expect(_tag == 1, "Result::unwrap_err: not Err()");
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
   auto err() && -> Option<E> {
     if (_tag != 1) return {};
-    return static_cast<E&&>(_1);
+    return mem::move(_1);
   }
 
  public:

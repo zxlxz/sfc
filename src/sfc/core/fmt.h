@@ -62,7 +62,7 @@ struct Debug {
 
   static void fmt(trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
-    const auto u = num::uabs(val);
+    const auto u = num::unsigned_abs(val);
     const auto s = Debug::format_int(buf, u, f._spec._type);
     f.pad_num(val < 0, s);
   }
@@ -101,11 +101,7 @@ struct Formatter {
 
  public:
   void write_char(char c) {
-    if constexpr (requires { _buf.push(char32_t{0}); }) {
-      (void)_buf.push(static_cast<char32_t>(c));
-    } else {
-      this->write_str(Str{&c, 1});
-    }
+    this->write_str(Str{&c, 1});
   }
 
   void write_chars(char c, usize n) {

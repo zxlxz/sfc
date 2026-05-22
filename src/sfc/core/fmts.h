@@ -80,9 +80,10 @@ struct Parser {
   constexpr auto extract_int() -> u32 {
     auto res = 0U;
     for (; _ptr < _end; ++_ptr) {
-      const auto ch = *_ptr;
-      if (!(ch >= '0' && ch <= '9')) break;
-      res = res * 10 + static_cast<u32>(ch - '0');
+      const auto c = *_ptr;
+      if (!(c >= '0' && c <= '9')) break;
+      const auto n = c-'0';
+      res = res * 10 + num::cast_unsigned(n);
     }
     return res;
   };
@@ -125,8 +126,8 @@ struct Fmts {
   static constexpr auto kMaxLen = 16U;
   RawStr _str;
   u32 _cnt = 0;
-  u16 _idxs[kMaxLen] = {};
-  u16 _ends[kMaxLen] = {};
+  u32 _idxs[kMaxLen] = {};
+  u32 _ends[kMaxLen] = {};
   Spec _specs[kMaxLen] = {};
 
  public:
@@ -137,8 +138,8 @@ struct Fmts {
       const auto a = _str.find('{', p);
       const auto b = _str.find('}', a);
       if (b == _str._len) break;
-      _idxs[_cnt] = static_cast<u16>(a);
-      _ends[_cnt] = static_cast<u16>(b);
+      _idxs[_cnt] = a;
+      _ends[_cnt] = b;
       _specs[_cnt] = Spec::from({_str._ptr + a + 1, b - a - 1});
       p = b + 1;
       _cnt += 1;

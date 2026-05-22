@@ -213,7 +213,7 @@ auto Spec::prefix() const -> str::Str {
 }
 
 auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
-  const auto uval = num::uabs(val) + 0U;
+  const auto uval = num::unsigned_abs(val) + 0U;
 
   auto rbuf = RevBuf{buf};
   switch (type) {

@@ -140,7 +140,7 @@ auto wide_encode(wchar_t (&buf)[2], char32_t ch) -> usize {
 
 auto wide_decode(const wchar_t p[], usize n) -> char32_t {
   if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
-    return static_cast<char32_t>(p[0]);
+    return char32_t{p[0]};
   } else {
     return chr::utf16_decode(reinterpret_cast<const u16*>(p), n);
   }

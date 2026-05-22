@@ -15,17 +15,17 @@ auto Duration::from_micros(u64 micros) noexcept -> Duration {
 }
 
 auto Duration::from_nanos(u64 nanos) noexcept -> Duration {
-  return {nanos};
+  return Duration{nanos};
 }
 
 auto Duration::from_secs_f32(f32 secs) noexcept -> Duration {
   const auto nanos = static_cast<f64>(secs) * static_cast<f64>(NANOS_PER_SEC);
-  return {static_cast<u64>(nanos)};
+  return Duration{static_cast<u64>(nanos)};
 }
 
 auto Duration::from_secs_f64(f64 secs) noexcept -> Duration {
   const auto nanos = secs * static_cast<f64>(NANOS_PER_SEC);
-  return {static_cast<u64>(nanos)};
+  return Duration{static_cast<u64>(nanos)};
 }
 
 auto Duration::as_secs() const noexcept -> u64 {
@@ -54,15 +54,18 @@ auto Duration::as_micros() const noexcept -> u64 {
 }
 
 auto Duration::subsec_nanos() const noexcept -> u32 {
-  return static_cast<u32>(_nanos % NANOS_PER_SEC);
+  const auto val = _nanos % NANOS_PER_SEC;
+  return static_cast<u32>(val);
 }
 
 auto Duration::subsec_millis() const noexcept -> u32 {
-  return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MILLI);
+  const auto val = _nanos % NANOS_PER_SEC / NANOS_PER_MILLI;
+  return static_cast<u32>(val);
 }
 
 auto Duration::subsec_micros() const noexcept -> u32 {
-  return static_cast<u32>(_nanos % NANOS_PER_SEC / NANOS_PER_MICRO);
+  const auto val = _nanos % NANOS_PER_SEC / NANOS_PER_MICRO;
+  return static_cast<u32>(val);
 }
 
 auto Duration::operator==(const Duration& other) const noexcept -> bool {

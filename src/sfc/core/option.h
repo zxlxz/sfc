@@ -115,59 +115,59 @@ class Option {
 
   auto expect(const auto& msg) && -> T {
     sfc::expect(_tag == 1, "Option::expect: {}", msg);
-    return static_cast<T&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap() && -> T {
     sfc::expect(_tag == 1, "Option::unwrap: not Some()");
-    return static_cast<T&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (_tag == 1) return static_cast<T&&>(_1);
-    return static_cast<T&&>(default_val);
+    if (_tag == 1) return mem::move(_1);
+    return mem::move(default_val);
   }
 
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
-    if (_tag == 1) return static_cast<Option<U>&&>(optb);
+    if (_tag == 1) return mem::move(optb);
     return None{};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
-    if (_tag == 1) return static_cast<Option<T>&&>(*this);
-    return static_cast<Option<T>&&>(optb);
+    if (_tag == 1) return mem::move(*this);
+    return mem::move(optb);
   }
 
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_tag == 1) return op(static_cast<T&&>(_1));
+    if (_tag == 1) return op(mem::move(_1));
     return None{};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
-    if (_tag == 1) return static_cast<Option<T>&&>(*this);
+    if (_tag == 1) return mem::move(*this);
     return f();
   }
 
   template <class F>
   auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
-    if (_tag == 1) return f(static_cast<T&&>(_1));
+    if (_tag == 1) return f(mem::move(_1));
     return None{};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) && -> U {
-    if (_tag == 1) return f(static_cast<T&&>(_1));
-    return static_cast<U&&>(default_val);
+    if (_tag == 1) return f(mem::move(_1));
+    return mem::move(default_val);
   }
 
  public:
   // to result
   template <class E>
   auto ok_or(E err) && -> result::Result<T, E> {
-    if (_tag == 1) return static_cast<T&&>(_1);
-    return static_cast<E&&>(err);
+    if (_tag == 1) return mem::move(_1);
+    return mem::move(err);
   }
 
  public:
@@ -224,58 +224,58 @@ class Option<T> {
 
   auto expect(const auto& msg) && -> T {
     sfc::expect(_1 != nullptr, "Option::expect: {}", msg);
-    return static_cast<T&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap() -> T {
     sfc::expect(_1 != nullptr, "Option::unwrap: None()");
-    return static_cast<T&&>(_1);
+    return mem::move(_1);
   }
 
   auto unwrap_or(T default_val) -> T {
-    return _1 != nullptr ? static_cast<T&&>(_1) : static_cast<T&&>(default_val);
+    return _1 != nullptr ? mem::move(_1) : mem::move(default_val);
   }
 
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
-    if (_1 != nullptr) return static_cast<Option<U>&&>(optb);
+    if (_1 != nullptr) return mem::move(optb);
     return None{};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
-    if (_1 != nullptr) return static_cast<Option<T>&&>(*this);
-    return static_cast<Option<T>&&>(optb);
+    if (_1 != nullptr) return mem::move(*this);
+    return mem::move(optb);
   }
 
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_1 != nullptr) return op(static_cast<T&&>(_1));
+    if (_1 != nullptr) return op(mem::move(_1));
     return None{};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
-    if (_1 != nullptr) return static_cast<Option<T>&&>(*this);
+    if (_1 != nullptr) return mem::move(*this);
     return f();
   }
 
   template <class F>
   auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
-    if (_1 != nullptr) return {f(static_cast<T&&>(_1))};
+    if (_1 != nullptr) return {f(mem::move(_1))};
     return {};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) && -> U {
-    if (_1 != nullptr) return f(static_cast<T&&>(_1));
-    return static_cast<U&&>(default_val);
+    if (_1 != nullptr) return f(mem::move(_1));
+    return mem::move(default_val);
   }
 
  public:
   // to result
   template <class E>
   auto ok_or(E err) && noexcept -> result::Result<T, E> {
-    if (_1 != nullptr) return {static_cast<T&&>(_1)};
-    return {static_cast<E&&>(err)};
+    if (_1 != nullptr) return {mem::move(_1)};
+    return {mem::move(err)};
   }
 
  public:
@@ -356,13 +356,13 @@ class Option<T&> {
 
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
-    if (_1) return static_cast<Option<U>&&>(optb);
+    if (_1) return mem::move(optb);
     return None{};
   }
 
   auto operator|(Option optb) const -> Option {
-    if (_1) return *this;
-    return optb;
+    if (_1) return mem::move(*this);
+    return mem::move(optb);
   }
 
   template <class F>
@@ -385,7 +385,7 @@ class Option<T&> {
   template <class U>
   auto map_or(U default_val, auto&& f) -> U {
     if (_1) return f(*_1);
-    return static_cast<U&&>(default_val);
+    return mem::move(default_val);
   }
 
  public:
@@ -393,7 +393,7 @@ class Option<T&> {
   template <class E>
   auto ok_or(E err) -> result::Result<T&, E> {
     if (_1) return {*_1};
-    return {static_cast<E&&>(err)};
+    return {mem::move(err)};
   }
 
  public:
@@ -455,7 +455,7 @@ class Option<const T&> {
 
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
-    if (_ptr) return static_cast<Option<U>&&>(optb);
+    if (_ptr) return mem::move(optb);
     return None{};
   }
 
@@ -484,7 +484,7 @@ class Option<const T&> {
   template <class U>
   auto map_or(U default_val, auto&& f) const -> U {
     if (_ptr) return f(*_ptr);
-    return static_cast<U&&>(default_val);
+    return mem::move(default_val);
   }
 
  public:
@@ -492,7 +492,7 @@ class Option<const T&> {
   template <class E>
   auto ok_or(E err) const -> result::Result<const T&, E> {
     if (_ptr) return {*_ptr};
-    return {static_cast<E&&>(err)};
+    return {mem::move(err)};
   }
 
  public:

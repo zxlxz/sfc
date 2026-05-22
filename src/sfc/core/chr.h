@@ -27,7 +27,6 @@ struct Chars : iter::Iterator {
 
  public:
   Chars(const u8* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
-
   auto next() noexcept -> Option<Item>;
   auto next_back() noexcept -> Option<Item>;
 };

@@ -50,6 +50,16 @@ struct Unique {
 };
 
 template <class T>
+[[gnu::always_inline]] inline auto null() noexcept -> T* {
+  return nullptr;
+}
+
+template <class T>
+[[gnu::always_inline]] inline auto cast(void* ptr) noexcept -> T* {
+  return static_cast<T*>(ptr);
+}
+
+template <class T>
 [[gnu::always_inline]] inline auto read(T* src) noexcept -> T {
   if constexpr (__is_trivially_copyable(T)) {
     return *src;

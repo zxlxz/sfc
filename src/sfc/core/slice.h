@@ -241,7 +241,7 @@ struct Slice {
 
   void fill(T val) noexcept {
     if constexpr (sizeof(T) == 1) {
-      ptr::write_bytes(_ptr, static_cast<u8>(val), _len);
+      ptr::write_bytes(_ptr, __builtin_bit_cast(u8, val), _len);
     } else {
       for (auto p = _ptr, e = p + _len; p != e; ++p) {
         *p = val;
@@ -386,7 +386,7 @@ struct Iter : iter::Iterator {
   Iter(T* ptr, usize len) noexcept : _ptr{ptr}, _end{ptr + len} {}
 
   auto len() const noexcept -> usize {
-    return _end - _ptr;
+    return num::cast_unsigned(_end - _ptr);
   }
 
   auto next() noexcept -> Option<Item> {

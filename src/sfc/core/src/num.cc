@@ -10,7 +10,7 @@ auto flt_eq_ulp(f64 a, f64 b, u32 ulp) noexcept -> bool {
     return a == b;
   }
 
-  const auto diff = static_cast<u32>(ia > ib ? ia - ib : ib - ia);
+  const auto diff = num::unsigned_abs(ia - ib);
   return diff <= ulp;
 }
 

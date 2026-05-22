@@ -27,7 +27,7 @@ using i64 = long;
 using u64 = unsigned long;
 #endif
 
-using isize = decltype(static_cast<char*>(0) - static_cast<char*>(0));
+using isize = decltype("" - "");
 using usize = decltype(sizeof(0));
 
 using f32 = float;

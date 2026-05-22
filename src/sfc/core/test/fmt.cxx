@@ -98,8 +98,8 @@ SFC_TEST(sint) {
   sfc::expect_eq(format("{}", -42), "-42");
 
   // min
-  sfc::expect_eq(format("{}", static_cast<i32>(0x80000000U)), "-2147483648");
-  sfc::expect_eq(format("{}", static_cast<i64>(0x8000000000000000ULL)), "-9223372036854775808");
+  sfc::expect_eq(format("{}", num::min_value<i32>()), "-2147483648");
+  sfc::expect_eq(format("{}", num::min_value<i64>()), "-9223372036854775808");
 
   // hex
   sfc::expect_eq(format("{x}", 255), "ff");
