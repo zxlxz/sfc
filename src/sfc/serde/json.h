@@ -121,8 +121,9 @@ struct Deserializer {
   auto deserialize_null() noexcept -> Result<>;
   auto deserialize_bool() noexcept -> Result<bool>;
   auto deserialize_str() noexcept -> Result<Str>;
-  auto deserialize_int() noexcept -> Result<i64>;
-  auto deserialize_flt() noexcept -> Result<f64>;
+  auto deserialize_u64() noexcept -> Result<u64>;
+  auto deserialize_i64() noexcept -> Result<i64>;
+  auto deserialize_f64() noexcept -> Result<f64>;
 
   template <class T>
   auto deserialize_any() noexcept -> Result<T> {
@@ -131,11 +132,11 @@ struct Deserializer {
     } else if constexpr (trait::same_<T, bool>) {
       return this->deserialize_bool();
     } else if constexpr (trait::sint_<T>) {
-      return this->deserialize_int().map([](i64 v) { return static_cast<T>(v); });
+      return this->deserialize_i64().map([](i64 v) { return static_cast<T>(v); });
     } else if constexpr (trait::uint_<T>) {
-      return this->deserialize_int().map([](u64 v) { return static_cast<T>(v); });
+      return this->deserialize_u64().map([](u64 v) { return static_cast<T>(v); });
     } else if constexpr (trait::float_<T>) {
-      return this->deserialize_flt().map([](f64 v) { return static_cast<T>(v); });
+      return this->deserialize_f64().map([](f64 v) { return static_cast<T>(v); });
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{s}; });
     } else {

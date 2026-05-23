@@ -50,16 +50,16 @@ SFC_TEST(deserialize_simple) {
 
   // int
   {
-    sfc::expect_eq(Deserializer{"0"}.deserialize_int().ok(), Option{0});
-    sfc::expect_eq(Deserializer{"123"}.deserialize_int().ok(), Option{123});
-    sfc::expect_eq(Deserializer{"-123"}.deserialize_int().ok(), Option{-123});
+    sfc::expect_eq(Deserializer{"0"}.deserialize_i64().ok(), Option{0});
+    sfc::expect_eq(Deserializer{"123"}.deserialize_i64().ok(), Option{123});
+    sfc::expect_eq(Deserializer{"-123"}.deserialize_i64().ok(), Option{-123});
   }
 
   // float
   {
-    sfc::expect_eq(Deserializer{"0.0"}.deserialize_flt().ok(), Option{0.0});
-    sfc::expect_eq(Deserializer{"1.23"}.deserialize_flt().ok(), Option{1.23});
-    sfc::expect_eq(Deserializer{"-1.23"}.deserialize_flt().ok(), Option{-1.23});
+    sfc::expect_eq(Deserializer{"0.0"}.deserialize_f64().ok(), Option{0.0});
+    sfc::expect_eq(Deserializer{"1.23"}.deserialize_f64().ok(), Option{1.23});
+    sfc::expect_eq(Deserializer{"-1.23"}.deserialize_f64().ok(), Option{-1.23});
   }
 
   // str

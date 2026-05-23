@@ -119,7 +119,7 @@ auto Deserializer::deserialize_num() noexcept -> Result<Str> {
   return Ok{num};
 }
 
-auto Deserializer::deserialize_int() noexcept -> Result<i64> {
+auto Deserializer::deserialize_i64() noexcept -> Result<i64> {
   const auto num_str = _TRY(this->deserialize_num());
   const auto num_val = num_str.template parse<i64>();
   if (!num_val) {
@@ -128,7 +128,16 @@ auto Deserializer::deserialize_int() noexcept -> Result<i64> {
   return Ok{*num_val};
 }
 
-auto Deserializer::deserialize_flt() noexcept -> Result<f64> {
+auto Deserializer::deserialize_u64() noexcept -> Result<u64> {
+  const auto num_str = _TRY(this->deserialize_num());
+  const auto num_val = num_str.template parse<u64>();
+  if (!num_val) {
+    return Err{Error::InvalidNumber};
+  }
+  return Ok{*num_val};
+}
+
+auto Deserializer::deserialize_f64() noexcept -> Result<f64> {
   const auto num_str = _TRY(this->deserialize_num());
   const auto num_val = num_str.template parse<f64>();
   if (!num_val) {
