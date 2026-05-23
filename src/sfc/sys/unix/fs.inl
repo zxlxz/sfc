@@ -67,7 +67,7 @@ class File {
       return Err{io::Error::last_os_error()};
     }
     const auto nseek = num::cast_unsigned(ret);
-    return Ok{nseek};
+    return Ok{usize{nseek}};
   }
 };
 

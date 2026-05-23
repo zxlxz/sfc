@@ -9,10 +9,10 @@ static constexpr auto MICROS_PER_SEC = 1000000U;
 static constexpr auto NANOS_PER_MICRO = 1000U;
 
 struct Instant {
-  timespec t = {};
+  ::timespec t = {};
 
   static auto now() noexcept -> Instant {
-    auto ts = timespec{};
+    auto ts = ::timespec{};
     (void)::clock_gettime(CLOCK_MONOTONIC, &ts);
     return Instant{ts};
   }
@@ -25,17 +25,17 @@ struct Instant {
 };
 
 struct SystemTime {
-  timespec t = {};
+  ::timespec t = {};
 
   static auto now() noexcept -> SystemTime {
-    struct timespec ts{};
+    auto ts = ::timespec{};
     (void)::clock_gettime(CLOCK_REALTIME, &ts);
     return SystemTime{ts};
   }
 
   static auto from_micros(uint64_t micros) -> SystemTime {
-    const auto secs = static_cast<time_t>(micros / MICROS_PER_SEC);
-    const auto nsec = static_cast<uint32_t>(micros % MICROS_PER_SEC * NANOS_PER_MICRO);
+    const auto secs = num::cast_signed(micros / MICROS_PER_SEC);
+    const auto nsec = num::cast_signed(micros % MICROS_PER_SEC * NANOS_PER_MICRO);
     return SystemTime{{.tv_sec = secs, .tv_nsec = nsec}};
   }
 
@@ -47,33 +47,33 @@ struct SystemTime {
 };
 
 struct DateTime {
-  unsigned short year = 0;
-  unsigned short month = 0;
-  unsigned short day = 0;
-  unsigned short hour = 0;
-  unsigned short minute = 0;
-  unsigned short second = 0;
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  int hour = 0;
+  int minute = 0;
+  int second = 0;
 
   static auto from_tm(const struct tm& t) -> DateTime {
     const auto res = DateTime{
-        .year = static_cast<unsigned short>(t.tm_year + 1900),
-        .month = static_cast<unsigned short>(t.tm_mon + 1),
-        .day = static_cast<unsigned short>(t.tm_mday),
-        .hour = static_cast<unsigned short>(t.tm_hour),
-        .minute = static_cast<unsigned short>(t.tm_min),
-        .second = static_cast<unsigned short>(t.tm_sec),
+        .year = t.tm_year + 1900,
+        .month = t.tm_mon + 1,
+        .day = t.tm_mday,
+        .hour = t.tm_hour,
+        .minute = t.tm_min,
+        .second = t.tm_sec,
     };
     return res;
   }
 
   static auto from_utc(const SystemTime& sys_time) -> DateTime {
-    struct tm tm{};
+    auto tm = ::tm{};
     ::gmtime_r(&sys_time.t.tv_sec, &tm);
     return DateTime::from_tm(tm);
   }
 
   static auto from_local(const SystemTime& sys_time) -> DateTime {
-    struct tm tm{};
+    auto tm = ::tm{};
     ::localtime_r(&sys_time.t.tv_sec, &tm);
     return DateTime::from_tm(tm);
   }

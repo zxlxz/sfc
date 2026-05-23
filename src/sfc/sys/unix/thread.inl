@@ -97,11 +97,11 @@ inline void sleep(time::Duration dur) noexcept {
     return;
   }
 
-  const auto secs = dur.as_secs();
-  const auto nanos = dur.subsec_nanos();
+  const auto secs = num::cast_signed(dur.as_secs());
+  const auto nanos = num::cast_signed(dur.subsec_nanos());
   const auto ts = ::timespec{
-      .tv_sec = static_cast<time_t>(secs),
-      .tv_nsec = static_cast<long>(nanos),
+      .tv_sec = time_t{secs},
+      .tv_nsec = long{nanos},
   };
 
   (void)::nanosleep(&ts, nullptr);

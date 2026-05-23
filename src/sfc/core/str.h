@@ -239,8 +239,8 @@ struct StrSearcher : Searcher {
 template <class F>
 struct CharPredicateSearcher : Searcher {
   F _pred;
-  u32 _finger = 0;
-  u32 _finger_back = static_cast<u32>(_haystack._len);
+  usize _finger = 0;
+  usize _finger_back = _haystack._len;
 
  public:
   auto next() -> SearchStep {

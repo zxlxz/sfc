@@ -5,7 +5,7 @@
 namespace sfc::sys::unix {
 
 struct Backtrace {
-  static constexpr auto kMaxFrame = 64U;
+  static constexpr auto kMaxFrame = 64;
   void* _frames[kMaxFrame];
   unsigned _count = 0;
 
