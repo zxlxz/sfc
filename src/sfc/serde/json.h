@@ -45,8 +45,9 @@ class Serializer {
 
   void serialize_null() noexcept;
   void serialize_bool(bool val) noexcept;
-  void serialize_int(i64 val) noexcept;
-  void serialize_flt(f64 val) noexcept;
+  void serialize_i64(i64 val) noexcept;
+  void serialize_u64(u64 val) noexcept;
+  void serialize_f64(f64 val) noexcept;
   void serialize_str(Str val) noexcept;
 
   template <class T>
@@ -55,10 +56,12 @@ class Serializer {
       return val.serialize(*this);
     } else if constexpr (trait::same_<T, bool>) {
       return this->serialize_bool(val);
-    } else if constexpr (trait::int_<T>) {
-      return this->serialize_int(static_cast<i64>(val));
+    } else if constexpr (trait::sint_<T>) {
+      return this->serialize_i64(val);
+    } else if constexpr (trait::uint_<T>) {
+      return this->serialize_u64(val);
     } else if constexpr (trait::float_<T>) {
-      return this->serialize_flt(val);
+      return this->serialize_f64(val);
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
     } else if constexpr (requires { Slice{val}; }) {
@@ -127,8 +130,10 @@ struct Deserializer {
       return T::deserialize(*this);
     } else if constexpr (trait::same_<T, bool>) {
       return this->deserialize_bool();
-    } else if constexpr (trait::int_<T>) {
+    } else if constexpr (trait::sint_<T>) {
       return this->deserialize_int().map([](i64 v) { return static_cast<T>(v); });
+    } else if constexpr (trait::uint_<T>) {
+      return this->deserialize_int().map([](u64 v) { return static_cast<T>(v); });
     } else if constexpr (trait::float_<T>) {
       return this->deserialize_flt().map([](f64 v) { return static_cast<T>(v); });
     } else if constexpr (requires { T{Str{}}; }) {

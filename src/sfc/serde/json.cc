@@ -10,13 +10,19 @@ void Serializer::serialize_bool(bool val) noexcept {
   _buf.push_str(val ? Str{"true"} : Str{"false"});
 }
 
-void Serializer::serialize_int(i64 val) noexcept {
+void Serializer::serialize_i64(i64 val) noexcept {
   char buf[32];
   const auto s = fmt::Debug::format_int(buf, val);
   _buf.push_str(s);
 }
 
-void Serializer::serialize_flt(f64 val) noexcept {
+void Serializer::serialize_u64(u64 val) noexcept {
+  char buf[32];
+  const auto s = fmt::Debug::format_int(buf, val);
+  _buf.push_str(s);
+}
+
+void Serializer::serialize_f64(f64 val) noexcept {
   char buf[32];
   const auto s = fmt::Debug::format_flt(buf, val, 6);
   _buf.push_str(s);

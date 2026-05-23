@@ -39,7 +39,7 @@ SFC_TEST(buf_write) {
   auto w = BufWriter<List<u8>&>{out};
 
   sfc::expect_eq(w.write(Str{"0123"}.as_bytes()).ok(), Option{4UZ});
-  sfc::expect_eq(out.len(), 0);
+  sfc::expect_eq(out.len(), 0U);
 
   sfc::expect_eq(w.flush().is_ok(), true);
   sfc::expect_eq(Str::from_utf8(out.as_slice()), "0123");

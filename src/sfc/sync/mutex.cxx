@@ -53,8 +53,8 @@ SFC_TEST(reentrant_lock) {
   auto list = List<usize>::with_capacity(4 * CNT);
   auto mtx = ReentrantLock{};
 
-  auto push = [&](Str name) {
-    for (auto i = 0u; i < CNT; ++i) {
+  auto push = [&]([[maybe_unused]] Str name) {
+    for (auto i = 0U; i < CNT; ++i) {
       auto lock1 = mtx.lock();
       const auto n = list.len();
       list.push(n);

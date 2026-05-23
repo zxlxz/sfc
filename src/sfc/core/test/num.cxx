@@ -2,23 +2,23 @@
 
 namespace sfc::num::test {
 
-SFC_TEST(max_value) {
+SFC_TEST(uint) {
   static_assert(num::Int<u8>::MAX == 0xFFU);
   static_assert(num::Int<u16>::MAX == 0xFFFFU);
   static_assert(num::Int<u32>::MAX == 0xFFFFFFFFU);
   static_assert(num::Int<u64>::MAX == 0xFFFFFFFFFFFFFFFFU);
+}
 
+SFC_TEST(sint) {
   static_assert(num::Int<i8>::MAX == 0x7F);
   static_assert(num::Int<i16>::MAX == 0x7FFF);
   static_assert(num::Int<i32>::MAX == 0x7FFFFFFF);
   static_assert(num::Int<i64>::MAX == 0x7FFFFFFFFFFFFFFF);
-}
 
-SFC_TEST(min_value) {
   static_assert(num::Int<i8>::MIN == -0x80);
   static_assert(num::Int<i16>::MIN == -0x8000);
-  static_assert(num::Int<i32>::MIN == -0x80000000);
-  static_assert(num::Int<i64>::MIN == -0x8000000000000000);
+  static_assert(num::Int<i32>::MIN + num::Int<i32>::MAX == -1);
+  static_assert(num::Int<i64>::MIN + num::Int<i64>::MAX == -1);
 }
 
 SFC_TEST(unsigned_abs) {

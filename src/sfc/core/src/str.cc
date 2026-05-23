@@ -21,8 +21,8 @@ auto Str::trim() const noexcept -> Str {
 auto Str::hash() const noexcept -> usize {
   auto imp = hash::Hasher{};
   for (auto i = 0UL; i < _len; ++i) {
-    const auto ch = _ptr[i];
-    imp.write_byte(static_cast<u8>(ch));
+    const auto byte = __builtin_bit_cast(u8, _ptr[i]);
+    imp.write_byte(byte);
   }
   return imp.finish();
 }

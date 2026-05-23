@@ -6,19 +6,19 @@
 namespace sfc::sync::mpmc::test {
 
 SFC_TEST(s1r1) {
-  static const auto CNT = 100;
+  static const auto CNT = 100U;
   auto chan = Channel<u32>::with_capacity(16);
 
   auto recv_cnt = 0U;
   auto recv_sum = 0U;
   auto sender = [&]() {
-    for (auto i = 0; i < CNT; ++i) {
+    for (auto i = 0U; i < CNT; ++i) {
       sfc::expect_true(chan.send(i).is_ok());
     }
   };
 
   auto receiver = [&]() {
-    for (auto i = 0; i < CNT; ++i) {
+    for (auto i = 0U; i < CNT; ++i) {
       auto val = chan.recv();
       sfc::expect_eq(val, Option{i});
       recv_cnt += 1;
@@ -60,7 +60,7 @@ SFC_TEST(s1r1_try) {
 
 SFC_TEST(s2r1) {
   static const auto CNT = 50;
-  auto chan = Channel<int>::with_capacity(16);
+  auto chan = Channel<i32>::with_capacity(16);
 
   auto recv_cnt = 0U;
   auto recv_sum = 0;
@@ -85,13 +85,13 @@ SFC_TEST(s2r1) {
     auto r1 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt, 2 * CNT);
+  sfc::expect_eq(recv_cnt, 2 * u32{CNT});
   sfc::expect_eq(recv_sum, 0);
 }
 
 SFC_TEST(s1r2) {
   static constexpr auto CNT = 50U;
-  auto chan = Channel<int>::with_capacity(16);
+  auto chan = Channel<u32>::with_capacity(16);
 
   auto recv_cnt = Atomic{0U};
   auto recv_sum = Atomic{0U};
@@ -147,7 +147,7 @@ SFC_TEST(s2r2) {
     auto c2 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt.load(), 2 * CNT);
+  sfc::expect_eq(recv_cnt.load(), 2 * u32{CNT});
   sfc::expect_eq(recv_sum.load(), 0);
 }
 

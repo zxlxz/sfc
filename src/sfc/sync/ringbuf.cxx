@@ -182,7 +182,7 @@ SFC_TEST(mpmc_s2r2) {
     auto c2 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt.load(), 2 * CNT);
+  sfc::expect_eq(recv_cnt.load(), 2 * u32{CNT});
   sfc::expect_eq(recv_sum.load(), 0);
 }
 

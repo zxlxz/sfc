@@ -41,7 +41,7 @@ SFC_TEST(position) {
 
   auto pos = Slice{v}.iter().position([](auto& x) { return x == 3; });
   sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3);
+  sfc::expect_eq(*pos, 3U);
 }
 
 SFC_TEST(rposition) {
@@ -49,7 +49,7 @@ SFC_TEST(rposition) {
 
   auto pos = Slice{v}.iter().rposition([](auto& x) { return x == 3; });
   sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3);
+  sfc::expect_eq(*pos, 3U);
 }
 
 SFC_TEST(all) {
@@ -101,10 +101,10 @@ SFC_TEST(max_by_key) {
 }
 
 SFC_TEST(collect) {
-  const int v[] = {0, 1, 2, 3, 4, 5};
+  const u32 v[] = {0, 1, 2, 3, 4, 5};
 
-  auto collected = Slice{v}.iter().collect<List<int>>();
-  sfc::expect_eq(collected.len(), 6);
+  auto collected = Slice{v}.iter().collect<List<u32>>();
+  sfc::expect_eq(collected.len(), 6U);
   for (auto i : v) {
     sfc::expect_eq(collected[i], i);
   }

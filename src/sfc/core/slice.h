@@ -411,14 +411,14 @@ struct Windows : iter::Iterator {
   Windows(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
   auto next() noexcept -> Option<Item> {
-    if (_end - _ptr < _len) return {};
+    if (_ptr + _len > _end) return {};
 
     _ptr += 1;
     return Item{_ptr - 1, _len};
   }
 
   auto next_back() noexcept -> Option<Item> {
-    if (_end - _ptr < _len) return {};
+    if (_ptr + _len > _end) return {};
 
     _end -= 1;
     return Item{_end - _len + 1, _len};
@@ -437,11 +437,16 @@ struct Chunks : iter::Iterator {
   Chunks(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
   auto next() noexcept -> Option<Item> {
-    if (_end - _ptr < 1) return {};
+    if (_ptr >= _end) return {};
 
-    const auto len = _end - _ptr < _len ? _end - _ptr : _len;
-    _ptr += len;
-    return Item{_ptr - len, len};
+    if (_ptr + _len > _end) {
+      const auto len = num::cast_unsigned(_end - _ptr);
+      _ptr = _end;
+      return Item{_ptr - len, len};
+    }
+
+    _ptr += _len;
+    return Item{_ptr - _len, _len};
   }
 };
 

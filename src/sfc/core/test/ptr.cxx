@@ -92,7 +92,7 @@ SFC_TEST(drop) {
 }
 
 SFC_TEST(copy) {
-  u32 v[] = {1, 1, 2, 2};
+  int v[] = {1, 1, 2, 2};
   ptr::copy(v, v + 2, 2);
   sfc::expect_eq(v[0], 1);
   sfc::expect_eq(v[1], 1);
@@ -101,7 +101,7 @@ SFC_TEST(copy) {
 }
 
 SFC_TEST(copy_nonoverlapping) {
-  u32 v[] = {1, 1, 2, 2};
+  int v[] = {1, 1, 2, 2};
   ptr::copy_nonoverlapping(v, v + 2, 2);
   sfc::expect_eq(v[0], 1);
   sfc::expect_eq(v[1], 1);
@@ -110,7 +110,7 @@ SFC_TEST(copy_nonoverlapping) {
 }
 
 SFC_TEST(shift_elements_left) {
-  u32 v[] = {0, 1, 2, 3, 4};
+  int v[] = {0, 1, 2, 3, 4};
   ptr::shift_elements_left(v + 1, 4, 1);
   sfc::expect_eq(v[0], 1);
   sfc::expect_eq(v[1], 2);
@@ -120,7 +120,7 @@ SFC_TEST(shift_elements_left) {
 }
 
 SFC_TEST(shift_elements_right) {
-  u32 v[] = {0, 1, 2, 3, 4};
+  int v[] = {0, 1, 2, 3, 4};
   ptr::shift_elements_right(v, 4, 1);
   sfc::expect_eq(v[0], 0);
   sfc::expect_eq(v[1], 0);

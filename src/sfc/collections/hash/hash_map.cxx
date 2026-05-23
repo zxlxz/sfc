@@ -14,33 +14,33 @@ SFC_TEST(map_get) {
 }
 
 SFC_TEST(map_try_insert) {
-  auto t = HashMap<int, int>{};
+  auto t = HashMap<u32, u32>{};
 
-  for (auto i = 0; i < 5; ++i) {
+  for (auto i = 0U; i < 5U; ++i) {
     t.try_insert(i, i * 10);
     sfc::expect_eq(t.len(), i + 1);
   }
 
-  sfc::expect_eq(*t.get(0), 0);
-  sfc::expect_eq(*t.get(1), 10);
-  sfc::expect_false(t.get(5));
+  sfc::expect_eq(*t.get(0U), 0U);
+  sfc::expect_eq(*t.get(1U), 10U);
+  sfc::expect_false(t.get(5U));
 
-  for (auto i = 5; i < 10; ++i) {
+  for (auto i = 5U; i < 10U; ++i) {
     t.try_insert(i, i * 10);
     sfc::expect_eq(t.len(), i + 1);
   }
 
-  sfc::expect_eq(*t.get(5), 50);
-  sfc::expect_eq(*t.get(9), 90);
-  sfc::expect_false(t.get(10));
+  sfc::expect_eq(*t.get(5U), 50U);
+  sfc::expect_eq(*t.get(9U), 90U);
+  sfc::expect_false(t.get(10U));
 
-  for (auto i = 10; i < 100; ++i) {
+  for (auto i = 10U; i < 100U; ++i) {
     t.try_insert(i, i * 10);
     sfc::expect_eq(t.len(), i + 1);
     sfc::expect_eq(*t.get(i), i * 10);
   }
 
-  for (auto i = 0; i < 100; ++i) {
+  for (auto i = 0U; i < 100U; ++i) {
     sfc::expect_eq(*t.get(i), i * 10);
   }
 

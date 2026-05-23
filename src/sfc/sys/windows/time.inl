@@ -55,7 +55,7 @@ struct SystemTime {
   }
 
   auto as_micros() const noexcept -> ULONG64 {
-    const auto cnt = static_cast<ULONG64>(t.dwHighDateTime) << 32 | static_cast<ULONG64>(t.dwLowDateTime);
+    const auto cnt = (ULONG64{t.dwHighDateTime} << 32) | ULONG64{t.dwLowDateTime};
     return cnt / TICKS_PER_MICROS;
   }
 };

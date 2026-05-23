@@ -38,9 +38,9 @@ SFC_TEST(slice) {
 }
 
 SFC_TEST(clone) {
-  int tmp[] = {0, 1, 2, 3};
+  u32 tmp[] = {0, 1, 2, 3};
 
-  auto x = List<int>::from(tmp);
+  auto x = List<u32>::from(tmp);
   auto y = x.clone();
   for (auto i = 0U; i < x.len(); ++i) {
     sfc::expect_eq(x[i], i);
@@ -69,9 +69,9 @@ SFC_TEST(pop) {
 };
 
 SFC_TEST(insert) {
-  int tmp[] = {0, 1, 3};
+  u32 tmp[] = {0, 1, 3};
 
-  auto v = List<int>::from(tmp);
+  auto v = List<u32>::from(tmp);
   v.insert(2U, 2);
   v.insert(4U, 4);
   sfc::expect_eq(v.len(), 5U);
@@ -148,9 +148,9 @@ SFC_TEST(retain) {
 
   // normal
   {
-    int tmp[] = {0, 1, 2, 3, 4, 5};
-    auto v = List<int>::from(tmp);
-    v.retain([](int x) { return x % 2 == 0; });
+    u32 tmp[] = {0, 1, 2, 3, 4, 5};
+    auto v = List<u32>::from(tmp);
+    v.retain([](u32 x) { return x % 2 == 0; });
     sfc::expect_eq(v.len(), 3U);
     for (auto i = 0U; i < v.len(); ++i) {
       sfc::expect_eq(v[i], i * 2);
@@ -159,9 +159,9 @@ SFC_TEST(retain) {
 
   // all
   {
-    int tmp[] = {0, 1, 2, 3, 4, 5};
-    auto v = List<int>::from(tmp);
-    v.retain([](int) { return true; });
+    u32 tmp[] = {0, 1, 2, 3, 4, 5};
+    auto v = List<u32>::from(tmp);
+    v.retain([](u32) { return true; });
     sfc::expect_eq(v.len(), 6U);
     for (auto i = 0U; i < v.len(); ++i) {
       sfc::expect_eq(v[i], i);

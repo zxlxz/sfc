@@ -6,7 +6,7 @@ namespace sfc::collections::queue::test {
 
 SFC_TEST(push_pop) {
   auto q = Queue<int>{};
-  for (auto i = 0U; i < 6U; ++i) {
+  for (auto i = 0; i < 6; ++i) {
     q.push(i);
   }
   sfc::expect_eq(q.len(), 6U);

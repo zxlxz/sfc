@@ -83,7 +83,7 @@ struct Debug {
     if constexpr (requires { to_str(val); }) {
       f.write_str(to_str(val));
     } else {
-      f.write_fmt("{}({})", kTypeName, static_cast<I>(val));
+      f.write_fmt("{}({})", kTypeName, __builtin_bit_cast(I, val));
     }
   }
 
