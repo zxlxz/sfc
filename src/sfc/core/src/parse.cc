@@ -49,7 +49,7 @@ struct NumParser {
 
   template <trait::uint_ T>
   auto parse_uint() -> Option<T> {
-    static constexpr auto kMaxVal = num::max_value<T>();
+    static constexpr auto kMaxVal = num::Int<T>::MAX;
 
     const auto is_neg = this->extract_sign() == '-';
     if (is_neg) return {};
@@ -63,7 +63,8 @@ struct NumParser {
 
   template <trait::sint_ T>
   auto parse_sint() -> Option<T> {
-    static constexpr auto kMaxVal = num::cast_unsigned(num::max_value<T>());
+    static constexpr auto kMaxVal = num::cast_unsigned(num::Int<T>::MAX);
+    static constexpr auto kMinVal = num::Int<T>::MIN;
 
     const auto is_neg = this->extract_sign() == '-';
     const auto radix = this->extract_radix();
@@ -71,7 +72,7 @@ struct NumParser {
 
     if (uval > kMaxVal) {
       if (is_neg && uval == kMaxVal + 1) {
-        return num::min_value<T>();
+        return kMinVal;
       }
       return {};
     }
