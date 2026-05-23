@@ -21,19 +21,6 @@ static void writeln(const auto&... args) {
   (void)(sys::Stderr::write(s.as_bytes()));
 }
 
-template <u32 N>
-static auto int2str(char (&buf)[N], u32 val) -> Str {
-  auto idx = N;
-  while (idx != 0) {
-    buf[--idx] = static_cast<char>('0' + val % 10);
-    val /= 10;
-    if (val == 0) {
-      break;
-    }
-  }
-  return Str{buf + idx, N - idx};
-}
-
 static auto idx2str(u32 idx) -> Str {
   static constexpr auto digits =
       " 0 1 2 3 4 5 6 7 8 9"
@@ -53,7 +40,7 @@ static auto idx2str(u32 idx) -> Str {
 
 void panic_imp(fmt::RawStr msg, SourceLoc loc) {
   char line_buf[8] = {};
-  const auto line_str = int2str(line_buf, static_cast<u32>(loc.line));
+  const auto line_str = fmt::Debug::format_int(line_buf, loc.line);
 
   panic::writeln(Str{loc.func}, ": ", Str{msg._ptr, msg._len});
   panic::writeln(" > ", Str{loc.file}, ":", line_str);
