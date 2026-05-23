@@ -136,6 +136,7 @@ SFC_TEST(exp) {
   sfc::expect_eq(format("{e}", 0.001f), "1.0000e-03");
 
   sfc::expect_eq(format("{.2e}", 1234.5f), "1.23e+03");
+  sfc::expect_eq(format("{.2e}", -1234.5f), "-1.23e+03");
 }
 
 SFC_TEST(flt_nan) {

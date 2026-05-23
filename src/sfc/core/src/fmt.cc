@@ -3,6 +3,109 @@
 
 namespace sfc::fmt {
 
+static auto exp10(u32 n) -> f64 {
+  static constexpr f64 kTBL[] = {
+      1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
+      1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27, 1e28, 1e29, 1e30, 1e31,
+  };
+
+  if (n == 0) {
+    return 1.0;
+  }
+
+  auto x = 1.0;
+  for (; n > 32; n -= 32) {
+    x *= 1e32;
+  }
+  x *= kTBL[n];
+  return x;
+}
+
+struct FltPoint {
+  u64 _int;  // int part
+  u64 _flt;  // flt part
+
+ public:
+  static auto build(f64 t, u32 precision) -> FltPoint {
+    static constexpr auto kMaxPrecision = 20U;
+    if (precision > kMaxPrecision) {
+      precision = kMaxPrecision;
+    }
+
+    const auto exp_val = fmt::exp10(precision);
+
+    // extract integer part
+    auto int_val = __builtin_floor(t);
+    auto flt_val = __builtin_round((t - int_val) * exp_val);
+    if (flt_val >= exp_val) {
+      flt_val -= exp_val;
+      int_val += 1;
+    }
+
+    // add 1000... to flt_val
+    // to ensure it has leading zeros when converted to string
+    flt_val += exp_val;
+
+    const auto int_part = static_cast<u64>(int_val);
+    const auto flt_part = static_cast<u64>(flt_val);
+    return FltPoint{int_part, flt_part};
+  }
+};
+
+struct FixPoint {
+  u64 _fix;  // fixed point value
+  i32 _exp;  // exponent, the actual value is _fix * 10^(-_exp)
+
+ public:
+  static auto unpack_exp(f64 t) -> i32 {
+    auto n = 0;
+    if (t > 10.0) {
+      for (; t >= 1e10; n += 10) {
+        t *= 1e-10;
+      }
+      for (; t >= 10.0; n += 1) {
+        t *= 1e-1;
+      }
+      return n;
+    }
+
+    if (t < 1.00) {
+      if (t < 1e-200) {  // too small, treat as zero
+        return 0;
+      }
+      for (; t <= 1e-10; n -= 10) {
+        t *= 1e10;
+      }
+      for (; t < 1.00; n -= 1) {
+        t *= 1e1;
+      }
+      return n;
+    }
+    return 0;
+  }
+
+  static auto build(f64 t, u32 precision) -> FixPoint {
+    static constexpr auto kMaxPrecision = 20U;
+    if (precision > kMaxPrecision) {
+      precision = kMaxPrecision;
+    }
+
+    const auto exp_cnt = FixPoint::unpack_exp(t);
+    const auto exp_factor = fmt::exp10(num::unsigned_abs(exp_cnt));
+    const auto uval = exp_cnt >= 0 ? t / exp_factor : t * exp_factor;
+
+    const auto prec_ratio = fmt::exp10(precision);
+    const auto fix_val = __builtin_round(uval * prec_ratio);
+    const auto fix_int = static_cast<u64>(fix_val);
+
+    if (fix_val > prec_ratio * 10) {
+      return FixPoint{fix_int / 10, exp_cnt - 1};
+    }
+
+    return FixPoint{fix_int, exp_cnt};
+  }
+};
+
 struct RevBuf {
   char* _buf;
   usize _cap;
@@ -43,22 +146,30 @@ struct RevBuf {
     this->push('0');
   }
 
-  void write_flt(u64 int_part, u64 flt_part) noexcept {
-    if (flt_part >= 10) {
-      this->write_dec(flt_part);
+  void write_flt(FltPoint flt) noexcept {
+    if (flt._flt >= 10) {
+      this->write_dec(flt._flt);
       _buf[_pos] = '.';
     }
-    this->write_dec(int_part);
+    this->write_dec(flt._int);
   }
 
-  void write_exp(i32 exp_part, char type = 'e') noexcept {
-    const auto uexp = num::unsigned_abs(exp_part);
+  void write_fix(FixPoint fix, char type = 'e') noexcept {
+    const auto exp_sign = fix._exp < 0 ? '-' : '+';
+    const auto exp_char = type < 'a' ? 'E' : 'e';
+    const auto uexp = num::unsigned_abs(fix._exp);
     this->write_dec(uexp);
     if (uexp < 10) {
       this->push('0');
     }
-    this->push(exp_part < 0 ? '-' : '+');
-    this->push(type < 'a' ? 'E' : 'e');
+    this->push(exp_sign);
+    this->push(exp_char);
+    this->write_dec(fix._fix);
+    if (fix._fix >= 10) {
+      const auto c = _buf[_pos];
+      _buf[_pos] = '.';
+      this->push(c);
+    }
   }
 
  private:
@@ -84,11 +195,6 @@ struct RevBuf {
     } else {
       this->push(static_cast<char>(uval + '0'));
     }
-
-    // write sign
-    if constexpr (trait::sint_<decltype(val)>) {
-      if (val < 0) this->push('-');
-    }
   }
 
   template <u32 RADIX>
@@ -113,84 +219,6 @@ struct RevBuf {
     if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
-  }
-};
-
-struct Decimal {
-  u64 _int;
-  u64 _flt;
-  i32 _exp = 0;
-
- public:
-  static auto unpack_exp(f64* pu) -> i32 {
-    if (pu == nullptr) {
-      return 0;
-    }
-
-    auto& u = *pu;
-    if (u == 0.0) {
-      return 0;
-    }
-
-    auto n = 0;
-    if (u >= 1e1) {
-      for (; u >= 1e4; n += 4) {
-        u /= 1e4;
-      }
-      for (; u >= 1e1; n += 1) {
-        u /= 1e1;
-      }
-      return n;
-    }
-
-    if (u < 1e0) {
-      for (; u < 1e-4; n -= 4) {
-        u *= 1e4;
-      }
-      for (; u < 1e0; n -= 1) {
-        u *= 1e1;
-      }
-      return n;
-    }
-
-    return 0;
-  }
-
-  static constexpr u32 kPow10Len = 20U;
-  static constexpr f64 kPow10Tbl[] = {
-      1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
-  };
-
-  static auto unpack(f64 uval, u32 precision, bool use_exp = false) -> Decimal {
-    // limit precision to 20, otherwise may overflow u64
-    if (precision >= kPow10Len) {
-      precision = kPow10Len - 1;
-    }
-
-    // extract integer part
-    auto exp_part = use_exp ? unpack_exp(&uval) : 0;
-    auto int_part = static_cast<u64>(uval);
-
-    const auto flt_val = uval - static_cast<f64>(int_part);
-    const auto exp_val = kPow10Tbl[precision];
-    auto flt_part = __builtin_floor(flt_val * exp_val + 0.5);
-
-    if (flt_part >= exp_val) {
-      flt_part -= exp_val;
-      int_part += 1;
-
-      // in exp format, if int_part becomes 10
-      // it should be converted to 1 and exp_part should be increased by 1
-      if (use_exp && int_part == 10) {
-        int_part = 1;
-        exp_part += 1;
-      }
-    }
-
-    // add 100..00 to flt_part,
-    // to ensure it has leading zeros when converted to string
-    flt_part += exp_val;
-    return {int_part, static_cast<u64>(flt_part), exp_part};
   }
 };
 
@@ -248,6 +276,7 @@ auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
 
 auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
   static constexpr auto kMaxFlt = 1e30;
+  const auto use_exp = type == 'e' || type == 'E' || val > kMaxFlt;
 
   if (__builtin_isnan(val)) {
     return "nan";
@@ -256,19 +285,18 @@ auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> S
     return val > 0 ? Str{"inf"} : Str{"-inf"};
   }
 
-  auto uval = val >= 0 ? val : -val;
-  auto enable_exp = type == 'E' || type == 'e' || val > kMaxFlt;
-  const auto dcm = Decimal::unpack(uval, precision, enable_exp);
-
+  const auto uval = __builtin_fabs(val);
   auto rbuf = RevBuf{buf};
-  if (enable_exp) {
-    rbuf.write_exp(dcm._exp, type == 'E' ? 'E' : 'e');
+  if (use_exp) {
+    const auto imp = FixPoint::build(uval, precision);
+    rbuf.write_fix(imp, type);
+  } else {
+    const auto imp = FltPoint::build(uval, precision);
+    rbuf.write_flt(imp);
   }
-  rbuf.write_flt(dcm._int, dcm._flt);
   if (val < 0) {
     rbuf.push('-');
   }
-
   return rbuf.as_str();
 }
 
