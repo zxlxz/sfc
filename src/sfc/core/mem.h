@@ -9,7 +9,7 @@ struct Layout {
   usize align{1};
 
  public:
-  template<class T>
+  template <class T>
   static auto of() noexcept -> Layout {
     return {.size = sizeof(T), .align = alignof(T)};
   }

@@ -42,7 +42,7 @@ class [[nodiscard]] Arc {
   template <class... U>
   static auto xnew(U&&... args) -> Arc {
     auto res = Arc{};
-    res._inn = Box<Inn>::xnew(U(args)...);
+    res._inn = Box<Inn>::xnew(mem::move<U>(args)...);
     return res;
   }
 

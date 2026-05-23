@@ -64,7 +64,7 @@ template <class T>
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
-    auto ret = static_cast<T&&>(*src);
+    auto ret = mem::move(*src);
     src->~T();
     return ret;
   }
@@ -75,7 +75,7 @@ template <class T>
   if constexpr (__is_trivially_copyable(T)) {
     *dst = val;
   } else {
-    new (dst) T(static_cast<T&&>(val));
+    new (dst) T(mem::move(val));
   }
 }
 

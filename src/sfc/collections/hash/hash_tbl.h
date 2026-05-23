@@ -42,7 +42,7 @@ struct Iter : iter::Iterator {
 
 template <class T>
 struct Bucket {
-  static constexpr auto kInvalidIdx = num::max_value<usize>();
+  static constexpr auto kInvalidIdx = num::Int<usize>::MAX;
 
   u8* _ctrl;
   T* _data;
@@ -135,7 +135,7 @@ struct Bucket {
 
 template <class T, class A = alloc::Global>
 class HashTbl {
-  static constexpr auto kMaxSize = num::max_value<usize>() >> 8U;
+  static constexpr auto kMaxSize = num::Int<usize>::MAX >> 8U;
   static constexpr auto kLoadFactor = 4U;
 
   struct HIdx {
@@ -180,7 +180,7 @@ class HashTbl {
 
     auto res = HashTbl{};
     res._cap = num::next_power_of_two(min_cap);
-    res._ptr = static_cast<u8*>(a.alloc(res.layout()));
+    res._ptr = ptr::cast<u8>(a.alloc(res.layout()));
     res.init();
     return res;
   }
@@ -222,7 +222,7 @@ class HashTbl {
     this->reserve(1);
 
     const auto [h1, h2] = this->hash(entry.key);
-    const auto ptr = this->bucket(h1).try_insert(h2, static_cast<T&&>(entry));
+    const auto ptr = this->bucket(h1).try_insert(h2, mem::move(entry));
     if (!ptr) {
       _len += 1;
       _rem -= 1;
@@ -269,7 +269,7 @@ class HashTbl {
     }
 
     auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, _a));
-    tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(static_cast<T&&>(entry)); });
+    tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(mem::move(entry)); });
   }
 
   using Iter = hash::Iter<const T>;
@@ -312,7 +312,7 @@ class HashTbl {
     }
 
     const auto [h1, h2] = this->hash(entry.key);
-    this->bucket(h1).insert_new(h2, static_cast<T&&>(entry));
+    this->bucket(h1).insert_new(h2, mem::move(entry));
     _len += 1;
     _rem -= 1;
     return true;

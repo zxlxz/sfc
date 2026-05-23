@@ -102,7 +102,7 @@ class [[nodiscard]] Queue {
     }
 
     const auto new_tail = this->to_physical_idx(_len);
-    ptr::write(&_buf[new_tail], static_cast<T&&>(value));
+    ptr::write(&_buf[new_tail], mem::move(value));
     _len += 1;
   }
 

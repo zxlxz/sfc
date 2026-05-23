@@ -34,9 +34,10 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  static auto xnew(auto&&... args) -> Box {
+  template <class... U>
+  static auto xnew(U&&... args) -> Box {
     auto res = Box{};
-    res._ptr = new T{static_cast<decltype(args)&&>(args)...};
+    res._ptr = new T{(U&&)(args)...};
     return res;
   }
 
@@ -110,7 +111,7 @@ class [[nodiscard]] Box<R(T...)> {
     static constexpr auto of(const X&) -> const Meta& {
       static const auto res = Meta{
           [](void* p) { delete ptr::cast<X>(p); },
-          [](void* p, T&&... t) { return (*ptr::cast<X>(p))(static_cast<T&&>(t)...); },
+          [](void* p, T&&... t) { return (*ptr::cast<X>(p))((T&&)(t)...); },
       };
       return res;
     }
@@ -145,7 +146,7 @@ class [[nodiscard]] Box<R(T...)> {
   }
 
   auto operator()(T... args) -> R {
-    return (_meta->_call)(_data, static_cast<T&&>(args)...);
+    return (_meta->_call)(_data, (T&&)(args)...);
   }
 
  public:

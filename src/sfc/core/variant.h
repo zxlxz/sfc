@@ -134,11 +134,11 @@ class Variant {
  public:
   template <u32 I, class U>
   Variant(idx_t<I> tag, U val) : _tag{I}, _inn{} {
-    ptr::write(&tag[_inn], static_cast<U&&>(val));
+    ptr::write(&tag[_inn], mem::move(val));
   }
 
   template <class U>
-  explicit Variant(U val) noexcept : Variant{idx_t<type_idx<U, T...>()>{}, static_cast<U&&>(val)} {}
+  explicit Variant(U val) noexcept : Variant{idx_t<type_idx<U, T...>()>{}, mem::move(val)} {}
 
   ~Variant() {
     _tag.map<N>([&](auto I) { mem::drop(I[_inn]); });

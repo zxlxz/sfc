@@ -16,7 +16,7 @@ struct Filter;
 
 struct Iterator {
 #ifndef __CUDACC__
-  template<class Self>
+  template <class Self>
   auto find(this Self self, auto&& pred) noexcept -> Option<typename Self::Item> {
     while (auto x = self.next()) {
       if (pred(*x)) {
@@ -26,7 +26,7 @@ struct Iterator {
     return {};
   }
 
-  template<class Self>
+  template <class Self>
   auto rfind(this Self self, auto&& pred) noexcept -> Option<typename Self::Item> {
     while (auto x = self.next_back()) {
       if (pred(*x)) {
@@ -36,7 +36,7 @@ struct Iterator {
     return {};
   }
 
-  template<class Self>
+  template <class Self>
   auto position(this Self self, auto&& pred) noexcept -> Option<usize> {
     auto idx = 0UL;
     while (auto x = self.next()) {
@@ -49,7 +49,7 @@ struct Iterator {
     return {};
   }
 
-  template<class Self>
+  template <class Self>
   auto rposition(this Self self, auto&& pred) noexcept -> Option<usize> {
     auto idx = self.len() - 1;
     while (auto x = self.next_back()) {
@@ -61,14 +61,14 @@ struct Iterator {
     return {};
   }
 
-  template<class Self>
+  template <class Self>
   void for_each(this Self self, auto&& f) {
     while (auto x = self.next()) {
       f(*x);
     }
   }
 
-  template<class Self>
+  template <class Self>
   void for_each_idx(this Self self, auto&& f) {
     auto i = 0UL;
     while (auto x = self.next()) {
@@ -79,7 +79,7 @@ struct Iterator {
 
   template <class Self, class B>
   auto fold(this Self self, B init, auto&& f) -> B {
-    auto accum = static_cast<B&&>(init);
+    auto accum = init;
     while (auto x = self.next()) {
       accum = f(accum, *x);
     }
@@ -110,17 +110,17 @@ struct Iterator {
     }
   }
 
-  template<class Self>
+  template <class Self>
   auto all(this Self self, auto&& f) -> bool {
     return !self.position([&](auto& x) { return !f(x); });
   }
 
-  template<class Self>
+  template <class Self>
   auto any(this Self self, auto&& f) -> bool {
     return self.position(f).is_some();
   }
 
-  template<class Self>
+  template <class Self>
   auto count(this Self self) -> usize {
     if constexpr (requires { self.len(); }) {
       return self.len();
@@ -158,17 +158,17 @@ struct Iterator {
 
   template <class B, class Self>
   auto collect(this Self self) -> B {
-    return B::from_iter(static_cast<Self&&>(self));
+    return B::from_iter(mem::move(self));
   }
 
   template <class Self, class F>
-  auto map(this Self self, F&& f) -> Map<Self, F> {
-    return Map<Self, F>{static_cast<Self&&>(self), static_cast<F&&>(f)};
+  auto map(this Self self, F f) -> Map<Self, F> {
+    return Map<Self, F>{mem::move(self), mem::move(f)};
   }
 
   template <class Self, class P>
-  auto filter(this Self self, P&& pred) -> Filter<Self, P> {
-    return Filter<Self, P>{static_cast<Self&&>(self), static_cast<P&&>(pred)};
+  auto filter(this Self self, P pred) -> Filter<Self, P> {
+    return Filter<Self, P>{mem::move(self), mem::move<P>(pred)};
   }
 #endif
 };

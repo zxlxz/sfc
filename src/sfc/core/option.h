@@ -25,12 +25,12 @@ class Option {
  public:
   constexpr Option() noexcept : _tag{0} {}
   constexpr Option(None) noexcept : _tag{0} {}
-  constexpr Option(T val) noexcept : _tag{1}, _1{static_cast<T&&>(val)} {}
+  constexpr Option(T val) noexcept : _tag{1}, _1{mem::move(val)} {}
 
   constexpr Option(Option&& other) noexcept : _tag{0} {
     switch (other._tag) {
       case 0:  break;
-      case 1:  ptr::write(&_1, static_cast<T&&>(other._1)), _tag = 1; break;
+      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
       default: break;
     }
   }
@@ -75,7 +75,7 @@ class Option {
     }
     switch (other._tag) {
       case 0:  break;
-      case 1:  ptr::write(&_1, static_cast<T&&>(other._1)), _tag = 1; break;
+      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
       default: break;
     }
     return *this;
@@ -188,7 +188,7 @@ class Option<T> {
  public:
   constexpr Option() noexcept : _1{} {}
   constexpr Option(None) noexcept : _1{} {}
-  constexpr Option(T val) noexcept : _1{static_cast<T&&>(val)} {}
+  constexpr Option(T val) noexcept : _1{mem::move(val)} {}
 
   constexpr auto is_some() const noexcept -> bool {
     return _1 != nullptr;

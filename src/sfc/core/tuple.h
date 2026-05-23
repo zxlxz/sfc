@@ -65,7 +65,7 @@ struct Tuple : Inner<T...> {
   static constexpr u32 N = sizeof...(T);
 
  public:
-  Tuple(T... args) noexcept : Inner<T...>{static_cast<T&&>(args)...} {}
+  Tuple(T... args) noexcept : Inner<T...>{(T&&)(args)...} {}
   ~Tuple() = default;
 
  public:
