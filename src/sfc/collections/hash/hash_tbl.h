@@ -9,11 +9,14 @@ static constexpr auto CTRL_NUL = u8{0x80U};
 static constexpr auto CTRL_DEL = u8{0xFFU};
 
 struct Hasher {
-  static auto hash(const auto& key) noexcept -> u64 {
+  template <class T>
+  static auto hash(const T& key) noexcept -> u64 {
     if constexpr (requires { key.hash(); }) {
       return key.hash();
-    } else if constexpr (requires { static_cast<u64>(key); }) {
-      return static_cast<u64>(key);
+    } else if constexpr (trait::uint_<T>) {
+      return u64{key};
+    } else if constexpr (trait::sint_<T>) {
+      return num::cast_unsigned(key);
     } else {
       static_assert(false, "HashTbl::hash: cannot hash key type");
     }
