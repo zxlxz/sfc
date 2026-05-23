@@ -4,12 +4,22 @@
 
 namespace sfc::ffi {
 
+struct WChars : iter::Iterator {
+  using Item = char32_t;
+  const wchar_t* _ptr;
+  const wchar_t* _end;
+
+ public:
+  WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
+  auto next() noexcept -> Option<Item>;
+};
+
 struct WStr {
   const wchar_t* _ptr;
   usize _len;
 
  public:
-  auto chars() const -> chr::WChars;
+  auto chars() const -> WChars;
   auto to_string() const -> String;
 };
 

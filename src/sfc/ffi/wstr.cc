@@ -3,8 +3,60 @@
 
 namespace sfc::ffi {
 
-auto WStr::chars() const -> chr::WChars {
-  return chr::WChars{_ptr, _len};
+auto wide_codelen(wchar_t h) -> usize {
+  if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
+    return 1;
+  }
+
+  if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
+    return chr::utf16_codelen(u16(h));
+  }
+}
+
+auto wide_encode(wchar_t (&wbuf)[2], char32_t ch) -> usize {
+  if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
+    wbuf[0] = wchar_t(ch);
+    return 1;
+  }
+
+  if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
+    u16 buf[2] = {};
+    const auto n = chr::utf16_encode(buf, ch);
+    wbuf[0] = wchar_t(buf[0]);
+    wbuf[1] = wchar_t(buf[1]);
+    return n;
+  }
+}
+
+auto wide_decode(const wchar_t wbuf[], usize n) -> char32_t {
+  if (n == 0) return chr::INVALID;
+  if (n == 1) return char32_t(wbuf[0]);
+
+  if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
+    if (n == 2) {
+      u16 buf[2] = {u16(wbuf[0]), u16(wbuf[1])};
+      return chr::utf16_decode(buf, n);
+    }
+  }
+  return chr::INVALID;
+}
+
+auto WChars::next() noexcept -> Option<Item> {
+  if (_ptr == _end) return {};
+
+  const auto n = ffi::wide_codelen(*_ptr);
+  if (n == 0 || _ptr + n > _end) {
+    _ptr = _end;
+    return {};
+  }
+
+  const auto ch = ffi::wide_decode(_ptr, n);
+  _ptr += n;
+  return ch;
+}
+
+auto WStr::chars() const -> WChars {
+  return WChars{_ptr, _len};
 }
 
 auto WStr::to_string() const -> String {
@@ -16,7 +68,7 @@ auto WStr::to_string() const -> String {
   // reserve 2x here is a balance between memory usage and performance for most cases
   static constexpr auto kRatio = 2U;
   auto res = String::with_capacity(kRatio * _len);
-  auto chars = chr::WChars{_ptr, _len};
+  auto chars = WChars{_ptr, _len};
   chars.for_each([&](char32_t ch) { res.push(ch); });
   return res;
 }
@@ -64,7 +116,7 @@ void WString::push_str(Str s) {
   _buf.reserve(s.len());
   s.chars().for_each([&](char32_t c) {
     wchar_t buf[2] = {};
-    const auto len = chr::wide_encode(buf, c);
+    const auto len = ffi::wide_encode(buf, c);
     _buf.extend_from_slice({buf, len});
   });
   _buf.push(0);

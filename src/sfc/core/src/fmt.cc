@@ -20,7 +20,49 @@ struct RevBuf {
     _buf[--_pos] = c;
   }
 
-  void write_dec(auto val) noexcept {
+  void write_u64(u64 uval, char type = 0) noexcept {
+    switch (type) {
+      default:  this->write_dec(uval); break;
+      case 'B': this->write_bin<2>(uval); break;
+      case 'b': this->write_bin<2>(uval); break;
+      case 'O': this->write_bin<8>(uval); break;
+      case 'o': this->write_bin<8>(uval); break;
+      case 'X': this->write_bin<16>(uval, true); break;
+      case 'x': this->write_bin<16>(uval, false); break;
+    }
+  }
+
+  void write_ptr(usize uval, char p = 'x') noexcept {
+    static const auto MIN_LEN = 12L;
+
+    this->write_bin<16>(uval);
+    while (_cap - _pos < MIN_LEN) {
+      this->push('0');
+    }
+    this->push(p <= 'a' ? 'x' : 'X');
+    this->push('0');
+  }
+
+  void write_flt(u64 int_part, u64 flt_part) noexcept {
+    if (flt_part >= 10) {
+      this->write_dec(flt_part);
+      _buf[_pos] = '.';
+    }
+    this->write_dec(int_part);
+  }
+
+  void write_exp(i32 exp_part, char type = 'e') noexcept {
+    const auto uexp = num::unsigned_abs(exp_part);
+    this->write_dec(uexp);
+    if (uexp < 10) {
+      this->push('0');
+    }
+    this->push(exp_part < 0 ? '-' : '+');
+    this->push(type < 'a' ? 'E' : 'e');
+  }
+
+ private:
+  void write_dec(u64 val) noexcept {
     static const char DIGITS[] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
@@ -50,7 +92,7 @@ struct RevBuf {
   }
 
   template <u32 RADIX>
-  void write_bin(auto val, bool upcase = false) noexcept {
+  void write_bin(u64 val, bool upcase = false) noexcept {
     static constexpr auto UPCASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static constexpr auto LOWCASE = "0123456789abcdefghijklmnopqrstuvwxyz";
     static constexpr auto MASK = RADIX - 1;
@@ -71,35 +113,6 @@ struct RevBuf {
     if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
     }
-  }
-
-  void write_ptr(usize uval, bool upcase = false) noexcept {
-    static const auto MIN_LEN = 12L;
-
-    this->write_bin<16>(uval);
-    while (_cap - _pos < MIN_LEN) {
-      this->push('0');
-    }
-    this->push(upcase ? 'X' : 'x');
-    this->push('0');
-  }
-
-  void write_flt(u64 int_part, u64 flt_part) noexcept {
-    if (flt_part >= 10) {
-      this->write_dec(flt_part);
-      _buf[_pos] = '.';
-    }
-    this->write_dec(int_part);
-  }
-
-  void write_exp(i32 exp_part, char type = 'e') noexcept {
-    const auto uexp = exp_part > 0 ? exp_part : -exp_part;
-    this->write_dec(uexp);
-    if (uexp < 10) {
-      this->push('0');
-    }
-    this->push(exp_part < 0 ? '-' : '+');
-    this->push(type);
   }
 };
 
@@ -145,8 +158,7 @@ struct Decimal {
 
   static constexpr u32 kPow10Len = 20U;
   static constexpr f64 kPow10Tbl[] = {
-      1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,
-      1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+      1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
   };
 
   static auto unpack(f64 uval, u32 precision, bool use_exp = false) -> Decimal {
@@ -213,39 +225,24 @@ auto Spec::prefix() const -> str::Str {
 }
 
 auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
-  const auto uval = num::unsigned_abs(val) + 0U;
-
   auto rbuf = RevBuf{buf};
-  switch (type) {
-    default:  rbuf.write_dec(uval); break;
-    case 'B': rbuf.write_bin<2>(uval); break;
-    case 'b': rbuf.write_bin<2>(uval); break;
-    case 'O': rbuf.write_bin<8>(uval); break;
-    case 'o': rbuf.write_bin<8>(uval); break;
-    case 'X': rbuf.write_bin<16>(uval, true); break;
-    case 'x': rbuf.write_bin<16>(uval, false); break;
-  }
-
-  if constexpr (trait::sint_<decltype(val)>) {
-    if (val < 0) {
-      rbuf.push('-');
-    }
+  if constexpr (trait::uint_<decltype(val)>) {
+    const auto uval = u64{val};
+    rbuf.write_u64(uval, type);
+  } else {
+    const auto uval = num::unsigned_abs(val);
+    rbuf.write_u64(uval, type);
+    if (val < 0) rbuf.push('-');
   }
 
   return rbuf.as_str();
 }
 
 auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
-  const auto uval = reinterpret_cast<usize>(ptr);
+  const auto uval = __builtin_bit_cast(usize, ptr);
 
   auto rbuf = RevBuf{buf};
-  switch (type) {
-    default:  rbuf.write_ptr(uval); break;
-    case 'X': rbuf.write_bin<16>(uval, true); break;
-    case 'x': rbuf.write_bin<16>(uval, false); break;
-    case 'P': rbuf.write_ptr(uval, true); break;
-    case 'p': rbuf.write_ptr(uval, false); break;
-  }
+  rbuf.write_ptr(uval, type);
   return rbuf.as_str();
 }
 
