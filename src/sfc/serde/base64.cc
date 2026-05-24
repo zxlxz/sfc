@@ -65,8 +65,8 @@ static auto decode_blk(data_buf_t& data, Str text) -> Slice<const u8> {
   for (auto i = 0U; i < TEXT_BUF_LEN; ++i) {
     val <<= 6;
     if (i < n) {
-      const auto c = static_cast<u8>(text[i]);
-      const auto u = c < sizeof(DECODE_MAP) ? DECODE_MAP[c] : FF;
+      const auto c = i32{text[i]};
+      const auto u = c < i32{sizeof(DECODE_MAP)} ? DECODE_MAP[c] : FF;
       if (u == FF) {
         return {};
       }

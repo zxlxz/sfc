@@ -46,8 +46,8 @@ struct FltPoint {
     // to ensure it has leading zeros when converted to string
     flt_val += exp_val;
 
-    const auto int_part = static_cast<u64>(int_val);
-    const auto flt_part = static_cast<u64>(flt_val);
+    const auto int_part = num::cast_unsigned(static_cast<i64>(int_val));
+    const auto flt_part = num::cast_unsigned(static_cast<i64>(flt_val));
     return FltPoint{int_part, flt_part};
   }
 };
@@ -96,7 +96,7 @@ struct FixPoint {
 
     const auto prec_ratio = fmt::exp10(precision);
     const auto fix_val = __builtin_round(uval * prec_ratio);
-    const auto fix_int = static_cast<u64>(fix_val);
+    const auto fix_int = num::cast_unsigned(static_cast<i64>(fix_val));
 
     if (fix_val > prec_ratio * 10) {
       return FixPoint{fix_int / 10, exp_cnt - 1};
@@ -174,7 +174,8 @@ struct RevBuf {
 
  private:
   void write_dec(u64 val) noexcept {
-    static const char DIGITS[] =
+    static const char DIGITS_1[] = "0123456789";
+    static const char DIGITS_2[] =
         "0001020304050607080910111213141516171819"
         "2021222324252627282930313233343536373839"
         "4041424344454647484950515253545556575859"
@@ -185,15 +186,15 @@ struct RevBuf {
     auto uval = val > 0 ? val : 0 - val;
     for (; uval >= 100; uval /= 100) {
       const auto n = uval % 100 * 2;
-      this->push(DIGITS[n + 1]);
-      this->push(DIGITS[n + 0]);
+      this->push(DIGITS_2[n + 1]);
+      this->push(DIGITS_2[n + 0]);
     }
     if (uval >= 10) {
       const auto n = uval % 100 * 2;
-      this->push(DIGITS[n + 1]);
-      this->push(DIGITS[n + 0]);
+      this->push(DIGITS_2[n + 1]);
+      this->push(DIGITS_2[n + 0]);
     } else {
-      this->push(static_cast<char>(uval + '0'));
+      this->push(DIGITS_1[uval]);
     }
   }
 

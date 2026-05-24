@@ -53,7 +53,8 @@ auto String::pop() noexcept -> Option<char32_t> {
 void String::push(char32_t c) noexcept {
   // ansii code point, just push as u8
   if (c < 0x80) {
-    _buf.push(static_cast<u8>(c));
+    const auto byte = static_cast<u8>(c);
+    _buf.push(byte);
     return;
   }
 

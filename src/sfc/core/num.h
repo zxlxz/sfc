@@ -139,11 +139,8 @@ constexpr auto cast_unsigned(T x) -> num::uint_t<T> {
 template <trait::sint_ T>
 constexpr auto unsigned_abs(T x) -> num::uint_t<T> {
   using U = num::uint_t<T>;
-  if (x >= 0) {
-    return __builtin_bit_cast(U, x);
-  } else {
-    return U{0} - __builtin_bit_cast(U, x);
-  }
+  if (x >= 0) return __builtin_bit_cast(U, x);
+  return U{0} - __builtin_bit_cast(U, x);
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;

@@ -107,7 +107,7 @@ static auto encode(u16 (&buf)[2], char32_t ch) -> usize {
   static constexpr char32_t C1 = 0x10000;  // max(u16) + 1
 
   if (ch < C1) {
-    buf[0] = static_cast<char16_t>(ch);
+    buf[0] = static_cast<u16>(ch);
     return 1;
   }
 
@@ -115,8 +115,8 @@ static auto encode(u16 (&buf)[2], char32_t ch) -> usize {
     const auto t = ch - C1;
     const auto t0 = t >> NBIT;  // top 10 bits
     const auto t1 = t & MASK;   // low 10
-    buf[0] = static_cast<char16_t>(H1 + t0);
-    buf[1] = static_cast<char16_t>(H2 + t1);
+    buf[0] = static_cast<u16>(H1 + t0);
+    buf[1] = static_cast<u16>(H2 + t1);
     return 2;
   }
 
@@ -200,6 +200,5 @@ auto Chars::next_back() noexcept -> Option<Item> {
   _end = p;
   return ch;
 }
-
 
 }  // namespace sfc::chr
