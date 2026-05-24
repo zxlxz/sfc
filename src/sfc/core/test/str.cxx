@@ -183,11 +183,13 @@ SFC_TEST(trim) {
   }
 }
 
-
 SFC_TEST(parse_uint) {
-  sfc::expect_eq(Str{"123"}.parse<u64>(), Option{123U});
+  // u32
   sfc::expect_eq(Str{"0"}.parse<u64>(), Option{0U});
+  sfc::expect_eq(Str{"123"}.parse<u64>(), Option{123U});
   sfc::expect_eq(Str{"4294967295"}.parse<u32>(), Option{0xFFFFFFFFU});
+
+  // hex
   sfc::expect_eq(Str{"0xff"}.parse<u64>(), Option{0xFFU});
   sfc::expect_eq(Str{"0xFF"}.parse<u64>(), Option{0xFFU});
   sfc::expect_eq(Str{"0b1010"}.parse<u64>(), Option{0xAU});
@@ -200,11 +202,22 @@ SFC_TEST(parse_uint) {
 }
 
 SFC_TEST(parse_sint) {
-  sfc::expect_eq(Str{"123"}.parse<i64>(), Option{123L});
-  sfc::expect_eq(Str{"-123"}.parse<i64>(), Option{-123L});
-  sfc::expect_eq(Str{"0"}.parse<i64>(), Option{0L});
+  // i32
+  sfc::expect_eq(Str{"0"}.parse<i32>(), Option{0L});
+  sfc::expect_eq(Str{"123"}.parse<i32>(), Option{123L});
+  sfc::expect_eq(Str{"-123"}.parse<i32>(), Option{-123L});
   sfc::expect_eq(Str{"-2147483648"}.parse<i32>(), Option{-2147483648});
   sfc::expect_eq(Str{"2147483647"}.parse<i32>(), Option{2147483647});
+
+  // i32 overflow
+  sfc::expect_eq(Str{"-21474836481"}.parse<i32>(), None{});
+  sfc::expect_eq(Str{"21474836471"}.parse<i32>(), None{});
+
+  // i64
+  sfc::expect_eq(Str{"-21474836481"}.parse<i64>(), Option{-21474836481});
+  sfc::expect_eq(Str{"21474836471"}.parse<i64>(), Option{21474836471});
+
+  // hex
   sfc::expect_eq(Str{"0xff"}.parse<i64>(), Option{0xFFL});
   sfc::expect_eq(Str{"-0xff"}.parse<i64>(), Option{-0xFFL});
 

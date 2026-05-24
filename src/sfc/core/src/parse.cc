@@ -51,46 +51,46 @@ struct NumParser {
   auto parse_uint() -> Option<T> {
     static constexpr auto kMaxVal = num::Int<T>::MAX;
 
-    const auto is_neg = this->extract_sign() == '-';
-    if (is_neg) return {};
+    if (auto sign = this->extract_sign(); sign == '-') {
+      return {};
+    }
 
     const auto radix = this->extract_radix();
     const auto uval = radix == 10 ? this->extract_dec() : this->extract_bin(radix);
-    if (uval > kMaxVal) return {};
+    if (uval > kMaxVal) {
+      return {};
+    }
 
     return static_cast<T>(uval);
   }
 
   template <trait::sint_ T>
   auto parse_sint() -> Option<T> {
-    static constexpr auto kMaxVal = num::cast_unsigned(num::Int<T>::MAX);
+    static constexpr auto kMaxVal = num::Int<T>::MAX;
     static constexpr auto kMinVal = num::Int<T>::MIN;
 
     const auto is_neg = this->extract_sign() == '-';
     const auto radix = this->extract_radix();
     const auto uval = radix == 10 ? this->extract_dec() : this->extract_bin(radix);
+    const auto ival = num::cast_signed(is_neg ? 0 - uval : uval);
 
-    if (uval > kMaxVal) {
-      if (is_neg && uval == kMaxVal + 1) {
-        return kMinVal;
-      }
+    if (ival > kMaxVal || ival < kMinVal) {
       return {};
     }
 
-    const auto sval = static_cast<T>(uval);
-    return is_neg ? -sval : sval;
+    return static_cast<T>(ival);
   }
 
   template <class T>
   auto parse_flt() -> Option<T> {
     const auto sign = this->extract_sign() == '-' ? -1.0 : 1.0;
 
-    const auto int_part = static_cast<f64>(this->extract_dec());
+    const auto int_part = this->extract_dec();
     const auto flt_part = this->extract_flt();
     const auto exp_part = this->extract_exp();
 
     const auto flt_val = sign * (int_part + flt_part) * exp_part;
-    return static_cast<T>(flt_val);
+    return T(flt_val);
   }
 
   template <class T>
@@ -216,13 +216,16 @@ struct NumParser {
       return 0.0;
     }
 
-    auto uval = 0.0;
-    auto base = 0.1;
+    auto val = u64{0};
+    auto cnt = 0U;
     while (auto digit = this->pop_digit()) {
-      uval += base * digit.val;
-      base *= 0.1;
+      val = 10 * val + digit.val;
+      cnt += 1;
     }
-    return uval;
+
+    const auto exp_val = str::fast_exp10(cnt);
+    const auto flt_val = val / exp_val;
+    return flt_val;
   }
 
   auto extract_exp() -> f64 {
