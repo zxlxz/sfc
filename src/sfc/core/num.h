@@ -7,6 +7,9 @@ namespace sfc::num {
 template <trait::int_ T>
 struct Int;
 
+template <trait::float_ T>
+struct Float;
+
 template <class T>
 using uint_t = typename Int<T>::uint_t;
 
@@ -102,6 +105,55 @@ struct Int<long long> {
   static constexpr sint_t MIN = -0x7FFFFFFFFFFFFFFF - 1;
 };
 
+template <>
+struct Float<float> {
+  using float_t = float;
+  using int_t = int;
+};
+
+template <>
+struct Float<double> {
+  using float_t = double;
+  using int_t = long long;
+};
+
+template <trait::uint_ T>
+constexpr auto cast_signed(T x) -> num::sint_t<T> {
+  return __builtin_bit_cast(num::sint_t<T>, x);
+}
+
+template <trait::sint_ T>
+constexpr auto cast_unsigned(T x) -> num::uint_t<T> {
+  return __builtin_bit_cast(num::uint_t<T>, x);
+}
+
+template <trait::int_ T, trait::int_ F>
+constexpr auto saturating_cast(F x) -> T {
+  if constexpr (trait::uint_<F>) {  // uint -> [uint|sint]
+    if constexpr (Int<F>::MAX > Int<T>::MAX) {
+      if (x > Int<T>::MAX) return Int<T>::MAX;
+    }
+  } else if constexpr (trait::uint_<T>) {  // sint->uint
+    if (x < 0) return 0;
+    if constexpr (Int<F>::MAX > Int<T>::MAX) {
+      if (x > Int<T>::MAX) return Int<T>::MAX;
+    }
+  } else if constexpr (trait::sint_<T>) {  // sint->sint
+    if constexpr (Int<F>::MAX > Int<T>::MAX) {
+      if (x > Int<T>::MAX) return Int<T>::MAX;
+      if (x < Int<T>::MIN) return Int<T>::MIN;
+    }
+  }
+  return T(x);
+}
+
+template <trait::sint_ T>
+constexpr auto unsigned_abs(T x) -> num::uint_t<T> {
+  using U = num::uint_t<T>;
+  if (x >= 0) return __builtin_bit_cast(U, x);
+  return U{0} - __builtin_bit_cast(U, x);
+}
+
 template <trait::uint_ T>
 constexpr auto saturating_sub(T a, T b) -> T {
   return a < b ? 0U : a - b;
@@ -126,21 +178,13 @@ constexpr auto next_power_of_two(T n) -> T {
   return t;
 }
 
-template <trait::uint_ T>
-constexpr auto cast_signed(T x) -> num::sint_t<T> {
-  return __builtin_bit_cast(num::sint_t<T>, x);
-}
-
-template <trait::sint_ T>
-constexpr auto cast_unsigned(T x) -> num::uint_t<T> {
-  return __builtin_bit_cast(num::uint_t<T>, x);
-}
-
-template <trait::sint_ T>
-constexpr auto unsigned_abs(T x) -> num::uint_t<T> {
-  using U = num::uint_t<T>;
-  if (x >= 0) return __builtin_bit_cast(U, x);
-  return U{0} - __builtin_bit_cast(U, x);
+template <trait::float_ T>
+constexpr auto trunc_to_int(T x) -> num::Float<T>::int_t {
+  if (sizeof(T) == sizeof(float)) {
+    return i32(x);
+  } else {
+    return i64(x);
+  }
 }
 
 auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
