@@ -48,8 +48,8 @@ struct SystemTime {
   static auto from_micros(ULONG64 micros) -> SystemTime {
     const auto intervals = micros * TICKS_PER_MICROS;
     const auto file_time = FILETIME{
-        .dwLowDateTime = static_cast<u32>(intervals),
-        .dwHighDateTime = static_cast<u32>(intervals >> 32),
+        .dwLowDateTime = num::saturating_cast<u32>(intervals & 0xFFFFFFFFU),
+        .dwHighDateTime = num::saturating_cast<u32>(intervals >> 32),
     };
     return SystemTime{file_time};
   }
@@ -85,9 +85,7 @@ struct DateTime {
     };
   }
 
-  static auto from_utc(const SystemTime& sys_time) -> DateTime {
-    return DateTime::from_filetime(sys_time.t);
-  }
+  static auto from_utc(const SystemTime& sys_time) -> DateTime { return DateTime::from_filetime(sys_time.t); }
 
   static auto from_local(const SystemTime& sys_time) -> DateTime {
     auto local_time = FILETIME{};

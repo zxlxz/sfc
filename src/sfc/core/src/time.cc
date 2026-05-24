@@ -20,14 +20,14 @@ auto Duration::from_nanos(u64 nanos) noexcept -> Duration {
 }
 
 auto Duration::from_secs_f32(f32 secs) noexcept -> Duration {
-  const auto nanos_f64 = secs * static_cast<f64>(NANOS_PER_SEC);
-  const auto nanos_u64 = num::cast_unsigned(static_cast<i64>(nanos_f64));
+  const auto nanos_f64 = secs * f64{NANOS_PER_SEC};
+  const auto nanos_u64 = num::cast_unsigned(num::trunc_to_int(nanos_f64));
   return Duration{nanos_u64};
 }
 
 auto Duration::from_secs_f64(f64 secs) noexcept -> Duration {
-  const auto nanos_f64 = secs * static_cast<f64>(NANOS_PER_SEC);
-  const auto nanos_u64 = num::cast_unsigned(static_cast<i64>(nanos_f64));
+  const auto nanos_f64 = secs * f64{NANOS_PER_SEC};
+  const auto nanos_u64 = num::cast_unsigned(num::trunc_to_int(nanos_f64));
   return Duration{nanos_u64};
 }
 
@@ -36,12 +36,12 @@ auto Duration::as_secs() const noexcept -> u64 {
 }
 
 auto Duration::as_secs_f32() const noexcept -> f32 {
-  const auto secs_f64 = static_cast<f64>(_nanos) / static_cast<f64>(NANOS_PER_SEC);
-  return static_cast<f32>(secs_f64);
+  const auto secs_f64 = f64(_nanos) / f64{NANOS_PER_SEC};
+  return f32(secs_f64);
 }
 
 auto Duration::as_secs_f64() const noexcept -> f64 {
-  const auto secs_f64 = static_cast<f64>(_nanos) / static_cast<f64>(NANOS_PER_SEC);
+  const auto secs_f64 = f64(_nanos) / f64{NANOS_PER_SEC};
   return secs_f64;
 }
 
@@ -59,17 +59,17 @@ auto Duration::as_micros() const noexcept -> u64 {
 
 auto Duration::subsec_nanos() const noexcept -> u32 {
   const auto nanos_u64 = _nanos % NANOS_PER_SEC;
-  return static_cast<u32>(nanos_u64);
+  return u32(nanos_u64);
 }
 
 auto Duration::subsec_millis() const noexcept -> u32 {
   const auto millis_u64 = _nanos % NANOS_PER_SEC / NANOS_PER_MILLI;
-  return static_cast<u32>(millis_u64);
+  return u32(millis_u64);
 }
 
 auto Duration::subsec_micros() const noexcept -> u32 {
   const auto micros_u64 = _nanos % NANOS_PER_SEC / NANOS_PER_MICRO;
-  return static_cast<u32>(micros_u64);
+  return u32(micros_u64);
 }
 
 auto Duration::operator==(const Duration& other) const noexcept -> bool {

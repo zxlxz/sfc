@@ -108,12 +108,8 @@ struct Tuple : Inner<T...> {
   }
 
   void fmt(auto& f) const {
-    f.write_char('(');
-    this->map([&](const auto& val) {
-      if (val != this->_0) f.write_str(", ");
-      f.write_val(val);
-    });
-    f.write_char(')');
+    auto imp = f.debug_tuple();
+    this->map([&](const auto& val) { imp.entry(val); });
   }
 };
 

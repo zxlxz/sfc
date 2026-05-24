@@ -47,21 +47,21 @@ struct SystemTime {
 };
 
 struct DateTime {
-  int year = 0;
-  int month = 0;
-  int day = 0;
-  int hour = 0;
-  int minute = 0;
-  int second = 0;
+  u16 year = 0;
+  u16 month = 0;
+  u16 day = 0;
+  u16 hour = 0;
+  u16 minute = 0;
+  u16 second = 0;
 
   static auto from_tm(const struct tm& t) -> DateTime {
     const auto res = DateTime{
-        .year = t.tm_year + 1900,
-        .month = t.tm_mon + 1,
-        .day = t.tm_mday,
-        .hour = t.tm_hour,
-        .minute = t.tm_min,
-        .second = t.tm_sec,
+        .year   = num::saturating_cast<u16>(t.tm_year + 1900),
+        .month  = num::saturating_cast<u16>(t.tm_mon + 1),
+        .day    = num::saturating_cast<u16>(t.tm_mday),
+        .hour   = num::saturating_cast<u16>(t.tm_hour),
+        .minute = num::saturating_cast<u16>(t.tm_min),
+        .second = num::saturating_cast<u16>(t.tm_sec),
     };
     return res;
   }

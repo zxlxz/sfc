@@ -46,7 +46,7 @@ struct Condvar {
   }
 
   bool wait_timeout(Mutex& mtx, time::Duration dur) {
-    const auto ms = static_cast<u32>(dur.as_millis());
+    const auto ms = num::saturating_cast<u32>(dur.as_millis());
     const auto ret = ::SleepConditionVariableSRW(&_raw, &mtx._raw, ms, 0);
     return bool(ret);
   }

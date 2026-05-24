@@ -48,7 +48,7 @@ struct File {
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto buf_ptr = buf._ptr;
-    const auto buf_len = static_cast<DWORD>(buf._len);
+    const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
     auto bytes_read = 0UL;
     if (!::ReadFile(_fd, buf_ptr, buf_len, &bytes_read, nullptr)) {
@@ -59,7 +59,7 @@ struct File {
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     const auto buf_ptr = buf._ptr;
-    const auto buf_len = static_cast<DWORD>(buf._len);
+    const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
     auto bytes_written = 0UL;
     if (!::WriteFile(_fd, buf_ptr, buf_len, &bytes_written, nullptr)) {

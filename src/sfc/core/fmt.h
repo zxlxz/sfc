@@ -121,9 +121,10 @@ struct Formatter {
     }
   }
 
-  void write_val(const auto& val) {
+  template <class T>
+  void write_val(const T& val) {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    if constexpr (requires { val.fmt(*this); }) {
+    if constexpr (__is_class(T)) {
       val.fmt(*this);
     } else if constexpr (requires { Str{val}; }) {
       Str{val}.fmt(*this);

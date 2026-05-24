@@ -132,11 +132,11 @@ struct Deserializer {
     } else if constexpr (trait::same_<T, bool>) {
       return this->deserialize_bool();
     } else if constexpr (trait::sint_<T>) {
-      return this->deserialize_i64().map([](i64 v) { return static_cast<T>(v); });
+      return this->deserialize_i64().map([](i64 v) { return num::saturating_cast<T>(v); });
     } else if constexpr (trait::uint_<T>) {
-      return this->deserialize_u64().map([](u64 v) { return static_cast<T>(v); });
+      return this->deserialize_u64().map([](u64 v) { return num::saturating_cast<T>(v); });
     } else if constexpr (trait::float_<T>) {
-      return this->deserialize_f64().map([](f64 v) { return static_cast<T>(v); });
+      return this->deserialize_f64().map([](f64 v) { return T(v); });
     } else if constexpr (requires { T{Str{}}; }) {
       return this->deserialize_str().and_then([](Str s) { return T{s}; });
     } else {

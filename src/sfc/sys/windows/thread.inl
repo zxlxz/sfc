@@ -21,7 +21,7 @@ struct Thread {
 
   template <class Fn>
   static auto spawn(size_t stack_size, Fn* func) -> Thread {
-    const auto ss = static_cast<u32>(stack_size);
+    const auto ss = num::saturating_cast<u32>(stack_size);
     const auto cb = &Thread::callback<Fn>;
     const auto thrd = ::_beginthreadex(nullptr, ss, cb, func, 0, nullptr);
     if (thrd == 0) {
@@ -65,7 +65,7 @@ struct Thread {
 };
 
 inline void sleep(time::Duration dur) {
-  const auto millis = static_cast<DWORD>(dur.as_millis());
+  const auto millis = num::saturating_cast<DWORD>(dur.as_millis());
 
   if (millis == 0) {
     ::SwitchToThread();

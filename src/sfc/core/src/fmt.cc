@@ -46,9 +46,13 @@ struct FltPoint {
     // to ensure it has leading zeros when converted to string
     flt_val += exp_val;
 
-    const auto int_part = num::cast_unsigned(static_cast<i64>(int_val));
-    const auto flt_part = num::cast_unsigned(static_cast<i64>(flt_val));
-    return FltPoint{int_part, flt_part};
+    const auto int_part = num::trunc_to_int(int_val);
+    const auto flt_part = num::trunc_to_int(flt_val);
+
+    return FltPoint{
+        num::cast_unsigned(int_part),
+        num::cast_unsigned(flt_part),
+    };
   }
 };
 
@@ -95,14 +99,13 @@ struct FixPoint {
     const auto uval = exp_cnt >= 0 ? t / exp_factor : t * exp_factor;
 
     const auto prec_ratio = fmt::exp10(precision);
-    const auto fix_val = __builtin_round(uval * prec_ratio);
-    const auto fix_int = num::cast_unsigned(static_cast<i64>(fix_val));
-
-    if (fix_val > prec_ratio * 10) {
-      return FixPoint{fix_int / 10, exp_cnt - 1};
+    const auto fix_sint = num::trunc_to_int(uval * prec_ratio);
+    const auto fix_uint = num::cast_unsigned(fix_sint);
+    if (fix_sint > prec_ratio * 10 && exp_cnt > 0) {
+      return FixPoint{fix_uint / 10, exp_cnt - 1};
     }
 
-    return FixPoint{fix_int, exp_cnt};
+    return FixPoint{fix_uint, exp_cnt};
   }
 };
 
@@ -114,9 +117,7 @@ struct RevBuf {
  public:
   RevBuf(Slice<char> buf) noexcept : _buf{buf._ptr}, _cap{buf._len} {}
 
-  auto as_str() const -> Str {
-    return Str{_buf + _pos, _cap - _pos};
-  }
+  auto as_str() const -> Str { return Str{_buf + _pos, _cap - _pos}; }
 
   void push(char c) {
     if (_pos == 0) return;

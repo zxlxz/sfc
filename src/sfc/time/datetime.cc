@@ -8,14 +8,14 @@
 
 namespace sfc::time {
 
-static auto make_datetime(auto sys_date_time, auto micros) -> DateTime {
+static auto make_datetime(const auto& t, auto micros) -> DateTime {
   const auto res = DateTime{
-      .year = static_cast<u16>(sys_date_time.year),
-      .month = static_cast<u16>(sys_date_time.month),
-      .day = static_cast<u16>(sys_date_time.day),
-      .hour = static_cast<u16>(sys_date_time.hour),
-      .minute = static_cast<u16>(sys_date_time.minute),
-      .second = static_cast<u16>(sys_date_time.second),
+      .year = t.year,
+      .month = t.month,
+      .day = t.day,
+      .hour = t.hour,
+      .minute = t.minute,
+      .second = t.second,
       .micros = micros,
   };
   return res;

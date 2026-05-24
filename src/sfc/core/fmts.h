@@ -82,7 +82,7 @@ struct Parser {
     for (; _ptr < _end; ++_ptr) {
       const auto c = *_ptr;
       if (!(c >= '0' && c <= '9')) break;
-      const auto n = c-'0';
+      const auto n = c - '0';
       res = res * 10 + num::cast_unsigned(n);
     }
     return res;
@@ -114,9 +114,9 @@ consteval auto Spec::from(RawStr s) noexcept -> Spec {
     res._fill = p.extract('0');
   }
 
-  res._width = static_cast<u8>(p.extract_int());
+  res._width = num::saturating_cast<u8>(p.extract_int());
   if ((res._point = p.extract('.'))) {
-    res._precision = static_cast<u8>(p.extract_int());
+    res._precision = num::saturating_cast<u8>(p.extract_int());
   }
   res._type = p.pop();
   return res;

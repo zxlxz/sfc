@@ -81,7 +81,7 @@ struct StdIo {
 
   auto write_u8(Str u8_str) -> io::Result<usize> {
     const auto buf = u8_str._ptr;
-    const auto buf_len = static_cast<DWORD>(u8_str._len);
+    const auto buf_len = num::saturating_cast<DWORD>(u8_str._len);
 
     auto nret = DWORD{};
     if (!::WriteFile(_handle, buf, buf_len, &nret, nullptr)) {
@@ -112,7 +112,7 @@ struct StdIo {
 
   auto read_u8(Slice<u8> data) -> io::Result<usize> {
     const auto buf = data._ptr;
-    const auto buf_len = static_cast<DWORD>(data._len);
+    const auto buf_len = num::saturating_cast<DWORD>(data._len);
 
     auto nret = DWORD{};
     if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
@@ -123,7 +123,7 @@ struct StdIo {
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
     // in the worst case, each u16 character takes 3 u8 bytes
-    const auto max_wchar = static_cast<DWORD>(data._len / 3);
+    const auto max_wchar = num::saturating_cast<DWORD>(data._len / 3);
     const auto max_read = cmp::min(max_wchar, kMaxBufLen);
 
     // read u16
