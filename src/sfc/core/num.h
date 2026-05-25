@@ -172,6 +172,7 @@ constexpr auto is_power_of_two(T val) -> bool {
 
 template <trait::uint_ T>
 constexpr auto next_power_of_two(T n) -> T {
+  if (num::is_power_of_two(n)) return n;
   auto t = T{1};
   while (t < n)
     t <<= 1;

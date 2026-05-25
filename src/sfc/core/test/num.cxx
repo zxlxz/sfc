@@ -113,6 +113,7 @@ SFC_TEST(is_power_of_two) {
 }
 
 SFC_TEST(next_power_of_two) {
+  static_assert(num::next_power_of_two(0U) == 0);
   static_assert(num::next_power_of_two(1U) == 1);
   static_assert(num::next_power_of_two(2U) == 2);
   static_assert(num::next_power_of_two(3U) == 4);
