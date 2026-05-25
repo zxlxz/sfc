@@ -40,7 +40,7 @@ struct Thread {
   template <class Fn>
   static auto callback(void* p) -> void* {
     const auto ret = Fn::run(p);
-    return ret ? nullptr : reinterpret_cast<void*>(-1LL);
+    return ret ? nullptr : p;
   }
 
   template <class Fn>

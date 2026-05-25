@@ -27,7 +27,7 @@ struct Thread {
     if (thrd == 0) {
       return {};
     }
-    return Thread{reinterpret_cast<HANDLE>(thrd)};
+    return Thread{__builtin_bit_cast(HANDLE, thrd)};
   }
 
   static void yield_now() {
@@ -53,9 +53,7 @@ struct Thread {
 
     const auto ret = ::WaitForSingleObject(_raw, INFINITE);
     ::CloseHandle(_raw);
-    sfc::expect(ret == WAIT_OBJECT_0,
-                "Thread::join: WaitForSingleObject failed, err={}",
-                ::GetLastError());
+    sfc::expect(ret == WAIT_OBJECT_0, "Thread::join: WaitForSingleObject failed, err={}", ::GetLastError());
   }
 
   void detach() {

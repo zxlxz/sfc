@@ -28,7 +28,7 @@ auto CString::len() const -> usize {
 
 auto CString::as_ptr() const -> const char* {
   const auto p = _buf.as_ptr();
-  return reinterpret_cast<const char*>(p);
+  return ptr::cast<char>(p);
 }
 
 auto CString::as_cstr() const -> CStr {

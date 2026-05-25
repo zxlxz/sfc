@@ -32,7 +32,7 @@ struct Backtrace::Frame {
 
  public:
   void parse_addr(const void* ptr) {
-    const auto addr = reinterpret_cast<ULONG_PTR>(ptr);
+    const auto addr = __builtin_bit_cast(ULONG_PTR, ptr);
     this->parse_file_line(addr);
     this->parse_func(addr);
   }

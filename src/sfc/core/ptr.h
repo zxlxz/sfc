@@ -55,7 +55,12 @@ template <class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto cast(void* ptr) noexcept -> T* {
+[[gnu::always_inline]] inline auto cast(const void* ptr) noexcept -> const T* {
+  return static_cast<const T*>(ptr);
+}
+
+template <class T>
+[[gnu::always_inline]] inline auto cast_mut(void* ptr) noexcept -> T* {
   return static_cast<T*>(ptr);
 }
 
@@ -96,14 +101,14 @@ template <class T>
 [[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
   // all sfc type is memoveable, so we can just copy the bytes
-  __builtin_memmove(dst, src, cnt * sizeof(T));
+  __builtin_memmove((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>
 [[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
   // all sfc type is memoveable, so we can just copy the bytes
-  __builtin_memcpy(dst, src, cnt * sizeof(T));
+  __builtin_memcpy((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>

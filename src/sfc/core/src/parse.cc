@@ -85,7 +85,7 @@ struct NumParser {
   auto parse_flt() -> Option<T> {
     const auto sign = this->extract_sign() == '-' ? -1.0 : 1.0;
 
-    const auto int_part = this->extract_dec();
+    const auto int_part = f64(this->extract_dec());
     const auto flt_part = this->extract_flt();
     const auto exp_part = this->extract_exp();
 
@@ -224,7 +224,7 @@ struct NumParser {
     }
 
     const auto exp_val = str::fast_exp10(cnt);
-    const auto flt_val = val / exp_val;
+    const auto flt_val = f64(val) / exp_val;
     return flt_val;
   }
 

@@ -152,7 +152,7 @@ class [[nodiscard]] Queue {
 
  public:
   auto as_slices() const -> Tuple<Slice<const T>, Slice<const T>> {
-    const auto p = const_cast<const T*>(_buf.ptr());
+    const auto* p = _buf.ptr();
     if (_pos + _len <= _buf.cap()) {
       return {Slice{p + _pos, _len}, {}};
     } else {
