@@ -44,7 +44,7 @@ static inline auto wstr_encode(Slice<wchar_t> wbuf, Str cstr) -> DWORD {
   auto wlen = 0UL;
   cstr.chars().for_each([&](char32_t ch) {
     wchar_t buf[2];
-    const auto cnt = chr::wide_encode(buf, ch);
+    const auto cnt = ffi::wide_encode(buf, ch);
     if (wlen + cnt >= wbuf._len) return;
     ptr::copy_nonoverlapping(buf, wbuf._ptr + wlen, cnt);
   });
@@ -59,7 +59,7 @@ static inline auto wstr_decode(Slice<u8> cbuf, ffi::WStr wstr) -> usize {
     u8 buf[4];
     const auto cnt = chr::utf8_encode(buf, ch);
     if (u8_len + cnt >= cbuf._len) return;
-    ptr::copy_nonoverlapping(buf, reinterpret_cast<u8*>(cbuf._ptr + u8_len), cnt);
+    ptr::copy_nonoverlapping(buf, cbuf._ptr + u8_len, cnt);
   });
 
   return u8_len;
