@@ -101,7 +101,7 @@ struct FixPoint {
     const auto prec_ratio = fmt::exp10(precision);
     const auto fix_sint = num::trunc_to_int(uval * prec_ratio);
     const auto fix_uint = num::cast_unsigned(fix_sint);
-    if (fix_sint > prec_ratio * 10 && exp_cnt > 0) {
+    if (f64(fix_sint) > prec_ratio * 10 && exp_cnt > 0) {
       return FixPoint{fix_uint / 10, exp_cnt - 1};
     }
 

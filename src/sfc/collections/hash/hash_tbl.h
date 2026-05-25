@@ -278,7 +278,7 @@ class HashTbl {
   using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto data = ptr::cast<const T>(_ptr + ctrl_size);
+    const auto data = ptr::cast<T>(_ptr + ctrl_size);
     return {{}, _ptr, data, _cap};
   }
 

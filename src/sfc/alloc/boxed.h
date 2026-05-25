@@ -110,8 +110,8 @@ class [[nodiscard]] Box<R(T...)> {
     template <class X>
     static constexpr auto of(const X&) -> const Meta& {
       static const auto res = Meta{
-          [](void* p) { delete ptr::cast<X>(p); },
-          [](void* p, T&&... t) { return (*ptr::cast<X>(p))((T&&)(t)...); },
+          [](void* p) { delete ptr::cast_mut<X>(p); },
+          [](void* p, T&&... t) { return (*ptr::cast_mut<X>(p))((T&&)(t)...); },
       };
       return res;
     }

@@ -54,7 +54,7 @@ struct Slice<const T> {
 
   [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
+    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
  public:
@@ -190,12 +190,12 @@ struct Slice {
 
   [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
+    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
   [[gnu::always_inline]] auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
+    return {ptr::cast_mut<u8>(_ptr), _len * sizeof(T)};
   }
 
  public:
@@ -241,7 +241,7 @@ struct Slice {
 
   void fill(T val) noexcept {
     if constexpr (sizeof(T) == 1) {
-      ptr::write_bytes(_ptr, __builtin_bit_cast(u8, val), _len);
+      ptr::write_bytes(_ptr, val, _len);
     } else {
       for (auto p = _ptr, e = p + _len; p != e; ++p) {
         *p = val;

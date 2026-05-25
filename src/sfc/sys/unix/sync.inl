@@ -14,7 +14,7 @@ class Mutex {
 
  public:
   explicit Mutex() {
-    _raw = ptr::cast<pthread_mutex_t>(::malloc(sizeof(pthread_mutex_t)));
+    _raw = ptr::cast_mut<pthread_mutex_t>(::malloc(sizeof(pthread_mutex_t)));
     if (auto err = ::pthread_mutex_init(_raw, nullptr); err != 0) {
       ::free(_raw);
       _raw = nullptr;
@@ -97,7 +97,7 @@ class Condvar {
     auto attr = CondAttr{};
     attr.set_clock(CLOCK_ID);
 
-    _raw = ptr::cast<pthread_cond_t>(::malloc(sizeof(pthread_cond_t)));
+    _raw = ptr::cast_mut<pthread_cond_t>(::malloc(sizeof(pthread_cond_t)));
     if (auto err = ::pthread_cond_init(_raw, &attr._raw); err != 0) {
       ::free(_raw);
       _raw = nullptr;
