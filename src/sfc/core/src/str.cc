@@ -20,10 +20,7 @@ auto Str::trim() const noexcept -> Str {
 
 auto Str::hash() const noexcept -> usize {
   auto imp = hash::Hasher{};
-  for (auto i = 0UL; i < _len; ++i) {
-    const auto byte = __builtin_bit_cast(u8, _ptr[i]);
-    imp.write_byte(byte);
-  }
+  imp.write_bytes(this->as_bytes());
   return imp.finish();
 }
 

@@ -10,22 +10,10 @@ struct FNVHasher {
   u64 _state = OFFSET;
 
  public:
-  auto finish() const noexcept -> u64 {
-    return _state;
-  }
+  auto finish() const noexcept -> u64;
 
-  void write_byte(u8 val) noexcept {
-    _state ^= val;
-    _state *= PRIME;
-  }
-
-  template <u32 N>
-  void write_bytes(const u8 (&bytes)[N]) noexcept {
-    for (auto byte : bytes) {
-      _state ^= byte;
-      _state *= PRIME;
-    }
-  }
+  void write_byte(u8 val) noexcept;
+  void write_bytes(slice::Slice<const u8> bytes) noexcept;
 };
 
 using Hasher = FNVHasher;
