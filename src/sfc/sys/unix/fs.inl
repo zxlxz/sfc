@@ -38,36 +38,36 @@ class File {
 
   auto flush() -> io::Result<> {
     if (::fsync(_fd) == -1) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
-    return Ok{};
+    return {};
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto nret = ::read(_fd, buf._ptr, buf._len);
     if (nret == -1) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
     const auto nread = num::cast_unsigned(nret);
-    return Ok{nread};
+    return {nread};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     const auto nret = ::write(_fd, buf._ptr, buf._len);
     if (nret == -1) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
     const auto nwrite = num::cast_unsigned(nret);
-    return Ok{nwrite};
+    return {nwrite};
   }
 
   auto seek(off_t offset, int whence) -> io::Result<usize> {
     const auto ret = ::lseek(_fd, offset, whence);
     if (ret == -1) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
     const auto nseek = num::cast_unsigned(ret);
-    return Ok{usize{nseek}};
+    return {usize{nseek}};
   }
 };
 
@@ -90,9 +90,9 @@ struct OpenOptions {
     const auto flag = access_flags | create_flags | append_flags | truncate_flags;
     const auto fd = ::open(path, flag, _mode);
     if (fd == -1) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
-    return Ok{fd};
+    return {fd};
   }
 };
 
@@ -113,41 +113,41 @@ struct Metadata {
 static inline auto lstat(const char* path) -> io::Result<Metadata> {
   struct stat st{};
   if (::lstat(path, &st) == -1) {
-    return Err{io::Error::last_os_error()};
+    return {io::Error::last_os_error()};
   }
   const auto meta = Metadata{
       st.st_mode,
       num::cast_unsigned(st.st_size),
   };
-  return Ok{meta};
+  return {meta};
 }
 
 static inline auto unlink(const char* path) -> io::Result<> {
   if (::unlink(path) == -1) {
-    return Err{io::Error::last_os_error()};
+    return {io::Error::last_os_error()};
   }
-  return Ok{};
+  return {};
 }
 
 static inline auto rename(const char* old_path, const char* new_path) -> io::Result<> {
   if (::rename(old_path, new_path) == -1) {
-    return Err{io::Error::last_os_error()};
+    return {io::Error::last_os_error()};
   }
-  return Ok{};
+  return {};
 }
 
 static inline auto mkdir(const char* path) -> io::Result<> {
   if (::mkdir(path, 0755) == -1) {
-    return Err{io::Error::last_os_error()};
+    return {io::Error::last_os_error()};
   }
-  return Ok{};
+  return {};
 }
 
 static inline auto rmdir(const char* path) -> io::Result<> {
   if (::rmdir(path) == -1) {
-    return Err{io::Error::last_os_error()};
+    return {io::Error::last_os_error()};
   }
-  return Ok{};
+  return {};
 }
 
 }  // namespace sfc::sys::unix

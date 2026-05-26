@@ -42,7 +42,7 @@ SFC_TEST(home_dir) {
 SFC_TEST(current_exe) {
   const auto exe = env::current_exe();
   sfc::expect_ne(exe.as_str(), "");
-  sfc::expect_true(exe.as_str().contains("sfc_test"));
+  sfc::expect_true(exe.as_str().contains("sfc-test"));
 }
 
 }  // namespace sfc::env::test
