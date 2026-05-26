@@ -15,9 +15,7 @@ target_compile_features(sfc PUBLIC cxx_std_23)
 target_include_directories(sfc PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 # sfc-test
-if (${PROJECT_IS_TOP_LEVEL})
-  add_executable(sfc-test)
-  file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "**.cxx")
-  target_sources(sfc-test PRIVATE ${SRC})
-  target_link_libraries(sfc-test sfc)
-endif()
+add_executable(sfc-test)
+file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "**.cxx")
+target_sources(sfc-test PRIVATE ${SRC})
+target_link_libraries(sfc-test sfc)
