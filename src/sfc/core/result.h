@@ -4,28 +4,10 @@
 
 namespace sfc::result {
 
-template <class T>
-struct Ok {
-  T _0;
-};
-
-template <class E>
-struct Err {
-  E _0;
-};
-
-template <>
-struct Ok<void> {};
-
-template <class T>
-Ok(T) -> Ok<T>;
-
-Ok() -> Ok<void>;
-
 template <class T, class E>
 class [[nodiscard]] Result {
-  using Ok = result::Ok<T>;
-  using Err = result::Err<E>;
+  static constexpr auto kTvCopyable = trait::tv_copy_<T> && trait::tv_copy_<E>;
+  static constexpr auto kTvDroppable = trait::tv_drop_<T> && trait::tv_drop_<E>;
 
   u8 _tag;
   union {
@@ -34,12 +16,10 @@ class [[nodiscard]] Result {
   };
 
  public:
-  constexpr explicit Result(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
-  constexpr explicit Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
+  constexpr Result(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
+  constexpr Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
 
-  constexpr Result(Ok t) noexcept : _tag{0}, _0{mem::move(t._0)} {}
-  constexpr Result(Err e) noexcept : _tag{1}, _1{mem::move(e._0)} {}
-
+  ~Result() noexcept requires(kTvDroppable) = default;
   ~Result() noexcept {
     switch (_tag) {
       case 0:  mem::drop(_0); break;
@@ -48,6 +28,7 @@ class [[nodiscard]] Result {
     }
   }
 
+  Result(const Result& other) noexcept requires(kTvCopyable) = default;
   Result(Result&& other) noexcept : _tag{0xFF} {
     switch (other._tag) {
       case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
@@ -56,14 +37,7 @@ class [[nodiscard]] Result {
     }
   }
 
-  Result(const Result& other) noexcept : _tag{0xFF} {
-    switch (other._tag) {
-      case 0:  ptr::write(&_0, other._0), _tag = 0; break;
-      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
-      default: break;
-    }
-  }
-
+  Result& operator=(const Result& other) noexcept requires(kTvCopyable) = default;
   Result& operator=(Result&& other) noexcept {
     if (this == &other) return *this;
     switch (_tag) {
@@ -74,21 +48,6 @@ class [[nodiscard]] Result {
     switch (other._tag) {
       case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
       case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
-      default: break;
-    }
-    return *this;
-  }
-
-  Result& operator=(const Result& other) noexcept {
-    if (this == &other) return *this;
-    switch (_tag) {
-      case 0:  mem::drop(_0), _tag = 0xFF; break;
-      case 1:  mem::drop(_1), _tag = 0xFF; break;
-      default: break;
-    }
-    switch (other._tag) {
-      case 0:  ptr::write(&_0, other._0), _tag = 0; break;
-      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
       default: break;
     }
     return *this;
@@ -110,79 +69,81 @@ class [[nodiscard]] Result {
     return mem::move(_1);
   }
 
-  auto unwrap() && -> T {
-    sfc::expect(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
-    return mem::move(_0);
+  auto unwrap(this auto self) -> T {
+    sfc::expect(self._tag == 0, "called `Result::unwrap()` on Err({})", self._1);
+    return mem::move(self._0);
   }
 
-  auto unwrap_err() && -> E {
-    sfc::expect(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
-    return mem::move(_1);
+  auto unwrap_err(this auto self) -> E {
+    sfc::expect(self._tag == 1, "called `Result::unwrap_err()` on Ok({})", self._0);
+    return mem::move(self._1);
   }
 
-  auto unwrap_or(T default_val) && -> T {
-    if (_tag == 0) return mem::move(_0);
+  auto unwrap_or(this auto self, T default_val) -> T {
+    if (self._tag == 0) return mem::move(self._0);
     return mem::move(default_val);
   }
 
-  auto expect(const auto& msg) && -> T {
-    sfc::expect(_tag == 0, "{}: Err({})", msg, _1);
-    return mem::move(_0);
+  auto expect(this auto self, const auto& msg) -> T {
+    sfc::expect(self._tag == 0, "{}: Err({})", msg, self._1);
+    return mem::move(self._0);
   }
 
-  auto ok() && -> Option<T> {
-    if (_tag != 0) return {};
-    return mem::move(_0);
+  auto ok(this auto self) -> Option<T> {
+    if (self._tag != 0) return {};
+    return mem::move(self._0);
   }
 
-  auto err() && -> Option<E> {
-    if (_tag != 1) return {};
-    return mem::move(_1);
+  auto err(this auto self) -> Option<E> {
+    if (self._tag != 1) return {};
+    return mem::move(self._1);
   }
 
   template <class U>
-  auto operator&(Result<U, E> res) && -> Result<U, E> {
-    if (_tag == 0) return mem::move(res);
-    return Err{mem::move(_1)};
+  auto operator&(this auto self, Result<U, E> res) -> Result<U, E> {
+    if (self._tag == 0) return mem::move(res);
+    return Result<U, E>{mem::move(self._1)};
   }
 
   template <class F>
-  auto operator|(Result<T, F> res) && -> Result<T, F> {
-    if (_tag == 0) return Ok{mem::move(_0)};
+  auto operator|(this auto self, Result<T, F> res) -> Result<T, F> {
+    if (self._tag == 0) return Result<T, F>{mem::move(self._0)};
     return mem::move(res);
   }
 
   template <class F, class ResultUE = ops::invoke_t<F(T)>>
-  auto and_then(F&& op) && -> ResultUE {
-    if (_tag == 0) return op(mem::move(_0));
-    return ResultUE{mem::move(_1)};
+  auto and_then(this auto self, F&& op) -> ResultUE {
+    if (self._tag == 0) return op(mem::move(self._0));
+    return ResultUE{mem::move(self._1)};
   }
 
   template <class O, class ResultTF = ops::invoke_t<O()>>
-  auto or_else(O&& op) && -> ResultTF {
-    if (_tag == 0) return ResultTF{mem::move(_0)};
+  auto or_else(this auto self, O&& op) -> ResultTF {
+    if (self._tag == 0) return ResultTF{mem::move(self._0)};
     return op();
   }
 
   template <class F, class U = ops::invoke_t<F(T)>>
-  auto map(F&& op) && -> Result<U, E> {
-    if (_tag == 0) return Result<U, E>{op(mem::move(_0))};
-    return Result<U, E>{mem::move(_1)};
+  auto map(this auto self, F&& op) -> Result<U, E> {
+    if (self._tag == 0) return Result<U, E>{op(mem::move(self._0))};
+    return Result<U, E>{mem::move(self._1)};
   }
 
   template <class O, class F = ops::invoke_t<O(E)>>
-  auto map_err(O&& op) && -> Result<T, F> {
-    if (_tag == 1) return Result<T, F>{op(mem::move(_1))};
-    return Result<T, F>{mem::move(_0)};
+  auto map_err(this auto self, O&& op) -> Result<T, F> {
+    if (self._tag == 1) return Result<T, F>{op(mem::move(self._1))};
+    return Result<T, F>{mem::move(self._0)};
   }
 
  public:
-  // trait:: ops::Eq
-  auto operator==(const Result& other) const noexcept -> bool {
-    if (_tag == 0) {
-      return other._tag == 0 && _0 == other._0;
+  // trait: ops::Eq
+  auto operator==(const Result& other) const -> bool {
+    if (_tag == 0 && other._tag == 0) {
+      return _0 == other._0;
+    } else if (_tag == 1 && other._tag == 1) {
+      return _1 == other._1;
     } else {
-      return other._tag == 1 && _1 == other._1;
+      return false;
     }
   }
 
@@ -198,8 +159,8 @@ class [[nodiscard]] Result {
 
 template <class E>
 class [[nodiscard]] Result<void, E> {
-  using Ok = result::Ok<void>;
-  using Err = result::Err<E>;
+  static constexpr auto kTvCopyable = trait::tv_copy_<E>;
+  static constexpr auto kTvDroppable = trait::tv_drop_<E>;
 
   u8 _tag;
   union {
@@ -207,31 +168,36 @@ class [[nodiscard]] Result<void, E> {
   };
 
  public:
-  constexpr Result(Ok) noexcept : _tag{0}, _1{} {}
-  constexpr Result(Err e) noexcept : _tag{1}, _1{mem::move(e._0)} {}
+  constexpr Result() noexcept : _tag{0}, _1{} {}
+  constexpr Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
 
-  Result(const Result& other) noexcept : _tag{0xFF} {
-    switch (other._tag) {
-      case 0:  _tag = 0; break;
-      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
-      default: break;
+  ~Result() noexcept requires(kTvDroppable) = default;
+  ~Result() requires(!kTvDroppable) {
+    if (_tag == 1) {
+      mem::drop(_1);
     }
   }
 
-  Result(Result&& other) noexcept : _tag{0xFF} {
-    switch (other._tag) {
-      case 0:  _tag = 0; break;
-      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
-      default: break;
+  Result(const Result& other) noexcept requires(kTvCopyable) = default;
+  Result(Result&& other) noexcept : _tag{0} {
+    if (other._tag == 1) {
+      ptr::write(&_1, mem::move(other._1));
+      _tag = 1;
     }
   }
 
-  ~Result() {
-    switch (_tag) {
-      case 0:  break;
-      case 1:  mem::drop(_1); break;
-      default: break;
+  Result& operator=(const Result& other) noexcept requires(kTvCopyable) = default;
+  Result& operator=(Result&& other) noexcept {
+    if (this == &other) return *this;
+    if (_tag == 1) {
+      mem::drop(_1);
+      _tag = 0;
     }
+    if (other._tag == 1) {
+      ptr::write(&_1, mem::move(other._1));
+      _tag = 1;
+    }
+    return *this;
   }
 
   constexpr auto is_ok() const noexcept -> bool {
@@ -248,24 +214,30 @@ class [[nodiscard]] Result<void, E> {
     return mem::move(_1);
   }
 
-  void unwrap() const noexcept {
-    sfc::expect(_tag == 0, "Result::unwrap: not Ok()");
+  void unwrap(this auto self) noexcept {
+    sfc::expect(self._tag == 0, "Result::unwrap: not Ok()");
   }
 
-  auto unwrap_err() && -> E {
-    sfc::expect(_tag == 1, "Result::unwrap_err: not Err()");
-    return mem::move(_1);
+  auto unwrap_err(this auto self) -> E {
+    sfc::expect(self._tag == 1, "Result::unwrap_err: not Err()");
+    return mem::move(self._1);
   }
 
-  auto err() && -> Option<E> {
-    if (_tag != 1) return {};
-    return mem::move(_1);
+  auto err(this auto self) -> Option<E> {
+    if (self._tag != 1) return {};
+    return mem::move(self._1);
   }
 
  public:
   // trait: ops::Eq
-  auto operator==(const Result& other) const noexcept -> bool {
-    return _tag == other._tag;
+  auto operator==(const Result& other) const {
+    if (_tag != other._tag) {
+      return false;
+    }
+    if (_tag == 1 && other._tag == 1) {
+      return _1 == other._1;
+    }
+    return true;
   }
 
   // trait: fmt::Display
@@ -281,20 +253,18 @@ class [[nodiscard]] Result<void, E> {
 }  // namespace sfc::result
 
 namespace sfc {
-using result::Ok;
-using result::Err;
 using result::Result;
 }  // namespace sfc
 
 #if !defined(__clang_analyzer__) && !defined(__INTELLISENSE__)
 #if defined(__GNUC__) || defined(__clang__)
-#define _TRY(expr)                             \
-  ({                                           \
-    auto _res = (expr);                        \
-    if (_res.is_err()) {                       \
-      return Err{_res.unwrap_err_unchecked()}; \
-    }                                          \
-    _res.unwrap_unchecked();                   \
+#define _TRY(expr)                          \
+  ({                                        \
+    auto _res = (expr);                     \
+    if (_res.is_err()) {                    \
+      return {_res.unwrap_err_unchecked()}; \
+    }                                       \
+    _res.unwrap_unchecked();                \
   })
 #endif
 #endif

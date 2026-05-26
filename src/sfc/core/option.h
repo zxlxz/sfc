@@ -7,7 +7,7 @@
 namespace sfc::option {
 
 template <class T>
-concept Nullable = requires(const T& x) { x == nullptr; };
+concept null_ = requires(const T& x) { x == nullptr; };
 
 template <class T = void>
 class Option;
@@ -47,11 +47,6 @@ class Option {
   constexpr Option(T val) noexcept : _tag{1}, _1{mem::move(val)} {}
 
   ~Option() noexcept requires(kTvDroppable) = default;
-  Option(Option&& other) noexcept requires(kTvCopyable) = default;
-  Option(const Option& other) noexcept requires(kTvCopyable) = default;
-  Option& operator=(Option&& other) noexcept requires(kTvCopyable) = default;
-  Option& operator=(const Option& other) noexcept requires(kTvCopyable) = default;
-
   ~Option() noexcept {
     switch (_tag) {
       case 0:  break;
@@ -60,6 +55,7 @@ class Option {
     }
   }
 
+  Option(const Option& other) noexcept requires(kTvCopyable) = default;
   Option(Option&& other) noexcept : _tag{0} {
     switch (other._tag) {
       case 0:  break;
@@ -76,21 +72,7 @@ class Option {
     }
   }
 
-  Option& operator=(const Option& other) noexcept {
-    if (this == &other) return *this;
-    switch (_tag) {
-      case 0:  break;
-      case 1:  mem::drop(_1), _tag = 0; break;
-      default: break;
-    }
-    switch (other._tag) {
-      case 0:  break;
-      case 1:  ptr::write(&_1, other._1), _tag = 1; break;
-      default: break;
-    }
-    return *this;
-  }
-
+  Option& operator=(const Option& other) noexcept requires(kTvCopyable) = default;
   Option& operator=(Option&& other) noexcept {
     if (this == &other) return *this;
     switch (_tag) {
@@ -206,7 +188,7 @@ class Option {
   }
 };
 
-template <Nullable T>
+template <null_ T>
 class Option<T> {
   T _1;
 

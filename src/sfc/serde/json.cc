@@ -80,27 +80,27 @@ auto Deserializer::deserialize_null() noexcept -> Result<> {
 auto Deserializer::deserialize_bool() noexcept -> Result<bool> {
   const auto next_tok = this->next_token();
   switch (next_tok) {
-    case Token::True:  this->consume(4); return Ok{true};
-    case Token::False: this->consume(5); return Ok{false};
-    case Token::Eof:   return Err{Error::EofWhileParsing};
-    default:           return Err{Error::InvalidKeyword};
+    case Token::True:  this->consume(4); return {true};
+    case Token::False: this->consume(5); return {false};
+    case Token::Eof:   return {Error::EofWhileParsing};
+    default:           return {Error::InvalidKeyword};
   }
 }
 
 auto Deserializer::deserialize_str() noexcept -> Result<Str> {
   const auto next_tok = this->next_token();
   if (next_tok != Token::DoubleQuote) {
-    return Err{Error::ExpectedDoubleQuote};
+    return {Error::ExpectedDoubleQuote};
   }
 
   const auto s = _buf[{1, _buf._len}];
   const auto p = s.find('"').unwrap_or(s._len);
   if (p == s._len) {
-    return Err{Error::InvalidString};
+    return {Error::InvalidString};
   }
 
   this->consume(p + 2);
-  return Ok{s[{0, p}]};
+  return {s[{0, p}]};
 }
 
 auto Deserializer::deserialize_num() noexcept -> Result<Str> {
@@ -111,39 +111,39 @@ auto Deserializer::deserialize_num() noexcept -> Result<Str> {
   };
   const auto pos = _buf.find(not_digits).unwrap_or(_buf.len());
   if (pos == 0) {
-    return Err{Error::InvalidNumber};
+    return {Error::InvalidNumber};
   }
 
   const auto num = _buf[{0, pos}];
   this->consume(pos);
-  return Ok{num};
+  return {num};
 }
 
 auto Deserializer::deserialize_i64() noexcept -> Result<i64> {
   const auto num_str = _TRY(this->deserialize_num());
   const auto num_val = num_str.template parse<i64>();
   if (!num_val) {
-    return Err{Error::InvalidNumber};
+    return {Error::InvalidNumber};
   }
-  return Ok{*num_val};
+  return {*num_val};
 }
 
 auto Deserializer::deserialize_u64() noexcept -> Result<u64> {
   const auto num_str = _TRY(this->deserialize_num());
   const auto num_val = num_str.template parse<u64>();
   if (!num_val) {
-    return Err{Error::InvalidNumber};
+    return {Error::InvalidNumber};
   }
-  return Ok{*num_val};
+  return {*num_val};
 }
 
 auto Deserializer::deserialize_f64() noexcept -> Result<f64> {
   const auto num_str = _TRY(this->deserialize_num());
   const auto num_val = num_str.template parse<f64>();
   if (!num_val) {
-    return Err{Error::InvalidNumber};
+    return {Error::InvalidNumber};
   }
-  return Ok{*num_val};
+  return {*num_val};
 }
 
 auto Deserializer::deserialize_key() noexcept -> Result<Str> {
@@ -188,18 +188,18 @@ auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<> {
   const auto next_tok = this->next_token();
   if (next_tok != expect_tok) {
     switch (expect_tok) {
-      case Token::Comma:       return Err{Error::ExpectedComma};
-      case Token::DoubleQuote: return Err{Error::ExpectedDoubleQuote};
-      case Token::Colon:       return Err{Error::ExpectedColon};
-      case Token::ArrayBegin:  return Err{Error::ExpectedArrayBegin};
-      case Token::ArrayEnd:    return Err{Error::ExpectedArrayEnd};
-      case Token::ObjectBegin: return Err{Error::ExpectedObjectBegin};
-      case Token::ObjectEnd:   return Err{Error::ExpectedObjectEnd};
-      case Token::Null:        return Err{Error::InvalidKeyword};
-      case Token::True:        return Err{Error::InvalidKeyword};
-      case Token::False:       return Err{Error::InvalidKeyword};
-      case Token::Eof:         return Err{Error::EofWhileParsing};
-      default:                 return Err{Error::InvalidKeyword};
+      case Token::Comma:       return {Error::ExpectedComma};
+      case Token::DoubleQuote: return {Error::ExpectedDoubleQuote};
+      case Token::Colon:       return {Error::ExpectedColon};
+      case Token::ArrayBegin:  return {Error::ExpectedArrayBegin};
+      case Token::ArrayEnd:    return {Error::ExpectedArrayEnd};
+      case Token::ObjectBegin: return {Error::ExpectedObjectBegin};
+      case Token::ObjectEnd:   return {Error::ExpectedObjectEnd};
+      case Token::Null:        return {Error::InvalidKeyword};
+      case Token::True:        return {Error::InvalidKeyword};
+      case Token::False:       return {Error::InvalidKeyword};
+      case Token::Eof:         return {Error::EofWhileParsing};
+      default:                 return {Error::InvalidKeyword};
     }
   }
 
@@ -216,7 +216,7 @@ auto Deserializer::extract_tok(Token expect_tok) noexcept -> Result<> {
     case Token::False:       this->consume(5); break;
     default:                 break;
   }
-  return Ok{};
+  return {};
 }
 
 }  // namespace sfc::serde::json

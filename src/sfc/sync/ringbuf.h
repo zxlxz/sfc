@@ -109,9 +109,9 @@ class RingBuf {
  public:
   auto push(T val) noexcept -> Result<void, T> {
     if (this->try_push(val)) {
-      return Ok{};
+      return {};
     }
-    return Err{mem::move(val)};
+    return {mem::move(val)};
   }
 
   auto try_push(T& val) noexcept -> bool {

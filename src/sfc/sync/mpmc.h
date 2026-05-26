@@ -43,11 +43,11 @@ class Channel {
         break;
       }
       if (_buff.try_push(val)) {
-        return Ok{};
+        return {};
       }
       sfc::thread::yield_now();
     }
-    return Err{mem::move(val)};
+    return {mem::move(val)};
   }
 
   auto recv() noexcept -> Option<T> {

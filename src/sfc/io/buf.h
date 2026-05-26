@@ -19,11 +19,11 @@ class Buffer {
   void discard_buffer();
   void consume(usize amount);
 
-  auto read_more(auto& read) -> io::Result<usize> {
+  auto read_more(auto& read) -> Result<usize> {
     auto buf = _buf.spare_capacity_mut();
     const auto nread = _TRY(read.read(buf));
     _buf.set_len(_buf.len() + nread);
-    return Ok{nread};
+    return {nread};
   }
 
   auto fill_buf(auto& read) -> Result<Slice<const u8>> {
@@ -31,7 +31,7 @@ class Buffer {
       this->backshift();
       _TRY(this->read_more(read));
     }
-    return Ok{this->buffer()};
+    return {this->buffer()};
   }
 };
 
@@ -55,7 +55,7 @@ struct BufRead : Read {
         break;
       }
     }
-    return Ok{nread};
+    return {nread};
   }
 
   auto read_until(this auto& r, u8 delim, List<u8>& buf) -> Result<usize> {
@@ -73,7 +73,7 @@ struct BufRead : Read {
         break;
       }
     }
-    return Ok{nread};
+    return {nread};
   }
 };
 
@@ -115,7 +115,7 @@ class BufReader : public BufRead {
       _TRY(_buf.fill_buf(_inn));
     }
     const auto buf = _buf.buffer();
-    return Ok{buf[{0, n}]};
+    return {buf[{0, n}]};
   }
 
   // trait: io::Read
@@ -130,7 +130,7 @@ class BufReader : public BufRead {
     auto rem = _TRY(_buf.fill_buf(_inn));
     const auto nread = rem.read(buf).unwrap_or(0);
     _buf.consume(nread);
-    return Ok{nread};
+    return {nread};
   }
 };
 
@@ -183,7 +183,7 @@ class BufWriter : public Write {
     } else {
       _TRY(_inn.write(buf));
     }
-    return Ok{buf_len};
+    return {buf_len};
   }
 
   // triat:: io::Read
@@ -193,7 +193,7 @@ class BufWriter : public Write {
       _buf.drain({0, nwrite});
     }
     _buf.clear();
-    return Ok{};
+    return {};
   }
 };
 

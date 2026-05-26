@@ -169,7 +169,7 @@ struct Deserializer {
         auto elem = _TRY(this->next_element<T>());
         res.push(mem::move(elem));
       }
-      return Ok{res};
+      return {res};
     }
   };
 
@@ -202,7 +202,7 @@ struct Deserializer {
         auto val = _TRY(this->next_value<V>());
         res.insert(key, mem::move(val));
       }
-      return Ok{res};
+      return {res};
     }
   };
 

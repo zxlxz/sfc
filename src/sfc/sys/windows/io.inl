@@ -85,9 +85,9 @@ struct StdIo {
 
     auto nret = DWORD{};
     if (!::WriteFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
-    return Ok{usize{nret}};
+    return {usize{nret}};
   }
 
   auto write_u16(Str u8_str) -> io::Result<usize> {
@@ -96,9 +96,9 @@ struct StdIo {
 
     auto nwrite = DWORD{};
     if (!::WriteConsoleW(_handle, buf, wlen, &nwrite, nullptr)) {
-      return Err{io::Error::last_os_error()};
+      return {io::Error::last_os_error()};
     }
-    return Ok{usize{nwrite}};
+    return {usize{nwrite}};
   }
 
   auto write(Slice<const u8> data) -> io::Result<usize> {
@@ -116,9 +116,9 @@ struct StdIo {
 
     auto nret = DWORD{};
     if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return Err{io::Error::last_os_error()};
+      return io::Result<usize>{io::Error::last_os_error()};
     }
-    return Ok{usize{nret}};
+    return io::Result<usize>{usize{nret}};
   }
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
@@ -130,13 +130,13 @@ struct StdIo {
     wchar_t buf[kMaxBufLen];
     auto nret = DWORD{};
     if (!::ReadConsoleW(_handle, buf, max_read, &nret, nullptr)) {
-      return Err{io::Error::last_os_error()};
+      return io::Result<usize>{io::Error::last_os_error()};
     }
 
     // convert u16 to u8
     const auto ws_len = usize{nret};
     const auto u8_len = windows::wstr_decode(data, {buf, ws_len});
-    return Ok{u8_len};
+    return io::Result<usize>{u8_len};
   }
 
   auto read(Slice<u8> data) -> io::Result<usize> {
@@ -167,7 +167,7 @@ struct Stdout {
   }
 
   static auto flush() -> io::Result<> {
-    return Ok{};
+    return {};
   }
 };
 
@@ -183,7 +183,7 @@ struct Stderr {
   }
 
   static auto flush() -> io::Result<> {
-    return Ok{};
+    return {};
   }
 };
 
