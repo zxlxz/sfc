@@ -15,7 +15,6 @@ template <class I, class P>
 struct Filter;
 
 struct Iterator {
-#ifndef __CUDACC__
   template <class Self>
   auto find(this Self self, auto&& pred) noexcept -> Option<typename Self::Item> {
     while (auto x = self.next()) {
@@ -170,7 +169,6 @@ struct Iterator {
   auto filter(this Self self, P pred) -> Filter<Self, P> {
     return Filter<Self, P>{mem::move(self), mem::move<P>(pred)};
   }
-#endif
 };
 
 template <class I, class F>
