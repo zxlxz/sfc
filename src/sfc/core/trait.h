@@ -35,6 +35,12 @@ concept int_ = sint_<T> || uint_<T>;
 template <class T>
 concept float_ = same_<T, float> || same_<T, double>;
 
+template<class T>
+concept tv_copy_ = __is_trivially_copyable(T);
+
+template<class T>
+concept tv_drop_ = __is_trivially_destructible(T);
+
 }  // namespace sfc::trait
 
 namespace sfc {

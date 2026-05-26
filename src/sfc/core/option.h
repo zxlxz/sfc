@@ -34,6 +34,9 @@ class Option<void> {
 
 template <class T>
 class Option {
+  static constexpr auto kTvCopyable = trait::tv_copy_<T>;
+  static constexpr auto kTvDroppable = trait::tv_drop_<T>;
+
   u8 _tag;
   union {
     T _1;
@@ -43,7 +46,21 @@ class Option {
   constexpr Option() noexcept : _tag{0} {}
   constexpr Option(T val) noexcept : _tag{1}, _1{mem::move(val)} {}
 
-  constexpr Option(Option&& other) noexcept : _tag{0} {
+  ~Option() noexcept requires(kTvDroppable) = default;
+  Option(Option&& other) noexcept requires(kTvCopyable) = default;
+  Option(const Option& other) noexcept requires(kTvCopyable) = default;
+  Option& operator=(Option&& other) noexcept requires(kTvCopyable) = default;
+  Option& operator=(const Option& other) noexcept requires(kTvCopyable) = default;
+
+  ~Option() noexcept {
+    switch (_tag) {
+      case 0:  break;
+      case 1:  mem::drop(_1); break;
+      default: break;
+    }
+  }
+
+  Option(Option&& other) noexcept : _tag{0} {
     switch (other._tag) {
       case 0:  break;
       case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
@@ -51,18 +68,10 @@ class Option {
     }
   }
 
-  constexpr Option(const Option& other) noexcept : _tag{0} {
+  Option(const Option& other) noexcept : _tag{0} {
     switch (other._tag) {
       case 0:  break;
       case 1:  ptr::write(&_1, other._1), _tag = 1; break;
-      default: break;
-    }
-  }
-
-  ~Option() noexcept {
-    switch (_tag) {
-      case 0:  break;
-      case 1:  mem::drop(_1); break;
       default: break;
     }
   }
@@ -129,60 +138,60 @@ class Option {
     return _1;
   }
 
-  auto expect(const auto& msg) && -> T {
-    sfc::expect(_tag == 1, "Option::expect: {}", msg);
-    return mem::move(_1);
+ public:
+  auto expect(this auto self, const auto& msg) -> T {
+    sfc::expect(self._tag == 1, "Option::expect: {}", msg);
+    return mem::move(self._1);
   }
 
-  auto unwrap() && -> T {
-    sfc::expect(_tag == 1, "Option::unwrap: not Some()");
-    return mem::move(_1);
+  auto unwrap(this auto self) -> T {
+    sfc::expect(self._tag == 1, "Option::unwrap: not Some()");
+    return mem::move(self._1);
   }
 
-  auto unwrap_or(T default_val) && -> T {
-    if (_tag == 1) return mem::move(_1);
+  auto unwrap_or(this auto self, T default_val) -> T {
+    if (self._tag == 1) return mem::move(self._1);
     return mem::move(default_val);
   }
 
   template <class U>
-  auto operator&(Option<U> optb) && -> Option<U> {
-    if (_tag == 1) return mem::move(optb);
+  auto operator&(this auto self, Option<U> optb) -> Option<U> {
+    if (self._tag == 1) return mem::move(optb);
     return {};
   }
 
-  auto operator|(Option<T> optb) && -> Option<T> {
-    if (_tag == 1) return mem::move(*this);
+  auto operator|(this auto self, Option<T> optb) -> Option<T> {
+    if (self._tag == 1) return mem::move(self);
     return mem::move(optb);
   }
 
   template <class F>
-  auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_tag == 1) return op(mem::move(_1));
+  auto and_then(this auto self, F&& op) -> ops::invoke_t<F(T)> {
+    if (self._tag == 1) return op(mem::move(self._1));
     return {};
   }
 
-  auto or_else(auto&& f) && -> Option<T> {
-    if (_tag == 1) return mem::move(*this);
+  auto or_else(this auto self, auto&& f) -> Option<T> {
+    if (self._tag == 1) return mem::move(self);
     return f();
   }
 
   template <class F>
-  auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
-    if (_tag == 1) return f(mem::move(_1));
+  auto map(this auto self, F&& f) -> Option<ops::invoke_t<F(T)>> {
+    if (self._tag == 1) return f(mem::move(self._1));
     return {};
   }
 
   template <class U>
-  auto map_or(U default_val, auto&& f) && -> U {
-    if (_tag == 1) return f(mem::move(_1));
+  auto map_or(this auto self, U default_val, auto&& f) -> U {
+    if (self._tag == 1) return f(mem::move(self._1));
     return mem::move(default_val);
   }
 
- public:
   // to result
   template <class E>
-  auto ok_or(E err) && -> result::Result<T, E> {
-    if (_tag == 1) return mem::move(_1);
+  auto ok_or(this auto self, E err) -> result::Result<T, E> {
+    if (self._tag == 1) return mem::move(self._1);
     return mem::move(err);
   }
 
@@ -237,60 +246,61 @@ class Option<T> {
     return _1;
   }
 
-  auto expect(const auto& msg) && -> T {
-    sfc::expect(_1 != nullptr, "Option::expect: {}", msg);
-    return mem::move(_1);
+ public:
+  auto expect(this auto self, const auto& msg) -> T {
+    sfc::expect(self._1 != nullptr, "Option::expect: {}", msg);
+    return mem::move(self._1);
   }
 
-  auto unwrap() -> T {
-    sfc::expect(_1 != nullptr, "Option::unwrap: None()");
-    return mem::move(_1);
+  auto unwrap(this auto self) -> T {
+    sfc::expect(self._1 != nullptr, "Option::unwrap: None()");
+    return mem::move(self._1);
   }
 
-  auto unwrap_or(T default_val) -> T {
-    return _1 != nullptr ? mem::move(_1) : mem::move(default_val);
+  auto unwrap_or(this auto self, T default_val) -> T {
+    return self._1 != nullptr ? mem::move(self._1) : mem::move(default_val);
   }
 
   template <class U>
-  auto operator&(Option<U> optb) && -> Option<U> {
-    if (_1 != nullptr) return mem::move(optb);
+  auto operator&(this auto self, Option<U> optb) -> Option<U> {
+    if (self._1 != nullptr) return mem::move(optb);
     return {};
   }
 
-  auto operator|(Option<T> optb) && -> Option<T> {
-    if (_1 != nullptr) return mem::move(*this);
+  auto operator|(this auto self, Option<T> optb) -> Option<T> {
+    if (self._1 != nullptr) return mem::move(self);
     return mem::move(optb);
   }
 
   template <class F>
-  auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
-    if (_1 != nullptr) return op(mem::move(_1));
+  auto and_then(this auto self, F&& op) -> ops::invoke_t<F(T)> {
+    if (self._1 != nullptr) return op(mem::move(self._1));
     return {};
   }
 
-  auto or_else(auto&& f) && -> Option<T> {
-    if (_1 != nullptr) return mem::move(*this);
+  auto or_else(this auto self, auto&& f) -> Option<T> {
+    if (self._1 != nullptr) return mem::move(self);
     return f();
   }
 
   template <class F>
-  auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
-    if (_1 != nullptr) return {f(mem::move(_1))};
+  auto map(this auto self, F&& f) -> Option<ops::invoke_t<F(T)>> {
+    if (self._1 != nullptr) return {f(mem::move(self._1))};
     return {};
   }
 
   template <class U>
-  auto map_or(U default_val, auto&& f) && -> U {
-    if (_1 != nullptr) return f(mem::move(_1));
+  auto map_or(this auto self, U default_val, auto&& f) -> U {
+    if (self._1 != nullptr) return f(mem::move(self._1));
     return mem::move(default_val);
   }
 
  public:
   // to result
   template <class E>
-  auto ok_or(E err) && noexcept -> result::Result<T, E> {
-    if (_1 != nullptr) return {mem::move(_1)};
-    return {mem::move(err)};
+  auto ok_or(this auto self, E err) noexcept -> result::Result<T, E> {
+    if (self._1 != nullptr) return result::Result<T, E>{mem::move(self._1)};
+    return result::Result<T, E>{mem::move(err)};
   }
 
  public:
@@ -349,64 +359,64 @@ class Option<T&> {
     return *_1;
   }
 
-  auto unwrap_or(T& default_val) -> T& {
-    return _1 ? *_1 : default_val;
+ public:
+  auto unwrap_or(this auto self, T& default_val) -> T& {
+    return self._1 ? *self._1 : default_val;
   }
 
-  auto unwrap_or_else(auto&& f) -> T& {
-    if (_1) return *_1;
+  auto unwrap_or_else(this auto self, auto&& f) -> T& {
+    if (self._1) return *self._1;
     return f();
   }
 
-  auto expect(const auto& msg) const -> T& {
-    sfc::expect(_1 != nullptr, "Option::expect: {}", msg);
-    return *_1;
+  auto expect(this auto self, const auto& msg) -> T& {
+    sfc::expect(self._1 != nullptr, "Option::expect: {}", msg);
+    return *self._1;
   }
 
-  auto to_owned() const -> Option<T> {
-    if (!_1) return {};
-    return {*_1};
+  auto to_owned(this auto self) -> Option<T> {
+    if (!self._1) return {};
+    return {*(self._1)};
   }
 
   template <class U>
-  auto operator&(Option<U> optb) const -> Option<U> {
-    if (_1) return mem::move(optb);
+  auto operator&(this auto self, Option<U> optb) -> Option<U> {
+    if (self._1) return mem::move(optb);
     return {};
   }
 
-  auto operator|(Option optb) const -> Option {
-    if (_1) return mem::move(*this);
+  auto operator|(this auto self, Option<T> optb) -> Option<T> {
+    if (self._1) return mem::move(self);
     return mem::move(optb);
   }
 
   template <class F>
-  auto and_then(F&& op) -> ops::invoke_t<F(T&)> {
-    if (_1) return op(*_1);
+  auto and_then(this auto self, F&& op) -> ops::invoke_t<F(T&)> {
+    if (self._1) return op(*self._1);
     return {};
   }
 
-  auto or_else(auto&& f) -> Option<T&> {
-    if (_1) return *this;
+  auto or_else(this auto self, auto&& f) -> Option<T&> {
+    if (self._1) return mem::move(self);
     return f();
   }
 
   template <class F>
-  auto map(F&& f) -> Option<ops::invoke_t<F(T&)>> {
-    if (_1) return {f(*_1)};
+  auto map(this auto self, F&& f) -> Option<ops::invoke_t<F(T&)>> {
+    if (self._1) return {f(*self._1)};
     return {};
   }
 
   template <class U>
-  auto map_or(U default_val, auto&& f) -> U {
-    if (_1) return f(*_1);
+  auto map_or(this auto self, U default_val, auto&& f) -> U {
+    if (self._1) return f(*self._1);
     return mem::move(default_val);
   }
 
- public:
   // to result
   template <class E>
-  auto ok_or(E err) -> result::Result<T&, E> {
-    if (_1) return {*_1};
+  auto ok_or(this auto self, E err) -> result::Result<T&, E> {
+    if (self._1) return {*self._1};
     return {mem::move(err)};
   }
 
@@ -417,104 +427,6 @@ class Option<T&> {
       f.write_str("None()");
     } else {
       f.write_fmt("Some({})", *_1);
-    }
-  }
-};
-
-template <class T>
-class Option<const T&> {
-  const T* _ptr;
-
- public:
-  constexpr Option() noexcept : _ptr{nullptr} {}
-  constexpr Option(const T& val) noexcept : _ptr{&val} {}
-
-  constexpr auto is_some() const noexcept -> bool {
-    return _ptr != nullptr;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
-  constexpr explicit operator bool() const noexcept {
-    return _ptr != nullptr;
-  }
-
-  auto operator->() const -> const T* {
-    sfc::expect(_ptr != nullptr, "Option::operator->: None()");
-    return _ptr;
-  }
-
-  auto operator*() const -> const T& {
-    sfc::expect(_ptr != nullptr, "Option::deref: nullptr");
-    return *_ptr;
-  }
-
-  auto unwrap() const -> const T& {
-    sfc::expect(_ptr != nullptr, "Option::unwrap: nullptr");
-    return *_ptr;
-  }
-
-  auto expect(const auto& msg) const -> const T& {
-    sfc::expect(_ptr != nullptr, "Option::expect: {}", msg);
-    return *_ptr;
-  }
-
-  auto to_owned() const -> Option<T> {
-    if (!_ptr) return {};
-    return {*_ptr};
-  }
-
-  template <class U>
-  auto operator&(Option<U> optb) const -> Option<U> {
-    if (_ptr) return mem::move(optb);
-    return {};
-  }
-
-  auto operator|(Option<const T&> optb) const -> Option<const T&> {
-    if (_ptr) return *this;
-    return optb;
-  }
-
-  template <class F>
-  auto and_then(F&& op) const -> ops::invoke_t<F(const T&)> {
-    if (_ptr) return op(*_ptr);
-    return {};
-  }
-
-  auto or_else(auto&& f) const -> Option<const T&> {
-    if (_ptr) return *this;
-    return f();
-  }
-
-  template <class F>
-  auto map(F&& f) const -> Option<ops::invoke_t<F(const T&)>> {
-    if (_ptr) return {f(*_ptr)};
-    return {};
-  }
-
-  template <class U>
-  auto map_or(U default_val, auto&& f) const -> U {
-    if (_ptr) return f(*_ptr);
-    return mem::move(default_val);
-  }
-
- public:
-  // to result
-  template <class E>
-  auto ok_or(E err) const -> result::Result<const T&, E> {
-    if (_ptr) return {*_ptr};
-    return {mem::move(err)};
-  }
-
- public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    if (!_ptr) {
-      f.write_str("None()");
-    } else {
-      f.write_fmt("Some({})", *_ptr);
     }
   }
 };
