@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 4.0.0)
 
+project(sfc)
+
 # warning
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
 endif()
 
@@ -12,15 +14,10 @@ target_sources(sfc PRIVATE ${SRC})
 target_compile_features(sfc PUBLIC cxx_std_23)
 target_include_directories(sfc PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-# option: lto
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-  set_target_properties(sfc PROPERTIES INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
-# test (enable only if project is top level)
-if (SFC_ENABLE_TEST)
-  add_executable(sfc_test)
-  target_link_libraries(sfc_test sfc)
+# sfc-test
+if (${PROJECT_IS_TOP_LEVEL})
+  add_executable(sfc-test)
   file(GLOB_RECURSE SRC CONFIGURE_DEPENDS "**.cxx")
-  target_sources(sfc_test PRIVATE ${SRC})
+  target_sources(sfc-test PRIVATE ${SRC})
+  target_link_libraries(sfc-test sfc)
 endif()
