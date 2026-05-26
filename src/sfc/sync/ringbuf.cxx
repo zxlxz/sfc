@@ -8,7 +8,7 @@ SFC_TEST(push_pop_u32) {
   auto rb = RingBuf<u32>::with_capacity(4);
 
   const auto r0 = rb.pop();
-  sfc::expect_eq(r0, None{});
+  sfc::expect_eq(r0, Option{});
 
   for (auto i = 0U; i < 4U; ++i) {
     sfc::expect_true(rb.push(i).is_ok());
@@ -19,7 +19,7 @@ SFC_TEST(push_pop_u32) {
     sfc::expect_eq(val, Option{i});
   }
 
-  sfc::expect_eq(rb.pop(), None{});
+  sfc::expect_eq(rb.pop(), Option{});
 }
 
 SFC_TEST(push_overflow) {

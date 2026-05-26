@@ -9,7 +9,24 @@ namespace sfc::option {
 template <class T>
 concept Nullable = requires(const T& x) { x == nullptr; };
 
-struct None {
+template <class T = void>
+class Option;
+
+template <>
+class Option<void> {
+ public:
+  constexpr auto is_some() const noexcept -> bool {
+    return false;
+  }
+
+  constexpr auto is_none() const noexcept -> bool {
+    return true;
+  }
+
+  constexpr explicit operator bool() const noexcept {
+    return false;
+  }
+
   void fmt(auto& f) const {
     f.write_str("None()");
   }
@@ -24,7 +41,6 @@ class Option {
 
  public:
   constexpr Option() noexcept : _tag{0} {}
-  constexpr Option(None) noexcept : _tag{0} {}
   constexpr Option(T val) noexcept : _tag{1}, _1{mem::move(val)} {}
 
   constexpr Option(Option&& other) noexcept : _tag{0} {
@@ -131,7 +147,7 @@ class Option {
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
     if (_tag == 1) return mem::move(optb);
-    return None{};
+    return {};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
@@ -142,7 +158,7 @@ class Option {
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
     if (_tag == 1) return op(mem::move(_1));
-    return None{};
+    return {};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
@@ -153,7 +169,7 @@ class Option {
   template <class F>
   auto map(F&& f) && -> Option<ops::invoke_t<F(T)>> {
     if (_tag == 1) return f(mem::move(_1));
-    return None{};
+    return {};
   }
 
   template <class U>
@@ -187,7 +203,6 @@ class Option<T> {
 
  public:
   constexpr Option() noexcept : _1{} {}
-  constexpr Option(None) noexcept : _1{} {}
   constexpr Option(T val) noexcept : _1{mem::move(val)} {}
 
   constexpr auto is_some() const noexcept -> bool {
@@ -239,7 +254,7 @@ class Option<T> {
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
     if (_1 != nullptr) return mem::move(optb);
-    return None{};
+    return {};
   }
 
   auto operator|(Option<T> optb) && -> Option<T> {
@@ -250,7 +265,7 @@ class Option<T> {
   template <class F>
   auto and_then(F&& op) && -> ops::invoke_t<F(T)> {
     if (_1 != nullptr) return op(mem::move(_1));
-    return None{};
+    return {};
   }
 
   auto or_else(auto&& f) && -> Option<T> {
@@ -295,7 +310,6 @@ class Option<T&> {
 
  public:
   constexpr Option() noexcept : _1{nullptr} {}
-  constexpr Option(None) noexcept : _1{nullptr} {}
   constexpr Option(T& val) noexcept : _1{&val} {}
 
   constexpr auto is_some() const noexcept -> bool {
@@ -357,7 +371,7 @@ class Option<T&> {
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
     if (_1) return mem::move(optb);
-    return None{};
+    return {};
   }
 
   auto operator|(Option optb) const -> Option {
@@ -368,7 +382,7 @@ class Option<T&> {
   template <class F>
   auto and_then(F&& op) -> ops::invoke_t<F(T&)> {
     if (_1) return op(*_1);
-    return None{};
+    return {};
   }
 
   auto or_else(auto&& f) -> Option<T&> {
@@ -379,7 +393,7 @@ class Option<T&> {
   template <class F>
   auto map(F&& f) -> Option<ops::invoke_t<F(T&)>> {
     if (_1) return {f(*_1)};
-    return None{};
+    return {};
   }
 
   template <class U>
@@ -413,7 +427,6 @@ class Option<const T&> {
 
  public:
   constexpr Option() noexcept : _ptr{nullptr} {}
-  constexpr Option(None) noexcept : _ptr{nullptr} {}
   constexpr Option(const T& val) noexcept : _ptr{&val} {}
 
   constexpr auto is_some() const noexcept -> bool {
@@ -456,7 +469,7 @@ class Option<const T&> {
   template <class U>
   auto operator&(Option<U> optb) const -> Option<U> {
     if (_ptr) return mem::move(optb);
-    return None{};
+    return {};
   }
 
   auto operator|(Option<const T&> optb) const -> Option<const T&> {
@@ -467,7 +480,7 @@ class Option<const T&> {
   template <class F>
   auto and_then(F&& op) const -> ops::invoke_t<F(const T&)> {
     if (_ptr) return op(*_ptr);
-    return None{};
+    return {};
   }
 
   auto or_else(auto&& f) const -> Option<const T&> {
@@ -478,7 +491,7 @@ class Option<const T&> {
   template <class F>
   auto map(F&& f) const -> Option<ops::invoke_t<F(const T&)>> {
     if (_ptr) return {f(*_ptr)};
-    return None{};
+    return {};
   }
 
   template <class U>
@@ -512,7 +525,7 @@ Option(T) -> Option<T>;
 Option(const char*) -> Option<str::Str>;
 
 template <class T>
-auto operator==(const Option<T>& a, None) -> bool {
+auto operator==(const Option<T>& a, Option<void>) -> bool {
   return !a;
 }
 
@@ -526,6 +539,5 @@ auto operator==(const Option<A>& a, const Option<B>& b) -> bool {
 }  // namespace sfc::option
 
 namespace sfc {
-using option::None;
 using option::Option;
 }  // namespace sfc

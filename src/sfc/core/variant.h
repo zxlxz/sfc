@@ -193,14 +193,14 @@ class Variant {
   template <class U>
   auto as() const noexcept -> Option<const U&> {
     static constexpr auto IDX = variant::type_idx<U, T...>();
-    if (_tag._idx != IDX) return None{};
+    if (_tag._idx != IDX) return {};
     return idx_t<IDX>::operator[](_inn);
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
     static constexpr auto IDX = variant::type_idx<U, T...>();
-    if (_tag._idx != IDX) return None{};
+    if (_tag._idx != IDX) return {};
     return idx_t<IDX>::operator[](_inn);
   }
 

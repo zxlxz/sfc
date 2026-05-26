@@ -122,14 +122,14 @@ SFC_TEST(find) {
   const int v[] = {1, 2, 3, 2};
   const auto s = Slice{v};
   sfc::expect_eq(s.find(2), Option{1UZ});
-  sfc::expect_eq(s.find(4), None{});
+  sfc::expect_eq(s.find(4), Option{});
 }
 
 SFC_TEST(rfind) {
   const int v[] = {1, 2, 3, 2};
   const auto s = Slice{v};
   sfc::expect_eq(s.rfind(2), Option{3UZ});
-  sfc::expect_eq(s.rfind(4), None{});
+  sfc::expect_eq(s.rfind(4), Option{});
 }
 
 SFC_TEST(starts_with) {
