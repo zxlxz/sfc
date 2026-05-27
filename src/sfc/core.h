@@ -15,6 +15,7 @@
 #include "sfc/core/sync.h"
 #include "sfc/core/time.h"
 #include "sfc/core/iter.h"
+#include "sfc/core/test.h"
 #include "sfc/core/slice.h"
 #include "sfc/core/panic.h"
 

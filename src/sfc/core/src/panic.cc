@@ -38,7 +38,9 @@ static auto idx2str(u32 idx) -> Str {
   return Str{idx_ptr, 2};
 }
 
-void panic_imp(fmt::RawStr msg, SourceLoc loc) {
+void panic_imp(PanicInfo info) {
+  const auto [msg, loc] = info;
+
   char line_buf[8] = {};
   const auto line_str = fmt::Debug::format_int(line_buf, loc.line);
 
@@ -53,7 +55,7 @@ void panic_imp(fmt::RawStr msg, SourceLoc loc) {
     panic::writeln(" ", idx_str, ": ", fun_str);
   }
 
-  throw Error{loc};
+  throw info;
 }
 
 }  // namespace sfc::panic
