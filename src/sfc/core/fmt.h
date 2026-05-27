@@ -110,6 +110,11 @@ struct Formatter {
     }
   }
 
+  void write_arg(Spec spec, const auto& val) {
+    _spec = spec;
+    this->write_val(val);
+  }
+
   template <class... T>
   void write_fmt(const fmt::Args<T...>& args) {
     args.fmt(*this);

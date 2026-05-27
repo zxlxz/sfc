@@ -161,9 +161,8 @@ struct Args {
     _args.map([&, idx = 0U](const auto& val) mutable {
       const auto fill = _fmts._fills[idx];
       const auto spec = _fmts._specs[idx];
-      f._spec = spec;
       f.write_str({fill._ptr, fill._len});
-      f.write_val(val);
+      f.write_arg(spec, val);
       ++idx;
     });
 

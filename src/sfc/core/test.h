@@ -26,10 +26,7 @@ struct AssertExpr {
 };
 
 [[noreturn]] void assert_failed(const auto& msg, SourceLoc loc = SourceLoc::current()) {
-  char buf[1024];
-  auto out = fmt::SBuf{buf};
-  fmt::write(out, "assertion failed: {}", msg);
-  panic::panic_imp(panic::PanicInfo{{out._ptr, out._len}, loc});
+  panic::panic_fmt(fmt::Args{"assertion failed: {}", msg}, loc);
 }
 
 void assert_fmt(AssertCond cond, const fmt::Fmts& fmts, const auto&... args) {
