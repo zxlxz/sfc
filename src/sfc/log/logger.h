@@ -53,14 +53,14 @@ class Logger {
     _backend.push(Record{time, level, message});
   }
 
-  void write_fmt(Level level, const fmt::Fmts& fmts, const auto&... args) {
+  void write_fmt(Level level, const auto& args) {
     if (level < _level) {
       return;
     }
 
     char buf[1024];
     auto out = fmt::SBuf{buf};
-    fmt::write(out, fmts, args...);
+    fmt::Formatter{out}.write_val(args);
     this->write_str(level, out.as_str());
   }
 };

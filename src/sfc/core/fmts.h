@@ -8,8 +8,9 @@ struct RawStr {
   const char* _ptr;
   usize _len;
 
-  constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
+  consteval RawStr() : _ptr{nullptr}, _len{0} {}
   consteval RawStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
+  constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
 
   consteval auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
@@ -125,44 +126,73 @@ consteval auto Spec::from(RawStr s) noexcept -> Spec {
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
   RawStr _str;
-  u32 _cnt = 0;
-  u32 _idxs[kMaxLen] = {};
-  u32 _ends[kMaxLen] = {};
+  usize _cnt = 0;
+  RawStr _fills[kMaxLen] = {};
   Spec _specs[kMaxLen] = {};
+  RawStr _tail = {};
 
  public:
   consteval Fmts(const char* s) noexcept : _str{s} {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     auto p = 0U;
-    for (auto i = 0U; i < kMaxLen; ++i) {
+    for (_cnt = 0U; _cnt < kMaxLen; ++_cnt) {
       const auto a = _str.find('{', p);
       const auto b = _str.find('}', a);
       if (b == _str._len) break;
-      _idxs[_cnt] = a;
-      _ends[_cnt] = b;
+      _fills[_cnt] = RawStr{_str._ptr + p, a - p};
       _specs[_cnt] = Spec::from({_str._ptr + a + 1, b - a - 1});
       p = b + 1;
-      _cnt += 1;
     }
+    _tail = RawStr{_str._ptr + p, _str._len - p};
 #endif
   }
+};
 
-  struct Item {
-    RawStr _fill;
-    Spec _spec;
-  };
-  auto operator[](u32 idx) const -> Item {
-    if (idx >= _cnt) return {"", {}};
-    const auto a = idx == 0 ? 0UL : _ends[idx - 1] + 1;
-    const auto b = _idxs[idx];
-    const auto s = RawStr{_str._ptr + a, b - a};
-    return {s, _specs[idx]};
-  }
+template <class... T>
+struct Args {
+  Fmts _fmts;
+  Tuple<const T&...> _args;
 
-  auto tail() const -> RawStr {
-    const auto i = _cnt == 0 ? 0U : _ends[_cnt - 1] + 1;
-    return {_str._ptr + i, _str._len - i};
+ public:
+  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
+
+  void fmt(auto& f) const {
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+    _args.map([&, idx = 0U](const auto& val) mutable {
+      const auto fill = _fmts._fills[idx];
+      const auto spec = _fmts._specs[idx];
+      f._spec = spec;
+      f.write_str({fill._ptr, fill._len});
+      f.write_val(val);
+      ++idx;
+    });
+
+    const auto s = _fmts._tail;
+    f.write_str({s._ptr, s._len});
+#endif
   }
 };
+
+template <class... T>
+Args(const Fmts& fmts, const T&... args) -> Args<T...>;
+
+struct SBuf {
+  char* const _ptr;
+  usize const _cap;
+  usize _len = 0;
+
+ public:
+  template <usize N>
+  SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
+
+  void clear() {
+    _len = 0;
+  }
+
+  auto as_str() const -> str::Str;
+  void write_str(str::Str s);
+};
+
+void write(auto&& out, const fmt::Fmts& fmts, const auto&... args);
 
 }  // namespace sfc::fmt

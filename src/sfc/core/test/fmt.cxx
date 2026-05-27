@@ -185,4 +185,13 @@ SFC_TEST(cstr) {
   sfc::expect_eq(format("{}", "hello"), "hello");
 }
 
+SFC_TEST(array) {
+  int a[] = {1, 2, 3};
+  sfc::expect_eq(format("{:?}", a), "[1, 2, 3]");
+
+  char b[] = {'a', 'b', 'c'};
+  sfc::expect_eq(format("{:?}", b), "abc");
+}
+
+
 }  // namespace sfc::fmt::test

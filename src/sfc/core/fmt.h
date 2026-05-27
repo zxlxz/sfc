@@ -5,30 +5,6 @@
 
 namespace sfc::fmt {
 
-struct SBuf {
-  char* const _ptr;
-  usize const _cap;
-  usize _len = 0;
-
- public:
-  template <usize N>
-  SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
-
-  auto as_str() const -> Str {
-    return {_ptr, _len};
-  }
-
-  void clear() {
-    _len = 0;
-  }
-
-  void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > _cap) return;
-    ptr::copy_nonoverlapping(s._ptr, _ptr + _len, s._len);
-    _len += s._len;
-  }
-};
-
 struct Debug {
   static auto format_int(Slice<char> buf, auto val, char type = 0) -> Str;
   static auto format_ptr(Slice<char> buf, auto val, char type = 0) -> Str;
@@ -83,7 +59,7 @@ struct Debug {
     if constexpr (requires { to_str(val); }) {
       f.write_str(to_str(val));
     } else {
-      f.write_fmt("{}({})", kTypeName, __builtin_bit_cast(I, val));
+      f.write_fmt(fmt::Args{"{}({})", kTypeName, __builtin_bit_cast(I, val)});
     }
   }
 
@@ -123,39 +99,20 @@ struct Formatter {
 
   template <class T>
   void write_val(const T& val) {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
     if constexpr (__is_class(T)) {
       val.fmt(*this);
-    } else if constexpr (requires { Str{val}; }) {
-      Str{val}.fmt(*this);
+    } else if constexpr (requires { str::Str{val}; }) {
+      this->pad(Str{val});
     } else if constexpr (requires { Slice{val}; }) {
       Slice{val}.fmt(*this);
     } else {
-      fmt::Debug::fmt(val, *this);
+      Debug::fmt(val, *this);
     }
-#endif
   }
 
-  void write_arg(Spec spec, const auto& arg) {
-    const auto old_spec = _spec;
-    _spec = spec;
-    this->write_val(arg);
-    _spec = old_spec;
-  }
-
-  void write_fmt(const fmt::Fmts& fmts, const auto&... args) {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    const auto u = tuple::bind(args...);
-    u.map([&, idx = 0U](const auto& val) mutable {
-      const auto [fill, spec] = fmts[idx];
-      this->write_str({fill._ptr, fill._len});
-      this->write_arg(spec, val);
-      ++idx;
-    });
-
-    const auto s = fmts.tail();
-    this->write_str({s._ptr, s._len});
-#endif
+  template <class... T>
+  void write_fmt(const fmt::Args<T...>& args) {
+    args.fmt(*this);
   }
 
   void pad(Str s) {
@@ -415,18 +372,19 @@ struct Formatter<W>::DebugStruct {
   }
 };
 
+// macro: write!(out, arg...)
 void write(auto&& out, const fmt::Fmts& fmts, const auto&... args) {
-  Formatter{out}.write_fmt(fmts, args...);
+  Formatter{out}.write_val(fmt::Args{fmts, args...});
 }
 
 }  // namespace sfc::fmt
 
 namespace sfc::panic {
-[[noreturn]] void panic_fmt(const XFmt& fmts, const auto&... args) {
-  char buf[1024];
-  auto out = fmt::SBuf{buf};
-  fmt::write(out, fmts._fmts, args...);
-  const auto s = fmt::RawStr{out._ptr, out._len};
-  panic::panic_imp(s, fmts._loc);
+
+auto PanicInfo::from_args(const auto& args, SourceLoc loc) -> PanicInfo {
+  auto buf = PanicInfo::sbuf();
+  fmt::Formatter{buf}.write_val(args);
+  return PanicInfo{{buf._ptr, buf._len}, loc};
 }
+
 }  // namespace sfc::panic

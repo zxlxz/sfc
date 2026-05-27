@@ -93,7 +93,7 @@ class [[nodiscard]] Box {
     if (_ptr == nullptr) {
       f.write_str("Box()");
     } else {
-      f.write_fmt("Box({})", *_ptr);
+      f.write_fmt(fmt::Args{"Box({})", *_ptr});
     }
   }
 };

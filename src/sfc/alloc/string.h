@@ -128,9 +128,10 @@ class [[nodiscard]] String {
 
 auto format(const fmt::Fmts& fmts, const auto&... args) -> String {
   auto out = String{};
-  fmt::Formatter{out}.write_fmt(fmts, args...);
+  fmt::write(out, fmts, args...);
   return out;
 }
+
 }  // namespace sfc::string
 
 namespace sfc::fmt {

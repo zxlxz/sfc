@@ -12,7 +12,7 @@ struct Cnt {
   }
 
   void fmt(auto& f) const {
-    f.write_fmt("({},{})", ctor, dtor);
+    f.write_fmt(fmt::Args{"({},{})", ctor, dtor});
   }
 };
 

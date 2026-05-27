@@ -70,7 +70,7 @@ struct GTestCase {
   }
 
   void fmt(auto& f) const {
-    f.write_fmt("{}.{}", _test.mod(), _test.name());
+    f.write_fmt(fmt::Args{"{}.{}", _test.mod(), _test.name()});
   }
 };
 
@@ -306,15 +306,15 @@ auto gtest_format_xml() -> String {
   auto buf = String{};
   auto out = fmt::Formatter{buf};
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-  out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt);
+  out.write_fmt(fmt::Args{"<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt});
   for (auto& suite : all_suites) {
     auto tests = suite.tests();
-    out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
+    out.write_fmt(fmt::Args{"  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len()});
     for (auto& test : tests) {
       const auto name = test.name();
       const auto file = test._loc.file;
       const auto line = test._loc.line;
-      out.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, Str{file}, line);
+      out.write_fmt(fmt::Args{"    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, Str{file}, line});
     }
     out.write_str("  </testsuite>\n");
   }

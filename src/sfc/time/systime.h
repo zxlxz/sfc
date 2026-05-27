@@ -30,7 +30,7 @@ struct SystemTime {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.write_fmt("{}us", _micros);
+    f.write_fmt(fmt::Args{"{}us", _micros});
   }
 };
 

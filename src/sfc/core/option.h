@@ -2,7 +2,7 @@
 
 #include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
-#include "sfc/core/panic.h"
+#include "sfc/core/test.h"
 
 namespace sfc::option {
 
@@ -183,7 +183,7 @@ class Option {
     if (_tag == 0) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", _1);
+      f.write_fmt(fmt::Args{"Some({})", _1});
     }
   }
 };
@@ -291,7 +291,7 @@ class Option<T> {
     if (_1 == nullptr) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", _1);
+      f.write_fmt(fmt::Args{"Some({})", _1});
     }
   }
 };
@@ -408,7 +408,7 @@ class Option<T&> {
     if (!_1) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", *_1);
+      f.write_fmt(fmt::Args{"Some({})", *_1});
     }
   }
 };

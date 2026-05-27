@@ -3,9 +3,9 @@
 #include "sfc/core/ops.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"
+#include "sfc/core/test.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/tuple.h"
-#include "sfc/core/panic.h"
 
 namespace sfc::slice {
 
