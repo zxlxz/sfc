@@ -18,234 +18,234 @@ SFC_TEST(constexpr) {
 
 SFC_TEST(index) {
   const auto s = Str{"01"};
-  sfc::expect_eq(s[0], '0');
-  sfc::expect_eq(s[1], '1');
-  sfc::expect_eq(s[2], '\0');
+  sfc::assert_eq(s[0], '0');
+  sfc::assert_eq(s[1], '1');
+  sfc::assert_eq(s[2], '\0');
 
-  sfc::expect_eq(s[{0, 0}], "");
-  sfc::expect_eq(s[{0, 2}], "01");
-  sfc::expect_eq(s[{0, 3}], "01");
+  sfc::assert_eq(s[{0, 0}], "");
+  sfc::assert_eq(s[{0, 2}], "01");
+  sfc::assert_eq(s[{0, 3}], "01");
 
-  sfc::expect_eq(s[{1, 2}], "1");
-  sfc::expect_eq(s[{2, 2}], "");
-  sfc::expect_eq(s[{3, 2}], "");
+  sfc::assert_eq(s[{1, 2}], "1");
+  sfc::assert_eq(s[{2, 2}], "");
+  sfc::assert_eq(s[{3, 2}], "");
 
-  sfc::expect_eq(s[{0, $}], "01");
-  sfc::expect_eq(s[{1, $}], "1");
-  sfc::expect_eq(s[{2, $}], "");
+  sfc::assert_eq(s[{0, $}], "01");
+  sfc::assert_eq(s[{1, $}], "1");
+  sfc::assert_eq(s[{2, $}], "");
 }
 
 SFC_TEST(cmp) {
   const auto s = Str{"abc"};
-  sfc::expect_eq(s, "abc");
-  sfc::expect_ne(s, "ab");
-  sfc::expect_ne(s, "abcd");
+  sfc::assert_eq(s, "abc");
+  sfc::assert_ne(s, "ab");
+  sfc::assert_ne(s, "abcd");
 }
 
 SFC_TEST(fmt) {
-  sfc::expect_eq(string::format("{}", ""), "");
-  sfc::expect_eq(string::format("{#?}", Str{""}), R"("")");
+  sfc::assert_eq(string::format("{}", ""), "");
+  sfc::assert_eq(string::format("{#?}", Str{""}), R"("")");
 
-  sfc::expect_eq(string::format("{}", "abc"), "abc");
-  sfc::expect_eq(string::format("{#?}", Str{"abc"}), R"("abc")");
+  sfc::assert_eq(string::format("{}", "abc"), "abc");
+  sfc::assert_eq(string::format("{#?}", Str{"abc"}), R"("abc")");
 }
 
 SFC_TEST(find) {
   const auto s = Str{"ababcd"};
 
   // char
-  sfc::expect_eq(s.find('a'), Option{0UZ});
-  sfc::expect_eq(s.find('d'), Option{5UZ});
-  sfc::expect_eq(s.find('x'), Option{});
+  sfc::assert_eq(s.find('a'), Option{0UZ});
+  sfc::assert_eq(s.find('d'), Option{5UZ});
+  sfc::assert_eq(s.find('x'), Option{});
 
   // str
-  sfc::expect_eq(s.find("ab"), Option{0UZ});
-  sfc::expect_eq(s.find("cd"), Option{4UZ});
-  sfc::expect_eq(s.find(""), Option{0UZ});
-  sfc::expect_eq(s.find("ababcd"), Option{0UZ});
-  sfc::expect_eq(s.find("ababcdx"), Option{});
+  sfc::assert_eq(s.find("ab"), Option{0UZ});
+  sfc::assert_eq(s.find("cd"), Option{4UZ});
+  sfc::assert_eq(s.find(""), Option{0UZ});
+  sfc::assert_eq(s.find("ababcd"), Option{0UZ});
+  sfc::assert_eq(s.find("ababcdx"), Option{});
 
   // pred
-  sfc::expect_eq(s.find([](char c) { return c == 'a'; }), Option{0UZ});
-  sfc::expect_eq(s.find([](char c) { return c == 'd'; }), Option{5UZ});
-  sfc::expect_eq(s.find([](char c) { return c == 'x'; }), Option{});
+  sfc::assert_eq(s.find([](char c) { return c == 'a'; }), Option{0UZ});
+  sfc::assert_eq(s.find([](char c) { return c == 'd'; }), Option{5UZ});
+  sfc::assert_eq(s.find([](char c) { return c == 'x'; }), Option{});
 
   // empty str
-  sfc::expect_eq(Str{}.find('a'), Option{});
-  sfc::expect_eq(Str{}.find(""), Option{});
+  sfc::assert_eq(Str{}.find('a'), Option{});
+  sfc::assert_eq(Str{}.find(""), Option{});
 }
 
 SFC_TEST(rfind) {
   const auto s = Str{"abcdcd"};
 
   // char
-  sfc::expect_eq(s.rfind('a'), Option{0UZ});
-  sfc::expect_eq(s.rfind('d'), Option{5UZ});
-  sfc::expect_eq(s.rfind('x'), Option{});
+  sfc::assert_eq(s.rfind('a'), Option{0UZ});
+  sfc::assert_eq(s.rfind('d'), Option{5UZ});
+  sfc::assert_eq(s.rfind('x'), Option{});
 
   // str
-  sfc::expect_eq(s.rfind("ab"), Option{0UZ});
-  sfc::expect_eq(s.rfind("cd"), Option{4UZ});
-  sfc::expect_eq(s.rfind(""), Option{6UZ});
-  sfc::expect_eq(s.rfind("abcdcd"), Option{0UZ});
-  sfc::expect_eq(s.rfind("xabcdcd"), Option{});
+  sfc::assert_eq(s.rfind("ab"), Option{0UZ});
+  sfc::assert_eq(s.rfind("cd"), Option{4UZ});
+  sfc::assert_eq(s.rfind(""), Option{6UZ});
+  sfc::assert_eq(s.rfind("abcdcd"), Option{0UZ});
+  sfc::assert_eq(s.rfind("xabcdcd"), Option{});
 
   // pred
-  sfc::expect_eq(s.rfind([](char c) { return c == 'a'; }), Option{0UZ});
-  sfc::expect_eq(s.rfind([](char c) { return c == 'd'; }), Option{5UZ});
-  sfc::expect_eq(s.rfind([](char c) { return c == 'x'; }), Option{});
+  sfc::assert_eq(s.rfind([](char c) { return c == 'a'; }), Option{0UZ});
+  sfc::assert_eq(s.rfind([](char c) { return c == 'd'; }), Option{5UZ});
+  sfc::assert_eq(s.rfind([](char c) { return c == 'x'; }), Option{});
 
   // empty str
-  sfc::expect_eq(Str{}.rfind('a'), Option{});
-  sfc::expect_eq(Str{}.rfind(""), Option{});
+  sfc::assert_eq(Str{}.rfind('a'), Option{});
+  sfc::assert_eq(Str{}.rfind(""), Option{});
 }
 
 SFC_TEST(contains) {
   const auto s = Str{"ababcd"};
 
   // char
-  sfc::expect_true(s.contains('a'));
-  sfc::expect_false(s.contains('x'));
+  sfc::assert_eq(s.contains('a'), true);
+  sfc::assert_eq(s.contains('x'), false);
 
   // str
-  sfc::expect_true(s.contains("ab"));
-  sfc::expect_false(s.contains("xy"));
+  sfc::assert_eq(s.contains("ab"), true);
+  sfc::assert_eq(s.contains("xy"), false);
 
   // pred
-  sfc::expect_true(s.contains([](char c) { return c == 'a'; }));
-  sfc::expect_false(s.contains([](char c) { return c == 'x'; }));
+  sfc::assert_eq(s.contains([](char c) { return c == 'a'; }), true);
+  sfc::assert_eq(s.contains([](char c) { return c == 'x'; }), false);
 
   // empty str
-  sfc::expect_eq(Str{}.contains('a'), false);
-  sfc::expect_eq(Str{}.contains(""), false);
+  sfc::assert_eq(Str{}.contains('a'), false);
+  sfc::assert_eq(Str{}.contains(""), false);
 }
 
 SFC_TEST(starts_with) {
   const auto s = Str{"ababcd"};
 
   // char
-  sfc::expect_true(s.starts_with('a'));
-  sfc::expect_false(s.starts_with('b'));
+  sfc::assert_eq(s.starts_with('a'), true);
+  sfc::assert_eq(s.starts_with('b'), false);
 
   // str
-  sfc::expect_true(s.starts_with("ab"));
-  sfc::expect_false(s.starts_with("bc"));
+  sfc::assert_eq(s.starts_with("ab"), true);
+  sfc::assert_eq(s.starts_with("bc"), false);
 
   // pred
-  sfc::expect_true(s.starts_with([](char c) { return c == 'a'; }));
-  sfc::expect_false(s.starts_with([](char c) { return c == 'b'; }));
+  sfc::assert_eq(s.starts_with([](char c) { return c == 'a'; }), true);
+  sfc::assert_eq(s.starts_with([](char c) { return c == 'b'; }), false);
 
   // empty str
-  sfc::expect_eq(Str{}.starts_with('a'), false);
-  sfc::expect_eq(Str{}.starts_with(""), false);
+  sfc::assert_eq(Str{}.starts_with('a'), false);
+  sfc::assert_eq(Str{}.starts_with(""), false);
 }
 
 SFC_TEST(ends_with) {
   const auto s = Str{"ababcd"};
 
   // char
-  sfc::expect_true(s.ends_with('d'));
-  sfc::expect_false(s.ends_with('c'));
+  sfc::assert_eq(s.ends_with('d'), true);
+  sfc::assert_eq(s.ends_with('c'), false);
 
   // str
-  sfc::expect_true(s.ends_with("bcd"));
-  sfc::expect_false(s.ends_with("bc"));
+  sfc::assert_eq(s.ends_with("bcd"), true);
+  sfc::assert_eq(s.ends_with("bc"), false);
 
   // pred
-  sfc::expect_true(s.ends_with([](char c) { return c == 'd'; }));
-  sfc::expect_false(s.ends_with([](char c) { return c == 'c'; }));
+  sfc::assert_eq(s.ends_with([](char c) { return c == 'd'; }), true);
+  sfc::assert_eq(s.ends_with([](char c) { return c == 'c'; }), false);
 
   // empty str
-  sfc::expect_eq(Str{}.ends_with('a'), false);
-  sfc::expect_eq(Str{}.ends_with(""), false);
+  sfc::assert_eq(Str{}.ends_with('a'), false);
+  sfc::assert_eq(Str{}.ends_with(""), false);
 }
 
 SFC_TEST(trim) {
   {
     const auto s = Str{"  \t\nabc  \n\t "};
-    sfc::expect_eq(s.trim_start(), "abc  \n\t ");
-    sfc::expect_eq(s.trim_end(), "  \t\nabc");
-    sfc::expect_eq(s.trim(), "abc");
+    sfc::assert_eq(s.trim_start(), "abc  \n\t ");
+    sfc::assert_eq(s.trim_end(), "  \t\nabc");
+    sfc::assert_eq(s.trim(), "abc");
   }
 
   {
     const auto s = Str{"xxxyabczyxx"};
-    sfc::expect_eq(s.trim_start_matches([](char c) { return c == 'x'; }), "yabczyxx");
-    sfc::expect_eq(s.trim_end_matches([](char c) { return c == 'x'; }), "xxxyabczy");
-    sfc::expect_eq(s.trim_matches([](char c) { return c == 'x' || c == 'y'; }), "abcz");
+    sfc::assert_eq(s.trim_start_matches([](char c) { return c == 'x'; }), "yabczyxx");
+    sfc::assert_eq(s.trim_end_matches([](char c) { return c == 'x'; }), "xxxyabczy");
+    sfc::assert_eq(s.trim_matches([](char c) { return c == 'x' || c == 'y'; }), "abcz");
   }
 
   {
     const auto s = Str{};
-    sfc::expect_eq(s.trim_start(), "");
-    sfc::expect_eq(s.trim_end(), "");
-    sfc::expect_eq(s.trim(), "");
+    sfc::assert_eq(s.trim_start(), "");
+    sfc::assert_eq(s.trim_end(), "");
+    sfc::assert_eq(s.trim(), "");
   }
 }
 
 SFC_TEST(parse_uint) {
   // u32
-  sfc::expect_eq(Str{"0"}.parse<u64>(), Option{0U});
-  sfc::expect_eq(Str{"123"}.parse<u64>(), Option{123U});
-  sfc::expect_eq(Str{"4294967295"}.parse<u32>(), Option{0xFFFFFFFFU});
+  sfc::assert_eq(Str{"0"}.parse<u64>(), Option{0U});
+  sfc::assert_eq(Str{"123"}.parse<u64>(), Option{123U});
+  sfc::assert_eq(Str{"4294967295"}.parse<u32>(), Option{0xFFFFFFFFU});
 
   // hex
-  sfc::expect_eq(Str{"0xff"}.parse<u64>(), Option{0xFFU});
-  sfc::expect_eq(Str{"0xFF"}.parse<u64>(), Option{0xFFU});
-  sfc::expect_eq(Str{"0b1010"}.parse<u64>(), Option{0xAU});
-  sfc::expect_eq(Str{"0755"}.parse<u64>(), Option{0755U});
+  sfc::assert_eq(Str{"0xff"}.parse<u64>(), Option{0xFFU});
+  sfc::assert_eq(Str{"0xFF"}.parse<u64>(), Option{0xFFU});
+  sfc::assert_eq(Str{"0b1010"}.parse<u64>(), Option{0xAU});
+  sfc::assert_eq(Str{"0755"}.parse<u64>(), Option{0755U});
 
   // Invalid cases
-  sfc::expect_eq(Str{""}.parse<u64>(), Option{});
-  sfc::expect_eq(Str{"-123"}.parse<u64>(), Option{});
-  sfc::expect_eq(Str{"abc"}.parse<u64>(), Option{});
+  sfc::assert_eq(Str{""}.parse<u64>(), Option{});
+  sfc::assert_eq(Str{"-123"}.parse<u64>(), Option{});
+  sfc::assert_eq(Str{"abc"}.parse<u64>(), Option{});
 }
 
 SFC_TEST(parse_sint) {
   // i32
-  sfc::expect_eq(Str{"0"}.parse<i32>(), Option{0L});
-  sfc::expect_eq(Str{"123"}.parse<i32>(), Option{123L});
-  sfc::expect_eq(Str{"-123"}.parse<i32>(), Option{-123L});
-  sfc::expect_eq(Str{"-2147483648"}.parse<i32>(), Option{-2147483648});
-  sfc::expect_eq(Str{"2147483647"}.parse<i32>(), Option{2147483647});
+  sfc::assert_eq(Str{"0"}.parse<i32>(), Option{0L});
+  sfc::assert_eq(Str{"123"}.parse<i32>(), Option{123L});
+  sfc::assert_eq(Str{"-123"}.parse<i32>(), Option{-123L});
+  sfc::assert_eq(Str{"-2147483648"}.parse<i32>(), Option{-2147483648});
+  sfc::assert_eq(Str{"2147483647"}.parse<i32>(), Option{2147483647});
 
   // i32 overflow
-  sfc::expect_eq(Str{"-21474836481"}.parse<i32>(), Option{});
-  sfc::expect_eq(Str{"21474836471"}.parse<i32>(), Option{});
+  sfc::assert_eq(Str{"-21474836481"}.parse<i32>(), Option{});
+  sfc::assert_eq(Str{"21474836471"}.parse<i32>(), Option{});
 
   // i64
-  sfc::expect_eq(Str{"-21474836481"}.parse<i64>(), Option{-21474836481});
-  sfc::expect_eq(Str{"21474836471"}.parse<i64>(), Option{21474836471});
+  sfc::assert_eq(Str{"-21474836481"}.parse<i64>(), Option{-21474836481});
+  sfc::assert_eq(Str{"21474836471"}.parse<i64>(), Option{21474836471});
 
   // hex
-  sfc::expect_eq(Str{"0xff"}.parse<i64>(), Option{0xFFL});
-  sfc::expect_eq(Str{"-0xff"}.parse<i64>(), Option{-0xFFL});
+  sfc::assert_eq(Str{"0xff"}.parse<i64>(), Option{0xFFL});
+  sfc::assert_eq(Str{"-0xff"}.parse<i64>(), Option{-0xFFL});
 
   // Invalid cases
-  sfc::expect_eq(Str{""}.parse<i64>(), Option{});
-  sfc::expect_eq(Str{"abc"}.parse<i64>(), Option{});
+  sfc::assert_eq(Str{""}.parse<i64>(), Option{});
+  sfc::assert_eq(Str{"abc"}.parse<i64>(), Option{});
 }
 
 SFC_TEST(parse_flt) {
-  sfc::expect_eq(Str{"3.14"}.parse<f64>(), Option{3.14});
-  sfc::expect_eq(Str{"-3.14"}.parse<f64>(), Option{-3.14});
-  sfc::expect_eq(Str{"0.0"}.parse<f64>(), Option{0.0});
-  sfc::expect_eq(Str{"123.456"}.parse<f64>(), Option{123.456});
-  sfc::expect_eq(Str{"1.5"}.parse<f32>(), Option{1.5F});
+  sfc::assert_eq(Str{"3.14"}.parse<f64>(), Option{3.14});
+  sfc::assert_eq(Str{"-3.14"}.parse<f64>(), Option{-3.14});
+  sfc::assert_eq(Str{"0.0"}.parse<f64>(), Option{0.0});
+  sfc::assert_eq(Str{"123.456"}.parse<f64>(), Option{123.456});
+  sfc::assert_eq(Str{"1.5"}.parse<f32>(), Option{1.5F});
 
   // Invalid cases
-  sfc::expect_eq(Str{""}.parse<f64>(), Option{});
-  sfc::expect_eq(Str{"abc"}.parse<f64>(), Option{});
+  sfc::assert_eq(Str{""}.parse<f64>(), Option{});
+  sfc::assert_eq(Str{"abc"}.parse<f64>(), Option{});
 }
 
 SFC_TEST(parse_exp) {
-  sfc::expect_eq(Str{"1e10"}.parse<f64>(), Option{1e10});
-  sfc::expect_eq(Str{"1E10"}.parse<f64>(), Option{1E10});
-  sfc::expect_eq(Str{"1.5e2"}.parse<f64>(), Option{150.0});
-  sfc::expect_eq(Str{"1.5e-2"}.parse<f64>(), Option{0.015});
-  sfc::expect_eq(Str{"-1.5e2"}.parse<f64>(), Option{-150.0});
-  sfc::expect_eq(Str{"-1.5e-2"}.parse<f64>(), Option{-0.015});
-  sfc::expect_eq(Str{"1e-10"}.parse<f64>(), Option{1e-10});
+  sfc::assert_eq(Str{"1e10"}.parse<f64>(), Option{1e10});
+  sfc::assert_eq(Str{"1E10"}.parse<f64>(), Option{1E10});
+  sfc::assert_eq(Str{"1.5e2"}.parse<f64>(), Option{150.0});
+  sfc::assert_eq(Str{"1.5e-2"}.parse<f64>(), Option{0.015});
+  sfc::assert_eq(Str{"-1.5e2"}.parse<f64>(), Option{-150.0});
+  sfc::assert_eq(Str{"-1.5e-2"}.parse<f64>(), Option{-0.015});
+  sfc::assert_eq(Str{"1e-10"}.parse<f64>(), Option{1e-10});
 }
 
 }  // namespace sfc::str::test

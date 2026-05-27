@@ -13,14 +13,14 @@ SFC_TEST(s1r1) {
   auto recv_sum = 0U;
   auto sender = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      sfc::expect_true(chan.send(i).is_ok());
+      sfc::assert_eq(chan.send(i).is_ok(), true);
     }
   };
 
   auto receiver = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
       auto val = chan.recv();
-      sfc::expect_eq(val, Option{i});
+      sfc::assert_eq(val, Option{i});
       recv_cnt += 1;
       recv_sum += *val;
     }
@@ -31,8 +31,8 @@ SFC_TEST(s1r1) {
     auto r1 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt, CNT);
-  sfc::expect_eq(recv_sum, CNT * (CNT - 1) / 2);
+  sfc::assert_eq(recv_cnt, CNT);
+  sfc::assert_eq(recv_sum, CNT * (CNT - 1) / 2);
 }
 
 SFC_TEST(s1r1_try) {
@@ -41,20 +41,20 @@ SFC_TEST(s1r1_try) {
   // try_recv returns empty when channel is empty
   {
     auto val = chan.try_recv();
-    sfc::expect_eq(val, Option<u32>{});
+    sfc::assert_eq(val, Option<u32>{});
   }
 
   // try_recv returns value when available
   {
-    sfc::expect_true(chan.send(7).is_ok());
+    sfc::assert_eq(chan.send(7).is_ok(), true);
     auto val = chan.try_recv();
-    sfc::expect_eq(val, Option{7U});
+    sfc::assert_eq(val, Option{7U});
   }
 
   // try_recv returns empty after drain
   {
     auto val = chan.try_recv();
-    sfc::expect_eq(val, Option<u32>{});
+    sfc::assert_eq(val, Option<u32>{});
   }
 }
 
@@ -66,14 +66,14 @@ SFC_TEST(s2r1) {
   auto recv_sum = 0;
   auto sender = [&](int k) {
     for (auto i = 0; i < CNT; ++i) {
-      sfc::expect_true(chan.send(k * i).is_ok());
+      sfc::assert_eq(chan.send(k * i).is_ok(), true);
     }
   };
 
   auto receiver = [&]() {
     for (auto i = 0; i < 2 * CNT; ++i) {
       auto val = chan.recv();
-      sfc::expect_true(val.is_some());
+      sfc::assert_eq(val.is_some(), true);
       recv_cnt += 1;
       recv_sum += *val;
     }
@@ -85,8 +85,8 @@ SFC_TEST(s2r1) {
     auto r1 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt, 2 * u32{CNT});
-  sfc::expect_eq(recv_sum, 0);
+  sfc::assert_eq(recv_cnt, 2 * u32{CNT});
+  sfc::assert_eq(recv_sum, 0);
 }
 
 SFC_TEST(s1r2) {
@@ -97,7 +97,7 @@ SFC_TEST(s1r2) {
   auto recv_sum = Atomic{0U};
   auto sender = [&]() {
     for (auto i = 0U; i < 2 * CNT; ++i) {
-      sfc::expect_true(chan.send(1U).is_ok());
+      sfc::assert_eq(chan.send(1U).is_ok(), true);
     }
   };
 
@@ -115,8 +115,8 @@ SFC_TEST(s1r2) {
     auto s1 = thread::spawn([&]() { sender(); });
   }
 
-  sfc::expect_eq(recv_cnt.load(), 2 * CNT);
-  sfc::expect_eq(recv_sum.load(), 2 * CNT);
+  sfc::assert_eq(recv_cnt.load(), 2 * CNT);
+  sfc::assert_eq(recv_sum.load(), 2 * CNT);
 }
 
 SFC_TEST(s2r2) {
@@ -127,14 +127,14 @@ SFC_TEST(s2r2) {
   auto recv_sum = Atomic{0};
   auto sender = [&](int k) {
     for (auto i = 0; i < CNT; ++i) {
-      sfc::expect_true(chan.send(k * i).is_ok());
+      sfc::assert_eq(chan.send(k * i).is_ok(), true);
     }
   };
 
   auto receiver = [&]() {
     for (auto i = 0; i < CNT; ++i) {
       auto val = chan.recv();
-      sfc::expect_true(val.is_some());
+      sfc::assert_eq(val.is_some(), true);
       recv_cnt.fetch_add(1);
       recv_sum.fetch_add(*val);
     }
@@ -147,8 +147,8 @@ SFC_TEST(s2r2) {
     auto c2 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt.load(), 2 * u32{CNT});
-  sfc::expect_eq(recv_sum.load(), 0);
+  sfc::assert_eq(recv_cnt.load(), 2 * u32{CNT});
+  sfc::assert_eq(recv_sum.load(), 0);
 }
 
 }  // namespace sfc::sync::mpmc::test

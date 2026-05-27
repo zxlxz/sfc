@@ -7,106 +7,102 @@ SFC_TEST(fold) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto sum = Slice{v}.iter().fold(0, [](auto acc, auto x) { return acc + x; });
-  sfc::expect_eq(sum, 15);
+  sfc::assert_eq(sum, 15);
 }
 
 SFC_TEST(reduce) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto min_ref = Slice{v}.iter().reduce([](auto& a, auto& b) -> auto& { return a < b ? a : b; });
-  sfc::expect_eq(min_ref, Option<const int&>{v[0]});
+  sfc::assert_eq(min_ref, Option<const int&>{v[0]});
 
   auto max_ref = Slice{v}.iter().reduce([](auto& a, auto& b) -> auto& { return a > b ? a : b; });
-  sfc::expect_eq(max_ref, Option<const int&>{v[5]});
+  sfc::assert_eq(max_ref, Option<const int&>{v[5]});
 }
 
 SFC_TEST(find) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto pos = Slice{v}.iter().find([](auto& x) { return x == 3; });
-  sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3);
+  sfc::assert_eq(pos, Option{3});
 }
 
 SFC_TEST(rfind) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto pos = Slice{v}.iter().rfind([](auto& x) { return x == 3; });
-  sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3);
+  sfc::assert_eq(pos, Option{3});
 }
 
 SFC_TEST(position) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto pos = Slice{v}.iter().position([](auto& x) { return x == 3; });
-  sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3U);
+  sfc::assert_eq(pos, Option{3U});
 }
 
 SFC_TEST(rposition) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto pos = Slice{v}.iter().rposition([](auto& x) { return x == 3; });
-  sfc::expect_true(pos);
-  sfc::expect_eq(*pos, 3U);
+  sfc::assert_eq(pos, Option{3U});
 }
 
 SFC_TEST(all) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto all_even = Slice{v}.iter().all([](auto& x) { return x % 2 == 0; });
-  sfc::expect_false(all_even);
+  sfc::assert_eq(all_even, false);
 
   auto all_non_negative = Slice{v}.iter().all([](auto& x) { return x >= 0; });
-  sfc::expect_true(all_non_negative);
+  sfc::assert_eq(all_non_negative, true);
 }
 
 SFC_TEST(any) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto any_even = Slice{v}.iter().any([](auto& x) { return x % 2 == 0; });
-  sfc::expect_true(any_even);
+  sfc::assert_eq(any_even, true);
 
   auto any_greater_than_five = Slice{v}.iter().any([](auto& x) { return x > 5; });
-  sfc::expect_false(any_greater_than_five);
+  sfc::assert_eq(any_greater_than_five, false);
 }
 
 SFC_TEST(min) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto min_val = Slice{v}.iter().min();
-  sfc::expect_eq(min_val, Option{0});
+  sfc::assert_eq(min_val, Option{0});
 }
 
 SFC_TEST(max) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto max_val = Slice{v}.iter().max();
-  sfc::expect_eq(max_val, Option{5});
+  sfc::assert_eq(max_val, Option{5});
 }
 
 SFC_TEST(min_by_key) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto min_val = Slice{v}.iter().min_by_key([](auto& x) { return -x; });
-  sfc::expect_eq(min_val, Option{5});
+  sfc::assert_eq(min_val, Option{5});
 }
 
 SFC_TEST(max_by_key) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto max_val = Slice{v}.iter().max_by_key([](auto& x) { return -x; });
-  sfc::expect_eq(max_val, Option{0});
+  sfc::assert_eq(max_val, Option{0});
 }
 
 SFC_TEST(collect) {
   const u32 v[] = {0, 1, 2, 3, 4, 5};
 
   auto collected = Slice{v}.iter().collect<List<u32>>();
-  sfc::expect_eq(collected.len(), 6U);
+  sfc::assert_eq(collected.len(), 6U);
   for (auto i : v) {
-    sfc::expect_eq(collected[i], i);
+    sfc::assert_eq(collected[i], i);
   }
 }
 

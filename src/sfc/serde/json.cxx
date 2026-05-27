@@ -8,64 +8,64 @@ namespace sfc::serde::json::test {
 
 SFC_TEST(serialize_simple) {
   // bool
-  sfc::expect_eq(json::to_string(true), "true");
-  sfc::expect_eq(json::to_string(false), "false");
+  sfc::assert_eq(json::to_string(true), "true");
+  sfc::assert_eq(json::to_string(false), "false");
 
   // int
-  sfc::expect_eq(json::to_string(0), "0");
-  sfc::expect_eq(json::to_string(123), "123");
-  sfc::expect_eq(json::to_string(-123), "-123");
+  sfc::assert_eq(json::to_string(0), "0");
+  sfc::assert_eq(json::to_string(123), "123");
+  sfc::assert_eq(json::to_string(-123), "-123");
 
   // float
-  sfc::expect_eq(json::to_string(0.0), "0.000000");
-  sfc::expect_eq(json::to_string(1.23), "1.230000");
-  sfc::expect_eq(json::to_string(-1.23), "-1.230000");
+  sfc::assert_eq(json::to_string(0.0), "0.000000");
+  sfc::assert_eq(json::to_string(1.23), "1.230000");
+  sfc::assert_eq(json::to_string(-1.23), "-1.230000");
 
   // str
-  sfc::expect_eq(json::to_string(Str{""}), "\"\"");
-  sfc::expect_eq(json::to_string(Str{"abc"}), "\"abc\"");
+  sfc::assert_eq(json::to_string(Str{""}), "\"\"");
+  sfc::assert_eq(json::to_string(Str{"abc"}), "\"abc\"");
 }
 
 SFC_TEST(serialize_seq) {
   const int seq[] = {1, 2, 3};
-  sfc::expect_eq(json::to_string(seq), "[1,2,3]");
+  sfc::assert_eq(json::to_string(seq), "[1,2,3]");
 }
 
 SFC_TEST(serialize_map) {
   auto map = Dict<Str, int>{};
   map.insert(Str{"a"}, 1);
   map.insert(Str{"b"}, 2);
-  sfc::expect_eq(json::to_string(map), R"({"a":1,"b":2})");
+  sfc::assert_eq(json::to_string(map), R"({"a":1,"b":2})");
 }
 
 SFC_TEST(deserialize_simple) {
   // null
-  { sfc::expect_true(Deserializer{"null"}.deserialize_null().is_ok()); }
+  { sfc::assert_eq(Deserializer{"null"}.deserialize_null().is_ok(), true); }
 
   // bool
   {
-    sfc::expect_eq(Deserializer{"true"}.deserialize_bool().ok(), Option{true});
-    sfc::expect_eq(Deserializer{"false"}.deserialize_bool().ok(), Option{false});
+    sfc::assert_eq(Deserializer{"true"}.deserialize_bool().ok(), Option{true});
+    sfc::assert_eq(Deserializer{"false"}.deserialize_bool().ok(), Option{false});
   }
 
   // int
   {
-    sfc::expect_eq(Deserializer{"0"}.deserialize_i64().ok(), Option{0});
-    sfc::expect_eq(Deserializer{"123"}.deserialize_i64().ok(), Option{123});
-    sfc::expect_eq(Deserializer{"-123"}.deserialize_i64().ok(), Option{-123});
+    sfc::assert_eq(Deserializer{"0"}.deserialize_i64().ok(), Option{0});
+    sfc::assert_eq(Deserializer{"123"}.deserialize_i64().ok(), Option{123});
+    sfc::assert_eq(Deserializer{"-123"}.deserialize_i64().ok(), Option{-123});
   }
 
   // float
   {
-    sfc::expect_eq(Deserializer{"0.0"}.deserialize_f64().ok(), Option{0.0});
-    sfc::expect_eq(Deserializer{"1.23"}.deserialize_f64().ok(), Option{1.23});
-    sfc::expect_eq(Deserializer{"-1.23"}.deserialize_f64().ok(), Option{-1.23});
+    sfc::assert_eq(Deserializer{"0.0"}.deserialize_f64().ok(), Option{0.0});
+    sfc::assert_eq(Deserializer{"1.23"}.deserialize_f64().ok(), Option{1.23});
+    sfc::assert_eq(Deserializer{"-1.23"}.deserialize_f64().ok(), Option{-1.23});
   }
 
   // str
   {
-    sfc::expect_eq(Deserializer{R"("")"}.deserialize_str().ok(), Option{""});
-    sfc::expect_eq(Deserializer{R"("abc")"}.deserialize_str().ok(), Option{"abc"});
+    sfc::assert_eq(Deserializer{R"("")"}.deserialize_str().ok(), Option{""});
+    sfc::assert_eq(Deserializer{R"("abc")"}.deserialize_str().ok(), Option{"abc"});
   }
 }
 
@@ -74,17 +74,17 @@ SFC_TEST(deserialize_seq) {
   const int vals[] = {0, 1, 2};
   auto visit = [&](auto& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
-      sfc::expect_eq(seq.has_next(), true);
+      sfc::assert_eq(seq.has_next(), true);
       const auto val = seq.template next_element<int>().ok();
-      sfc::expect_eq(val, Option{vals[i]});
+      sfc::assert_eq(val, Option{vals[i]});
     }
-    sfc::expect_false(seq.has_next());
+    sfc::assert_eq(seq.has_next(), false);
     return {};
   };
 
   auto des = Deserializer{s};
   auto ret = des.deserialize_seq(visit);
-  sfc::expect_true(ret.is_ok());
+  sfc::assert_eq(ret.is_ok(), true);
 }
 
 SFC_TEST(deserialize_map) {
@@ -95,17 +95,17 @@ SFC_TEST(deserialize_map) {
   auto visit = [&](auto& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
       const auto key = map.next_key();
-      sfc::expect_eq(auto{key}.ok(), Option{keys[i]});
+      sfc::assert_eq(auto{key}.ok(), Option{keys[i]});
 
       const auto val = map.template next_value<int>();
-      sfc::expect_eq(auto{val}.ok(), Option{vals[i]});
+      sfc::assert_eq(auto{val}.ok(), Option{vals[i]});
     }
-    sfc::expect_false(map.has_next());
+    sfc::assert_eq(map.has_next(), false);
     return {};
   };
 
   auto des = Deserializer{s};
-  sfc::expect_true(des.deserialize_map(visit).is_ok());
+  sfc::assert_eq(des.deserialize_map(visit).is_ok(), true);
 }
 
 }  // namespace sfc::serde::json::test

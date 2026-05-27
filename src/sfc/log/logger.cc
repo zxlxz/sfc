@@ -13,17 +13,9 @@ auto Record::time_str() const -> Str {
   if (time.as_secs() != prev_sec) {
     prev_sec = time.as_secs();
 
+    out = fmt::SBuf{buf};
     const auto t = time::DateTime::from_local(time);
-    out.clear();
-    fmt::write(out,
-               "{04}-{02}-{02} {02}:{02}:{02}.{03}",
-               t.year,
-               t.month,
-               t.day,
-               t.hour,
-               t.minute,
-               t.second,
-               millis);
+    fmt::write(out, "{04}-{02}-{02} {02}:{02}:{02}.{03}", t.year, t.month, t.day, t.hour, t.minute, t.second, millis);
   } else {
     out._len = kStrLen - 3;  // trim off the old millis
     fmt::write(out, "{03}", millis);

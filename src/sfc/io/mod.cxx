@@ -34,44 +34,44 @@ SFC_TEST(read) {
   auto sb = RBuf{"0123456789"};
 
   u8 tmp[4] = {};
-  sfc::expect_eq(sb.read(tmp).ok(), Option{4UZ});
-  sfc::expect_eq(Str::from_utf8(tmp), "0123");
+  sfc::assert_eq(sb.read(tmp).ok(), Option{4UZ});
+  sfc::assert_eq(Str::from_utf8(tmp), "0123");
 
-  sfc::expect_eq(sb.read(tmp).ok(), Option{4UZ});
-  sfc::expect_eq(Str::from_utf8(tmp), "4567");
+  sfc::assert_eq(sb.read(tmp).ok(), Option{4UZ});
+  sfc::assert_eq(Str::from_utf8(tmp), "4567");
 
-  sfc::expect_eq(sb.read(tmp).ok(), Option{2UZ});
-  sfc::expect_eq(Str::from_utf8({tmp, 2}), "89");
+  sfc::assert_eq(sb.read(tmp).ok(), Option{2UZ});
+  sfc::assert_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
 SFC_TEST(read_exact) {
   auto sb = RBuf{"0123456789"};
 
   u8 tmp[4] = {};
-  sfc::expect_true(sb.read_exact(tmp).is_ok());
-  sfc::expect_eq(Str::from_utf8(tmp), "0123");
+  sfc::assert_eq(sb.read_exact(tmp).is_ok(), true);
+  sfc::assert_eq(Str::from_utf8(tmp), "0123");
 
-  sfc::expect_true(sb.read_exact(tmp).is_ok());
-  sfc::expect_eq(Str::from_utf8(tmp), "4567");
+  sfc::assert_eq(sb.read_exact(tmp).is_ok(), true);
+  sfc::assert_eq(Str::from_utf8(tmp), "4567");
 
-  sfc::expect_true(sb.read_exact(tmp).is_err());
-  sfc::expect_eq(Str::from_utf8({tmp, 2}), "89");
+  sfc::assert_eq(sb.read_exact(tmp).is_err(), true);
+  sfc::assert_eq(Str::from_utf8({tmp, 2}), "89");
 }
 
 SFC_TEST(read_to_end) {
   auto sb = RBuf{"0123456789"};
 
   auto v = List<u8>{};
-  sfc::expect_true(sb.read_to_end(v).is_ok());
-  sfc::expect_eq(Str::from_utf8(v.as_slice()), "0123456789");
+  sfc::assert_eq(sb.read_to_end(v).is_ok(), true);
+  sfc::assert_eq(Str::from_utf8(v.as_slice()), "0123456789");
 }
 
 SFC_TEST(read_to_string) {
   auto sb = RBuf{"0123456789"};
 
   auto str = String{};
-  sfc::expect_true(sb.read_to_string(str).is_ok());
-  sfc::expect_eq(str, "0123456789");
+  sfc::assert_eq(sb.read_to_string(str).is_ok(), true);
+  sfc::assert_eq(str, "0123456789");
 }
 
 SFC_TEST(write) {
@@ -80,12 +80,12 @@ SFC_TEST(write) {
 
   // Test basic write
   const auto data = Str{"abcd"}.as_bytes();
-  sfc::expect_eq(wbuf.write(data).ok(), Option{4UZ});
-  sfc::expect_eq(Str::from_utf8({buf, 4}), "abcd");
+  sfc::assert_eq(wbuf.write(data).ok(), Option{4UZ});
+  sfc::assert_eq(Str::from_utf8({buf, 4}), "abcd");
 
   // Test partial write (buffer full)
   auto wbuf2{WBuf{{buf, 0}}};
-  sfc::expect_true(wbuf2.write(Str{"x"}.as_bytes()).is_err());
+  sfc::assert_eq(wbuf2.write(Str{"x"}.as_bytes()).is_err(), true);
 }
 
 SFC_TEST(write_all) {
@@ -93,11 +93,11 @@ SFC_TEST(write_all) {
   auto wbuf{WBuf{buf}};
 
   // Test write_all writes complete data
-  sfc::expect_true(wbuf.write_all(Str{"0123456789"}.as_bytes()).is_ok());
-  sfc::expect_eq(Str::from_utf8({buf, 10}), "0123456789");
+  sfc::assert_eq(wbuf.write_all(Str{"0123456789"}.as_bytes()).is_ok(), true);
+  sfc::assert_eq(Str::from_utf8({buf, 10}), "0123456789");
 
   // Test write_all handles empty data
-  sfc::expect_true(wbuf.write_all(Str{}.as_bytes()).is_ok());
+  sfc::assert_eq(wbuf.write_all(Str{}.as_bytes()).is_ok(), true);
 }
 
 SFC_TEST(write_str) {
@@ -105,11 +105,11 @@ SFC_TEST(write_str) {
   auto wbuf{WBuf{buf}};
 
   // Test write_str
-  sfc::expect_true(wbuf.write_str("hello").is_ok());
-  sfc::expect_eq(Str::from_utf8({buf, 5}), "hello");
+  sfc::assert_eq(wbuf.write_str("hello").is_ok(), true);
+  sfc::assert_eq(Str::from_utf8({buf, 5}), "hello");
 
   // Test write_str with empty string
-  sfc::expect_true(wbuf.write_str("").is_ok());
+  sfc::assert_eq(wbuf.write_str("").is_ok(), true);
 }
 
 }  // namespace sfc::io::test

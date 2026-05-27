@@ -24,8 +24,8 @@ SFC_TEST(index) {
   int tmp[] = {0, 1, 2, 3};
 
   auto v = List<int>::from(tmp);
-  sfc::expect_eq(v[0], 0);
-  sfc::expect_eq(v[1], 1);
+  sfc::assert_eq(v[0], 0);
+  sfc::assert_eq(v[1], 1);
 }
 
 SFC_TEST(slice) {
@@ -33,8 +33,8 @@ SFC_TEST(slice) {
 
   auto v = List<int>::from(tmp);
   auto s = v.as_slice();
-  sfc::expect_eq(s.as_ptr(), v.as_ptr());
-  sfc::expect_eq(s.len(), v.len());
+  sfc::assert_eq(s.as_ptr(), v.as_ptr());
+  sfc::assert_eq(s.len(), v.len());
 }
 
 SFC_TEST(clone) {
@@ -43,8 +43,8 @@ SFC_TEST(clone) {
   auto x = List<u32>::from(tmp);
   auto y = x.clone();
   for (auto i = 0U; i < x.len(); ++i) {
-    sfc::expect_eq(x[i], i);
-    sfc::expect_eq(y[i], i);
+    sfc::assert_eq(x[i], i);
+    sfc::assert_eq(y[i], i);
   }
 }
 
@@ -54,18 +54,18 @@ SFC_TEST(push) {
   auto v = List<int>::from(tmp);
   v.push(4);
   v.push(5);
-  sfc::expect_eq(v.len(), 6U);
-  sfc::expect_eq(v[v.len() - 1], 5);
+  sfc::assert_eq(v.len(), 6U);
+  sfc::assert_eq(v[v.len() - 1], 5);
 }
 
 SFC_TEST(pop) {
   int tmp[] = {0, 1, 2, 3};
 
   auto v = List<int>::from(tmp);
-  sfc::expect_eq(v.pop().unwrap(), 3);
-  sfc::expect_eq(v.pop().unwrap(), 2);
-  sfc::expect_eq(v.pop().unwrap(), 1);
-  sfc::expect_eq(v.pop().unwrap(), 0);
+  sfc::assert_eq(v.pop().unwrap(), 3);
+  sfc::assert_eq(v.pop().unwrap(), 2);
+  sfc::assert_eq(v.pop().unwrap(), 1);
+  sfc::assert_eq(v.pop().unwrap(), 0);
 };
 
 SFC_TEST(insert) {
@@ -74,9 +74,9 @@ SFC_TEST(insert) {
   auto v = List<u32>::from(tmp);
   v.insert(2U, 2);
   v.insert(4U, 4);
-  sfc::expect_eq(v.len(), 5U);
+  sfc::assert_eq(v.len(), 5U);
   for (auto i = 0U; i < 5U; ++i) {
-    sfc::expect_eq(v[i], i);
+    sfc::assert_eq(v[i], i);
   }
 }
 
@@ -85,18 +85,18 @@ SFC_TEST(remove) {
 
   auto v = List<int>::from(tmp);
   v.remove(1);
-  sfc::expect_eq(v.len(), 3U);
-  sfc::expect_eq(v[2], 3);
+  sfc::assert_eq(v.len(), 3U);
+  sfc::assert_eq(v[2], 3);
 }
 
 SFC_TEST(reserve) {
   auto v = List<int>::with_capacity(10);
-  sfc::expect_eq(v.capacity(), 10U);
+  sfc::assert_eq(v.capacity(), 10U);
   for (auto i = 0; i < 10; ++i) {
     v.push(i);
   }
   v.reserve(1);
-  sfc::expect_true(v.capacity() >= 16);
+  sfc::assert_ge(v.capacity(), 16U);
 }
 
 SFC_TEST(drain) {
@@ -104,11 +104,11 @@ SFC_TEST(drain) {
 
   auto v = List<int>::from(tmp);
   v.drain(ops::Range{2, 4});
-  sfc::expect_eq(v.len(), 4U);
-  sfc::expect_eq(v[0], 0);
-  sfc::expect_eq(v[1], 1);
-  sfc::expect_eq(v[2], 4);
-  sfc::expect_eq(v[3], 5);
+  sfc::assert_eq(v.len(), 4U);
+  sfc::assert_eq(v[0], 0);
+  sfc::assert_eq(v[1], 1);
+  sfc::assert_eq(v[2], 4);
+  sfc::assert_eq(v[3], 5);
 }
 
 SFC_TEST(memory) {
@@ -118,24 +118,24 @@ SFC_TEST(memory) {
   // push
   for (auto i = 0; i < 10; ++i) {
     v.push(RefCnt{cnt});
-    sfc::expect_eq(cnt, i + 1);
+    sfc::assert_eq(cnt, i + 1);
   }
 
   // pop
   v.pop();
-  sfc::expect_eq(cnt, 9);
+  sfc::assert_eq(cnt, 9);
 
   // insert
   v.insert(5, RefCnt{cnt});
-  sfc::expect_eq(cnt, 10);
+  sfc::assert_eq(cnt, 10);
 
   // remove
   v.remove(5);
-  sfc::expect_eq(cnt, 9);
+  sfc::assert_eq(cnt, 9);
 
   // drain
   v.drain(ops::Range{0, 5});
-  sfc::expect_eq(cnt, 4);
+  sfc::assert_eq(cnt, 4);
 }
 
 SFC_TEST(retain) {
@@ -143,7 +143,7 @@ SFC_TEST(retain) {
   {
     auto v = List<int>{};
     v.retain([](int) { return false; });
-    sfc::expect_eq(v.len(), 0U);
+    sfc::assert_eq(v.len(), 0U);
   }
 
   // normal
@@ -151,9 +151,9 @@ SFC_TEST(retain) {
     u32 tmp[] = {0, 1, 2, 3, 4, 5};
     auto v = List<u32>::from(tmp);
     v.retain([](u32 x) { return x % 2 == 0; });
-    sfc::expect_eq(v.len(), 3U);
+    sfc::assert_eq(v.len(), 3U);
     for (auto i = 0U; i < v.len(); ++i) {
-      sfc::expect_eq(v[i], i * 2);
+      sfc::assert_eq(v[i], i * 2);
     }
   }
 
@@ -162,9 +162,9 @@ SFC_TEST(retain) {
     u32 tmp[] = {0, 1, 2, 3, 4, 5};
     auto v = List<u32>::from(tmp);
     v.retain([](u32) { return true; });
-    sfc::expect_eq(v.len(), 6U);
+    sfc::assert_eq(v.len(), 6U);
     for (auto i = 0U; i < v.len(); ++i) {
-      sfc::expect_eq(v[i], i);
+      sfc::assert_eq(v[i], i);
     }
   }
 
@@ -173,7 +173,7 @@ SFC_TEST(retain) {
     int tmp[] = {0, 1, 2, 3, 4, 5};
     auto v = List<int>::from(tmp);
     v.retain([](int) { return false; });
-    sfc::expect_eq(v.len(), 0U);
+    sfc::assert_eq(v.len(), 0U);
   }
 }
 

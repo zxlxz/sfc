@@ -54,7 +54,7 @@ SFC_TEST(condvar_notify_all) {
   thread::sleep_ms(5);
 
   auto lock = mtx.lock();
-  sfc::expect_eq(finished, kThreadCnt);
+  sfc::assert_eq(finished, kThreadCnt);
 }
 
 SFC_TEST(condvar_wait_timeout) {
@@ -65,7 +65,7 @@ SFC_TEST(condvar_wait_timeout) {
   {
     auto lock = mtx.lock();
     auto result = cv.wait_timeout(lock, time::Duration::from_millis(10));
-    sfc::expect_false(result);
+    sfc::assert_eq(result, false);
   }
 
   auto t1 = thread::spawn([&]() {
@@ -95,7 +95,7 @@ SFC_TEST(condvar_wait_while) {
   auto t1 = thread::spawn([&]() {
     auto lock = mtx.lock();
     cv.wait_while(lock, [&]() { return count < 5U; });
-    sfc::expect_eq(count, 5U);
+    sfc::assert_eq(count, 5U);
   });
 
   thread::sleep_ms(5);
@@ -141,9 +141,9 @@ SFC_TEST(condvar_producer_consumer) {
     });
   }
 
-  sfc::expect_true(list.is_empty());
-  sfc::expect_eq(produced, CNT);
-  sfc::expect_eq(consumed, CNT);
+  sfc::assert_eq(list.is_empty(), true);
+  sfc::assert_eq(produced, CNT);
+  sfc::assert_eq(consumed, CNT);
 }
 
 }  // namespace sfc::sync::test

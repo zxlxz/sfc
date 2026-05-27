@@ -21,21 +21,8 @@ struct SourceLoc {
 struct PanicInfo {
   fmt::RawStr _msg;
   SourceLoc _loc;
-
- public:
-  static auto sbuf() -> fmt::SBuf {
-    static thread_local char buf[1024];
-    return fmt::SBuf{buf};
-  }
-
-  static auto from_args(const auto& args, SourceLoc loc = SourceLoc::current()) -> PanicInfo;
 };
 
 [[noreturn]] void panic_imp(PanicInfo info);
-
-[[noreturn]] void panic_fmt(const auto& args, SourceLoc loc = SourceLoc::current()) {
-  const auto info = PanicInfo::from_args(args, loc);
-  panic::panic_imp(info);
-}
-
+[[noreturn]] void panic_fmt(const auto& args, SourceLoc loc = SourceLoc::current());
 }  // namespace sfc::panic

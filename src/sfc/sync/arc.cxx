@@ -25,13 +25,13 @@ SFC_TEST(own) {
 
   {
     auto ra = Arc<Cnter>::xnew(cnt);
-    sfc::expect_eq(cnt, 1);
+    sfc::assert_eq(cnt, 1);
 
     auto rb = mem::move(ra);
-    sfc::expect_eq(cnt, 1);
+    sfc::assert_eq(cnt, 1);
   }
 
-  sfc::expect_eq(cnt, 0);
+  sfc::assert_eq(cnt, 0);
 }
 
 SFC_TEST(clone) {
@@ -39,13 +39,13 @@ SFC_TEST(clone) {
 
   {
     const auto ra = Arc<Cnter>::xnew(cnt);
-    sfc::expect_eq(cnt, 1);
+    sfc::assert_eq(cnt, 1);
 
     const auto rb = ra.clone();
-    sfc::expect_eq(cnt, 1);
+    sfc::assert_eq(cnt, 1);
   }
 
-  sfc::expect_eq(cnt, 0);
+  sfc::assert_eq(cnt, 0);
 }
 
 }  // namespace sfc::sync::test

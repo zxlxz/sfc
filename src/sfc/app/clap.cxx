@@ -16,12 +16,12 @@ SFC_TEST(clap) {
   const Str args[] = {"--verbose", "--output", "output.txt", "-c=config.yaml", "a.txt", "b.txt"};
   clap.parse(args);
 
-  sfc::expect_eq(clap.get_flag("help"), Option{});
-  sfc::expect_eq(clap.get_flag("verbose"), Option{true});
+  sfc::assert_eq(clap.get_flag("help"), Option{});
+  sfc::assert_eq(clap.get_flag("verbose"), Option{true});
 
-  sfc::expect_eq(clap.get("input"),  Option{"a.txt;b.txt"});
-  sfc::expect_eq(clap.get("output"), Option{"output.txt"});
-  sfc::expect_eq(clap.get("config"), Option{"config.yaml"});
+  sfc::assert_eq(clap.get("input"),  Option{"a.txt;b.txt"});
+  sfc::assert_eq(clap.get("output"), Option{"output.txt"});
+  sfc::assert_eq(clap.get("config"), Option{"config.yaml"});
 }
 
 }  // namespace sfc::app::test

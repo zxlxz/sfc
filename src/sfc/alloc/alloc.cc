@@ -44,7 +44,7 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
 }
 
 auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::expect(old_layout.align == new_layout.align,
+  sfc::assert_fmt(old_layout.align == new_layout.align,
                 "alloc::Global::grow: alignment not match (old({}), new({}))",
                 old_layout.align,
                 new_layout.align);
@@ -61,7 +61,7 @@ auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> v
 }
 
 auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::expect(old_layout.align == new_layout.align,
+  sfc::assert_fmt(old_layout.align == new_layout.align,
                 "alloc::Global::shrink: alignment not match (old({}), new({}))",
                 old_layout.align,
                 new_layout.align);

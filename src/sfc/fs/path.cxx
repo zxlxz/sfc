@@ -4,77 +4,77 @@
 namespace sfc::fs::path::test {
 
 SFC_TEST(file_name) {
-  sfc::expect_eq(Path{"/usr/bin"}.file_name(), "bin");
-  sfc::expect_eq(Path{"tmp/foo.txt"}.file_name(), "foo.txt");
+  sfc::assert_eq(Path{"/usr/bin"}.file_name(), "bin");
+  sfc::assert_eq(Path{"tmp/foo.txt"}.file_name(), "foo.txt");
 
-  sfc::expect_eq(Path{"foo.txt/."}.file_name(), "");
-  sfc::expect_eq(Path{"foo.txt/.."}.file_name(), "");
-  sfc::expect_eq(Path{"foo.txt/.//"}.file_name(), "");
-  sfc::expect_eq(Path{"/"}.file_name(), "");
+  sfc::assert_eq(Path{"foo.txt/."}.file_name(), "");
+  sfc::assert_eq(Path{"foo.txt/.."}.file_name(), "");
+  sfc::assert_eq(Path{"foo.txt/.//"}.file_name(), "");
+  sfc::assert_eq(Path{"/"}.file_name(), "");
 }
 
 SFC_TEST(file_stem) {
-  sfc::expect_eq(Path{"foo.cc"}.file_stem(), "foo");
-  sfc::expect_eq(Path{"foo.tar.gz"}.file_stem(), "foo.tar");
+  sfc::assert_eq(Path{"foo.cc"}.file_stem(), "foo");
+  sfc::assert_eq(Path{"foo.tar.gz"}.file_stem(), "foo.tar");
 }
 
 SFC_TEST(extension) {
-  sfc::expect_eq(Path{"foo.cc"}.extension(), "cc");
-  sfc::expect_eq(Path{"foo.tar.gz"}.extension(), "gz");
+  sfc::assert_eq(Path{"foo.cc"}.extension(), "cc");
+  sfc::assert_eq(Path{"foo.tar.gz"}.extension(), "gz");
 }
 
 SFC_TEST(parrent) {
-  sfc::expect_eq(Path{"/"}.parent(), Path{""});
-  sfc::expect_eq(Path{"/foo"}.parent(), Path{"/"});
-  sfc::expect_eq(Path{"/foo/"}.parent(), Path{"/"});
-  sfc::expect_eq(Path{"/foo/bar"}.parent(), Path{"/foo"});
-  sfc::expect_eq(Path{"/foo/bar/"}.parent(), Path{"/foo"});
+  sfc::assert_eq(Path{"/"}.parent(), Path{""});
+  sfc::assert_eq(Path{"/foo"}.parent(), Path{"/"});
+  sfc::assert_eq(Path{"/foo/"}.parent(), Path{"/"});
+  sfc::assert_eq(Path{"/foo/bar"}.parent(), Path{"/foo"});
+  sfc::assert_eq(Path{"/foo/bar/"}.parent(), Path{"/foo"});
 }
 
 SFC_TEST(is_absolute) {
-  sfc::expect_true(Path{"/usr/bin"}.is_absolute());
+  sfc::assert_eq(Path{"/usr/bin"}.is_absolute(), true);
 
-  sfc::expect_false(Path{"tmp/foo.txt"}.is_absolute());
-  sfc::expect_false(Path{"foo.txt/."}.is_absolute());
-  sfc::expect_false(Path{"foo.txt/.//"}.is_absolute());
+  sfc::assert_eq(Path{"tmp/foo.txt"}.is_absolute(), false);
+  sfc::assert_eq(Path{"foo.txt/."}.is_absolute(), false);
+  sfc::assert_eq(Path{"foo.txt/.//"}.is_absolute(), false);
 }
 
 SFC_TEST(is_relative) {
-  sfc::expect_false(Path{"/usr/bin"}.is_relative());
+  sfc::assert_eq(Path{"/usr/bin"}.is_relative(), false);
 
-  sfc::expect_true(Path{"tmp/foo.txt"}.is_relative());
-  sfc::expect_true(Path{"foo.txt/."}.is_relative());
-  sfc::expect_true(Path{"foo.txt/.//"}.is_relative());
+  sfc::assert_eq(Path{"tmp/foo.txt"}.is_relative(), true);
+  sfc::assert_eq(Path{"foo.txt/."}.is_relative(), true);
+  sfc::assert_eq(Path{"foo.txt/.//"}.is_relative(), true);
 }
 
 SFC_TEST(push) {
   auto p = PathBuf::from("tmp");
   p.push(Path{"foo.txt"});
-  sfc::expect_eq(p.as_str(), "tmp/foo.txt");
+  sfc::assert_eq(p.as_str(), "tmp/foo.txt");
 }
 
 SFC_TEST(pop) {
   auto p = PathBuf::from("tmp/foo.txt");
 
   p.pop();
-  sfc::expect_eq(p.as_str(), "tmp");
+  sfc::assert_eq(p.as_str(), "tmp");
 }
 
 SFC_TEST(join) {
   const auto p = Path{"tmp"};
-  sfc::expect_eq(p.join("foo.txt").as_str(), "tmp/foo.txt");
+  sfc::assert_eq(p.join("foo.txt").as_str(), "tmp/foo.txt");
 }
 
 SFC_TEST(set_file_name) {
   auto p = PathBuf::from("tmp/foo.txt");
   p.set_file_name("bar.txt");
-  sfc::expect_eq(p.as_str(), "tmp/bar.txt");
+  sfc::assert_eq(p.as_str(), "tmp/bar.txt");
 }
 
 SFC_TEST(set_extension) {
   auto p = PathBuf::from("tmp/foo.txt");
   p.set_extension("md");
-  sfc::expect_eq(p.as_str(), "tmp/foo.md");
+  sfc::assert_eq(p.as_str(), "tmp/foo.md");
 }
 
 }  // namespace sfc::fs::path::test

@@ -9,21 +9,21 @@ SFC_TEST(push_pop) {
   for (auto i = 0; i < 6; ++i) {
     q.push(i);
   }
-  sfc::expect_eq(q.len(), 6U);
-  sfc::expect_eq(q.top(), Option{0});
+  sfc::assert_eq(q.len(), 6U);
+  sfc::assert_eq(q.top(), Option{0});
 
   for (auto i = 0; i < 2; ++i) {
     const auto x = q.pop();
-    sfc::expect_eq(x, Option{i});
+    sfc::assert_eq(x, Option{i});
   }
-  sfc::expect_eq(q.len(), 4U);
-  sfc::expect_eq(q.top(), Option{2});
+  sfc::assert_eq(q.len(), 4U);
+  sfc::assert_eq(q.top(), Option{2});
 
   for (auto i = 6; i < 8; ++i) {
     q.push(i);
   }
-  sfc::expect_eq(q.len(), 6U);
-  sfc::expect_eq(q.top(), Option{2});
+  sfc::assert_eq(q.len(), 6U);
+  sfc::assert_eq(q.top(), Option{2});
 }
 
 SFC_TEST(reserve) {
@@ -36,7 +36,7 @@ SFC_TEST(reserve) {
     q.push(i);
   }
   auto sb = q.as_slices();
-  sfc::expect_eq(sa._0._ptr, sb._0._ptr);
+  sfc::assert_eq(sa._0._ptr, sb._0._ptr);
 }
 
 SFC_TEST(iter) {
@@ -47,9 +47,9 @@ SFC_TEST(iter) {
 
   auto iter = q.iter();
   for (auto i = 0; i < 10; ++i) {
-    sfc::expect_eq(iter.next(), Option{i});
+    sfc::assert_eq(iter.next(), Option{i});
   }
-  sfc::expect_false(iter.next());
+  sfc::assert_eq(iter.next(), Option{});
 }
 
 }  // namespace sfc::collections::queue::test

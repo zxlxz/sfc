@@ -27,7 +27,7 @@ SFC_TEST(mutex) {
   }
 
   for (auto i = 0U; i < list.len(); ++i) {
-    sfc::expect_eq(list[i], i);
+    sfc::assert_eq(list[i], i);
   }
 }
 
@@ -36,15 +36,15 @@ SFC_TEST(mutex_try_lock) {
 
   {
     auto guard = mtx.try_lock();
-    sfc::expect_true(guard.is_some());
+    sfc::assert_eq(guard.is_some(), true);
   }
 
   {
     auto guard1 = mtx.try_lock();
-    sfc::expect_true(guard1.is_some());
+    sfc::assert_eq(guard1.is_some(), true);
 
     auto guard2 = mtx.try_lock();
-    sfc::expect_false(guard2.is_some());
+    sfc::assert_eq(guard2.is_some(), false);
   }
 }
 
@@ -71,7 +71,7 @@ SFC_TEST(reentrant_lock) {
   }
 
   for (auto i = 0UL; i < list.len(); ++i) {
-    sfc::expect_eq(list[i], i);
+    sfc::assert_eq(list[i], i);
   }
 }
 

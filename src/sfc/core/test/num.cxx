@@ -122,16 +122,16 @@ SFC_TEST(next_power_of_two) {
 }
 
 SFC_TEST(flt_eq) {
-  sfc::expect_flt_eq(1.0, 1.0);
-  sfc::expect_flt_eq(-1.0, -1.0);
-  sfc::expect_flt_ne(1.0, -1.0);
+  sfc::assert_flt_eq(1.0, 1.0);
+  sfc::assert_flt_eq(-1.0, -1.0);
+  sfc::assert_flt_ne(1.0, -1.0);
 
-  sfc::expect_flt_eq(1.0, 1.0 + 1e-20);
-  sfc::expect_flt_ne(1.0, 1.0 + 1e-10);
+  sfc::assert_flt_eq(1.0, 1.0 + 1e-20);
+  sfc::assert_flt_ne(1.0, 1.0 + 1e-10);
 
-  sfc::expect_flt_eq(0.0, 0.0);
-  sfc::expect_flt_eq(-0.0, +0.0);
-  sfc::expect_flt_eq(-0.0, -0.0);
+  sfc::assert_flt_eq(0.0, 0.0);
+  sfc::assert_flt_eq(-0.0, +0.0);
+  sfc::assert_flt_eq(-0.0, -0.0);
 }
 
 }  // namespace sfc::num::test

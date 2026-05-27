@@ -177,22 +177,18 @@ template <class... T>
 Args(const Fmts& fmts, const T&... args) -> Args<T...>;
 
 struct SBuf {
-  char* const _ptr;
-  usize const _cap;
+  char* _ptr;
+  usize _cap;
   usize _len = 0;
 
  public:
   template <usize N>
-  SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
-
-  void clear() {
-    _len = 0;
-  }
+  constexpr SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
 
   auto as_str() const -> str::Str;
   void write_str(str::Str s);
 };
 
-void write(auto&& out, const fmt::Fmts& fmts, const auto&... args);
+void write(auto& out, const fmt::Fmts& fmts, const auto&... args);
 
 }  // namespace sfc::fmt

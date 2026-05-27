@@ -8,28 +8,28 @@ SFC_TEST(push_pop_u32) {
   auto rb = RingBuf<u32>::with_capacity(4);
 
   const auto r0 = rb.pop();
-  sfc::expect_eq(r0, Option{});
+  sfc::assert_eq(r0, Option{});
 
   for (auto i = 0U; i < 4U; ++i) {
-    sfc::expect_true(rb.push(i).is_ok());
+    sfc::assert_eq(rb.push(i).is_ok(), true);
   }
 
   for (auto i = 0U; i < 4U; ++i) {
     const auto val = rb.pop();
-    sfc::expect_eq(val, Option{i});
+    sfc::assert_eq(val, Option{i});
   }
 
-  sfc::expect_eq(rb.pop(), Option{});
+  sfc::assert_eq(rb.pop(), Option{});
 }
 
 SFC_TEST(push_overflow) {
   auto rb = RingBuf<u32>::with_capacity(8);
 
   for (auto i = 0U; i < 8U; ++i) {
-    sfc::expect_true(rb.push(i).is_ok());
+    sfc::assert_eq(rb.push(i).is_ok(), true);
   }
 
-  sfc::expect_false(rb.push(99U).is_ok());
+  sfc::assert_eq(rb.push(99U).is_ok(), false);
 }
 
 SFC_TEST(try_push_full) {
@@ -38,8 +38,8 @@ SFC_TEST(try_push_full) {
   (void)rb.push(2);
 
   int val = 3;
-  sfc::expect_false(rb.try_push(val));  // full
-  sfc::expect_eq(val, 3);               // val not consumed
+  sfc::assert_eq(rb.try_push(val), false);  // full
+  sfc::assert_eq(val, 3);                   // val not consumed
 }
 
 SFC_TEST(fifo_order) {
@@ -51,7 +51,7 @@ SFC_TEST(fifo_order) {
 
   for (auto i = 0; i < 10; ++i) {
     const auto val = rb.pop();
-    sfc::expect_eq(val, Option{i});
+    sfc::assert_eq(val, Option{i});
   }
 }
 
@@ -65,7 +65,7 @@ SFC_TEST(interleaved_push_pop) {
 
     for (auto i = 0; i < 3; ++i) {
       const auto val = rb.pop();
-      sfc::expect_eq(val, Option{round * 3 + i});
+      sfc::assert_eq(val, Option{round * 3 + i});
     }
   }
 }
@@ -77,10 +77,10 @@ SFC_TEST(move_semantics) {
   (void)rb.push(String::from("world"));
 
   const auto v0 = rb.pop();
-  sfc::expect_eq(v0, Option{"hello"});
+  sfc::assert_eq(v0, Option{"hello"});
 
   const auto v1 = rb.pop();
-  sfc::expect_eq(v1, Option{"world"});
+  sfc::assert_eq(v1, Option{"world"});
 }
 
 SFC_TEST(move_ringbuf) {
@@ -90,11 +90,11 @@ SFC_TEST(move_ringbuf) {
   }
 
   auto rb2 = mem::move(rb1);
-  sfc::expect_false(rb1.pop());
+  sfc::assert_eq(rb1.pop(), Option{});
 
   for (auto i = 0; i < 5; ++i) {
     const auto val = rb2.pop();
-    sfc::expect_eq(val, Option{i});
+    sfc::assert_eq(val, Option{i});
   }
 }
 
@@ -105,11 +105,11 @@ SFC_TEST(clear) {
   }
 
   rb.clear();
-  sfc::expect_false(rb.pop());
+  sfc::assert_eq(rb.pop(), Option{});
 
-  sfc::expect_true(rb.push(42).is_ok());
+  sfc::assert_eq(rb.push(42).is_ok(), true);
   const auto val = rb.pop();
-  sfc::expect_eq(val, Option{42});
+  sfc::assert_eq(val, Option{42});
 }
 
 SFC_TEST(mpmc_s1r1) {
@@ -144,8 +144,8 @@ SFC_TEST(mpmc_s1r1) {
     auto r1 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt, CNT);
-  sfc::expect_eq(recv_sum, CNT * (CNT - 1) / 2);
+  sfc::assert_eq(recv_cnt, CNT);
+  sfc::assert_eq(recv_sum, CNT * (CNT - 1) / 2);
 }
 
 SFC_TEST(mpmc_s2r2) {
@@ -182,8 +182,8 @@ SFC_TEST(mpmc_s2r2) {
     auto c2 = thread::spawn([&]() { receiver(); });
   }
 
-  sfc::expect_eq(recv_cnt.load(), 2 * u32{CNT});
-  sfc::expect_eq(recv_sum.load(), 0);
+  sfc::assert_eq(recv_cnt.load(), 2 * u32{CNT});
+  sfc::assert_eq(recv_sum.load(), 0);
 }
 
 }  // namespace sfc::sync::ringbuf::test

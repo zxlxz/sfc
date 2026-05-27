@@ -373,18 +373,19 @@ struct Formatter<W>::DebugStruct {
 };
 
 // macro: write!(out, arg...)
-void write(auto&& out, const fmt::Fmts& fmts, const auto&... args) {
-  Formatter{out}.write_val(fmt::Args{fmts, args...});
+void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
+  Formatter{out}.write_fmt(fmt::Args{fmts, args...});
 }
 
 }  // namespace sfc::fmt
 
 namespace sfc::panic {
 
-auto PanicInfo::from_args(const auto& args, SourceLoc loc) -> PanicInfo {
-  auto buf = PanicInfo::sbuf();
-  fmt::Formatter{buf}.write_val(args);
-  return PanicInfo{{buf._ptr, buf._len}, loc};
+[[noreturn]] void panic_fmt(const auto& args, SourceLoc loc) {
+  char buf[1024];
+  auto out = fmt::SBuf{buf};
+  fmt::Formatter{out}.write_fmt(fmt::Args{args});
+  panic::panic_imp({{buf, out._len}, loc});
 }
 
 }  // namespace sfc::panic
