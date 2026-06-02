@@ -383,14 +383,3 @@ void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
 }
 
 }  // namespace sfc::fmt
-
-namespace sfc::panic {
-
-[[noreturn]] void panic_fmt(const auto& args, SourceLoc loc) {
-  char buf[1024];
-  auto out = fmt::SBuf{buf};
-  fmt::Formatter{out}.write_fmt(fmt::Args{args});
-  panic::panic_imp({{buf, out._len}, loc});
-}
-
-}  // namespace sfc::panic

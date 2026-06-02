@@ -23,6 +23,20 @@ struct PanicInfo {
   SourceLoc _loc;
 };
 
+struct PanicFmts : fmt::Fmts {
+  SourceLoc _loc;
+
+ public:
+  constexpr PanicFmts(const auto& fmts, SourceLoc loc = SourceLoc::current()) : fmt::Fmts{fmts}, _loc{loc} {}
+};
+
 [[noreturn]] void panic_imp(PanicInfo info);
-[[noreturn]] void panic_fmt(const auto& args, SourceLoc loc = SourceLoc::current());
+
+[[noreturn]] void panic_fmt(PanicFmts fmts, const auto&... args) {
+  char buf[1024];
+  auto out = fmt::SBuf{buf};
+  fmt::write(out, fmts, args...);
+  panic::panic_imp({{buf, out._len}, fmts._loc});
+}
+
 }  // namespace sfc::panic

@@ -4,74 +4,66 @@
 
 namespace sfc::test {
 
+using fmt::RawStr;
 using panic::SourceLoc;
+using panic::PanicFmts;
 
-struct AssertCond {
-  bool _val;
-  SourceLoc _loc;
-
-  AssertCond(bool val, SourceLoc loc = {}) : _val{val}, _loc{loc} {}
-};
-
-template <class A, class B>
-struct AssertExpr {
-  const char* _op;
-  const A& _left;
-  const B& _right;
-
- public:
-  void fmt(auto& f) const {
-    f.write_fmt(fmt::Args{"`(left {} right)`\n  left = {}\n  right = {}", _op, _left, _right});
-  }
-};
-
-[[noreturn]] void assert_failed(const auto& msg, SourceLoc loc = SourceLoc::current()) {
-  panic::panic_fmt(fmt::Args{"assertion failed: {}", msg}, loc);
+void assert_fmt(bool cond, const PanicFmts& fmts, const auto&... args) {
+  if (cond) return;
+  panic::panic_fmt(fmts, args...);
 }
 
-void assert_fmt(AssertCond cond, const fmt::Fmts& fmts, const auto&... args) {
-  if (cond._val) return;
-  test::assert_failed(fmt::Args{fmts, args...}, cond._loc);
+[[noreturn]] void assert_failed(SourceLoc loc, const auto& expr, const auto&... args) {
+  if constexpr (sizeof...(args) == 0) {
+    const auto fmts = fmt::Fmts{"assert failed: `{}`"};
+    panic::panic_fmt({fmts, loc}, expr);
+  } else if constexpr (sizeof...(args) == 1) {
+    const auto fmts = fmt::Fmts{"assert failed: `{}`\n  value: {}"};
+    panic::panic_fmt({fmts, loc}, expr, args...);
+  } else if constexpr (sizeof...(args) == 2) {
+    const auto fmts = fmt::Fmts{"assert failed: `(left {} right)`\n  left: {},\n right: {}"};
+    panic::panic_fmt({fmts, loc}, expr, args...);
+  }
 }
 
 void assert_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a == b) return;
-  test::assert_failed(AssertExpr{"==", a, b}, loc);
+  test::assert_failed(loc, RawStr{"=="}, a, b);
 }
 
 void assert_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a != b) return;
-  test::assert_failed(AssertExpr{"!=", a, b}, loc);
+  test::assert_failed(loc, RawStr{"!="}, a, b);
 }
 
 void assert_lt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a < b) return;
-  test::assert_failed(AssertExpr{"<", a, b}, loc);
+  test::assert_failed(loc, RawStr{"<"}, a, b);
 }
 
 void assert_le(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a <= b) return;
-  test::assert_failed(AssertExpr{"<=", a, b}, loc);
+  test::assert_failed(loc, RawStr{"<="}, a, b);
 }
 
 void assert_gt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a > b) return;
-  test::assert_failed(AssertExpr{">", a, b}, loc);
+  test::assert_failed(loc, RawStr{">"}, a, b);
 }
 
 void assert_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a >= b) return;
-  test::assert_failed(AssertExpr{">=", a, b}, loc);
+  test::assert_failed(loc, RawStr{">="}, a, b);
 }
 
 inline void assert_flt_eq(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (num::flt_eq_ulp(a, b, ulp)) return;
-  test::assert_failed(AssertExpr{"==", a, b}, loc);
+  test::assert_failed(loc, RawStr{"=="}, a, b);
 }
 
 inline void assert_flt_ne(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (!num::flt_eq_ulp(a, b, ulp)) return;
-  test::assert_failed(AssertExpr{"!=", a, b}, loc);
+  test::assert_failed(loc, RawStr{"!="}, a, b);
 }
 
 }  // namespace sfc::test

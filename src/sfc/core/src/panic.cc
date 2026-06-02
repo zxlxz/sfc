@@ -44,15 +44,15 @@ void panic_imp(PanicInfo info) {
   char line_buf[8] = {};
   const auto line_str = fmt::Debug::format_int(line_buf, loc.line);
 
-  panic::writeln(Str{loc.func}, ": ", Str{msg._ptr, msg._len});
-  panic::writeln(" > ", Str{loc.file}, ":", line_str);
+  panic::writeln(Str{"thread panicked at "}, Str::from_cstr(loc.file), Str{":"}, line_str);
+  panic::writeln(Str{msg._ptr, msg._len});
 
   auto bt = sys::Backtrace::capture();
   for (auto idx = 0U; idx < bt._count; ++idx) {
     auto frame = bt.frame(idx);
     const auto idx_str = idx2str(idx);
-    const auto fun_str = frame.func;
-    panic::writeln(" ", idx_str, ": ", fun_str);
+    const auto fun_str = Str::from_cstr(frame.func);
+    panic::writeln(Str{" "}, idx_str, Str{": "}, fun_str);
   }
 
   throw info;

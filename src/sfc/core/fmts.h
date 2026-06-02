@@ -18,6 +18,11 @@ struct RawStr {
     }
     return pos;
   }
+
+ public:
+  void fmt(auto& f) const {
+    f.pad({_ptr, _len});
+  }
 };
 
 struct Spec {

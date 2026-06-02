@@ -514,6 +514,9 @@ class Option<const T&> {
 template <class T>
 Option(T) -> Option<T>;
 
+template <usize N>
+Option(const char(&)[N]) -> Option<str::Str>;
+
 template <class T>
 auto operator==(const Option<T>& a, Option<void>) -> bool {
   return !a;
