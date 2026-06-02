@@ -342,7 +342,7 @@ auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
   }
 
   const auto c_args = Slice{argv, num::cast_unsigned(argc)};
-  const auto args = c_args[{1, $}].iter().collect<List<Str>>();
+  const auto args = c_args[{1, $}].iter().map(&Str::from_cstr).collect<List<Str>>();
   return this->parse(args.as_slice());
 }
 

@@ -14,10 +14,16 @@ struct Str {
 
   [[gnu::always_inline]] constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  [[gnu::always_inline]] constexpr Str(const char* s) noexcept : _ptr{s}, _len{s ? __builtin_strlen(s) : 0} {}
+  template <usize N>
+  [[gnu::always_inline]] constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
   [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     return Str{ptr::cast<char>(s._ptr), s._len};
+  }
+
+  [[gnu::always_inline]] static auto from_cstr(const char* s) noexcept -> Str {
+    const auto n = s ? __builtin_strlen(s) : 0;
+    return Str{s, n};
   }
 
   [[gnu::always_inline]] constexpr auto ptr() const noexcept -> const char* {

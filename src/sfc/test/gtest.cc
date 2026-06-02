@@ -312,9 +312,9 @@ auto gtest_format_xml() -> String {
     out.write_fmt(fmt::Args{"  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len()});
     for (auto& test : tests) {
       const auto name = test.name();
-      const auto file = test._loc.file;
+      const auto file = Str::from_cstr(test._loc.file);
       const auto line = test._loc.line;
-      out.write_fmt(fmt::Args{"    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, Str{file}, line});
+      out.write_fmt(fmt::Args{"    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, file, line});
     }
     out.write_str("  </testsuite>\n");
   }

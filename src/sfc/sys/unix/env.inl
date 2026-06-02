@@ -5,8 +5,8 @@
 namespace sfc::sys::unix {
 
 static auto getenv(const char* key) -> ffi::CString {
-  const auto val = ::getenv(key);
-  return ffi::CString::from(val);
+  const auto c_val = Str::from_cstr(::getenv(key));
+  return ffi::CString::from(c_val);
 }
 
 static auto setenv(const char* key, const char* val) -> bool {
@@ -27,7 +27,9 @@ static auto home_dir() -> ffi::CString {
   if (!usr || !usr->pw_dir) {
     return {};
   }
-  return ffi::CString::from(usr->pw_dir);
+
+  const auto c_home = Str::from_cstr(usr->pw_dir);
+  return ffi::CString::from(c_home);
 }
 
 static auto temp_dir() -> ffi::CString {
@@ -36,7 +38,8 @@ static auto temp_dir() -> ffi::CString {
   if (::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, sizeof(buf)) <= 0) {
     return {};
   }
-  return ffi::CString::from(buf);
+  const auto c_temp = Str::from_cstr(buf);
+  return ffi::CString::from(c_temp);
 #else
   return ffi::CString::from("/tmp");
 #endif
@@ -54,13 +57,15 @@ static auto current_exe() -> ffi::CString {
     return {};
   }
 #endif
-  return ffi::CString::from(buf);
+  const auto c_exe = Str::from_cstr(buf);
+  return ffi::CString::from(c_exe);
 }
 
 static auto getcwd() -> ffi::CString {
   char buf[1024];
   const auto s = ::getcwd(buf, sizeof(buf));
-  return ffi::CString::from(s);
+  const auto c_cwd = Str::from_cstr(s);
+  return ffi::CString::from(c_cwd);
 }
 
 static auto chdir(const char* path) -> bool {
