@@ -162,12 +162,12 @@ struct Iterator {
 
   template <class Self, class F>
   auto map(this Self self, F f) -> Map<Self, F> {
-    return Map<Self, F>{mem::move(self), mem::move(f)};
+    return Map<Self, F>{{}, mem::move(self), mem::move(f)};
   }
 
   template <class Self, class P>
   auto filter(this Self self, P pred) -> Filter<Self, P> {
-    return Filter<Self, P>{mem::move(self), mem::move<P>(pred)};
+    return Filter<Self, P>{{}, mem::move(self), mem::move<P>(pred)};
   }
 };
 
