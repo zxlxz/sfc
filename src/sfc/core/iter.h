@@ -173,7 +173,7 @@ struct Iterator {
 
 template <class I, class F>
 struct Map : Iterator {
-  using Item = typename ops::invoke_t<F(typename I::Item)>;
+  using Item = FnOut<F, typename I::Item>;
   I _iter;
   F _func;
 

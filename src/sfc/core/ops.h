@@ -11,16 +11,8 @@ namespace sfc::ops {
 template <class T>
 auto declval() -> T&&;
 
-template <class X>
-struct Invoke;
-
-template <class F, class... T>
-struct Invoke<F(T...)> {
-  using Output = decltype(declval<F>()(declval<T>()...));
-};
-
-template <class X>
-using invoke_t = Invoke<X>::Output;
+template <class F, class... A>
+using FnOut = decltype(declval<F>()(declval<A>()...));
 
 struct End {};
 static constexpr auto $ = End{};
@@ -49,4 +41,5 @@ struct Range {
 namespace sfc {
 using ops::$;
 using ops::Range;
+using ops::FnOut;
 }  // namespace sfc

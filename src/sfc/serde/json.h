@@ -206,7 +206,8 @@ struct Deserializer {
     }
   };
 
-  auto deserialize_seq(auto&& visit) -> decltype(visit(ops::declval<DesArray&>())) {
+  template <class V, class U = FnOut<V, DesArray&>>
+  auto deserialize_seq(V&& visit) -> U {
     _TRY(this->extract_tok(Token::ArrayBegin));
     auto imp = DesArray{*this};
     auto res = visit(imp);
@@ -215,7 +216,8 @@ struct Deserializer {
     return res;
   }
 
-  auto deserialize_obj(auto&& visit) -> decltype(visit(ops::declval<DesObject&>())) {
+  template <class V, class U = FnOut<V, DesObject&>>
+  auto deserialize_obj(V&& visit) -> U {
     _TRY(this->extract_tok(Token::ObjectBegin));
     auto imp = DesObject{*this};
     auto res = visit(imp);
@@ -224,7 +226,8 @@ struct Deserializer {
     return res;
   }
 
-  auto deserialize_map(auto&& visit) -> decltype(visit(ops::declval<DesObject&>())) {
+  template <class V, class U = FnOut<V, DesObject&>>
+  auto deserialize_map(V&& visit) -> U {
     _TRY(this->extract_tok(Token::ObjectBegin));
     auto imp = DesObject{*this};
     auto res = visit(imp);

@@ -69,70 +69,70 @@ class [[nodiscard]] Result {
     return mem::move(_1);
   }
 
-  auto unwrap(this auto self) -> T {
-    sfc::assert_fmt(self._tag == 0, "called `Result::unwrap()` on Err({})", self._1);
-    return mem::move(self._0);
+  auto unwrap() && -> T {
+    sfc::assert_fmt(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
+    return mem::move(_0);
   }
 
-  auto unwrap_err(this auto self) -> E {
-    sfc::assert_fmt(self._tag == 1, "called `Result::unwrap_err()` on Ok({})", self._0);
-    return mem::move(self._1);
+  auto unwrap_err() && -> E {
+    sfc::assert_fmt(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
+    return mem::move(_1);
   }
 
-  auto unwrap_or(this auto self, T default_val) -> T {
-    if (self._tag == 0) return mem::move(self._0);
+  auto unwrap_or(T default_val) && -> T {
+    if (_tag == 0) return mem::move(_0);
     return mem::move(default_val);
   }
 
-  auto expect(this auto self, const auto& msg) -> T {
-    sfc::assert_fmt(self._tag == 0, "{}: Err({})", msg, self._1);
-    return mem::move(self._0);
+  auto expect(const auto& msg) && -> T {
+    sfc::assert_fmt(_tag == 0, "{}: Err({})", msg, _1);
+    return mem::move(_0);
   }
 
-  auto ok(this auto self) -> Option<T> {
-    if (self._tag != 0) return {};
-    return mem::move(self._0);
+  auto ok() && -> Option<T> {
+    if (_tag != 0) return {};
+    return mem::move(_0);
   }
 
-  auto err(this auto self) -> Option<E> {
-    if (self._tag != 1) return {};
-    return mem::move(self._1);
+  auto err() && -> Option<E> {
+    if (_tag != 1) return {};
+    return mem::move(_1);
   }
 
   template <class U>
-  auto operator&(this auto self, Result<U, E> res) -> Result<U, E> {
-    if (self._tag == 0) return mem::move(res);
-    return Result<U, E>{mem::move(self._1)};
+  auto operator&(Result<U, E> res) && -> Result<U, E> {
+    if (_tag == 0) return mem::move(res);
+    return Result<U, E>{mem::move(_1)};
   }
 
   template <class F>
-  auto operator|(this auto self, Result<T, F> res) -> Result<T, F> {
-    if (self._tag == 0) return Result<T, F>{mem::move(self._0)};
+  auto operator|(Result<T, F> res) && -> Result<T, F> {
+    if (_tag == 0) return Result<T, F>{mem::move(_0)};
     return mem::move(res);
   }
 
-  template <class F, class ResultUE = ops::invoke_t<F(T)>>
-  auto and_then(this auto self, F&& op) -> ResultUE {
-    if (self._tag == 0) return op(mem::move(self._0));
-    return ResultUE{mem::move(self._1)};
+  template <class F, class ResultUE = FnOut<F, T>>
+  auto and_then(F&& op) && -> ResultUE {
+    if (_tag == 0) return op(mem::move(_0));
+    return ResultUE{mem::move(_1)};
   }
 
-  template <class O, class ResultTF = ops::invoke_t<O()>>
-  auto or_else(this auto self, O&& op) -> ResultTF {
-    if (self._tag == 0) return ResultTF{mem::move(self._0)};
+  template <class O, class ResultTF = FnOut<O>>
+  auto or_else(O&& op) && -> ResultTF {
+    if (_tag == 0) return ResultTF{mem::move(_0)};
     return op();
   }
 
-  template <class F, class U = ops::invoke_t<F(T)>>
-  auto map(this auto self, F&& op) -> Result<U, E> {
-    if (self._tag == 0) return Result<U, E>{op(mem::move(self._0))};
-    return Result<U, E>{mem::move(self._1)};
+  template <class F, class U = FnOut<F, T>>
+  auto map(F&& op) && -> Result<U, E> {
+    if (_tag == 0) return Result<U, E>{op(mem::move(_0))};
+    return Result<U, E>{mem::move(_1)};
   }
 
-  template <class O, class F = ops::invoke_t<O(E)>>
-  auto map_err(this auto self, O&& op) -> Result<T, F> {
-    if (self._tag == 1) return Result<T, F>{op(mem::move(self._1))};
-    return Result<T, F>{mem::move(self._0)};
+  template <class O, class F = FnOut<O, E>>
+  auto map_err(O&& op) && -> Result<T, F> {
+    if (_tag == 1) return Result<T, F>{op(mem::move(_1))};
+    return Result<T, F>{mem::move(_0)};
   }
 
  public:
@@ -214,18 +214,18 @@ class [[nodiscard]] Result<void, E> {
     return mem::move(_1);
   }
 
-  void unwrap(this auto self) noexcept {
-    sfc::assert_fmt(self._tag == 0, "Result::unwrap: not Ok()");
+  void unwrap() && noexcept {
+    sfc::assert_fmt(_tag == 0, "Result::unwrap: not Ok()");
   }
 
-  auto unwrap_err(this auto self) -> E {
-    sfc::assert_fmt(self._tag == 1, "Result::unwrap_err: not Err()");
-    return mem::move(self._1);
+  auto unwrap_err() && -> E {
+    sfc::assert_fmt(_tag == 1, "Result::unwrap_err: not Err()");
+    return mem::move(_1);
   }
 
-  auto err(this auto self) -> Option<E> {
-    if (self._tag != 1) return {};
-    return mem::move(self._1);
+  auto err() && -> Option<E> {
+    if (_tag != 1) return {};
+    return mem::move(_1);
   }
 
  public:
