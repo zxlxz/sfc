@@ -21,24 +21,25 @@ template <class T, class U>
 concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
 #endif
 
-template <class T>
-concept sint_ = same_<T, signed char> || same_<T, short> || same_<T, int> || same_<T, long> ||
-                same_<T, long long>;
+template <class T, class... U>
+concept any_ = (same_<T, U> || ...);
 
 template <class T>
-concept uint_ = same_<T, unsigned char> || same_<T, unsigned short> || same_<T, unsigned int> ||
-                same_<T, unsigned long> || same_<T, unsigned long long>;
+concept sint_ = any_<T, signed char, short, int, long, long long>;
+
+template <class T>
+concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
 
 template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept float_ = same_<T, float> || same_<T, double>;
+concept float_ = any_<T, float, double>;
 
-template<class T>
+template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
 
-template<class T>
+template <class T>
 concept tv_drop_ = __is_trivially_destructible(T);
 
 }  // namespace sfc::trait
