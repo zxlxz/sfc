@@ -382,4 +382,8 @@ void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
   Formatter{out}.write_fmt(fmt::Args{fmts, args...});
 }
 
+void write_fmt(auto& out, auto& args) {
+  Formatter{out}.write_fmt(args);
+}
+
 }  // namespace sfc::fmt

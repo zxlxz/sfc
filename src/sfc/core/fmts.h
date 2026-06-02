@@ -193,6 +193,6 @@ struct SBuf {
   void write_str(str::Str s);
 };
 
-void write(auto& out, const fmt::Fmts& fmts, const auto&... args);
+void write_fmt(auto& out, auto& args);
 
 }  // namespace sfc::fmt

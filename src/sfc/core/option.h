@@ -101,33 +101,33 @@ class Option {
   }
 
   auto operator->() const -> const T* {
-    sfc::assert_fmt(_tag == 1, "Option::operator->: not Some()");
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::operator->: not Some()"});
     return &_1;
   }
 
   auto operator->() -> T* {
-    sfc::assert_fmt(_tag == 1, "Option::operator->: not Some()");
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::operator->: not Some()"});
     return &_1;
   }
 
   auto operator*() const -> const T& {
-    sfc::assert_fmt(_tag == 1, "Option::operator*: not Some()");
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::operator*: not Some()"});
     return _1;
   }
 
   auto operator*() -> T& {
-    sfc::assert_fmt(_tag == 1, "Option::operator*: not Some()");
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::operator*: not Some()"});
     return _1;
   }
 
  public:
   auto expect(const auto& msg) && -> T {
-    sfc::assert_fmt(_tag == 1, "Option::expect: {}", msg);
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::expect: {}", msg});
     return mem::move(_1);
   }
 
   auto unwrap() && -> T {
-    sfc::assert_fmt(_tag == 1, "Option::unwrap: not Some()");
+    sfc::assert_fmt(_tag == 1, fmt::Args{"Option::unwrap: not Some()"});
     return mem::move(_1);
   }
 
@@ -209,33 +209,33 @@ class Option<T> {
   }
 
   auto operator->() const -> const T* {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator->: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator->: None()"});
     return &_1;
   }
 
   auto operator->() -> T* {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator->: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator->: None()"});
     return &_1;
   }
 
   auto operator*() const -> const T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator*: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator*: None()"});
     return _1;
   }
 
   auto operator*() -> T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator*: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator*: None()"});
     return _1;
   }
 
  public:
   auto expect(const auto& msg) && -> T {
-    sfc::assert_fmt(_1 != nullptr, "Option::expect: {}", msg);
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::expect: {}", msg});
     return mem::move(_1);
   }
 
   auto unwrap() && -> T {
-    sfc::assert_fmt(_1 != nullptr, "Option::unwrap: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::unwrap: None()"});
     return mem::move(_1);
   }
 
@@ -320,27 +320,27 @@ class Option<T&> {
   }
 
   auto operator->() const -> const T* {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator->: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator->: None()"});
     return _1;
   }
 
   auto operator->() -> T* {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator->: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator->: None()"});
     return _1;
   }
 
   auto operator*() const -> const T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::deref: nullptr");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::deref: nullptr"});
     return *_1;
   }
 
   auto operator*() -> T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::deref: nullptr");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::deref: nullptr"});
     return *_1;
   }
 
   auto unwrap() const -> T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::unwrap: nullptr");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::unwrap: nullptr"});
     return *_1;
   }
 
@@ -354,7 +354,7 @@ class Option<T&> {
   }
 
   auto expect(const auto& msg) && -> T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::expect: {}", msg);
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::expect: {}", msg});
     return *_1;
   }
 
@@ -432,17 +432,17 @@ class Option<const T&> {
   }
 
   auto operator->() const -> const T* {
-    sfc::assert_fmt(_1 != nullptr, "Option::operator->: None()");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::operator->: None()"});
     return _1;
   }
 
   auto operator*() const -> const T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::deref: nullptr");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::deref: nullptr"});
     return *_1;
   }
 
   auto unwrap() const -> const T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::unwrap: nullptr");
+    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::unwrap: nullptr"});
     return *_1;
   }
 
@@ -515,7 +515,7 @@ template <class T>
 Option(T) -> Option<T>;
 
 template <usize N>
-Option(const char(&)[N]) -> Option<str::Str>;
+Option(const char (&)[N]) -> Option<str::Str>;
 
 template <class T>
 auto operator==(const Option<T>& a, Option<void>) -> bool {

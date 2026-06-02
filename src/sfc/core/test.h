@@ -6,23 +6,23 @@ namespace sfc::test {
 
 using fmt::RawStr;
 using panic::SourceLoc;
-using panic::PanicFmts;
 
-void assert_fmt(bool cond, const PanicFmts& fmts, const auto&... args) {
+template<class ...T>
+void assert_fmt(bool cond, const fmt::Args<T...>& args, SourceLoc loc = SourceLoc::current()) {
   if (cond) return;
-  panic::panic_fmt(fmts, args...);
+  panic::panic_fmt(args, loc);
 }
 
 [[noreturn]] void assert_failed(SourceLoc loc, const auto& expr, const auto&... args) {
   if constexpr (sizeof...(args) == 0) {
     const auto fmts = fmt::Fmts{"assert failed: `{}`"};
-    panic::panic_fmt({fmts, loc}, expr);
+    panic::panic_fmt(fmt::Args{fmts, expr}, loc);
   } else if constexpr (sizeof...(args) == 1) {
     const auto fmts = fmt::Fmts{"assert failed: `{}`\n  value: {}"};
-    panic::panic_fmt({fmts, loc}, expr, args...);
+    panic::panic_fmt(fmt::Args{fmts, expr, args...}, loc);
   } else if constexpr (sizeof...(args) == 2) {
     const auto fmts = fmt::Fmts{"assert failed: `(left {} right)`\n  left: {},\n right: {}"};
-    panic::panic_fmt({fmts, loc}, expr, args...);
+    panic::panic_fmt(fmt::Args{fmts, expr, args...}, loc);
   }
 }
 

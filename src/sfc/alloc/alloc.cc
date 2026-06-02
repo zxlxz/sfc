@@ -9,9 +9,7 @@
 namespace sfc::alloc {
 
 auto Global::alloc(Layout layout) noexcept -> void* {
-  if (layout.align == 0 || !num::is_power_of_two(layout.align)) {
-    panic::panic_fmt("alloc::Global::alloc: invalid align({})", layout.align);
-  }
+  sfc::assert_fmt(num::is_power_of_two(layout.align), fmt::Args{"Global::alloc: invalid align({})", layout.align});
 
   if (layout.size == 0) {
     return nullptr;
@@ -32,9 +30,7 @@ void Global::dealloc(void* ptr, Layout layout) noexcept {
 }
 
 auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
-  if (layout.align == 0 || !num::is_power_of_two(layout.align)) {
-    panic::panic_fmt("alloc::Global::realloc: invalid align({})", layout.align);
-  }
+  sfc::assert_fmt(num::is_power_of_two(layout.align), fmt::Args{"Global::realloc: invalid align({})", layout.align});
 
   if (new_size == layout.size) {
     return ptr;
@@ -44,10 +40,9 @@ auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*
 }
 
 auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::assert_fmt(old_layout.align == new_layout.align,
-                  "alloc::Global::grow: alignment not match (old({}), new({}))",
-                  old_layout.align,
-                  new_layout.align);
+  sfc::assert_fmt(
+      old_layout.align == new_layout.align,
+      fmt::Args{"Global::grow: alignment not match (old({}), new({}))", old_layout.align, new_layout.align});
 
   if (old_layout.size >= new_layout.size) {
     return ptr;
@@ -61,10 +56,9 @@ auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> v
 }
 
 auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::assert_fmt(old_layout.align == new_layout.align,
-                  "alloc::Global::shrink: alignment not match (old({}), new({}))",
-                  old_layout.align,
-                  new_layout.align);
+  sfc::assert_fmt(
+      old_layout.align == new_layout.align,
+      fmt::Args{"Global::shrink: alignment not match (old({}), new({}))", old_layout.align, new_layout.align});
 
   if (old_layout.size <= new_layout.size) {
     return ptr;
