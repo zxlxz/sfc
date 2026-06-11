@@ -383,11 +383,6 @@ class Option<T&> {
     return _1 ? *_1 : f();
   }
 
-  auto expect(const auto& msg) && -> T& {
-    sfc::assert_fmt(_1 != nullptr, fmt::Args{"Option::expect: {}", msg});
-    return *_1;
-  }
-
   template <class U>
   auto operator&(Option<U> optb) && -> Option<U> {
     return _1 ? mem::move(optb) : Option<U>{};
@@ -483,11 +478,6 @@ class Option<const T&> {
 
   auto unwrap_or_else(auto&& f) const -> const T& {
     return _1 ? *_1 : f();
-  }
-
-  auto expect(const auto& msg) const -> const T& {
-    sfc::assert_fmt(_1 != nullptr, "Option::expect: {}", msg);
-    return *_1;
   }
 
   template <class U>
