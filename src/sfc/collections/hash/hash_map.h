@@ -38,41 +38,35 @@ class HashMap {
   }
 
   auto get(const auto& key) const noexcept -> Option<const V&> {
-    const auto p = _inn.search(key);
-    if (!p) {
-      return {};
+    if (auto* p = _inn.search(key)) {
+      return p->val;
     }
-    return p->val;
+    return {};
   }
 
   auto get_mut(const auto& key) noexcept -> Option<V&> {
-    const auto p = _inn.search(key);
-    if (!p) {
-      return {};
+    if (auto* p = _inn.search(key)) {
+      return p->val;
     }
-    return p->val;
+    return {};
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
-    const auto p = _inn.try_insert({mem::move(key), mem::move(val)});
-    if (!p) {
-      return {};
+    if (auto* p = _inn.try_insert({mem::move(key), mem::move(val)})) {
+      return p->val;
     }
-    return p->val;
+    return {};
   }
 
   auto insert(K key, V val) noexcept -> Option<V> {
-    const auto p = _inn.try_insert({mem::move(key), mem::move(val)});
-    if (!p) {
-      return {};
+    if (auto* p = _inn.try_insert({mem::move(key), mem::move(val)})) {
+      return mem::replace(p->val, mem::move(val));
     }
-    return mem::replace(p->val, mem::move(val));
+    return {};
   }
 
   auto remove(const K& key) -> Option<V> {
-    auto x = _inn.remove(key);
-    if (!x) return {};
-    return mem::move(x->val);
+    return _inn.remove(key).map([](auto entry) { return mem::move(entry.val); });
   }
 
   void clear() {
