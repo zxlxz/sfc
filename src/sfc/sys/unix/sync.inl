@@ -14,9 +14,9 @@ class Mutex {
 
  public:
   explicit Mutex() {
-    _raw = ptr::cast_mut<pthread_mutex_t>(::malloc(sizeof(pthread_mutex_t)));
+    _raw = new pthread_mutex_t{};
     if (auto err = ::pthread_mutex_init(_raw, nullptr); err != 0) {
-      ::free(_raw);
+      delete _raw;
       _raw = nullptr;
     }
   }
@@ -28,7 +28,7 @@ class Mutex {
 
     // no need to check error here, since after dtor, the mutex is already unusable
     (void)::pthread_mutex_destroy(_raw);
-    ::free(_raw);
+    delete _raw;
   }
 
   Mutex(Mutex&& other) noexcept : _raw{other._raw} {
@@ -97,9 +97,9 @@ class Condvar {
     auto attr = CondAttr{};
     attr.set_clock(CLOCK_ID);
 
-    _raw = ptr::cast_mut<pthread_cond_t>(::malloc(sizeof(pthread_cond_t)));
+    _raw = new pthread_cond_t{};
     if (auto err = ::pthread_cond_init(_raw, &attr._raw); err != 0) {
-      ::free(_raw);
+      delete _raw;
       _raw = nullptr;
     }
   }
@@ -111,7 +111,7 @@ class Condvar {
 
     // no need to check error here, since after dtor, the condvar is already unusable
     (void)::pthread_cond_destroy(_raw);
-    ::free(_raw);
+    delete _raw;
   }
 
   Condvar(Condvar&& other) noexcept : _raw{other._raw} {
