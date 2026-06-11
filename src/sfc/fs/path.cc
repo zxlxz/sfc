@@ -30,24 +30,9 @@ struct Components {
       return {};
     }
 
-    if (_str.len() == 1) {
-      return mem::take(_str);
-    }
-
-    const auto p = _str.find(is_delim);
-    if (!p) {
-      return mem::take(_str);
-    }
-
-    // root, use '/' for all platforms, don't use ugly '\'
-    if (*p == 0) {
-      _str = _str[{1, $}];
-      return Str{"/"};
-    }
-
-    const auto s = _str[{0, *p}];
-    _str = _str[{*p + 1, $}];
-    return s;
+    const auto [a, b] = _str.split_once(is_delim).unwrap_or({_str, {}});
+    _str = b;
+    return a.is_empty() ? Str{"/"} : a;
   }
 
   auto next_back() noexcept -> Option<Str> {
@@ -55,24 +40,14 @@ struct Components {
       return {};
     }
 
-    // trim delimiters
-    if (_str.len() > 1 && _str.ends_with(is_delim)) {
-      _str._len -= 1;
+    _str = _str.trim_end_matches(is_delim);
+    if (_str.is_empty()) {
+      return Str{"/"};
     }
 
-    if (_str.len() == 1) {
-      return mem::take(_str);
-    }
-
-    const auto p = _str.rfind(is_delim);
-    if (!p) {
-      return mem::take(_str);
-    }
-
-    const auto i = *p;
-    const auto s = _str[{i + 1, $}];
-    _str = _str[{0, i ? i : 1}];
-    return s;
+    const auto [a, b] = _str.rsplit_once(is_delim).unwrap_or({{}, _str});
+    _str = a.is_empty() ? Str{"/"} : a;
+    return b;
   }
 };
 
@@ -185,13 +160,13 @@ auto Path::exists() const noexcept -> bool {
 }
 
 auto Path::is_file() const noexcept -> bool {
-  const auto t = fs::metadata(*this).ok();
-  return t && (*t).is_file();
+  const auto m = fs::metadata(*this);
+  return auto{m}.map([](const auto& m) { return m.is_file(); }).unwrap_or(false);
 }
 
 auto Path::is_dir() const noexcept -> bool {
-  const auto t = fs::metadata(*this).ok();
-  return t && (*t).is_dir();
+  const auto m = fs::metadata(*this);
+  return auto{m}.map([](const auto& m) { return m.is_dir(); }).unwrap_or(false);
 }
 
 auto PathBuf::from(Str s) noexcept -> PathBuf {
@@ -321,7 +296,7 @@ auto create_dir(Path path) -> io::Result<> {
 
 auto create_dir_all(Path path) -> io::Result<> {
   const auto err = fs::create_dir(path).err();
-  if (!err || err->kind() == io::ErrorKind::AlreadyExists) {
+  if (!err || (*err).kind() == io::ErrorKind::AlreadyExists) {
     return {};
   }
 

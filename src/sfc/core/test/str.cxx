@@ -248,4 +248,19 @@ SFC_TEST(parse_exp) {
   sfc::assert_eq(Str{"1e-10"}.parse<f64>(), Option{1e-10});
 }
 
+SFC_TEST(split_once) {
+  const auto s = Str{"a,b;c"};
+  {
+    const auto [a, b] = s.split_once(',').unwrap_or({{}, {}});
+    sfc::assert_eq(a, "a");
+    sfc::assert_eq(b, "b;c");
+  }
+
+  {
+    const auto [a, b] = s.split_once(';').unwrap_or({{}, {}});
+    sfc::assert_eq(a, "a,b");
+    sfc::assert_eq(b, "c");
+  }
+}
+
 }  // namespace sfc::str::test

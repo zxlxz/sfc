@@ -101,10 +101,21 @@ struct Str {
   auto trim_end() const noexcept -> Str;
   auto trim() const noexcept -> Str;
 
+  auto split_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
+  auto rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
+
  public:
   // trait: option::Nullable
   constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _ptr == nullptr;
+  }
+
+  // trait: ops::Eq
+  constexpr auto eq(Str other) const noexcept -> bool {
+    if (_len != other._len) return false;
+    if (_len == 0) return true;
+    const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
+    return ret == 0;
   }
 
   // trait: fmt::Display
@@ -133,10 +144,7 @@ struct Str {
 };
 
 constexpr auto operator==(Str left, Str right) noexcept -> bool {
-  if (left._len != right._len) return false;
-  if (left._len == 0) return true;
-  const auto ret = __builtin_memcmp(left._ptr, right._ptr, left._len);
-  return ret == 0;
+  return left.eq(right);
 }
 
 template <class T>
@@ -233,6 +241,7 @@ struct StrSearcher : Searcher {
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
+ public:
   auto match() const -> bool;
   auto match_back() const -> bool;
   auto next() -> SearchStep;
@@ -291,7 +300,8 @@ auto Str::find(auto&& pat) const -> Option<usize> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  return s.next_match().pos();
+  auto m = s.next_match();
+  return m.pos();
 }
 
 auto Str::rfind(auto&& pat) const -> Option<usize> {
@@ -300,7 +310,8 @@ auto Str::rfind(auto&& pat) const -> Option<usize> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  return s.next_match_back().pos();
+  auto m = s.next_match_back();
+  return m.pos();
 }
 
 auto Str::contains(auto&& pat) const -> bool {
@@ -309,7 +320,8 @@ auto Str::contains(auto&& pat) const -> bool {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  return s.next_match()._type == SearchStep::Match;
+  auto m = s.next_match();
+  return m._type == SearchStep::Match;
 }
 
 auto Str::starts_with(auto&& pat) const -> bool {
@@ -372,6 +384,36 @@ auto Str::trim_matches(auto&& pat) const -> Str {
     j = m._end;
   }
   return Str{_ptr + i, j - i};
+}
+
+auto Str::split_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
+  if (_len == 0) {
+    return {};
+  }
+
+  auto s = Pattern::into_searcher(pat, *this);
+  auto m = s.next_match();
+  if (!m) {
+    return {};
+  }
+  const auto i = m._pos;
+  const auto j = m._end;
+  return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
+}
+
+auto Str::rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
+  if (_len == 0) {
+    return {};
+  }
+
+  auto s = Pattern::into_searcher(pat, *this);
+  auto m = s.next_match_back();
+  if (!m) {
+    return {};
+  }
+  const auto i = m._pos;
+  const auto j = m._end;
+  return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
 }
 
 }  // namespace sfc::str

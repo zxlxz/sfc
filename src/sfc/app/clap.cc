@@ -175,11 +175,8 @@ struct Clap::Parser {
   static auto parse_kv(Str s) -> Tuple<Str, Str> {
     s = s.trim_start_matches('-');
 
-    if (auto p = s.find('=')) {
-      const auto [a, b] = s.split_at(*p);
-      return {a, b[{1, $}]};
-    }
-    return {s, {}};
+    const auto [a, b] = s.split_once('=').unwrap_or({s, {}});
+    return {a, b};
   }
 
   auto find_item(Str key) -> Item* {
