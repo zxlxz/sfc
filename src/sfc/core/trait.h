@@ -42,6 +42,9 @@ concept tv_copy_ = __is_trivially_copyable(T);
 template <class T>
 concept tv_drop_ = __is_trivially_destructible(T);
 
+template <class T, class... U>
+concept AsRef = requires(const U&... args) { T{args...}; };
+
 }  // namespace sfc::trait
 
 namespace sfc {

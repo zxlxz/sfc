@@ -34,15 +34,15 @@ class [[nodiscard]] String {
   }
 
   auto as_slice() const noexcept -> Slice<const u8> {
-    return {_buf.as_ptr(), _buf.len()};
+    return _buf.as_slice();
   }
 
   auto as_mut_slice() noexcept -> Slice<u8> {
-    return {_buf.as_mut_ptr(), _buf.len()};
+    return _buf.as_mut_slice();
   }
 
   auto as_str() const noexcept -> Str {
-    return Str::from_utf8(this->as_slice());
+    return Str::from_utf8(_buf.as_slice());
   }
 
   auto operator[](ops::Range ids) const noexcept -> Str {
@@ -92,17 +92,12 @@ class [[nodiscard]] String {
  public:
   // trait: Deref<Str>
   auto operator*() const noexcept -> Str {
-    return Str::from_utf8(this->as_slice());
+    return Str::from_utf8(_buf.as_slice());
   }
 
   // trait: ops::Eq
   auto operator==(Str other) const noexcept -> bool {
     return this->as_str() == other;
-  }
-
-  // trait: ops::Eq
-  auto operator==(const String& other) const noexcept -> bool {
-    return this->as_str() == other.as_str();
   }
 
   // trait: Clone

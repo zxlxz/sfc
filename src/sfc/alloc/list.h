@@ -77,12 +77,12 @@ class [[nodiscard]] List {
 
   auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<u8>(_inn.ptr()), _len * sizeof(T)};
+    return this->as_slice().as_bytes();
   }
 
   auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast_mut<u8>(_inn.ptr()), _len * sizeof(T)};
+    return this->as_mut_slice().as_mut_bytes();
   }
 
   void set_len(usize new_len) noexcept {

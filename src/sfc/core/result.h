@@ -137,7 +137,7 @@ class [[nodiscard]] Result {
 
  public:
   // trait: ops::Eq
-  auto operator==(const Result& other) const -> bool {
+  auto eq(const Result& other) const -> bool {
     if (_tag == 0 && other._tag == 0) {
       return _0 == other._0;
     } else if (_tag == 1 && other._tag == 1) {
@@ -230,7 +230,7 @@ class [[nodiscard]] Result<void, E> {
 
  public:
   // trait: ops::Eq
-  auto operator==(const Result& other) const {
+  auto eq(const Result& other) const {
     if (_tag != other._tag) {
       return false;
     }
@@ -249,6 +249,12 @@ class [[nodiscard]] Result<void, E> {
     }
   }
 };
+
+// trait: ops::Eq
+template <class T, class E>
+auto operator==(const Result<T, E>& left, const Result<T, E>& right) -> bool {
+  return left.eq(right);
+}
 
 }  // namespace sfc::result
 

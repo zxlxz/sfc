@@ -27,6 +27,36 @@ class Option<void> {
     return false;
   }
 
+ public:
+  template <class U>
+  auto operator&([[maybe_unused]] Option<U> optb) const -> Option<U> {
+    return {};
+  }
+
+  template <class U>
+  auto operator|(Option<U> optb) const -> Option<U> {
+    return mem::move(optb);
+  }
+
+  auto and_then([[maybe_unused]] auto&& f) const -> Option<void> {
+    return {};
+  }
+
+  auto map([[maybe_unused]] auto&& f) const -> Option<void> {
+    return {};
+  }
+
+  template <class U>
+  auto map_or(U default_val, [[maybe_unused]] auto&& f) const -> U {
+    return default_val;
+  }
+
+  template <class F, class OptionU = FnOut<F>>
+  auto or_else(F&& f) const -> OptionU {
+    return f();
+  }
+
+ public:
   void fmt(auto& f) const {
     f.write_str("None()");
   }
@@ -517,16 +547,18 @@ Option(T) -> Option<T>;
 template <usize N>
 Option(const char (&)[N]) -> Option<str::Str>;
 
-template <class T>
-auto operator==(const Option<T>& a, Option<void>) -> bool {
-  return !a;
-}
-
 template <class A, class B>
 auto operator==(const Option<A>& a, const Option<B>& b) -> bool {
-  if (!a) return !b;
-  if (!b) return false;
-  return *a == *b;
+  if constexpr (trait::same_<A, void>) {
+    return b.is_none();
+  } else if constexpr (trait::same_<B, void>) {
+    return a.is_none();
+  } else {
+    if (a.is_some() && b.is_some()) {
+      return *a == *b;
+    }
+    return a.is_none() && b.is_none();
+  }
 }
 
 }  // namespace sfc::option

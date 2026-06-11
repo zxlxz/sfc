@@ -102,14 +102,6 @@ struct Str {
   auto trim() const noexcept -> Str;
 
  public:
-  // trait: ops::Eq
-  constexpr auto operator==(Str other) const noexcept -> bool {
-    if (_len != other._len) return false;
-    if (_len == 0) return true;
-    const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
-    return ret == 0;
-  }
-
   // trait: option::Nullable
   constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
     return _ptr == nullptr;
@@ -139,6 +131,13 @@ struct Str {
   // trait: hash::Hash
   auto hash() const noexcept -> usize;
 };
+
+constexpr auto operator==(Str left, Str right) noexcept -> bool {
+  if (left._len != right._len) return false;
+  if (left._len == 0) return true;
+  const auto ret = __builtin_memcmp(left._ptr, right._ptr, left._len);
+  return ret == 0;
+}
 
 template <class T>
 struct FromStr {
