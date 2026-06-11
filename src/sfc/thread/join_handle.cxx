@@ -5,17 +5,17 @@
 
 namespace sfc::thread::test {
 
-SFC_TEST(spawn) {
+SFC_TEST(spawn_joind) {
   auto n1 = 0;
   auto n2 = 0;
 
   {
-    auto t1 = thread::spawn([&]() { n1 += 1; });
-    auto t2 = thread::spawn([&]() { n2 += 1; });
+    auto t1 = thread::spawn_joined([&]() { n1 += 1; });
+    auto t2 = thread::spawn_joined([&]() { n2 += 1; });
   }
 
   sfc::assert_eq(n1, 1);
   sfc::assert_eq(n2, 1);
 }
 
-}  // namespace sfc::thread
+}  // namespace sfc::thread::test

@@ -10,7 +10,7 @@ class JoinHandle {
   sys::Thread _thread{};
 
  public:
-  JoinHandle() noexcept;
+  explicit JoinHandle(sys::Thread thread) noexcept;
   ~JoinHandle() noexcept;
 
   JoinHandle(JoinHandle&& other) noexcept;
@@ -18,6 +18,17 @@ class JoinHandle {
 
   auto is_finished() const -> bool;
   void join();
+};
+
+class JoinGuard {
+  JoinHandle _handle;
+
+ public:
+  explicit JoinGuard(JoinHandle handle) noexcept;
+  ~JoinGuard() noexcept;
+
+  JoinGuard(JoinGuard&& other) noexcept;
+  JoinGuard& operator=(JoinGuard&& other) noexcept;
 };
 
 struct Builder {
@@ -29,7 +40,12 @@ struct Builder {
 };
 
 auto spawn(auto f) -> JoinHandle {
-  return Builder{}.spawn(Box<void()>::xnew(mem::move(f)));
+  auto b = Builder{};
+  return b.spawn(Box<void()>::xnew(mem::move(f)));
+}
+
+auto spawn_joined(auto f) {
+  return JoinGuard{thread::spawn(mem::move(f))};
 }
 
 }  // namespace sfc::thread

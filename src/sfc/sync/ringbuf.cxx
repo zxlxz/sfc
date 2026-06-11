@@ -140,8 +140,8 @@ SFC_TEST(mpmc_s1r1) {
   };
 
   {
-    auto s1 = thread::spawn([&]() { sender(); });
-    auto r1 = thread::spawn([&]() { receiver(); });
+    auto s1 = thread::spawn_joined([&]() { sender(); });
+    auto r1 = thread::spawn_joined([&]() { receiver(); });
   }
 
   sfc::assert_eq(recv_cnt, CNT);
@@ -176,10 +176,10 @@ SFC_TEST(mpmc_s2r2) {
   };
 
   {
-    auto p1 = thread::spawn([&]() { sender(+1); });
-    auto p2 = thread::spawn([&]() { sender(-1); });
-    auto c1 = thread::spawn([&]() { receiver(); });
-    auto c2 = thread::spawn([&]() { receiver(); });
+    auto p1 = thread::spawn_joined([&]() { sender(+1); });
+    auto p2 = thread::spawn_joined([&]() { sender(-1); });
+    auto c1 = thread::spawn_joined([&]() { receiver(); });
+    auto c2 = thread::spawn_joined([&]() { receiver(); });
   }
 
   sfc::assert_eq(recv_cnt.load(), 2 * u32{CNT});
