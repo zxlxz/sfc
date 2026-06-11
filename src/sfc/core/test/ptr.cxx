@@ -55,7 +55,7 @@ SFC_TEST(write) {
   auto cnt = Cnt{};
 
   usize buf[1];
-  auto ptr = ptr::cast_mut<RefCnt>(buf);
+  auto ptr = ptr::cast<RefCnt>(buf);
   {
     ptr::write(ptr, RefCnt{cnt});
     sfc::assert_eq(cnt, Cnt{2, 1});

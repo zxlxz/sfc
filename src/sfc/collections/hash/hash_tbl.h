@@ -183,7 +183,7 @@ class HashTbl {
 
     auto res = HashTbl{};
     res._cap = num::next_power_of_two(min_cap);
-    res._ptr = ptr::cast_mut<u8>(a.alloc(res.layout()));
+    res._ptr = ptr::cast<u8>(a.alloc(res.layout()));
     res.init();
     return res;
   }
@@ -285,7 +285,7 @@ class HashTbl {
   using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto data = ptr::cast_mut<T>(_ptr + ctrl_size);
+    const auto data = ptr::cast<T>(_ptr + ctrl_size);
     return {{}, _ptr, data, _cap};
   }
 
@@ -298,7 +298,7 @@ class HashTbl {
 
   auto bucket(usize h1) const -> Bucket<T> {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto data = ptr::cast_mut<T>(_ptr + ctrl_size);
+    const auto data = ptr::cast<T>(_ptr + ctrl_size);
     return Bucket{_ptr, data, _cap - 1, h1};
   }
 

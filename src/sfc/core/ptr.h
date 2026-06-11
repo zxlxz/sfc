@@ -54,14 +54,18 @@ template <class T>
   return nullptr;
 }
 
-template <class T>
-[[gnu::always_inline]] inline auto cast(const void* ptr) noexcept -> const T* {
-  return static_cast<const T*>(ptr);
+template <class U, class T>
+[[gnu::always_inline]] inline auto cast(T* ptr) noexcept -> U* {
+  if constexpr (__is_constructible(U*, T*)) {
+    return static_cast<U*>(ptr);
+  } else {
+    return reinterpret_cast<U*>(ptr);
+  }
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto cast_mut(void* ptr) noexcept -> T* {
-  return static_cast<T*>(ptr);
+[[gnu::always_inline]] inline auto cast_mut(const T* ptr) noexcept -> T* {
+  return const_cast<T*>(ptr);
 }
 
 template <class T>

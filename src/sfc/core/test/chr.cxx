@@ -99,7 +99,7 @@ SFC_TEST(utf8_encode) {
 
 SFC_TEST(utf8_decode) {
   auto decode = [](Slice<const char8_t> s) {
-    const auto p = ptr::cast<u8>(s._ptr);
+    const auto p = ptr::cast<const u8>(s._ptr);
     return chr::utf8_decode(p, s._len - 1);
   };
 
@@ -169,7 +169,7 @@ SFC_TEST(utf16_encode) {
 
 SFC_TEST(utf16_decode) {
   auto decode = [](Slice<const char16_t> s) {
-    const auto p = ptr::cast<u16>(s._ptr);
+    const auto p = ptr::cast<const u16>(s._ptr);
     return chr::utf16_decode(p, s._len - 1);
   };
 

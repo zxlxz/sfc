@@ -18,7 +18,7 @@ struct Str {
   [[gnu::always_inline]] constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
   [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
-    return Str{ptr::cast<char>(s._ptr), s._len};
+    return Str{ptr::cast<const char>(s._ptr), s._len};
   }
 
   [[gnu::always_inline]] static auto from_cstr(const char* s) noexcept -> Str {
@@ -55,7 +55,7 @@ struct Str {
   }
 
   [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
-    return {ptr::cast<u8>(_ptr), _len};
+    return {ptr::cast<const u8>(_ptr), _len};
   }
 
  public:
@@ -82,7 +82,7 @@ struct Str {
   }
 
   auto chars() const noexcept -> chr::Chars {
-    return chr::Chars{ptr::cast<u8>(_ptr), _len};
+    return chr::Chars{ptr::cast<const u8>(_ptr), _len};
   }
 
  public:

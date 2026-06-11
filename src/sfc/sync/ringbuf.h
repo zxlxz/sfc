@@ -66,7 +66,7 @@ struct RawBuf {
     if (cap == 0) return res;
 
     const auto layout = Layout::array<Cell>(cap);
-    auto ptr = ptr::cast_mut<Cell>(a.alloc(layout));
+    auto ptr = ptr::cast<Cell>(a.alloc(layout));
     for (auto i = 0UL; i < cap; ++i) {
       new (ptr + i) Cell{i};
     }
