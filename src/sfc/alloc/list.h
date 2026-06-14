@@ -210,15 +210,13 @@ class [[nodiscard]] List {
   }
 
   void drain(ops::Range ids) noexcept {
-    ids = ids % _len;
+    ids = ids.wrap(_len);
 
-    const auto hole_ptr = _inn.ptr() + ids.start;
-    const auto hole_len = ids.len();
-    const auto tail_ptr = hole_ptr + hole_len;
-    const auto tail_len = _len - ids.end;
-    ptr::drop(hole_ptr, hole_len);
-    ptr::shift_elements_left(tail_ptr, tail_len, hole_len);
-    _len -= ids.len();
+    auto hole = Slice{_inn.ptr() + ids.start, ids.len()};
+    auto tail = Slice{hole._ptr + hole._len, _len - ids.end};
+    ptr::drop(hole._ptr, hole._len);
+    ptr::shift_elements_left(tail._ptr, tail._len, hole._len);
+    _len -= hole._len;
   }
 
   void resize(usize new_len, T value) noexcept {

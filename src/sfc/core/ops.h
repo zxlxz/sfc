@@ -25,7 +25,7 @@ struct Range {
   [[gnu::always_inline]] constexpr Range(usize start, usize end) : start{start}, end{end} {}
   [[gnu::always_inline]] constexpr Range(usize start, End) : start{start}, end{usize(-1)} {}
 
-  [[gnu::always_inline]] constexpr auto operator%(usize len) const noexcept -> Range {
+  [[gnu::always_inline]] constexpr auto wrap(usize len) const noexcept -> Range {
     const auto s = start < len ? start : len;
     const auto e = end < len ? end : len;
     return {s, e};

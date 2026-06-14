@@ -19,9 +19,6 @@ template <class T>
 struct Chunks;
 
 template <class T>
-struct Slice;
-
-template <class T>
 struct Slice {
   T* _ptr = nullptr;
   usize _len = 0;
@@ -76,12 +73,12 @@ struct Slice {
   }
 
   auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
-    ids = ids % _len;
+    ids = ids.wrap(_len);
     return Slice<const T>{_ptr + ids.start, ids.len()};
   }
 
   auto operator[](ops::Range ids) noexcept -> Slice<T> {
-    ids = ids % _len;
+    ids = ids.wrap(_len);
     return Slice<T>{_ptr + ids.start, ids.len()};
   }
 
@@ -200,8 +197,8 @@ struct Slice {
   }
 
  public:
-  // trait: option::Nullable
-  constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
+  // trait: option::None
+  constexpr auto is_none() const noexcept -> bool {
     return _ptr == nullptr;
   }
 
@@ -265,7 +262,7 @@ struct Slice<const T> {
   }
 
   auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
-    ids = ids % _len;
+    ids = ids.wrap(_len);
     return Slice<const T>{_ptr + ids.start, ids.len()};
   }
 
@@ -313,14 +310,6 @@ struct Slice<const T> {
   }
 
  public:
-  [[gnu::always_inline]] auto begin() const noexcept -> const T* {
-    return _ptr;
-  }
-
-  [[gnu::always_inline]] auto end() const noexcept -> const T* {
-    return _ptr + _len;
-  }
-
   [[gnu::always_inline]] auto iter() const noexcept -> Iter<const T> {
     return {_ptr, _len};
   }
@@ -334,8 +323,8 @@ struct Slice<const T> {
   }
 
  public:
-  // trait: option::Nullable
-  constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
+  // trait: option::None
+  constexpr auto is_none() const noexcept -> bool {
     return _ptr == nullptr;
   }
 
@@ -361,6 +350,17 @@ Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
 Slice(T*, usize) -> Slice<T>;
+
+// ops::foreach
+template <class T>
+[[gnu::always_inline]] auto begin(Slice<T> v) -> const T* {
+  return v._ptr;
+}
+
+template <class T>
+[[gnu::always_inline]] auto end(Slice<T> v) -> const T* {
+  return v._ptr + v._len;
+}
 
 // trait: ops::Eq
 template <class A, class B>

@@ -41,14 +41,13 @@ class [[nodiscard]] Box {
     return res;
   }
 
+ public:
   auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
   auto into_raw() && noexcept -> T* {
-    const auto p = _ptr;
-    _ptr = nullptr;
-    return p;
+    return mem::take(_ptr);
   }
 
   template <class B>
@@ -63,11 +62,6 @@ class [[nodiscard]] Box {
   }
 
  public:
-  // trait: option::Nullable
-  auto operator==(decltype(nullptr)) const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
   // trait: Deref<const T*>
   auto operator->() const noexcept -> const T* {
     return _ptr;
@@ -86,6 +80,11 @@ class [[nodiscard]] Box {
   // trait: Deref<T&>
   auto operator*() noexcept -> T& {
     return *_ptr;
+  }
+
+  // trait: option::None
+  auto is_none() const noexcept -> bool {
+    return _ptr == nullptr;
   }
 
   // trait: fmt::Display
@@ -145,14 +144,13 @@ class [[nodiscard]] Box<R(T...)> {
     return res;
   }
 
-  auto operator()(T... args) -> R {
-    return (_meta->_call)(_data, (T&&)(args)...);
+ public:
+  auto is_none() const noexcept -> bool {
+    return _data == nullptr;
   }
 
- public:
-  // trait: option::Nullable
-  auto operator==(decltype(nullptr)) const noexcept -> bool {
-    return _data == nullptr;
+  auto operator()(T... args) -> R {
+    return (_meta->_call)(_data, (T&&)(args)...);
   }
 };
 
