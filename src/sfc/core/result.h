@@ -5,10 +5,8 @@
 namespace sfc::result {
 
 template <class T, class E>
-class [[nodiscard]] Result {
-  static constexpr auto kTvCopyable = trait::tv_copy_<T> && trait::tv_copy_<E>;
-  static constexpr auto kTvDroppable = trait::tv_drop_<T> && trait::tv_drop_<E>;
-
+class Inner {
+ protected:
   u8 _tag;
   union {
     T _0;
@@ -16,11 +14,11 @@ class [[nodiscard]] Result {
   };
 
  public:
-  constexpr Result(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
-  constexpr Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
+  constexpr Inner(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
+  constexpr Inner(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
 
-  ~Result() noexcept requires(kTvDroppable) = default;
-  ~Result() noexcept {
+  ~Inner() noexcept requires(trait::tv_drop_<T> && trait::tv_drop_<E>) = default;
+  ~Inner() noexcept {
     switch (_tag) {
       case 0:  mem::drop(_0); break;
       case 1:  mem::drop(_1); break;
@@ -28,31 +26,33 @@ class [[nodiscard]] Result {
     }
   }
 
-  Result(const Result& other) noexcept requires(kTvCopyable) = default;
-  Result(Result&& other) noexcept : _tag{0xFF} {
-    switch (other._tag) {
-      case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
-      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
+  Inner(const Inner& other) noexcept requires(trait::tv_copy_<T> && trait::tv_copy_<E>) = default;
+  Inner(Inner&& other) noexcept : _tag{other._tag} {
+    switch (_tag) {
+      case 0:  ptr::write(&_0, mem::move(other._0)); break;
+      case 1:  ptr::write(&_1, mem::move(other._1)); break;
       default: break;
     }
   }
 
-  Result& operator=(const Result& other) noexcept requires(kTvCopyable) = default;
-  Result& operator=(Result&& other) noexcept {
+  Inner& operator=(const Inner& other) noexcept requires(trait::tv_copy_<T> && trait::tv_copy_<E>) = default;
+  Inner& operator=(Inner&& other) noexcept {
     if (this == &other) return *this;
     switch (_tag) {
-      case 0:  mem::drop(_0), _tag = 0xFF; break;
-      case 1:  mem::drop(_1), _tag = 0xFF; break;
+      case 0:  mem::drop(_0); break;
+      case 1:  mem::drop(_1); break;
       default: break;
     }
+    _tag = other._tag;
     switch (other._tag) {
-      case 0:  ptr::write(&_0, mem::move(other._0)), _tag = 0; break;
-      case 1:  ptr::write(&_1, mem::move(other._1)), _tag = 1; break;
+      case 0:  ptr::write(&_0, mem::move(other._0)); break;
+      case 1:  ptr::write(&_1, mem::move(other._1)); break;
       default: break;
     }
     return *this;
   }
 
+ public:
   constexpr auto is_ok() const noexcept -> bool {
     return _tag == 0;
   }
@@ -60,6 +60,70 @@ class [[nodiscard]] Result {
   constexpr auto is_err() const noexcept -> bool {
     return _tag == 1;
   }
+};
+
+template <class E>
+class Inner<void, E> {
+ protected:
+  struct T {};
+  u8 _tag;
+  union {
+    T _0;
+    E _1;
+  };
+
+ public:
+  constexpr Inner() noexcept : _tag{0}, _0{} {}
+  constexpr Inner(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
+
+  ~Inner() noexcept requires(trait::tv_drop_<E>) = default;
+  ~Inner() noexcept {
+    switch (_tag) {
+      case 1:  mem::drop(_1); break;
+      default: break;
+    }
+  }
+
+  Inner(const Inner& other) noexcept requires(trait::tv_copy_<T> && trait::tv_copy_<E>) = default;
+  Inner(Inner&& other) noexcept : _tag{other._tag} {
+    switch (_tag) {
+      case 1:  ptr::write(&_1, mem::move(other._1)); break;
+      default: break;
+    }
+  }
+
+  Inner& operator=(const Inner& other) noexcept requires(trait::tv_copy_<T> && trait::tv_copy_<E>) = default;
+  Inner& operator=(Inner&& other) noexcept {
+    if (this == &other) return *this;
+    if (_tag == 1) mem::drop(_1);
+    _tag = other._tag;
+    if (_tag == 1) ptr::write(&_1, mem::move(other._1));
+    return *this;
+  }
+
+ public:
+  constexpr auto is_ok() const noexcept -> bool {
+    return _tag == 0;
+  }
+
+  constexpr auto is_err() const noexcept -> bool {
+    return _tag == 1;
+  }
+};
+
+template <class T, class E>
+class [[nodiscard]] Result : Inner<T, E> {
+  using Inn = Inner<T, E>;
+  using Inn::_0;
+  using Inn::_1;
+  using Inn::_tag;
+
+ public:
+  using Inn::Inn;
+  using Inn::operator=;
+
+  using Inn::is_ok;
+  using Inn::is_err;
 
   auto unwrap_unchecked() noexcept -> T {
     return mem::move(_0);
@@ -138,12 +202,10 @@ class [[nodiscard]] Result {
  public:
   // trait: ops::Eq
   auto eq(const Result& other) const -> bool {
-    if (_tag == 0 && other._tag == 0) {
-      return _0 == other._0;
-    } else if (_tag == 1 && other._tag == 1) {
-      return _1 == other._1;
+    if (this->is_ok()) {
+      return other.is_ok() && _0 == other._0;
     } else {
-      return false;
+      return other.is_err() && _1 == other._1;
     }
   }
 
@@ -158,55 +220,17 @@ class [[nodiscard]] Result {
 };
 
 template <class E>
-class [[nodiscard]] Result<void, E> {
-  static constexpr auto kTvCopyable = trait::tv_copy_<E>;
-  static constexpr auto kTvDroppable = trait::tv_drop_<E>;
-
-  u8 _tag;
-  union {
-    E _1;
-  };
+class [[nodiscard]] Result<void, E> : Inner<void, E> {
+  using Inn = Inner<void, E>;
+  using Inn::_0;
+  using Inn::_1;
+  using Inn::_tag;
 
  public:
-  constexpr Result() noexcept : _tag{0}, _1{} {}
-  constexpr Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
-
-  ~Result() noexcept requires(kTvDroppable) = default;
-  ~Result() requires(!kTvDroppable) {
-    if (_tag == 1) {
-      mem::drop(_1);
-    }
-  }
-
-  Result(const Result& other) noexcept requires(kTvCopyable) = default;
-  Result(Result&& other) noexcept : _tag{0} {
-    if (other._tag == 1) {
-      ptr::write(&_1, mem::move(other._1));
-      _tag = 1;
-    }
-  }
-
-  Result& operator=(const Result& other) noexcept requires(kTvCopyable) = default;
-  Result& operator=(Result&& other) noexcept {
-    if (this == &other) return *this;
-    if (_tag == 1) {
-      mem::drop(_1);
-      _tag = 0;
-    }
-    if (other._tag == 1) {
-      ptr::write(&_1, mem::move(other._1));
-      _tag = 1;
-    }
-    return *this;
-  }
-
-  constexpr auto is_ok() const noexcept -> bool {
-    return _tag == 0;
-  }
-
-  constexpr auto is_err() const noexcept -> bool {
-    return _tag == 1;
-  }
+  using Inn::Inn;
+  using Inn::operator=;
+  using Inn::is_ok;
+  using Inn::is_err;
 
   void unwrap_unchecked() const noexcept {}
 
@@ -231,18 +255,17 @@ class [[nodiscard]] Result<void, E> {
  public:
   // trait: ops::Eq
   auto eq(const Result& other) const {
-    if (_tag != other._tag) {
-      return false;
-    }
-    if (_tag == 1 && other._tag == 1) {
-      return _1 == other._1;
+    if (this->is_ok()) {
+      return other.is_ok() && _0 == other._0;
+    } else {
+      return other.is_err() && _1 == other._1;
     }
     return true;
   }
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    switch (_tag) {
+    switch (this->_tag) {
       case 0:  f.write_str("Ok()"); break;
       case 1:  f.write_fmt("Err({})", _1); break;
       default: f.write_str("Result(?)"); break;
