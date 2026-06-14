@@ -105,8 +105,8 @@ struct Str {
   auto rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
 
  public:
-  // trait: option::Nullable
-  constexpr auto operator==(decltype(nullptr)) const noexcept -> bool {
+  // trait: option::None
+  constexpr auto is_none() const noexcept -> bool {
     return _ptr == nullptr;
   }
 
