@@ -5,70 +5,68 @@
 
 namespace sfc::variant {
 
-namespace impl {
 template <class... T>
-union Storage;
+union Inner;
 
-#define _VF              \
-  constexpr Storage() {} \
-  constexpr ~Storage() {}
+#define _VF           \
+  constexpr Inner() {} \
+  constexpr ~Inner() {}
 
 // clang-format off
 template<>
-union Storage<> { };
+union Inner<> { };
 
 template <class A>
-union Storage<A>{A _0;_VF};
+union Inner<A>{A _0;_VF};
 
 template <class A, class B>
-union Storage<A,B>{A _0; B _1; _VF};
+union Inner<A,B>{A _0; B _1; _VF};
 
 template <class A, class B, class C>
-union Storage<A,B,C> { A _0; B _1; C _2; _VF};
+union Inner<A,B,C> { A _0; B _1; C _2; _VF};
 
 template <class A, class B, class C, class D>
-union Storage<A,B,C,D> { A _0; B _1; C _2; D _3; _VF};
+union Inner<A,B,C,D> { A _0; B _1; C _2; D _3; _VF};
 
 template <class A, class B, class C, class D, class E>
-union Storage<A,B,C,D,E> { A _0; B _1; C _2; D _3; E _4; _VF};
+union Inner<A,B,C,D,E> { A _0; B _1; C _2; D _3; E _4; _VF};
 
 template <class A, class B, class C, class D, class E, class F>
-union Storage<A,B,C,D,E,F> { A _0; B _1; C _2; D _3; E _4; F _5; _VF};
+union Inner<A,B,C,D,E,F> { A _0; B _1; C _2; D _3; E _4; F _5; _VF};
 
 template <class A, class B, class C, class D, class E, class F, class G>
-union Storage<A,B,C,D,E,F,G> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; _VF};
+union Inner<A,B,C,D,E,F,G> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; _VF};
 
 template <class A, class B, class C, class D, class E, class F, class G, class H>
-union Storage<A,B,C,D,E,F,G,H> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; _VF};
+union Inner<A,B,C,D,E,F,G,H> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; _VF};
 
 template <class A, class B, class C, class D, class E, class F, class G, class H, class I>
-union Storage<A,B,C,D,E,F,G,H,I> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; _VF};
+union Inner<A,B,C,D,E,F,G,H,I> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; _VF};
 
 template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J>
-union Storage<A,B,C,D,E,F,G,H,I,J> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K>
-union Storage<A,B,C,D,E,F,G,H,I,J,K> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L>
-union Storage<A,B,C,D,E,F,G,H,I,J,K,L> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K,L> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M>
-union Storage<A,B,C,D,E,F,G,H,I,J,K,L,M> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K,L,M> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N>
-union Storage<A,B,C,D,E,F,G,H,I,J,K,L,M,N> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K,L,M,N> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O>
-union Storage<A,B,C,D,E,F,G,H,I,J,K,L,M,N,O> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K,L,M,N,O> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; _VF};
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O, class P>
-union Storage<A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9 ; K _10; L _11; M _12; N _13; O _14; P _15; _VF};
+union Inner<A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9 ; K _10; L _11; M _12; N _13; O _14; P _15; _VF};
 // clang-format on
-}  // namespace impl
 
 template <u32 I>
-struct idx_t {
+struct Index {
   static constexpr auto VALUE = I;
 
   [[gnu::always_inline]] static auto operator[](auto& t) -> auto& {
@@ -94,7 +92,7 @@ struct idx_t {
 template <class... T>
 class Variant {
   static constexpr u32 N = sizeof...(T);
-  using Inn = impl::Storage<T...>;
+  using Inn = Inner<T...>;
   u8 _tag;
   Inn _inn;
 
@@ -109,12 +107,12 @@ class Variant {
   }
 
   template <u32 I, class U>
-  Variant(idx_t<I> tag, U val) : _tag{I}, _inn{} {
+  Variant(Index<I> tag, U val) : _tag{I}, _inn{} {
     ptr::write(&tag[_inn], mem::move(val));
   }
 
   template <trait::any_<T...> U, u32 I = Variant::tag_of<U>()>
-  explicit Variant(U val) noexcept : Variant{idx_t<I>{}, mem::move(val)} {}
+  explicit Variant(U val) noexcept : Variant{Index<I>{}, mem::move(val)} {}
 
   ~Variant() {
     this->map_mut([&](auto& v) { mem::drop(v); });
@@ -170,35 +168,35 @@ class Variant {
   auto as() const noexcept -> Option<const U&> {
     static constexpr auto IDX = Variant::tag_of<U>();
     if (_tag != IDX) return {};
-    return idx_t<IDX>::operator[](_inn);
+    return Index<IDX>::operator[](_inn);
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
     static constexpr auto IDX = Variant::tag_of<U>();
     if (_tag != IDX) return {};
-    return idx_t<IDX>::operator[](_inn);
+    return Index<IDX>::operator[](_inn);
   }
 
   void imap(auto&& f) const {
     // clang-format off
     switch (_tag) {
-      case 0:  if constexpr (N > 0)   return f(idx_t<0>{});
-      case 1:  if constexpr (N > 1)   return f(idx_t<1>{});
-      case 2:  if constexpr (N > 2)   return f(idx_t<2>{});
-      case 3:  if constexpr (N > 3)   return f(idx_t<3>{});
-      case 4:  if constexpr (N > 4)   return f(idx_t<4>{});
-      case 5:  if constexpr (N > 5)   return f(idx_t<5>{});
-      case 6:  if constexpr (N > 6)   return f(idx_t<6>{});
-      case 7:  if constexpr (N > 7)   return f(idx_t<7>{});
-      case 8:  if constexpr (N > 8)   return f(idx_t<8>{});
-      case 9:  if constexpr (N > 9)   return f(idx_t<9>{});
-      case 10: if constexpr (N > 10)  return f(idx_t<10>{});
-      case 11: if constexpr (N > 11)  return f(idx_t<11>{});
-      case 12: if constexpr (N > 12)  return f(idx_t<12>{});
-      case 13: if constexpr (N > 13)  return f(idx_t<13>{});
-      case 14: if constexpr (N > 14)  return f(idx_t<14>{});
-      case 15: if constexpr (N > 15)  return f(idx_t<15>{});
+      case 0:  if constexpr (N > 0)   return f(Index<0>{});
+      case 1:  if constexpr (N > 1)   return f(Index<1>{});
+      case 2:  if constexpr (N > 2)   return f(Index<2>{});
+      case 3:  if constexpr (N > 3)   return f(Index<3>{});
+      case 4:  if constexpr (N > 4)   return f(Index<4>{});
+      case 5:  if constexpr (N > 5)   return f(Index<5>{});
+      case 6:  if constexpr (N > 6)   return f(Index<6>{});
+      case 7:  if constexpr (N > 7)   return f(Index<7>{});
+      case 8:  if constexpr (N > 8)   return f(Index<8>{});
+      case 9:  if constexpr (N > 9)   return f(Index<9>{});
+      case 10: if constexpr (N > 10)  return f(Index<10>{});
+      case 11: if constexpr (N > 11)  return f(Index<11>{});
+      case 12: if constexpr (N > 12)  return f(Index<12>{});
+      case 13: if constexpr (N > 13)  return f(Index<13>{});
+      case 14: if constexpr (N > 14)  return f(Index<14>{});
+      case 15: if constexpr (N > 15)  return f(Index<15>{});
       default: break; // for 0xFF
     }
     // clang-format on
