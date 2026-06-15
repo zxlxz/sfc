@@ -5,6 +5,26 @@
 
 namespace sfc::fmt {
 
+struct SBuf {
+  char* _ptr;
+  usize _cap;
+  usize _len = 0;
+
+ public:
+  template <usize N>
+  constexpr SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
+
+  auto as_str() const -> Str {
+    return Str{_ptr, _len};
+  }
+
+  void write_str(Str s) {
+    if (s._len == 0 || _len + s._len > _cap) return;
+    ptr::copy_nonoverlapping(s._ptr, _ptr + _len, s._len);
+    _len += s._len;
+  }
+};
+
 struct Debug {
   static auto format_int(Slice<char> buf, auto val, char type = 0) -> Str;
   static auto format_ptr(Slice<char> buf, auto val, char type = 0) -> Str;
@@ -382,7 +402,7 @@ void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
   Formatter{out}.write_fmt(fmt::Args{fmts, args...});
 }
 
-void write_fmt(auto& out, auto& args) {
+void write_fmt(auto& out, const auto& args) {
   Formatter{out}.write_fmt(args);
 }
 

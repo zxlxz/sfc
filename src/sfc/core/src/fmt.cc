@@ -226,18 +226,6 @@ struct RevBuf {
   }
 };
 
-auto SBuf::as_str() const -> str::Str {
-  return Str{_ptr, _len};
-}
-
-void SBuf::write_str(str::Str s) {
-  if (s._len == 0 || _len + s._len > _cap) {
-    return;
-  }
-  ptr::copy_nonoverlapping(s._ptr, _ptr + _len, s._len);
-  _len += s._len;
-}
-
 auto Spec::sign(bool is_neg) const -> str::Str {
   if (is_neg) {
     return "-";

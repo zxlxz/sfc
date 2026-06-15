@@ -19,7 +19,7 @@ struct SourceLoc {
 };
 
 struct PanicInfo {
-  fmt::RawStr _msg;
+  fmt::XArgs _args;
   SourceLoc _loc;
 };
 
@@ -27,10 +27,7 @@ struct PanicInfo {
 
 template <class... T>
 [[noreturn]] void panic_fmt(const fmt::Args<T...>& args, SourceLoc loc = SourceLoc::current()) {
-  char buf[1024];
-  auto out = fmt::SBuf{buf};
-  fmt::write_fmt(out, args);
-  panic::panic_imp({{buf, out._len}, loc});
+  panic::panic_imp({fmt::XArgs{args}, loc});
 }
 
 }  // namespace sfc::panic

@@ -4,6 +4,10 @@
 
 namespace sfc::fmt {
 
+void write_fmt(auto& out, const auto& args);
+
+struct SBuf;
+
 struct RawStr {
   const char* _ptr;
   usize _len;
@@ -37,9 +41,6 @@ struct Spec {
   u8 _precision = 0;
 
  public:
-  // [[fill]align][sign]['#'][0][width][.][precision][type]
-  consteval static auto from(RawStr s) noexcept -> Spec;
-
   auto type(char default_type = 0) const -> char {
     return _type ? _type : default_type;
   }
@@ -62,71 +63,72 @@ struct Spec {
 
   auto sign(bool is_neg) const -> str::Str;
   auto prefix() const -> str::Str;
-};
-
-struct Parser {
-  const char* _ptr;
-  const char* _end;
 
  public:
-  constexpr auto match(auto... c) const -> bool {
-    if (_ptr >= _end) return false;
-    return ((*_ptr == c) || ...);
-  }
+  struct Parser {
+    const char* _ptr;
+    const char* _end;
 
-  constexpr auto pop() -> char {
-    if (_ptr >= _end) return 0;
-    return *_ptr++;
-  }
-
-  constexpr auto extract(auto... c) -> char {
-    return this->match(c...) ? this->pop() : 0;
-  }
-
-  constexpr auto extract_int() -> u32 {
-    auto res = 0U;
-    for (; _ptr < _end; ++_ptr) {
-      const auto c = *_ptr;
-      if (!(c >= '0' && c <= '9')) break;
-      const auto n = c - '0';
-      res = res * 10 + num::cast_unsigned(n);
+   public:
+    constexpr auto match(auto... c) const -> bool {
+      if (_ptr >= _end) return false;
+      return ((*_ptr == c) || ...);
     }
-    return res;
+
+    constexpr auto pop() -> char {
+      if (_ptr >= _end) return 0;
+      return *_ptr++;
+    }
+
+    constexpr auto extract(auto... c) -> char {
+      return this->match(c...) ? this->pop() : 0;
+    }
+
+    constexpr auto extract_int() -> u32 {
+      auto res = 0U;
+      for (; _ptr < _end; ++_ptr) {
+        const auto c = *_ptr;
+        if (!(c >= '0' && c <= '9')) break;
+        const auto n = c - '0';
+        res = res * 10 + num::cast_unsigned(n);
+      }
+      return res;
+    }
   };
-};
 
-// [[fill]align][sign]['#'][0][width][.][precision][type]
-consteval auto Spec::from(RawStr s) noexcept -> Spec {
-  if (s._len == 0) {
-    return {};
-  }
+  // [[fill]align][sign]['#'][0][width][.][precision][type]
+  consteval static auto from(RawStr s) noexcept -> Spec {
+    if (s._len == 0) {
+      return {};
+    }
 
-  auto res = Spec{};
+    auto res = Spec{};
 
-  auto p = Parser{s._ptr, s._ptr + s._len};
-  p.extract(':');
+    auto p = Parser{s._ptr, s._ptr + s._len};
+    p.extract(':');
 
-  res._fill = p.pop();
-  res._align = p.extract('<', '>', '=', '^');
-  if (res._fill && !res._align) {
-    p._ptr -= 1;
-    res._fill = 0;
+    res._fill = p.pop();
     res._align = p.extract('<', '>', '=', '^');
-  }
+    if (res._fill && !res._align) {
+      p._ptr -= 1;
+      res._fill = 0;
+      res._align = p.extract('<', '>', '=', '^');
+    }
 
-  res._sign = p.extract('+', '-');
-  res._prefix = p.extract('#');
-  if (!res._fill) {
-    res._fill = p.extract('0');
-  }
+    res._sign = p.extract('+', '-');
+    res._prefix = p.extract('#');
+    if (!res._fill) {
+      res._fill = p.extract('0');
+    }
 
-  res._width = num::saturating_cast<u8>(p.extract_int());
-  if ((res._point = p.extract('.'))) {
-    res._precision = num::saturating_cast<u8>(p.extract_int());
+    res._width = num::saturating_cast<u8>(p.extract_int());
+    if ((res._point = p.extract('.'))) {
+      res._precision = num::saturating_cast<u8>(p.extract_int());
+    }
+    res._type = p.pop();
+    return res;
   }
-  res._type = p.pop();
-  return res;
-}
+};
 
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
@@ -180,19 +182,19 @@ struct Args {
 template <class... T>
 Args(const Fmts& fmts, const T&... args) -> Args<T...>;
 
-struct SBuf {
-  char* _ptr;
-  usize _cap;
-  usize _len = 0;
+struct XArgs {
+  void (*_fmt)(const XArgs& self, SBuf& out);
+  const void* _args;
 
  public:
-  template <usize N>
-  constexpr SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
+  template <class... T>
+  XArgs(const fmt::Args<T...>& args)
+      : _fmt{[](const XArgs& self, SBuf& out) { fmt::write_fmt(out, *ptr::cast<const fmt::Args<T...>>(self._args)); }}
+      , _args{&args} {}
 
-  auto as_str() const -> str::Str;
-  void write_str(str::Str s);
+  void fmt(auto& out) const {
+    if (_fmt) _fmt(*this, out);
+  }
 };
-
-void write_fmt(auto& out, auto& args);
 
 }  // namespace sfc::fmt
