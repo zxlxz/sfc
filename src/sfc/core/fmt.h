@@ -277,8 +277,9 @@ struct Formatter<W>::DebugTuple {
     return *this;
   }
 
-  void entries(auto&& iter) {
+  auto entries(auto&& iter) -> DebugTuple& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
   }
 };
 
@@ -298,13 +299,15 @@ struct Formatter<W>::DebugList {
 
   DebugList(const DebugList&) = delete;
 
-  void entry(const auto& value) {
+  auto entry(const auto& value) -> DebugList& {
     _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
+    return *this;
   }
 
-  void entries(auto&& iter) {
+  auto entries(auto&& iter) -> DebugList& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
   }
 };
 
@@ -324,13 +327,15 @@ struct Formatter<W>::DebugSet {
 
   DebugSet(const DebugSet&) = delete;
 
-  void entry(const auto& value) {
+  auto entry(const auto& value) -> DebugSet& {
     _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
+    return *this;
   }
 
-  void entries(auto&& iter) {
+  auto entries(auto&& iter) -> DebugSet& {
     iter.for_each([&](auto&& val) { this->entry(val); });
+    return *this;
   }
 };
 
@@ -350,19 +355,21 @@ struct Formatter<W>::DebugMap {
 
   DebugMap(const DebugMap&) = delete;
 
-  void entry(Str key, const auto& value) {
+  auto entry(Str key, const auto& value) -> DebugMap& {
     _fmt.block_entry(_cnt++);
     _fmt.write_str('"');
     _fmt.write_str(key);
     _fmt.write_str("\": ");
     _fmt.write_val(value);
+    return *this;
   }
 
-  void entries(auto&& iter) {
+  auto entries(auto&& iter) -> DebugMap& {
     iter.for_each([&](const auto& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
     });
+    return *this;
   }
 };
 
@@ -382,18 +389,20 @@ struct Formatter<W>::DebugStruct {
 
   DebugStruct(const DebugStruct&) = delete;
 
-  void field(Str key, const auto& value) {
+  auto field(Str key, const auto& value) -> DebugStruct& {
     _fmt.block_entry(_cnt++);
     _fmt.write_str(key);
     _fmt.write_str(": ");
     _fmt.write_val(value);
+    return *this;
   }
 
-  void fields(auto&& iter) {
+  auto fields(auto&& iter) -> DebugStruct& {
     iter.for_each([&](const auto& item) {
       const auto& [k, v] = item;
       this->field(k, v);
     });
+    return *this;
   }
 };
 
