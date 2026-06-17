@@ -13,10 +13,6 @@ class [[nodiscard]] String {
   static auto from(Str s) noexcept -> String;
   static auto from_buf(Buf buf) -> String;
 
-  auto as_ptr() const noexcept -> const u8* {
-    return _buf.as_ptr();
-  }
-
   auto capacity() const noexcept -> usize {
     return _buf.capacity();
   }
@@ -25,12 +21,16 @@ class [[nodiscard]] String {
     return _buf.len();
   }
 
-  auto buf() noexcept -> List<u8>& {
-    return _buf;
-  }
-
   auto is_empty() const noexcept -> bool {
     return _buf.is_empty();
+  }
+
+  auto as_ptr() const noexcept -> const u8* {
+    return _buf.as_ptr();
+  }
+
+  auto as_mut_buf() noexcept -> Buf& {
+    return _buf;
   }
 
   auto as_slice() const noexcept -> Slice<const u8> {
