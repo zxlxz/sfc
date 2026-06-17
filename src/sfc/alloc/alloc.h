@@ -47,7 +47,7 @@ class RawBuf {
     const auto layout = alloc::Layout::template array<T>(capacity);
 
     auto res = RawBuf{};
-    res._ptr = ptr::cast_mut<T>(alloc.alloc(layout));
+    res._ptr = ptr::cast<T>(alloc.alloc(layout));
     res._cap = capacity;
     res._a = alloc;
     return res;
