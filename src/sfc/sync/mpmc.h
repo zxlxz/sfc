@@ -1,13 +1,13 @@
 #pragma once
 
-#include "sfc/sync/ringbuf.h"
+#include "sfc/sync/queue.h"
 
 namespace sfc::sync::mpmc {
 
 template <class T>
 class Channel {
-  using RingBuf = ringbuf::RingBuf<T>;
-  RingBuf _buff{};
+  using Queue = Queue<T>;
+  Queue _buff{};
   Atomic<bool> _closed{true};
 
  public:
@@ -23,7 +23,7 @@ class Channel {
   static auto with_capacity(usize capacity) -> Channel {
     if (capacity == 0) return {};
     auto res = Channel{};
-    res._buff = RingBuf::with_capacity(capacity);
+    res._buff = Queue::with_capacity(capacity);
     res._closed.store(false);
     return res;
   }
