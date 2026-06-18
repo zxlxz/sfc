@@ -22,26 +22,31 @@ SFC_TEST(base) {
   sfc::assert_eq(mq.pop(), Option{});
 }
 
-SFC_TEST(push_overflow) {
-  auto mq = Queue<u32>::with_capacity(8);
-
-  for (auto i = 0U; i < 8U; ++i) {
+SFC_TEST(push_full) {
+  const auto cap = 4U;
+  auto mq = Queue<u32>::with_capacity(cap);
+  for (auto i = 0U; i < cap; ++i) {
     sfc::assert_eq(mq.push(i).is_ok(), true);
   }
-
-  sfc::assert_eq(mq.push(99U).is_ok(), false);
-}
-
-SFC_TEST(try_push_full) {
-  auto mq = Queue<int>::with_capacity(2);
-  (void)mq.push(1);
-  (void)mq.push(2);
   sfc::assert_eq(mq.is_empty(), false);
   sfc::assert_eq(mq.is_full(), true);
 
-  int val = 3;
-  sfc::assert_eq(mq.try_push(val), false);  // full
-  sfc::assert_eq(val, 3);                   // val not consumed
+  auto val = cap + 1;
+  sfc::assert_eq(mq.push(val).err(), Option{cap + 1});  // full
+  sfc::assert_eq(mq.is_full(), true);
+
+  for (auto i = 0U; i < cap; ++i) {
+    const auto val = mq.pop();
+    sfc::assert_eq(val, Option{i});
+
+    sfc::assert_eq(mq.is_full(), false);
+    sfc::assert_eq(mq.push(cap + i).is_ok(), true);
+    sfc::assert_eq(mq.is_full(), true);
+  }
+
+  for (auto i = 0U; i < cap; ++i) {
+    sfc::assert_eq(mq.pop(), Option{cap + i});
+  }
 }
 
 SFC_TEST(clear) {

@@ -38,25 +38,21 @@ class Channel {
   }
 
   auto send(T val) noexcept -> Result<void, T> {
-    while (true) {
-      if (this->is_closed()) {
-        break;
-      }
-      if (_buff.try_push(val)) {
+    while (!this->is_closed()) {
+      auto ret = _buff.push(val);
+      if (ret.is_ok()) {
         return {};
       }
+      val = mem::move(ret).unwrap_err();
       sfc::thread::yield_now();
     }
     return {mem::move(val)};
   }
 
   auto recv() noexcept -> Option<T> {
-    while (true) {
+    while (!this->is_closed()) {
       if (auto ret = _buff.pop()) {
         return ret;
-      }
-      if (this->is_closed()) {
-        break;
       }
       sfc::thread::yield_now();
     }
