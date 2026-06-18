@@ -9,7 +9,6 @@ namespace sfc::option {
 template <class T>
 concept none_ = requires(const T& x) { x.is_none(); };
 
-
 template <class T>
 class Inner {
  protected:
@@ -236,7 +235,7 @@ class Option : Inner<T> {
     if (self.is_none()) {
       f.write_str("None()");
     } else {
-      f.write_fmt(fmt::Args{"Some({})", self._1});
+      f.write_fmt("Some({})", self._1);
     }
   }
 };
@@ -422,7 +421,7 @@ class Option<const T&> : Inner<const T&> {
     if (!this->is_some()) {
       f.write_str("None()");
     } else {
-      f.write_fmt(fmt::Args{"Some({})", *this->_1});
+      f.write_fmt("Some({})", *this->_1);
     }
   }
 };

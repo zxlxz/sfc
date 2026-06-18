@@ -79,7 +79,7 @@ struct Debug {
     if constexpr (requires { to_str(val); }) {
       f.write_str(to_str(val));
     } else {
-      f.write_fmt(fmt::Args{"{}({})", kTypeName, __builtin_bit_cast(I, val)});
+      f.write_fmt("{}({})", kTypeName, __builtin_bit_cast(I, val));
     }
   }
 
@@ -130,14 +130,9 @@ struct Formatter {
     }
   }
 
-  void write_arg(Spec spec, const auto& val) {
-    _spec = spec;
-    this->write_val(val);
-  }
-
-  template <class... T>
-  void write_fmt(const fmt::Args<T...>& args) {
-    args.fmt(*this);
+  void write_fmt(const Fmts& fmts, const auto&... args) {
+    const auto xargs = Args{fmts, args...};
+    xargs.fmt(*this);
   }
 
   void pad(Str s) {
@@ -408,11 +403,19 @@ struct Formatter<W>::DebugStruct {
 
 // macro: write!(out, arg...)
 void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
-  Formatter{out}.write_fmt(fmt::Args{fmts, args...});
+  if constexpr (requires { out.write_fmt(fmts, args...); }) {
+    out.write_fmt(fmts, args...);
+  } else {
+    Formatter{out}.write_fmt(fmts, args...);
+  }
 }
 
 void write_fmt(auto& out, const auto& args) {
-  Formatter{out}.write_fmt(args);
+  if constexpr (requires { out.write_val(args); }) {
+    out.write_val(args);
+  } else {
+    Formatter{out}.write_val(args);
+  }
 }
 
 }  // namespace sfc::fmt

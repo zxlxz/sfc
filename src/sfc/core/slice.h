@@ -252,7 +252,7 @@ struct Slice<const T> {
 
   [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
+    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
   }
 
  public:

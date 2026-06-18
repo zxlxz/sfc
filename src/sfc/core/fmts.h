@@ -168,8 +168,9 @@ struct Args {
     _args.map([&, idx = 0U](const auto& val) mutable {
       const auto fill = _fmts._fills[idx];
       const auto spec = _fmts._specs[idx];
+      f._spec = spec;
       f.write_str({fill._ptr, fill._len});
-      f.write_arg(spec, val);
+      f.write_val(val);
       ++idx;
     });
 
@@ -183,17 +184,22 @@ template <class... T>
 Args(const Fmts& fmts, const T&... args) -> Args<T...>;
 
 struct XArgs {
-  void (*_fmt)(const XArgs& self, SBuf& out);
   const void* _args;
+  void (*_fmt)(const void* args, SBuf& out);
+
+  template <class Impl>
+  static void fmt_imp(const void* ptr, SBuf& out) {
+    const auto& args = *ptr::cast<const Impl>(ptr);
+    fmt::write_fmt(out, args);
+  }
 
  public:
   template <class... T>
-  XArgs(const fmt::Args<T...>& args)
-      : _fmt{[](const XArgs& self, SBuf& out) { fmt::write_fmt(out, *ptr::cast<const fmt::Args<T...>>(self._args)); }}
-      , _args{&args} {}
+  XArgs(const Args<T...>& args) : _args{&args}, _fmt{&fmt_imp<fmt::Args<T...>>} {}
 
   void fmt(auto& out) const {
-    if (_fmt) _fmt(*this, out);
+    if (_args == nullptr) return;
+    _fmt(_args, out);
   }
 };
 

@@ -4,26 +4,6 @@
 
 namespace sfc::reflect {
 
-template <u32 I>
-struct idx_t {
-  static constexpr auto VALUE = I;
-};
-
-template <class T, T... I>
-struct idxs_t {
-  static void map(auto&& f) {
-    (void)(f(idx_t<I>{}), ...);
-  }
-};
-
-#if defined(__GNUC__) && !defined(__clang__)
-template <auto N>
-using seq_t = idxs_t<decltype(N), __integer_pack(N)...>;
-#else
-template <auto N>
-using seq_t = __make_integer_seq<idxs_t, decltype(N), N>;
-#endif
-
 template <class T>
 consteval Str TYPE_NAME() {
 #if defined(_MSC_VER) && !defined(__clang__)

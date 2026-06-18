@@ -212,8 +212,8 @@ class [[nodiscard]] Result : Inner<T, E> {
   // trait: fmt::Display
   void fmt(auto& f) const {
     switch (_tag) {
-      case 0:  f.write_fmt(fmt::Args{"Ok({})", _0}); break;
-      case 1:  f.write_fmt(fmt::Args{"Err({})", _1}); break;
+      case 0:  f.write_fmt("Ok({})", _0); break;
+      case 1:  f.write_fmt("Err({})", _1); break;
       default: f.write_str("Result(?)"); break;
     }
   }
