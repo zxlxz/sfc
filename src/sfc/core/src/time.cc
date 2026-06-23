@@ -76,4 +76,12 @@ auto Duration::operator==(const Duration& other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
+auto Duration::operator<(const Duration& other) const noexcept -> bool {
+  return _nanos < other._nanos;
+}
+
+auto Duration::operator<=(const Duration& other) const noexcept -> bool {
+  return _nanos <= other._nanos;
+}
+
 }  // namespace sfc::time

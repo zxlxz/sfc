@@ -28,6 +28,22 @@ auto Instant::operator==(const Instant& other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
+auto Instant::operator<(const Instant& other) const noexcept -> bool {
+  return _nanos < other._nanos;
+}
+
+auto Instant::operator<=(const Instant& other) const noexcept -> bool {
+  return _nanos <= other._nanos;
+}
+
+auto Instant::operator>(const Instant& other) const noexcept -> bool {
+  return _nanos > other._nanos;
+}
+
+auto Instant::operator>=(const Instant& other) const noexcept -> bool {
+  return _nanos >= other._nanos;
+}
+
 auto Instant::operator+(const Duration& dur) const noexcept -> Instant {
   const auto ns = _nanos + dur.as_nanos();
   return Instant{ns};

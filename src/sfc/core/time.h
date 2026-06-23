@@ -39,28 +39,17 @@ struct Duration {
   // trait: ops::Eq
   auto operator==(const Duration& other) const noexcept -> bool;
 
+  // trait: ops::Lt
+  auto operator<(const Duration& other) const noexcept -> bool;
+
+  // trait: ops::Le
+  auto operator<=(const Duration& other) const noexcept -> bool;
+
+ public:
   // trait: fmt::Display
   void fmt(auto& f) const {
     const auto secs = this->as_secs_f64();
-    switch (f._spec._type) {
-      default:
-      case 's':
-        f.write_val(secs);
-        f.write_str("s");
-        break;
-      case 'm':
-        f.write_val(secs * 1e3);
-        f.write_str("ms");
-        break;
-      case 'u':
-        f.write_val(secs * 1e6);
-        f.write_str("us");
-        break;
-      case 'n':
-        f.write_val(secs * 1e9);
-        f.write_str("ns");
-        break;
-    }
+    f.write_fmt("{.4}s", secs);
   }
 };
 

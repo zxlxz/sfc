@@ -17,12 +17,25 @@ struct Instant {
   // trait: ops::Eq
   auto operator==(const Instant& other) const noexcept -> bool;
 
+  // trait: ops::Lt
+  auto operator<(const Instant& other) const noexcept -> bool;
+
+  // trait: ops::Gt
+  auto operator>(const Instant& other) const noexcept -> bool;
+
+  // trait: ops::Le
+  auto operator<=(const Instant& other) const noexcept -> bool;
+
+  // trait: ops::Ge
+  auto operator>=(const Instant& other) const noexcept -> bool;
+
   // trait: ops::Add
   auto operator+(const Duration& dur) const noexcept -> Instant;
 
   // trait: ops::Sub
   auto operator-(const Duration& dur) const noexcept -> Instant;
 
+ public:
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.write_fmt(fmt::Args{"{}ns", _nanos});
