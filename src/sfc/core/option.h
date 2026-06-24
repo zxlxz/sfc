@@ -153,39 +153,44 @@ class Option : Inner<T> {
   using Inn::operator bool;
 
   auto operator->() const -> const T* {
-    sfc::assert_fmt(this->is_some(), fmt::Args{"Option::operator->: deref None()"});
+    sfc::assert_(this->is_some(), "Option::operator->: deref None()");
     return &this->_1;
   }
 
   auto operator->() -> T* {
-    sfc::assert_fmt(this->is_some(), fmt::Args{"Option::operator->: deref None()"});
+    sfc::assert_(this->is_some(), "Option::operator->: deref None()");
     return &this->_1;
   }
 
   auto operator*() const -> const T& {
-    sfc::assert_fmt(this->is_some(), fmt::Args{"Option::operator*: deref None()"});
+    sfc::assert_(this->is_some(), "Option::operator*: deref None()");
     return this->_1;
   }
 
   auto operator*() -> T& {
-    sfc::assert_fmt(this->is_some(), fmt::Args{"Option::operator*: deref None()"});
+    sfc::assert_(this->is_some(), "Option::operator*: deref None()");
     return this->_1;
   }
 
  public:
   auto expect(this auto self, const auto& msg) -> T {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::expect: {}", msg});
+    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
     return mem::move(self._1);
   }
 
   auto unwrap(this auto self) -> T {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::unwrap: not Some()"});
+    sfc::assert_(self.is_some(), "Option::unwrap: not Some()");
     return mem::move(self._1);
   }
 
   auto unwrap_or(this auto self, T default_val) -> T {
     if (self.is_some()) return mem::move(self._1);
     return mem::move(default_val);
+  }
+
+  auto unwrap_or_else(this auto self, auto&& f) -> T {
+    if (self.is_some()) return mem::move(self._1);
+    return f();
   }
 
   template <class U>
@@ -270,12 +275,12 @@ class Option<T&> : Inner<T&> {
 
  public:
   auto expect(this auto self, const auto& msg) -> T& {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::expect: {}", msg});
+    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
     return *self._1;
   }
 
   auto unwrap(this auto self) -> T& {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::unwrap: None()"});
+    sfc::assert_(self.is_some(), "Option::unwrap: None()");
     return *self._1;
   }
 
@@ -332,7 +337,7 @@ class Option<T&> : Inner<T&> {
     if (!this->is_some()) {
       f.write_str("None()");
     } else {
-      f.write_fmt(fmt::Args{"Some({})", *_1});
+      f.write_fmt("Some({})", *_1);
     }
   }
 };
@@ -359,12 +364,12 @@ class Option<const T&> : Inner<const T&> {
 
  public:
   auto expect(this auto self, const auto& msg) -> const T& {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::expect: {}", msg});
+    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
     return *self._1;
   }
 
   auto unwrap(this auto self) -> const T& {
-    sfc::assert_fmt(self.is_some(), fmt::Args{"Option::unwrap: None()"});
+    sfc::assert_(self.is_some(), "Option::unwrap: None()");
     return *self._1;
   }
 

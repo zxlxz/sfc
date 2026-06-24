@@ -134,12 +134,12 @@ class [[nodiscard]] Result : Inner<T, E> {
 
  public:
   auto unwrap(this auto self) -> T {
-    sfc::assert_fmt(self._tag == 0, fmt::Args{"called `Result::unwrap()` on Err({})", self._1});
+    sfc::assert_(self._tag == 0, "called `Result::unwrap()` on Err({})", self._1);
     return mem::move(self._0);
   }
 
   auto unwrap_err(this auto self) -> E {
-    sfc::assert_fmt(self._tag == 1, fmt::Args{"called `Result::unwrap_err()` on Ok({})", self._0});
+    sfc::assert_(self._tag == 1, "called `Result::unwrap_err()` on Ok({})", self._0);
     return mem::move(self._1);
   }
 
@@ -149,7 +149,7 @@ class [[nodiscard]] Result : Inner<T, E> {
   }
 
   auto expect(this auto self, const auto& msg) -> T {
-    sfc::assert_fmt(self._tag == 0, fmt::Args{"{}: Err({})", msg, self._1});
+    sfc::assert_(self._tag == 0, "{}: Err({})", msg, self._1);
     return mem::move(self._0);
   }
 
@@ -240,11 +240,11 @@ class [[nodiscard]] Result<void, E> : Inner<void, E> {
 
  public:
   void unwrap(this auto self) noexcept {
-    sfc::assert_fmt(self._tag == 0, fmt::Args{"Result::unwrap: not Ok()"});
+    sfc::assert_(self._tag == 0, "Result::unwrap: not Ok()");
   }
 
   auto unwrap_err(this auto self) -> E {
-    sfc::assert_fmt(self._tag == 1, fmt::Args{"Result::unwrap_err: not Err()"});
+    sfc::assert_(self._tag == 1, "Result::unwrap_err: not Err()");
     return mem::move(self._1);
   }
 

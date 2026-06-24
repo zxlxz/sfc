@@ -39,11 +39,11 @@ static auto idx2str(u32 idx) -> Str {
 }
 
 void panic_imp(PanicInfo info) {
-  const auto [args, loc] = info;
+  const auto [args, loc, write_buf] = info;
 
   char msg_buf[1024];
   auto msg_out = fmt::SBuf{msg_buf};
-  args.fmt(msg_out);
+  write_buf(msg_out, args);
   const auto msg = msg_out.as_str();
 
   char line_buf[8] = {};

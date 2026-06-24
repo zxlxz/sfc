@@ -63,12 +63,12 @@ struct Slice {
 
  public:
   [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
-    sfc::assert_fmt(idx < _len, fmt::Args{"Slice::[]: idx(={}) out of range(={})", idx, _len});
+    sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
   [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
-    sfc::assert_fmt(idx < _len, fmt::Args{"Slice::[]: idx(={}) out of range(={})", idx, _len});
+    sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
@@ -94,8 +94,8 @@ struct Slice {
 
  public:
   void swap(usize i, usize j) noexcept {
-    sfc::assert_fmt(i < _len, fmt::Args{"Slice::[]: i(={}), out of range(={})", i, _len});
-    sfc::assert_fmt(j < _len, fmt::Args{"Slice::[]: j(={}), out of range(={})", j, _len});
+    sfc::assert_(i < _len, "Slice::[]: i(={}), out of range(={})", i, _len);
+    sfc::assert_(j < _len, "Slice::[]: j(={}), out of range(={})", j, _len);
 
     if (i != j) {
       mem::swap(_ptr[i], _ptr[j]);
@@ -257,7 +257,7 @@ struct Slice<const T> {
 
  public:
   [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
-    sfc::assert_fmt(idx < _len, fmt::Args{"Slice::[]: idx(={}) out of range(={})", idx, _len});
+    sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 

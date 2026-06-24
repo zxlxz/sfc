@@ -38,7 +38,7 @@ struct Instant {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.write_fmt(fmt::Args{"{}ns", _nanos});
+    f.write_fmt("{}ns", _nanos);
   }
 };
 

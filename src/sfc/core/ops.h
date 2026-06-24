@@ -36,33 +36,6 @@ struct Range {
   }
 };
 
-template <auto X>
-struct ConstVal {
-  using Type = decltype(X);
-  static constexpr auto VALUE = X;
-
-  operator Type() const {
-    return VALUE;
-  }
-};
-
-template <usize N>
-constexpr auto fold_seq(auto&& f) {
-  static_assert(N > 0 && N <= 8, "assert (0<=N<=8) failed");
-
-#define X(n) ConstVal<n>()
-  if constexpr (N == 0) return;
-  if constexpr (N == 1) return f(X(0));
-  if constexpr (N == 2) return f(X(0), X(1));
-  if constexpr (N == 3) return f(X(0), X(1), X(2));
-  if constexpr (N == 4) return f(X(0), X(1), X(2), X(3));
-  if constexpr (N == 5) return f(X(0), X(1), X(2), X(3), X(4));
-  if constexpr (N == 6) return f(X(0), X(1), X(2), X(3), X(4), X(5));
-  if constexpr (N == 7) return f(X(0), X(1), X(2), X(3), X(4), X(5), X(6));
-  if constexpr (N == 8) return f(X(0), X(1), X(2), X(3), X(4), X(5), X(6), X(7));
-#undef X
-}
-
 }  // namespace sfc::ops
 
 namespace sfc {

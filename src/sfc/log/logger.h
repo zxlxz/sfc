@@ -25,9 +25,11 @@ class Logger {
  public:
   Logger(Backend& backend) noexcept : _backend{backend} {}
   ~Logger() noexcept {}
+
   Logger(Logger&&) = delete;
   Logger& operator=(Logger&&) = delete;
 
+ public:
   auto level() const -> Level {
     return _level;
   }
@@ -53,15 +55,18 @@ class Logger {
     _backend.push(Record{time, level, message});
   }
 
-  void write_fmt(Level level, const auto& args) {
+  void write_fmt(Level level, const fmt::Fmts& fmts, const auto&... args) {
     if (level < _level) {
       return;
     }
 
     char buf[1024];
     auto out = fmt::SBuf{buf};
-    fmt::Formatter{out}.write_val(args);
-    this->write_str(level, out.as_str());
+    fmt::write(out, fmts, args...);
+
+    const auto time = time::SystemTime::now();
+    const auto message = out.as_str();
+    _backend.push(Record{time, level, message});
   }
 };
 

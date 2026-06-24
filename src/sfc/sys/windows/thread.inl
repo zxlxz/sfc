@@ -53,8 +53,8 @@ struct Thread {
 
     const auto ret = ::WaitForSingleObject(_raw, INFINITE);
     ::CloseHandle(_raw);
-    sfc::assert_fmt(ret == WAIT_OBJECT_0,
-                    fmt::Args{"Thread::join: WaitForSingleObject failed, err={}", ::GetLastError()});
+    sfc::assert_(ret == WAIT_OBJECT_0,
+                    "Thread::join: WaitForSingleObject failed, err={}", ::GetLastError());
   }
 
   void detach() {

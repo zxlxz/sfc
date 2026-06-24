@@ -7,10 +7,15 @@ namespace sfc::test {
 using fmt::RawStr;
 using panic::SourceLoc;
 
-template<class ...T>
-void assert_fmt(bool cond, const fmt::Args<T...>& args, SourceLoc loc = SourceLoc::current()) {
-  if (cond) return;
-  panic::panic_fmt(args, loc);
+struct AssertCondition {
+  bool _val;
+  SourceLoc _loc;
+  constexpr AssertCondition(bool val, SourceLoc loc = SourceLoc::current()) : _val{val}, _loc{loc} {}
+};
+
+void assert_(AssertCondition cond, const fmt::Fmts& fmts, const auto&... args) {
+  if (cond._val) return;
+  panic::panic_fmt(fmt::Args{fmts, args...}, cond._loc);
 }
 
 [[noreturn]] void assert_failed(SourceLoc loc, const auto& expr, const auto&... args) {
@@ -69,7 +74,7 @@ inline void assert_flt_ne(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::
 }  // namespace sfc::test
 
 namespace sfc {
-using test::assert_fmt;
+using test::assert_;
 
 using test::assert_eq;
 using test::assert_ne;

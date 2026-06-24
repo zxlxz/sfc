@@ -87,6 +87,11 @@ SFC_TEST(and_or) {
   sfc::assert_eq(Option{10} | Option{1}, Option{10});
 }
 
+SFC_TEST(unwrap_or_else) {
+  auto make_opt = [] { return 1; };
+  sfc::assert_eq(Option{10}.unwrap_or_else(make_opt), 10);
+}
+
 SFC_TEST(and_then) {
   auto add1 = [](auto x) { return Option{x + 1}; };
 
