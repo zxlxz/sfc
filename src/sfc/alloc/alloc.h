@@ -6,20 +6,41 @@ namespace sfc::alloc {
 
 using mem::Layout;
 
-struct Global {
-  static auto alloc(Layout layout) noexcept -> void*;
-  static void dealloc(void* ptr, Layout layout) noexcept;
-  static auto realloc(void* ptr, Layout layout, usize new_size) noexcept -> void*;
+class Allocator {
+ protected:
+  Allocator() noexcept;
+  ~Allocator() noexcept;
 
-  static auto grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
-  static auto shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void*;
+  Allocator(const Allocator&) noexcept = delete;
+  Allocator& operator=(const Allocator&) noexcept = delete;
+
+ public:
+  virtual void* allocate(Layout layout) = 0;
+  virtual void deallocate(void* ptr, Layout layout) = 0;
+
+  virtual void* grow(void* ptr, Layout old_layout, usize new_size);
+  virtual void* shrink(void* ptr, Layout old_layout, usize new_size);
 };
 
-template <class T, class A = alloc::Global>
+class Global : public Allocator {
+  Global();
+  ~Global();
+
+ public:
+  static auto instance() noexcept -> Global&;
+
+  void* allocate(Layout layout) override;
+  void deallocate(void* ptr, Layout layout) override;
+
+  void* grow(void* ptr, Layout layout, usize new_size) override;
+  void* shrink(void* ptr, Layout layout, usize new_size) override;
+};
+
+template <class T>
 class RawBuf {
   T* _ptr{nullptr};
   usize _cap{0};
-  [[no_unique_address]] A _a{};
+  Allocator* _a{&alloc::Global::instance()};
 
  public:
   [[gnu::always_inline]] RawBuf() noexcept = default;
@@ -27,12 +48,12 @@ class RawBuf {
   [[gnu::always_inline]] ~RawBuf() noexcept {
     if (!_ptr) return;
 
-    const auto layout = alloc::Layout::template array<T>(_cap);
-    _a.dealloc(_ptr, layout);
+    const auto layout = Layout{}.array<T>(_cap);
+    _a->deallocate(_ptr, layout);
   }
 
   [[gnu::always_inline]] RawBuf(RawBuf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{other._a} {}
 
   [[gnu::always_inline]] RawBuf& operator=(RawBuf&& other) noexcept {
     if (this != &other) {
@@ -43,13 +64,13 @@ class RawBuf {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> RawBuf {
-    const auto layout = alloc::Layout::template array<T>(capacity);
+  static auto with_capacity(usize capacity, Allocator& alloc = Global::instance()) noexcept -> RawBuf {
+    const auto layout = Layout{}.array<T>(capacity);
 
     auto res = RawBuf{};
-    res._ptr = ptr::cast<T>(alloc.alloc(layout));
+    res._ptr = ptr::cast<T>(alloc.allocate(layout));
     res._cap = capacity;
-    res._a = alloc;
+    res._a = &alloc;
     return res;
   }
 
@@ -69,8 +90,8 @@ class RawBuf {
     return _ptr[idx];
   }
 
-  auto allocator() -> A& {
-    return _a;
+  auto allocator() -> Allocator& {
+    return *_a;
   }
 
   void reserve(usize len, usize additional) noexcept {
@@ -82,10 +103,9 @@ class RawBuf {
     const auto req_cap = len + additional;
     const auto fit_cap = cmp::max(req_cap, _cap * 2);
     const auto new_cap = cmp::max(fit_cap, kMinCap);
+    const auto layout = Layout{}.array<T>(_cap);
 
-    const auto old_layout = alloc::Layout::template array<T>(_cap);
-    const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
+    _ptr = ptr::cast<T>(_a->grow(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
 
@@ -94,10 +114,9 @@ class RawBuf {
       return;
     }
 
+    const auto layout = Layout{}.array<T>(_cap);
     const auto new_cap = len + additional;
-    const auto old_layout = alloc::Layout::template array<T>(_cap);
-    const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
+    _ptr = ptr::cast<T>(_a->grow(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
 
@@ -106,9 +125,8 @@ class RawBuf {
       return;
     }
 
-    const auto old_layout = alloc::Layout::template array<T>(_cap);
-    const auto new_layout = alloc::Layout::template array<T>(new_cap);
-    _ptr = ptr::cast<T>(_a.shrink(_ptr, old_layout, new_layout));
+    const auto layout = Layout{}.array<T>(_cap);
+    _ptr = ptr::cast<T>(_a->shrink(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
 };
@@ -118,4 +136,5 @@ class RawBuf {
 namespace sfc {
 using alloc::Layout;
 using alloc::RawBuf;
+using alloc::Allocator;
 }  // namespace sfc

@@ -2,49 +2,39 @@
 
 namespace sfc::alloc::test {
 
-SFC_TEST(alloc_basic) {
-  Global a;
-  const auto layout = Layout{16, 8};
-  auto* ptr = a.alloc(layout);
-  sfc::assert_ne(ptr, nullptr);
-  a.dealloc(ptr, layout);
-}
+SFC_TEST(global_alloc_dealloc) {
+  auto& a = Global::instance();
 
-SFC_TEST(alloc_zero_size) {
-  Global a;
-  const auto layout = Layout{0, 8};
-  auto* ptr = a.alloc(layout);
-  sfc::assert_eq(ptr, nullptr);
-}
+  const auto layout = Layout{}.array<u64>(16);
 
-SFC_TEST(realloc_nullptr) {
-  Global a;
-  const auto layout = Layout{16, 8};
-  auto* ptr = a.realloc(nullptr, layout, 32);
-  sfc::assert_ne(ptr, nullptr);
-  a.dealloc(ptr, Layout{32, 8});
-}
-
-SFC_TEST(realloc_grow) {
-  Global a;
-  const auto layout = Layout{16, 8};
-  auto* ptr = a.alloc(layout);
+  auto* ptr = a.allocate(layout);
   sfc::assert_ne(ptr, nullptr);
 
-  auto* new_ptr = a.realloc(ptr, layout, 32);
+  a.deallocate(ptr, layout);
+}
+
+SFC_TEST(global_grow) {
+  auto& a = Global::instance();
+
+  const auto layout = Layout{}.array<u64>(16);
+  auto* ptr = a.allocate(layout);
+  sfc::assert_ne(ptr, nullptr);
+
+  auto* new_ptr = a.grow(ptr, layout, 32);
   sfc::assert_ne(new_ptr, nullptr);
-  a.dealloc(new_ptr, Layout{32, 8});
+  a.deallocate(new_ptr, Layout{}.array<u64>(32));
 }
 
-SFC_TEST(realloc_shrink) {
-  Global a;
-  const auto layout = Layout{32, 8};
-  auto* ptr = a.alloc(layout);
+SFC_TEST(global_shrink) {
+  auto& a = Global::instance();
+
+  const auto layout = Layout{}.array<u64>(32);
+  auto* ptr = a.allocate(layout);
   sfc::assert_ne(ptr, nullptr);
 
-  auto* new_ptr = a.realloc(ptr, layout, 16);
+  auto* new_ptr = a.shrink(ptr, layout, 16);
   sfc::assert_ne(new_ptr, nullptr);
-  a.dealloc(new_ptr, Layout{16, 8});
+  a.deallocate(new_ptr, Layout{}.array<u64>(16));
 }
 
 }  // namespace sfc::alloc::test

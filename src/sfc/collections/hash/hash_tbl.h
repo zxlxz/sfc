@@ -136,7 +136,7 @@ struct Bucket {
   }
 };
 
-template <class T, class A = alloc::Global>
+template <class T>
 class HashTbl {
   static constexpr auto kMaxSize = num::Int<usize>::MAX >> 8U;
   static constexpr auto kLoadFactor = 4U;
@@ -150,7 +150,7 @@ class HashTbl {
   usize _cap{0};
   usize _len{0};
   usize _rem{0};
-  [[no_unique_address]] A _a{};
+  Allocator* _a{&alloc::Global::instance()};
 
  public:
   HashTbl() noexcept = default;
@@ -159,7 +159,7 @@ class HashTbl {
     if (_ptr == nullptr) return;
 
     this->clear();
-    _a.dealloc(_ptr, this->layout());
+    _a->deallocate(_ptr, this->layout());
   }
 
   HashTbl(HashTbl&& other) noexcept
@@ -176,14 +176,15 @@ class HashTbl {
     return *this;
   }
 
-  static auto with_capacity(usize min_cap, A a = {}) -> HashTbl {
+  static auto with_capacity(usize min_cap, Allocator& alloc = alloc::Global::instance()) -> HashTbl {
     if (min_cap == 0) {
       return HashTbl{};
     }
 
     auto res = HashTbl{};
     res._cap = num::next_power_of_two(min_cap);
-    res._ptr = ptr::cast<u8>(a.alloc(res.layout()));
+    res._ptr = ptr::cast<u8>(alloc.allocate(res.layout()));
+    res._a = &alloc;
     res.init();
     return res;
   }
@@ -271,7 +272,7 @@ class HashTbl {
       new_cap *= 2;
     }
 
-    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, _a));
+    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, *_a));
     tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(mem::move(entry)); });
   }
 

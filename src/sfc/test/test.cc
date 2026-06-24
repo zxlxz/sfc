@@ -66,8 +66,11 @@ struct TestManager {
     for (auto& m : _mods.as_mut_slice()) {
       if (m._name == mod) return m;
     }
-    return _mods.push(Module{mod});
+
+    auto& ret = _mods.push(Module{mod});
+    return ret;
   }
+
   void regist(Test test) {
     auto& mod = this->regist_mod(test._mod);
     mod.regist(test);

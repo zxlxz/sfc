@@ -30,9 +30,9 @@ struct Iter : iter::Iterator {
   }
 };
 
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] Queue {
-  using Buf = RawBuf<T, A>;
+  using Buf = RawBuf<T>;
   usize _pos{0};
   usize _len{0};
   Buf _buf{};
@@ -55,9 +55,9 @@ class [[nodiscard]] Queue {
     return *this;
   }
 
-  static auto with_capacity(usize capacity) -> Queue {
+  static auto with_capacity(usize capacity, Allocator& alloc = alloc::Global::instance()) -> Queue {
     auto res = Queue{};
-    res.reserve(capacity);
+    res._buf = Buf::with_capacity(capacity, alloc);
     return res;
   }
 

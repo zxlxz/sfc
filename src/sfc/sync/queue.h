@@ -4,11 +4,19 @@
 
 namespace sfc::sync {
 
-template <class T, class A = alloc::Global>
+template <class T>
 class Queue {
   struct Cell {
     Atomic<usize> _seq;
     T _val;
+
+    auto seq() const noexcept -> usize {
+      return _seq.load(Ordering::Acquire);
+    }
+
+    void init(usize idx) noexcept {
+      _seq.store(idx, Ordering::Relaxed);
+    }
 
     void set(usize idx, T val) noexcept {
       ptr::write(&_val, mem::move(val));
@@ -22,7 +30,7 @@ class Queue {
     }
   };
 
-  using Buf = alloc::RawBuf<Cell, A>;
+  using Buf = alloc::RawBuf<Cell>;
   Atomic<usize> _head{0};
   Atomic<usize> _tail{0};
   Buf _buf;
@@ -37,13 +45,13 @@ class Queue {
   Queue(Queue&& other) noexcept = default;
   Queue& operator=(Queue&& other) noexcept = default;
 
-  static auto with_capacity(usize capacity, A alloc = {}) -> Queue {
+  static auto with_capacity(usize capacity, Allocator& alloc = alloc::Global::instance()) -> Queue {
     auto res = Queue{};
     res._buf = Buf::with_capacity(capacity, alloc);
 
     // init
     for (auto i = 0U; i < capacity; ++i) {
-      res._buf[i]._seq.store(i, Ordering::Relaxed);
+      res._buf[i].init(i);
     }
     return res;
   }
@@ -70,7 +78,7 @@ class Queue {
       const auto head = _head.load(Ordering::Acquire);
       auto& cell = _buf[head % _buf.cap()];
 
-      const auto seq = cell._seq.load(Ordering::Acquire);
+      const auto seq = cell.seq();
       if (seq < head) break;
       if (seq > head) continue;
 
@@ -90,7 +98,7 @@ class Queue {
     while (true) {
       auto tail = _tail.load(Ordering::Acquire);
       auto& cell = _buf[tail % _buf.cap()];
-      const auto seq = cell._seq.load(Ordering::Acquire);
+      const auto seq = cell.seq();
       if (seq < tail + 1) break;
       if (seq > tail + 1) continue;
 

@@ -6,10 +6,10 @@ namespace sfc::list {
 
 static constexpr auto MAX_SIZE = num::Int<usize>::MAX / 4;
 
-template <class T, class A = alloc::Global>
+template <class T>
 class [[nodiscard]] List {
-  using Inn = RawBuf<T, A>;
-  Inn _inn = {};
+  using Inn = RawBuf<T>;
+  Inn _buf = {};
   usize _len = 0;
 
  public:
@@ -19,19 +19,19 @@ class [[nodiscard]] List {
     this->clear();
   }
 
-  List(List&& other) noexcept : _inn{mem::move(other._inn)}, _len{mem::take(other._len)} {}
+  List(List&& other) noexcept : _buf{mem::move(other._buf)}, _len{mem::take(other._len)} {}
 
   List& operator=(List&& other) noexcept {
     if (this != &other) {
-      mem::swap(_inn, other._inn);
+      mem::swap(_buf, other._buf);
       mem::swap(_len, other._len);
     }
     return *this;
   }
 
-  static auto with_capacity(usize capacity) noexcept -> List {
+  static auto with_capacity(usize capacity, alloc::Allocator& alloc = alloc::Global::instance()) noexcept -> List {
     auto res = List{};
-    res.reserve(capacity);
+    res._buf = Inn::with_capacity(capacity, alloc);
     return res;
   }
 
@@ -48,11 +48,11 @@ class [[nodiscard]] List {
   }
 
   auto as_ptr() const noexcept -> const T* {
-    return _inn.ptr();
+    return _buf.ptr();
   }
 
   auto as_mut_ptr() noexcept -> T* {
-    return _inn.ptr();
+    return _buf.ptr();
   }
 
   auto len() const noexcept -> usize {
@@ -60,7 +60,7 @@ class [[nodiscard]] List {
   }
 
   auto capacity() const noexcept -> usize {
-    return _inn.cap();
+    return _buf.cap();
   }
 
   auto is_empty() const noexcept -> bool {
@@ -68,11 +68,11 @@ class [[nodiscard]] List {
   }
 
   auto as_slice() const noexcept -> Slice<const T> {
-    return Slice<const T>{_inn.ptr(), _len};
+    return Slice<const T>{_buf.ptr(), _len};
   }
 
   auto as_mut_slice() noexcept -> Slice<T> {
-    return Slice<T>{_inn.ptr(), _len};
+    return Slice<T>{_buf.ptr(), _len};
   }
 
   void set_len(usize new_len) noexcept {
@@ -81,21 +81,21 @@ class [[nodiscard]] List {
 
  public:
   auto get_unchecked(usize idx) const noexcept -> const T& {
-    return _inn[idx];
+    return _buf[idx];
   }
 
   auto get_unchecked_mut(usize idx) noexcept -> T& {
-    return _inn[idx];
+    return _buf[idx];
   }
 
   auto operator[](usize idx) const noexcept -> const T& {
     sfc::assert_(idx < _len, "List::[]: idx(={}) out of ids(={})", idx, _len);
-    return _inn[idx];
+    return _buf[idx];
   }
 
   auto operator[](usize idx) noexcept -> T& {
     sfc::assert_(idx < _len, "List::[]: idx(={}) out of ids(={})", idx, _len);
-    return _inn[idx];
+    return _buf[idx];
   }
 
   auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
@@ -107,15 +107,15 @@ class [[nodiscard]] List {
   }
 
   auto spare_capacity_mut() noexcept -> Slice<T> {
-    return Slice{_inn.ptr() + _len, _inn.cap() - _len};
+    return Slice{_buf.ptr() + _len, _buf.cap() - _len};
   }
 
  public:
   auto push(T val) -> T& {
-    if (_len == _inn.cap()) {
+    if (_len == _buf.cap()) {
       this->reserve(1);
     }
-    const auto end = _inn.ptr() + _len;
+    const auto end = _buf.ptr() + _len;
     ptr::write(end, mem::move(val));
     _len += 1;
     return *end;
@@ -126,11 +126,11 @@ class [[nodiscard]] List {
       return {};
     }
     _len -= 1;
-    return ptr::read(&_inn[_len]);
+    return ptr::read(&_buf[_len]);
   }
 
   auto pop_if(auto&& f) -> Option<T> {
-    if (_len == 0 || !f(_inn[_len - 1])) {
+    if (_len == 0 || !f(_buf[_len - 1])) {
       return {};
     }
     return this->pop();
@@ -140,39 +140,39 @@ class [[nodiscard]] List {
     sfc::assert_(idx < _len, "List::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     _len -= 1;
-    auto tmp = ptr::read(_inn.ptr() + _len);
+    auto tmp = ptr::read(_buf.ptr() + _len);
     if (idx == _len) {
       return tmp;
     }
-    return mem::replace(_inn[idx], mem::move(tmp));
+    return mem::replace(_buf[idx], mem::move(tmp));
   }
 
   void truncate(usize len) noexcept {
     if (len >= _len) {
       return;
     }
-    ptr::drop(_inn.ptr() + len, _len - len);
+    ptr::drop(_buf.ptr() + len, _len - len);
     _len = len;
   }
 
   void reserve(usize additional) noexcept {
-    _inn.reserve(_len, additional);
+    _buf.reserve(_len, additional);
   }
 
   void reserve_exact(usize additional) noexcept {
-    _inn.reserve_exact(_len, additional);
+    _buf.reserve_exact(_len, additional);
   }
 
   void shrink_to(usize cap) noexcept {
-    _inn.shrink_to(cap);
+    _buf.shrink_to(cap);
   }
 
   void shrink_to_fit() noexcept {
-    _inn.shrink_to(_len);
+    _buf.shrink_to(_len);
   }
 
   void clear() noexcept {
-    ptr::drop(_inn.ptr(), _len);
+    ptr::drop(_buf.ptr(), _len);
     _len = 0;
   }
 
@@ -180,17 +180,17 @@ class [[nodiscard]] List {
     sfc::assert_(idx <= _len, "List::insert: idx(={}) out of ids([0,{}))", idx, _len);
 
     this->reserve(1);
-    const auto tail_ptr = _inn.ptr() + idx;
+    const auto tail_ptr = _buf.ptr() + idx;
     const auto tail_len = _len - idx;
     ptr::shift_elements_right(tail_ptr, tail_len, 1);
-    ptr::write(_inn.ptr() + idx, mem::move(val));
+    ptr::write(_buf.ptr() + idx, mem::move(val));
     _len += 1;
   }
 
   auto remove(usize idx) noexcept -> T {
     sfc::assert_(idx < _len, "List::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
-    const auto hole_ptr = _inn.ptr() + idx;
+    const auto hole_ptr = _buf.ptr() + idx;
     const auto tail_ptr = hole_ptr + 1;
     const auto tail_len = _len - idx - 1;
     auto res = ptr::read(hole_ptr);
@@ -202,7 +202,7 @@ class [[nodiscard]] List {
   void drain(ops::Range ids) noexcept {
     ids = ids.wrap(_len);
 
-    auto hole = Slice{_inn.ptr() + ids.start, ids.len()};
+    auto hole = Slice{_buf.ptr() + ids.start, ids.len()};
     auto tail = Slice{hole._ptr + hole._len, _len - ids.end};
     ptr::drop(hole._ptr, hole._len);
     ptr::shift_elements_left(tail._ptr, tail._len, hole._len);
@@ -221,7 +221,7 @@ class [[nodiscard]] List {
       return;
     }
     this->reserve(other._len);
-    ptr::uninit_move(other._inn.ptr(), _inn.ptr() + _len, other._len);
+    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
     other._len = 0;
   }
@@ -243,7 +243,7 @@ class [[nodiscard]] List {
   void extend_from_slice(Slice<const T> other) noexcept {
     static_assert(__is_trivially_copyable(T));
     this->reserve(other._len);
-    ptr::copy_nonoverlapping(other._ptr, _inn.ptr() + _len, other._len);
+    ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
     _len += other._len;
   }
 
@@ -254,7 +254,7 @@ class [[nodiscard]] List {
     }
 
     auto cnt = idx;
-    const auto ptr = _inn.ptr();
+    const auto ptr = _buf.ptr();
     for (auto i = idx + 1; i < _len; ++i) {
       if (f(ptr[i])) {
         ptr[cnt++] = mem::move(ptr[i]);
@@ -266,25 +266,25 @@ class [[nodiscard]] List {
  public:
   using Iter = slice::Iter<const T>;
   auto iter() const noexcept -> Iter {
-    return Slice{_inn.ptr(), _len}.iter();
+    return Slice{_buf.ptr(), _len}.iter();
   }
 
   using IterMut = slice::Iter<T>;
   auto iter_mut() noexcept -> IterMut {
-    return Slice{_inn.ptr(), _len}.iter_mut();
+    return Slice{_buf.ptr(), _len}.iter_mut();
   }
 
  public:
   // trait: Clone
   auto clone() const noexcept -> List {
     auto res = List{};
-    res.extend_from_slice({_inn.ptr(), _len});
+    res.extend_from_slice({_buf.ptr(), _len});
     return res;
   }
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    return Slice{_inn.ptr(), _len}.fmt(f);
+    return Slice{_buf.ptr(), _len}.fmt(f);
   }
 
   // trait: io::Write
@@ -295,7 +295,7 @@ class [[nodiscard]] List {
 
   // trait: serde::Serialize
   auto serialize(auto& ser) const {
-    const auto v = Slice{_inn.ptr(), _len};
+    const auto v = Slice{_buf.ptr(), _len};
     return v.serialize(ser);
   }
 

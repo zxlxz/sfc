@@ -8,20 +8,54 @@
 
 namespace sfc::alloc {
 
-auto Global::alloc(Layout layout) noexcept -> void* {
-  sfc::assert_(num::is_power_of_two(layout.align), "Global::alloc: invalid align({})", layout.align);
+Allocator::Allocator() noexcept {}
 
+Allocator::~Allocator() noexcept {}
+
+void* Allocator::grow(void* ptr, Layout layout, usize new_size) {
+  if (new_size <= layout.size) {
+    return ptr;
+  }
+
+  const auto new_ptr = this->allocate({new_size, layout.align});
+  if (ptr && new_ptr) {
+    __builtin_memcpy(new_ptr, ptr, layout.size);
+  }
+  this->deallocate(ptr, layout);
+  return new_ptr;
+}
+
+void* Allocator::shrink(void* ptr, Layout layout, usize new_size) {
+  if (new_size >= layout.size) {
+    return ptr;
+  }
+
+  const auto new_ptr = this->allocate({new_size, layout.align});
+  if (ptr && new_ptr) {
+    __builtin_memcpy(new_ptr, ptr, new_size);
+  }
+  this->deallocate(ptr, layout);
+  return new_ptr;
+}
+
+Global::Global() {}
+
+Global::~Global() {}
+
+auto Global::instance() noexcept -> Global& {
+  static auto g = Global{};
+  return g;
+}
+
+void* Global::allocate(Layout layout) {
   if (layout.size == 0) {
     return nullptr;
   }
 
-  // no need to check if ptr is nullptr here
-  // the caller should handle it
-  const auto ptr = sys::alloc(layout);
-  return ptr;
+  return sys::alloc(layout);
 }
 
-void Global::dealloc(void* ptr, Layout layout) noexcept {
+void Global::deallocate(void* ptr, Layout layout) {
   if (ptr == nullptr) {
     return;
   }
@@ -29,43 +63,29 @@ void Global::dealloc(void* ptr, Layout layout) noexcept {
   sys::dealloc(ptr, layout);
 }
 
-auto Global::realloc(void* ptr, Layout layout, usize new_size) noexcept -> void* {
-  sfc::assert_(num::is_power_of_two(layout.align), "Global::realloc: invalid align({})", layout.align);
-
-  if (new_size == layout.size) {
+void* Global::grow(void* ptr, Layout layout, usize new_size) {
+  if (layout.size >= new_size) {
     return ptr;
+  }
+
+  if (layout.size == 0) {
+    return sys::alloc(Layout{new_size, layout.align});
   }
 
   return sys::realloc(ptr, layout, new_size);
 }
 
-auto Global::grow(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::assert_(old_layout.align == new_layout.align, "Global::grow: alignment not match (old({}), new({}))", old_layout.align, new_layout.align);
-
-  if (old_layout.size >= new_layout.size) {
+void* Global::shrink(void* ptr, Layout layout, usize new_size) {
+  if (layout.size <= new_size) {
     return ptr;
   }
 
-  if (old_layout.size == 0) {
-    return Global::alloc(new_layout);
-  }
-
-  return Global::realloc(ptr, old_layout, new_layout.size);
-}
-
-auto Global::shrink(void* ptr, Layout old_layout, Layout new_layout) noexcept -> void* {
-  sfc::assert_(old_layout.align == new_layout.align, "Global::shrink: alignment not match (old({}), new({}))", old_layout.align, new_layout.align);
-
-  if (old_layout.size <= new_layout.size) {
-    return ptr;
-  }
-
-  if (new_layout.size == 0) {
-    Global::dealloc(ptr, old_layout);
+  if (new_size == 0) {
+    sys::dealloc(ptr, layout);
     return nullptr;
   }
 
-  return Global::realloc(ptr, old_layout, new_layout.size);
+  return sys::realloc(ptr, layout, new_size);
 }
 
 }  // namespace sfc::alloc

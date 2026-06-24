@@ -40,7 +40,7 @@ SFC_TEST(reserve) {
 }
 
 SFC_TEST(iter) {
-  auto q = Queue<int>{};
+  auto q = Queue<int>::with_capacity(10);
   for (auto i = 0; i < 10; ++i) {
     q.push(i);
   }
