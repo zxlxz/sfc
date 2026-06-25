@@ -4,10 +4,6 @@
 
 namespace sfc::collections::hash {
 
-static constexpr auto CTRL_ALIGN = usize{128UL};
-static constexpr auto CTRL_NUL = u8{0x80U};
-static constexpr auto CTRL_DEL = u8{0xFFU};
-
 struct Hasher {
   template <class T>
   static auto hash(const T& key) noexcept -> u64 {
@@ -23,11 +19,38 @@ struct Hasher {
   }
 };
 
+struct Ctrl {
+  static constexpr auto kNul = u8{0x80U};
+  static constexpr auto kDel = u8{0xFFU};
+  u8 _val;
+
+ public:
+  void set_nul() noexcept {
+    _val = kNul;
+  }
+
+  void set_del() noexcept {
+    _val = kDel;
+  }
+
+  auto is_nul() const noexcept -> bool {
+    return _val == kNul;
+  }
+
+  auto is_del() const noexcept -> bool {
+    return _val == kDel;
+  }
+
+  auto is_valid() const noexcept -> bool {
+    return _val < kNul;
+  }
+};
+
 template <class T>
 struct Iter : iter::Iterator {
   using Item = T&;
 
-  const u8* _ctrl;
+  const Ctrl* _ctrl;
   T* _data;
   usize _cap = 0;
   usize _idx = 0;
@@ -35,7 +58,7 @@ struct Iter : iter::Iterator {
  public:
   auto next() -> Option<Item> {
     for (; _idx < _cap; _idx++) {
-      if (_ctrl[_idx] < CTRL_NUL) {
+      if (_ctrl[_idx].is_valid()) {
         return _data[_idx++];
       }
     }
@@ -47,7 +70,7 @@ template <class T>
 struct Bucket {
   static constexpr auto kInvalidIdx = num::Int<usize>::MAX;
 
-  u8* _ctrl;
+  Ctrl* _ctrl;
   T* _data;
   usize _mask;
   usize _hidx;
@@ -61,8 +84,7 @@ struct Bucket {
   auto search_nul() const -> usize {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
-      const auto c = _ctrl[k];
-      if (c == CTRL_NUL) {
+      if (_ctrl[k].is_nul()) {
         return k;
       }
     }
@@ -73,9 +95,9 @@ struct Bucket {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
       const auto c = _ctrl[k];
-      if (c == h2 && _data[k].key == key) {  // found
+      if (c._val == h2 && _data[k].key == key) {  // found
         return {&_data[k], k};
-      } else if (c == CTRL_NUL) {  // not found
+      } else if (c.is_nul()) {  // not found
         return {nullptr, 0};
       }
     }
@@ -88,12 +110,12 @@ struct Bucket {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
       const auto c = _ctrl[k];
-      if (c == h2 && _data[k].key == key) {
+      if (c._val == h2 && _data[k].key == key) {
         return {&_data[k], k};
-      } else if (c == CTRL_NUL) {
+      } else if (c.is_nul()) {
         const auto ins_idx = del_idx != kInvalidIdx ? del_idx : k;
         return {nullptr, ins_idx};
-      } else if (c == CTRL_DEL && del_idx == kInvalidIdx) {
+      } else if (c.is_del() && del_idx == kInvalidIdx) {
         del_idx = k;
       }
     }
@@ -101,13 +123,13 @@ struct Bucket {
   }
 
   void insert_at(usize pos, u8 h2, T&& val) {
-    _ctrl[pos] = h2;
+    _ctrl[pos] = {h2};
     ptr::write(_data + pos, mem::move(val));
   }
 
   auto erase_at(usize pos) -> T {
     auto res = ptr::read(_data + pos);
-    _ctrl[pos] = CTRL_DEL;
+    _ctrl[pos].set_del();
     return res;
   }
 
@@ -138,8 +160,9 @@ struct Bucket {
 
 template <class T>
 class HashTbl {
-  static constexpr auto kMaxSize = num::Int<usize>::MAX >> 8U;
+  static constexpr auto kMaxSize = num::Int<u32>::MAX;
   static constexpr auto kLoadFactor = 4U;
+  static constexpr auto CTRL_ALIGN = usize{128UL};
 
   struct HIdx {
     u64 h1;
@@ -150,7 +173,7 @@ class HashTbl {
   usize _cap{0};
   usize _len{0};
   usize _rem{0};
-  Allocator* _a{&alloc::Global::instance()};
+  Allocator _a{alloc::global()};
 
  public:
   HashTbl() noexcept = default;
@@ -159,7 +182,7 @@ class HashTbl {
     if (_ptr == nullptr) return;
 
     this->clear();
-    _a->deallocate(_ptr, this->layout());
+    _a.dealloc(_ptr, this->layout());
   }
 
   HashTbl(HashTbl&& other) noexcept
@@ -176,15 +199,15 @@ class HashTbl {
     return *this;
   }
 
-  static auto with_capacity(usize min_cap, Allocator& alloc = alloc::Global::instance()) -> HashTbl {
+  static auto with_capacity(usize min_cap, Allocator alloc = alloc::global()) -> HashTbl {
     if (min_cap == 0) {
       return HashTbl{};
     }
 
     auto res = HashTbl{};
     res._cap = num::next_power_of_two(min_cap);
-    res._ptr = ptr::cast<u8>(alloc.allocate(res.layout()));
-    res._a = &alloc;
+    res._ptr = ptr::cast<u8>(alloc.alloc(res.layout()));
+    res._a = alloc;
     res.init();
     return res;
   }
@@ -272,40 +295,44 @@ class HashTbl {
       new_cap *= 2;
     }
 
-    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, *_a));
+    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, _a));
     tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(mem::move(entry)); });
   }
 
   using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto ctrl = ptr::cast<const Ctrl>(_ptr);
     const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return {{}, _ptr, data, _cap};
+    return {{}, ctrl, data, _cap};
   }
 
   using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto ctrl = ptr::cast<Ctrl>(_ptr);
     const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return {{}, _ptr, data, _cap};
+    return {{}, ctrl, data, _cap};
   }
 
  private:
-  auto layout() const -> alloc::Layout {
+  auto layout() const -> mem::Layout {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
     const auto data_size = _cap * sizeof(T);
-    return alloc::Layout{ctrl_size + data_size, alignof(T)};
+    return mem::Layout{ctrl_size + data_size, alignof(T)};
   }
 
   auto bucket(usize h1) const -> Bucket<T> {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
+    const auto ctrl = ptr::cast<Ctrl>(_ptr);
     const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return Bucket{_ptr, data, _cap - 1, h1};
+    return Bucket{ctrl, data, _cap - 1, h1};
   }
 
   void init() {
     const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
+    const auto ctrl = ptr::cast<Ctrl>(_ptr);
+    ptr::write_bytes(ctrl, Ctrl::kNul, ctrl_size);
     _len = 0;
     _rem = _cap - _cap / kLoadFactor;
   }
