@@ -155,6 +155,12 @@ constexpr auto unsigned_abs(T x) -> num::uint_t<T> {
 }
 
 template <trait::uint_ T>
+constexpr auto saturating_add(T a, T b) -> T {
+  using Int = num::Int<T>;
+  return a > Int::MAX - b ? Int::MAX : a + b;
+}
+
+template <trait::uint_ T>
 constexpr auto saturating_sub(T a, T b) -> T {
   return a < b ? 0U : a - b;
 }
