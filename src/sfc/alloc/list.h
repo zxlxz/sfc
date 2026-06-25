@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/alloc/rawbuf.h"
 
 namespace sfc::list {
 
@@ -29,7 +29,7 @@ class [[nodiscard]] List {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, alloc::Allocator& alloc = alloc::Global::instance()) noexcept -> List {
+  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) noexcept -> List {
     auto res = List{};
     res._buf = Inn::with_capacity(capacity, alloc);
     return res;

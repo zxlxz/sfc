@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/alloc/rawbuf.h"
 
 namespace sfc::collections::queue {
 
@@ -55,7 +55,7 @@ class [[nodiscard]] Queue {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, Allocator& alloc = alloc::Global::instance()) -> Queue {
+  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) -> Queue {
     auto res = Queue{};
     res._buf = Buf::with_capacity(capacity, alloc);
     return res;

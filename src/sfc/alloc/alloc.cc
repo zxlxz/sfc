@@ -8,46 +8,33 @@
 
 namespace sfc::alloc {
 
-Allocator::Allocator() noexcept {}
-
-Allocator::~Allocator() noexcept {}
-
-void* Allocator::grow(void* ptr, Layout layout, usize new_size) {
+void* IAlloc::grow(void* ptr, Layout layout, usize new_size) {
   if (new_size <= layout.size) {
     return ptr;
   }
 
-  const auto new_ptr = this->allocate({new_size, layout.align});
+  const auto new_ptr = this->alloc({new_size, layout.align});
   if (ptr && new_ptr) {
     __builtin_memcpy(new_ptr, ptr, layout.size);
   }
-  this->deallocate(ptr, layout);
+  this->dealloc(ptr, layout);
   return new_ptr;
 }
 
-void* Allocator::shrink(void* ptr, Layout layout, usize new_size) {
+void* IAlloc::shrink(void* ptr, Layout layout, usize new_size) {
   if (new_size >= layout.size) {
     return ptr;
   }
 
-  const auto new_ptr = this->allocate({new_size, layout.align});
+  const auto new_ptr = this->alloc({new_size, layout.align});
   if (ptr && new_ptr) {
     __builtin_memcpy(new_ptr, ptr, new_size);
   }
-  this->deallocate(ptr, layout);
+  this->dealloc(ptr, layout);
   return new_ptr;
 }
 
-Global::Global() {}
-
-Global::~Global() {}
-
-auto Global::instance() noexcept -> Global& {
-  static auto g = Global{};
-  return g;
-}
-
-void* Global::allocate(Layout layout) {
+void* System::alloc(Layout layout) {
   if (layout.size == 0) {
     return nullptr;
   }
@@ -55,7 +42,7 @@ void* Global::allocate(Layout layout) {
   return sys::alloc(layout);
 }
 
-void Global::deallocate(void* ptr, Layout layout) {
+void System::dealloc(void* ptr, Layout layout) {
   if (ptr == nullptr) {
     return;
   }
@@ -63,7 +50,7 @@ void Global::deallocate(void* ptr, Layout layout) {
   sys::dealloc(ptr, layout);
 }
 
-void* Global::grow(void* ptr, Layout layout, usize new_size) {
+void* System::grow(void* ptr, Layout layout, usize new_size) {
   if (layout.size >= new_size) {
     return ptr;
   }
@@ -75,7 +62,7 @@ void* Global::grow(void* ptr, Layout layout, usize new_size) {
   return sys::realloc(ptr, layout, new_size);
 }
 
-void* Global::shrink(void* ptr, Layout layout, usize new_size) {
+void* System::shrink(void* ptr, Layout layout, usize new_size) {
   if (layout.size <= new_size) {
     return ptr;
   }
@@ -86,6 +73,11 @@ void* Global::shrink(void* ptr, Layout layout, usize new_size) {
   }
 
   return sys::realloc(ptr, layout, new_size);
+}
+
+auto global() -> IAlloc& {
+  static auto imp = System{};
+  return imp;
 }
 
 }  // namespace sfc::alloc
