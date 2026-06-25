@@ -24,8 +24,6 @@ class System : public IAlloc {
   void* shrink(void* ptr, Layout layout, usize new_size) override;
 };
 
-auto global() -> IAlloc&;
-
 class Allocator {
   IAlloc* _alloc{nullptr};
 
@@ -50,6 +48,8 @@ class Allocator {
     return _alloc->shrink(ptr, layout, new_size);
   }
 };
+
+auto global() -> IAlloc&;
 
 }  // namespace sfc::alloc
 
