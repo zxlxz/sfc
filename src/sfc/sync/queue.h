@@ -45,9 +45,9 @@ class Queue {
   Queue(Queue&& other) noexcept = default;
   Queue& operator=(Queue&& other) noexcept = default;
 
-  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) -> Queue {
+  static auto with_capacity(usize capacity) -> Queue {
     auto res = Queue{};
-    res._buf = Buf::with_capacity(capacity, alloc);
+    res._buf = Buf::with_capacity(capacity);
 
     // init
     for (auto i = 0U; i < capacity; ++i) {

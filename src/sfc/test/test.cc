@@ -50,7 +50,7 @@ void Module::regist(Test test) {
 }
 
 struct TestManager {
-  List<Module> _mods;
+  List<Module> _mods{};
 
  public:
   static auto instance() -> TestManager& {

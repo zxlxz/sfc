@@ -4,16 +4,14 @@
 
 namespace sfc::list {
 
-static constexpr auto MAX_SIZE = num::Int<usize>::MAX / 4;
-
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
-  using Inn = RawBuf<T>;
+  using Inn = RawBuf<T, A>;
   Inn _buf = {};
   usize _len = 0;
 
  public:
-  List() noexcept = default;
+  explicit List() noexcept {}
 
   ~List() noexcept {
     this->clear();
@@ -29,7 +27,7 @@ class [[nodiscard]] List {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) noexcept -> List {
+  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> List {
     auto res = List{};
     res._buf = Inn::with_capacity(capacity, alloc);
     return res;

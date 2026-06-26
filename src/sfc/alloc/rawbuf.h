@@ -4,16 +4,16 @@
 
 namespace sfc::alloc {
 
-template <class T>
+template <class T, class A = Global>
 class RawBuf {
   static constexpr usize kMinCap = sizeof(T) <= sizeof(u32) ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
 
   T* _ptr{nullptr};
   usize _cap{0};
-  Allocator _a{alloc::global()};
+  A _a{};
 
  public:
-  [[gnu::always_inline]] RawBuf() noexcept = default;
+  [[gnu::always_inline]] RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
 
   [[gnu::always_inline]] ~RawBuf() noexcept {
     if (!_ptr) return;
@@ -23,7 +23,7 @@ class RawBuf {
   }
 
   [[gnu::always_inline]] RawBuf(RawBuf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{other._a} {}
+      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
   [[gnu::always_inline]] RawBuf& operator=(RawBuf&& other) noexcept {
     if (this != &other) {
@@ -34,7 +34,7 @@ class RawBuf {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) noexcept -> RawBuf {
+  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> RawBuf {
     const auto layout = Layout{}.array<T>(capacity);
 
     auto res = RawBuf{};
@@ -60,7 +60,7 @@ class RawBuf {
     return _ptr[idx];
   }
 
-  auto allocator() -> Allocator {
+  auto allocator() -> A& {
     return _a;
   }
 

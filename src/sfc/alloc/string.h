@@ -6,7 +6,7 @@ namespace sfc::string {
 
 class [[nodiscard]] String {
   using Buf = List<u8>;
-  Buf _buf = {};
+  Buf _buf{};
 
  public:
   static auto with_capacity(usize capacity) noexcept -> String;

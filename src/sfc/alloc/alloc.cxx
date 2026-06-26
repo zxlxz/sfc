@@ -3,7 +3,7 @@
 namespace sfc::alloc::test {
 
 SFC_TEST(global_alloc_dealloc) {
-  auto& a = alloc::global();
+  auto a = alloc::Global{};
 
   const auto layout = Layout{}.array<u64>(16);
 
@@ -14,7 +14,7 @@ SFC_TEST(global_alloc_dealloc) {
 }
 
 SFC_TEST(global_grow) {
-  auto& a = alloc::global();
+  auto a = alloc::Global{};
 
   const auto layout = Layout{}.array<u64>(16);
   auto* ptr = a.alloc(layout);
@@ -26,7 +26,7 @@ SFC_TEST(global_grow) {
 }
 
 SFC_TEST(global_shrink) {
-  auto& a = alloc::global();
+  auto a = alloc::Global{};
 
   const auto layout = Layout{}.array<u64>(32);
   auto* ptr = a.alloc(layout);

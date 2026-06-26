@@ -24,35 +24,6 @@ class System : public IAlloc {
   void* shrink(void* ptr, Layout layout, usize new_size) override;
 };
 
-class Allocator {
-  IAlloc* _alloc{nullptr};
-
- public:
-  Allocator(IAlloc& alloc) noexcept : _alloc{&alloc} {}
-  ~Allocator() noexcept = default;
-
- public:
-  void* alloc(Layout layout) {
-    return _alloc->alloc(layout);
-  }
-
-  void dealloc(void* ptr, Layout layout) {
-    return _alloc->dealloc(ptr, layout);
-  }
-
-  void* grow(void* ptr, Layout layout, usize new_size) {
-    return _alloc->grow(ptr, layout, new_size);
-  }
-
-  void* shrink(void* ptr, Layout layout, usize new_size) {
-    return _alloc->shrink(ptr, layout, new_size);
-  }
-};
-
-auto global() -> IAlloc&;
+using Global = System;
 
 }  // namespace sfc::alloc
-
-namespace sfc {
-using alloc::Allocator;
-}  // namespace sfc

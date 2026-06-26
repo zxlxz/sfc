@@ -5,8 +5,7 @@
 namespace sfc::collections::queue {
 
 template <class T>
-struct Iter : iter::Iterator {
-  using Item = T&;
+struct Iter : iter::Iterator<T&> {
   slice::Iter<T> _iter1;
   slice::Iter<T> _iter2;
 
@@ -15,14 +14,14 @@ struct Iter : iter::Iterator {
     return _iter1.len() + _iter2.len();
   }
 
-  auto next() noexcept -> Option<Item> {
+  auto next() noexcept -> Option<T&> {
     if (auto t = _iter1.next()) {
       return t;
     }
     return _iter2.next();
   }
 
-  auto next_back() noexcept -> Option<Item> {
+  auto next_back() noexcept -> Option<T&> {
     if (auto t = _iter1.next_back()) {
       return t;
     }
@@ -30,9 +29,9 @@ struct Iter : iter::Iterator {
   }
 };
 
-template <class T>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
-  using Buf = RawBuf<T>;
+  using Buf = RawBuf<T, A>;
   usize _pos{0};
   usize _len{0};
   Buf _buf{};
@@ -55,9 +54,9 @@ class [[nodiscard]] Queue {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, Allocator alloc = alloc::global()) -> Queue {
+  static auto with_capacity(usize capacity, A alloc = {}) -> Queue {
     auto res = Queue{};
-    res._buf = Buf::with_capacity(capacity, alloc);
+    res._buf = Buf::with_capacity(capacity, mem::move(alloc));
     return res;
   }
 

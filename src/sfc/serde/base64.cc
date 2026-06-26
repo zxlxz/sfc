@@ -106,12 +106,12 @@ auto encode(Slice<const u8> data) -> String {
 
 auto decode(Str text) -> List<u8> {
   if (text.is_empty()) {
-    return {};
+    return List<u8>{};
   }
 
   const auto text_len = text.len();
   if (text_len % 4 != 0) {
-    return {};
+    return List<u8>{};
   }
 
   auto out = List<u8>{};
