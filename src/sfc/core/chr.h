@@ -15,15 +15,14 @@ auto utf16_codelen(u16 h) -> usize;
 auto utf16_encode(u16 (&buf)[2], char32_t ch) -> usize;
 auto utf16_decode(const u16 buf[], usize buf_len) -> char32_t;
 
-struct Chars : iter::Iterator {
-  using Item = char32_t;
+struct Chars : iter::Iterator<char32_t> {
   const u8* _ptr;
   const u8* _end;
 
  public:
   Chars(const u8* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
-  auto next() noexcept -> Option<Item>;
-  auto next_back() noexcept -> Option<Item>;
+  auto next() noexcept -> Option<char32_t>;
+  auto next_back() noexcept -> Option<char32_t>;
 };
 
 }  // namespace sfc::chr

@@ -167,7 +167,7 @@ auto utf16_decode(const u16 p[], usize n) -> char32_t {
   return utf16::decode(p, n);
 }
 
-auto Chars::next() noexcept -> Option<Item> {
+auto Chars::next() noexcept -> Option<char32_t> {
   if (_ptr == _end) return {};
 
   const auto n = utf8::codelen(*_ptr);
@@ -181,7 +181,7 @@ auto Chars::next() noexcept -> Option<Item> {
   return ch;
 }
 
-auto Chars::next_back() noexcept -> Option<Item> {
+auto Chars::next_back() noexcept -> Option<char32_t> {
   if (_ptr == _end) return {};
 
   // rev find the start of the last code point

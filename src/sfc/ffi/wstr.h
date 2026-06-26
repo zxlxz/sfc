@@ -8,14 +8,13 @@ auto wide_codelen(wchar_t h) -> usize;
 auto wide_encode(wchar_t (&wbuf)[2], char32_t ch) -> usize;
 auto wide_decode(const wchar_t wbuf[], usize n) -> char32_t;
 
-struct WChars : iter::Iterator {
-  using Item = char32_t;
+struct WChars : iter::Iterator<char32_t> {
   const wchar_t* _ptr;
   const wchar_t* _end;
 
  public:
   WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
-  auto next() noexcept -> Option<Item>;
+  auto next() noexcept -> Option<char32_t>;
 };
 
 struct WStr {

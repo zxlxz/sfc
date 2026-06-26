@@ -376,9 +376,7 @@ constexpr auto operator==(const Slice<A>& a, const Slice<B>& b) noexcept -> bool
 }
 
 template <class T>
-struct Iter : iter::Iterator {
-  using Item = T&;
-
+struct Iter : iter::Iterator<T&> {
   T* _ptr = nullptr;
   T* _end = nullptr;
 
@@ -389,20 +387,21 @@ struct Iter : iter::Iterator {
     return num::cast_unsigned(_end - _ptr);
   }
 
-  auto next() noexcept -> Option<Item> {
+  auto next() noexcept -> Option<T&> {
     if (_ptr >= _end) return {};
     return *_ptr++;
   }
 
-  auto next_back() noexcept -> Option<Item> {
+  auto next_back() noexcept -> Option<T&> {
     if (_ptr >= _end) return {};
     return *--_end;
   }
 };
 
 template <class T>
-struct Windows : iter::Iterator {
+struct Windows : iter::Iterator<Slice<T>> {
   using Item = Slice<T>;
+
   T* _ptr;
   T* _end;
   usize _len;
@@ -426,9 +425,8 @@ struct Windows : iter::Iterator {
 };
 
 template <class T>
-struct Chunks : iter::Iterator {
+struct Chunks : iter::Iterator<Slice<T>> {
   using Item = Slice<T>;
-
   T* _ptr;
   T* _end;
   usize _len;
