@@ -19,9 +19,9 @@ auto Str::trim() const noexcept -> Str {
 }
 
 auto Str::hash() const noexcept -> usize {
-  auto imp = hash::Hasher{};
-  imp.write_bytes(this->as_bytes());
-  return imp.finish();
+  auto hasher = hash::Hasher{};
+  hasher.write(this->as_bytes());
+  return hasher.finish();
 }
 
 auto CharSearcher::next() -> SearchStep {
