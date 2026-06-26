@@ -4,61 +4,20 @@
 
 namespace sfc::collections::hash {
 
-struct Hasher {
-  template <class T>
-  static auto hash(const T& key) noexcept -> u64 {
-    if constexpr (requires { key.hash(); }) {
-      return key.hash();
-    } else if constexpr (trait::uint_<T>) {
-      return u64{key};
-    } else if constexpr (trait::sint_<T>) {
-      return num::cast_unsigned(key);
-    } else {
-      static_assert(false, "HashTbl::hash: cannot hash key type");
-    }
-  }
-};
-
-struct Ctrl {
-  static constexpr auto kNul = u8{0x80U};
-  static constexpr auto kDel = u8{0xFFU};
-  u8 _val;
-
- public:
-  void set_nul() noexcept {
-    _val = kNul;
-  }
-
-  void set_del() noexcept {
-    _val = kDel;
-  }
-
-  auto is_nul() const noexcept -> bool {
-    return _val == kNul;
-  }
-
-  auto is_del() const noexcept -> bool {
-    return _val == kDel;
-  }
-
-  auto is_valid() const noexcept -> bool {
-    return _val < kNul;
-  }
-};
+static constexpr u8 CTRL_NUL = 0x80U;
+static constexpr u8 CTRL_DEL = 0xFFU;
 
 template <class T>
-struct Iter : iter::Iterator {
-  using Item = T&;
-
-  const Ctrl* _ctrl;
+struct Iter : iter::Iterator<T&> {
+  const u8* _ctrl;
   T* _data;
   usize _cap = 0;
   usize _idx = 0;
 
  public:
-  auto next() -> Option<Item> {
+  auto next() -> Option<T&> {
     for (; _idx < _cap; _idx++) {
-      if (_ctrl[_idx].is_valid()) {
+      if (_ctrl[_idx] < CTRL_NUL) {
         return _data[_idx++];
       }
     }
@@ -70,7 +29,7 @@ template <class T>
 struct Bucket {
   static constexpr auto kInvalidIdx = num::Int<usize>::MAX;
 
-  Ctrl* _ctrl;
+  u8* _ctrl;
   T* _data;
   usize _mask;
   usize _hidx;
@@ -84,7 +43,7 @@ struct Bucket {
   auto search_nul() const -> usize {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
-      if (_ctrl[k].is_nul()) {
+      if (_ctrl[k] == CTRL_NUL) {
         return k;
       }
     }
@@ -95,9 +54,9 @@ struct Bucket {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
       const auto c = _ctrl[k];
-      if (c._val == h2 && _data[k].key == key) {  // found
+      if (c == h2 && _data[k].key == key) {  // found
         return {&_data[k], k};
-      } else if (c.is_nul()) {  // not found
+      } else if (c == CTRL_NUL) {  // not found
         return {nullptr, 0};
       }
     }
@@ -110,12 +69,12 @@ struct Bucket {
     for (auto i = 0U; i <= _mask; ++i) {
       const auto k = (_hidx + i) & _mask;
       const auto c = _ctrl[k];
-      if (c._val == h2 && _data[k].key == key) {
+      if (c == h2 && _data[k].key == key) {
         return {&_data[k], k};
-      } else if (c.is_nul()) {
+      } else if (c == CTRL_NUL) {
         const auto ins_idx = del_idx != kInvalidIdx ? del_idx : k;
         return {nullptr, ins_idx};
-      } else if (c.is_del() && del_idx == kInvalidIdx) {
+      } else if (c == CTRL_DEL && del_idx == kInvalidIdx) {
         del_idx = k;
       }
     }
@@ -123,13 +82,13 @@ struct Bucket {
   }
 
   void insert_at(usize pos, u8 h2, T&& val) {
-    _ctrl[pos] = {h2};
+    _ctrl[pos] = h2;
     ptr::write(_data + pos, mem::move(val));
   }
 
   auto erase_at(usize pos) -> T {
     auto res = ptr::read(_data + pos);
-    _ctrl[pos].set_del();
+    _ctrl[pos] = CTRL_DEL;
     return res;
   }
 
@@ -158,56 +117,77 @@ struct Bucket {
   }
 };
 
-template <class T>
-class HashTbl {
-  static constexpr auto kMaxSize = num::Int<u32>::MAX;
-  static constexpr auto kLoadFactor = 4U;
-  static constexpr auto CTRL_ALIGN = usize{128UL};
-
-  struct HIdx {
-    u64 h1;
-    u8 h2;
-  };
+class HashTblStorage {
+  using A = alloc::Global;
+  static constexpr usize kAlign = 16U;
 
   u8* _ptr{nullptr};
   usize _cap{0};
+  [[no_unique_address]] A _alloc{};
+
+ public:
+  HashTblStorage();
+  ~HashTblStorage();
+
+  HashTblStorage(HashTblStorage&& other) noexcept;
+  HashTblStorage& operator=(HashTblStorage&& other) noexcept;
+
+  static auto with_capacity(usize min_cap, usize element_size) -> HashTblStorage;
+
+  void init(usize element_size);
+
+ public:
+  auto cap() const noexcept -> usize {
+    return _cap;
+  }
+
+  auto mask() const noexcept -> usize {
+    return _cap - 1;
+  }
+
+  auto ctrl() const noexcept -> u8* {
+    return _ptr;
+  }
+
+  template <class T>
+  auto data() const noexcept -> T* {
+    const auto offset = num::align_up(_cap, kAlign);
+    return ptr::cast<T>(_ptr + offset);
+  }
+};
+
+template <class T>
+class HashTbl {
+  using RawTbl = HashTblStorage;
+  static constexpr f64 kLoadFactor = 0.75;
+
+  RawTbl _buf;
   usize _len{0};
   usize _rem{0};
-  Allocator _a{alloc::global()};
 
  public:
   HashTbl() noexcept = default;
 
   ~HashTbl() noexcept {
-    if (_ptr == nullptr) return;
-
     this->clear();
-    _a.dealloc(_ptr, this->layout());
   }
 
-  HashTbl(HashTbl&& other) noexcept
-      : _ptr{other._ptr}, _cap{other._cap}, _len{other._len}, _rem{other._rem}, _a{other._a} {
-    other._ptr = nullptr;
-    other._cap = 0;
+  HashTbl(HashTbl&& other) noexcept : _buf{mem::move(other._buf)}, _len{other._len}, _rem{other._rem} {
     other._len = 0;
     other._rem = 0;
   }
 
   HashTbl& operator=(HashTbl&& other) noexcept {
     if (this == &other) return *this;
-    this->swap(other);
+    mem::swap(_buf, other._buf);
+    mem::swap(_len, other._len);
+    mem::swap(_rem, other._rem);
     return *this;
   }
 
-  static auto with_capacity(usize min_cap, Allocator alloc = alloc::global()) -> HashTbl {
-    if (min_cap == 0) {
-      return HashTbl{};
-    }
-
+  static auto with_capacity(usize min_cap) -> HashTbl {
     auto res = HashTbl{};
-    res._cap = num::next_power_of_two(min_cap);
-    res._ptr = ptr::cast<u8>(alloc.alloc(res.layout()));
-    res._a = alloc;
+    res._buf = RawTbl::with_capacity(min_cap, sizeof(T));
     res.init();
     return res;
   }
@@ -217,23 +197,7 @@ class HashTbl {
   }
 
   auto cap() const noexcept -> usize {
-    return _cap;
-  }
-
-  void swap(HashTbl& other) noexcept {
-    if (this == &other) return;
-    mem::swap(_ptr, other._ptr);
-    mem::swap(_cap, other._cap);
-    mem::swap(_len, other._len);
-    mem::swap(_rem, other._rem);
-    mem::swap(_a, other._a);
-  }
-
-  auto hash(const auto& key) const noexcept -> HIdx {
-    const auto hx = Hasher::hash(key);
-    const auto h1 = hx & (_cap - 1);
-    const auto h2 = static_cast<u8>((hx >> 57) & 0x7F);
-    return {h1, h2};
+    return _buf.cap();
   }
 
   auto search(const auto& key) const -> T* {
@@ -241,14 +205,14 @@ class HashTbl {
       return nullptr;
     }
 
-    const auto [h1, h2] = this->hash(key);
+    const auto [h1, h2] = this->hidx(key);
     return this->bucket(h1).search_key(h2, key).ptr;
   }
 
   auto try_insert(T&& entry) noexcept -> T* {
     this->reserve(1);
 
-    const auto [h1, h2] = this->hash(entry.key);
+    const auto [h1, h2] = this->hidx(entry.key);
     const auto ptr = this->bucket(h1).try_insert(h2, mem::move(entry));
     if (!ptr) {
       _len += 1;
@@ -262,7 +226,7 @@ class HashTbl {
       return {};
     }
 
-    const auto [h1, h2] = this->hash(key);
+    const auto [h1, h2] = this->hidx(key);
     auto ret = this->bucket(h1).remove(h2, key);
     if (ret) {
       _len -= 1;
@@ -271,6 +235,9 @@ class HashTbl {
   }
 
   void clear() noexcept {
+    if (_buf.cap() == 0) {
+      return;
+    }
     this->iter_mut().for_each([&](T& entry) { entry.~T(); });
     this->init();
   }
@@ -283,58 +250,41 @@ class HashTbl {
     this->rehash(_len + additional);
   }
 
-  void rehash(usize min_cap) {
-    if (min_cap < _len) {
-      return;
-    }
-    sfc::assert_(min_cap < kMaxSize, "HashTbl::rehash: requested capacity(={}) too large", min_cap);
-
-    // calculate new capacity
-    auto new_cap = num::next_power_of_two(min_cap);
-    if (new_cap - new_cap / kLoadFactor < min_cap) {
-      new_cap *= 2;
-    }
-
-    auto tmp = mem::replace(*this, HashTbl::with_capacity(new_cap, _a));
-    tmp.iter_mut().for_each([&](T& entry) { this->rehash_insert(mem::move(entry)); });
-  }
-
   using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto ctrl = ptr::cast<const Ctrl>(_ptr);
-    const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return {{}, ctrl, data, _cap};
+    return {{}, _buf.ctrl(), _buf.data<T>(), _buf.cap()};
   }
 
   using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto ctrl = ptr::cast<Ctrl>(_ptr);
-    const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return {{}, ctrl, data, _cap};
+    return {{}, _buf.ctrl(), _buf.data<T>(), _buf.cap()};
   }
 
  private:
-  auto layout() const -> mem::Layout {
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto data_size = _cap * sizeof(T);
-    return mem::Layout{ctrl_size + data_size, alignof(T)};
+  auto hidx(const auto& key) const noexcept -> Tuple<usize, u8> {
+    const auto hx = Hash::hash(key);
+    const auto h1 = hx & (_buf.mask());
+    const auto h2 = u8((hx >> 57) & 0x7F);
+    return {h1, h2};
   }
 
   auto bucket(usize h1) const -> Bucket<T> {
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto ctrl = ptr::cast<Ctrl>(_ptr);
-    const auto data = ptr::cast<T>(_ptr + ctrl_size);
-    return Bucket{ctrl, data, _cap - 1, h1};
+    return Bucket{_buf.ctrl(), _buf.data<T>(), _buf.mask(), h1};
   }
 
   void init() {
-    const auto ctrl_size = num::align_up(_cap, CTRL_ALIGN);
-    const auto ctrl = ptr::cast<Ctrl>(_ptr);
-    ptr::write_bytes(ctrl, Ctrl::kNul, ctrl_size);
     _len = 0;
-    _rem = _cap - _cap / kLoadFactor;
+    _rem = usize(f64(_buf.cap()) * kLoadFactor);
+    _buf.init(sizeof(T));
+  }
+
+  void rehash(usize max_len) {
+    const auto min_cap = usize(f64(max_len) / kLoadFactor + 0.5);
+    auto new_tbl = HashTbl::with_capacity(min_cap);
+
+    // rehash all entries
+    this->iter_mut().for_each([&](T& entry) { new_tbl.rehash_insert(mem::move(entry)); });
+    *this = mem::move(new_tbl);
   }
 
   auto rehash_insert(T&& entry) -> bool {
@@ -342,8 +292,12 @@ class HashTbl {
       return false;
     }
 
-    const auto [h1, h2] = this->hash(entry.key);
-    this->bucket(h1).insert_new(h2, mem::move(entry));
+    const auto [h1, h2] = this->hidx(entry.key);
+    const auto ret = this->bucket(h1).insert_new(h2, mem::move(entry));
+    if (!ret) {
+      return false;
+    }
+
     _len += 1;
     _rem -= 1;
     return true;
