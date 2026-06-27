@@ -1,12 +1,12 @@
 #pragma once
 
-#include "sfc/sync/queue.h"
+#include "sfc/sync/ringbuf.h"
 
 namespace sfc::sync::mpmc {
 
 template <class T>
 class Channel {
-  using Queue = Queue<T>;
+  using Queue = RingBuf<T>;
   Queue _buff{};
   Atomic<bool> _closed{true};
 
@@ -37,26 +37,32 @@ class Channel {
     return _closed.load(Ordering::Acquire);
   }
 
-  auto send(T val) noexcept -> Result<void, T> {
-    while (!this->is_closed()) {
-      auto ret = _buff.push(val);
-      if (ret.is_ok()) {
-        return {};
-      }
-      val = mem::move(ret).unwrap_err();
-      sfc::thread::yield_now();
+  auto send(T val) noexcept -> Option<T> {
+    const auto ret = this->try_send(val);
+    if (ret) {
+      return {};
     }
-    return {mem::move(val)};
+    return Option{mem::move(val)};
   }
 
   auto recv() noexcept -> Option<T> {
     while (!this->is_closed()) {
-      if (auto ret = _buff.pop()) {
-        return ret;
+      if (auto opt = _buff.pop()) {
+        return opt;
       }
       sfc::thread::yield_now();
     }
     return {};
+  }
+
+  auto try_send(T& val) noexcept -> bool {
+    while (!this->is_closed()) {
+      if (_buff.try_push(val)) {
+        return true;
+      }
+      sfc::thread::yield_now();
+    }
+    return false;
   }
 
   auto try_recv() noexcept -> Option<T> {
@@ -69,7 +75,7 @@ struct Sender {
   Channel<T>& _chan;
 
  public:
-  auto send(T val) noexcept -> Result<void, T> {
+  auto send(T val) noexcept -> Option<T> {
     return _chan.send(mem::move(val));
   }
 };

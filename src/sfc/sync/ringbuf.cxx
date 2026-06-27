@@ -1,17 +1,17 @@
 #include "sfc/test.h"
 #include "sfc/thread.h"
-#include "sfc/sync/queue.h"
+#include "sfc/sync/ringbuf.h"
 
-namespace sfc::sync::queue::test {
+namespace sfc::sync::ringbuf::test {
 
 SFC_TEST(base) {
-  auto mq = Queue<u32>::with_capacity(4);
+  auto mq = RingBuf<u32>::with_capacity(4);
 
   const auto r0 = mq.pop();
   sfc::assert_eq(r0, Option{});
 
   for (auto i = 0U; i < 4U; ++i) {
-    sfc::assert_eq(mq.push(i).is_ok(), true);
+    sfc::assert_eq(mq.push(i), Option{});
   }
 
   for (auto i = 0U; i < 4U; ++i) {
@@ -24,15 +24,15 @@ SFC_TEST(base) {
 
 SFC_TEST(push_full) {
   const auto cap = 4U;
-  auto mq = Queue<u32>::with_capacity(cap);
+  auto mq = RingBuf<u32>::with_capacity(cap);
   for (auto i = 0U; i < cap; ++i) {
-    sfc::assert_eq(mq.push(i).is_ok(), true);
+    sfc::assert_eq(mq.push(i), Option{});
   }
   sfc::assert_eq(mq.is_empty(), false);
   sfc::assert_eq(mq.is_full(), true);
 
   auto val = cap + 1;
-  sfc::assert_eq(mq.push(val).err(), Option{cap + 1});  // full
+  sfc::assert_eq(mq.push(val), Option{cap + 1});  // full
   sfc::assert_eq(mq.is_full(), true);
 
   for (auto i = 0U; i < cap; ++i) {
@@ -40,7 +40,7 @@ SFC_TEST(push_full) {
     sfc::assert_eq(val, Option{i});
 
     sfc::assert_eq(mq.is_full(), false);
-    sfc::assert_eq(mq.push(cap + i).is_ok(), true);
+    sfc::assert_eq(mq.push(cap + i), Option{});
     sfc::assert_eq(mq.is_full(), true);
   }
 
@@ -50,7 +50,7 @@ SFC_TEST(push_full) {
 }
 
 SFC_TEST(clear) {
-  auto mq = Queue<int>::with_capacity(5);
+  auto mq = RingBuf<int>::with_capacity(5);
   for (auto i = 0; i < 5; ++i) {
     (void)mq.push(i);
   }
@@ -58,13 +58,13 @@ SFC_TEST(clear) {
   mq.clear();
   sfc::assert_eq(mq.pop(), Option{});
 
-  sfc::assert_eq(mq.push(42).is_ok(), true);
+  sfc::assert_eq(mq.push(42), Option{});
   const auto val = mq.pop();
   sfc::assert_eq(val, Option{42});
 }
 
 SFC_TEST(fifo_order) {
-  auto mq = Queue<int>::with_capacity(16);
+  auto mq = RingBuf<int>::with_capacity(16);
 
   for (auto i = 0; i < 10; ++i) {
     (void)mq.push(i);
@@ -78,14 +78,14 @@ SFC_TEST(fifo_order) {
 
 SFC_TEST(mpmc_s1r1) {
   static const auto CNT = 100U;
-  auto mq = Queue<u32>::with_capacity(100);
+  auto mq = RingBuf<u32>::with_capacity(100);
 
   auto recv_cnt = 0U;
   auto recv_sum = 0U;
 
   auto sender = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      while (!mq.push(i).is_ok()) {
+      while (mq.push(i).is_some()) {
         thread::yield_now();
       }
     }
@@ -114,14 +114,14 @@ SFC_TEST(mpmc_s1r1) {
 
 SFC_TEST(mpmc_s2r2) {
   static const auto CNT = 50;
-  auto mq = Queue<int>::with_capacity(100);
+  auto mq = RingBuf<int>::with_capacity(100);
 
   auto recv_cnt = Atomic{0U};
   auto recv_sum = Atomic{0};
 
   auto sender = [&](int k) {
     for (auto i = 0; i < CNT; ++i) {
-      while (!mq.push(k * i).is_ok()) {
+      while (mq.push(k * i).is_some()) {
         thread::yield_now();
       }
     }

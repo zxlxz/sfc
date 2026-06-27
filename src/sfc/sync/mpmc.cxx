@@ -13,7 +13,7 @@ SFC_TEST(s1r1) {
   auto recv_sum = 0U;
   auto sender = [&]() {
     for (auto i = 0U; i < CNT; ++i) {
-      sfc::assert_eq(chan.send(i).is_ok(), true);
+      sfc::assert_eq(chan.send(i), Option{});
     }
   };
 
@@ -46,7 +46,7 @@ SFC_TEST(s1r1_try) {
 
   // try_recv returns value when available
   {
-    sfc::assert_eq(chan.send(7).is_ok(), true);
+    sfc::assert_eq(chan.send(7), Option{});
     auto val = chan.try_recv();
     sfc::assert_eq(val, Option{7U});
   }
@@ -66,7 +66,7 @@ SFC_TEST(s2r1) {
   auto recv_sum = 0;
   auto sender = [&](int k) {
     for (auto i = 0; i < CNT; ++i) {
-      sfc::assert_eq(chan.send(k * i).is_ok(), true);
+      sfc::assert_eq(chan.send(k * i), Option{});
     }
   };
 
@@ -97,7 +97,7 @@ SFC_TEST(s1r2) {
   auto recv_sum = Atomic{0U};
   auto sender = [&]() {
     for (auto i = 0U; i < 2 * CNT; ++i) {
-      sfc::assert_eq(chan.send(1U).is_ok(), true);
+      sfc::assert_eq(chan.send(1U), Option{});
     }
   };
 
@@ -127,7 +127,7 @@ SFC_TEST(s2r2) {
   auto recv_sum = Atomic{0};
   auto sender = [&](int k) {
     for (auto i = 0; i < CNT; ++i) {
-      sfc::assert_eq(chan.send(k * i).is_ok(), true);
+      sfc::assert_eq(chan.send(k * i), Option{});
     }
   };
 
