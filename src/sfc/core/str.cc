@@ -1,27 +1,9 @@
 #include "sfc/core/str.h"
+#include "sfc/core/hash.h"
 
 namespace sfc::str {
 
-static auto fast_exp10(u64 n) -> f64 {
-  static constexpr f64 TBL[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};
-
-  if (n == 0) {
-    return 1.0;
-  }
-
-  auto res = 1.0;
-  for (; n >= 256; n -= 256) {
-    res *= 1e256;
-  }
-  for (; n >= 16; n -= 16) {
-    res *= 1e16;
-  }
-  res *= TBL[n];
-
-  return res;
-}
-
-struct NumParser {
+struct Parser {
   const char* _ptr;
   const char* _end;
 
@@ -41,10 +23,29 @@ struct NumParser {
   };
 
  public:
-  NumParser(Str s) noexcept : _ptr{s._ptr}, _end{s._ptr + s._len} {}
+  Parser(Str s) noexcept : _ptr{s._ptr}, _end{s._ptr + s._len} {}
 
   auto is_empty() const -> bool {
     return _ptr == _end;
+  }
+
+  static auto fast_exp10(u64 n) -> f64 {
+    static constexpr f64 TBL[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};
+
+    if (n == 0) {
+      return 1.0;
+    }
+
+    auto res = 1.0;
+    for (; n >= 256; n -= 256) {
+      res *= 1e256;
+    }
+    for (; n >= 16; n -= 16) {
+      res *= 1e16;
+    }
+    res *= TBL[n];
+
+    return res;
   }
 
   template <trait::uint_ T>
@@ -223,7 +224,7 @@ struct NumParser {
       cnt += 1;
     }
 
-    const auto exp_val = str::fast_exp10(cnt);
+    const auto exp_val = fast_exp10(cnt);
     const auto flt_val = f64(val) / exp_val;
     return flt_val;
   }
@@ -246,12 +247,115 @@ struct NumParser {
 
 template <class T>
 auto FromStr<T>::from_str(Str s) -> Option<T> {
-  auto imp = NumParser{s};
+  auto imp = Parser{s};
   auto res = imp.parse_num<T>();
   if (!imp.is_empty()) {
     return {};
   }
   return res;
+}
+
+auto Str::trim_start() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_start_matches(is_space);
+}
+
+auto Str::trim_end() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_end_matches(is_space);
+}
+
+auto Str::trim() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_matches(is_space);
+}
+
+auto Str::hash() const noexcept -> usize {
+  auto hasher = hash::Hasher{};
+  hasher.write(this->as_bytes());
+  return hasher.finish();
+}
+
+auto CharSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done, 0, 0};
+  }
+
+  const auto ch = _haystack[_finger++];
+  if (ch == _needle) {
+    return {SearchStep::Match, _finger - 1, _finger};
+  } else {
+    return {SearchStep::Reject, _finger - 1, _finger};
+  }
+}
+
+auto CharSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done, 0, 0};
+  }
+
+  const auto ch = _haystack[_finger_back - 1];
+  if (ch == _needle) {
+    _finger_back -= 1;
+    return {SearchStep::Match, _finger_back, _finger_back + 1};
+  } else {
+    _finger_back -= 1;
+    return {SearchStep::Reject, _finger_back, _finger_back + 1};
+  }
+}
+
+auto StrSearcher::match() const -> bool {
+  if (_needle._len == 0) return true;
+  if (_finger + _needle._len > _haystack._len) return false;
+
+  const auto p = _haystack._ptr + _finger;
+  return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
+}
+
+auto StrSearcher::match_back() const -> bool {
+  if (_needle._len == 0) return true;
+  if (_finger_back < _needle._len) return false;
+
+  const auto p = _haystack._ptr + _finger_back - _needle._len;
+  return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
+}
+
+auto StrSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done, 0, 0};
+  }
+
+  const auto old_finger = _finger;
+  if (this->match()) {
+    _finger += _needle._len;
+    return {SearchStep::Match, old_finger, _finger};
+  } else {
+    if (_finger + _needle._len < _haystack._len) {
+      _finger += 1;
+    } else {
+      _finger = _haystack._len;
+    }
+    return {SearchStep::Reject, old_finger, _finger};
+  }
+}
+
+auto StrSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done, 0, 0};
+  }
+
+  const auto old_finger_back = _finger_back;
+  if (this->match_back()) {
+    _finger_back -= _needle._len;
+    return {SearchStep::Match, _finger_back, old_finger_back};
+  } else {
+    if (_finger_back >= _needle._len) {
+      _finger_back -= _needle._len;
+    } else {
+      _finger_back = 0;
+    }
+    return {SearchStep::Reject, _finger_back, old_finger_back};
+  }
 }
 
 template struct FromStr<signed char>;
@@ -268,4 +372,5 @@ template struct FromStr<unsigned long long>;
 
 template struct FromStr<float>;
 template struct FromStr<double>;
+
 }  // namespace sfc::str
