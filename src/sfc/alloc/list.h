@@ -197,15 +197,8 @@ class [[nodiscard]] List {
     return res;
   }
 
-  void drain(ops::Range ids) noexcept {
-    ids = ids.wrap(_len);
-
-    auto hole = Slice{_buf.ptr() + ids.start, ids.len()};
-    auto tail = Slice{hole._ptr + hole._len, _len - ids.end};
-    ptr::drop(hole._ptr, hole._len);
-    ptr::shift_elements_left(tail._ptr, tail._len, hole._len);
-    _len -= hole._len;
-  }
+  class Drain;
+  auto drain(ops::Range ids) noexcept -> Drain;
 
   void resize(usize new_len, T value) noexcept {
     if (new_len <= _len) {
@@ -303,6 +296,40 @@ class [[nodiscard]] List {
     return des.deserialize_seq(visit);
   }
 };
+
+template <class T, class A>
+class List<T, A>::Drain {
+  List& _list;
+  Slice<T> _hole;
+
+ public:
+  Drain(List& list, ops::Range ids) noexcept : _list{list}, _hole{list[ids]} {}
+
+  ~Drain() noexcept {
+    ptr::drop(_hole._ptr, _hole._len);
+
+    const auto tail_ptr = _hole._ptr + _hole._len;
+    const auto tail_pos = num::cast_unsigned(tail_ptr - _list.as_ptr());
+    const auto tail_len = _list._len - tail_pos;
+    ptr::shift_elements_left(tail_ptr, tail_len, _hole._len);
+    _list._len -= _hole._len;
+  }
+
+  Drain(const Drain&) = delete;
+  Drain& operator=(const Drain&) = delete;
+
+ public:
+  void for_each(auto&& f) noexcept {
+    for (auto& x : _hole) {
+      f(x);
+    }
+  }
+};
+
+template <class T, class A>
+auto List<T, A>::drain(ops::Range ids) noexcept -> Drain {
+  return Drain{*this, ids};
+}
 
 }  // namespace sfc::list
 
