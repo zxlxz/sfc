@@ -9,6 +9,14 @@
 
 namespace sfc::fs {
 
+static constexpr auto is_path_delim(char c) -> bool {
+#ifdef _WIN32
+  return c == '/' || c == '\\';
+#else
+  return c == '/';
+#endif
+};
+
 struct Components {
   Str _str;
 
@@ -17,20 +25,12 @@ struct Components {
     return _str.len();
   }
 
-  static constexpr auto is_delim(char c) -> bool {
-#ifdef _WIN32
-    return c == '/' || c == '\\';
-#else
-    return c == '/';
-#endif
-  };
-
   auto next() noexcept -> Option<Str> {
     if (_str.is_empty()) {
       return {};
     }
 
-    const auto [a, b] = _str.split_once(is_delim).unwrap_or({_str, {}});
+    const auto [a, b] = _str.split_once(is_path_delim).unwrap_or({_str, {}});
     _str = b;
     return a.is_empty() ? Str{"/"} : a;
   }
@@ -40,12 +40,12 @@ struct Components {
       return {};
     }
 
-    _str = _str.trim_end_matches(is_delim);
+    _str = _str.trim_end_matches(is_path_delim);
     if (_str.is_empty()) {
       return Str{"/"};
     }
 
-    const auto [a, b] = _str.rsplit_once(is_delim).unwrap_or({{}, _str});
+    const auto [a, b] = _str.rsplit_once(is_path_delim).unwrap_or({{}, _str});
     _str = a.is_empty() ? Str{"/"} : a;
     return b;
   }
@@ -75,20 +75,21 @@ struct FileName {
 };
 
 auto Path::as_str() const noexcept -> Str {
-  return _inn;
+  return _inn.as_str();
 }
 
 auto Path::file_name() const noexcept -> Str {
-  if (_inn.is_empty()) {
+  const auto s = _inn.as_str();
+  if (s.is_empty()) {
     return {};
   }
 
-  auto cmpts = Components{_inn};
-  const auto s = cmpts.next_back().unwrap_or("");
-  if (s == "" || s == "." || s == ".." || s == "/") {
+  auto cmpts = Components{s};
+  const auto last = cmpts.next_back().unwrap_or("");
+  if (last == "" || last == "." || last == ".." || last == "/") {
     return {};
   }
-  return s;
+  return last;
 }
 
 auto Path::extension() const noexcept -> Str {
@@ -115,32 +116,31 @@ auto Path::join(Str path) const noexcept -> PathBuf {
 }
 
 auto Path::is_root() const noexcept -> bool {
-  if (_inn.is_empty()) {
+  const auto s = _inn.as_str();
+  if (s.is_empty()) {
     return false;
   }
-  if (_inn == "/") {
+  if (s == "/") {
     return true;
   }
-#ifdef _WIN32
-  if (_inn.len() == 2 && _inn.ends_with(':')) {
-    return true;
-  }
-#endif
+
   return false;
 }
 
 auto Path::is_absolute() const noexcept -> bool {
-  if (_inn.is_empty()) {
+  const auto s = _inn.as_str();
+
+  if (s.is_empty()) {
     return false;
   }
 
-  if (_inn.starts_with('/')) {
+  if (s.starts_with('/')) {
     return true;
   }
 
 #ifdef _WIN32
-  const auto first_cmpt = Path{Components{_inn}.next().unwrap_or("")};
-  if (first_cmpt.is_root()) {
+  // match [a-z]:
+  if (s[1] == ':' && chr::is_ascii_alpha(s[0])) {
     return true;
   }
 #endif
