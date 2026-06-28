@@ -14,7 +14,7 @@ HashTblStorage::~HashTblStorage() {
   const auto ctrl_size = num::align_up(_cap, kAlign);
   const auto data_size = _cap * element_size;
   const auto layout = mem::Layout{ctrl_size + data_size, kAlign};
-  _alloc.dealloc(_ptr, layout);
+  _alloc.deallocate(_ptr, layout);
 }
 
 HashTblStorage::HashTblStorage(HashTblStorage&& other) noexcept
@@ -44,7 +44,7 @@ auto HashTblStorage::with_capacity(usize min_cap, usize element_size) -> HashTbl
   auto a = alloc::Global{};
   auto res = HashTblStorage{};
   res._cap = capacity;
-  res._ptr = ptr::cast<u8>(a.alloc(layout));
+  res._ptr = ptr::cast<u8>(a.allocate(layout));
   res._alloc = mem::move(a);
   return res;
 }

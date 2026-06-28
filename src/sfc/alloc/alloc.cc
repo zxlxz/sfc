@@ -8,33 +8,7 @@
 
 namespace sfc::alloc {
 
-void* IAlloc::grow(void* ptr, Layout layout, usize new_size) {
-  if (new_size <= layout.size) {
-    return ptr;
-  }
-
-  const auto new_ptr = this->alloc({new_size, layout.align});
-  if (ptr && new_ptr) {
-    __builtin_memcpy(new_ptr, ptr, layout.size);
-  }
-  this->dealloc(ptr, layout);
-  return new_ptr;
-}
-
-void* IAlloc::shrink(void* ptr, Layout layout, usize new_size) {
-  if (new_size >= layout.size) {
-    return ptr;
-  }
-
-  const auto new_ptr = this->alloc({new_size, layout.align});
-  if (ptr && new_ptr) {
-    __builtin_memcpy(new_ptr, ptr, new_size);
-  }
-  this->dealloc(ptr, layout);
-  return new_ptr;
-}
-
-void* System::alloc(Layout layout) {
+void* System::allocate(Layout layout) {
   if (layout.size == 0) {
     return nullptr;
   }
@@ -42,7 +16,7 @@ void* System::alloc(Layout layout) {
   return sys::alloc(layout);
 }
 
-void System::dealloc(void* ptr, Layout layout) {
+void System::deallocate(void* ptr, Layout layout) {
   if (ptr == nullptr) {
     return;
   }
@@ -73,11 +47,6 @@ void* System::shrink(void* ptr, Layout layout, usize new_size) {
   }
 
   return sys::realloc(ptr, layout, new_size);
-}
-
-auto global() -> IAlloc& {
-  static auto imp = System{};
-  return imp;
 }
 
 }  // namespace sfc::alloc

@@ -19,7 +19,7 @@ class RawBuf {
     if (!_ptr) return;
 
     const auto layout = Layout{}.array<T>(_cap);
-    _a.dealloc(_ptr, layout);
+    _a.deallocate(_ptr, layout);
   }
 
   [[gnu::always_inline]] RawBuf(RawBuf&& other) noexcept
@@ -38,7 +38,7 @@ class RawBuf {
     const auto layout = Layout{}.array<T>(capacity);
 
     auto res = RawBuf{};
-    res._ptr = ptr::cast<T>(alloc.alloc(layout));
+    res._ptr = ptr::cast<T>(alloc.allocate(layout));
     res._cap = capacity;
     res._a = alloc;
     return res;
