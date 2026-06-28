@@ -31,7 +31,6 @@ SFC_TEST(to_option) {
   sfc::assert_eq(Res{1}.ok(), Option{1});
   sfc::assert_eq(Res{1}.err(), Option<E>{});
 
-  const auto res = Res{EA};
   sfc::assert_eq(Res{EA}.ok(), Option<int>{});
   sfc::assert_eq(Res{EA}.err(), Option{EA});
 }

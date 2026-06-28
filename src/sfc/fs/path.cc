@@ -148,7 +148,8 @@ auto Path::is_absolute() const noexcept -> bool {
 }
 
 auto Path::is_relative() const noexcept -> bool {
-  if (_inn.is_empty()) {
+  const auto s = _inn.as_str();
+  if (s.is_empty()) {
     return false;
   }
   return !this->is_absolute();
@@ -287,7 +288,7 @@ auto metadata(Path path) -> io::Result<Metadata> {
 
 auto create_dir(Path path) -> io::Result<> {
   if (path._inn.is_empty() || path.is_root()) {
-    return {io::Error{io::ErrorKind::InvalidInput}};
+    return {io::Error::InvalidInput};
   }
 
   const auto os_path = ffi::OsString::from(path.as_str());
@@ -296,7 +297,7 @@ auto create_dir(Path path) -> io::Result<> {
 
 auto create_dir_all(Path path) -> io::Result<> {
   const auto err = fs::create_dir(path).err();
-  if (!err || (*err).kind() == io::ErrorKind::AlreadyExists) {
+  if (!err || *err == io::Error::AlreadyExists) {
     return {};
   }
 

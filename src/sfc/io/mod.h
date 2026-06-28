@@ -9,7 +9,7 @@ struct Read {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(self.read(buf));
       if (cnt == 0) {
-        return {io::Error{io::ErrorKind::UnexpectedEof}};
+        return {io::Error::UnexpectedEof};
       }
       buf = buf[{cnt, $}];
     }
@@ -44,7 +44,7 @@ struct Write {
     while (!buf.is_empty()) {
       const auto write_cnt = _TRY(self.write(buf));
       if (write_cnt == 0) {
-        return {Error{ErrorKind::WriteZero}};
+        return {Error::WriteZero};
       }
       buf = buf[{write_cnt, $}];
     }

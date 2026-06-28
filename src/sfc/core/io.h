@@ -4,13 +4,7 @@
 
 namespace sfc::io {
 
-#ifdef _WIN32
-using ErrCode = u32;
-#else
-using ErrCode = int;
-#endif
-
-enum class ErrorKind {
+enum class Error {
   Success,
   NotFound,
   PermissionDenied,
@@ -47,26 +41,8 @@ enum class ErrorKind {
   Other,
 };
 
-struct Error {
-  ErrorKind _kind;
-  ErrCode _code = 0;
-
- public:
-  static auto from_raw_os_error(ErrCode err) noexcept -> Error;
-  static auto last_os_error() noexcept -> Error;
-
-  auto kind() const noexcept -> ErrorKind;
-  auto raw_os_err() const noexcept -> ErrCode;
-
-  auto to_str() const noexcept -> Str;
-
- public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    const auto s = this->to_str();
-    f.write_str(s);
-  }
-};
+auto to_str(Error) noexcept -> Str;
+auto last_os_error() noexcept -> Error;
 
 template <class T = void>
 using Result = result::Result<T, Error>;

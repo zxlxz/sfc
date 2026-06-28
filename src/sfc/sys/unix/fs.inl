@@ -38,7 +38,7 @@ class File {
 
   auto flush() -> io::Result<> {
     if (::fsync(_fd) == -1) {
-      return {io::Error::last_os_error()};
+      return {io::last_os_error()};
     }
     return {};
   }
@@ -46,7 +46,7 @@ class File {
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto nret = ::read(_fd, buf._ptr, buf._len);
     if (nret == -1) {
-      return {io::Error::last_os_error()};
+      return {io::last_os_error()};
     }
     const auto nread = num::cast_unsigned(nret);
     return {nread};
@@ -55,7 +55,7 @@ class File {
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     const auto nret = ::write(_fd, buf._ptr, buf._len);
     if (nret == -1) {
-      return {io::Error::last_os_error()};
+      return {io::last_os_error()};
     }
     const auto nwrite = num::cast_unsigned(nret);
     return {nwrite};
@@ -64,7 +64,7 @@ class File {
   auto seek(off_t offset, int whence) -> io::Result<usize> {
     const auto ret = ::lseek(_fd, offset, whence);
     if (ret == -1) {
-      return {io::Error::last_os_error()};
+      return {io::last_os_error()};
     }
     const auto nseek = num::cast_unsigned(ret);
     return {usize{nseek}};
@@ -90,7 +90,7 @@ struct OpenOptions {
     const auto flag = access_flags | create_flags | append_flags | truncate_flags;
     const auto fd = ::open(path, flag, _mode);
     if (fd == -1) {
-      return {io::Error::last_os_error()};
+      return {io::last_os_error()};
     }
     return {fd};
   }
@@ -113,7 +113,7 @@ struct Metadata {
 static inline auto lstat(const char* path) -> io::Result<Metadata> {
   struct stat st{};
   if (::lstat(path, &st) == -1) {
-    return {io::Error::last_os_error()};
+    return {io::last_os_error()};
   }
   const auto meta = Metadata{
       st.st_mode,
@@ -124,28 +124,28 @@ static inline auto lstat(const char* path) -> io::Result<Metadata> {
 
 static inline auto unlink(const char* path) -> io::Result<> {
   if (::unlink(path) == -1) {
-    return {io::Error::last_os_error()};
+    return {io::last_os_error()};
   }
   return {};
 }
 
 static inline auto rename(const char* old_path, const char* new_path) -> io::Result<> {
   if (::rename(old_path, new_path) == -1) {
-    return {io::Error::last_os_error()};
+    return {io::last_os_error()};
   }
   return {};
 }
 
 static inline auto mkdir(const char* path) -> io::Result<> {
   if (::mkdir(path, 0755) == -1) {
-    return {io::Error::last_os_error()};
+    return {io::last_os_error()};
   }
   return {};
 }
 
 static inline auto rmdir(const char* path) -> io::Result<> {
   if (::rmdir(path) == -1) {
-    return {io::Error::last_os_error()};
+    return {io::last_os_error()};
   }
   return {};
 }

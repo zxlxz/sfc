@@ -59,7 +59,7 @@ class Result;
 }
 
 namespace io {
-struct Error;
+enum class Error;
 
 template<class T>
 using Result = result::Result<T, Error>;
