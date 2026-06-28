@@ -82,7 +82,7 @@ class HashMap {
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
-    auto imp = ser.serialize_map();
+    auto imp = ser.serialize_obj();
     _inn.iter().for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
   }
 
