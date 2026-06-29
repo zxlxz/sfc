@@ -82,11 +82,6 @@ class [[nodiscard]] Box {
     return *_ptr;
   }
 
-  // trait: option::None
-  auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (_ptr == nullptr) {
@@ -145,10 +140,6 @@ class [[nodiscard]] Box<R(T...)> {
   }
 
  public:
-  auto is_none() const noexcept -> bool {
-    return _data == nullptr;
-  }
-
   auto operator()(T... args) -> R {
     return (_meta->_call)(_data, (T&&)(args)...);
   }

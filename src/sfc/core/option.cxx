@@ -14,6 +14,18 @@ SFC_TEST(basic) {
   sfc::assert_eq(*some, 10);
 }
 
+SFC_TEST(ref) {
+  auto val = 0;
+  auto ref = Option<const int&>{val};
+  auto mut_ref = Option<int&>{val};
+
+  sfc::assert_eq(ref.is_some(), true);
+  sfc::assert_eq(*ref, 0);
+
+  sfc::assert_eq(mut_ref.is_some(), true);
+  sfc::assert_eq(*mut_ref, 0);
+}
+
 SFC_TEST(copy_ctor) {
   const auto none = Option{};
   const auto some = Option{10};

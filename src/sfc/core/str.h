@@ -105,11 +105,6 @@ struct Str {
   auto rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
 
  public:
-  // trait: option::None
-  constexpr auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
   // trait: ops::Eq
   constexpr auto eq(Str other) const noexcept -> bool {
     if (_len != other._len) return false;

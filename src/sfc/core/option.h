@@ -7,169 +7,69 @@
 namespace sfc::option {
 
 template <class T>
-concept none_ = requires(const T& x) { x.is_none(); };
+class Option;
 
 template <class T>
-class Inner {
- protected:
-  u8 _tag;
+class Option {
+  bool _tag;
   union {
     T _1;
   };
 
  public:
-  Inner() noexcept : _tag{0} {}
-  Inner(T val) noexcept : _tag{1}, _1{mem::move(val)} {}
+  Option() noexcept : _tag{false} {}
+  Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
 
-  ~Inner() noexcept requires(trait::tv_drop_<T>) = default;
-  ~Inner() noexcept {
-    if (_tag == 1) mem::drop(_1);
+  ~Option() requires(trait::tv_drop_<T>) = default;
+  ~Option() {
+    if (_tag) mem::drop(_1);
   }
 
-  Inner(const Inner& other) requires(trait::tv_copy_<T>) = default;
-  Inner(Inner&& other) noexcept : _tag{other._tag} {
-    if (_tag == 1) ptr::write(&_1, mem::move(other._1));
+  Option(const Option& other) requires(trait::tv_copy_<T>) = default;
+  Option(Option&& other) noexcept : _tag{other._tag} {
+    if (_tag) ptr::write(&_1, mem::move(other._1));
   }
 
-  Inner& operator=(const Inner& other) requires(trait::tv_copy_<T>) = default;
-  Inner& operator=(Inner&& other) noexcept {
+  Option& operator=(const Option& other) requires(trait::tv_copy_<T>) = default;
+  Option& operator=(Option&& other) noexcept {
     if (this == &other) return *this;
-    if (_tag == 1) mem::drop(_1);
+    if (_tag) mem::drop(_1);
     _tag = other._tag;
-    if (_tag == 1) ptr::write(&_1, mem::move(other._1));
+    if (_tag) ptr::write(&_1, mem::move(other._1));
     return *this;
   }
 
-  constexpr auto is_some() const noexcept -> bool {
-    return _tag == 1;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return _tag == 0;
-  }
-
-  constexpr operator bool() const noexcept {
-    return _tag == 1;
-  }
-};
-
-template <none_ T>
-class Inner<T> {
- protected:
-  T _1;
-
  public:
-  Inner() noexcept : _1{} {}
-  Inner(T val) noexcept : _1{mem::move(val)} {}
-
-  constexpr auto is_some() const noexcept -> bool {
-    return !_1.is_none();
+  auto is_none() const noexcept -> bool {
+    return !_tag;
   }
 
-  constexpr auto is_none() const noexcept -> bool {
-    return _1.is_none();
+  auto is_some() const noexcept -> bool {
+    return _tag;
   }
 
-  constexpr operator bool() const noexcept {
-    return !_1.is_none();
+  operator bool() const noexcept {
+    return _tag;
   }
-};
-
-template <class T>
-class Inner<T&> {
- protected:
-  T* _1;
-
- public:
-  constexpr Inner() noexcept : _1{nullptr} {}
-  constexpr Inner(T& val) noexcept : _1{&val} {}
-
-  constexpr Inner(Inner&& other) noexcept = default;
-  constexpr Inner& operator=(Inner&& other) noexcept = default;
-
-  constexpr auto is_some() const noexcept -> bool {
-    return _1 != nullptr;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return _1 == nullptr;
-  }
-
-  constexpr explicit operator bool() const noexcept {
-    return _1 != nullptr;
-  }
-};
-
-template <class T>
-class Inner<const T&> {
- protected:
-  const T* _1;
-
- public:
-  constexpr Inner() noexcept : _1{nullptr} {}
-  constexpr Inner(const T& val) noexcept : _1{&val} {}
-
-  constexpr auto is_some() const noexcept -> bool {
-    return _1 != nullptr;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return _1 == nullptr;
-  }
-
-  constexpr explicit operator bool() const noexcept {
-    return _1 != nullptr;
-  }
-};
-
-template <>
-class Inner<void> {
- public:
-  constexpr auto is_some() const noexcept -> bool {
-    return false;
-  }
-
-  constexpr auto is_none() const noexcept -> bool {
-    return true;
-  }
-
-  constexpr explicit operator bool() const noexcept {
-    return false;
-  }
-};
-
-template <class T>
-class Option;
-
-template <class T>
-class Option : Inner<T> {
-  using Inn = Inner<T>;
-
- public:
-  using Inn::Inn;
-  using Inn::is_some;
-  using Inn::is_none;
-  using Inn::operator=;
-  using Inn::operator bool;
 
   auto operator->() const -> const T* {
     sfc::assert_(this->is_some(), "Option::operator->: deref None()");
-    return &this->_1;
+    return &_1;
   }
 
   auto operator->() -> T* {
     sfc::assert_(this->is_some(), "Option::operator->: deref None()");
-    return &this->_1;
+    return &_1;
   }
 
   auto operator*() const -> const T& {
     sfc::assert_(this->is_some(), "Option::operator*: deref None()");
-    return this->_1;
+    return _1;
   }
 
   auto operator*() -> T& {
     sfc::assert_(this->is_some(), "Option::operator*: deref None()");
-    return this->_1;
+    return _1;
   }
 
  public:
@@ -246,16 +146,24 @@ class Option : Inner<T> {
 };
 
 template <class T>
-class Option<T&> : Inner<T&> {
-  using Inn = Inner<T&>;
-  using Inn::_1;
+class Option<T&> {
+  T* _1;
 
  public:
-  using Inn::Inn;
-  using Inn::is_some;
-  using Inn::is_none;
-  using Inn::operator=;
-  using Inn::operator bool;
+  constexpr Option() noexcept : _1{nullptr} {}
+  constexpr Option(T& val) noexcept : _1{&val} {}
+
+  auto is_none() const noexcept -> bool {
+    return _1 == nullptr;
+  }
+
+  auto is_some() const noexcept -> bool {
+    return _1 != nullptr;
+  }
+
+  operator bool() const noexcept {
+    return _1 != nullptr;
+  }
 
   auto operator->() const -> const T* {
     return _1;
@@ -342,105 +250,20 @@ class Option<T&> : Inner<T&> {
   }
 };
 
-template <class T>
-class Option<const T&> : Inner<const T&> {
-  using Inn = Inner<const T&>;
-  using Inn::_1;
-
- public:
-  using Inn::Inn;
-  using Inn::is_some;
-  using Inn::is_none;
-  using Inn::operator=;
-  using Inn::operator bool;
-
-  auto operator->() const -> const T* {
-    return _1;
-  }
-
-  auto operator*() const -> const T& {
-    return *_1;
-  }
-
- public:
-  auto expect(this auto self, const auto& msg) -> const T& {
-    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
-    return *self._1;
-  }
-
-  auto unwrap(this auto self) -> const T& {
-    sfc::assert_(self.is_some(), "Option::unwrap: None()");
-    return *self._1;
-  }
-
-  auto unwrap_or(this auto self, const T& default_val) -> const T& {
-    return self.is_some() ? *self._1 : default_val;
-  }
-
-  auto unwrap_or_else(this auto self, auto&& f) -> const T& {
-    return self.is_some() ? *self._1 : f();
-  }
-
-  template <class U>
-  auto operator&(this auto self, Option<U> optb) -> Option<U> {
-    return self.is_some() ? mem::move(optb) : Option<U>{};
-  }
-
-  auto operator|(this auto self, Option optb) -> Option {
-    return self.is_some() ? self : optb;
-  }
-
-  template <class F, class OptionU = FnOut<F, const T&>>
-  auto and_then(this auto self, F&& op) -> OptionU {
-    return self.is_some() ? op(*self._1) : OptionU{};
-  }
-
-  auto or_else(this auto self, auto&& f) -> Option {
-    return self.is_some() ? self : f();
-  }
-
-  template <class F, class U = FnOut<F, const T&>>
-  auto map(this auto self, F&& f) -> Option<U> {
-    return self.is_some() ? Option<U>{f(*self._1)} : Option<U>{};
-  }
-
-  template <class U>
-  auto map_or(this auto self, U default_val, auto&& f) -> U {
-    return self.is_some() ? f(*self._1) : mem::move(default_val);
-  }
-
- public:
-  auto to_owned(this auto self) -> Option<T> {
-    return self.is_some() ? Option<T>{*self._1} : Option<T>{};
-  }
-
-  // to result
-  template <class E>
-  auto ok_or(this auto self, E err) -> result::Result<const T&, E> {
-    if (self.is_some()) return result::Result<const T&, E>{*self._1};
-    return result::Result<const T&, E>{mem::move(err)};
-  }
-
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    if (!this->is_some()) {
-      f.write_str("None()");
-    } else {
-      f.write_fmt("Some({})", *this->_1);
-    }
-  }
-};
-
 template <>
-class Option<void> : Inner<void> {
-  using Inn = Inner<void>;
-
+class Option<void> {
  public:
-  using Inn::Inn;
-  using Inn::is_some;
-  using Inn::is_none;
-  using Inn::operator=;
-  using Inn::operator bool;
+  auto is_none() const noexcept -> bool {
+    return true;
+  }
+
+  auto is_some() const noexcept -> bool {
+    return false;
+  }
+
+  operator bool() const noexcept {
+    return false;
+  }
 
  public:
   template <class U>

@@ -197,11 +197,6 @@ struct Slice {
   }
 
  public:
-  // trait: option::None
-  constexpr auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
@@ -323,11 +318,6 @@ struct Slice<const T> {
   }
 
  public:
-  // trait: option::None
-  constexpr auto is_none() const noexcept -> bool {
-    return _ptr == nullptr;
-  }
-
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
