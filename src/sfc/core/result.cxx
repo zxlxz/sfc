@@ -12,17 +12,23 @@ enum E {
 SFC_TEST(simple) {
   using Res = result::Result<int, E>;
 
-  {
-    const auto res = Res{1};
-    sfc::assert_eq(res.is_ok(), true);
-    sfc::assert_eq(res.is_err(), false);
-  }
+  const auto ok = Res{1};
+  sfc::assert_eq(ok.is_ok(), true);
+  sfc::assert_eq(ok.is_err(), false);
 
-  {
-    const auto res = Res{EA};
-    sfc::assert_eq(res.is_ok(), false);
-    sfc::assert_eq(res.is_err(), true);
-  }
+  const auto err = Res{EA};
+  sfc::assert_eq(err.is_ok(), false);
+  sfc::assert_eq(err.is_err(), true);
+}
+
+SFC_TEST(move) {
+  using Res = result::Result<String, E>;
+
+  auto x = Res{String::from("hello")};
+  sfc::assert_eq(x.as_ok(), Option{"hello"});
+
+  auto y = mem::move(x);
+  sfc::assert_eq(y.as_ok(), Option{"hello"});
 }
 
 SFC_TEST(to_option) {
