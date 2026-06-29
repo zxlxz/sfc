@@ -73,11 +73,27 @@ class [[nodiscard]] List {
     return Slice<T>{_buf.ptr(), _len};
   }
 
-  void set_len(usize new_len) noexcept {
-    _len = new_len;
+ public:
+  auto first() const noexcept -> Option<const T> {
+    if (_len == 0) return {};
+    return _buf[0];
   }
 
- public:
+  auto first_mut() noexcept -> Option<T> {
+    if (_len == 0) return {};
+    return _buf[0];
+  }
+
+  auto last() const noexcept -> Option<const T> {
+    if (_len == 0) return {};
+    return _buf[_len - 1];
+  }
+
+  auto last_mut() noexcept -> Option<T> {
+    if (_len == 0) return {};
+    return _buf[_len - 1];
+  }
+
   auto get_unchecked(usize idx) const noexcept -> const T& {
     return _buf[idx];
   }
@@ -109,6 +125,10 @@ class [[nodiscard]] List {
   }
 
  public:
+  void set_len(usize new_len) noexcept {
+    _len = new_len;
+  }
+
   auto push(T val) -> T& {
     if (_len == _buf.cap()) {
       this->reserve(1);
