@@ -6,11 +6,6 @@
 
 namespace sfc::io {
 
-auto from_raw_os_error(int os_err) noexcept -> Error {
-  const auto io_err = sys::io_error(os_err);
-  return io_err;
-}
-
 auto last_os_error() noexcept -> Error {
   const auto os_err = sys::os_error();
   const auto io_err = sys::io_error(os_err);

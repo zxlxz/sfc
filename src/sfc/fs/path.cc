@@ -140,7 +140,7 @@ auto Path::is_absolute() const noexcept -> bool {
 
 #ifdef _WIN32
   // match [a-z]:
-  if (s[1] == ':' && chr::is_ascii_alpha(s[0])) {
+  if (s[1] == ':' && chr::is_alpha(s[0])) {
     return true;
   }
 #endif
