@@ -10,14 +10,18 @@
 
 namespace sfc::io {
 
-class Stdout::Inn {
+class StdoutImpl {
   BufWriter<sys::Stdout> _inn{{}};
   sync::ReentrantLock _mtx{};
 
  public:
-  static inline auto instance() -> Inn& {
-    static auto res = Inn{};
+  static inline auto instance() -> StdoutImpl& {
+    static auto res = StdoutImpl{};
     return res;
+  }
+
+  static auto is_terminal() -> bool {
+    return sys::Stdout::is_console();
   }
 
   void flush() noexcept {
@@ -41,14 +45,18 @@ class Stdout::Inn {
   }
 };
 
-class Stderr::Inn {
+class StderrImpl {
   sys::Stderr _inn{};
   sync::ReentrantLock _mtx{};
 
  public:
-  static inline auto instance() -> Inn& {
-    static auto res = Inn{};
+  static auto instance() -> StderrImpl& {
+    static auto res = StderrImpl{};
     return res;
+  }
+
+  static auto is_terminal() -> bool {
+    return sys::Stderr::is_console();
   }
 
   void flush() {
@@ -72,54 +80,56 @@ class Stderr::Inn {
   }
 };
 
+StdoutLock::StdoutLock(StdoutImpl& imp) : _lock{imp.lock()} {}
+
+StdoutLock::~StdoutLock() noexcept {}
+
+void StdoutLock::flush() {
+  static auto& imp = StdoutImpl::instance();
+  imp.flush();
+}
+
+void StdoutLock::write_str(Str s) {
+  static auto& imp = StdoutImpl::instance();
+  (void)imp.write_str(s);
+}
+
+StderrLock::StderrLock(StderrImpl& imp) : _lock{imp.lock()} {}
+
+StderrLock::~StderrLock() noexcept {}
+
+void StderrLock::flush() {
+  static auto& imp = StderrImpl::instance();
+  imp.flush();
+}
+
+void StderrLock::write_str(Str s) {
+  static auto& imp = StderrImpl::instance();
+  (void)imp.write_str(s);
+}
+
 auto Stdout::is_terminal() -> bool {
-  return sys::Stdout::is_console();
+  return StdoutImpl::is_terminal();
 }
 
-auto Stdout::lock() -> Lock {
-  return Lock{Inn::instance()};
-}
-
-Stdout::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
-
-Stdout::Lock::~Lock() noexcept {
-  _inn.flush();
-}
-
-void Stdout::Lock::flush() {
-  _inn.flush();
-}
-
-void Stdout::Lock::write_str(Str s) {
-  (void)_inn.write_str(s);
+auto Stdout::lock() -> StdoutLock {
+  return StdoutLock{StdoutImpl::instance()};
 }
 
 auto Stderr::is_terminal() -> bool {
-  return sys::Stderr::is_console();
+  return StderrImpl::is_terminal();
 }
 
-auto Stderr::lock() -> Lock {
-  return Lock{Inn::instance()};
-}
-
-Stderr::Lock::Lock(Inn& inn) : _inn{inn}, _lock{_inn.lock()} {}
-
-Stderr::Lock::~Lock() {}
-
-void Stderr::Lock::flush() {
-  _inn.flush();
-}
-
-void Stderr::Lock::write_str(Str s) {
-  (void)_inn.write_str(s);
+auto Stderr::lock() -> StderrLock {
+  return StderrLock{StderrImpl::instance()};
 }
 
 }  // namespace sfc::io
 
 namespace sfc::fmt {
 template struct Formatter<io::Stdout>;
-template struct Formatter<io::Stdout::Lock>;
+template struct Formatter<io::StdoutLock>;
 
 template struct Formatter<io::Stderr>;
-template struct Formatter<io::Stderr::Lock>;
+template struct Formatter<io::StderrLock>;
 }  // namespace sfc::fmt

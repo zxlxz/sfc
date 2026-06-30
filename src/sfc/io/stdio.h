@@ -5,24 +5,36 @@
 
 namespace sfc::io {
 
+class StdoutImpl;
+class StderrImpl;
+
+class StdoutLock {
+  sync::ReentrantLock::Guard _lock;
+
+ public:
+  explicit StdoutLock(StdoutImpl&);
+  ~StdoutLock() noexcept;
+
+ public:
+  void flush();
+  void write_str(Str s);
+};
+
+class StderrLock {
+  sync::ReentrantLock::Guard _lock;
+
+ public:
+  explicit StderrLock(StderrImpl&);
+  ~StderrLock() noexcept;
+
+ public:
+  void flush();
+  void write_str(Str s);
+};
+
 class Stdout {
-  class Inn;
-
  public:
-  class Lock {
-    Inn& _inn;
-    sync::ReentrantLock::Guard _lock;
-
-   public:
-    explicit Lock(Inn&);
-    ~Lock() noexcept;
-
-    void flush();
-    void write_str(Str s);
-  };
-
- public:
-  static auto lock() -> Lock;
+  static auto lock() -> StdoutLock;
   static auto is_terminal() -> bool;
 
   static void flush() {
@@ -35,23 +47,8 @@ class Stdout {
 };
 
 class Stderr {
-  class Inn;
-
  public:
-  class Lock {
-    Inn& _inn;
-    sync::ReentrantLock::Guard _lock;
-
-   public:
-    explicit Lock(Inn&);
-    ~Lock();
-
-    void flush();
-    void write_str(Str s);
-  };
-
- public:
-  static auto lock() -> Lock;
+  static auto lock() -> StderrLock;
   static auto is_terminal() -> bool;
 
   static void flush() {
@@ -89,8 +86,8 @@ void eprintln(const fmt::Fmts& fmts, const auto&... args) {
 
 namespace sfc::fmt {
 extern template struct Formatter<io::Stdout>;
-extern template struct Formatter<io::Stdout::Lock>;
+extern template struct Formatter<io::StdoutLock>;
 
 extern template struct Formatter<io::Stderr>;
-extern template struct Formatter<io::Stderr::Lock>;
+extern template struct Formatter<io::StderrLock>;
 }  // namespace sfc::fmt
