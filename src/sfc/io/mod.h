@@ -4,55 +4,59 @@
 
 namespace sfc::io {
 
+class DynRead {
+  using read_t = Result<usize> (*)(void*, Slice<u8> buf);
+  void* _self;
+  read_t _read;
+
+ public:
+  template <class X>
+  DynRead(X& impl) : _self{&impl}, _read{[](void* x, auto... u) { return ((X*)x)->read(u...); }} {}
+
+ public:
+  auto read(Slice<u8> buf) -> Result<usize>;
+  auto read_exact(Slice<u8> buf) -> Result<>;
+  auto read_to_end(List<u8>& buf) -> Result<usize>;
+  auto read_to_string(String& buf) -> Result<usize>;
+};
+
+class DynWrite {
+  using write_t = Result<usize> (*)(void*, Slice<const u8> buf);
+  void* _self;
+  write_t _write;
+
+ public:
+  template <class X>
+  DynWrite(X& impl) : _self{&impl}, _write{[](void* x, auto... u) { return ((X*)x)->write(u...); }} {
+  }
+
+ public:
+  auto write(Slice<const u8> buf) -> Result<usize>;
+  auto write_all(Slice<const u8> buf) -> Result<>;
+  auto write_str(Str buf) -> Result<>;
+};
+
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    while (!buf.is_empty()) {
-      const auto cnt = _TRY(self.read(buf));
-      if (cnt == 0) {
-        return {io::Error::UnexpectedEof};
-      }
-      buf = buf[{cnt, $}];
-    }
-
-    return {};
+    return DynRead{self}.read_exact(buf);
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    static constexpr auto PROBE_SIZE = 1024U;
-
-    const auto old_len = buf.len();
-    while (true) {
-      buf.reserve(PROBE_SIZE);
-
-      auto spare = buf.spare_capacity_mut();
-      const auto read_cnt = _TRY(self.read(spare));
-      if (read_cnt == 0) {
-        break;
-      }
-      buf.set_len(buf.len() + read_cnt);
-    }
-    return {usize{buf.len() - old_len}};
+    return DynRead{self}.read_to_end(buf);
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return self.read_to_end(buf.as_mut_buf());
+    return DynRead{self}.read_to_string(buf);
   }
 };
 
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    while (!buf.is_empty()) {
-      const auto write_cnt = _TRY(self.write(buf));
-      if (write_cnt == 0) {
-        return {Error::WriteZero};
-      }
-      buf = buf[{write_cnt, $}];
-    }
-    return {};
+    return DynWrite{self}.write_all(buf);
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {
-    return self.write_all(buf.as_bytes());
+    return DynWrite{self}.write_str(buf);
   }
 };
 
