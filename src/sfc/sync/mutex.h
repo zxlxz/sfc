@@ -5,8 +5,8 @@
 namespace sfc::sync {
 
 class Mutex {
-  struct passkey_t {};
-  sys::Mutex _inn;
+  using Inn = sys::Mutex;
+  Inn _inn;
 
  public:
   explicit Mutex() noexcept;
@@ -21,28 +21,31 @@ class Mutex {
 };
 
 class Mutex::Guard {
+  friend class Mutex;
   ptr::Unique<Mutex> _lock;
 
+ private:
+  Guard(Mutex&);
+
  public:
-  Guard(Mutex&, passkey_t = {});
   ~Guard() noexcept;
   Guard(Guard&&) noexcept = default;
   Guard& operator=(Guard&&) noexcept = default;
-
-  auto inner() -> sys::Mutex&;
+  auto inner() -> Inn&;
 };
 
 class ReentrantLock {
-  struct passkey_t {};
-  struct Tid {
-    Atomic<u32> _id;
-    auto contains(u32 tid) const -> bool;
-    void set(u32 tid);
-  };
+  struct Inn {
+    sys::Mutex _imp{};
+    Atomic<u32> _owner{0};
+    u32 _count{0};
 
-  sys::Mutex _mutex;
-  Tid _owner;
-  u32 _count;
+   public:
+    void lock();
+    auto try_lock() -> bool;
+    void unlock();
+  };
+  Inn _inn;
 
  public:
   explicit ReentrantLock() noexcept;
@@ -57,10 +60,13 @@ class ReentrantLock {
 };
 
 class ReentrantLock::Guard {
+  friend class ReentrantLock;
   ptr::Unique<ReentrantLock> _lock;
 
+ private:
+  Guard(ReentrantLock&);
+
  public:
-  Guard(ReentrantLock&, passkey_t = {});
   ~Guard() noexcept;
   Guard(Guard&&) noexcept = default;
   Guard& operator=(Guard&&) noexcept = default;
