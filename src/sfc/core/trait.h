@@ -7,6 +7,11 @@ namespace sfc::trait {
 template <class T>
 struct type_t {};
 
+template <auto X>
+struct const_t {
+  static constexpr auto VALUE = X;
+};
+
 template <class T>
 concept enum_ = __is_enum(T);
 
