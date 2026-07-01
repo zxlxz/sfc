@@ -56,7 +56,7 @@ consteval auto union_tag() -> u32 {
 }
 
 template <u32 IDX>
-auto union_at(auto&& u) -> auto& {
+auto union_at(auto&& u) -> decltype(auto) {
   static_assert(IDX <= 8, "union_at: index out of bounds");
 
   if constexpr (IDX == 0) return u._0;
@@ -154,6 +154,14 @@ class Variant {
     return variant::union_at<IDX>(_inn);
   }
 
+  void map(auto&& f) const {
+    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
+  }
+
+  void map_mut(auto&& f) {
+    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
+  }
+
   void imap(auto&& f) const {
     if constexpr (CNT > 0) _tag == 0 ? f(trait::const_t<0U>{}) : void();
     if constexpr (CNT > 1) _tag == 1 ? f(trait::const_t<1U>{}) : void();
@@ -163,14 +171,6 @@ class Variant {
     if constexpr (CNT > 5) _tag == 5 ? f(trait::const_t<5U>{}) : void();
     if constexpr (CNT > 6) _tag == 6 ? f(trait::const_t<6U>{}) : void();
     if constexpr (CNT > 7) _tag == 7 ? f(trait::const_t<7U>{}) : void();
-  }
-
-  void map(auto&& f) const {
-    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
-  }
-
-  void map_mut(auto&& f) {
-    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
   }
 
  public:
