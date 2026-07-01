@@ -3,17 +3,17 @@
 
 namespace sfc::tuple::test {
 
-SFC_TEST(tuple_visit) {
+SFC_TEST(visit) {
   const auto t = Tuple{1, 2.0, Str{"abc"}};
   sfc::assert_eq(t._0, 1);
   sfc::assert_eq(t._1, 2.0);
   sfc::assert_eq(t._2, Str{"abc"});
 }
 
-SFC_TEST(tuple_map) {
+SFC_TEST(for_each) {
   const auto t = Tuple{1, 2, 3};
   auto sum = 0;
-  t.map([&sum](auto x) { sum += x; });
+  t.for_each([&sum](auto x) { sum += x; });
   sfc::assert_eq(sum, 6);
 }
 
