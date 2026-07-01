@@ -163,7 +163,7 @@ struct Args {
 
   void fmt(auto& f) const {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    _args.map([&, idx = 0U](const auto& val) mutable {
+    _args.for_each([&, idx = 0U](const auto& val) mutable {
       const auto fill = _fmts._fills[idx];
       const auto spec = _fmts._specs[idx];
       f._spec = spec;

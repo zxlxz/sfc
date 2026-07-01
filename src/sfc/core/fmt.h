@@ -266,14 +266,34 @@ struct Formatter<W>::DebugTuple {
 
   DebugTuple(const DebugTuple&) = delete;
 
-  auto entry(const auto& value) -> DebugTuple& {
+  auto field(const auto& value) -> DebugTuple& {
     _fmt.block_entry(_cnt++);
     _fmt.write_val(value);
     return *this;
   }
+};
 
-  auto entries(auto&& iter) -> DebugTuple& {
-    iter.for_each([&](auto&& val) { this->entry(val); });
+template <class W>
+struct Formatter<W>::DebugStruct {
+  Formatter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugStruct(Formatter& fmt) : _fmt{fmt} {
+    _fmt.block_open("{");
+  }
+
+  ~DebugStruct() {
+    _fmt.block_close("}", _cnt);
+  }
+
+  DebugStruct(const DebugStruct&) = delete;
+
+  auto field(Str key, const auto& value) -> DebugStruct& {
+    _fmt.block_entry(_cnt++);
+    _fmt.write_str(key);
+    _fmt.write_str(": ");
+    _fmt.write_val(value);
     return *this;
   }
 };
@@ -363,39 +383,6 @@ struct Formatter<W>::DebugMap {
     iter.for_each([&](const auto& item) {
       const auto& [k, v] = item;
       this->entry(k, v);
-    });
-    return *this;
-  }
-};
-
-template <class W>
-struct Formatter<W>::DebugStruct {
-  Formatter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugStruct(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("{");
-  }
-
-  ~DebugStruct() {
-    _fmt.block_close("}", _cnt);
-  }
-
-  DebugStruct(const DebugStruct&) = delete;
-
-  auto field(Str key, const auto& value) -> DebugStruct& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_str(key);
-    _fmt.write_str(": ");
-    _fmt.write_val(value);
-    return *this;
-  }
-
-  auto fields(auto&& iter) -> DebugStruct& {
-    iter.for_each([&](const auto& item) {
-      const auto& [k, v] = item;
-      this->field(k, v);
     });
     return *this;
   }
