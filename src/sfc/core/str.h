@@ -106,7 +106,7 @@ struct Str {
 
  public:
   // trait: ops::Eq
-  constexpr auto eq(Str other) const noexcept -> bool {
+  constexpr auto operator==(Str other) const noexcept -> bool {
     if (_len != other._len) return false;
     if (_len == 0) return true;
     const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
@@ -137,10 +137,6 @@ struct Str {
   // trait: hash::Hash
   auto hash() const noexcept -> usize;
 };
-
-constexpr auto operator==(Str left, Str right) noexcept -> bool {
-  return left.eq(right);
-}
 
 template <class T>
 struct FromStr {

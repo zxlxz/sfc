@@ -56,7 +56,7 @@ consteval auto union_tag() -> u32 {
 }
 
 template <u32 IDX>
-auto union_at(auto&& u) -> decltype(auto) {
+auto union_at(auto&& u) -> auto& {
   static_assert(IDX <= 8, "union_at: index out of bounds");
 
   if constexpr (IDX == 0) return u._0;
