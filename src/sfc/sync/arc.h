@@ -53,22 +53,22 @@ class [[nodiscard]] Arc {
 
  public:
   // trait: Deref<const T*>
-  [[gnu::always_inline]] auto operator->() const noexcept -> const T* {
+  auto operator->() const noexcept -> const T* {
     return &_inn->_val;
   }
 
   // trait: Deref<T*>
-  [[gnu::always_inline]] auto operator->() noexcept -> T* {
+  auto operator->() noexcept -> T* {
     return &_inn->_val;
   }
 
   // trait: Deref<const T&>
-  [[gnu::always_inline]] auto operator*() const noexcept -> const T& {
+  auto operator*() const noexcept -> const T& {
     return _inn->_val;
   }
 
   // trait: Deref<T&>
-  [[gnu::always_inline]] auto operator*() noexcept -> T& {
+  auto operator*() noexcept -> T& {
     return _inn->_val;
   }
 

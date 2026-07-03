@@ -9,13 +9,13 @@ struct Unique {
   T* _ptr = nullptr;
 
  public:
-  [[gnu::always_inline]] Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
+  Unique(T* ptr = nullptr) noexcept : _ptr{ptr} {}
 
-  [[gnu::always_inline]] Unique(Unique&& other) noexcept : _ptr{other._ptr} {
+  Unique(Unique&& other) noexcept : _ptr{other._ptr} {
     other._ptr = nullptr;
   }
 
-  [[gnu::always_inline]] Unique& operator=(Unique&& other) noexcept {
+  Unique& operator=(Unique&& other) noexcept {
     if (this != &other) {
       _ptr = other._ptr;
       other._ptr = nullptr;
@@ -23,39 +23,39 @@ struct Unique {
     return *this;
   }
 
-  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto operator->() const -> const T* {
+  auto operator->() const -> const T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto operator->() -> T* {
+  auto operator->() -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto operator*() const -> const T& {
+  auto operator*() const -> const T& {
     return *_ptr;
   }
 
-  [[gnu::always_inline]] auto operator*() -> T& {
+  auto operator*() -> T& {
     return *_ptr;
   }
 
  public:
-  [[gnu::always_inline]] auto operator==(T* ptr) const noexcept -> bool {
+  auto operator==(T* ptr) const noexcept -> bool {
     return _ptr == ptr;
   }
 };
 
 template <class T>
-[[gnu::always_inline]] inline auto null() noexcept -> T* {
+inline auto null() noexcept -> T* {
   return nullptr;
 }
 
 template <class U, class T>
-[[gnu::always_inline]] inline auto cast(T* ptr) noexcept -> U* {
+inline auto cast(T* ptr) noexcept -> U* {
   if constexpr (__is_constructible(U*, T*)) {
     return static_cast<U*>(ptr);
   } else {
@@ -64,12 +64,12 @@ template <class U, class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto cast_mut(const T* ptr) noexcept -> T* {
+inline auto cast_mut(const T* ptr) noexcept -> T* {
   return const_cast<T*>(ptr);
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto read(T* src) noexcept -> T {
+inline auto read(T* src) noexcept -> T {
   if constexpr (__is_trivially_copyable(T)) {
     return *src;
   } else {
@@ -80,7 +80,7 @@ template <class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline void write(T* dst, T val) noexcept {
+inline void write(T* dst, T val) noexcept {
   if constexpr (__is_trivially_copyable(T)) {
     *dst = val;
   } else {
@@ -89,45 +89,45 @@ template <class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline void drop(T* ptr, usize cnt = 1) noexcept {
+inline void drop(T* ptr, usize cnt = 1) noexcept {
   for (auto i = 0UL; i < cnt; ++i) {
     ptr[i].~T();
   }
 }
 
 template <class T>
-[[gnu::always_inline]] inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
+inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
   if (cnt == 0) return;
   __builtin_memset(dst, val, cnt * sizeof(T));
 }
 
 template <class T>
-[[gnu::always_inline]] inline void copy(const T* src, T* dst, usize cnt) noexcept {
+inline void copy(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
   // all sfc type is memoveable, so we can just copy the bytes
   __builtin_memmove((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>
-[[gnu::always_inline]] inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
+inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
   // all sfc type is memoveable, so we can just copy the bytes
   __builtin_memcpy((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>
-[[gnu::always_inline]] inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
+inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
   ptr::copy_nonoverlapping(src, dst, cnt);
 }
 
 template <class T>
-[[gnu::always_inline]] inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
+inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
   ptr::copy(ptr, ptr - offset, len);
 }
 
 template <class T>
-[[gnu::always_inline]] inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
+inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
   ptr::copy(ptr, ptr + offset, len);
 }

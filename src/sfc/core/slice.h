@@ -24,54 +24,54 @@ struct Slice {
   usize _len = 0;
 
  public:
-  [[gnu::always_inline]] constexpr Slice() noexcept = default;
+  constexpr Slice() noexcept = default;
 
-  [[gnu::always_inline]] constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+  constexpr Slice(T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
 
   template <usize N>
-  [[gnu::always_inline]] constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+  constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
-  [[gnu::always_inline]] constexpr auto ptr() const noexcept -> T* {
+  constexpr auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
+  constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const T* {
+  constexpr auto as_ptr() const noexcept -> const T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto as_mut_ptr() noexcept -> T* {
+  constexpr auto as_mut_ptr() noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
+  constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
+  auto as_bytes() const noexcept -> Slice<const u8> {
     static_assert(__is_trivially_copyable(T));
     return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
   }
 
-  [[gnu::always_inline]] auto as_mut_bytes() noexcept -> Slice<u8> {
+  auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
     return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
-  [[gnu::always_inline]] operator Slice<const T>() const noexcept {
+  operator Slice<const T>() const noexcept {
     return {_ptr, _len};
   }
 
  public:
-  [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
+  auto operator[](usize idx) const noexcept -> const T& {
     sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
 
-  [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
+  auto operator[](usize idx) noexcept -> T& {
     sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
     return _ptr[idx];
   }
@@ -160,43 +160,43 @@ struct Slice {
   }
 
  public:
-  [[gnu::always_inline]] auto begin() const noexcept -> const T* {
+  auto begin() const noexcept -> const T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto begin() noexcept -> T* {
+  auto begin() noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto end() const noexcept -> const T* {
+  auto end() const noexcept -> const T* {
     return _ptr + _len;
   }
 
-  [[gnu::always_inline]] auto end() noexcept -> T* {
+  auto end() noexcept -> T* {
     return _ptr + _len;
   }
 
-  [[gnu::always_inline]] auto iter() const noexcept -> Iter<const T> {
+  auto iter() const noexcept -> Iter<const T> {
     return {_ptr, _len};
   }
 
-  [[gnu::always_inline]] auto iter_mut() noexcept -> Iter<T> {
+  auto iter_mut() noexcept -> Iter<T> {
     return {_ptr, _len};
   }
 
-  [[gnu::always_inline]] auto windows(usize n) const noexcept -> Windows<const T> {
+  auto windows(usize n) const noexcept -> Windows<const T> {
     return {*this, n};
   }
 
-  [[gnu::always_inline]] auto windows_mut(usize n) noexcept -> Windows<T> {
+  auto windows_mut(usize n) noexcept -> Windows<T> {
     return {*this, n};
   }
 
-  [[gnu::always_inline]] auto chunks(usize n) const noexcept -> Chunks<const T> {
+  auto chunks(usize n) const noexcept -> Chunks<const T> {
     return {*this, n};
   }
 
-  [[gnu::always_inline]] auto chunks_mut(usize n) noexcept -> Chunks<T> {
+  auto chunks_mut(usize n) noexcept -> Chunks<T> {
     return {*this, n};
   }
 
@@ -226,12 +226,12 @@ Slice(T*, usize) -> Slice<T>;
 
 // ops::foreach
 template <class T>
-[[gnu::always_inline]] auto begin(Slice<T> v) -> const T* {
+auto begin(Slice<T> v) -> const T* {
   return v._ptr;
 }
 
 template <class T>
-[[gnu::always_inline]] auto end(Slice<T> v) -> const T* {
+auto end(Slice<T> v) -> const T* {
   return v._ptr + v._len;
 }
 

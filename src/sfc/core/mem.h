@@ -31,17 +31,17 @@ struct Layout {
 };
 
 template <class T>
-[[gnu::always_inline]] inline auto move(T& x) noexcept -> T&& {
+inline auto move(T& x) noexcept -> T&& {
   return static_cast<T&&>(x);
 }
 
 template <class T>
-[[gnu::always_inline]] inline void drop(T& x) {
+inline void drop(T& x) {
   x.~T();
 }
 
 template <class T>
-[[gnu::always_inline]] inline void swap(T& x, T& y) noexcept {
+inline void swap(T& x, T& y) noexcept {
   if constexpr (requires { x.swap(y); }) {
     x.swap(y);
   } else {
@@ -52,38 +52,38 @@ template <class T>
 }
 
 template <class T>
-[[gnu::always_inline]] inline void forget(T& x) noexcept {
+inline void forget(T& x) noexcept {
   alignas(T) char tmp[sizeof(T)];
   new (tmp) T{mem::move(x)};
 }
 
 template <class T>
-[[gnu::always_inline]] inline void assign(T& dst, T src) noexcept {
+inline void assign(T& dst, T src) noexcept {
   dst = mem::move(src);
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto replace(T& dst, T src) noexcept -> T {
+inline auto replace(T& dst, T src) noexcept -> T {
   auto tmp = mem::move(dst);
   dst = mem::move(src);
   return tmp;
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto take(T& dst) noexcept -> T {
+inline auto take(T& dst) noexcept -> T {
   auto res = mem::move(dst);
   dst = T{};
   return res;
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto as_bytes(const T& x) noexcept -> const u8 (&)[sizeof(T)] {
+inline auto as_bytes(const T& x) noexcept -> const u8 (&)[sizeof(T)] {
   static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<const u8(&)[sizeof(T)]>(x);
 }
 
 template <class T>
-[[gnu::always_inline]] inline auto as_mut_bytes(T& x) noexcept -> u8 (&)[sizeof(T)] {
+inline auto as_mut_bytes(T& x) noexcept -> u8 (&)[sizeof(T)] {
   static_assert(__is_trivially_copyable(T));
   return reinterpret_cast<u8(&)[sizeof(T)]>(x);
 }

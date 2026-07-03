@@ -13,19 +13,19 @@ class RawBuf {
   A _a{};
 
  public:
-  [[gnu::always_inline]] RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
+  RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
 
-  [[gnu::always_inline]] ~RawBuf() noexcept {
+  ~RawBuf() noexcept {
     if (!_ptr) return;
 
     const auto layout = Layout{}.array<T>(_cap);
     _a.deallocate(_ptr, layout);
   }
 
-  [[gnu::always_inline]] RawBuf(RawBuf&& other) noexcept
+  RawBuf(RawBuf&& other) noexcept
       : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
-  [[gnu::always_inline]] RawBuf& operator=(RawBuf&& other) noexcept {
+  RawBuf& operator=(RawBuf&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
@@ -44,19 +44,19 @@ class RawBuf {
     return res;
   }
 
-  [[gnu::always_inline]] auto ptr() const noexcept -> T* {
+  auto ptr() const noexcept -> T* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] auto cap() const noexcept -> usize {
+  auto cap() const noexcept -> usize {
     return _cap;
   }
 
-  [[gnu::always_inline]] auto operator[](usize idx) const noexcept -> const T& {
+  auto operator[](usize idx) const noexcept -> const T& {
     return _ptr[idx];
   }
 
-  [[gnu::always_inline]] auto operator[](usize idx) noexcept -> T& {
+  auto operator[](usize idx) noexcept -> T& {
     return _ptr[idx];
   }
 
