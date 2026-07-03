@@ -255,6 +255,21 @@ auto FromStr<T>::from_str(Str s) -> Option<T> {
   return res;
 }
 
+template struct FromStr<signed char>;
+template struct FromStr<short>;
+template struct FromStr<int>;
+template struct FromStr<long>;
+template struct FromStr<long long>;
+
+template struct FromStr<unsigned char>;
+template struct FromStr<unsigned short>;
+template struct FromStr<unsigned int>;
+template struct FromStr<unsigned long>;
+template struct FromStr<unsigned long long>;
+
+template struct FromStr<float>;
+template struct FromStr<double>;
+
 auto Str::trim_start() const noexcept -> Str {
   const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
   return this->trim_start_matches(is_space);
@@ -274,6 +289,50 @@ auto Str::hash() const noexcept -> usize {
   auto hasher = hash::Hasher{};
   hasher.write(this->as_bytes());
   return hasher.finish();
+}
+
+auto Searcher::next_match(this auto& self) -> SearchStep {
+  while (true) {
+    const auto step = self.next();
+    switch (step._type) {
+      case SearchStep::Done:  return {SearchStep::Done, 0, 0};
+      case SearchStep::Match: return step;
+      default:                break;
+    }
+  }
+}
+
+auto Searcher::next_reject(this auto& self) -> SearchStep {
+  while (true) {
+    const auto step = self.next();
+    switch (step._type) {
+      case SearchStep::Done:   return {SearchStep::Done, 0, 0};
+      case SearchStep::Reject: return step;
+      default:                 break;
+    }
+  }
+}
+
+auto Searcher::next_match_back(this auto& self) -> SearchStep {
+  while (true) {
+    const auto step = self.next_back();
+    switch (step._type) {
+      case SearchStep::Done:  return {SearchStep::Done, 0, 0};
+      case SearchStep::Match: return step;
+      default:                break;
+    }
+  }
+}
+
+auto Searcher::next_reject_back(this auto& self) -> SearchStep {
+  while (true) {
+    const auto step = self.next_back();
+    switch (step._type) {
+      case SearchStep::Done:   return {SearchStep::Done, 0, 0};
+      case SearchStep::Reject: return step;
+      default:                 break;
+    }
+  }
 }
 
 auto CharSearcher::next() -> SearchStep {
@@ -304,29 +363,20 @@ auto CharSearcher::next_back() -> SearchStep {
   }
 }
 
-auto StrSearcher::match() const -> bool {
-  if (_needle._len == 0) return true;
-  if (_finger + _needle._len > _haystack._len) return false;
-
-  const auto p = _haystack._ptr + _finger;
-  return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-}
-
-auto StrSearcher::match_back() const -> bool {
-  if (_needle._len == 0) return true;
-  if (_finger_back < _needle._len) return false;
-
-  const auto p = _haystack._ptr + _finger_back - _needle._len;
-  return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-}
-
 auto StrSearcher::next() -> SearchStep {
+  auto is_match = [&]() {
+    if (_needle._len == 0) return true;
+    if (_finger + _needle._len > _haystack._len) return false;
+    const auto p = _haystack._ptr + _finger;
+    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
+  };
+
   if (_finger >= _haystack._len) {
     return {SearchStep::Done, 0, 0};
   }
 
   const auto old_finger = _finger;
-  if (this->match()) {
+  if (is_match()) {
     _finger += _needle._len;
     return {SearchStep::Match, old_finger, _finger};
   } else {
@@ -340,12 +390,19 @@ auto StrSearcher::next() -> SearchStep {
 }
 
 auto StrSearcher::next_back() -> SearchStep {
+  auto is_match_back = [&]() {
+    if (_needle._len == 0) return true;
+    if (_finger_back < _needle._len) return false;
+    const auto p = _haystack._ptr + _finger_back - _needle._len;
+    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
+  };
+
   if (_finger_back == 0) {
     return {SearchStep::Done, 0, 0};
   }
 
   const auto old_finger_back = _finger_back;
-  if (this->match_back()) {
+  if (is_match_back()) {
     _finger_back -= _needle._len;
     return {SearchStep::Match, _finger_back, old_finger_back};
   } else {
@@ -358,19 +415,40 @@ auto StrSearcher::next_back() -> SearchStep {
   }
 }
 
-template struct FromStr<signed char>;
-template struct FromStr<short>;
-template struct FromStr<int>;
-template struct FromStr<long>;
-template struct FromStr<long long>;
+auto CharPredicateSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done, 0, 0};
+  }
 
-template struct FromStr<unsigned char>;
-template struct FromStr<unsigned short>;
-template struct FromStr<unsigned int>;
-template struct FromStr<unsigned long>;
-template struct FromStr<unsigned long long>;
+  const auto ch = _haystack[_finger++];
+  if (_pred(ch)) {
+    return {SearchStep::Match, _finger - 1, _finger};
+  } else {
+    return {SearchStep::Reject, _finger - 1, _finger};
+  }
+}
 
-template struct FromStr<float>;
-template struct FromStr<double>;
+auto CharPredicateSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done, 0, 0};
+  }
+
+  const auto ch = _haystack[--_finger_back];
+  if (_pred(ch)) {
+    return {SearchStep::Match, _finger_back, _finger_back + 1};
+  } else {
+    return {SearchStep::Reject, _finger_back, _finger_back + 1};
+  }
+}
+
+#define IMPL_SEARCHER(T)                                          \
+  template auto Searcher::next_match(this T&) -> SearchStep;      \
+  template auto Searcher::next_reject(this T&) -> SearchStep;     \
+  template auto Searcher::next_match_back(this T&) -> SearchStep; \
+  template auto Searcher::next_reject_back(this T&) -> SearchStep
+IMPL_SEARCHER(CharSearcher);
+IMPL_SEARCHER(StrSearcher);
+IMPL_SEARCHER(CharPredicateSearcher);
+#undef IMPL_SEARCHER
 
 }  // namespace sfc::str

@@ -10,67 +10,66 @@ struct Str {
   usize _len = 0;
 
  public:
-  [[gnu::always_inline]] constexpr Str() noexcept = default;
+  constexpr Str() noexcept = default;
 
-  [[gnu::always_inline]] constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
+  constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
   template <usize N>
-  [[gnu::always_inline]] constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
 
-  [[gnu::always_inline]] static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     return Str{ptr::cast<const char>(s._ptr), s._len};
   }
 
-  [[gnu::always_inline]] static auto from_cstr(const char* s) noexcept -> Str {
+  static auto from_cstr(const char* s) noexcept -> Str {
     const auto n = s ? __builtin_strlen(s) : 0;
     return Str{s, n};
   }
 
-  [[gnu::always_inline]] constexpr auto ptr() const noexcept -> const char* {
+  constexpr auto ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto len() const noexcept -> usize {
+  constexpr auto len() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] constexpr auto as_ptr() const noexcept -> const char* {
+  constexpr auto as_ptr() const noexcept -> const char* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto as_str() const noexcept -> Str {
+  constexpr auto as_str() const noexcept -> Str {
     return *this;
   }
 
-  [[gnu::always_inline]] constexpr auto data() const noexcept -> const char* {
+  constexpr auto data() const noexcept -> const char* {
     return _ptr;
   }
 
-  [[gnu::always_inline]] constexpr auto size() const noexcept -> usize {
+  constexpr auto size() const noexcept -> usize {
     return _len;
   }
 
-  [[gnu::always_inline]] constexpr auto is_empty() const noexcept -> bool {
+  constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
   }
 
-  [[gnu::always_inline]] auto as_bytes() const noexcept -> Slice<const u8> {
+  auto as_bytes() const noexcept -> Slice<const u8> {
     return {ptr::cast<const u8>(_ptr), _len};
   }
 
  public:
-  [[gnu::always_inline]] constexpr auto operator[](usize idx) const noexcept -> char {
+  constexpr auto operator[](usize idx) const noexcept -> char {
     if (!_ptr || idx >= _len) return 0;
     return _ptr[idx];
   }
 
-  [[gnu::always_inline]] constexpr auto operator[](Range ids) const noexcept -> Str {
-    const auto start = ids.start < _len ? ids.start : _len;
-    const auto end = ids.end < _len ? ids.end : _len;
-    return Str{_ptr + start, start < end ? end - start : 0U};
+  constexpr auto operator[](Range ids) const noexcept -> Str {
+    ids = ids.wrap(_len);
+    return Str{_ptr + ids.start, ids.len()};
   }
 
-  [[gnu::always_inline]] auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
+  auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
     const auto x = mid < _len ? mid : _len;
     return Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
   }
@@ -159,128 +158,69 @@ struct SearchStep {
   usize _end;
 
  public:
-  [[gnu::always_inline]] operator bool() const {
+  operator bool() const {
     return _type != Done;
   }
 
-  [[gnu::always_inline]] auto pos() const -> Option<usize> {
+  auto pos() const -> Option<usize> {
     return _type ? Option<usize>{_pos} : Option<usize>{};
   }
 };
 
 struct Searcher {
-  Str _haystack;
-
- public:
-  auto next_match(this auto& self) -> SearchStep {
-    while (true) {
-      const auto step = self.next();
-      switch (step._type) {
-        case SearchStep::Done:  return {SearchStep::Done, 0, 0};
-        case SearchStep::Match: return step;
-        default:                break;
-      }
-    }
-  }
-
-  auto next_reject(this auto& self) -> SearchStep {
-    while (true) {
-      const auto step = self.next();
-      switch (step._type) {
-        case SearchStep::Done:   return {SearchStep::Done, 0, 0};
-        case SearchStep::Reject: return step;
-        default:                 break;
-      }
-    }
-  }
-
-  auto next_match_back(this auto& self) -> SearchStep {
-    while (true) {
-      const auto step = self.next_back();
-      switch (step._type) {
-        case SearchStep::Done:  return {SearchStep::Done, 0, 0};
-        case SearchStep::Match: return step;
-        default:                break;
-      }
-    }
-  }
-
-  auto next_reject_back(this auto& self) -> SearchStep {
-    while (true) {
-      const auto step = self.next_back();
-      switch (step._type) {
-        case SearchStep::Done:   return {SearchStep::Done, 0, 0};
-        case SearchStep::Reject: return step;
-        default:                 break;
-      }
-    }
-  }
+  auto next_match(this auto& self) -> SearchStep;
+  auto next_reject(this auto& self) -> SearchStep;
+  auto next_match_back(this auto& self) -> SearchStep;
+  auto next_reject_back(this auto& self) -> SearchStep;
 };
 
 struct CharSearcher : Searcher {
+  Str _haystack;
   char _needle;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
+  CharSearcher(Str haystack, char ch) noexcept : _haystack{haystack}, _needle{ch} {}
+
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
 
 struct StrSearcher : Searcher {
+  Str _haystack;
   Str _needle;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
-  auto match() const -> bool;
-  auto match_back() const -> bool;
+  StrSearcher(Str haystack, Str str) noexcept : _haystack{haystack}, _needle{str} {}
+
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
 
-template <class F>
 struct CharPredicateSearcher : Searcher {
-  F _pred;
+  Str _haystack;
+  ops::DynFn<bool(char)> _pred;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
-  auto next() -> SearchStep {
-    if (_finger >= _haystack._len) {
-      return {SearchStep::Done, 0, 0};
-    }
+  CharPredicateSearcher(Str haystack, auto&& pred) noexcept : _haystack{haystack}, _pred{mem::move(pred)} {}
 
-    const auto ch = _haystack[_finger++];
-    if (_pred(ch)) {
-      return {SearchStep::Match, _finger - 1, _finger};
-    } else {
-      return {SearchStep::Reject, _finger - 1, _finger};
-    }
-  }
-
-  auto next_back() -> SearchStep {
-    if (_finger_back == 0) {
-      return {SearchStep::Done, 0, 0};
-    }
-
-    const auto ch = _haystack[--_finger_back];
-    if (_pred(ch)) {
-      return {SearchStep::Match, _finger_back, _finger_back + 1};
-    } else {
-      return {SearchStep::Reject, _finger_back, _finger_back + 1};
-    }
-  }
+  auto next() -> SearchStep;
+  auto next_back() -> SearchStep;
 };
 
 struct Pattern {
   static auto into_searcher(auto&& self, Str haystack) {
     if constexpr (requires { char{self}; }) {
-      return CharSearcher{{haystack}, self};
+      return CharSearcher{haystack, self};
     } else if constexpr (requires { Str{self}; }) {
-      return StrSearcher{{haystack}, self};
+      return StrSearcher{haystack, self};
     } else if constexpr (requires { self(char{0}); }) {
-      return CharPredicateSearcher{{haystack}, mem::move(self)};
+      return CharPredicateSearcher{haystack, mem::move(self)};
     }
   }
 };
@@ -311,8 +251,7 @@ auto Str::contains(auto&& pat) const -> bool {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto m = s.next_match();
-  return m._type == SearchStep::Match;
+  return s.next_match() == SearchStep::Match;
 }
 
 auto Str::starts_with(auto&& pat) const -> bool {
