@@ -17,9 +17,7 @@ struct DateTime {
   static auto from_utc(SystemTime utc_time) noexcept -> DateTime;
   static auto from_local(SystemTime local_time) noexcept -> DateTime;
 
-  void fmt(auto& f) const {
-    f.write_fmt("{04}-{02}-{02} {02}:{02}:{02}.{06}", year, month, day, hour, minute, second, micros);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 }  // namespace sfc::time

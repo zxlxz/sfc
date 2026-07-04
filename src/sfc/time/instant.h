@@ -37,9 +37,7 @@ struct Instant {
 
  public:
   // trait: fmt::Display
-  void fmt(auto& f) const {
-    f.write_fmt("{}ns", _nanos);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 }  // namespace sfc::time

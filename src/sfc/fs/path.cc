@@ -170,6 +170,14 @@ auto Path::is_dir() const noexcept -> bool {
   return auto{m}.map([](const auto& m) { return m.is_dir(); }).unwrap_or(false);
 }
 
+auto Path::operator==(const Path& p) const noexcept -> bool {
+  return _inn == p._inn;
+}
+
+void Path::fmt(fmt::Formatter& f) const {
+  _inn.fmt(f);
+}
+
 auto PathBuf::from(Str s) noexcept -> PathBuf {
   auto res = PathBuf{};
   res.push(Path{s});
@@ -261,6 +269,14 @@ auto PathBuf::join(Path path) const -> PathBuf {
   auto res = this->clone();
   res.push(path);
   return res;
+}
+
+auto PathBuf::operator*() const noexcept -> Path {
+  return this->as_path();
+}
+
+void PathBuf::fmt(fmt::Formatter& f) const {
+  _inn.fmt(f);
 }
 
 auto Metadata::exists() const noexcept -> bool {

@@ -32,14 +32,10 @@ struct Path {
 
  public:
   // trait: ops::Eq
-  auto operator==(const Path& p) const -> bool {
-    return _inn == p._inn;
-  }
+  auto operator==(const Path& p) const noexcept -> bool;
 
   // trait: fmt::Display
-  void fmt(auto& f) const {
-    _inn.fmt(f);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 class PathBuf {
@@ -66,14 +62,10 @@ class PathBuf {
 
  public:
   // trait: deref<Path>
-  auto operator*() const noexcept -> Path {
-    return this->as_path();
-  }
+  auto operator*() const noexcept -> Path;
 
   // trait: fmt::Display
-  void fmt(auto& f) const {
-    _inn.fmt(f);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 struct Metadata {

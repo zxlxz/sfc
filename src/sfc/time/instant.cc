@@ -54,4 +54,8 @@ auto Instant::operator-(const Duration& dur) const noexcept -> Instant {
   return Instant{ns};
 }
 
+void Instant::fmt(fmt::Formatter& f) const {
+  f.write_fmt("{}ns", _nanos);
+}
+
 }  // namespace sfc::time

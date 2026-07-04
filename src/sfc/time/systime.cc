@@ -57,4 +57,8 @@ auto SystemTime::operator-(const Duration& dur) const noexcept -> SystemTime {
   return SystemTime{us};
 }
 
+void SystemTime::fmt(fmt::Formatter& f) const {
+  f.write_fmt("{}us", _micros);
+}
+
 }  // namespace sfc::time

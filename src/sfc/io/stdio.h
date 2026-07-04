@@ -36,28 +36,16 @@ class Stdout {
  public:
   static auto lock() -> StdoutLock;
   static auto is_terminal() -> bool;
-
-  static void flush() {
-    return Stdout::lock().flush();
-  }
-
-  static void write_str(Str s) {
-    return Stdout::lock().write_str(s);
-  }
+  static void flush();
+  static void write_str(Str s);
 };
 
 class Stderr {
  public:
   static auto lock() -> StderrLock;
   static auto is_terminal() -> bool;
-
-  static void flush() {
-    return Stderr::lock().flush();
-  }
-
-  static void write_str(Str s) {
-    return Stderr::lock().write_str(s);
-  }
+  static void flush();
+  static void write_str(Str s);
 };
 
 void print(const fmt::Fmts& fmts, const auto&... args) {

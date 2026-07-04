@@ -116,12 +116,28 @@ auto Stdout::lock() -> StdoutLock {
   return StdoutLock{StdoutImpl::instance()};
 }
 
+void Stdout::flush() {
+  return Stdout::lock().flush();
+}
+
+void Stdout::write_str(Str s) {
+  return Stdout::lock().write_str(s);
+}
+
 auto Stderr::is_terminal() -> bool {
   return StderrImpl::is_terminal();
 }
 
 auto Stderr::lock() -> StderrLock {
   return StderrLock{StderrImpl::instance()};
+}
+
+void Stderr::flush() {
+  return Stderr::lock().flush();
+}
+
+void Stderr::write_str(Str s) {
+  return Stderr::lock().write_str(s);
 }
 
 }  // namespace sfc::io

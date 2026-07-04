@@ -29,9 +29,7 @@ struct SystemTime {
   auto operator-(const Duration& dur) const noexcept -> SystemTime;
 
   // trait: fmt::Display
-  void fmt(auto& f) const {
-    f.write_fmt("{}us", _micros);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 }  // namespace sfc::time
