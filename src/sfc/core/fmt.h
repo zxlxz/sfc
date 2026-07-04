@@ -27,71 +27,6 @@ struct SBuf {
   }
 };
 
-struct Debug {
-  static auto format_int(Slice<char> buf, auto val, char type = 0) -> Str;
-  static auto format_ptr(Slice<char> buf, auto val, char type = 0) -> Str;
-  static auto format_flt(Slice<char> buf, auto val, u32 precision = 6, char type = 0) -> Str;
-
-  static void fmt(bool val, auto& f) {
-    f.write_str(val ? Str{"true"} : Str{"false"});
-  }
-
-  static void fmt(char val, auto& f) {
-    f.write_char(val);
-  }
-
-  static void fmt(char16_t val, auto& f) {
-    u8 u8_buf[4] = {};
-    const auto u8_len = chr::utf8_encode(u8_buf, val);
-    f.write_str(Str::from_utf8({u8_buf, u8_len}));
-  }
-
-  static void fmt(char32_t val, auto& f) {
-    u8 u8_buf[4] = {};
-    const auto u8_len = chr::utf8_encode(u8_buf, val);
-    f.write_str(Str::from_utf8({u8_buf, u8_len}));
-  }
-
-  static void fmt(trait::uint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 8];
-    const auto s = Debug::format_int(buf, val + 0, f.type());
-    f.pad_num(false, s);
-  }
-
-  static void fmt(trait::sint_ auto val, auto& f) {
-    char buf[8 * sizeof(val) + 8];
-    const auto u = num::unsigned_abs(val);
-    const auto s = Debug::format_int(buf, u, f.type());
-    f.pad_num(val < 0, s);
-  }
-
-  static void fmt(trait::float_ auto val, auto& f) {
-    static constexpr auto DEFAULT_PRECISION = sizeof(val) == 4 ? 4U : 6U;
-    char buf[8 * sizeof(val) + 16];
-
-    const auto uval = val < 0 ? -val : val;
-    const auto prec = f.precision().unwrap_or(DEFAULT_PRECISION);
-    const auto s = Debug::format_flt(buf, uval, prec, f.type());
-    f.pad_num(val < 0, s);
-  }
-
-  static void fmt(trait::enum_ auto val, auto& f) {
-    using I = __underlying_type(decltype(val));
-    constexpr auto kTypeName = reflect::type_name<decltype(val)>();
-    if constexpr (requires { to_str(val); }) {
-      f.write_str(to_str(val));
-    } else {
-      f.write_fmt("{}({})", kTypeName, __builtin_bit_cast(I, val));
-    }
-  }
-
-  static void fmt(const void* val, auto& f) {
-    char buf[16];
-    const auto s = Debug::format_ptr(buf, val, f.type());
-    f.write_str(s);
-  }
-};
-
 struct Write {
   using write_str_t = void(void*, Str);
   void* _obj;
@@ -103,6 +38,36 @@ struct Write {
 
   void write_str(Str s) {
     _write_str(_obj, s);
+  }
+};
+
+struct Debug {
+  static void fmt(bool val, Formatter& f);
+  static void fmt(char val, Formatter& f);
+  static void fmt(char16_t val, Formatter& f);
+  static void fmt(char32_t val, Formatter& f);
+
+  static void fmt(unsigned int val, Formatter& f);
+  static void fmt(unsigned long val, Formatter& f);
+  static void fmt(unsigned long long val, Formatter& f);
+
+  static void fmt(int val, Formatter& f);
+  static void fmt(long val, Formatter& f);
+  static void fmt(long long val, Formatter& f);
+
+  static void fmt(float val, Formatter& f);
+  static void fmt(double val, Formatter& f);
+
+  static void fmt(const void* val, Formatter& f);
+
+  static void fmt(trait::enum_ auto val, auto& f) {
+    using I = __underlying_type(decltype(val));
+    constexpr auto kTypeName = reflect::type_name<decltype(val)>();
+    if constexpr (requires { to_str(val); }) {
+      f.write_str(to_str(val));
+    } else {
+      f.write_fmt("{}({})", kTypeName, __builtin_bit_cast(I, val));
+    }
   }
 };
 
@@ -142,19 +107,6 @@ class Formatter {
 
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
-
-  template <class T>
-  void write_val(const T& val) {
-    if constexpr (__is_class(T)) {
-      val.fmt(*this);
-    } else if constexpr (requires { str::Str{val}; }) {
-      this->pad(Str{val});
-    } else if constexpr (requires { Slice{val}; }) {
-      Slice{val}.fmt(*this);
-    } else {
-      fmt::Debug::fmt(val, *this);
-    }
-  }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
     const auto xargs = Args{fmts, args...};

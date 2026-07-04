@@ -121,12 +121,7 @@ struct RevBuf {
     return Str{_buf + _pos, _cap - _pos};
   }
 
-  void push(char c) {
-    if (_pos == 0) return;
-    _buf[--_pos] = c;
-  }
-
-  void write_u64(u64 uval, char type = 0) noexcept {
+  auto write_u64(u64 uval, char type = 0) noexcept -> Str {
     switch (type) {
       default:  this->write_dec(uval); break;
       case 'B': this->write_bin<2>(uval); break;
@@ -136,9 +131,10 @@ struct RevBuf {
       case 'X': this->write_bin<16>(uval, true); break;
       case 'x': this->write_bin<16>(uval, false); break;
     }
+    return this->as_str();
   }
 
-  void write_ptr(usize uval, char p = 'x') noexcept {
+  auto write_ptr(usize uval, char p = 'x') noexcept -> Str {
     static const auto MIN_LEN = 12L;
 
     this->write_bin<16>(uval);
@@ -147,35 +143,40 @@ struct RevBuf {
     }
     this->push(p <= 'a' ? 'x' : 'X');
     this->push('0');
+    return this->as_str();
   }
 
-  void write_flt(FltPoint flt) noexcept {
-    if (flt._flt >= 10) {
-      this->write_dec(flt._flt);
-      _buf[_pos] = '.';
-    }
-    this->write_dec(flt._int);
-  }
+  auto write_flt(f64 val, u32 precision, char type) -> Str {
+    static constexpr auto kMaxFlt = 1e30;
+    const auto use_exp = type == 'e' || type == 'E' || val > kMaxFlt;
 
-  void write_fix(FixPoint fix, char type = 'e') noexcept {
-    const auto exp_sign = fix._exp < 0 ? '-' : '+';
-    const auto exp_char = type < 'a' ? 'E' : 'e';
-    const auto uexp = num::unsigned_abs(fix._exp);
-    this->write_dec(uexp);
-    if (uexp < 10) {
-      this->push('0');
+    if (__builtin_isnan(val)) {
+      return "nan";
     }
-    this->push(exp_sign);
-    this->push(exp_char);
-    this->write_dec(fix._fix);
-    if (fix._fix >= 10) {
-      const auto c = _buf[_pos];
-      _buf[_pos] = '.';
-      this->push(c);
+    if (__builtin_isinf(val)) {
+      return val > 0 ? Str{"inf"} : Str{"-inf"};
     }
+
+    const auto uval = __builtin_fabs(val);
+    if (use_exp) {
+      const auto imp = FixPoint::build(uval, precision);
+      this->write_fix(imp, type);
+    } else {
+      const auto imp = FltPoint::build(uval, precision);
+      this->write_flt(imp);
+    }
+    if (val < 0) {
+      this->push('-');
+    }
+    return this->as_str();
   }
 
  private:
+  void push(char c) {
+    if (_pos == 0) return;
+    _buf[--_pos] = c;
+  }
+
   void write_dec(u64 val) noexcept {
     static const char DIGITS_1[] = "0123456789";
     static const char DIGITS_2[] =
@@ -224,6 +225,32 @@ struct RevBuf {
       if (val < 0) this->push('-');
     }
   }
+
+  void write_flt(FltPoint flt) noexcept {
+    if (flt._flt >= 10) {
+      this->write_dec(flt._flt);
+      _buf[_pos] = '.';
+    }
+    this->write_dec(flt._int);
+  }
+
+  void write_fix(FixPoint fix, char type = 'e') noexcept {
+    const auto exp_sign = fix._exp < 0 ? '-' : '+';
+    const auto exp_char = type < 'a' ? 'E' : 'e';
+    const auto uexp = num::unsigned_abs(fix._exp);
+    this->write_dec(uexp);
+    if (uexp < 10) {
+      this->push('0');
+    }
+    this->push(exp_sign);
+    this->push(exp_char);
+    this->write_dec(fix._fix);
+    if (fix._fix >= 10) {
+      const auto c = _buf[_pos];
+      _buf[_pos] = '.';
+      this->push(c);
+    }
+  }
 };
 
 auto Spec::sign(bool is_neg) const -> str::Str {
@@ -256,70 +283,95 @@ auto Spec::prefix() const -> str::Str {
   }
 }
 
-auto Debug::format_int(Slice<char> buf, auto val, char type) -> Str {
-  auto rbuf = RevBuf{buf};
-  if constexpr (trait::uint_<decltype(val)>) {
-    const auto uval = u64{val};
-    rbuf.write_u64(uval, type);
-  } else {
-    const auto uval = num::unsigned_abs(val);
-    rbuf.write_u64(uval, type);
-    if (val < 0) rbuf.push('-');
-  }
-
-  return rbuf.as_str();
+void Debug::fmt(bool val, Formatter& f) {
+  f.write_str(val ? Str{"true"} : Str{"false"});
 }
 
-auto Debug::format_ptr(Slice<char> buf, auto ptr, char type) -> Str {
-  const auto uval = __builtin_bit_cast(usize, ptr);
-
-  auto rbuf = RevBuf{buf};
-  rbuf.write_ptr(uval, type);
-  return rbuf.as_str();
+void Debug::fmt(char val, Formatter& f) {
+  f.write_char(val);
 }
 
-auto Debug::format_flt(Slice<char> buf, auto val, u32 precision, char type) -> Str {
-  static constexpr auto kMaxFlt = 1e30;
-  const auto use_exp = type == 'e' || type == 'E' || val > kMaxFlt;
-
-  if (__builtin_isnan(val)) {
-    return "nan";
-  }
-  if (__builtin_isinf(val)) {
-    return val > 0 ? Str{"inf"} : Str{"-inf"};
-  }
-
-  const auto uval = __builtin_fabs(val);
-  auto rbuf = RevBuf{buf};
-  if (use_exp) {
-    const auto imp = FixPoint::build(uval, precision);
-    rbuf.write_fix(imp, type);
-  } else {
-    const auto imp = FltPoint::build(uval, precision);
-    rbuf.write_flt(imp);
-  }
-  if (val < 0) {
-    rbuf.push('-');
-  }
-  return rbuf.as_str();
+void Debug::fmt(char16_t val, Formatter& f) {
+  u8 u8_buf[4] = {};
+  const auto u8_len = chr::utf8_encode(u8_buf, val);
+  f.write_str(Str::from_utf8({u8_buf, u8_len}));
 }
 
-template auto Debug::format_int(Slice<char> buf, signed char val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, short val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, int val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, long val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, long long val, char type) -> Str;
+void Debug::fmt(char32_t val, Formatter& f) {
+  u8 u8_buf[4] = {};
+  const auto u8_len = chr::utf8_encode(u8_buf, val);
+  f.write_str(Str::from_utf8({u8_buf, u8_len}));
+}
 
-template auto Debug::format_int(Slice<char> buf, unsigned char val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned short val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned int val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned long val, char type) -> Str;
-template auto Debug::format_int(Slice<char> buf, unsigned long long val, char type) -> Str;
+void Debug::fmt(unsigned int val, Formatter& f) {
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  f.pad_num(false, s);
+}
 
-template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> Str;
+void Debug::fmt(unsigned long val, Formatter& f) {
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  f.pad_num(false, s);
+}
 
-template auto Debug::format_flt(Slice<char> buf, f32 val, u32 precision, char type) -> Str;
-template auto Debug::format_flt(Slice<char> buf, f64 val, u32 precision, char type) -> Str;
+void Debug::fmt(unsigned long long val, Formatter& f) {
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  f.pad_num(false, s);
+}
+
+void Debug::fmt(int val, Formatter& f) {
+  const auto uval = num::unsigned_abs(val);
+
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  f.pad_num(val < 0, s);
+}
+
+void Debug::fmt(long val, Formatter& f) {
+  const auto uval = num::unsigned_abs(val);
+
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  f.pad_num(val < 0, s);
+}
+
+void Debug::fmt(long long val, Formatter& f) {
+  const auto uval = num::unsigned_abs(val);
+
+  char buf[8 * sizeof(val) + 8];
+  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  f.pad_num(val < 0, s);
+}
+
+void Debug::fmt(float val, Formatter& f) {
+  static constexpr auto kDefautlPrecision = 4U;
+  const auto uval = val < 0 ? -val : val;
+  const auto prec = f.precision().unwrap_or(kDefautlPrecision);
+
+  char buf[8 * sizeof(val) + 16];
+  const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
+  f.pad_num(val < 0, s);
+}
+
+void Debug::fmt(double val, Formatter& f) {
+  static constexpr auto kDefautlPrecision = 6U;
+  const auto uval = val < 0 ? -val : val;
+  const auto prec = f.precision().unwrap_or(kDefautlPrecision);
+
+  char buf[8 * sizeof(val) + 16];
+  const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
+  f.pad_num(val < 0, s);
+}
+
+void Debug::fmt(const void* val, Formatter& f) {
+  const auto uval = __builtin_bit_cast(usize, val);
+
+  char buf[16];
+  const auto s = RevBuf{buf}.write_ptr(uval, f.type());
+  f.write_str(s);
+}
 
 void Formatter::write_str(Str s) {
   if (s._len == 0) return;
