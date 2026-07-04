@@ -9,16 +9,16 @@
 namespace sfc::ops {
 
 template <class T>
-auto declval() -> T&&;
+auto declval() -> T;
 
 template <class F, class... A>
 using FnOut = decltype(declval<F>()(declval<A>()...));
 
 template <class>
-struct DynFn;
+struct Dyn;
 
 template <class R, class... T>
-struct DynFn<R(T...)> {
+struct Dyn<R(T...)> {
   using pfn_t = R(T...);
   using mfn_t = R(void*, T...);
 
@@ -29,18 +29,18 @@ struct DynFn<R(T...)> {
   };
 
  public:
-  DynFn() : _obj{nullptr}, _pfun{nullptr} {}
+  Dyn() : _obj{nullptr}, _pfun{nullptr} {}
 
-  DynFn(R (*func)(T...)) : _obj{nullptr}, _pfun{func} {}
-
-  template <class X>
-  DynFn(X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((X*)x))((T&&)t...); }} {}
+  Dyn(R (*func)(T...)) : _obj{nullptr}, _pfun{func} {}
 
   template <class X>
-  DynFn(const X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((const X*)x))((T&&)t...); }} {}
+  Dyn(X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((X*)x))((T&&)t...); }} {}
 
   template <class X>
-  DynFn(const X& x, R (*func)(const X&, T...)) : _obj{&x}, _mfun{(mfn_t*)func} {}
+  Dyn(const X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((const X*)x))((T&&)t...); }} {}
+
+  template <class X>
+  Dyn(const X& x, R (*func)(const X&, T...)) : _obj{&x}, _mfun{(mfn_t*)func} {}
 
  public:
   R operator()(T... t) const {

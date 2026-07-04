@@ -202,7 +202,7 @@ struct StrSearcher : Searcher {
 
 struct CharPredicateSearcher : Searcher {
   Str _haystack;
-  ops::DynFn<bool(char)> _pred;
+  ops::Dyn<bool(char)> _pred;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
