@@ -19,10 +19,13 @@ struct DynFn;
 
 template <class R, class... T>
 struct DynFn<R(T...)> {
+  using pfn_t = R(T...);
+  using mfn_t = R(void*, T...);
+
   const void* _obj;
   union {
-    R (*_pfun)(T...);
-    R (*_mfun)(void*, T...);
+    pfn_t* _pfun;
+    mfn_t* _mfun;
   };
 
  public:
@@ -35,6 +38,9 @@ struct DynFn<R(T...)> {
 
   template <class X>
   DynFn(const X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((const X*)x))((T&&)t...); }} {}
+
+  template <class X>
+  DynFn(const X& x, R (*func)(const X&, T...)) : _obj{&x}, _mfun{(mfn_t*)func} {}
 
  public:
   R operator()(T... t) const {
