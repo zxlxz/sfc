@@ -54,7 +54,7 @@ struct Str {
     return _len == 0;
   }
 
-  auto as_bytes() const noexcept -> Slice<const u8> {
+  constexpr auto as_bytes() const noexcept -> Slice<const u8> {
     return {ptr::cast<const u8>(_ptr), _len};
   }
 

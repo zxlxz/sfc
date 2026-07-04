@@ -13,42 +13,16 @@ class [[nodiscard]] String {
   static auto from(Str s) noexcept -> String;
   static auto from_buf(Buf buf) -> String;
 
-  auto capacity() const noexcept -> usize {
-    return _buf.capacity();
-  }
+  auto capacity() const noexcept -> usize;
+  auto len() const noexcept -> usize;
+  auto is_empty() const noexcept -> bool;
+  auto as_ptr() const noexcept -> const u8*;
+  auto as_mut_buf() noexcept -> Buf&;
 
-  auto len() const noexcept -> usize {
-    return _buf.len();
-  }
-
-  auto is_empty() const noexcept -> bool {
-    return _buf.is_empty();
-  }
-
-  auto as_ptr() const noexcept -> const u8* {
-    return _buf.as_ptr();
-  }
-
-  auto as_mut_buf() noexcept -> Buf& {
-    return _buf;
-  }
-
-  auto as_slice() const noexcept -> Slice<const u8> {
-    return _buf.as_slice();
-  }
-
-  auto as_mut_slice() noexcept -> Slice<u8> {
-    return _buf.as_mut_slice();
-  }
-
-  auto as_str() const noexcept -> Str {
-    return Str::from_utf8(_buf.as_slice());
-  }
-
-  auto operator[](ops::Range ids) const noexcept -> Str {
-    const auto v = _buf[ids];
-    return Str::from_utf8(v);
-  }
+  auto as_slice() const noexcept -> Slice<const u8>;
+  auto as_mut_slice() noexcept -> Slice<u8>;
+  auto as_str() const noexcept -> Str;
+  auto operator[](ops::Range ids) const noexcept -> Str;
 
  public:
   auto pop() noexcept -> Option<char32_t>;
@@ -91,29 +65,19 @@ class [[nodiscard]] String {
 
  public:
   // trait: Deref<Str>
-  auto operator*() const noexcept -> Str {
-    return Str::from_utf8(_buf.as_slice());
-  }
+  auto operator*() const noexcept -> Str;
 
   // trait: ops::Eq
-  auto operator==(Str other) const noexcept -> bool {
-    return this->as_str() == other;
-  }
+  auto operator==(Str other) const noexcept -> bool;
 
   // trait: Clone
-  auto clone() const noexcept -> String {
-    return String::from(this->as_str());
-  }
-
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    this->as_str().fmt(f);
-  }
+  auto clone() const noexcept -> String;
 
   // trait: fmt::Write
-  void write_str(Str s) {
-    this->push_str(s);
-  }
+  void write_str(Str s) noexcept;
+
+  // trait: fmt::Display
+  void fmt(fmt::Formatter& f) const;
 
   // trait: serde::Serialize
   void serialize(auto& s) const {
