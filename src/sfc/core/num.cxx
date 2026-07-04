@@ -35,8 +35,8 @@ SFC_TEST(cast_unsigned) {
 
 SFC_TEST(saturating_cast) {
   // u32 -> u16
-  static_assert(num::saturating_cast<u16>(0) == 0U);
-  static_assert(num::saturating_cast<u16>(1) == 1U);
+  static_assert(num::saturating_cast<u16>(0U) == 0U);
+  static_assert(num::saturating_cast<u16>(1U) == 1U);
   static_assert(num::saturating_cast<u16>(0xFFFFU) == 0xFFFFU);
   static_assert(num::saturating_cast<u16>(0x10000U) == 0xFFFFU);
 
@@ -48,19 +48,6 @@ SFC_TEST(saturating_cast) {
   static_assert(num::saturating_cast<i16>(-1) == -1);
   static_assert(num::saturating_cast<i16>(-0x8000) == -0x8000);
   static_assert(num::saturating_cast<i16>(-0x8001) == -0x8000);
-
-  // i32->u32
-  static_assert(num::saturating_cast<u32>(0) == 0U);
-  static_assert(num::saturating_cast<u32>(1) == 1U);
-  static_assert(num::saturating_cast<u32>(-1) == 0U);
-  static_assert(num::saturating_cast<u32>(Int<i32>::MIN) == 0U);
-  static_assert(num::saturating_cast<u32>(Int<i32>::MAX) == Int<i32>::MAX);
-
-  // u32 -> i32
-  static_assert(num::saturating_cast<i32>(0U) == 0);
-  static_assert(num::saturating_cast<i32>(1U) == 1);
-  static_assert(num::saturating_cast<i32>(Int<i32>::MAX) == Int<i32>::MAX);
-  static_assert(num::saturating_cast<i32>(Int<u32>::MAX) == Int<i32>::MAX);
 }
 
 SFC_TEST(unsigned_abs) {

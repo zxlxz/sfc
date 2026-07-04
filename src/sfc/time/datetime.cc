@@ -10,13 +10,13 @@ namespace sfc::time {
 
 static auto make_datetime(const auto& t, auto micros) -> DateTime {
   const auto res = DateTime{
-      .year = t.year,
-      .month = t.month,
-      .day = t.day,
-      .hour = t.hour,
-      .minute = t.minute,
-      .second = t.second,
-      .micros = micros,
+      .year =  t.year,
+      .month =  t.month,
+      .day =  t.day,
+      .hour =  t.hour,
+      .minute =  t.minute,
+      .second =  t.second,
+      .micros =  micros,
   };
   return res;
 };
