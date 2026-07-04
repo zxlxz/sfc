@@ -114,8 +114,8 @@ struct Str {
 
   // trait: fmt::Display
   void fmt(auto& f) const {
-    const auto dbg_mode = f._spec._type == 's' || f._spec._type == '?';
-    if (dbg_mode) {
+    const auto type = f.type();
+    if (type == 's' || type == '?') {
       f.write_char('"');
       f.write_str(*this);
       f.write_char('"');

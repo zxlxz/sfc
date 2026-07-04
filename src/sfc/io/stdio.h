@@ -83,11 +83,3 @@ void eprintln(const fmt::Fmts& fmts, const auto&... args) {
 }
 
 }  // namespace sfc::io
-
-namespace sfc::fmt {
-extern template struct Formatter<io::Stdout>;
-extern template struct Formatter<io::StdoutLock>;
-
-extern template struct Formatter<io::Stderr>;
-extern template struct Formatter<io::StderrLock>;
-}  // namespace sfc::fmt

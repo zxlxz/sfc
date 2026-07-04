@@ -5,6 +5,8 @@
 
 namespace sfc::fmt {
 
+class Formatter;
+
 struct SBuf {
   char* _ptr;
   usize _cap;
@@ -52,14 +54,14 @@ struct Debug {
 
   static void fmt(trait::uint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
-    const auto s = Debug::format_int(buf, val + 0, f._spec._type);
+    const auto s = Debug::format_int(buf, val + 0, f.type());
     f.pad_num(false, s);
   }
 
   static void fmt(trait::sint_ auto val, auto& f) {
     char buf[8 * sizeof(val) + 8];
     const auto u = num::unsigned_abs(val);
-    const auto s = Debug::format_int(buf, u, f._spec._type);
+    const auto s = Debug::format_int(buf, u, f.type());
     f.pad_num(val < 0, s);
   }
 
@@ -68,8 +70,8 @@ struct Debug {
     char buf[8 * sizeof(val) + 16];
 
     const auto uval = val < 0 ? -val : val;
-    const auto prec = f._spec.precision(DEFAULT_PRECISION);
-    const auto s = Debug::format_flt(buf, uval, prec, f._spec._type);
+    const auto prec = f.precision().unwrap_or(DEFAULT_PRECISION);
+    const auto s = Debug::format_flt(buf, uval, prec, f.type());
     f.pad_num(val < 0, s);
   }
 
@@ -85,37 +87,61 @@ struct Debug {
 
   static void fmt(const void* val, auto& f) {
     char buf[16];
-    const auto s = Debug::format_ptr(buf, val, f._spec._type);
+    const auto s = Debug::format_ptr(buf, val, f.type());
     f.write_str(s);
   }
 };
 
-template <class W>
-struct Formatter {
-  W& _buf;
+struct Write {
+  using write_str_t = void(void*, Str);
+  void* _obj;
+  write_str_t* _write_str;
+
+ public:
+  template <class W>
+  Write(W& w) : _obj{&w}, _write_str{([](void* x, Str s) { ((W*)x)->write_str(s); })} {}
+
+  void write_str(Str s) {
+    _write_str(_obj, s);
+  }
+};
+
+class DebugList;
+class DebugSet;
+class DebugMap;
+class DebugTuple;
+class DebugStruct;
+
+class Formatter {
+  friend struct fmt::Fmts;
+
+  Write _out;
   Spec _spec = {};
 
  public:
-  void write_char(char c) {
-    this->write_str(Str{&c, 1});
+  Formatter(auto& w) : _out{w}, _spec{} {}
+
+  auto type() const -> char {
+    return _spec._type;
   }
 
-  void write_chars(char c, usize n) {
-    static constexpr auto BUF_LEN = 8U;
-    const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
-    for (auto i = 0U; i < n; i += BUF_LEN) {
-      this->write_str(Str{buf, i + BUF_LEN < n ? BUF_LEN : n - i});
-    }
+  auto width() const -> Option<u32> {
+    if (!_spec._width) return {};
+    return _spec._width;
   }
 
-  void write_str(Str s) {
-    if (s._len == 0) return;
-    if constexpr (requires { _buf.write_str(""); }) {
-      (void)_buf.write_str(s);
-    } else {
-      (void)_buf.write(s.as_bytes());
-    }
+  auto precision() const -> Option<u32> {
+    if (!_spec._point) return {};
+    return _spec._precision;
   }
+
+ public:
+  void write_str(Str s);
+  void write_char(char c);
+  void write_chars(char c, usize n);
+
+  void pad(Str s);
+  void pad_num(bool is_neg, Str num_str);
 
   template <class T>
   void write_val(const T& val) {
@@ -126,7 +152,7 @@ struct Formatter {
     } else if constexpr (requires { Slice{val}; }) {
       Slice{val}.fmt(*this);
     } else {
-      Debug::fmt(val, *this);
+      fmt::Debug::fmt(val, *this);
     }
   }
 
@@ -135,188 +161,28 @@ struct Formatter {
     xargs.fmt(*this);
   }
 
-  void pad(Str s) {
-    if (_spec._width <= s._len) {
-      this->write_str(s);
-      return;
-    }
-
-    const auto fill = _spec.fill();
-    const auto npad = _spec._width - s._len;
-
-    switch (_spec._align) {
-      default:
-      case '<':
-        this->write_str(s);
-        this->write_chars(fill, npad);
-        break;
-      case '>':
-        this->write_chars(fill, npad);
-        this->write_str(s);
-        break;
-      case '=':
-      case '^':
-        this->write_chars(fill, (npad + 0) / 2);
-        this->write_str(s);
-        this->write_chars(fill, (npad + 1) / 2);
-        break;
-    }
-  }
-
-  void pad_num(bool is_neg, Str num_str) {
-    const auto sign = _spec.sign(is_neg);
-    const auto prefix = _spec.prefix();
-    if (num_str._len >= _spec._width) {
-      this->write_str(sign);
-      this->write_str(prefix);
-      this->write_str(num_str);
-      return;
-    }
-
-    const auto npad = _spec._width - num_str._len;
-    const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
-    const auto align = _spec.align(fill == '0' ? '=' : '>');
-    switch (align) {
-      default:
-      case '>':
-        this->write_chars(fill, npad);
-        this->write_str(sign);
-        this->write_str(prefix);
-        this->write_str(num_str);
-        break;
-      case '<':
-        this->write_str(sign);
-        this->write_str(prefix);
-        this->write_str(num_str);
-        this->write_chars(fill, npad);
-        break;
-      case '=':
-        this->write_str(sign);
-        this->write_str(prefix);
-        this->write_chars(fill, npad);
-        this->write_str(num_str);
-        break;
-      case '^':
-        this->write_chars(fill, (npad + 0) / 2);
-        this->write_str(sign);
-        this->write_str(prefix);
-        this->write_str(num_str);
-        this->write_chars(fill, (npad + 1) / 2);
-    }
-  }
-
  public:
-  struct DebugTuple;
-  auto debug_tuple() -> DebugTuple {
-    return DebugTuple{*this};
-  }
-
-  struct DebugList;
-  auto debug_list() -> DebugList {
-    return DebugList{*this};
-  }
-
-  struct DebugSet;
-  auto debug_set() -> DebugSet {
-    return DebugSet{*this};
-  }
-
-  struct DebugMap;
-  auto debug_map() -> DebugMap {
-    return DebugMap{*this};
-  }
-
-  struct DebugStruct;
-  auto debug_struct() -> DebugStruct {
-    return DebugStruct{*this};
-  }
-
- private:
-  void block_open(Str s) noexcept {
-    this->write_str(s);
-  }
-
-  void block_close(Str s, u32 cnt) noexcept {
-    if (cnt != 0) {
-      this->block_entry(0);
-    }
-    this->write_str(s);
-  }
-
-  void block_entry(u32 idx) {
-    if (idx != 0) {
-      this->write_str(", ");
-    }
-  }
+  auto debug_list() -> DebugList;
+  auto debug_set() -> DebugSet;
+  auto debug_map() -> DebugMap;
+  auto debug_tuple() -> DebugTuple;
+  auto debug_struct() -> DebugStruct;
 };
 
-template <class W>
-struct Formatter<W>::DebugTuple {
+class DebugList {
   Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugTuple(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("(");
-  }
-
-  ~DebugTuple() {
-    _fmt.block_close(")", _cnt);
-  }
-
-  DebugTuple(const DebugTuple&) = delete;
-
-  auto field(const auto& value) -> DebugTuple& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_val(value);
-    return *this;
-  }
-};
-
-template <class W>
-struct Formatter<W>::DebugStruct {
-  Formatter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugStruct(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("{");
-  }
-
-  ~DebugStruct() {
-    _fmt.block_close("}", _cnt);
-  }
-
-  DebugStruct(const DebugStruct&) = delete;
-
-  auto field(Str key, const auto& value) -> DebugStruct& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_str(key);
-    _fmt.write_str(": ");
-    _fmt.write_val(value);
-    return *this;
-  }
-};
-
-template <class W>
-struct Formatter<W>::DebugList {
-  Formatter& _fmt;
-  u32 _cnt = 0;
-
- public:
-  explicit DebugList(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("[");
-  }
-
-  ~DebugList() {
-    _fmt.block_close("]", _cnt);
-  }
-
+  explicit DebugList(Formatter& fmt);
+  ~DebugList();
   DebugList(const DebugList&) = delete;
 
+  void push(Str s);
+
   auto entry(const auto& value) -> DebugList& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_val(value);
+    this->push({});
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -326,25 +192,20 @@ struct Formatter<W>::DebugList {
   }
 };
 
-template <class W>
-struct Formatter<W>::DebugSet {
+class DebugSet {
   Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugSet(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("{");
-  }
-
-  ~DebugSet() {
-    _fmt.block_close("}", _cnt);
-  }
-
+  explicit DebugSet(Formatter& fmt);
+  ~DebugSet();
   DebugSet(const DebugSet&) = delete;
 
+  void push(Str s);
+
   auto entry(const auto& value) -> DebugSet& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_val(value);
+    this->push({});
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -354,28 +215,20 @@ struct Formatter<W>::DebugSet {
   }
 };
 
-template <class W>
-struct Formatter<W>::DebugMap {
+class DebugMap {
   Formatter& _fmt;
   u32 _cnt = 0;
 
  public:
-  explicit DebugMap(Formatter& fmt) : _fmt{fmt} {
-    _fmt.block_open("{");
-  }
-
-  ~DebugMap() {
-    _fmt.block_close("}", _cnt);
-  }
-
+  explicit DebugMap(Formatter& fmt);
+  ~DebugMap();
   DebugMap(const DebugMap&) = delete;
 
+  void push(Str key, Str value);
+
   auto entry(Str key, const auto& value) -> DebugMap& {
-    _fmt.block_entry(_cnt++);
-    _fmt.write_str('"');
-    _fmt.write_str(key);
-    _fmt.write_str("\": ");
-    _fmt.write_val(value);
+    this->push(key, {});
+    Display::fmt(value, _fmt);
     return *this;
   }
 
@@ -388,20 +241,71 @@ struct Formatter<W>::DebugMap {
   }
 };
 
+class DebugTuple {
+  Formatter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugTuple(Formatter& fmt);
+  ~DebugTuple();
+  DebugTuple(const DebugTuple&) = delete;
+
+  void push(Str s);
+
+  auto field(const auto& value) -> DebugTuple& {
+    this->push("");
+    Display::fmt(value, _fmt);
+    return *this;
+  }
+};
+
+class DebugStruct {
+  Formatter& _fmt;
+  u32 _cnt = 0;
+
+ public:
+  explicit DebugStruct(Formatter& fmt);
+  ~DebugStruct();
+  DebugStruct(const DebugStruct&) = delete;
+
+  void push(Str key, Str value);
+  auto field(Str key, const auto& value) -> DebugStruct& {
+    this->push(key, {});
+    Display::fmt(value, _fmt);
+    return *this;
+  }
+};
+
+void Display::fmt(const auto& self, auto&& formatter) {
+  if constexpr (requires { self.fmt(formatter); }) {
+    self.fmt(formatter);
+  } else if constexpr (requires { str::Str{self}; }) {
+    formatter.pad(Str{self});
+  } else if constexpr (requires { Slice{self}; }) {
+    Slice{self}.fmt(formatter);
+  } else {
+    fmt::Debug::fmt(self, formatter);
+  }
+}
+
+void Fmts::format_imp(fmt::Formatter& f, u32 idx, const auto& val) const {
+  if (idx >= _cnt) {
+    return;
+  }
+
+  const auto fill = _fills[idx];
+  const auto spec = _specs[idx];
+  f._spec = spec;
+  f.write_str({fill._ptr, fill._len});
+  Display::fmt(val, f);
+}
+
 // macro: write!(out, arg...)
 void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
   if constexpr (requires { out.write_fmt(fmts, args...); }) {
     out.write_fmt(fmts, args...);
   } else {
     Formatter{out}.write_fmt(fmts, args...);
-  }
-}
-
-void write_fmt(auto& out, const auto& args) {
-  if constexpr (requires { out.write_val(args); }) {
-    out.write_val(args);
-  } else {
-    Formatter{out}.write_val(args);
   }
 }
 

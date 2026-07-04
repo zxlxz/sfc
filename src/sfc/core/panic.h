@@ -19,20 +19,11 @@ struct SourceLoc {
 };
 
 struct PanicInfo {
-  const void* _args;
+  fmt::Args _args;
   SourceLoc _loc;
-  void (*_write_buf)(fmt::SBuf& out, const void* args);
 };
 
 [[noreturn]] void panic_imp(PanicInfo info);
-
-template <class... T>
-[[noreturn]] void panic_fmt(const fmt::Args<T...>& args, SourceLoc loc = SourceLoc::current()) {
-  auto write_buf = [](fmt::SBuf& out, const void* xargs) {
-    fmt::write_fmt(out, *ptr::cast<const fmt::Args<T...>>(xargs));
-  };
-  const auto info = PanicInfo{&args, loc, write_buf};
-  panic::panic_imp(info);
-}
+[[noreturn]] void panic_fmt(fmt::Args args, SourceLoc loc = SourceLoc::current());
 
 }  // namespace sfc::panic

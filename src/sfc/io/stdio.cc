@@ -125,11 +125,3 @@ auto Stderr::lock() -> StderrLock {
 }
 
 }  // namespace sfc::io
-
-namespace sfc::fmt {
-template struct Formatter<io::Stdout>;
-template struct Formatter<io::StdoutLock>;
-
-template struct Formatter<io::Stderr>;
-template struct Formatter<io::StderrLock>;
-}  // namespace sfc::fmt

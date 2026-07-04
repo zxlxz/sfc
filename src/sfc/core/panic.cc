@@ -21,6 +21,12 @@ static void writeln(const auto&... args) {
   (void)(sys::Stderr::write(s.as_bytes()));
 }
 
+static auto write_buf(fmt::SBuf buf, const auto& args) -> Str {
+  auto formatter = fmt::Formatter{buf};
+  args.fmt(formatter);
+  return buf.as_str();
+}
+
 static auto idx2str(u32 idx) -> Str {
   static constexpr auto digits =
       " 0 1 2 3 4 5 6 7 8 9"
@@ -39,18 +45,13 @@ static auto idx2str(u32 idx) -> Str {
 }
 
 void panic_imp(PanicInfo info) {
-  const auto [args, loc, write_buf] = info;
+  char line_buf[8] = {};
+  const auto line_str = panic::write_buf(line_buf, fmt::Args{"{02}", info._loc.line});
+  panic::writeln(Str{"thread panicked at "}, Str::from_cstr(info._loc.file), Str{":"}, line_str);
 
   char msg_buf[1024];
-  auto msg_out = fmt::SBuf{msg_buf};
-  write_buf(msg_out, args);
-  const auto msg = msg_out.as_str();
-
-  char line_buf[8] = {};
-  const auto line_str = fmt::Debug::format_int(line_buf, loc.line);
-
-  panic::writeln(Str{"thread panicked at "}, Str::from_cstr(loc.file), Str{":"}, line_str);
-  panic::writeln(Str{msg._ptr, msg._len});
+  const auto msg_str = panic::write_buf(msg_buf, info._args);
+  panic::writeln(msg_str);
 
   auto bt = sys::Backtrace::capture();
   for (auto idx = 0U; idx < bt._count; ++idx) {
@@ -61,6 +62,11 @@ void panic_imp(PanicInfo info) {
   }
 
   throw info;
+}
+
+[[noreturn]] void panic_fmt(fmt::Args args, SourceLoc loc) {
+  const auto info = PanicInfo{args, loc};
+  panic::panic_imp(info);
 }
 
 }  // namespace sfc::panic

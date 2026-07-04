@@ -4,15 +4,15 @@
 
 namespace sfc::fmt {
 
-struct SBuf;
+class Formatter;
 
-struct RawStr {
+struct CStr {
   const char* _ptr;
   usize _len;
 
-  consteval RawStr() : _ptr{nullptr}, _len{0} {}
-  consteval RawStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
-  constexpr RawStr(const char* p, usize n) : _ptr{p}, _len{n} {}
+  consteval CStr() : _ptr{nullptr}, _len{0} {}
+  consteval CStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
+  constexpr CStr(const char* p, usize n) : _ptr{p}, _len{n} {}
 
   consteval auto find(char c, u32 pos) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
@@ -95,7 +95,7 @@ struct Spec {
   };
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  consteval static auto from(RawStr s) noexcept -> Spec {
+  consteval static auto from(CStr s) noexcept -> Spec {
     if (s._len == 0) {
       return {};
     }
@@ -128,13 +128,18 @@ struct Spec {
   }
 };
 
+struct Display {
+  static void fmt(const auto& self, auto&& formatter);
+};
+
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
-  RawStr _str;
+
+  CStr _str;
   usize _cnt = 0;
-  RawStr _fills[kMaxLen] = {};
+  CStr _fills[kMaxLen] = {};
   Spec _specs[kMaxLen] = {};
-  RawStr _tail = {};
+  CStr _tail = {};
 
  public:
   consteval Fmts(const char* s) noexcept : _str{s} {
@@ -144,43 +149,41 @@ struct Fmts {
       const auto a = _str.find('{', p);
       const auto b = _str.find('}', a);
       if (b == _str._len) break;
-      _fills[_cnt] = RawStr{_str._ptr + p, a - p};
+      _fills[_cnt] = CStr{_str._ptr + p, a - p};
       _specs[_cnt] = Spec::from({_str._ptr + a + 1, b - a - 1});
       p = b + 1;
     }
-    _tail = RawStr{_str._ptr + p, _str._len - p};
+    _tail = CStr{_str._ptr + p, _str._len - p};
 #endif
   }
+
+  void format_imp(fmt::Formatter& f, u32 idx, const auto& val) const;
 };
 
-template <class... T>
 struct Args {
+  static constexpr auto kMaxLen = 16U;
+  using write_fmt_t = void(fmt::Formatter& f, const Fmts& fmts, const void* args);
   Fmts _fmts;
-  Tuple<const T&...> _args;
+  const void* _args[kMaxLen] = {};
+  write_fmt_t* _write_fmt;
 
  public:
-  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{args...} {}
+  template <class... T>
+  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {
+    static_assert(sizeof...(T) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
+
+    _write_fmt = [](fmt::Formatter& f, const Fmts& fmts, const void* args) {
+      const auto& tp_args = *ptr::cast<const Tuple<const T&...>>(args);
+      tp_args.for_each([&, idx = 0U](const auto& val) mutable { fmts.format_imp(f, idx++, val); });
+    };
+  }
 
   void fmt(auto& f) const {
-#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    _args.for_each([&, idx = 0U](const auto& val) mutable {
-      const auto fill = _fmts._fills[idx];
-      const auto spec = _fmts._specs[idx];
-      f._spec = spec;
-      f.write_str({fill._ptr, fill._len});
-      f.write_val(val);
-      ++idx;
-    });
+    const auto tail = _fmts._tail;
 
-    const auto s = _fmts._tail;
-    f.write_str({s._ptr, s._len});
-#endif
+    _write_fmt(f, _fmts, _args);
+    f.write_str({tail._ptr, tail._len});
   }
 };
-
-template <class... T>
-Args(const Fmts& fmts, const T&... args) -> Args<T...>;
-
-void write_fmt(auto& out, const auto& args);
 
 }  // namespace sfc::fmt

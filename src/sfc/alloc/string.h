@@ -129,10 +129,6 @@ auto format(const fmt::Fmts& fmts, const auto&... args) -> String {
 
 }  // namespace sfc::string
 
-namespace sfc::fmt {
-extern template struct Formatter<string::String>;
-}
-
 namespace sfc {
 using string::String;
 }  // namespace sfc

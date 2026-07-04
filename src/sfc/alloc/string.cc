@@ -64,7 +64,3 @@ void String::push(char32_t c) noexcept {
 }
 
 }  // namespace sfc::string
-
-namespace sfc::fmt {
-template struct Formatter<string::String>;
-}

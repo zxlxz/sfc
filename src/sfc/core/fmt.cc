@@ -321,6 +321,183 @@ template auto Debug::format_ptr(Slice<char> buf, const void* val, char type) -> 
 template auto Debug::format_flt(Slice<char> buf, f32 val, u32 precision, char type) -> Str;
 template auto Debug::format_flt(Slice<char> buf, f64 val, u32 precision, char type) -> Str;
 
-template struct Formatter<SBuf>;
+void Formatter::write_str(Str s) {
+  if (s._len == 0) return;
+  _out.write_str(s);
+}
+
+void Formatter::write_char(char c) {
+  const auto s = Str{&c, 1};
+  this->write_str(s);
+}
+
+void Formatter::write_chars(char c, usize n) {
+  static constexpr auto BUF_LEN = 8U;
+  const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
+  for (auto i = 0U; i < n; i += BUF_LEN) {
+    const auto s = Str{buf, i + BUF_LEN < n ? BUF_LEN : n - i};
+    this->write_str(s);
+  }
+}
+
+void Formatter::pad(Str s) {
+  if (_spec._width <= s._len) {
+    this->write_str(s);
+    return;
+  }
+
+  const auto fill = _spec.fill();
+  const auto npad = _spec._width - s._len;
+
+  switch (_spec._align) {
+    default:
+    case '<':
+      this->write_str(s);
+      this->write_chars(fill, npad);
+      break;
+    case '>':
+      this->write_chars(fill, npad);
+      this->write_str(s);
+      break;
+    case '=':
+    case '^':
+      this->write_chars(fill, (npad + 0) / 2);
+      this->write_str(s);
+      this->write_chars(fill, (npad + 1) / 2);
+      break;
+  }
+}
+
+void Formatter::pad_num(bool is_neg, Str num_str) {
+  const auto sign = _spec.sign(is_neg);
+  const auto prefix = _spec.prefix();
+  if (num_str._len >= _spec._width) {
+    this->write_str(sign);
+    this->write_str(prefix);
+    this->write_str(num_str);
+    return;
+  }
+
+  const auto npad = _spec._width - num_str._len;
+  const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
+  const auto align = _spec.align(fill == '0' ? '=' : '>');
+  switch (align) {
+    default:
+    case '>':
+      this->write_chars(fill, npad);
+      this->write_str(sign);
+      this->write_str(prefix);
+      this->write_str(num_str);
+      break;
+    case '<':
+      this->write_str(sign);
+      this->write_str(prefix);
+      this->write_str(num_str);
+      this->write_chars(fill, npad);
+      break;
+    case '=':
+      this->write_str(sign);
+      this->write_str(prefix);
+      this->write_chars(fill, npad);
+      this->write_str(num_str);
+      break;
+    case '^':
+      this->write_chars(fill, (npad + 0) / 2);
+      this->write_str(sign);
+      this->write_str(prefix);
+      this->write_str(num_str);
+      this->write_chars(fill, (npad + 1) / 2);
+  }
+}
+
+auto Formatter::debug_tuple() -> DebugTuple {
+  return DebugTuple{*this};
+}
+
+auto Formatter::debug_list() -> DebugList {
+  return DebugList{*this};
+}
+
+auto Formatter::debug_set() -> DebugSet {
+  return DebugSet{*this};
+}
+
+auto Formatter::debug_map() -> DebugMap {
+  return DebugMap{*this};
+}
+
+auto Formatter::debug_struct() -> DebugStruct {
+  return DebugStruct{*this};
+}
+
+DebugList::DebugList(Formatter& fmt) : _fmt{fmt} {
+  _fmt.write_str("[");
+}
+
+DebugList::~DebugList() {
+  _fmt.write_str("]");
+}
+
+void DebugList::push(Str s) {
+  if (_cnt++ != 0) _fmt.write_str(", ");
+  _fmt.write_str(s);
+}
+
+DebugSet::DebugSet(Formatter& fmt) : _fmt{fmt} {
+  _fmt.write_str("{");
+}
+
+DebugSet::~DebugSet() {
+  _fmt.write_str("}");
+}
+
+void DebugSet::push(Str s) {
+  if (_cnt++ != 0) _fmt.write_str(", ");
+  _fmt.write_str(s);
+}
+
+DebugMap::DebugMap(Formatter& fmt) : _fmt{fmt} {
+  _fmt.write_str("{");
+}
+
+DebugMap::~DebugMap() {
+  _fmt.write_str("}");
+}
+
+void DebugMap::push(Str key, Str value) {
+  if (_cnt++ != 0) _fmt.write_str(", ");
+  _fmt.write_str("\"");
+  _fmt.write_str(key);
+  _fmt.write_str("\": ");
+  _fmt.write_str(value);
+}
+
+DebugTuple::DebugTuple(Formatter& fmt) : _fmt{fmt} {
+  _fmt.write_str("(");
+}
+
+DebugTuple::~DebugTuple() {
+  _fmt.write_str(")");
+}
+
+void DebugTuple::push(Str s) {
+  if (_cnt++ != 0) _fmt.write_str(", ");
+  _fmt.write_str(s);
+}
+
+DebugStruct::DebugStruct(Formatter& fmt) : _fmt{fmt} {
+  _fmt.write_str("{");
+}
+
+DebugStruct::~DebugStruct() {
+  _fmt.write_str("}");
+}
+
+void DebugStruct::push(Str key, Str value) {
+  if (_cnt++ != 0) _fmt.write_str(", ");
+  _fmt.write_str(key);
+  _fmt.write_str(": ");
+  _fmt.write_str(value);
+}
 
 }  // namespace sfc::fmt

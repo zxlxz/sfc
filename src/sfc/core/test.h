@@ -33,42 +33,42 @@ void assert_(AssertCondition cond, const fmt::Fmts& fmts, const auto&... args) {
 
 void assert_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a == b) return;
-  test::assert_failed(loc, RawStr{"=="}, a, b);
+  test::assert_failed(loc, fmt::CStr{"=="}, a, b);
 }
 
 void assert_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a != b) return;
-  test::assert_failed(loc, RawStr{"!="}, a, b);
+  test::assert_failed(loc, fmt::CStr{"!="}, a, b);
 }
 
 void assert_lt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a < b) return;
-  test::assert_failed(loc, RawStr{"<"}, a, b);
+  test::assert_failed(loc, fmt::CStr{"<"}, a, b);
 }
 
 void assert_le(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a <= b) return;
-  test::assert_failed(loc, RawStr{"<="}, a, b);
+  test::assert_failed(loc, fmt::CStr{"<="}, a, b);
 }
 
 void assert_gt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a > b) return;
-  test::assert_failed(loc, RawStr{">"}, a, b);
+  test::assert_failed(loc, fmt::CStr{">"}, a, b);
 }
 
 void assert_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a >= b) return;
-  test::assert_failed(loc, RawStr{">="}, a, b);
+  test::assert_failed(loc, fmt::CStr{">="}, a, b);
 }
 
 inline void assert_flt_eq(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (num::flt_eq_ulp(a, b, ulp)) return;
-  test::assert_failed(loc, RawStr{"=="}, a, b);
+  test::assert_failed(loc, fmt::CStr{"=="}, a, b);
 }
 
 inline void assert_flt_ne(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
   if (!num::flt_eq_ulp(a, b, ulp)) return;
-  test::assert_failed(loc, RawStr{"!="}, a, b);
+  test::assert_failed(loc, fmt::CStr{"!="}, a, b);
 }
 
 }  // namespace sfc::test
