@@ -34,7 +34,50 @@ struct _TupleData<A, B, C, D, E, F, G> { A _0; B _1; C _2; D _3; E _4; F _5; G _
 
 template <class A, class B, class C, class D, class E, class F, class G, class H>
 struct _TupleData<A, B, C, D, E, F, G, H> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I>
+struct _TupleData<A, B, C, D, E, F, G, H, I> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K, L> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K, L, M> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K, L, M, N> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O, class P>
+struct _TupleData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> { A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; P _15; };
 // clang-format on
+
+void for_each(auto&& self, auto&& f) {
+  if constexpr (requires { self._0; }) f(self._0);
+  if constexpr (requires { self._1; }) f(self._1);
+  if constexpr (requires { self._2; }) f(self._2);
+  if constexpr (requires { self._3; }) f(self._3);
+  if constexpr (requires { self._4; }) f(self._4);
+  if constexpr (requires { self._5; }) f(self._5);
+  if constexpr (requires { self._6; }) f(self._6);
+  if constexpr (requires { self._7; }) f(self._7);
+  if constexpr (requires { self._8; }) f(self._8);
+  if constexpr (requires { self._9; }) f(self._9);
+  if constexpr (requires { self._10; }) f(self._10);
+  if constexpr (requires { self._11; }) f(self._11);
+  if constexpr (requires { self._12; }) f(self._12);
+  if constexpr (requires { self._13; }) f(self._13);
+  if constexpr (requires { self._14; }) f(self._14);
+  if constexpr (requires { self._15; }) f(self._15);
+}
 
 template <class... T>
 struct Tuple : _TupleData<T...> {
@@ -47,30 +90,16 @@ struct Tuple : _TupleData<T...> {
 
  public:
   void for_each(auto&& f) const {
-    if constexpr (COUNT > 0) f(this->_0);
-    if constexpr (COUNT > 1) f(this->_1);
-    if constexpr (COUNT > 2) f(this->_2);
-    if constexpr (COUNT > 3) f(this->_3);
-    if constexpr (COUNT > 4) f(this->_4);
-    if constexpr (COUNT > 5) f(this->_5);
-    if constexpr (COUNT > 6) f(this->_6);
-    if constexpr (COUNT > 7) f(this->_7);
+    tuple::for_each(*this, f);
   }
 
   void for_each_mut(auto&& f) {
-    if constexpr (COUNT > 0) f(this->_0);
-    if constexpr (COUNT > 1) f(this->_1);
-    if constexpr (COUNT > 2) f(this->_2);
-    if constexpr (COUNT > 3) f(this->_3);
-    if constexpr (COUNT > 4) f(this->_4);
-    if constexpr (COUNT > 5) f(this->_5);
-    if constexpr (COUNT > 6) f(this->_6);
-    if constexpr (COUNT > 7) f(this->_7);
+    tuple::for_each(*this, f);
   }
 
   void fmt(auto& f) const {
     auto imp = f.debug_tuple();
-    this->for_each([&](const auto& val) { imp.field(val); });
+    tuple::for_each(*this, [&](const auto& val) { imp.field(val); });
   }
 };
 
