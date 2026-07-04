@@ -20,18 +20,14 @@ struct Iterator {
 
   auto find(this auto self, auto&& pred) noexcept -> Option<Item> {
     while (auto x = self.next()) {
-      if (pred(*x)) {
-        return x;
-      }
+      if (pred(*x)) return x;
     }
     return {};
   }
 
   auto rfind(this auto self, auto&& pred) noexcept -> Option<Item> {
     while (auto x = self.next_back()) {
-      if (pred(*x)) {
-        return x;
-      }
+      if (pred(*x)) return x;
     }
     return {};
   }
@@ -39,9 +35,7 @@ struct Iterator {
   auto position(this auto self, auto&& pred) noexcept -> Option<usize> {
     auto idx = 0UL;
     while (auto x = self.next()) {
-      if (pred(*x)) {
-        return idx;
-      }
+      if (pred(*x)) return idx;
       ++idx;
     }
 
@@ -51,9 +45,7 @@ struct Iterator {
   auto rposition(this auto self, auto&& pred) noexcept -> Option<usize> {
     auto idx = self.len() - 1;
     while (auto x = self.next_back()) {
-      if (pred(*x)) {
-        return idx;
-      }
+      if (pred(*x)) return idx;
       --idx;
     }
     return {};
@@ -85,9 +77,7 @@ struct Iterator {
   template <class F>
   auto reduce(this auto self, F&& f) -> Option<Item> {
     auto opt = self.next();
-    if (!opt) {
-      return {};
-    }
+    if (!opt) return {};
 
     if constexpr (!trait::same_<Item, Item&>) {
       auto res_val = mem::move(opt).unwrap();
@@ -179,9 +169,7 @@ struct Filter : Iterator<typename I::Item> {
  public:
   auto next() noexcept -> Option<Item> {
     while (auto x = _iter.next()) {
-      if (_pred(*x)) {
-        return x;
-      }
+      if (_pred(*x)) return x;
     }
     return {};
   }
