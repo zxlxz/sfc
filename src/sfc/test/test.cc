@@ -2,22 +2,28 @@
 
 namespace sfc::test {
 
-auto Test::from(Str type, func_t func, SourceLoc loc) -> Test {
-  const auto p = type.rfind(':').unwrap_or(0);
-  if (p == 0) {
-    return Test{"", type[{1, $}], func, loc};
+static auto unpack_test_name(Str type) -> Tuple<Str, Str> {
+  if (type.is_empty()) {
+    return {{}, {}};
   }
-  const auto mod = type[{0, p - 1}];
-  const auto name = type[{p + 2, $}];
-  return Test{mod, name, func, loc};
+
+  // a::b::c::_test_name
+  const auto p = type.rfind(':').unwrap_or(0);
+  const auto mod_name = p == 0 ? Str{} : type[{0, p - 1}];
+  const auto class_name = p == 0 ? type : type[{p + 2, $}];
+  const auto type_name = class_name[0] == '_' ? class_name[{1, $}] : class_name;
+
+  return {mod_name, type_name};
 }
 
 auto Test::mod() const noexcept -> Str {
-  return _mod;
+  const auto mod_name = test::unpack_test_name(_path);
+  return mod_name._0;
 }
 
 auto Test::name() const noexcept -> Str {
-  return _name;
+  const auto mod_name = test::unpack_test_name(_path);
+  return mod_name._1;
 }
 
 void Test::run() const {
@@ -72,7 +78,7 @@ struct TestManager {
   }
 
   void regist(Test test) {
-    auto& mod = this->regist_mod(test._mod);
+    auto& mod = this->regist_mod(test.mod());
     mod.regist(test);
   }
 };
@@ -82,7 +88,7 @@ auto modules() noexcept -> Slice<const Module> {
   return ctx.mods();
 }
 
-auto regist(Test test) noexcept -> bool {
+auto regist_test(Test test) noexcept -> bool {
   static auto& ctx = TestManager::instance();
   ctx.regist(test);
   return true;

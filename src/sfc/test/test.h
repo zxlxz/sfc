@@ -8,22 +8,14 @@ using panic::SourceLoc;
 
 struct Test {
   using func_t = void (*)();
-  Str _mod;
-  Str _name;
   func_t _func;
+  Str _path;
   SourceLoc _loc;
 
  public:
-  static auto from(Str type, func_t func, SourceLoc loc) -> Test;
   auto mod() const noexcept -> Str;
   auto name() const noexcept -> Str;
   void run() const;
-
- public:
-  template <class T>
-  static constexpr auto of(SourceLoc loc = SourceLoc::current()) -> Test {
-    return Test::from(reflect::type_name<T>(), &T::test, loc);
-  }
 };
 
 struct Module {
@@ -43,18 +35,25 @@ struct Module {
 };
 
 auto modules() noexcept -> Slice<const Module>;
-auto regist(Test test) noexcept -> bool;
+auto regist_test(Test test) noexcept -> bool;
+
+template <class T>
+auto regist(SourceLoc loc = SourceLoc::current()) noexcept -> bool {
+  const auto func = &T::test;
+  const auto path = reflect::type_name<T>();
+  return test::regist_test({func, path, loc});
+}
 
 }  // namespace sfc::test
 
 #if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
 #define SFC_TEST(X) void _##X()
 #else
-#define SFC_TEST(X)                                                       \
-  struct _##X {                                                           \
-    static const bool _UT_;                                               \
-    static void test();                                                   \
-  };                                                                      \
-  const bool _##X::_UT_ = sfc::test::regist(sfc::test::Test::of<_##X>()); \
+#define SFC_TEST(X)                                  \
+  struct _##X {                                      \
+    static const bool _UT_;                          \
+    static void test();                              \
+  };                                                 \
+  const bool _##X::_UT_ = sfc::test::regist<_##X>(); \
   void _##X::test()
 #endif
