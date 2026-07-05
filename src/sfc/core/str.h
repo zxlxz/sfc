@@ -181,8 +181,6 @@ struct CharSearcher : Searcher {
   usize _finger_back = _haystack._len;
 
  public:
-  CharSearcher(Str haystack, char ch) noexcept : _haystack{haystack}, _needle{ch} {}
-
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
@@ -194,8 +192,6 @@ struct StrSearcher : Searcher {
   usize _finger_back = _haystack._len;
 
  public:
-  StrSearcher(Str haystack, Str str) noexcept : _haystack{haystack}, _needle{str} {}
-
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
@@ -207,8 +203,6 @@ struct CharPredicateSearcher : Searcher {
   usize _finger_back = _haystack._len;
 
  public:
-  CharPredicateSearcher(Str haystack, auto&& pred) noexcept : _haystack{haystack}, _pred{mem::move(pred)} {}
-
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
@@ -216,11 +210,11 @@ struct CharPredicateSearcher : Searcher {
 struct Pattern {
   static auto into_searcher(auto&& self, Str haystack) {
     if constexpr (requires { char{self}; }) {
-      return CharSearcher{haystack, self};
+      return CharSearcher{{}, haystack, self};
     } else if constexpr (requires { Str{self}; }) {
-      return StrSearcher{haystack, self};
+      return StrSearcher{{}, haystack, self};
     } else if constexpr (requires { self(char{0}); }) {
-      return CharPredicateSearcher{haystack, mem::move(self)};
+      return CharPredicateSearcher{{}, haystack, mem::move(self)};
     }
   }
 };
