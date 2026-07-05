@@ -1,5 +1,6 @@
 #include "sfc/core/time.h"
 #include "sfc/core/num.h"
+#include "sfc/core/fmt.h"
 
 namespace sfc::time {
 
@@ -72,16 +73,41 @@ auto Duration::subsec_micros() const noexcept -> u32 {
   return u32(micros_u64);
 }
 
-auto Duration::operator==(const Duration& other) const noexcept -> bool {
+auto Duration::operator==(Duration other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
-auto Duration::operator<(const Duration& other) const noexcept -> bool {
+auto Duration::operator!=(Duration other) const noexcept -> bool {
+  return _nanos != other._nanos;
+}
+
+auto Duration::operator<(Duration other) const noexcept -> bool {
   return _nanos < other._nanos;
 }
 
-auto Duration::operator<=(const Duration& other) const noexcept -> bool {
+auto Duration::operator>(Duration other) const noexcept -> bool {
+  return _nanos > other._nanos;
+}
+
+auto Duration::operator<=(Duration other) const noexcept -> bool {
   return _nanos <= other._nanos;
+}
+
+auto Duration::operator>=(Duration other) const noexcept -> bool {
+  return _nanos >= other._nanos;
+}
+
+void Duration::fmt(fmt::Formatter& f) const {
+  const auto secs = this->as_secs_f64();
+  if (secs >= 1e-1) {
+    f.write_fmt("{.4}s", secs);
+  } else if (secs >= 1e-4) {
+    f.write_fmt("{.3}ms", secs * 1e3);
+  } else if (secs >= 1e-7) {
+    f.write_fmt("{.3}µs", secs * 1e6);
+  } else {
+    f.write_fmt("{.3}ns", secs * 1e9);
+  }
 }
 
 }  // namespace sfc::time

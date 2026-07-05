@@ -24,34 +24,43 @@ auto Instant::duration_since(Instant earlier) const noexcept -> Duration {
   return Duration::from_nanos(dur);
 }
 
-auto Instant::operator==(const Instant& other) const noexcept -> bool {
+auto Instant::operator==(Instant other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
-auto Instant::operator<(const Instant& other) const noexcept -> bool {
+auto Instant::operator!=(Instant other) const noexcept -> bool {
+  return _nanos != other._nanos;
+}
+
+auto Instant::operator<(Instant other) const noexcept -> bool {
   return _nanos < other._nanos;
 }
 
-auto Instant::operator<=(const Instant& other) const noexcept -> bool {
-  return _nanos <= other._nanos;
-}
-
-auto Instant::operator>(const Instant& other) const noexcept -> bool {
+auto Instant::operator>(Instant other) const noexcept -> bool {
   return _nanos > other._nanos;
 }
 
-auto Instant::operator>=(const Instant& other) const noexcept -> bool {
+auto Instant::operator<=(Instant other) const noexcept -> bool {
+  return _nanos <= other._nanos;
+}
+
+auto Instant::operator>=(Instant other) const noexcept -> bool {
   return _nanos >= other._nanos;
 }
 
-auto Instant::operator+(const Duration& dur) const noexcept -> Instant {
+auto Instant::operator+(Duration dur) const noexcept -> Instant {
   const auto ns = _nanos + dur.as_nanos();
   return Instant{ns};
 }
 
-auto Instant::operator-(const Duration& dur) const noexcept -> Instant {
+auto Instant::operator-(Duration dur) const noexcept -> Instant {
   const auto ns = num::saturating_sub(_nanos, dur.as_nanos());
   return Instant{ns};
+}
+
+auto Instant::operator-(Instant other) const noexcept -> Duration {
+  const auto dur = num::saturating_sub(_nanos, other._nanos);
+  return Duration::from_nanos(dur);
 }
 
 void Instant::fmt(fmt::Formatter& f) const {

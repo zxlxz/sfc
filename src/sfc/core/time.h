@@ -36,21 +36,16 @@ struct Duration {
   auto subsec_micros() const noexcept -> u32;
 
  public:
-  // trait: ops::Eq
-  auto operator==(const Duration& other) const noexcept -> bool;
+  auto operator==(Duration other) const noexcept -> bool;
+  auto operator!=(Duration other) const noexcept -> bool;
 
-  // trait: ops::Lt
-  auto operator<(const Duration& other) const noexcept -> bool;
-
-  // trait: ops::Le
-  auto operator<=(const Duration& other) const noexcept -> bool;
+  auto operator<(Duration other) const noexcept -> bool;
+  auto operator>(Duration other) const noexcept -> bool;
+  auto operator<=(Duration other) const noexcept -> bool;
+  auto operator>=(Duration other) const noexcept -> bool;
 
  public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    const auto secs = this->as_secs_f64();
-    f.write_fmt("{.4}s", secs);
-  }
+  void fmt(fmt::Formatter& f) const;
 };
 
 }  // namespace sfc::time

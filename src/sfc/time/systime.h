@@ -19,16 +19,19 @@ struct SystemTime {
   auto subsec_millis() const noexcept -> u32;
 
  public:
-  // trait:: ops::Eq
-  auto operator==(const SystemTime& other) const noexcept -> bool;
+  auto operator==(SystemTime other) const noexcept -> bool;
+  auto operator!=(SystemTime other) const noexcept -> bool;
 
-  // trait: ops::Add
-  auto operator+(const Duration& dur) const noexcept -> SystemTime;
+  auto operator<(SystemTime other) const noexcept -> bool;
+  auto operator>(SystemTime other) const noexcept -> bool;
+  auto operator<=(SystemTime other) const noexcept -> bool;
+  auto operator>=(SystemTime other) const noexcept -> bool;
 
-  // trait: ops::Sub
-  auto operator-(const Duration& dur) const noexcept -> SystemTime;
+  auto operator+(Duration dur) const noexcept -> SystemTime;
+  auto operator-(Duration dur) const noexcept -> SystemTime;
+  auto operator-(SystemTime other) const noexcept -> Duration;
 
-  // trait: fmt::Display
+ public:
   void fmt(fmt::Formatter& f) const;
 };
 

@@ -43,18 +43,43 @@ auto SystemTime::subsec_millis() const noexcept -> u32 {
   return num::saturating_cast<u32>(millis);
 }
 
-auto SystemTime::operator==(const SystemTime& other) const noexcept -> bool {
+auto SystemTime::operator==(SystemTime other) const noexcept -> bool {
   return _micros == other._micros;
 }
 
-auto SystemTime::operator+(const Duration& dur) const noexcept -> SystemTime {
+auto SystemTime::operator!=(SystemTime other) const noexcept -> bool {
+  return _micros != other._micros;
+}
+
+auto SystemTime::operator<(SystemTime other) const noexcept -> bool {
+  return _micros < other._micros;
+}
+
+auto SystemTime::operator>(SystemTime other) const noexcept -> bool {
+  return _micros > other._micros;
+}
+
+auto SystemTime::operator<=(SystemTime other) const noexcept -> bool {
+  return _micros <= other._micros;
+}
+
+auto SystemTime::operator>=(SystemTime other) const noexcept -> bool {
+  return _micros >= other._micros;
+}
+
+auto SystemTime::operator+(Duration dur) const noexcept -> SystemTime {
   const auto us = _micros + dur.as_micros();
   return SystemTime{us};
 }
 
-auto SystemTime::operator-(const Duration& dur) const noexcept -> SystemTime {
+auto SystemTime::operator-(Duration dur) const noexcept -> SystemTime {
   const auto us = num::saturating_sub(_micros, dur.as_micros());
   return SystemTime{us};
+}
+
+auto SystemTime::operator-(SystemTime other) const noexcept -> Duration {
+  const auto dur = num::saturating_sub(_micros, other._micros);
+  return Duration::from_micros(dur);
 }
 
 void SystemTime::fmt(fmt::Formatter& f) const {

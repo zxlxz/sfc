@@ -14,29 +14,19 @@ struct Instant {
   auto duration_since(Instant earlier) const noexcept -> Duration;
 
  public:
-  // trait: ops::Eq
-  auto operator==(const Instant& other) const noexcept -> bool;
+  auto operator==(Instant other) const noexcept -> bool;
+  auto operator!=(Instant other) const noexcept -> bool;
 
-  // trait: ops::Lt
-  auto operator<(const Instant& other) const noexcept -> bool;
+  auto operator<(Instant other) const noexcept -> bool;
+  auto operator>(Instant other) const noexcept -> bool;
+  auto operator<=(Instant other) const noexcept -> bool;
+  auto operator>=(Instant other) const noexcept -> bool;
 
-  // trait: ops::Gt
-  auto operator>(const Instant& other) const noexcept -> bool;
-
-  // trait: ops::Le
-  auto operator<=(const Instant& other) const noexcept -> bool;
-
-  // trait: ops::Ge
-  auto operator>=(const Instant& other) const noexcept -> bool;
-
-  // trait: ops::Add
-  auto operator+(const Duration& dur) const noexcept -> Instant;
-
-  // trait: ops::Sub
-  auto operator-(const Duration& dur) const noexcept -> Instant;
+  auto operator+(Duration dur) const noexcept -> Instant;
+  auto operator-(Duration dur) const noexcept -> Instant;
+  auto operator-(Instant other) const noexcept -> Duration;
 
  public:
-  // trait: fmt::Display
   void fmt(fmt::Formatter& f) const;
 };
 
