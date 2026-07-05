@@ -5,8 +5,6 @@
 
 namespace sfc::fmt {
 
-class Formatter;
-
 struct SBuf {
   char* _ptr;
   usize _cap;
@@ -79,7 +77,6 @@ class DebugStruct;
 
 class Formatter {
   friend struct fmt::Fmts;
-
   Write _out;
   Spec _spec = {};
 

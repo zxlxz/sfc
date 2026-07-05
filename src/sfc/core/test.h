@@ -4,12 +4,13 @@
 
 namespace sfc::test {
 
-using fmt::RawStr;
 using panic::SourceLoc;
 
 struct AssertCondition {
   bool _val;
   SourceLoc _loc;
+
+ public:
   constexpr AssertCondition(bool val, SourceLoc loc = SourceLoc::current()) : _val{val}, _loc{loc} {}
 };
 
