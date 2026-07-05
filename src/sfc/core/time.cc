@@ -99,14 +99,14 @@ auto Duration::operator>=(Duration other) const noexcept -> bool {
 
 void Duration::fmt(fmt::Formatter& f) const {
   const auto secs = this->as_secs_f64();
-  if (secs >= 1e-1) {
-    f.write_fmt("{.4}s", secs);
-  } else if (secs >= 1e-4) {
-    f.write_fmt("{.3}ms", secs * 1e3);
-  } else if (secs >= 1e-7) {
-    f.write_fmt("{.3}µs", secs * 1e6);
+  if (secs >= 1.0) {
+    f.write_fmt("{.4} s", secs);
+  } else if (secs >= 1e-3) {
+    f.write_fmt("{.3} ms", secs * 1e3);
+  } else if (secs >= 1e-6) {
+    f.write_fmt("{.3} us", secs * 1e6);
   } else {
-    f.write_fmt("{.3}ns", secs * 1e9);
+    f.write_fmt("{.3} ns", secs * 1e9);
   }
 }
 
