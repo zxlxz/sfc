@@ -72,7 +72,7 @@ class StderrImpl {
       }
       buf = buf[{nwrite, buf._len}];
     }
-    return {};
+    return Tuple{};
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {

@@ -16,7 +16,7 @@ SFC_TEST(clap) {
   const Str args[] = {"--verbose", "--output", "output.txt", "-c=config.yaml", "a.txt", "b.txt"};
   clap.parse(args);
 
-  sfc::assert_eq(clap.get_flag("help"), Option{});
+  sfc::assert_eq(clap.get_flag("help"), None{});
   sfc::assert_eq(clap.get_flag("verbose"), Option{true});
 
   sfc::assert_eq(clap.get("input"),  Option{"a.txt;b.txt"});

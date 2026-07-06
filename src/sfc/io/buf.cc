@@ -159,7 +159,7 @@ auto WriteBuf::flush(DynWrite write) -> Result<> {
     _buf.drain({0, nwrite});
   }
   _buf.clear();
-  return {};
+  return Tuple{};
 }
 
 }  // namespace sfc::io

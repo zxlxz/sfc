@@ -9,6 +9,28 @@ namespace sfc::option {
 template <class T>
 class Option;
 
+struct Void {
+  template <class T>
+  constexpr auto operator==(const T&) const noexcept -> bool {
+    return false;
+  }
+
+  void fmt(auto& f) const {
+    f.write_str("()");
+  }
+};
+
+struct None {
+  template <class T>
+  constexpr auto operator==(const Option<T>& other) const noexcept -> bool {
+    return other.is_none();
+  }
+
+  void fmt(auto& f) const {
+    f.write_str("None()");
+  }
+};
+
 template <class T>
 class Option {
   bool _tag;
@@ -128,6 +150,13 @@ class Option {
   }
 
  public:
+  template <class U>
+  auto operator==(const Option<U>& other) const -> bool {
+    if (this->is_none()) return other.is_none();
+    if (other.is_none()) return false;
+    return _1 == *other;
+  }
+
   // to result
   template <class E>
   auto ok_or(this auto self, E err) -> result::Result<T, E> {
@@ -229,11 +258,17 @@ class Option<T&> {
   }
 
  public:
+  template <class U>
+  auto operator==(const Option<U&>& other) const -> bool {
+    if (this->is_none()) return other.is_none();
+    if (other.is_none()) return false;
+    return *_1 == *other;
+  }
+
   auto to_owned(this auto self) -> Option<T> {
     return self.is_some() ? Option<T>{*self._1} : Option<T>{};
   }
 
-  // to result
   template <class E>
   auto ok_or(this auto self, E err) -> result::Result<T&, E> {
     if (self.is_some()) return {*self._1};
@@ -250,76 +285,15 @@ class Option<T&> {
   }
 };
 
-template <>
-class Option<void> {
- public:
-  auto is_none() const noexcept -> bool {
-    return true;
-  }
-
-  auto is_some() const noexcept -> bool {
-    return false;
-  }
-
-  operator bool() const noexcept {
-    return false;
-  }
-
- public:
-  template <class U>
-  auto operator&([[maybe_unused]] Option<U> optb) const -> Option<U> {
-    return {};
-  }
-
-  template <class U>
-  auto operator|(Option<U> optb) const -> Option<U> {
-    return mem::move(optb);
-  }
-
-  auto and_then([[maybe_unused]] auto&& f) const -> Option {
-    return {};
-  }
-
-  auto map([[maybe_unused]] auto&& f) const -> Option {
-    return {};
-  }
-
-  template <class U>
-  auto map_or(U default_val, [[maybe_unused]] auto&& f) const -> U {
-    return default_val;
-  }
-
-  template <class F, class OptionU = FnOut<F>>
-  auto or_else(F&& f) const -> OptionU {
-    return f();
-  }
-
- public:
-  void fmt(auto& f) const {
-    f.write_str("None()");
-  }
-};
-
-Option() -> Option<void>;
-
 template <class T>
 Option(T) -> Option<T>;
 
 template <usize N>
 Option(const char (&)[N]) -> Option<str::Str>;
 
-template <class A, class B>
-auto operator==(const Option<A>& a, const Option<B>& b) -> bool {
-  if constexpr (!trait::same_<A, void> && !trait::same_<B, void>) {
-    if (a.is_some() && b.is_some()) {
-      return *a == *b;
-    }
-  }
-  return a.is_none() && b.is_none();
-}
-
 }  // namespace sfc::option
 
 namespace sfc {
+using option::None;
 using option::Option;
 }  // namespace sfc

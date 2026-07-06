@@ -23,7 +23,7 @@ SFC_TEST(map_try_insert) {
 
   sfc::assert_eq(t.get(0U), Option{0U});
   sfc::assert_eq(t.get(1U), Option{10U});
-  sfc::assert_eq(t.get(5U), Option{});
+  sfc::assert_eq(t.get(5U), None{});
 
   for (auto i = 5U; i < 10U; ++i) {
     t.try_insert(i, i * 10);
@@ -32,7 +32,7 @@ SFC_TEST(map_try_insert) {
 
   sfc::assert_eq(t.get(5U), Option{50U});
   sfc::assert_eq(t.get(9U), Option{90U});
-  sfc::assert_eq(t.get(10U), Option{});
+  sfc::assert_eq(t.get(10U), None{});
   for (auto i = 10U; i < 100U; ++i) {
     t.try_insert(i, i * 10);
     sfc::assert_eq(t.len(), i + 1);
@@ -68,7 +68,7 @@ SFC_TEST(map_remove) {
 
   for (auto i = 0; i < 3; ++i) {
     sfc::assert_eq(t.remove(i), Option{i * 10});
-    sfc::assert_eq(t.get(i), Option{});
+    sfc::assert_eq(t.get(i), None{});
   }
 
   for (auto i = 0; i < 100; ++i) {

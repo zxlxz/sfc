@@ -87,15 +87,15 @@ struct Spec {
       for (; _ptr < _end; ++_ptr) {
         const auto c = *_ptr;
         if (!(c >= '0' && c <= '9')) break;
-        const auto n = c - '0';
-        res = res * 10 + num::cast_unsigned(n);
+        const auto n = u32(c - '0');
+        res = res * 10 + n;
       }
       return res;
     }
   };
 
   // [[fill]align][sign]['#'][0][width][.][precision][type]
-  consteval static auto from(CStr s) noexcept -> Spec {
+  consteval static auto from_cstr(CStr s) noexcept -> Spec {
     if (s._len == 0) {
       return {};
     }
@@ -128,9 +128,7 @@ struct Spec {
   }
 };
 
-struct Display {
-  static void fmt(const auto& self, auto&& formatter);
-};
+
 
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
@@ -150,7 +148,7 @@ struct Fmts {
       const auto b = _str.find('}', a);
       if (b == _str._len) break;
       _fills[_cnt] = CStr{_str._ptr + p, a - p};
-      _specs[_cnt] = Spec::from({_str._ptr + a + 1, b - a - 1});
+      _specs[_cnt] = Spec::from_cstr({_str._ptr + a + 1, b - a - 1});
       p = b + 1;
     }
     _tail = CStr{_str._ptr + p, _str._len - p};

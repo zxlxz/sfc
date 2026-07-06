@@ -14,8 +14,7 @@ struct Str {
 
   constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  template <usize N>
-  constexpr Str(const char (&s)[N]) noexcept : _ptr{s}, _len{N - 1} {}
+  constexpr Str(const char* s) noexcept : _ptr{s}, _len{__builtin_strlen(s)} {}
 
   static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     return Str{ptr::cast<const char>(s._ptr), s._len};

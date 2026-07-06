@@ -78,7 +78,7 @@ SFC_TEST(deserialize_seq) {
       sfc::assert_eq(val, Option{vals[i]});
     }
     sfc::assert_eq(seq.template next_element<int>().err(), Option{Error::Finished});
-    return {};
+    return Tuple{};
   };
 
   auto des = Deserializer{s};
@@ -100,7 +100,7 @@ SFC_TEST(deserialize_map) {
       sfc::assert_eq(auto{val}.ok(), Option{vals[i]});
     }
     sfc::assert_eq(map.next_key().err(), Option{Error::Finished});
-    return {};
+    return Tuple{};
   };
 
   auto des = Deserializer{s};

@@ -43,7 +43,7 @@ struct File {
     if (!ret) {
       return {io::last_os_error()};
     }
-    return {};
+    return Tuple{};
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
@@ -153,7 +153,7 @@ static inline auto unlink(const wchar_t* path) -> io::Result<> {
   if (!ret) {
     return {io::last_os_error()};
   }
-  return {};
+  return Tuple{};
 }
 
 static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<> {
@@ -161,7 +161,7 @@ static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> i
   if (!ret) {
     return {io::last_os_error()};
   }
-  return {};
+  return Tuple{};
 }
 
 static inline auto mkdir(const wchar_t* path) -> io::Result<> {
@@ -169,7 +169,7 @@ static inline auto mkdir(const wchar_t* path) -> io::Result<> {
   if (!ret) {
     return {io::last_os_error()};
   }
-  return {};
+  return Tuple{};
 }
 
 static inline auto rmdir(const wchar_t* path) -> io::Result<> {
@@ -177,7 +177,7 @@ static inline auto rmdir(const wchar_t* path) -> io::Result<> {
   if (!ret) {
     return {io::last_os_error()};
   }
-  return {};
+  return Tuple{};
 }
 
 }  // namespace sfc::sys::windows

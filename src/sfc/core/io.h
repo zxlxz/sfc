@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/str.h"
+#include "sfc/core/tuple.h"
 
 namespace sfc::io {
 
@@ -41,10 +41,10 @@ enum class Error {
   Other,
 };
 
-auto to_str(Error) noexcept -> Str;
+auto to_str(Error) noexcept -> str::Str;
 auto last_os_error() noexcept -> Error;
 
-template <class T = void>
+template <class T = Tuple<>>
 using Result = result::Result<T, Error>;
 
 }  // namespace sfc::io

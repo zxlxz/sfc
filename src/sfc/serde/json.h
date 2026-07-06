@@ -35,7 +35,7 @@ enum class Error {
   InvalidString,        // invalid string format (e.g. invalid escape sequence)
 };
 
-template <class T = void>
+template <class T = Tuple<>>
 using Result = result::Result<T, Error>;
 
 class Serializer {

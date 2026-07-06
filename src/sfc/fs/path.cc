@@ -314,7 +314,7 @@ auto create_dir(Path path) -> io::Result<> {
 auto create_dir_all(Path path) -> io::Result<> {
   const auto err = fs::create_dir(path).err();
   if (!err || *err == io::Error::AlreadyExists) {
-    return {};
+    return Tuple{};
   }
 
   const auto parent = path.parent();

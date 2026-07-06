@@ -4,7 +4,7 @@
 namespace sfc::option::test {
 
 SFC_TEST(basic) {
-  const auto none = Option{};
+  const auto none = Option<int>{};
   sfc::assert_eq(none.is_none(), true);
   sfc::assert_eq(none.is_some(), false);
 
@@ -27,9 +27,9 @@ SFC_TEST(ref) {
 }
 
 SFC_TEST(copy_ctor) {
-  const auto none = Option{};
+  const auto none = Option<int>{};
   const auto some = Option{10};
-  sfc::assert_eq(auto{none}, Option{});
+  sfc::assert_eq(auto{none}, None{});
   sfc::assert_eq(auto{some}, Option{10});
 }
 
@@ -50,8 +50,8 @@ SFC_TEST(move_ctor) {
   auto a = Option<String>{};
   auto b = Option{String::from("hello")};
 
-  sfc::assert_eq(mem::move(a), Option{});
-  sfc::assert_eq(mem::move(b), Option{Str{"hello"}});
+  sfc::assert_eq(mem::move(a), None{});
+  sfc::assert_eq(mem::move(b), Option{"hello"});
 }
 
 SFC_TEST(move_assign) {
@@ -62,7 +62,7 @@ SFC_TEST(move_assign) {
   sfc::assert_eq(x.is_none(), true);
 
   x = mem::move(a);
-  sfc::assert_eq(x, Option{});
+  sfc::assert_eq(x, None{});
   sfc::assert_eq(x.is_none(), true);
 
   x = mem::move(b);
@@ -79,10 +79,8 @@ SFC_TEST(move_assign) {
 }
 
 SFC_TEST(eq) {
-  sfc::assert_eq(Option{}, Option{});
   sfc::assert_eq(Option{1}, Option{1});
-
-  sfc::assert_ne(Option{}, Option{1});
+  sfc::assert_ne(Option{1}, None{});
   sfc::assert_ne(Option{1}, Option{2});
 }
 
@@ -92,10 +90,10 @@ SFC_TEST(unwrap) {
 }
 
 SFC_TEST(and_or) {
-  sfc::assert_eq(Option{} & Option{1}, Option{});
+  sfc::assert_eq(Option<int>{} & Option{1}, None{});
   sfc::assert_eq(Option{10} & Option{1}, Option{1});
 
-  sfc::assert_eq(Option{} | Option{1}, Option{1});
+  sfc::assert_eq(Option<int>{} | Option{1}, Option{1});
   sfc::assert_eq(Option{10} | Option{1}, Option{10});
 }
 
@@ -108,27 +106,27 @@ SFC_TEST(and_then) {
   auto add1 = [](auto x) { return Option{x + 1}; };
 
   sfc::assert_eq(Option{10}.and_then(add1), Option{11});
-  sfc::assert_eq(Option{}.and_then(add1), Option{});
+  sfc::assert_eq(Option<int>{}.and_then(add1), None{});
 }
 
 SFC_TEST(or_else) {
   auto make_opt = [] { return Option{1}; };
 
-  sfc::assert_eq(Option{}.or_else(make_opt), Option{1});
+  sfc::assert_eq( Option<int>{}.or_else(make_opt), Option{1});
   sfc::assert_eq(Option{10}.or_else(make_opt), Option{10});
 }
 
 SFC_TEST(map) {
   auto add1 = [](auto x) { return x + 1; };
 
-  sfc::assert_eq(Option{}.map(add1), Option{});
+  sfc::assert_eq(Option<int>{}.map(add1), None{});
   sfc::assert_eq(Option{10}.map(add1), Option{11});
 }
 
 SFC_TEST(map_or) {
   auto add1 = [](auto x) { return x + 1; };
 
-  sfc::assert_eq(Option{}.map_or(5, add1), 5);
+  sfc::assert_eq(Option<int>{}.map_or(5, add1), 5);
   sfc::assert_eq(Option{10}.map_or(5, add1), 11);
 }
 

@@ -100,7 +100,7 @@ auto Deserializer::deserialize_null() -> Result<> {
     return {Error::InvalidKeyword};
   }
   this->consume(4);
-  return {};
+  return Tuple{};
 }
 
 auto Deserializer::deserialize_bool() -> Result<bool> {
@@ -194,7 +194,7 @@ auto Deserializer::DeserializeSeq::next_imp() -> Result<> {
   }
 
   _count += 1;
-  return {};
+  return Tuple{};
 }
 
 Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
@@ -229,7 +229,7 @@ auto Deserializer::DeserializeObj::next_imp() -> Result<> {
   }
 
   _count += 1;
-  return {};
+  return Tuple{};
 }
 
 auto Deserializer::DeserializeObj::next_key() -> Result<Str> {

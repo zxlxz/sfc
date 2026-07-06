@@ -167,7 +167,7 @@ struct Stdout {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Tuple{};
   }
 };
 
@@ -183,7 +183,7 @@ struct Stderr {
   }
 
   static auto flush() -> io::Result<> {
-    return {};
+    return Tuple{};
   }
 };
 

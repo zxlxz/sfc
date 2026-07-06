@@ -8,10 +8,10 @@ SFC_TEST(base) {
   auto mq = RingBuf<u32>::with_capacity(4);
 
   const auto r0 = mq.pop();
-  sfc::assert_eq(r0, Option{});
+  sfc::assert_eq(r0, None{});
 
   for (auto i = 0U; i < 4U; ++i) {
-    sfc::assert_eq(mq.push(i), Option{});
+    sfc::assert_eq(mq.push(i), None{});
   }
 
   for (auto i = 0U; i < 4U; ++i) {
@@ -19,14 +19,14 @@ SFC_TEST(base) {
     sfc::assert_eq(val, Option{i});
   }
 
-  sfc::assert_eq(mq.pop(), Option{});
+  sfc::assert_eq(mq.pop(), None{});
 }
 
 SFC_TEST(push_full) {
   const auto cap = 4U;
   auto mq = RingBuf<u32>::with_capacity(cap);
   for (auto i = 0U; i < cap; ++i) {
-    sfc::assert_eq(mq.push(i), Option{});
+    sfc::assert_eq(mq.push(i), None{});
   }
   sfc::assert_eq(mq.is_empty(), false);
   sfc::assert_eq(mq.is_full(), true);
@@ -40,7 +40,7 @@ SFC_TEST(push_full) {
     sfc::assert_eq(val, Option{i});
 
     sfc::assert_eq(mq.is_full(), false);
-    sfc::assert_eq(mq.push(cap + i), Option{});
+    sfc::assert_eq(mq.push(cap + i), None{});
     sfc::assert_eq(mq.is_full(), true);
   }
 
@@ -56,9 +56,9 @@ SFC_TEST(clear) {
   }
 
   mq.clear();
-  sfc::assert_eq(mq.pop(), Option{});
+  sfc::assert_eq(mq.pop(), None{});
 
-  sfc::assert_eq(mq.push(42), Option{});
+  sfc::assert_eq(mq.push(42), None{});
   const auto val = mq.pop();
   sfc::assert_eq(val, Option{42});
 }

@@ -69,6 +69,20 @@ struct Debug {
   }
 };
 
+struct Display {
+  static void fmt(const auto& self, auto&& formatter) {
+    if constexpr (requires { self.fmt(formatter); }) {
+      self.fmt(formatter);
+    } else if constexpr (requires { str::Str{self}; }) {
+      formatter.pad(Str{self});
+    } else if constexpr (requires { Slice{self}; }) {
+      Slice{self}.fmt(formatter);
+    } else {
+      fmt::Debug::fmt(self, formatter);
+    }
+  }
+};
+
 class DebugList;
 class DebugSet;
 class DebugMap;
@@ -76,12 +90,15 @@ class DebugTuple;
 class DebugStruct;
 
 class Formatter {
-  friend struct fmt::Fmts;
   Write _out;
   Spec _spec = {};
 
  public:
   Formatter(auto& w) : _out{w}, _spec{} {}
+
+  auto spec() const -> Spec {
+    return _spec;
+  }
 
   auto type() const -> char {
     return _spec._type;
@@ -104,6 +121,11 @@ class Formatter {
 
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
+
+  void write_val(Spec spec, const auto& val) {
+    _spec = spec;
+    fmt::Display::fmt(val, *this);
+  }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
     const auto xargs = Args{fmts, args...};
@@ -225,18 +247,6 @@ class DebugStruct {
   }
 };
 
-void Display::fmt(const auto& self, auto&& formatter) {
-  if constexpr (requires { self.fmt(formatter); }) {
-    self.fmt(formatter);
-  } else if constexpr (requires { str::Str{self}; }) {
-    formatter.pad(Str{self});
-  } else if constexpr (requires { Slice{self}; }) {
-    Slice{self}.fmt(formatter);
-  } else {
-    fmt::Debug::fmt(self, formatter);
-  }
-}
-
 void Fmts::format_imp(fmt::Formatter& f, u32 idx, const auto& val) const {
   if (idx >= _cnt) {
     return;
@@ -244,9 +254,8 @@ void Fmts::format_imp(fmt::Formatter& f, u32 idx, const auto& val) const {
 
   const auto fill = _fills[idx];
   const auto spec = _specs[idx];
-  f._spec = spec;
   f.write_str({fill._ptr, fill._len});
-  Display::fmt(val, f);
+  f.write_val(spec, val);
 }
 
 // macro: write!(out, arg...)

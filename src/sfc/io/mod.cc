@@ -27,7 +27,7 @@ auto DynRead::read_exact(Slice<u8> buf) -> Result<> {
     buf = buf[{cnt, $}];
   }
 
-  return {};
+  return Tuple{};
 }
 
 auto DynRead::read_to_end(List<u8>& buf) -> Result<usize> {
@@ -63,7 +63,7 @@ auto DynWrite::write_all(Slice<const u8> buf) -> Result<> {
     }
     buf = buf[{write_cnt, $}];
   }
-  return {};
+  return Tuple{};
 }
 
 auto DynWrite::write_str(Str buf) -> Result<> {

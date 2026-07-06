@@ -55,7 +55,7 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
 
 auto File::flush() -> io::Result<> {
   if (!_inn.is_valid()) {
-    return {};
+    return Tuple{};
   }
   return _inn.flush();
 }
@@ -90,7 +90,7 @@ auto read(Path path) noexcept -> io::Result<List<u8>> {
 auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
   auto file = _TRY(File::create(path));
   _TRY(file.write_all(buf));
-  return {};
+  return Tuple{};
 }
 
 }  // namespace sfc::fs

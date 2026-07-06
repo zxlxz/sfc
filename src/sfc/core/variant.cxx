@@ -8,11 +8,11 @@ SFC_TEST(variant_basic) {
   const auto a = Variant<i32, f32>{2};
   sfc::assert_eq(a.is<i32>(), true);
   sfc::assert_eq(a.as<i32>(), Option{2});
-  sfc::assert_eq(a.as<f32>(), Option{});
+  sfc::assert_eq(a.as<f32>(), None{});
 
   const auto b = Variant<i32, f32>{3.0f};
   sfc::assert_eq(b.is<f32>(), true);
-  sfc::assert_eq(b.as<i32>(), Option{});
+  sfc::assert_eq(b.as<i32>(), None{});
   sfc::assert_eq(b.as<f32>(), Option{3.0f});
 }
 
