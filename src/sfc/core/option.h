@@ -9,17 +9,6 @@ namespace sfc::option {
 template <class T>
 class Option;
 
-struct Void {
-  template <class T>
-  constexpr auto operator==(const T&) const noexcept -> bool {
-    return false;
-  }
-
-  void fmt(auto& f) const {
-    f.write_str("()");
-  }
-};
-
 struct None {
   template <class T>
   constexpr auto operator==(const Option<T>& other) const noexcept -> bool {
