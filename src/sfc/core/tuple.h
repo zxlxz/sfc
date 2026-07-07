@@ -79,6 +79,25 @@ void for_each(auto&& self, auto&& f) {
   if constexpr (requires { self._15; }) f(self._15);
 }
 
+void for_each_idx(auto&& self, auto&& f) {
+  if constexpr (requires { self._0; }) f(0, self._0);
+  if constexpr (requires { self._1; }) f(1, self._1);
+  if constexpr (requires { self._2; }) f(2, self._2);
+  if constexpr (requires { self._3; }) f(3, self._3);
+  if constexpr (requires { self._4; }) f(4, self._4);
+  if constexpr (requires { self._5; }) f(5, self._5);
+  if constexpr (requires { self._6; }) f(6, self._6);
+  if constexpr (requires { self._7; }) f(7, self._7);
+  if constexpr (requires { self._8; }) f(8, self._8);
+  if constexpr (requires { self._9; }) f(9, self._9);
+  if constexpr (requires { self._10; }) f(10, self._10);
+  if constexpr (requires { self._11; }) f(11, self._11);
+  if constexpr (requires { self._12; }) f(12, self._12);
+  if constexpr (requires { self._13; }) f(13, self._13);
+  if constexpr (requires { self._14; }) f(14, self._14);
+  if constexpr (requires { self._15; }) f(15, self._15);
+}
+
 template <class... T>
 struct Tuple : _TupleData<T...> {
   static constexpr u32 COUNT = sizeof...(T);
