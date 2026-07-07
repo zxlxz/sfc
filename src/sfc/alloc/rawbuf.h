@@ -6,8 +6,6 @@ namespace sfc::alloc {
 
 template <class T, class A = Global>
 class RawBuf {
-  static constexpr usize kMinCap = sizeof(T) <= sizeof(u32) ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
-
   T* _ptr{nullptr};
   usize _cap{0};
   A _a{};
@@ -22,8 +20,7 @@ class RawBuf {
     _a.deallocate(_ptr, layout);
   }
 
-  RawBuf(RawBuf&& other) noexcept
-      : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+  RawBuf(RawBuf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
   RawBuf& operator=(RawBuf&& other) noexcept {
     if (this != &other) {
@@ -65,6 +62,8 @@ class RawBuf {
   }
 
   void reserve(usize len, usize additional) noexcept {
+    constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
+
     const auto req_cap = num::saturating_add(len, additional);
     if (req_cap <= _cap) {
       return;

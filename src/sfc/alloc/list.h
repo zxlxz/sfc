@@ -232,7 +232,7 @@ class [[nodiscard]] List {
       return;
     }
     this->reserve(other._len);
-    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
+    ptr::copy_nonoverlapping(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
     other._len = 0;
   }
