@@ -66,32 +66,28 @@ class [[nodiscard]] List {
   }
 
   auto as_slice() const noexcept -> Slice<const T> {
-    return Slice<const T>{_buf.ptr(), _len};
+    return {_buf.ptr(), _len};
   }
 
   auto as_mut_slice() noexcept -> Slice<T> {
-    return Slice<T>{_buf.ptr(), _len};
+    return {_buf.ptr(), _len};
   }
 
  public:
   auto first() const noexcept -> Option<const T> {
-    if (_len == 0) return {};
-    return _buf[0];
+    return this->as_slice().first();
   }
 
   auto first_mut() noexcept -> Option<T> {
-    if (_len == 0) return {};
-    return _buf[0];
+    return this->as_mut_slice().first();
   }
 
   auto last() const noexcept -> Option<const T> {
-    if (_len == 0) return {};
-    return _buf[_len - 1];
+    return this->as_slice().last();
   }
 
   auto last_mut() noexcept -> Option<T> {
-    if (_len == 0) return {};
-    return _buf[_len - 1];
+    return this->as_mut_slice().last();
   }
 
   auto get_unchecked(usize idx) const noexcept -> const T& {

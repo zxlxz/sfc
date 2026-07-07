@@ -7,6 +7,7 @@
 #include "sfc/core/test.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/tuple.h"
+#include "sfc/core/option.h"
 
 namespace sfc::slice {
 
@@ -85,6 +86,26 @@ struct Slice {
   auto operator[](ops::Range ids) noexcept -> Slice<T> {
     ids = ids.wrap(_len);
     return Slice<T>{_ptr + ids.start, ids.len()};
+  }
+
+  auto first() const noexcept -> Option<const T&> {
+    if (_len == 0) return {};
+    return _ptr[0];
+  }
+
+  auto first_mut() noexcept -> Option<T&> {
+    if (_len == 0) return {};
+    return _ptr[0];
+  }
+
+  auto last() const noexcept -> Option<const T&> {
+    if (_len == 0) return {};
+    return _ptr[_len - 1];
+  }
+
+  auto last_mut() noexcept -> Option<T&> {
+    if (_len == 0) return {};
+    return _ptr[_len - 1];
   }
 
   auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
