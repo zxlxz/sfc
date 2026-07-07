@@ -40,16 +40,16 @@ class File {
     if (::fsync(_fd) == -1) {
       return {io::last_os_error()};
     }
-    return {};
+    return Ok{};
   }
 
   auto read(Slice<u8> buf) -> io::Result<usize> {
     const auto nret = ::read(_fd, buf._ptr, buf._len);
     if (nret == -1) {
-      return {io::last_os_error()};
+      return Err{io::last_os_error()};
     }
     const auto nread = num::cast_unsigned(nret);
-    return {nread};
+    return Ok{nread};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
@@ -92,7 +92,7 @@ struct OpenOptions {
     if (fd == -1) {
       return {io::last_os_error()};
     }
-    return {fd};
+    return Ok{fd};
   }
 };
 
@@ -119,35 +119,35 @@ static inline auto lstat(const char* path) -> io::Result<Metadata> {
       st.st_mode,
       num::cast_unsigned(st.st_size),
   };
-  return {meta};
+  return Ok{meta};
 }
 
 static inline auto unlink(const char* path) -> io::Result<> {
   if (::unlink(path) == -1) {
     return {io::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto rename(const char* old_path, const char* new_path) -> io::Result<> {
   if (::rename(old_path, new_path) == -1) {
     return {io::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto mkdir(const char* path) -> io::Result<> {
   if (::mkdir(path, 0755) == -1) {
     return {io::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 static inline auto rmdir(const char* path) -> io::Result<> {
   if (::rmdir(path) == -1) {
     return {io::last_os_error()};
   }
-  return {};
+  return Ok{};
 }
 
 }  // namespace sfc::sys::unix

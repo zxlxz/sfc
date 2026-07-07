@@ -68,11 +68,11 @@ class Stderr::Inn {
     while (!buf.is_empty()) {
       const auto nwrite = _TRY(_inn.write(buf));
       if (nwrite == 0) {
-        return {Error::WriteZero};
+        return Error::WriteZero;
       }
       buf = buf[{nwrite, buf._len}];
     }
-    return Tuple{};
+    return Ok{};
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {

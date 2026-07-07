@@ -183,7 +183,7 @@ struct Stderr {
   }
 
   auto flush() -> io::Result<> {
-    return Tuple{};
+    return Ok{};
   }
 };
 

@@ -97,10 +97,10 @@ void Deserializer::consume(usize cnt) {
 
 auto Deserializer::deserialize_null() -> Result<> {
   if (!_buf.starts_with("null")) {
-    return {Error::InvalidKeyword};
+    return Error::InvalidKeyword;
   }
   this->consume(4);
-  return Tuple{};
+  return Ok{};
 }
 
 auto Deserializer::deserialize_bool() -> Result<bool> {
@@ -108,27 +108,27 @@ auto Deserializer::deserialize_bool() -> Result<bool> {
   switch (tok) {
     case Token::True:  this->consume(4); return {true};
     case Token::False: this->consume(5); return {false};
-    case Token::Eof:   return {Error::EofWhileParsing};
-    default:           return {Error::InvalidKeyword};
+    case Token::Eof:   return Error::EofWhileParsing;
+    default:           return Error::InvalidKeyword;
   }
 }
 
 auto Deserializer::deserialize_str() -> Result<Str> {
   const auto tok = this->next_token();
   if (tok != Token::DoubleQuote) {
-    return {Error::ExpectedDoubleQuote};
+    return Error::ExpectedDoubleQuote;
   }
 
   this->consume(1);  // consume '"'
   const auto pos = _buf.find('"').unwrap_or(_buf._len);
   if (pos == _buf._len) {
-    return {Error::InvalidString};
+    return Error::InvalidString;
   }
 
   const auto res = _buf[{0, pos}];
   this->consume(res.len());
   this->consume(1);  // consume '"'
-  return {res};
+  return Ok{res};
 }
 
 auto Deserializer::deserialize_num() -> Result<Str> {
@@ -136,12 +136,12 @@ auto Deserializer::deserialize_num() -> Result<Str> {
 
   const auto pos = _buf.find(is_spliter).unwrap_or(_buf.len());
   if (pos == 0) {
-    return {Error::InvalidNumber};
+    return Error::InvalidNumber;
   }
 
   const auto num = _buf[{0, pos}];
   this->consume(pos);
-  return {num};
+  return num;
 }
 
 auto Deserializer::deserialize_i64() -> Result<i64> {
@@ -168,13 +168,13 @@ Deserializer::DeserializeSeq::~DeserializeSeq() {}
 
 auto Deserializer::DeserializeSeq::next_imp() -> Result<> {
   if (_finished) {
-    return {Error::Finished};
+    return Error::Finished;
   }
 
   if (_count == 0) {  // '['
     const auto tok = _des.next_token();
     if (tok != Token::ArrayBegin) {
-      return {Error::ExpectedArrayBegin};
+      return Error::ExpectedArrayBegin;
     }
     _des.consume(1);
   }
@@ -183,18 +183,18 @@ auto Deserializer::DeserializeSeq::next_imp() -> Result<> {
   if (tok == Token::ArrayEnd) {  // ']'
     _finished = true;
     _des.consume(1);
-    return {Error::Finished};
+    return Error::Finished;
   }
 
   if (_count != 0) {
     if (tok != Token::Comma) {
-      return {Error::ExpectedComma};
+      return Error::ExpectedComma;
     }
     _des.consume(1);
   }
 
   _count += 1;
-  return Tuple{};
+  return Ok{};
 }
 
 Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
@@ -203,13 +203,13 @@ Deserializer::DeserializeObj::~DeserializeObj() {}
 
 auto Deserializer::DeserializeObj::next_imp() -> Result<> {
   if (_finished) {
-    return {Error::Finished};
+    return Error::Finished;
   }
 
   if (_count == 0) {  // '{'
     const auto tok = _des.next_token();
     if (tok != Token::ObjectBegin) {
-      return {Error::ExpectedObjectBegin};
+      return Error::ExpectedObjectBegin;
     }
     _des.consume(1);
   }
@@ -218,18 +218,18 @@ auto Deserializer::DeserializeObj::next_imp() -> Result<> {
   if (tok == Token::ObjectEnd) {  // '}'
     _finished = true;
     _des.consume(1);
-    return {Error::Finished};
+    return Error::Finished;
   }
 
   if (_count != 0) {
     if (tok != Token::Comma) {
-      return {Error::ExpectedComma};
+      return Error::ExpectedComma;
     }
     _des.consume(1);
   }
 
   _count += 1;
-  return Tuple{};
+  return Ok{};
 }
 
 auto Deserializer::DeserializeObj::next_key() -> Result<Str> {
@@ -238,7 +238,7 @@ auto Deserializer::DeserializeObj::next_key() -> Result<Str> {
   const auto key = _TRY(_des.deserialize_str());
   const auto tok = _des.next_token();
   if (tok != Token::Colon) {
-    return {Error::ExpectedColon};
+    return Error::ExpectedColon;
   }
   _des.consume(1);  // consume ':'
   return {key};

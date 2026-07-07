@@ -4,6 +4,16 @@
 
 namespace sfc::result {
 
+template <class T = Tuple<>>
+struct Ok {
+  T _0{};
+};
+
+template <class E>
+struct Err {
+  E _1{};
+};
+
 template <class T, class E>
 class [[nodiscard]] Result {
   static constexpr auto kSuccess = E{};
@@ -16,6 +26,12 @@ class [[nodiscard]] Result {
  public:
   Result(T t) noexcept : _0{mem::move(t)} {}
   Result(E e) noexcept : _1{mem::move(e)} {}
+
+  template <class U>
+  Result(Ok<U> ok) noexcept : _0{mem::move(ok._0)} {}
+
+  template <class F>
+  Result(Err<F> err) noexcept : _1{mem::move(err._1)} {}
 
   ~Result() requires(trait::tv_drop_<T>) = default;
   ~Result() {
@@ -276,6 +292,8 @@ auto operator==(const Result<A, E>& a, const Result<B, E>& b) {
 }  // namespace sfc::result
 
 namespace sfc {
+using result::Ok;
+using result::Err;
 using result::Result;
 }  // namespace sfc
 

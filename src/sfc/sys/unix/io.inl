@@ -94,7 +94,7 @@ struct Stdout {
   }
 
   auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 
@@ -111,7 +111,7 @@ struct Stderr {
   }
 
   auto flush() -> io::Result<> {
-    return {};
+    return Ok{};
   }
 };
 
