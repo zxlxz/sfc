@@ -23,10 +23,8 @@ class ReadBuf {
   void consume(usize amount);
 
   auto fill_buf(DynRead read) -> Result<Slice<const u8>>;
-  auto read_more(DynRead read) -> Result<usize>;
   auto skip_until(DynRead read, u8 byte) -> Result<usize>;
 
-  auto peak(DynRead read, usize n) -> Result<Slice<const u8>>;
   auto read(DynRead read, Slice<u8> buf) -> Result<usize>;
   auto read_until(DynRead read, u8 byte, List<u8>& buf) -> Result<usize>;
   auto read_line(DynRead read, String& buf) -> Result<usize>;
@@ -84,10 +82,6 @@ class BufReader : public Read {
  public:
   auto read(Slice<u8> buf) -> Result<usize> {
     return _buf.read(_inn, buf);
-  }
-
-  auto peak(usize n) -> Result<Slice<const u8>> {
-    return _buf.peak(_inn, n);
   }
 
   auto read_until(u8 byte, List<u8>& buf) -> Result<usize> {

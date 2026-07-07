@@ -41,17 +41,13 @@ void ReadBuf::consume(usize amount) {
   _pos = cmp::min(_pos + amount, _buf.len());
 }
 
-auto ReadBuf::read_more(DynRead read) -> Result<usize> {
-  auto buf = _buf.spare_capacity_mut();
-  const auto nread = _TRY(read.read(buf));
-  _buf.set_len(_buf.len() + nread);
-  return {nread};
-}
-
 auto ReadBuf::fill_buf(DynRead read) -> Result<Slice<const u8>> {
   if (_pos == _buf.len()) {
     this->backshift();
-    _TRY(this->read_more(read));
+
+    auto buf = _buf.spare_capacity_mut();
+    const auto nread = _TRY(read.read(buf));
+    _buf.set_len(_buf.len() + nread);
   }
   return {this->buffer()};
 }
@@ -70,16 +66,6 @@ auto ReadBuf::skip_until(DynRead read, u8 byte) -> Result<usize> {
     }
   }
   return {nread};
-}
-
-auto ReadBuf::peak(DynRead read, usize n) -> Result<Slice<const u8>> {
-  if (n > _buf.len()) {
-    this->backshift();
-    _TRY(this->fill_buf(read));
-  }
-
-  const auto buf = _buf[{0, n}];
-  return Slice<const u8>{buf};
 }
 
 auto ReadBuf::read(DynRead read, Slice<u8> buf) -> Result<usize> {

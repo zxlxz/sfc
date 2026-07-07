@@ -8,18 +8,6 @@ SFC_TEST(buf_read) {
   const auto in = Str{"0123456789"};
   auto r = BufReader{in.as_bytes()};
 
-  // peak
-  {
-    const auto s1 = r.peak(1).unwrap_or({});
-    sfc::assert_eq(Str::from_utf8(s1), "0");
-
-    const auto s10 = r.peak(10).unwrap_or({});
-    sfc::assert_eq(Str::from_utf8(s10), "0123456789");
-
-    const auto s20 = r.peak(20).unwrap_or({});
-    sfc::assert_eq(Str::from_utf8(s20), "0123456789");
-  }
-
   // read
   {
     u8 tmp[4] = {};
