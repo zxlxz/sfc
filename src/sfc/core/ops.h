@@ -48,6 +48,14 @@ struct Dyn<R(T...)> {
   }
 };
 
+template <auto f>
+consteval auto dyn_fn() {
+  auto conv = []<class X, class R, class... T>(R (X::*)(T...)) {
+    return [](void* x, T... u) -> R { return ((X*)x->*f)(u...); };
+  };
+  return conv(f);
+}
+
 struct End {};
 static constexpr auto $ = End{};
 
