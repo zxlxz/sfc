@@ -5,3 +5,4 @@ project(sfc)
 include(cmake/config.cmake)
 
 add_subdirectory(src)
+add_subdirectory(tests)
