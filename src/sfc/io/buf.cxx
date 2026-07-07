@@ -35,8 +35,8 @@ SFC_TEST(buf_read) {
 }
 
 SFC_TEST(buf_write) {
-  auto out = List<u8>{};
-  auto w = BufWriter<List<u8>&>{out};
+  auto w = BufWriter{List<u8>::with_capacity(256)};
+  auto& out = w.inner();
 
   sfc::assert_eq(w.write(Str{"0123"}.as_bytes()).ok(), Option{4UZ});
   sfc::assert_eq(out.len(), 0U);

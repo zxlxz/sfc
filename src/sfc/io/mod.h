@@ -11,7 +11,7 @@ class DynRead {
 
  public:
   template <class X>
-  DynRead(X& impl) : _self{&impl}, _read{[](void* x, auto... u) { return ((X*)x)->read(u...); }} {}
+  DynRead(X& impl) : _self{&impl}, _read{ops::dyn_fn<&X::read>()} {}
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -27,8 +27,7 @@ class DynWrite {
 
  public:
   template <class X>
-  DynWrite(X& impl) : _self{&impl}, _write{[](void* x, auto... u) { return ((X*)x)->write(u...); }} {
-  }
+  DynWrite(X& impl) : _self{&impl}, _write{ops::dyn_fn<&X::write>()} {}
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize>;

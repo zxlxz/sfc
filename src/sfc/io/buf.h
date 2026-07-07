@@ -11,6 +11,7 @@ class ReadBuf {
  public:
   static auto with_capacity(usize capacity) -> ReadBuf;
 
+ public:
   auto len() const -> usize;
   auto capacity() const -> usize;
   auto has_data_left() const -> bool;
@@ -37,6 +38,7 @@ class WriteBuf {
  public:
   static auto with_capacity(usize capacity) -> WriteBuf;
 
+ public:
   auto len() const -> usize;
   auto capacity() const -> usize;
   auto spare_capacity() const -> usize;
@@ -48,12 +50,15 @@ class WriteBuf {
 
 template <class R>
 class BufReader : public Read {
-  static constexpr usize DEFAULT_BUFF_SIZE = 1024U;
+  static constexpr usize DEFAULT_BUFF_SIZE = 256U;
   R _inn;
-  ReadBuf _buf = ReadBuf::with_capacity(DEFAULT_BUFF_SIZE);
+  ReadBuf _buf;
 
  public:
-  explicit BufReader(R inn) noexcept : _inn{mem::move<R>(inn)} {}
+  explicit BufReader(R inn) noexcept : _inn{mem::move(inn)}, _buf{ReadBuf::with_capacity(DEFAULT_BUFF_SIZE)} {}
+
+  explicit BufReader(R inn, ReadBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
+
   ~BufReader() noexcept = default;
 
   BufReader(BufReader&&) noexcept = default;
@@ -77,25 +82,37 @@ class BufReader : public Read {
   }
 
  public:
+  auto read(Slice<u8> buf) -> Result<usize> {
+    return _buf.read(_inn, buf);
+  }
+
   auto peak(usize n) -> Result<Slice<const u8>> {
     return _buf.peak(_inn, n);
   }
 
-  // trait: io::Read
-  auto read(Slice<u8> buf) -> Result<usize> {
-    return _buf.read(_inn, buf);
+  auto read_until(u8 byte, List<u8>& buf) -> Result<usize> {
+    return _buf.read_until(_inn, byte, buf);
+  }
+
+  auto skip_until(u8 byte) -> Result<usize> {
+    return _buf.skip_until(_inn, byte);
+  }
+
+  auto read_line(String& buf) -> Result<usize> {
+    return _buf.read_line(_inn, buf);
   }
 };
 
 template <class W>
 class BufWriter : public Write {
-  static constexpr usize BUFF_SIZE = 1024U;
-
+  static constexpr usize DEFAULT_BUF_SIZE = 256;
   W _inn;
-  WriteBuf _buf = WriteBuf::with_capacity(BUFF_SIZE);
+  WriteBuf _buf;
 
  public:
-  explicit BufWriter(W inn) noexcept : _inn{mem::move<W>(inn)} {}
+  explicit BufWriter(W inn) noexcept : _inn{mem::move(inn)}, _buf{WriteBuf::with_capacity(DEFAULT_BUF_SIZE)} {}
+
+  explicit BufWriter(W inn, WriteBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
 
   ~BufWriter() noexcept {
     (void)this->flush();
@@ -103,6 +120,11 @@ class BufWriter : public Write {
 
   BufWriter(BufWriter&&) noexcept = default;
   BufWriter& operator=(BufWriter&&) noexcept = default;
+
+  static auto with_capacity(usize capacity, W inn) -> BufWriter {
+    auto buf = WriteBuf::with_capacity(capacity);
+    return BufWriter{inn, mem::move(buf)};
+  }
 
  public:
   auto inner() -> W& {
@@ -122,12 +144,10 @@ class BufWriter : public Write {
   }
 
  public:
-  // trait: io::Read
   auto write(Slice<const u8> buf) -> Result<usize> {
     return _buf.write(_inn, buf);
   }
 
-  // trait: io::Read
   auto flush() -> Result<> {
     return _buf.flush(_inn);
   }
