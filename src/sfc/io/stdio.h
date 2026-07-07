@@ -5,67 +5,74 @@
 
 namespace sfc::io {
 
-class StdoutImpl;
-class StderrImpl;
-
-class StdoutLock {
-  sync::ReentrantLock::Guard _lock;
-
- public:
-  explicit StdoutLock(StdoutImpl&);
-  ~StdoutLock() noexcept;
-
- public:
-  void flush();
-  void write_str(Str s);
-};
-
-class StderrLock {
-  sync::ReentrantLock::Guard _lock;
-
- public:
-  explicit StderrLock(StderrImpl&);
-  ~StderrLock() noexcept;
-
- public:
-  void flush();
-  void write_str(Str s);
-};
-
 class Stdout {
+  class Inn;
+
  public:
-  static auto lock() -> StdoutLock;
-  static auto is_terminal() -> bool;
-  static void flush();
-  static void write_str(Str s);
+  auto is_terminal() -> bool;
+  void flush();
+  void write_str(Str s);
+
+ public:
+  class LockGuard;
+  auto lock() -> LockGuard;
 };
 
 class Stderr {
+  class Inn;
+
  public:
-  static auto lock() -> StderrLock;
-  static auto is_terminal() -> bool;
-  static void flush();
-  static void write_str(Str s);
+  auto is_terminal() -> bool;
+  void flush();
+  void write_str(Str s);
+
+ public:
+  class LockGuard;
+  auto lock() -> LockGuard;
+};
+
+class Stdout::LockGuard {
+  sync::ReentrantLock::Guard _lock;
+
+ public:
+  explicit LockGuard(Inn&);
+  ~LockGuard() noexcept;
+
+ public:
+  void flush();
+  void write_str(Str s);
+};
+
+class Stderr::LockGuard {
+  sync::ReentrantLock::Guard _lock;
+
+ public:
+  explicit LockGuard(Inn&);
+  ~LockGuard() noexcept;
+
+ public:
+  void flush();
+  void write_str(Str s);
 };
 
 void print(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = Stdout::lock();
+  auto out = io::Stdout().lock();
   fmt::write(out, fmts, args...);
 }
 
 void println(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = Stdout::lock();
+  auto out = io::Stdout().lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");
 }
 
 void eprint(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = Stderr::lock();
+  auto out = io::Stderr().lock();
   fmt::write(out, fmts, args...);
 }
 
 void eprintln(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = Stderr::lock();
+  auto out = io::Stderr().lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");
 }

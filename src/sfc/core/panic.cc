@@ -18,7 +18,7 @@ static void writeln(const auto&... args) {
   (void)(out.write_str("\n"));
 
   const auto s = out.as_str();
-  (void)(sys::Stderr::write(s.as_bytes()));
+  (void)(sys::Stderr().write(s.as_bytes()));
 }
 
 static auto write_buf(fmt::SBuf buf, const auto& args) -> Str {

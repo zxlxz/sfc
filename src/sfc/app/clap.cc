@@ -303,7 +303,7 @@ auto Clap::get_flag(Str key) const -> Option<bool> {
 }
 
 void Clap::print_help() const {
-  auto out = io::Stdout::lock();
+  auto out = io::Stdout().lock();
 
   if (!_about.is_empty()) {
     out.write_str(_about.as_str());

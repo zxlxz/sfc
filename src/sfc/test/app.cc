@@ -52,7 +52,7 @@ auto main(int argc, const char* argv[]) -> int {
     return 0;
   }
 
-  const auto is_terminal = io::Stdout::is_terminal();
+  const auto is_terminal = io::Stdout{}.is_terminal();
   const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
   const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
   app.exec(gtest_filter, gtest_color);

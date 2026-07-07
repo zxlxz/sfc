@@ -40,7 +40,7 @@ void GlobalBackend::push(Record record) noexcept {
   if (_file.is_valid()) {
     (void)_file.write_str(out.as_str());
   } else {
-    io::Stdout::write_str(out.as_str());
+    io::Stdout{}.write_str(out.as_str());
   }
 }
 

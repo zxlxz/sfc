@@ -73,35 +73,44 @@ struct StdIo {
 };
 
 struct StdIn {
-  static auto read(Slice<u8> data) -> io::Result<usize> {
-    return StdIo{STDIN_FILENO}.read(data);
+  StdIo _impl{STDIN_FILENO};
+
+ public:
+  auto read(Slice<u8> data) -> io::Result<usize> {
+    return _impl.read(data);
   }
 };
 
 struct Stdout {
-  static auto is_console() -> bool {
-    return StdIo{STDOUT_FILENO}.is_console();
+  StdIo _impl{STDOUT_FILENO};
+
+ public:
+  auto is_console() -> bool {
+    return _impl.is_console();
   }
 
-  static auto write(Slice<const u8> data) -> io::Result<usize> {
-    return StdIo{STDOUT_FILENO}.write(data);
+  auto write(Slice<const u8> data) -> io::Result<usize> {
+    return _impl.write(data);
   }
 
-  static auto flush() -> io::Result<> {
+  auto flush() -> io::Result<> {
     return {};
   }
 };
 
 struct Stderr {
-  static auto is_console() -> bool {
-    return StdIo{STDERR_FILENO}.is_console();
+  StdIo _impl{STDERR_FILENO};
+
+ public:
+  auto is_console() -> bool {
+    return _impl.is_console();
   }
 
-  static auto write(Slice<const u8> data) -> io::Result<usize> {
-    return StdIo{STDERR_FILENO}.write(data);
+  auto write(Slice<const u8> data) -> io::Result<usize> {
+    return _impl.write(data);
   }
 
-  static auto flush() -> io::Result<> {
+  auto flush() -> io::Result<> {
     return {};
   }
 };

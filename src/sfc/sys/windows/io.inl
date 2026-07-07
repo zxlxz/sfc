@@ -149,40 +149,40 @@ struct StdIo {
 };
 
 struct StdIn {
-  static auto read(Slice<u8> data) -> io::Result<usize> {
-    const auto handle = ::GetStdHandle(STD_INPUT_HANDLE);
-    return StdIo{handle}.read(data);
+  StdIo _impl{GetStdHandle(STD_INPUT_HANDLE)};
+
+ public:
+  auto read(Slice<u8> data) -> io::Result<usize> {
+    return _impl.read(data);
   }
 };
 
 struct Stdout {
-  static auto is_console() -> bool {
-    const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-    return StdIo{handle}.is_console();
+  StdIo _impl{GetStdHandle(STD_OUTPUT_HANDLE)};
+
+ public:
+  auto is_console() -> bool {
+    return _impl.is_console();
   }
 
-  static auto write(Slice<const u8> data) -> io::Result<usize> {
-    const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-    return StdIo{handle}.write(data);
-  }
-
-  static auto flush() -> io::Result<> {
-    return Tuple{};
+  auto write(Slice<const u8> data) -> io::Result<usize> {
+    return _impl.write(data);
   }
 };
 
 struct Stderr {
-  static auto is_console() -> bool {
-    const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
-    return StdIo{handle}.is_console();
+  StdIo _impl{GetStdHandle(STD_ERROR_HANDLE)};
+
+ public:
+  auto is_console() -> bool {
+    return _impl.is_console();
   }
 
-  static auto write(Slice<const u8> data) -> io::Result<usize> {
-    const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
-    return StdIo{handle}.write(data);
+  auto write(Slice<const u8> data) -> io::Result<usize> {
+    return _impl.write(data);
   }
 
-  static auto flush() -> io::Result<> {
+  auto flush() -> io::Result<> {
     return Tuple{};
   }
 };
