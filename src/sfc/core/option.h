@@ -1,8 +1,10 @@
 #pragma once
 
-#include "sfc/core/ops.h"
 #include "sfc/core/ptr.h"
+#include "sfc/core/mem.h"
+#include "sfc/core/ops.h"
 #include "sfc/core/test.h"
+#include "sfc/core/tuple.h"
 
 namespace sfc::option {
 
@@ -115,7 +117,7 @@ class Option {
     return mem::move(optb);
   }
 
-  template <class F, class OptionU = FnOut<F, T>>
+  template <class F, class OptionU = ops::FnOut<F, T>>
   auto and_then(this auto self, F&& op) -> OptionU {
     if (self.is_some()) return op(mem::move(self._1));
     return {};
@@ -126,7 +128,7 @@ class Option {
     return f();
   }
 
-  template <class F, class U = FnOut<F, T>>
+  template <class F, class U = ops::FnOut<F, T>>
   auto map(this auto self, F&& f) -> Option<U> {
     if (self.is_some()) return f(mem::move(self._1));
     return {};
@@ -227,7 +229,7 @@ class Option<T&> {
     return self.is_some() ? mem::move(self) : mem::move(optb);
   }
 
-  template <class F, class OptionU = FnOut<F, T&>>
+  template <class F, class OptionU = ops::FnOut<F, T&>>
   auto and_then(F&& op) && -> OptionU {
     return this->is_some() ? op(*_1) : OptionU{};
   }
@@ -236,7 +238,7 @@ class Option<T&> {
     return self.is_some() ? mem::move(self) : f();
   }
 
-  template <class F, class U = FnOut<F, T&>>
+  template <class F, class U = ops::FnOut<F, T&>>
   auto map(this auto self, F&& f) -> Option<U> {
     return self.is_some() ? Option<U>{f(*self._1)} : Option<U>{};
   }

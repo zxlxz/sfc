@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/io.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"

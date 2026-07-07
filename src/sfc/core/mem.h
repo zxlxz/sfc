@@ -2,11 +2,6 @@
 
 #include "sfc/core/trait.h"
 
-template <class T>
-inline void* operator new([[maybe_unused]] sfc::usize size, T* p) noexcept {
-  return p;
-}
-
 namespace sfc::mem {
 
 struct Layout {

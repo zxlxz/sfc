@@ -40,7 +40,6 @@ struct Str;
 }
 
 namespace fmt {
-struct CStr;
 class Formatter;
 }
 
@@ -59,11 +58,9 @@ template <class T, class E>
 class Result;
 }
 
-namespace io {
-enum class Error;
-
-template<class T>
-using Result = result::Result<T, Error>;
-}
-
 }  // namespace sfc
+
+template <class T>
+inline void* operator new([[maybe_unused]] sfc::usize size, T* p) noexcept {
+  return p;
+}
