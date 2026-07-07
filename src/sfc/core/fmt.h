@@ -115,8 +115,15 @@ class Formatter {
   }
 
  public:
-  void write_str(Str s);
-  void write_char(char c);
+  void write_str(Str s) {
+    if (s._len == 0) return;
+    _out.write_str(s);
+  }
+
+  void write_char(char c) {
+    _out.write_str({&c, 1});
+  }
+
   void write_chars(char c, usize n);
 
   void pad(Str s);
@@ -247,15 +254,13 @@ class DebugStruct {
   }
 };
 
-void Fmts::format_imp(fmt::Formatter& f, u32 idx, const auto& val) const {
-  if (idx >= _cnt) {
-    return;
-  }
-
-  const auto fill = _fills[idx];
-  const auto spec = _specs[idx];
-  f.write_str({fill._ptr, fill._len});
-  f.write_val(spec, val);
+void Fmts::format_imp(fmt::Formatter& f, const auto& args) const {
+  tuple::for_each_idx(args, [&](u32 idx, const auto& val) {
+    if (idx >= _cnt) return;
+    f.write_str({_fills[idx]._ptr, _fills[idx]._len});
+    f.write_val(_specs[idx], val);
+  });
+  f.write_str({_tail._ptr, _tail._len});
 }
 
 // macro: write!(out, arg...)

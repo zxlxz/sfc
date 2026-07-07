@@ -23,7 +23,7 @@ struct CStr {
 
  public:
   void fmt(auto& f) const {
-    f.pad({_ptr, _len});
+    f.write_str({_ptr, _len});
   }
 };
 
@@ -128,8 +128,6 @@ struct Spec {
   }
 };
 
-
-
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
 
@@ -155,12 +153,12 @@ struct Fmts {
 #endif
   }
 
-  void format_imp(fmt::Formatter& f, u32 idx, const auto& val) const;
+  void format_imp(fmt::Formatter& f, const auto& args) const;
 };
 
 struct Args {
   static constexpr auto kMaxLen = 16U;
-  using write_fmt_t = void(fmt::Formatter& f, const Fmts& fmts, const void* args);
+  using write_fmt_t = void(const Fmts& fmts, fmt::Formatter& f, const void* args);
   Fmts _fmts;
   const void* _args[kMaxLen] = {};
   write_fmt_t* _write_fmt;
@@ -170,17 +168,13 @@ struct Args {
   Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {
     static_assert(sizeof...(T) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
 
-    _write_fmt = [](fmt::Formatter& f, const Fmts& fmts, const void* args) {
-      const auto& tp_args = *ptr::cast<const Tuple<const T&...>>(args);
-      tp_args.for_each([&, idx = 0U](const auto& val) mutable { fmts.format_imp(f, idx++, val); });
+    _write_fmt = [](const Fmts& fmts, auto& f, const void* args) {
+      fmts.format_imp(f, *ptr::cast<const Tuple<const T&...>>(args));
     };
   }
 
   void fmt(auto& f) const {
-    const auto tail = _fmts._tail;
-
-    _write_fmt(f, _fmts, _args);
-    f.write_str({tail._ptr, tail._len});
+    _write_fmt(_fmts, f, _args);
   }
 };
 

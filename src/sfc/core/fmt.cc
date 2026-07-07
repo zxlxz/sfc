@@ -271,7 +271,7 @@ auto Spec::prefix() const -> str::Str {
   }
 
   switch (_type) {
-    case 'O': return "0";
+    case 'O':
     case 'o': return "0";
     case 'B': return "0B";
     case 'b': return "0b";
@@ -371,16 +371,6 @@ void Debug::fmt(const void* val, Formatter& f) {
   char buf[16];
   const auto s = RevBuf{buf}.write_ptr(uval, f.type());
   f.write_str(s);
-}
-
-void Formatter::write_str(Str s) {
-  if (s._len == 0) return;
-  _out.write_str(s);
-}
-
-void Formatter::write_char(char c) {
-  const auto s = Str{&c, 1};
-  this->write_str(s);
 }
 
 void Formatter::write_chars(char c, usize n) {
