@@ -4,7 +4,7 @@
 
 namespace sfc::result {
 
-template <class T = Tuple<>>
+template <class T = Unit>
 struct Ok {
   T _0{};
 };

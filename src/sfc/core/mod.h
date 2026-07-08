@@ -35,6 +35,8 @@ using f64 = double;
 
 using cstr_t = const char*;
 
+struct Unit {};
+
 namespace str {
 struct Str;
 }
