@@ -40,7 +40,7 @@ struct Str;
 }
 
 namespace fmt {
-class Formatter;
+struct Formatter;
 }
 
 namespace slice {

@@ -32,7 +32,7 @@ struct Write {
 
  public:
   template <class W>
-  Write(W& w) : _obj{&w}, _write_str{([](void* x, Str s) { ((W*)x)->write_str(s); })} {}
+  Write(W& w) : _obj{&w}, _write_str{ops::dyn_fn<&W::write_str>()} {}
 
   void write_str(Str s) {
     _write_str(_obj, s);
@@ -69,33 +69,17 @@ struct Debug {
   }
 };
 
-struct Display {
-  static void fmt(const auto& self, auto&& formatter) {
-    if constexpr (requires { self.fmt(formatter); }) {
-      self.fmt(formatter);
-    } else if constexpr (requires { str::Str{self}; }) {
-      formatter.pad(Str{self});
-    } else if constexpr (requires { Slice{self}; }) {
-      Slice{self}.fmt(formatter);
-    } else {
-      fmt::Debug::fmt(self, formatter);
-    }
-  }
-};
-
 class DebugList;
 class DebugSet;
 class DebugMap;
 class DebugTuple;
 class DebugStruct;
 
-class Formatter {
+struct Formatter {
   Write _out;
   Spec _spec = {};
 
  public:
-  Formatter(auto& w) : _out{w}, _spec{} {}
-
   auto spec() const -> Spec {
     return _spec;
   }
@@ -172,7 +156,7 @@ class DebugList {
 
   auto entry(const auto& value) -> DebugList& {
     this->push({});
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 
@@ -195,7 +179,7 @@ class DebugSet {
 
   auto entry(const auto& value) -> DebugSet& {
     this->push({});
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 
@@ -218,7 +202,7 @@ class DebugMap {
 
   auto entry(Str key, const auto& value) -> DebugMap& {
     this->push(key, {});
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 
@@ -244,7 +228,7 @@ class DebugTuple {
 
   auto field(const auto& value) -> DebugTuple& {
     this->push("");
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 };
@@ -261,7 +245,7 @@ class DebugStruct {
   void push(Str key, Str value);
   auto field(Str key, const auto& value) -> DebugStruct& {
     this->push(key, {});
-    Display::fmt(value, _fmt);
+    _fmt.write_val(value);
     return *this;
   }
 };

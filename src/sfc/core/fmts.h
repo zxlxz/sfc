@@ -4,8 +4,6 @@
 
 namespace sfc::fmt {
 
-class Formatter;
-
 struct CStr {
   const char* _ptr;
   usize _len;
