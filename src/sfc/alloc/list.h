@@ -74,19 +74,19 @@ class [[nodiscard]] List {
   }
 
  public:
-  auto first() const noexcept -> Option<const T> {
+  auto first() const noexcept -> Option<const T&> {
     return this->as_slice().first();
   }
 
-  auto first_mut() noexcept -> Option<T> {
+  auto first_mut() noexcept -> Option<T&> {
     return this->as_mut_slice().first();
   }
 
-  auto last() const noexcept -> Option<const T> {
+  auto last() const noexcept -> Option<const T&> {
     return this->as_slice().last();
   }
 
-  auto last_mut() noexcept -> Option<T> {
+  auto last_mut() noexcept -> Option<T&> {
     return this->as_mut_slice().last();
   }
 
