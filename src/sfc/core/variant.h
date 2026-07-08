@@ -175,7 +175,7 @@ class Variant {
 
  public:
   void fmt(auto& f) const {
-    this->map([&](const auto& v) { f.write_val(f.spec(), v); });
+    this->map([&](const auto& t) { f.write_val(t); });
   }
 };
 

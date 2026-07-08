@@ -129,9 +129,21 @@ class Formatter {
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
 
-  void write_val(Spec spec, const auto& val) {
+  void write_val(const auto& val) {
+    if constexpr (requires { val.fmt(*this); }) {
+      val.fmt(*this);
+    } else if constexpr (requires { str::Str{val}; }) {
+      this->pad(Str{val});
+    } else if constexpr (requires { Slice{val}; }) {
+      Slice{val}.fmt(*this);
+    } else {
+      fmt::Debug::fmt(val, *this);
+    }
+  }
+
+  void write_arg(Spec spec, const auto& val) {
     _spec = spec;
-    fmt::Display::fmt(val, *this);
+    this->write_val(val);
   }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
@@ -258,7 +270,7 @@ void Fmts::format_imp(fmt::Formatter& f, const auto& args) const {
   tuple::for_each_idx(args, [&](u32 idx, const auto& val) {
     if (idx >= _cnt) return;
     f.write_str({_fills[idx]._ptr, _fills[idx]._len});
-    f.write_val(_specs[idx], val);
+    f.write_arg(_specs[idx], val);
   });
   f.write_str({_tail._ptr, _tail._len});
 }
