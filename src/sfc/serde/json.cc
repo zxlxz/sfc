@@ -3,29 +3,29 @@
 namespace sfc::serde::json {
 
 void Serializer::serialize_null() {
-  _buf.push_str("null");
+  _out.write_str("null");
 }
 
 void Serializer::serialize_bool(bool val) {
-  _buf.push_str(val ? Str{"true"} : Str{"false"});
+  _out.write_str(val ? Str{"true"} : Str{"false"});
 }
 
 void Serializer::serialize_i64(i64 val) {
-  fmt::Display::fmt(val, fmt::Formatter{_buf});
+  fmt::Formatter{_out}.write_val(val);
 }
 
 void Serializer::serialize_u64(u64 val) {
-  fmt::Display::fmt(val, fmt::Formatter{_buf});
+  fmt::Formatter{_out}.write_val(val);
 }
 
 void Serializer::serialize_f64(f64 val) {
-  fmt::Display::fmt(val, fmt::Formatter{_buf});
+  fmt::Formatter{_out}.write_val(val);
 }
 
 void Serializer::serialize_str(Str val) {
-  _buf.push_str("\"");
-  _buf.push_str(val);
-  _buf.push_str("\"");
+  _out.write_str("\"");
+  _out.write_str(val);
+  _out.write_str("\"");
 }
 
 auto Serializer::serialize_seq() -> SerializeSeq {
@@ -37,34 +37,34 @@ auto Serializer::serialize_obj() -> SerializeObj {
 }
 
 Serializer::SerializeSeq::SerializeSeq(Serializer& ser) : _ser{ser} {
-  _ser._buf.push('[');
+  _ser._out.write_str("[");
 }
 
 Serializer::SerializeSeq::~SerializeSeq() {
-  _ser._buf.push(']');
+  _ser._out.write_str("]");
 }
 
 void Serializer::SerializeSeq::serialize_next() {
   if (_count++ != 0) {
-    _ser._buf.push(',');
+    _ser._out.write_str(",");
   }
 }
 
 Serializer::SerializeObj::SerializeObj(Serializer& ser) : _ser{ser} {
-  _ser._buf.push('{');
+  _ser._out.write_str("{");
 }
 
 Serializer::SerializeObj::~SerializeObj() {
-  _ser._buf.push('}');
+  _ser._out.write_str("}");
 }
 
 void Serializer::SerializeObj::serialize_key(Str val) {
   if (_count++ != 0) {
-    _ser._buf.push(',');
+    _ser._out.write_str(",");
   }
-  _ser._buf.push_str("\"");
-  _ser._buf.push_str(val);
-  _ser._buf.push_str("\":");
+  _ser._out.write_str("\"");
+  _ser._out.write_str(val);
+  _ser._out.write_str("\":");
 }
 
 Deserializer::Deserializer(Str s) : _buf{s} {}

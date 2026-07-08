@@ -38,12 +38,10 @@ enum class Error {
 template <class T = Tuple<>>
 using Result = result::Result<T, Error>;
 
-class Serializer {
-  String& _buf;
+struct Serializer {
+  fmt::Write _out;
 
  public:
-  explicit Serializer(String& buf) : _buf{buf} {}
-
   void serialize_null();
   void serialize_bool(bool val);
   void serialize_i64(i64 val);
