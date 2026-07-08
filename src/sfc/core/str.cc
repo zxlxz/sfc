@@ -1,5 +1,6 @@
 #include "sfc/core/str.h"
 #include "sfc/core/hash.h"
+#include "sfc/core/fmt.h"
 
 namespace sfc::str {
 
@@ -22,6 +23,17 @@ auto Str::hash() const noexcept -> usize {
   auto hasher = hash::Hasher{};
   hasher.write(this->as_bytes());
   return hasher.finish();
+}
+
+void Str::fmt(fmt::Formatter& f) const {
+  const auto type = f.type();
+  if (type == 's' || type == '?') {
+    f.write_char('"');
+    f.write_str(*this);
+    f.write_char('"');
+  } else {
+    f.pad(*this);
+  }
 }
 
 auto Searcher::next_match(this auto& self) -> SearchStep {

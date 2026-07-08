@@ -14,7 +14,7 @@ struct Str {
 
   constexpr Str(const char* s, usize n) noexcept : _ptr{s}, _len{n} {}
 
-  constexpr Str(const char* s) noexcept : _ptr{s}, _len{__builtin_strlen(s)} {}
+  constexpr Str(const char* s) noexcept : _ptr{s}, _len{s == nullptr ? 0 : __builtin_strlen(s)} {}
 
   static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     return Str{ptr::cast<const char>(s._ptr), s._len};
@@ -112,16 +112,7 @@ struct Str {
   }
 
   // trait: fmt::Display
-  void fmt(auto& f) const {
-    const auto type = f.type();
-    if (type == 's' || type == '?') {
-      f.write_char('"');
-      f.write_str(*this);
-      f.write_char('"');
-    } else {
-      f.pad(*this);
-    }
-  }
+  void fmt(fmt::Formatter& f) const;
 
   // trait: str::FromStr
   template <class T>
