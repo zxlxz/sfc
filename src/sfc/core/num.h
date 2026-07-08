@@ -129,17 +129,12 @@ constexpr auto cast_unsigned(T x) -> num::uint_t<T> {
 
 template <trait::int_ T, trait::int_ F>
 constexpr auto saturating_cast(F x) -> T {
-  static constexpr auto kFMAX = Int<F>::MAX;
-  static constexpr auto kTMAX = Int<T>::MAX;
-  static constexpr auto kFMin = Int<F>::MIN;
-  static constexpr auto kTMin = Int<T>::MIN;
-
-  if constexpr (u64(kFMAX) > u64(kTMAX)) {
-    if (x > kTMAX) return kTMAX;
+  if constexpr (u64(Int<F>::MAX) > u64(Int<T>::MAX)) {
+    if (x > Int<T>::MAX) return Int<T>::MAX;
   }
 
-  if constexpr (i64(kFMin) < i64(kTMin)) {
-    if (x < kTMin) return kTMin;
+  if constexpr (i64(Int<F>::MIN) < i64(Int<T>::MIN)) {
+    if (x < Int<T>::MIN) return Int<T>::MIN;
   }
 
   return T(x);
