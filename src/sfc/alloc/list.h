@@ -11,7 +11,7 @@ class [[nodiscard]] List {
   usize _len = 0;
 
  public:
-  explicit List() noexcept {}
+  List() noexcept {}
 
   ~List() noexcept {
     this->clear();

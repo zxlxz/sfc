@@ -141,8 +141,7 @@ class Option {
   }
 
  public:
-  template <class U>
-  auto operator==(const Option<U>& other) const -> bool {
+  auto operator==(const Option& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
     return _1 == *other;
@@ -249,8 +248,7 @@ class Option<T&> {
   }
 
  public:
-  template <class U>
-  auto operator==(const Option<U&>& other) const -> bool {
+  auto operator==(const Option& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
     return *_1 == *other;
