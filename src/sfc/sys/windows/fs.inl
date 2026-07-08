@@ -52,9 +52,9 @@ struct File {
 
     auto bytes_read = 0UL;
     if (!::ReadFile(_fd, buf_ptr, buf_len, &bytes_read, nullptr)) {
-      return Ok{io::last_os_error()};
+      return Err{io::last_os_error()};
     }
-    return Err{usize(bytes_read)};
+    return Ok{bytes_read};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
@@ -63,9 +63,9 @@ struct File {
 
     auto bytes_written = 0UL;
     if (!::WriteFile(_fd, buf_ptr, buf_len, &bytes_written, nullptr)) {
-      return Ok{io::last_os_error()};
+      return Err{io::last_os_error()};
     }
-    return Err{usize(bytes_written)};
+    return Ok{bytes_written};
   }
 
   auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
@@ -73,11 +73,11 @@ struct File {
 
     auto new_pos = LARGE_INTEGER{};
     if (!::SetFilePointerEx(_fd, old_pos, &new_pos, whence)) {
-      return Ok{io::last_os_error()};
+      return Err{io::last_os_error()};
     }
 
     const auto ret_pos = num::cast_unsigned(new_pos.QuadPart);
-    return Err{ret_pos};
+    return Ok{ret_pos};
   }
 };
 
