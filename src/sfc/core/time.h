@@ -27,13 +27,13 @@ struct Duration {
   auto as_secs_f32() const noexcept -> f32;
   auto as_secs_f64() const noexcept -> f64;
 
-  auto as_nanos() const noexcept -> u64;
   auto as_millis() const noexcept -> u64;
   auto as_micros() const noexcept -> u64;
+  auto as_nanos() const noexcept -> u64;
 
-  auto subsec_nanos() const noexcept -> u32;
   auto subsec_millis() const noexcept -> u32;
   auto subsec_micros() const noexcept -> u32;
+  auto subsec_nanos() const noexcept -> u32;
 
  public:
   auto operator==(Duration other) const noexcept -> bool;
