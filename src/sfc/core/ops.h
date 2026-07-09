@@ -19,13 +19,13 @@ struct Dyn;
 
 template <class R, class... T>
 struct Dyn<R(T...)> {
-  using pfn_t = R(T...);
-  using mfn_t = R(void*, T...);
+  using pfn_t = R (*)(T...);
+  using mfn_t = R (*)(void*, T...);
 
   const void* _obj;
   union {
-    pfn_t* _pfun;
-    mfn_t* _mfun;
+    pfn_t _pfun;
+    mfn_t _mfun;
   };
 
  public:
