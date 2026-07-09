@@ -117,7 +117,7 @@ struct Tuple : _TupleData<T...> {
   }
 
   void fmt(auto& f) const {
-    auto imp = f.debug_tuple();
+    auto imp = f.debug_tuple("");
     tuple::for_each(*this, [&](const auto& val) { imp.field(val); });
   }
 };

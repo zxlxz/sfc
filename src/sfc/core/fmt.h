@@ -74,6 +74,7 @@ struct Debug {
 class DebugList;
 class DebugSet;
 class DebugMap;
+
 class DebugTuple;
 class DebugStruct;
 
@@ -141,8 +142,9 @@ struct Formatter {
   auto debug_list() -> DebugList;
   auto debug_set() -> DebugSet;
   auto debug_map() -> DebugMap;
-  auto debug_tuple() -> DebugTuple;
-  auto debug_struct() -> DebugStruct;
+
+  auto debug_tuple(Str name) -> DebugTuple;
+  auto debug_struct(Str name) -> DebugStruct;
 };
 
 class DebugList {

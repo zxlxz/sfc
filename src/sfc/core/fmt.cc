@@ -452,10 +452,6 @@ void Formatter::pad_num(bool is_neg, Str num_str) {
   }
 }
 
-auto Formatter::debug_tuple() -> DebugTuple {
-  return DebugTuple{*this};
-}
-
 auto Formatter::debug_list() -> DebugList {
   return DebugList{*this};
 }
@@ -468,7 +464,13 @@ auto Formatter::debug_map() -> DebugMap {
   return DebugMap{*this};
 }
 
-auto Formatter::debug_struct() -> DebugStruct {
+auto Formatter::debug_tuple(Str name) -> DebugTuple {
+  this->write_str(name);
+  return DebugTuple{*this};
+}
+
+auto Formatter::debug_struct(Str name) -> DebugStruct {
+  this->write_str(name);
   return DebugStruct{*this};
 }
 
