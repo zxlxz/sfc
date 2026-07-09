@@ -62,13 +62,15 @@ void assert_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current(
   test::assert_failed(loc, fmt::CStr{">="}, a, b);
 }
 
-inline void assert_flt_eq(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
-  if (num::flt_eq_ulp(a, b, ulp)) return;
+inline void assert_flt_eq(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
+  const auto diff = a - b;
+  if (-eps < diff && diff < eps) return;
   test::assert_failed(loc, fmt::CStr{"=="}, a, b);
 }
 
-inline void assert_flt_ne(f64 a, f64 b, u32 ulp = 4, SourceLoc loc = SourceLoc::current()) {
-  if (!num::flt_eq_ulp(a, b, ulp)) return;
+inline void assert_flt_ne(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
+  const auto diff = a - b;
+  if (diff < -eps || eps < diff) return;
   test::assert_failed(loc, fmt::CStr{"!="}, a, b);
 }
 

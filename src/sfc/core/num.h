@@ -187,6 +187,5 @@ constexpr auto trunc_to_int(T x) -> num::Float<T>::int_t {
   }
 }
 
-auto flt_eq_ulp(f64 a, f64 b, u32 ulp = 4) noexcept -> bool;
 
 }  // namespace sfc::num
