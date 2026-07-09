@@ -47,5 +47,4 @@ consteval Str value_name() {
   return Str{P, N};
 }
 
-
 }  // namespace sfc::reflect

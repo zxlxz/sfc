@@ -58,13 +58,15 @@ struct Debug {
 
   static void fmt(const void* val, Formatter& f);
 
-  static void fmt(trait::enum_ auto val, auto& f) {
-    using I = __underlying_type(decltype(val));
-    constexpr auto kTypeName = reflect::type_name<decltype(val)>();
+  template <trait::enum_ T>
+  static void fmt(T val, auto& f) {
+    using I = __underlying_type(T);
     if constexpr (requires { to_str(val); }) {
-      f.write_str(to_str(val));
+      const auto s = to_str(val);
+      f.write_str(s);
     } else {
-      f.write_fmt("{}({})", kTypeName, I(val));
+      const auto name = reflect::type_name<T>();
+      f.write_fmt("{}({})", name, I(val));
     }
   }
 };
