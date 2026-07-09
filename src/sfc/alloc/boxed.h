@@ -35,7 +35,7 @@ class [[nodiscard]] Box {
   }
 
   template <class... U>
-  static auto xnew(U&&... args) -> Box {
+  static auto new_(U&&... args) -> Box {
     auto res = Box{};
     res._ptr = new T{(U&&)(args)...};
     return res;
@@ -132,7 +132,7 @@ class [[nodiscard]] Box<R(T...)> {
     return *this;
   }
 
-  static auto xnew(auto fn) noexcept -> Box {
+  static auto new_(auto fn) noexcept -> Box {
     auto res = Box{};
     res._data = new auto{mem::move(fn)};
     res._meta = &Meta::of(fn);
@@ -147,7 +147,7 @@ class [[nodiscard]] Box<R(T...)> {
 
 template <class T>
 auto box(T val) -> Box<T> {
-  return Box<T>::xnew(mem::move(val));
+  return Box<T>::new_(mem::move(val));
 }
 
 }  // namespace sfc::boxed

@@ -24,7 +24,7 @@ SFC_TEST(own) {
   auto cnt = 0;
 
   {
-    auto ra = Arc<Cnter>::xnew(cnt);
+    auto ra = Arc<Cnter>::new_(cnt);
     sfc::assert_eq(cnt, 1);
 
     auto rb = mem::move(ra);
@@ -38,7 +38,7 @@ SFC_TEST(clone) {
   auto cnt = 0;
 
   {
-    const auto ra = Arc<Cnter>::xnew(cnt);
+    const auto ra = Arc<Cnter>::new_(cnt);
     sfc::assert_eq(cnt, 1);
 
     const auto rb = ra.clone();

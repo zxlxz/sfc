@@ -17,7 +17,7 @@ SFC_TEST(obj) {
 SFC_TEST(fun) {
   auto f1 = [](int x) { return 10 * x; };
 
-  auto b1 = Box<int(int)>::xnew(f1);
+  auto b1 = Box<int(int)>::new_(f1);
   sfc::assert_eq(b1(1), 10);
 
   auto b2 = mem::move(b1);

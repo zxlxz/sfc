@@ -41,7 +41,7 @@ struct Builder {
 
 auto spawn(auto f) -> JoinHandle {
   auto b = Builder{};
-  return b.spawn(Box<void()>::xnew(mem::move(f)));
+  return b.spawn(Box<void()>::new_(mem::move(f)));
 }
 
 auto spawn_joined(auto f) {

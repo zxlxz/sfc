@@ -39,10 +39,9 @@ class [[nodiscard]] Arc {
 
   Arc& operator=(Arc&& other) noexcept = default;
 
-  template <class... U>
-  static auto xnew(U&&... args) -> Arc {
+  static auto new_(auto&&... args) -> Arc {
     auto res = Arc{};
-    res._inn = Box<Inn>::xnew(mem::move<U>(args)...);
+    res._inn = Box<Inn>::new_((decltype(args)&&)(args)...);
     return res;
   }
 

@@ -76,7 +76,7 @@ JoinGuard::JoinGuard(JoinGuard&&) noexcept = default;
 JoinGuard& JoinGuard::operator=(JoinGuard&&) noexcept = default;
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
-  auto data = Box<ThreadData>::xnew(mem::move(fun), ffi::OsString::from(name));
+  auto data = Box<ThreadData>::new_(mem::move(fun), ffi::OsString::from(name));
   auto thrd = sys::Thread::spawn(stack_size, data.ptr());
   // if thread creation succeeded:
   //    the thread will take ownership of data
