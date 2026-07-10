@@ -49,7 +49,7 @@ struct Unique {
   }
 };
 
-template <class T>
+template <class T = void>
 inline auto null() noexcept -> T* {
   return nullptr;
 }
