@@ -70,4 +70,11 @@ auto DynWrite::write_str(Str buf) -> Result<> {
   return this->write_all(buf.as_bytes());
 }
 
+auto DynWrite::flush() -> Result<> {
+  if (_flush) {
+    return (_flush)(_self);
+  }
+  return Ok{};
+}
+
 }  // namespace sfc::io

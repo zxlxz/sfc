@@ -22,17 +22,24 @@ class DynRead {
 
 class DynWrite {
   using write_t = Result<usize> (*)(void*, Slice<const u8> buf);
+  using flush_t = Result<> (*)(void*);
   void* _self;
   write_t _write;
+  flush_t _flush{nullptr};
 
  public:
   template <class X>
-  DynWrite(X& impl) : _self{&impl}, _write{ops::dyn_fn<&X::write>()} {}
+  DynWrite(X& impl) : _self{&impl}, _write{ops::dyn_fn<&X::write>()} {
+    if constexpr (requires{ impl.flush(); }) {
+      _flush = ops::dyn_fn<&X::flush>();
+    }
+  }
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize>;
   auto write_all(Slice<const u8> buf) -> Result<>;
   auto write_str(Str buf) -> Result<>;
+  auto flush() -> Result<>;
 };
 
 struct Read {

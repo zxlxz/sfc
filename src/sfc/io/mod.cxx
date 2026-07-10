@@ -28,6 +28,10 @@ struct WBuf : io::Write {
     ptr::copy_nonoverlapping(buf._ptr, _buf._ptr, len);
     return {len};
   }
+
+  auto flush() -> Result<> {
+    return Ok{};
+  }
 };
 
 SFC_TEST(read) {

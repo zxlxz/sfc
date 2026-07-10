@@ -145,7 +145,7 @@ auto WriteBuf::flush(DynWrite write) -> Result<> {
     _buf.drain({0, nwrite});
   }
   _buf.clear();
-  return Ok{};
+  return write.flush();
 }
 
 }  // namespace sfc::io

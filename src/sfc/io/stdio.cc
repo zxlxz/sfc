@@ -34,10 +34,11 @@ class Stdout::Inn {
       return _inn.write_str(s);
     }
 
-    const auto [a, b] = s.split_at(*p);
+    const auto [a, b] = s.split_at(*p + 1);
     _TRY(_inn.write_str(a));
     _TRY(_inn.flush());
-    return _inn.write_str(b);
+    _TRY(_inn.write_str(b));
+    return Ok{};
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
