@@ -5,6 +5,7 @@
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/num.h"
+#include "sfc/core/dyn.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/tuple.h"
 #include "sfc/core/io.h"

@@ -150,35 +150,41 @@ struct Searcher {
   auto next_reject_back(this auto& self) -> SearchStep;
 };
 
-struct CharSearcher : Searcher {
+class CharSearcher : public Searcher {
   Str _haystack;
   char _needle;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
+  CharSearcher(Str haystack, char needle) : _haystack{haystack}, _needle{needle} {}
+
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
 
-struct StrSearcher : Searcher {
+class StrSearcher : public Searcher {
   Str _haystack;
   Str _needle;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
+  StrSearcher(Str haystack, Str needle) : _haystack{haystack}, _needle{needle} {}
+
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
 
-struct CharPredicateSearcher : Searcher {
+class CharPredicateSearcher : public Searcher {
+  using Pred = ops::Fn<bool(char)>;
   Str _haystack;
-  ops::Dyn<bool(char)> _pred;
+  Pred _pred;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
+  CharPredicateSearcher(Str haystack, auto& pred) : _haystack{haystack}, _pred{Pred::of(pred)} {}
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };
@@ -186,11 +192,11 @@ struct CharPredicateSearcher : Searcher {
 struct Pattern {
   static auto into_searcher(auto&& self, Str haystack) {
     if constexpr (requires { char{self}; }) {
-      return CharSearcher{{}, haystack, self};
+      return CharSearcher{haystack, self};
     } else if constexpr (requires { Str{self}; }) {
-      return StrSearcher{{}, haystack, self};
+      return StrSearcher{haystack, self};
     } else if constexpr (requires { self(char{0}); }) {
-      return CharPredicateSearcher{{}, haystack, mem::move(self)};
+      return CharPredicateSearcher{haystack, self};
     }
   }
 };

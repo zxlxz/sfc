@@ -15,46 +15,28 @@ template <class F, class... A>
 using FnOut = decltype(declval<F>()(declval<A>()...));
 
 template <class>
-struct Dyn;
+struct Fn;
 
 template <class R, class... T>
-struct Dyn<R(T...)> {
-  using pfn_t = R (*)(T...);
-  using mfn_t = R (*)(void*, T...);
-
-  const void* _obj;
-  union {
-    pfn_t _pfun;
-    mfn_t _mfun;
-  };
+struct Fn<R(T...)> {
+  class Self {};
+  Self& _self;
+  R (*_call)(Self&, T&&...);
 
  public:
-  Dyn() : _obj{nullptr}, _pfun{nullptr} {}
-
-  Dyn(R (*func)(T...)) : _obj{nullptr}, _pfun{func} {}
-
   template <class X>
-  Dyn(X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((X*)x))((T&&)t...); }} {}
-
-  template <class X>
-  Dyn(const X& x) : _obj{&x}, _mfun{[](void* x, T... t) { return (*((const X*)x))((T&&)t...); }} {}
-
-  template <class X>
-  Dyn(const X& x, R (*func)(const X&, T...)) : _obj{&x}, _mfun{(mfn_t*)func} {}
+  static auto of(X& x) -> Fn {
+    return {(Self&)x, [](Self& self, T&&... t) { return ((X&)self)((T&&)t...); }};
+  }
 
  public:
   R operator()(T... t) const {
-    return _obj ? _mfun((void*)_obj, (T&&)t...) : _pfun((T&&)t...);
+    return _call(_self, (T&&)t...);
   }
 };
 
-template <auto f>
-consteval auto dyn_fn() {
-  auto conv = []<class X, class R, class... T>(R (X::*)(T...)) {
-    return [](void* x, T... u) -> R { return ((X*)x->*f)(u...); };
-  };
-  return conv(f);
-}
+template <class Self, class>
+struct DynFn;
 
 struct End {};
 static constexpr auto $ = End{};

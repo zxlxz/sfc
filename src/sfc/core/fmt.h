@@ -2,6 +2,7 @@
 
 #include "sfc/core/reflect.h"
 #include "sfc/core/fmts.h"
+#include "sfc/core/dyn.h"
 
 namespace sfc::fmt {
 
@@ -25,17 +26,20 @@ struct SBuf {
   }
 };
 
-struct Write {
-  using write_str_t = void(void*, Str);
-  void* _obj;
-  write_str_t* _write_str;
+struct DynWrite {
+  class Self;
+  Self& _self;
+  void (*_write_str)(Self&, Str);
 
  public:
-  template <class W>
-  Write(W& w) : _obj{&w}, _write_str{ops::dyn_fn<&W::write_str>()} {}
+  template <class X>
+  static auto of(X& x) -> DynWrite {
+    return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write_str>{}};
+  }
 
+ public:
   void write_str(Str s) {
-    _write_str(_obj, s);
+    _write_str(_self, s);
   }
 };
 
@@ -78,11 +82,13 @@ class DebugMap;
 class DebugTuple;
 class DebugStruct;
 
-struct Formatter {
-  Write _out;
+class Formatter {
+  DynWrite _out;
   Spec _spec = {};
 
  public:
+  Formatter(auto& out) : _out{DynWrite::of(out)} {}
+
   auto spec() const -> Spec {
     return _spec;
   }
