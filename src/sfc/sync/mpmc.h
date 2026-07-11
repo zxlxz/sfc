@@ -7,7 +7,7 @@ namespace sfc::sync::mpmc {
 template <class T>
 class Channel {
   using Queue = RingBuf<T>;
-  Queue _buff{};
+  Queue _queue{};
   Atomic<bool> _closed{true};
 
  public:
@@ -23,7 +23,7 @@ class Channel {
   static auto with_capacity(usize capacity) -> Channel {
     if (capacity == 0) return {};
     auto res = Channel{};
-    res._buff = Queue::with_capacity(capacity);
+    res._queue = Queue::with_capacity(capacity);
     res._closed.store(false);
     return res;
   }
@@ -47,7 +47,7 @@ class Channel {
 
   auto recv() noexcept -> Option<T> {
     while (!this->is_closed()) {
-      if (auto opt = _buff.pop()) {
+      if (auto opt = _queue.pop()) {
         return opt;
       }
       sfc::thread::yield_now();
@@ -57,7 +57,7 @@ class Channel {
 
   auto try_send(T& val) noexcept -> bool {
     while (!this->is_closed()) {
-      if (_buff.try_push(val)) {
+      if (_queue.try_push(val)) {
         return true;
       }
       sfc::thread::yield_now();
@@ -66,7 +66,7 @@ class Channel {
   }
 
   auto try_recv() noexcept -> Option<T> {
-    return _buff.pop();
+    return _queue.pop();
   }
 };
 
