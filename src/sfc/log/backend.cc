@@ -48,9 +48,9 @@ void GlobalBackend::flush() noexcept {
   (void)_file.flush();
 }
 
-auto global() -> Logger<GlobalBackend>& {
+auto global() -> Logger& {
   static auto backend = GlobalBackend{};
-  static auto logger = Logger<GlobalBackend>{backend};
+  static auto logger = Logger{backend};
   return logger;
 }
 

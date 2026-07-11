@@ -13,61 +13,46 @@ struct Record {
   Str message;
 
  public:
-  auto time_str() const -> Str;
   auto level_str() const -> Str;
+  auto time_str() const -> Str;
 };
 
-template <class Backend>
-class Logger {
-  Backend& _backend;
-  Level _level{Level::Info};
+struct DynBackend {
+  class Self;
+  Self& _self;
+  void (*_push)(Self&, Record record);
+  void (*_flush)(Self&);
 
  public:
-  Logger(Backend& backend) noexcept : _backend{backend} {}
-  ~Logger() noexcept {}
-
-  Logger(Logger&&) = delete;
-  Logger& operator=(Logger&&) = delete;
+  template <class X>
+  static auto of(X& x) -> DynBackend {
+    return DynBackend{dyn::Impl{x}, dyn::Fn<&X::push>{}, dyn::Fn<&X::flush>{}};
+  }
 
  public:
-  auto level() const -> Level {
-    return _level;
-  }
-
-  void set_level(Level level) {
-    _level = level;
-  }
-
-  auto backend() -> Backend& {
-    return _backend;
+  void push(Record record) {
+    return _push(_self, record);
   }
 
   void flush() {
-    _backend.flush();
+    return _flush(_self);
   }
+};
 
-  void write_str(Level level, Str message) {
-    if (level < _level) {
-      return;
-    }
+class Logger {
+  DynBackend _backend;
+  Level _level{Level::Info};
 
-    const auto time = time::SystemTime::now();
-    _backend.push(Record{time, level, message});
-  }
+ public:
+  explicit Logger(auto& backend) : _backend{DynBackend::of(backend)} {}
 
-  void write_fmt(Level level, const fmt::Fmts& fmts, const auto&... args) {
-    if (level < _level) {
-      return;
-    }
+ public:
+  auto level() const -> Level;
+  void set_level(Level level);
 
-    char buf[1024];
-    auto out = fmt::SBuf{buf};
-    fmt::write(out, fmts, args...);
-
-    const auto time = time::SystemTime::now();
-    const auto message = out.as_str();
-    _backend.push(Record{time, level, message});
-  }
+  void flush();
+  void write_str(Level level, Str message);
+  void write_fmt(Level level, fmt::Args args);
 };
 
 }  // namespace sfc::log
