@@ -1,83 +1,82 @@
 #pragma once
 
-#include "sfc/alloc/boxed.h"
+#include "sfc/core.h"
 
 namespace sfc::sync {
 
 template <class T>
 class [[nodiscard]] Arc {
   struct Inn {
-    sync::Atomic<int> _cnt;
+    sync::Atomic<u32> _cnt;
     T _val;
 
-   public:
-    explicit Inn(auto&&... args) noexcept : _cnt{1}, _val{(decltype(args)&&)(args)...} {}
-
-    auto inc_count() noexcept -> int {
+    auto inc_count() noexcept -> u32 {
       return _cnt.fetch_add(1, sync::Ordering::Relaxed);
     }
 
-    auto dec_count() noexcept -> int {
-      return _cnt.fetch_sub(1, sync::Ordering::AcqRel);
+    auto dec_count() noexcept -> u32 {
+      return _cnt.fetch_sub(1, sync::Ordering::Release);
     }
   };
-
-  Box<Inn> _inn{};
+  Inn* _ptr{nullptr};
 
  public:
   Arc() noexcept = default;
 
   ~Arc() noexcept {
-    const auto p = _inn.ptr();
-    if (p && p->dec_count() > 1) {
-      // don't need to drop, just forget to avoid double drop
-      mem::forget(_inn);
+    if (_ptr == nullptr) return;
+
+    if (_ptr->dec_count() == 1) {
+      delete _ptr;
     }
   }
 
-  Arc(Arc&& other) noexcept = default;
+  Arc(Arc&& other) noexcept : _ptr{mem::take(other._ptr)} {}
 
-  Arc& operator=(Arc&& other) noexcept = default;
+  Arc& operator=(Arc&& other) noexcept {
+    if (this == &other) return *this;
+    mem::swap(_ptr, other._ptr);
+    return *this;
+  }
 
   static auto new_(auto&&... args) -> Arc {
     auto res = Arc{};
-    res._inn = Box<Inn>::new_((decltype(args)&&)(args)...);
+    res._ptr = new Inn{{1}, {(decltype(args)&&)(args)...}};
     return res;
   }
 
-  auto as_ptr() const noexcept -> T* {
-    const auto p = _inn.ptr();
-    return p ? &p->_val : nullptr;
+  auto as_ptr() const noexcept -> const T* {
+    return _ptr ? &_ptr->_val : nullptr;
   }
 
  public:
   // trait: Deref<const T*>
   auto operator->() const noexcept -> const T* {
-    return &_inn->_val;
+    return &_ptr->_val;
   }
 
   // trait: Deref<T*>
   auto operator->() noexcept -> T* {
-    return &_inn->_val;
+    return &_ptr->_val;
   }
 
   // trait: Deref<const T&>
   auto operator*() const noexcept -> const T& {
-    return _inn->_val;
+    return _ptr->_val;
   }
 
   // trait: Deref<T&>
   auto operator*() noexcept -> T& {
-    return _inn->_val;
+    return _ptr->_val;
   }
 
   // trait: Clone
   auto clone() const noexcept -> Arc {
+    if (_ptr == nullptr) return {};
+
+    _ptr->inc_count();
     auto res = Arc{};
-    if (auto ptr = _inn.ptr()) {
-      ptr->inc_count();
-      res._inn = Box<Inn>::from_raw(ptr);
-    }
+    res._ptr = _ptr;
     return res;
   }
 };
