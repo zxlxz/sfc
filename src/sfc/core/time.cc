@@ -77,24 +77,10 @@ auto Duration::operator==(Duration other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
-auto Duration::operator!=(Duration other) const noexcept -> bool {
-  return _nanos != other._nanos;
-}
-
-auto Duration::operator<(Duration other) const noexcept -> bool {
-  return _nanos < other._nanos;
-}
-
-auto Duration::operator>(Duration other) const noexcept -> bool {
-  return _nanos > other._nanos;
-}
-
-auto Duration::operator<=(Duration other) const noexcept -> bool {
-  return _nanos <= other._nanos;
-}
-
-auto Duration::operator>=(Duration other) const noexcept -> bool {
-  return _nanos >= other._nanos;
+auto Duration::operator<=>(Duration other) const noexcept -> int {
+  if (_nanos < other._nanos) return -1;
+  if (_nanos > other._nanos) return +1;
+  return 0;
 }
 
 void Duration::fmt(fmt::Formatter& f) const {

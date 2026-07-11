@@ -28,24 +28,10 @@ auto Instant::operator==(Instant other) const noexcept -> bool {
   return _nanos == other._nanos;
 }
 
-auto Instant::operator!=(Instant other) const noexcept -> bool {
-  return _nanos != other._nanos;
-}
-
-auto Instant::operator<(Instant other) const noexcept -> bool {
-  return _nanos < other._nanos;
-}
-
-auto Instant::operator>(Instant other) const noexcept -> bool {
-  return _nanos > other._nanos;
-}
-
-auto Instant::operator<=(Instant other) const noexcept -> bool {
-  return _nanos <= other._nanos;
-}
-
-auto Instant::operator>=(Instant other) const noexcept -> bool {
-  return _nanos >= other._nanos;
+auto Instant::operator<=>(Instant other) const noexcept -> int {
+  if (_nanos < other._nanos) return -1;
+  if (_nanos > other._nanos) return +1;
+  return 0;
 }
 
 auto Instant::operator+(Duration dur) const noexcept -> Instant {

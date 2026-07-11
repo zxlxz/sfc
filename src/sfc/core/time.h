@@ -37,12 +37,7 @@ struct Duration {
 
  public:
   auto operator==(Duration other) const noexcept -> bool;
-  auto operator!=(Duration other) const noexcept -> bool;
-
-  auto operator<(Duration other) const noexcept -> bool;
-  auto operator>(Duration other) const noexcept -> bool;
-  auto operator<=(Duration other) const noexcept -> bool;
-  auto operator>=(Duration other) const noexcept -> bool;
+  auto operator<=>(Duration other) const noexcept -> int;
 
  public:
   void fmt(fmt::Formatter& f) const;

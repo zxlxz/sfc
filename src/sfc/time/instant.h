@@ -15,12 +15,7 @@ struct Instant {
 
  public:
   auto operator==(Instant other) const noexcept -> bool;
-  auto operator!=(Instant other) const noexcept -> bool;
-
-  auto operator<(Instant other) const noexcept -> bool;
-  auto operator>(Instant other) const noexcept -> bool;
-  auto operator<=(Instant other) const noexcept -> bool;
-  auto operator>=(Instant other) const noexcept -> bool;
+  auto operator<=>(Instant other) const noexcept -> int;
 
   auto operator+(Duration dur) const noexcept -> Instant;
   auto operator-(Duration dur) const noexcept -> Instant;

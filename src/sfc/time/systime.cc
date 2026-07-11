@@ -47,24 +47,10 @@ auto SystemTime::operator==(SystemTime other) const noexcept -> bool {
   return _micros == other._micros;
 }
 
-auto SystemTime::operator!=(SystemTime other) const noexcept -> bool {
-  return _micros != other._micros;
-}
-
-auto SystemTime::operator<(SystemTime other) const noexcept -> bool {
-  return _micros < other._micros;
-}
-
-auto SystemTime::operator>(SystemTime other) const noexcept -> bool {
-  return _micros > other._micros;
-}
-
-auto SystemTime::operator<=(SystemTime other) const noexcept -> bool {
-  return _micros <= other._micros;
-}
-
-auto SystemTime::operator>=(SystemTime other) const noexcept -> bool {
-  return _micros >= other._micros;
+auto SystemTime::operator<=>(SystemTime other) const noexcept -> int {
+  if (_micros < other._micros) return -1;
+  if (_micros > other._micros) return +1;
+  return 0;
 }
 
 auto SystemTime::operator+(Duration dur) const noexcept -> SystemTime {

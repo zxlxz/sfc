@@ -20,12 +20,7 @@ struct SystemTime {
 
  public:
   auto operator==(SystemTime other) const noexcept -> bool;
-  auto operator!=(SystemTime other) const noexcept -> bool;
-
-  auto operator<(SystemTime other) const noexcept -> bool;
-  auto operator>(SystemTime other) const noexcept -> bool;
-  auto operator<=(SystemTime other) const noexcept -> bool;
-  auto operator>=(SystemTime other) const noexcept -> bool;
+  auto operator<=>(SystemTime other) const noexcept -> int;
 
   auto operator+(Duration dur) const noexcept -> SystemTime;
   auto operator-(Duration dur) const noexcept -> SystemTime;
