@@ -142,19 +142,9 @@ auto Str::parse() const -> Option<T> {
 }
 
 struct SearchStep {
-  enum Type { Done = 0, Match = 1, Reject = 2 };
-  Type _type;
-  usize _pos;
-  usize _end;
-
- public:
-  operator bool() const {
-    return _type != Done;
-  }
-
-  auto pos() const -> Option<usize> {
-    return _type ? Option<usize>{_pos} : Option<usize>{};
-  }
+  enum Kind { Done = 0, Match = 1, Reject = 2 };
+  Kind kind;
+  ops::Range range{0, 0};
 };
 
 struct Searcher {
@@ -215,8 +205,11 @@ auto Str::find(auto&& pat) const -> Option<usize> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto m = s.next_match();
-  return m.pos();
+  const auto [kind, step] = s.next_match();
+  if (kind != SearchStep::Match) {
+    return {};
+  }
+  return step.start;
 }
 
 auto Str::rfind(auto&& pat) const -> Option<usize> {
@@ -225,8 +218,11 @@ auto Str::rfind(auto&& pat) const -> Option<usize> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto m = s.next_match_back();
-  return m.pos();
+  const auto [kind, step] = s.next_match_back();
+  if (kind != SearchStep::Match) {
+    return {};
+  }
+  return step.start;
 }
 
 auto Str::contains(auto&& pat) const -> bool {
@@ -235,7 +231,8 @@ auto Str::contains(auto&& pat) const -> bool {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  return s.next_match() == SearchStep::Match;
+  const auto [kind, step] = s.next_match();
+  return kind == SearchStep::Match;
 }
 
 auto Str::starts_with(auto&& pat) const -> bool {
@@ -243,8 +240,9 @@ auto Str::starts_with(auto&& pat) const -> bool {
     return false;
   }
 
-  auto s = Pattern::into_searcher(pat, *this);
-  return s.next()._type == SearchStep::Match;
+  auto ss = Pattern::into_searcher(pat, *this);
+  const auto step = ss.next();
+  return step.kind == SearchStep::Match;
 }
 
 auto Str::ends_with(auto&& pat) const -> bool {
@@ -252,8 +250,9 @@ auto Str::ends_with(auto&& pat) const -> bool {
     return false;
   }
 
-  auto s = Pattern::into_searcher(pat, *this);
-  return s.next_back()._type == SearchStep::Match;
+  auto searcher = Pattern::into_searcher(pat, *this);
+  const auto step = searcher.next_back();
+  return step.kind == SearchStep::Match;
 }
 
 auto Str::trim_start_matches(auto&& pat) const -> Str {
@@ -263,8 +262,8 @@ auto Str::trim_start_matches(auto&& pat) const -> Str {
 
   auto s = Pattern::into_searcher(pat, *this);
   auto i = _len;
-  if (auto m = s.next_reject()) {
-    i = m._pos;
+  if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
+    i = step.start;
   }
   return Str{_ptr + i, _len - i};
 }
@@ -276,8 +275,8 @@ auto Str::trim_end_matches(auto&& pat) const -> Str {
 
   auto s = Pattern::into_searcher(pat, *this);
   auto j = usize{0U};
-  if (auto m = s.next_reject_back()) {
-    j = m._end;
+  if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
+    j = step.end;
   }
   return Str{_ptr, j};
 }
@@ -290,12 +289,12 @@ auto Str::trim_matches(auto&& pat) const -> Str {
   auto s = Pattern::into_searcher(pat, *this);
   auto i = usize{0U};
   auto j = usize{0U};
-  if (auto m = s.next_reject()) {
-    i = m._pos;
-    j = m._end;
+  if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
+    i = step.start;
+    j = step.end;
   }
-  if (auto m = s.next_reject_back()) {
-    j = m._end;
+  if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
+    j = step.end;
   }
   return Str{_ptr + i, j - i};
 }
@@ -306,12 +305,11 @@ auto Str::split_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto m = s.next_match();
-  if (!m) {
+  const auto [kind, range] = s.next_match();
+  if (kind != SearchStep::Match) {
     return {};
   }
-  const auto i = m._pos;
-  const auto j = m._end;
+  const auto [i, j] = range;
   return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
 }
 
@@ -321,12 +319,11 @@ auto Str::rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
   }
 
   auto s = Pattern::into_searcher(pat, *this);
-  auto m = s.next_match_back();
-  if (!m) {
+  auto [kind, step] = s.next_match_back();
+  if (kind != SearchStep::Match) {
     return {};
   }
-  const auto i = m._pos;
-  const auto j = m._end;
+  const auto [i, j] = step;
   return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
 }
 

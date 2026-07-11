@@ -39,8 +39,8 @@ void Str::fmt(fmt::Formatter& f) const {
 auto Searcher::next_match(this auto& self) -> SearchStep {
   while (true) {
     const auto step = self.next();
-    switch (step._type) {
-      case SearchStep::Done:  return {SearchStep::Done, 0, 0};
+    switch (step.kind) {
+      case SearchStep::Done:  return {SearchStep::Done};
       case SearchStep::Match: return step;
       default:                break;
     }
@@ -50,8 +50,8 @@ auto Searcher::next_match(this auto& self) -> SearchStep {
 auto Searcher::next_reject(this auto& self) -> SearchStep {
   while (true) {
     const auto step = self.next();
-    switch (step._type) {
-      case SearchStep::Done:   return {SearchStep::Done, 0, 0};
+    switch (step.kind) {
+      case SearchStep::Done:   return {SearchStep::Done};
       case SearchStep::Reject: return step;
       default:                 break;
     }
@@ -61,8 +61,8 @@ auto Searcher::next_reject(this auto& self) -> SearchStep {
 auto Searcher::next_match_back(this auto& self) -> SearchStep {
   while (true) {
     const auto step = self.next_back();
-    switch (step._type) {
-      case SearchStep::Done:  return {SearchStep::Done, 0, 0};
+    switch (step.kind) {
+      case SearchStep::Done:  return {SearchStep::Done};
       case SearchStep::Match: return step;
       default:                break;
     }
@@ -72,8 +72,8 @@ auto Searcher::next_match_back(this auto& self) -> SearchStep {
 auto Searcher::next_reject_back(this auto& self) -> SearchStep {
   while (true) {
     const auto step = self.next_back();
-    switch (step._type) {
-      case SearchStep::Done:   return {SearchStep::Done, 0, 0};
+    switch (step.kind) {
+      case SearchStep::Done:   return {SearchStep::Done};
       case SearchStep::Reject: return step;
       default:                 break;
     }
@@ -82,39 +82,39 @@ auto Searcher::next_reject_back(this auto& self) -> SearchStep {
 
 auto CharSearcher::next() -> SearchStep {
   if (_finger >= _haystack._len) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   const auto ch = _haystack[_finger++];
   if (ch == _needle) {
-    return {SearchStep::Match, _finger - 1, _finger};
+    return {SearchStep::Match, {_finger - 1, _finger}};
   } else {
-    return {SearchStep::Reject, _finger - 1, _finger};
+    return {SearchStep::Reject, {_finger - 1, _finger}};
   }
 }
 
 auto CharSearcher::next_back() -> SearchStep {
   if (_finger_back == 0) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   const auto ch = _haystack[_finger_back - 1];
   if (ch == _needle) {
     _finger_back -= 1;
-    return {SearchStep::Match, _finger_back, _finger_back + 1};
+    return {SearchStep::Match, {_finger_back, _finger_back + 1}};
   } else {
     _finger_back -= 1;
-    return {SearchStep::Reject, _finger_back, _finger_back + 1};
+    return {SearchStep::Reject, {_finger_back, _finger_back + 1}};
   }
 }
 
 auto StrSearcher::next() -> SearchStep {
   if (_finger >= _haystack._len) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   if (_needle._len == 0) {
-    return {SearchStep::Match, _finger, _finger};
+    return {SearchStep::Match, {_finger, _finger}};
   }
 
   auto is_match = [&]() {
@@ -127,24 +127,24 @@ auto StrSearcher::next() -> SearchStep {
   const auto old_finger = _finger;
   if (is_match()) {
     _finger += _needle._len;
-    return {SearchStep::Match, old_finger, _finger};
+    return {SearchStep::Match, {old_finger, _finger}};
   } else {
     if (_finger + _needle._len < _haystack._len) {
       _finger += 1;
     } else {
       _finger = _haystack._len;
     }
-    return {SearchStep::Reject, old_finger, _finger};
+    return {SearchStep::Reject, {old_finger, _finger}};
   }
 }
 
 auto StrSearcher::next_back() -> SearchStep {
   if (_finger_back == 0) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   if (_needle._len == 0) {
-    return {SearchStep::Match, _finger_back, _finger_back};
+    return {SearchStep::Match, {_finger_back, _finger_back}};
   }
 
   auto is_match_back = [&]() {
@@ -157,40 +157,40 @@ auto StrSearcher::next_back() -> SearchStep {
   const auto old_finger_back = _finger_back;
   if (is_match_back()) {
     _finger_back -= _needle._len;
-    return {SearchStep::Match, _finger_back, old_finger_back};
+    return {SearchStep::Match, {_finger_back, old_finger_back}};
   } else {
     if (_finger_back >= _needle._len) {
       _finger_back -= _needle._len;
     } else {
       _finger_back = 0;
     }
-    return {SearchStep::Reject, _finger_back, old_finger_back};
+    return {SearchStep::Reject, {_finger_back, old_finger_back}};
   }
 }
 
 auto CharPredicateSearcher::next() -> SearchStep {
   if (_finger >= _haystack._len) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   const auto ch = _haystack[_finger++];
   if (_pred(ch)) {
-    return {SearchStep::Match, _finger - 1, _finger};
+    return {SearchStep::Match, {_finger - 1, _finger}};
   } else {
-    return {SearchStep::Reject, _finger - 1, _finger};
+    return {SearchStep::Reject, {_finger - 1, _finger}};
   }
 }
 
 auto CharPredicateSearcher::next_back() -> SearchStep {
   if (_finger_back == 0) {
-    return {SearchStep::Done, 0, 0};
+    return {SearchStep::Done};
   }
 
   const auto ch = _haystack[--_finger_back];
   if (_pred(ch)) {
-    return {SearchStep::Match, _finger_back, _finger_back + 1};
+    return {SearchStep::Match, {_finger_back, _finger_back + 1}};
   } else {
-    return {SearchStep::Reject, _finger_back, _finger_back + 1};
+    return {SearchStep::Reject, {_finger_back, _finger_back + 1}};
   }
 }
 
