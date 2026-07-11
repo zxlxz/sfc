@@ -70,21 +70,9 @@ struct Write {
 };
 
 struct SeekFrom {
-  u8 _tag = 0;
+  enum Kind { Start = 0, Current = 1, End = 2 };
+  Kind _tag{};
   i64 offset;
-
- public:
-  static auto Start(u64 offset) -> SeekFrom {
-    return SeekFrom{0, num::cast_signed(offset)};
-  }
-
-  static auto Current(i64 offset) -> SeekFrom {
-    return SeekFrom{1, offset};
-  }
-
-  static auto End(i64 offset) -> SeekFrom {
-    return SeekFrom{2, offset};
-  }
 };
 
 }  // namespace sfc::io
