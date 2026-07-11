@@ -1,4 +1,4 @@
 
 link_libraries(sfc)
 
-add_executable(fmt_pref fmt_pref.cc)
+add_executable(fmt-pref fmt_pref.cc)
