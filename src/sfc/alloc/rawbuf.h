@@ -62,7 +62,9 @@ class RawBuf {
   }
 
   void reserve(usize len, usize additional) noexcept {
-    constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
+    constexpr auto kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
+    constexpr auto kMaxCap = num::Int<u32>::MAX;
+    sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
 
     const auto req_cap = num::saturating_add(len, additional);
     if (req_cap <= _cap) {
