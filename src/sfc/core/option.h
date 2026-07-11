@@ -86,57 +86,57 @@ class Option {
   }
 
  public:
-  auto expect(this auto self, const auto& msg) -> T {
-    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
-    return mem::move(self._1);
+  auto expect(const auto& msg) -> T {
+    sfc::assert_(this->is_some(), "Option::expect: {}", msg);
+    return mem::move(_1);
   }
 
-  auto unwrap(this auto self) -> T {
-    sfc::assert_(self.is_some(), "Option::unwrap: not Some()");
-    return mem::move(self._1);
+  auto unwrap() -> T {
+    sfc::assert_(this->is_some(), "Option::unwrap: not Some()");
+    return mem::move(_1);
   }
 
-  auto unwrap_or(this auto self, T default_val) -> T {
-    if (self.is_some()) return mem::move(self._1);
+  auto unwrap_or(T default_val) -> T {
+    if (this->is_some()) return mem::move(_1);
     return mem::move(default_val);
   }
 
-  auto unwrap_or_else(this auto self, auto&& f) -> T {
-    if (self.is_some()) return mem::move(self._1);
+  auto unwrap_or_else(auto&& f) -> T {
+    if (this->is_some()) return mem::move(_1);
     return f();
   }
 
   template <class U>
-  auto operator&(this auto self, Option<U> optb) -> Option<U> {
-    if (self.is_some()) return mem::move(optb);
+  auto operator&(Option<U> optb) -> Option<U> {
+    if (this->is_some()) return mem::move(optb);
     return {};
   }
 
-  auto operator|(this auto self, Option<T> optb) -> Option<T> {
-    if (self.is_some()) return mem::move(self);
+  auto operator|(Option<T> optb) -> Option<T> {
+    if (this->is_some()) return mem::move(*this);
     return mem::move(optb);
   }
 
   template <class F, class OptionU = ops::FnOut<F, T>>
-  auto and_then(this auto self, F&& op) -> OptionU {
-    if (self.is_some()) return op(mem::move(self._1));
+  auto and_then(F&& op) -> OptionU {
+    if (this->is_some()) return op(mem::move(_1));
     return {};
   }
 
-  auto or_else(this auto self, auto&& f) -> Option<T> {
-    if (self.is_some()) return mem::move(self);
+  auto or_else(auto&& f) -> Option<T> {
+    if (this->is_some()) return mem::move(*this);
     return f();
   }
 
   template <class F, class U = ops::FnOut<F, T>>
-  auto map(this auto self, F&& f) -> Option<U> {
-    if (self.is_some()) return f(mem::move(self._1));
+  auto map(F&& f) -> Option<U> {
+    if (this->is_some()) return f(mem::move(_1));
     return {};
   }
 
   template <class U>
-  auto map_or(this auto self, U default_val, auto&& f) -> U {
-    if (self.is_some()) return f(mem::move(self._1));
+  auto map_or(U default_val, auto&& f) -> U {
+    if (this->is_some()) return f(mem::move(_1));
     return mem::move(default_val);
   }
 
@@ -149,17 +149,17 @@ class Option {
 
   // to result
   template <class E>
-  auto ok_or(this auto self, E err) -> result::Result<T, E> {
-    if (self.is_some()) return mem::move(self._1);
+  auto ok_or(E err) -> result::Result<T, E> {
+    if (this->is_some()) return mem::move(_1);
     return mem::move(err);
   }
 
   // trait: fmt::Display
-  void fmt(this const auto& self, auto& f) {
-    if (self.is_none()) {
+  void fmt(auto& f) const {
+    if (this->is_none()) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", self._1);
+      f.write_fmt("Some({})", _1);
     }
   }
 };
@@ -201,50 +201,50 @@ class Option<T&> {
   }
 
  public:
-  auto expect(this auto self, const auto& msg) -> T& {
-    sfc::assert_(self.is_some(), "Option::expect: {}", msg);
-    return *self._1;
+  auto expect(const auto& msg) -> T& {
+    sfc::assert_(this->is_some(), "Option::expect: {}", msg);
+    return *_1;
   }
 
-  auto unwrap(this auto self) -> T& {
-    sfc::assert_(self.is_some(), "Option::unwrap: None()");
-    return *self._1;
+  auto unwrap() -> T& {
+    sfc::assert_(this->is_some(), "Option::unwrap: None()");
+    return *_1;
   }
 
-  auto unwrap_or(this auto self, T& default_val) -> T& {
-    return self.is_some() ? *self._1 : default_val;
+  auto unwrap_or(T& default_val) -> T& {
+    return this->is_some() ? *_1 : default_val;
   }
 
-  auto unwrap_or_else(this auto self, auto&& f) -> T& {
-    return self.is_some() ? *self._1 : f();
+  auto unwrap_or_else(auto&& f) -> T& {
+    return this->is_some() ? *_1 : f();
   }
 
   template <class U>
-  auto operator&(this auto self, Option<U> optb) -> Option<U> {
-    return self.is_some() ? mem::move(optb) : Option<U>{};
+  auto operator&(Option<U> optb) -> Option<U> {
+    return this->is_some() ? mem::move(optb) : Option<U>{};
   }
 
-  auto operator|(this auto self, Option<T&> optb) -> Option<T&> {
-    return self.is_some() ? mem::move(self) : mem::move(optb);
+  auto operator|(Option<T&> optb) && -> Option<T&> {
+    return this->is_some() ? *this : mem::move(optb);
   }
 
   template <class F, class OptionU = ops::FnOut<F, T&>>
-  auto and_then(F&& op) && -> OptionU {
+  auto and_then(F&& op) -> OptionU {
     return this->is_some() ? op(*_1) : OptionU{};
   }
 
-  auto or_else(this auto self, auto&& f) -> Option<T&> {
-    return self.is_some() ? mem::move(self) : f();
+  auto or_else(auto&& f) -> Option<T&> {
+    return this->is_some() ? *this : f();
   }
 
   template <class F, class U = ops::FnOut<F, T&>>
-  auto map(this auto self, F&& f) -> Option<U> {
-    return self.is_some() ? Option<U>{f(*self._1)} : Option<U>{};
+  auto map(F&& f) -> Option<U> {
+    return this->is_some() ? Option<U>{f(*_1)} : Option<U>{};
   }
 
   template <class U>
-  auto map_or(this auto self, U default_val, auto&& f) -> U {
-    return self.is_some() ? f(*self._1) : mem::move(default_val);
+  auto map_or(U default_val, auto&& f) -> U {
+    return this->is_some() ? f(*_1) : mem::move(default_val);
   }
 
  public:
@@ -254,13 +254,13 @@ class Option<T&> {
     return *_1 == *other;
   }
 
-  auto to_owned(this auto self) -> Option<T> {
-    return self.is_some() ? Option<T>{*self._1} : Option<T>{};
+  auto to_owned() -> Option<T> {
+    return this->is_some() ? Option<T>{*_1} : Option<T>{};
   }
 
   template <class E>
-  auto ok_or(this auto self, E err) -> result::Result<T&, E> {
-    if (self.is_some()) return {*self._1};
+  auto ok_or(E err) -> result::Result<T&, E> {
+    if (this->is_some()) return {*_1};
     return {mem::move(err)};
   }
 
