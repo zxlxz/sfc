@@ -71,10 +71,8 @@ auto DynWrite::write_str(Str buf) -> Result<> {
 }
 
 auto DynWrite::flush() -> Result<> {
-  if (_flush) {
-    return (_flush)(_self);
-  }
-  return Ok{};
+  if (!_flush) return Ok{};
+  return (_flush)(_self);
 }
 
 }  // namespace sfc::io

@@ -81,19 +81,19 @@ class BufReader : public Read {
 
  public:
   auto read(Slice<u8> buf) -> Result<usize> {
-    return _buf.read(_inn, buf);
+    return _buf.read(DynRead::of(_inn), buf);
   }
 
   auto read_until(u8 byte, List<u8>& buf) -> Result<usize> {
-    return _buf.read_until(_inn, byte, buf);
+    return _buf.read_until(DynRead::of(_inn), byte, buf);
   }
 
   auto skip_until(u8 byte) -> Result<usize> {
-    return _buf.skip_until(_inn, byte);
+    return _buf.skip_until(DynRead::of(_inn), byte);
   }
 
   auto read_line(String& buf) -> Result<usize> {
-    return _buf.read_line(_inn, buf);
+    return _buf.read_line(DynRead::of(_inn), buf);
   }
 };
 
@@ -139,11 +139,11 @@ class BufWriter : public Write {
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize> {
-    return _buf.write(_inn, buf);
+    return _buf.write(DynWrite::of(_inn), buf);
   }
 
   auto flush() -> Result<> {
-    return _buf.flush(_inn);
+    return _buf.flush(DynWrite::of(_inn));
   }
 };
 

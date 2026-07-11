@@ -38,8 +38,11 @@ enum class Error {
 template <class T = Unit>
 using Result = result::Result<T, Error>;
 
-struct Serializer {
-  fmt::Write _out;
+class Serializer {
+  fmt::DynWrite _out;
+
+ public:
+  Serializer(auto& out) : _out{fmt::DynWrite::of(out)} {}
 
  public:
   void serialize_null();

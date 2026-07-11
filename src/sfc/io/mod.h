@@ -4,14 +4,16 @@
 
 namespace sfc::io {
 
-class DynRead {
-  using read_t = Result<usize> (*)(void*, Slice<u8> buf);
-  void* _self;
-  read_t _read;
+struct DynRead {
+  class Self;
+  Self& _self;
+  Result<usize> (*_read)(Self&, Slice<u8> buf);
 
  public:
   template <class X>
-  DynRead(X& impl) : _self{&impl}, _read{ops::dyn_fn<&X::read>()} {}
+  static auto of(X& x) -> DynRead {
+    return DynRead{dyn::Impl{x}, dyn::Fn<&X::read>{}};
+  }
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -20,18 +22,19 @@ class DynRead {
   auto read_to_string(String& buf) -> Result<usize>;
 };
 
-class DynWrite {
-  using write_t = Result<usize> (*)(void*, Slice<const u8> buf);
-  using flush_t = Result<> (*)(void*);
-  void* _self;
-  write_t _write;
-  flush_t _flush{nullptr};
+struct DynWrite {
+  class Self;
+  Self& _self;
+  Result<usize> (*_write)(Self&, Slice<const u8> buf);
+  Result<> (*_flush)(Self&){nullptr};
 
  public:
   template <class X>
-  DynWrite(X& impl) : _self{&impl}, _write{ops::dyn_fn<&X::write>()} {
-    if constexpr (requires{ impl.flush(); }) {
-      _flush = ops::dyn_fn<&X::flush>();
+  static auto of(X& x) -> DynWrite {
+    if constexpr (requires { &X::flush; }) {
+      return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write>{}, dyn::Fn<&X::flush>{}};
+    } else {
+      return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write>{}, nullptr};
     }
   }
 
@@ -44,25 +47,25 @@ class DynWrite {
 
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    return DynRead{self}.read_exact(buf);
+    return DynRead::of(self).read_exact(buf);
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    return DynRead{self}.read_to_end(buf);
+    return DynRead::of(self).read_to_end(buf);
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return DynRead{self}.read_to_string(buf);
+    return DynRead::of(self).read_to_string(buf);
   }
 };
 
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    return DynWrite{self}.write_all(buf);
+    return DynWrite::of(self).write_all(buf);
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {
-    return DynWrite{self}.write_str(buf);
+    return DynWrite::of(self).write_str(buf);
   }
 };
 
