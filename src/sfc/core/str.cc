@@ -1,8 +1,31 @@
 #include "sfc/core/str.h"
 #include "sfc/core/hash.h"
 #include "sfc/core/fmt.h"
+#include "sfc/core/cmp.h"
 
 namespace sfc::str {
+
+auto Str::operator==(Str other) const noexcept -> bool {
+  if (_len != other._len) return false;
+  if (_len == 0) return true;
+
+  const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
+  return ret == 0;
+}
+
+auto Str::operator<=>(Str other) const noexcept -> int {
+  const auto len = cmp::min(_len, other._len);
+  if (len == 0) {
+    if (_len == other._len) return 0;
+    return _len < other._len ? -1 : 1;
+  }
+  const auto ret = __builtin_memcmp(_ptr, other._ptr, len);
+  if (ret == 0) {
+    if (_len == other._len) return 0;
+    return _len < other._len ? -1 : 1;
+  }
+  return ret;
+}
 
 auto Str::trim_start() const noexcept -> Str {
   const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };

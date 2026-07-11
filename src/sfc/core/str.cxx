@@ -42,6 +42,25 @@ SFC_TEST(cmp) {
   sfc::assert_ne(s, "abcd");
 }
 
+SFC_TEST(ord) {
+  const auto s = Str{"abc"};
+  sfc::assert_eq(s < "abcd", true);
+  sfc::assert_eq(s < "ab", false);
+  sfc::assert_eq(s < "abc", false);
+
+  sfc::assert_eq(s > "abcd", false);
+  sfc::assert_eq(s > "ab", true);
+  sfc::assert_eq(s > "abc", false);
+
+  sfc::assert_eq(s <= "abcd", true);
+  sfc::assert_eq(s <= "ab", false);
+  sfc::assert_eq(s <= "abc", true);
+
+  sfc::assert_eq(s >= "abcd", false);
+  sfc::assert_eq(s >= "ab", true);
+  sfc::assert_eq(s >= "abc", true);
+}
+
 SFC_TEST(fmt) {
   sfc::assert_eq(string::format("{}", ""), "");
   sfc::assert_eq(string::format("{#?}", Str{""}), R"("")");
@@ -160,26 +179,84 @@ SFC_TEST(ends_with) {
   sfc::assert_eq(Str{}.ends_with(""), false);
 }
 
+SFC_TEST(trim_start) {
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim_start(), "abc  \n\t ");
+
+  const auto b = Str{"abc  \n\t "};
+  sfc::assert_eq(b.trim_start(), "abc  \n\t ");
+
+  const auto c = Str{"  \t\n"};
+  sfc::assert_eq(c.trim_start(), "");
+}
+
+SFC_TEST(trim_start_matches) {
+  auto eq_any = [](auto... vals) { return [=](auto ch) { return ((ch == vals) || ...); }; };
+
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim_start_matches(eq_any(' ')), "\t\nabc  \n\t ");
+  sfc::assert_eq(a.trim_start_matches(eq_any(' ', '\t')), "\nabc  \n\t ");
+  sfc::assert_eq(a.trim_start_matches(eq_any(' ', '\t', '\n')), "abc  \n\t ");
+  sfc::assert_eq(a.trim_start_matches(eq_any(' ', '\t', '\n', 'a')), "bc  \n\t ");
+}
+
+SFC_TEST(trim_end) {
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim_end(), "  \t\nabc");
+
+  const auto b = Str{"  \t\nabc"};
+  sfc::assert_eq(b.trim_end(), "  \t\nabc");
+
+  const auto c = Str{"  \t\n"};
+  sfc::assert_eq(c.trim_end(), "");
+}
+
+SFC_TEST(trim_end_matches) {
+  auto eq_any = [](auto... vals) { return [=](auto ch) { return ((ch == vals) || ...); }; };
+
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim_end_matches(eq_any(' ')), "  \t\nabc  \n\t");
+  sfc::assert_eq(a.trim_end_matches(eq_any(' ', '\t')), "  \t\nabc  \n");
+  sfc::assert_eq(a.trim_end_matches(eq_any(' ', '\t', '\n')), "  \t\nabc");
+  sfc::assert_eq(a.trim_end_matches(eq_any(' ', '\t', '\n', 'c')), "  \t\nab");
+}
+
 SFC_TEST(trim) {
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim(), "abc");
+
+  const auto b = Str{"  \t\nabc"};
+  sfc::assert_eq(b.trim(), "abc");
+
+  const auto c = Str{"abc  \n\t "};
+  sfc::assert_eq(c.trim(), "abc");
+
+  const auto d = Str{"  \t\n"};
+  sfc::assert_eq(d.trim(), "");
+}
+
+SFC_TEST(trim_matches) {
+  auto eq_any = [](auto... vals) { return [=](auto ch) { return ((ch == vals) || ...); }; };
+
+  const auto a = Str{"  \t\nabc  \n\t "};
+  sfc::assert_eq(a.trim_matches(eq_any(' ')), "\t\nabc  \n\t");
+  sfc::assert_eq(a.trim_matches(eq_any(' ', '\t')), "\nabc  \n");
+  sfc::assert_eq(a.trim_matches(eq_any(' ', '\t', '\n')), "abc");
+  sfc::assert_eq(a.trim_matches(eq_any(' ', '\t', '\n', 'a')), "bc");
+}
+
+SFC_TEST(split_once) {
+  const auto s = Str{"a,b;c"};
   {
-    const auto s = Str{"  \t\nabc  \n\t "};
-    sfc::assert_eq(s.trim_start(), "abc  \n\t ");
-    sfc::assert_eq(s.trim_end(), "  \t\nabc");
-    sfc::assert_eq(s.trim(), "abc");
+    const auto [a, b] = s.split_once(',').unwrap_or({{}, {}});
+    sfc::assert_eq(a, "a");
+    sfc::assert_eq(b, "b;c");
   }
 
   {
-    const auto s = Str{"xxxyabczyxx"};
-    sfc::assert_eq(s.trim_start_matches([](char c) { return c == 'x'; }), "yabczyxx");
-    sfc::assert_eq(s.trim_end_matches([](char c) { return c == 'x'; }), "xxxyabczy");
-    sfc::assert_eq(s.trim_matches([](char c) { return c == 'x' || c == 'y'; }), "abcz");
-  }
-
-  {
-    const auto s = Str{};
-    sfc::assert_eq(s.trim_start(), "");
-    sfc::assert_eq(s.trim_end(), "");
-    sfc::assert_eq(s.trim(), "");
+    const auto [a, b] = s.split_once(';').unwrap_or({{}, {}});
+    sfc::assert_eq(a, "a,b");
+    sfc::assert_eq(b, "c");
   }
 }
 
@@ -246,21 +323,6 @@ SFC_TEST(parse_exp) {
   sfc::assert_eq(Str{"-1.5e2"}.parse<f64>(), Option{-150.0});
   sfc::assert_eq(Str{"-1.5e-2"}.parse<f64>(), Option{-0.015});
   sfc::assert_eq(Str{"1e-10"}.parse<f64>(), Option{1e-10});
-}
-
-SFC_TEST(split_once) {
-  const auto s = Str{"a,b;c"};
-  {
-    const auto [a, b] = s.split_once(',').unwrap_or({{}, {}});
-    sfc::assert_eq(a, "a");
-    sfc::assert_eq(b, "b;c");
-  }
-
-  {
-    const auto [a, b] = s.split_once(';').unwrap_or({{}, {}});
-    sfc::assert_eq(a, "a,b");
-    sfc::assert_eq(b, "c");
-  }
 }
 
 }  // namespace sfc::str::test

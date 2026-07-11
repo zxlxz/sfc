@@ -91,25 +91,21 @@ struct Str {
   auto starts_with(auto&& pat) const -> bool;
   auto ends_with(auto&& pat) const -> bool;
 
-  auto trim_start_matches(auto&& pat) const -> Str;
-  auto trim_end_matches(auto&& pat) const -> Str;
-  auto trim_matches(auto&& pat) const -> Str;
-
   auto trim_start() const noexcept -> Str;
+  auto trim_start_matches(auto&& pat) const -> Str;
+
   auto trim_end() const noexcept -> Str;
+  auto trim_end_matches(auto&& pat) const -> Str;
+
   auto trim() const noexcept -> Str;
+  auto trim_matches(auto&& pat) const -> Str;
 
   auto split_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
   auto rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
 
  public:
-  // trait: ops::Eq
-  constexpr auto operator==(Str other) const noexcept -> bool {
-    if (_len != other._len) return false;
-    if (_len == 0) return true;
-    const auto ret = __builtin_memcmp(_ptr, other._ptr, _len);
-    return ret == 0;
-  }
+  auto operator==(Str other) const noexcept -> bool;
+  auto operator<=>(Str other) const noexcept -> int;
 
   // trait: fmt::Display
   void fmt(fmt::Formatter& f) const;
