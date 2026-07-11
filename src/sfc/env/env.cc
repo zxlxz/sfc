@@ -1,5 +1,5 @@
 #if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/unix/env.inl"
+#include "sfc/sys/posix/env.inl"
 #elif defined(_WIN32)
 #include "sfc/sys/windows/env.inl"
 #endif

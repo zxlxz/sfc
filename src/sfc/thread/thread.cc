@@ -1,5 +1,5 @@
 #if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/unix/thread.inl"
+#include "sfc/sys/posix/thread.inl"
 #elif defined(_WIN32)
 #include "sfc/sys/windows/thread.inl"
 #endif

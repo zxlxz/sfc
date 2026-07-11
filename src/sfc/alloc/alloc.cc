@@ -1,5 +1,5 @@
 #if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/unix/alloc.inl"
+#include "sfc/sys/posix/alloc.inl"
 #elif defined(_WIN32)
 #include "sfc/sys/windows/alloc.inl"
 #endif
@@ -8,8 +8,10 @@
 
 namespace sfc::alloc {
 
+constexpr auto kMaxAllocSize = usize{num::Int<i64>::MAX};
+
 void* System::allocate(Layout layout) {
-  if (layout.size == 0) {
+  if (layout.size == 0 || layout.size >= kMaxAllocSize) {
     return nullptr;
   }
 
@@ -30,7 +32,7 @@ void* System::grow(void* ptr, Layout layout, usize new_size) {
   }
 
   if (layout.size == 0) {
-    return sys::alloc(Layout{new_size, layout.align});
+    return System::allocate(Layout{new_size, layout.align});
   }
 
   return sys::realloc(ptr, layout, new_size);
@@ -42,7 +44,7 @@ void* System::shrink(void* ptr, Layout layout, usize new_size) {
   }
 
   if (new_size == 0) {
-    sys::dealloc(ptr, layout);
+    System::deallocate(ptr, layout);
     return nullptr;
   }
 
