@@ -44,8 +44,13 @@ concept float_ = any_<T, float, double>;
 template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
 
+#ifdef __clang__
 template <class T>
 concept tv_drop_ = __is_trivially_destructible(T);
+#else
+template <class T>
+concept tv_drop_ = __has_trivial_destructor(T);
+#endif
 
 template <class T, class... U>
 concept AsRef = requires(const U&... args) { T{args...}; };

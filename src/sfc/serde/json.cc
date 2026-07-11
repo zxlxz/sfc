@@ -18,6 +18,7 @@ auto to_str(Error e) -> Str {
     case Error::InvalidNumber:       return "json::Error::InvalidNumber";
     case Error::InvalidString:       return "json::Error::InvalidString";
   }
+  return "json::Error::Unknown";
 }
 
 void Serializer::serialize_null() {
