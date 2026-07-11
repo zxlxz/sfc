@@ -2,6 +2,24 @@
 
 namespace sfc::serde::json {
 
+auto to_str(Error e) -> Str {
+  switch (e) {
+    case Error::Success:             return "json::Error::Success";
+    case Error::Finished:            return "json::Error::Finished";
+    case Error::EofWhileParsing:     return "json::Error::EofWhileParsing";
+    case Error::ExpectedComma:       return "json::Error::ExpectedComma";
+    case Error::ExpectedDoubleQuote: return "json::Error::ExpectedDoubleQuote";
+    case Error::ExpectedColon:       return "json::Error::ExpectedColon";
+    case Error::ExpectedArrayBegin:  return "json::Error::ExpectedArrayBegin";
+    case Error::ExpectedArrayEnd:    return "json::Error::ExpectedArrayEnd";
+    case Error::ExpectedObjectBegin: return "json::Error::ExpectedObjectBegin";
+    case Error::ExpectedObjectEnd:   return "json::Error::ExpectedObjectEnd";
+    case Error::InvalidKeyword:      return "json::Error::InvalidKeyword";
+    case Error::InvalidNumber:       return "json::Error::InvalidNumber";
+    case Error::InvalidString:       return "json::Error::InvalidString";
+  }
+}
+
 void Serializer::serialize_null() {
   _out.write_str("null");
 }
@@ -166,74 +184,81 @@ Deserializer::DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
 
 Deserializer::DeserializeSeq::~DeserializeSeq() {}
 
-auto Deserializer::DeserializeSeq::next_imp() -> Result<> {
+auto Deserializer::DeserializeSeq::next_imp() -> Result<bool> {
   if (_finished) {
     return Error::Finished;
   }
 
-  if (_count == 0) {  // '['
+  if (!_opened) {  // '['
     const auto tok = _des.next_token();
     if (tok != Token::ArrayBegin) {
       return Error::ExpectedArrayBegin;
     }
     _des.consume(1);
+    _opened = true;
   }
 
   const auto tok = _des.next_token();
   if (tok == Token::ArrayEnd) {  // ']'
+    _des.consume(1);
     _finished = true;
-    _des.consume(1);
-    return Error::Finished;
+    return false;
   }
 
-  if (_count != 0) {
-    if (tok != Token::Comma) {
-      return Error::ExpectedComma;
-    }
-    _des.consume(1);
+  if (_count == 0) {
+    return true;
   }
 
-  _count += 1;
-  return Ok{};
+  if (tok == Token::Comma) {
+    _des.consume(1);
+    return true;
+  }
+
+  return Error::ExpectedComma;
 }
 
 Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
 
 Deserializer::DeserializeObj::~DeserializeObj() {}
 
-auto Deserializer::DeserializeObj::next_imp() -> Result<> {
+auto Deserializer::DeserializeObj::next_imp() -> Result<bool> {
   if (_finished) {
-    return Error::Finished;
+    return false;
   }
 
-  if (_count == 0) {  // '{'
+  if (!_opened) {  // '{'
     const auto tok = _des.next_token();
     if (tok != Token::ObjectBegin) {
       return Error::ExpectedObjectBegin;
     }
     _des.consume(1);
+    _opened = true;
   }
 
   const auto tok = _des.next_token();
   if (tok == Token::ObjectEnd) {  // '}'
     _finished = true;
     _des.consume(1);
-    return Error::Finished;
+    return false;
   }
 
-  if (_count != 0) {
-    if (tok != Token::Comma) {
-      return Error::ExpectedComma;
-    }
+  if (_count == 0) {
+    return true;
+  }
+
+  if (tok == Token::Comma) {
     _des.consume(1);
+    return true;
   }
 
-  _count += 1;
-  return Ok{};
+  return Error::ExpectedComma;
 }
 
-auto Deserializer::DeserializeObj::next_key() -> Result<Str> {
-  _TRY(this->next_imp());
+auto Deserializer::DeserializeObj::next_key() -> Result<Option<Str>> {
+  const auto has_next = _TRY(this->next_imp());
+  if (!has_next) {
+    return {Option<Str>{}};
+  }
 
   const auto key = _TRY(_des.deserialize_str());
   const auto tok = _des.next_token();
@@ -241,7 +266,7 @@ auto Deserializer::DeserializeObj::next_key() -> Result<Str> {
     return Error::ExpectedColon;
   }
   _des.consume(1);  // consume ':'
-  return {key};
+  return {Option{key}};
 }
 
 }  // namespace sfc::serde::json

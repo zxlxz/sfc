@@ -34,6 +34,7 @@ enum class Error {
   InvalidNumber,        // invalid number format
   InvalidString,        // invalid string format (e.g. invalid escape sequence)
 };
+auto to_str(Error err) -> Str;
 
 template <class T = Unit>
 using Result = result::Result<T, Error>;
@@ -169,28 +170,34 @@ class Deserializer::DeserializeSeq {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
+  bool _opened{false};
   bool _finished{false};
 
-  auto next_imp() -> Result<>;
+  auto next_imp() -> Result<bool>;
 
  public:
   DeserializeSeq(Deserializer& inn);
   ~DeserializeSeq();
 
   template <class T>
-  auto next_element() -> Result<T> {
-    _TRY(this->next_imp());
-    return _des.deserialize_any<T>();
+  auto next_element() -> Result<Option<T>> {
+    const auto has_next = _TRY(this->next_imp());
+    if (!has_next) {
+      return {Option<T>{}};
+    }
+
+    auto val = _TRY(_des.deserialize_any<T>());
+    _count += 1;
+    return {Option<T>{mem::move(val)}};
   }
 
   template <class Seq, class T>
   auto collect() -> Result<Seq> {
     auto seq = Seq{};
     while (true) {
-      auto elmt = this->next_element<T>();
-      if (_finished) break;
-      _TRY(elmt);
-      seq.push(mem::move(elmt).unwrap());
+      auto opt = _TRY(this->next_element<T>());
+      if (!opt) break;
+      seq.push(*mem::move(opt));
     }
     return {seq};
   }
@@ -200,37 +207,32 @@ class Deserializer::DeserializeObj {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
+  bool _opened{false};
   bool _finished{false};
 
-  auto next_imp() -> Result<>;
+  auto next_imp() -> Result<bool>;
 
  public:
   DeserializeObj(Deserializer& inn);
   ~DeserializeObj();
 
-  auto next_key() -> Result<Str>;
+  auto next_key() -> Result<Option<Str>>;
 
   template <class T>
   auto next_value() -> Result<T> {
-    return _des.deserialize_any<T>();
-  }
-
-  template <class T>
-  auto next_entry() -> Result<Tuple<Str, T>> {
-    auto key = _TRY(this->next_key());
-    auto val = _TRY(this->next_value<T>());
-    return {Tuple{mem::move(key), mem::move(val)}};
+    auto res = _TRY(_des.deserialize_any<T>());
+    _count += 1;
+    return {mem::move(res)};
   }
 
   template <class Obj, class K, class V>
   auto collect() -> Result<Obj> {
     auto obj = Obj{};
     while (true) {
-      const auto key = this->next_key();
-      if (_finished) break;
-      _TRY(key);
+      auto key = _TRY(this->next_key());
+      if (!key) break;
       auto val = _TRY(this->next_value<V>());
-      obj.insert(key, mem::move(val));
+      obj.insert(*key, mem::move(val));
     }
     return {obj};
   }
