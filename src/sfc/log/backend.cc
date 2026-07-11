@@ -4,7 +4,12 @@
 namespace sfc::log {
 
 void ConsoleBackend::push(Record record) noexcept {
-  io::println("{} [{}] {}", record.time_str(), record.level_str(), record.message);
+  char buf[4096];
+  auto out = fmt::SBuf{buf};
+  fmt::Formatter{out}.write_val(record);
+
+  const auto msg = out.as_str();
+  io::Stdout().write_str(msg);
 }
 
 void ConsoleBackend::flush() noexcept {}
@@ -14,10 +19,12 @@ FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
 FileBackend::~FileBackend() noexcept {}
 
 void FileBackend::push(Record record) noexcept {
-  char buf[1024];
+  char buf[4096];
   auto out = fmt::SBuf{buf};
-  fmt::write(out, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
-  (void)_file.write_str(out.as_str());
+  fmt::Formatter{out}.write_val(record);
+
+  const auto msg = out.as_str();
+  (void)_file.write_str(msg);
 }
 
 void FileBackend::flush() noexcept {
@@ -33,14 +40,15 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 }
 
 void GlobalBackend::push(Record record) noexcept {
-  char buf[1024];
+  char buf[4096];
   auto out = fmt::SBuf{buf};
-  fmt::write(out, "{} [{}] {}\n", record.time_str(), record.level_str(), record.message);
+  fmt::Formatter{out}.write_val(record);
 
+  const auto msg = out.as_str();
   if (_file.is_valid()) {
-    (void)_file.write_str(out.as_str());
+    (void)_file.write_str(msg);
   } else {
-    io::Stdout{}.write_str(out.as_str());
+    io::Stdout().write_str(msg);
   }
 }
 

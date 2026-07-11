@@ -35,6 +35,12 @@ auto Record::time_str() const -> Str {
   return out.as_str();
 }
 
+void Record::fmt(fmt::Formatter& f) const {
+  const auto time_str = this->time_str();
+  const auto level_str = this->level_str();
+  fmt::write(f, "{} [{}] {}", time_str, level_str, this->message);
+}
+
 auto Logger::level() const -> Level {
   return _level;
 }
