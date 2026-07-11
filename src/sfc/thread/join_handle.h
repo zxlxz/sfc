@@ -16,6 +16,7 @@ class JoinHandle {
   JoinHandle(JoinHandle&& other) noexcept;
   JoinHandle& operator=(JoinHandle&& other) noexcept;
 
+ public:
   auto is_finished() const -> bool;
   void join();
 };

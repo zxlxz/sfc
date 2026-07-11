@@ -14,25 +14,16 @@ struct ThreadData {
   ffi::OsString _name;
 
  public:
-  void run() noexcept {
+  void operator()() noexcept {
     const auto name_ptr = _name.as_ptr();
     if (name_ptr != nullptr) {
       sys::Thread::set_name(name_ptr);
     }
-    _func();
-  }
-
-  static auto run(void* ptr) noexcept -> bool {
-    auto dat = ptr::cast<ThreadData>(ptr);
-    auto obj = Box<ThreadData>::from_raw(dat);
 
     try {
-      obj->run();
-    } catch (...) {
-      return false;
-    }
-
-    return true;
+      _func();
+    } catch (...) {}
+    return;
   }
 };
 
@@ -76,8 +67,10 @@ JoinGuard::JoinGuard(JoinGuard&&) noexcept = default;
 JoinGuard& JoinGuard::operator=(JoinGuard&&) noexcept = default;
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+  const auto stack_size_u32 = num::saturating_cast<u32>(stack_size);
+
   auto data = Box<ThreadData>::new_(mem::move(fun), ffi::OsString::from(name));
-  auto thrd = sys::Thread::spawn(stack_size, data.ptr());
+  auto thrd = sys::Thread::spawn(stack_size_u32, &*data);
   // if thread creation succeeded:
   //    the thread will take ownership of data
   //    so we should forget it here to avoid double free

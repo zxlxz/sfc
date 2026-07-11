@@ -14,20 +14,22 @@ struct Thread {
     return tid;
   }
 
-  template <class Fn>
-  static unsigned __stdcall callback(void* p) {
-    return Fn::run(p) ? 0 : 1;
+  template <class X>
+  static unsigned __stdcall start_routine(void* p) {
+    auto& obj = *ptr::cast<X>(p);
+    obj();
+    return 0;
   }
 
-  template <class Fn>
-  static auto spawn(size_t stack_size, Fn* func) -> Thread {
-    const auto ss = num::saturating_cast<u32>(stack_size);
-    const auto cb = &Thread::callback<Fn>;
-    const auto thrd = ::_beginthreadex(nullptr, ss, cb, func, 0, nullptr);
+  template <class X>
+  static auto spawn(u32 stack_size, X* func) -> Thread {
+    const auto thrd = ::_beginthreadex(nullptr, stack_size, start_routine<X>, func, 0, nullptr);
     if (thrd == 0) {
       return {};
     }
-    return Thread{__builtin_bit_cast(HANDLE, thrd)};
+
+    const auto handle = __builtin_bit_cast(HANDLE, thrd);
+    return Thread{handle};
   }
 
   static void yield_now() {
@@ -53,8 +55,7 @@ struct Thread {
 
     const auto ret = ::WaitForSingleObject(_raw, INFINITE);
     ::CloseHandle(_raw);
-    sfc::assert_(ret == WAIT_OBJECT_0,
-                    "Thread::join: WaitForSingleObject failed, err={}", ::GetLastError());
+    sfc::assert_(ret == WAIT_OBJECT_0, "Thread::join: WaitForSingleObject failed, err={}", ::GetLastError());
   }
 
   void detach() {

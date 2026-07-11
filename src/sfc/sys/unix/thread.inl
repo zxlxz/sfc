@@ -37,21 +37,23 @@ struct Thread {
     return num::saturating_cast<u32>(tid);
   }
 
-  template <class Fn>
-  static auto callback(void* p) -> void* {
-    const auto ret = Fn::run(p);
-    return ret ? nullptr : p;
+  template <class X>
+  static auto start_routine(void* p) -> void* {
+    auto& obj = *ptr::cast<X>(p);
+    obj();
+    return nullptr;
   }
 
-  template <class Fn>
-  static auto spawn(size_t stack_size, Fn* func) -> Thread {
+  template <class X>
+  static auto spawn(u32 stack_size, X* obj) -> Thread {
     // thread attr
     auto attr = ThreadAttr{};
     attr.set_stack_size(stack_size);
 
     // create
     auto thr = pthread_t{};
-    if (auto err = ::pthread_create(&thr, &attr._raw, callback<Fn>, func); err != 0) {
+    const auto err = ::pthread_create(&thr, &attr._raw, start_routine<X>, obj);
+    if (err != 0) {
       return {};
     }
 
