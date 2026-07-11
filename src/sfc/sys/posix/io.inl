@@ -1,9 +1,9 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 #define _SFC_SYS_IO_
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 static inline auto io_error(int code) -> io::Error {
   switch (code) {
@@ -42,6 +42,71 @@ static inline auto io_error(int code) -> io::Error {
     default:            return io::Error::Other;
   }
 }
+
+class File {
+  int _fd = -1;
+
+ public:
+  File(int fd = -1) : _fd(fd) {}
+
+  ~File() {
+    if (_fd == -1) return;
+    ::close(_fd);
+  }
+
+  File(File&& other) noexcept : _fd(other._fd) {
+    other._fd = -1;
+  }
+
+  File& operator=(File&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_fd, other._fd);
+    }
+    return *this;
+  }
+
+  auto is_valid() const -> bool {
+    return _fd != -1;
+  }
+
+  auto is_terminal() const -> bool {
+    return ::isatty(_fd) == 1;
+  }
+
+  auto flush() -> io::Result<> {
+    if (::fsync(_fd) == -1) {
+      return {io::last_os_error()};
+    }
+    return Ok{};
+  }
+
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto nret = ::read(_fd, buf._ptr, buf._len);
+    if (nret == -1) {
+      return Err{io::last_os_error()};
+    }
+    const auto nread = num::cast_unsigned(nret);
+    return Ok{nread};
+  }
+
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto nret = ::write(_fd, buf._ptr, buf._len);
+    if (nret == -1) {
+      return {io::last_os_error()};
+    }
+    const auto nwrite = num::cast_unsigned(nret);
+    return {nwrite};
+  }
+
+  auto seek(off_t offset, int whence) -> io::Result<usize> {
+    const auto ret = ::lseek(_fd, offset, whence);
+    if (ret == -1) {
+      return {io::last_os_error()};
+    }
+    const auto nseek = num::cast_unsigned(ret);
+    return {usize{nseek}};
+  }
+};
 
 struct StdIo {
   int _fd;
@@ -115,4 +180,4 @@ struct Stderr {
   }
 };
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

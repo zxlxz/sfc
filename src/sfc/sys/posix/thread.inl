@@ -1,9 +1,9 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 #define _SFC_SYS_THREAD_
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 struct ThreadAttr {
   pthread_attr_t _raw;
@@ -111,4 +111,4 @@ inline void sleep(time::Duration dur) noexcept {
   (void)::nanosleep(&ts, nullptr);
 }
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

@@ -1,23 +1,9 @@
 #pragma once
 
-#include "sfc/sys/raw.h"
-
-namespace sfc::sys {
-
-using raw::RawFd;
-using raw::ErrCode;
-
-#ifndef _SFC_SYS_IO_
-using raw::File;
+#if defined(__unix__) || defined(__APPLE__)
+#include "sfc/sys/posix.h"
 #endif
 
-#ifndef _SFC_SYS_THREAD_
-using raw::Thread;
+#ifdef _WIN32
+#include "sfc/sys/windows.h"
 #endif
-
-#ifndef _SFC_SYS_SYNC_
-using raw::Condvar;
-using raw::Mutex;
-#endif
-
-}  // namespace sfc::sys

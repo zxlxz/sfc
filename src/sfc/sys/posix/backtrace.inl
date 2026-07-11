@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 struct Backtrace {
   static constexpr auto kMaxFrame = 64;
@@ -59,4 +59,4 @@ inline auto Backtrace::frame(unsigned idx) const -> Frame {
   return frame;
 }
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

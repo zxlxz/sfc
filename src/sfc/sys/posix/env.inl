@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 static auto getenv(const char* key) -> ffi::CString {
   const auto c_val = Str::from_cstr(::getenv(key));
@@ -72,4 +72,4 @@ static auto chdir(const char* path) -> bool {
   return ::chdir(path) != -1;
 }
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

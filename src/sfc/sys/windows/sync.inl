@@ -4,50 +4,95 @@
 
 namespace sfc::sys::windows {
 
-struct Mutex {
-  SRWLOCK _raw;
+class Mutex {
+  struct Inn {
+    SRWLOCK _0;
+  };
+  Inn* _ptr{nullptr};
 
  public:
   explicit Mutex() {
-    ::InitializeSRWLock(&_raw);
+    _ptr = new Inn{};
+    ::InitializeSRWLock(&_ptr->_0);
+  }
+
+  ~Mutex() {
+    if (_ptr == nullptr) return;
+    delete _ptr;
+  }
+
+  Mutex(Mutex&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = nullptr;
+  }
+
+  Mutex& operator=(Mutex&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_ptr, other._ptr);
+    }
+    return *this;
+  }
+
+  auto raw() -> SRWLOCK* {
+    return &_ptr->_0;
   }
 
   void lock() {
-    ::AcquireSRWLockExclusive(&_raw);
+    ::AcquireSRWLockExclusive(&_ptr->_0);
   }
 
   void unlock() {
-    ::ReleaseSRWLockExclusive(&_raw);
+    ::ReleaseSRWLockExclusive(&_ptr->_0);
   }
 
   auto try_lock() -> bool {
-    return ::TryAcquireSRWLockExclusive(&_raw);
+    const auto ret = ::TryAcquireSRWLockExclusive(&_ptr->_0);
+    return bool(ret);
   }
 };
 
-struct Condvar {
-  CONDITION_VARIABLE _raw;
+class Condvar {
+  struct Inn {
+    CONDITION_VARIABLE _0;
+  };
+  Inn* _ptr{nullptr};
 
  public:
   explicit Condvar() {
-    ::InitializeConditionVariable(&_raw);
+    _ptr = new Inn{};
+    ::InitializeConditionVariable(&_ptr->_0);
+  }
+
+  ~Condvar() {
+    if (_ptr == nullptr) return;
+    delete _ptr;
+  }
+
+  Condvar(Condvar&& other) noexcept : _ptr{other._ptr} {
+    other._ptr = nullptr;
+  }
+
+  Condvar& operator=(Condvar&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_ptr, other._ptr);
+    }
+    return *this;
   }
 
   void notify_one() {
-    ::WakeConditionVariable(&_raw);
+    ::WakeConditionVariable(&_ptr->_0);
   }
 
   void notify_all() {
-    ::WakeAllConditionVariable(&_raw);
+    ::WakeAllConditionVariable(&_ptr->_0);
   }
 
   void wait(Mutex& mtx) {
-    ::SleepConditionVariableSRW(&_raw, &mtx._raw, INFINITE, 0);
+    (void)::SleepConditionVariableSRW(&_ptr->_0, mtx.raw(), INFINITE, 0);
   }
 
   bool wait_timeout(Mutex& mtx, time::Duration dur) {
     const auto ms = num::saturating_cast<u32>(dur.as_millis());
-    const auto ret = ::SleepConditionVariableSRW(&_raw, &mtx._raw, ms, 0);
+    const auto ret = ::SleepConditionVariableSRW(&_ptr->_0, mtx.raw(), ms, 0);
     return bool(ret);
   }
 };

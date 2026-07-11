@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
 static constexpr auto MICROS_PER_SEC = 1000000U;
@@ -79,4 +79,4 @@ struct DateTime {
   }
 };
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

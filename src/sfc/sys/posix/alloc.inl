@@ -1,8 +1,8 @@
 #pragma once
 
-#include "sfc/sys/unix/mod.inl"
+#include "sfc/sys/posix/mod.inl"
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 auto alloc(mem::Layout layout) -> void* {
   if (layout.size == 0) {
@@ -50,4 +50,4 @@ auto realloc(void* ptr, mem::Layout layout, usize new_size) -> void* {
   return new_ptr;
 }
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix

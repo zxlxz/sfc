@@ -38,14 +38,14 @@
 #include "sfc/core.h"
 #include "sfc/ffi.h"
 
-namespace sfc::sys::unix {
+namespace sfc::sys::posix {
 
 static inline auto os_error() -> int {
   return errno;
 }
 
-}  // namespace sfc::sys::unix
+}  // namespace sfc::sys::posix
 
 namespace sfc::sys {
-using namespace unix;
+using namespace posix;
 }
