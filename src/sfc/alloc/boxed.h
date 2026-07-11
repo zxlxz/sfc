@@ -6,7 +6,7 @@ namespace sfc::boxed {
 
 template <class T>
 class [[nodiscard]] Box {
-  T* _ptr = nullptr;
+  T* _ptr{nullptr};
 
  public:
   Box() noexcept = default;
@@ -16,13 +16,10 @@ class [[nodiscard]] Box {
     delete _ptr;
   }
 
-  Box(Box&& other) noexcept : _ptr{other._ptr} {
-    other._ptr = nullptr;
-  }
+  Box(Box&& other) noexcept : _ptr{mem::take(other._ptr)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      // just swap to other, and let other destruct old data
       mem::swap(_ptr, other._ptr);
     }
     return *this;
@@ -34,31 +31,19 @@ class [[nodiscard]] Box {
     return res;
   }
 
-  template <class... U>
-  static auto new_(U&&... args) -> Box {
+  static auto new_(auto&&... args) -> Box {
     auto res = Box{};
-    res._ptr = new T{(U&&)(args)...};
+    res._ptr = new T{(decltype(args)&&)(args)...};
     return res;
   }
 
  public:
-  auto ptr() const noexcept -> T* {
+  auto as_ptr() const noexcept -> T* {
     return _ptr;
   }
 
   auto into_raw() && noexcept -> T* {
     return mem::take(_ptr);
-  }
-
-  template <class B>
-  auto cast() && noexcept -> Box<B> {
-    static_assert(__has_virtual_destructor(B));
-    const auto p = dynamic_cast<B*>(_ptr);
-    if (p == nullptr) {
-      return {};
-    }
-    _ptr = nullptr;
-    return Box<B>::from_raw(p);
   }
 
  public:
