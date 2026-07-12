@@ -1,3 +1,5 @@
+project(sfc)
+
 # sfc
 add_library(sfc)
 target_source_files(sfc . "*.cc")
