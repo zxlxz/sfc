@@ -4,6 +4,8 @@
 
 namespace sfc::list {
 
+using slice::Range;
+
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
   using Inn = RawBuf<T, A>;
@@ -108,11 +110,11 @@ class [[nodiscard]] List {
     return _buf[idx];
   }
 
-  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
+  auto operator[](Range ids) const noexcept -> Slice<const T> {
     return this->as_slice()[ids];
   }
 
-  auto operator[](ops::Range ids) noexcept -> Slice<T> {
+  auto operator[](Range ids) noexcept -> Slice<T> {
     return this->as_mut_slice()[ids];
   }
 
@@ -213,9 +215,6 @@ class [[nodiscard]] List {
     return res;
   }
 
-  class Drain;
-  auto drain(ops::Range ids) noexcept -> Drain;
-
   void resize(usize new_len, T value) noexcept {
     if (new_len <= _len) {
       return this->truncate(new_len);
@@ -260,8 +259,9 @@ class [[nodiscard]] List {
       return;
     }
 
-    auto cnt = idx;
     const auto ptr = _buf.ptr();
+
+    auto cnt = idx;
     for (auto i = idx + 1; i < _len; ++i) {
       if (f(ptr[i])) {
         ptr[cnt++] = mem::move(ptr[i]);
@@ -269,6 +269,9 @@ class [[nodiscard]] List {
     }
     this->truncate(cnt);
   }
+
+  class Drain;
+  auto drain(Range ids) noexcept -> Drain;
 
  public:
   using Iter = slice::Iter<const T>;
@@ -319,7 +322,7 @@ class List<T, A>::Drain {
   Slice<T> _hole;
 
  public:
-  Drain(List& list, ops::Range ids) noexcept : _list{list}, _hole{list[ids]} {}
+  Drain(List& list, Range range) noexcept : _list{list}, _hole{list[range]} {}
 
   ~Drain() noexcept {
     ptr::drop(_hole._ptr, _hole._len);
@@ -343,7 +346,7 @@ class List<T, A>::Drain {
 };
 
 template <class T, class A>
-auto List<T, A>::drain(ops::Range ids) noexcept -> Drain {
+auto List<T, A>::drain(Range ids) noexcept -> Drain {
   return Drain{*this, ids};
 }
 

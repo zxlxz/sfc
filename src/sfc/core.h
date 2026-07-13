@@ -5,12 +5,12 @@
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/num.h"
-#include "sfc/core/dyn.h"
 #include "sfc/core/ops.h"
 #include "sfc/core/tuple.h"
-#include "sfc/core/io.h"
 
 #ifndef __CUDACC__
+#include "sfc/core/io.h"
+#include "sfc/core/dyn.h"
 #include "sfc/core/str.h"
 #include "sfc/core/fmt.h"
 #include "sfc/core/hash.h"

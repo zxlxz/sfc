@@ -5,6 +5,8 @@
 
 namespace sfc::str {
 
+using slice::Range;
+
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -65,7 +67,7 @@ struct Str {
 
   constexpr auto operator[](Range ids) const noexcept -> Str {
     ids = ids.wrap(_len);
-    return Str{_ptr + ids.start, ids.len()};
+    return Str{_ptr + ids._start, ids.len()};
   }
 
   auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
@@ -140,7 +142,7 @@ auto Str::parse() const -> Option<T> {
 struct SearchStep {
   enum Kind { Done = 0, Match = 1, Reject = 2 };
   Kind kind;
-  ops::Range range{0, 0};
+  Range range{0, 0};
 };
 
 struct Searcher {
@@ -211,7 +213,7 @@ auto Str::find(auto&& pat) const -> Option<usize> {
   if (kind != SearchStep::Match) {
     return {};
   }
-  return step.start;
+  return step._start;
 }
 
 auto Str::rfind(auto&& pat) const -> Option<usize> {
@@ -224,7 +226,7 @@ auto Str::rfind(auto&& pat) const -> Option<usize> {
   if (kind != SearchStep::Match) {
     return {};
   }
-  return step.start;
+  return step._start;
 }
 
 auto Str::contains(auto&& pat) const -> bool {
@@ -265,7 +267,7 @@ auto Str::trim_start_matches(auto&& pat) const -> Str {
   auto s = Pattern::into_searcher(pat, *this);
   auto i = _len;
   if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
-    i = step.start;
+    i = step._start;
   }
   return Str{_ptr + i, _len - i};
 }
@@ -278,7 +280,7 @@ auto Str::trim_end_matches(auto&& pat) const -> Str {
   auto s = Pattern::into_searcher(pat, *this);
   auto j = usize{0U};
   if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
-    j = step.end;
+    j = step._end;
   }
   return Str{_ptr, j};
 }
@@ -292,11 +294,11 @@ auto Str::trim_matches(auto&& pat) const -> Str {
   auto i = usize{0U};
   auto j = usize{0U};
   if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
-    i = step.start;
-    j = step.end;
+    i = step._start;
+    j = step._end;
   }
   if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
-    j = step.end;
+    j = step._end;
   }
   return Str{_ptr + i, j - i};
 }

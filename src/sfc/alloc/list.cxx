@@ -104,7 +104,7 @@ SFC_TEST(drain) {
 
   auto v = List<int>::from(tmp);
   {
-    auto drain = v.drain(ops::Range{2, 4});
+    auto drain = v.drain({2, 4});
     auto idx = 2;
     drain.for_each([&idx](int& x) { sfc::assert_eq(x, idx++); });
   }
@@ -138,7 +138,7 @@ SFC_TEST(memory) {
   sfc::assert_eq(cnt, 9);
 
   // drain
-  v.drain(ops::Range{0, 5});
+  v.drain({0, 5});
   sfc::assert_eq(cnt, 4);
 }
 

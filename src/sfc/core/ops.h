@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/num.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
@@ -35,35 +35,79 @@ struct Fn<R(T...)> {
   }
 };
 
-template <class Self, class>
-struct DynFn;
-
 struct End {};
 static constexpr auto $ = End{};
 
+template <class T = usize>
 struct Range {
-  usize start;
-  usize end;
+  T _start;
+  T _end;
 
  public:
-  constexpr Range(usize start, usize end) : start{start}, end{end} {}
-  constexpr Range(usize start, End) : start{start}, end{usize(-1)} {}
+  constexpr Range(T start, T end) : _start{start}, _end{end} {}
+  constexpr Range(T start, End) : _start{start}, _end{num::Int<T>::MAX} {}
 
-  constexpr auto wrap(usize len) const noexcept -> Range {
-    const auto s = start < len ? start : len;
-    const auto e = end < len ? end : len;
+  constexpr auto wrap(T len) const noexcept -> Range {
+    const auto s = _start < len ? _start : len;
+    const auto e = _end < len ? _end : len;
     return {s, e};
   }
 
   constexpr auto len() const noexcept -> usize {
-    return start < end ? end - start : 0UL;
+    return _start < _end ? usize{_end - _start} : 0UL;
+  }
+
+ public:
+  // trait: cmp::Eq
+  auto operator==(const Range& r) const noexcept -> bool {
+    return _start == r._start && _end == r._end;
+  }
+
+  void fmt(auto& f) const {
+    if (_end == num::Int<T>::MAX) {
+      f.write_fmt("{}..$", _start);
+    } else {
+      f.write_fmt("{}..{}", _start, _end);
+    }
+  }
+
+ public:
+  // trait: iter::Iter
+  auto operator*() const noexcept -> T {
+    return _start;
+  }
+
+  // trait: iter::Iter
+  void operator++() noexcept {
+    ++_start;
   }
 };
+
+// trait: cmp::Eq(End)
+template <class T>
+auto operator!=(Range<T> self, End) noexcept -> bool {
+  return self._start != self._end;
+}
+
+template <class T>
+auto begin(Range<T> iter) -> Range<T> {
+  return iter;
+}
+
+template <class T>
+auto end(Range<T>) -> End {
+  return {};
+}
+
+template <class T>
+auto range(T start, T end) -> Range<T> {
+  return {start, end};
+}
 
 }  // namespace sfc::ops
 
 namespace sfc {
 using ops::$;
-using ops::Range;
+using ops::range;
 using ops::FnOut;
 }  // namespace sfc

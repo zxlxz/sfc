@@ -11,6 +11,8 @@
 
 namespace sfc::slice {
 
+using Range = ops::Range<usize>;
+
 template <class T>
 struct Iter;
 
@@ -78,14 +80,14 @@ struct Slice {
     return _ptr[idx];
   }
 
-  auto operator[](ops::Range ids) const noexcept -> Slice<const T> {
+  auto operator[](Range ids) const noexcept -> Slice<const T> {
     ids = ids.wrap(_len);
-    return Slice<const T>{_ptr + ids.start, ids.len()};
+    return Slice<const T>{_ptr + ids._start, ids.len()};
   }
 
-  auto operator[](ops::Range ids) noexcept -> Slice<T> {
+  auto operator[](Range ids) noexcept -> Slice<T> {
     ids = ids.wrap(_len);
-    return Slice<T>{_ptr + ids.start, ids.len()};
+    return Slice<T>{_ptr + ids._start, ids.len()};
   }
 
   auto first() const noexcept -> Option<const T&> {
@@ -223,6 +225,18 @@ struct Slice {
   }
 
  public:
+  // trait: ops::Eq
+  constexpr auto operator==(const Slice& v) const noexcept -> bool {
+    if (_len != v._len) return false;
+
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] != v._ptr[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
@@ -255,19 +269,6 @@ auto begin(Slice<T> v) -> const T* {
 template <class T>
 auto end(Slice<T> v) -> const T* {
   return v._ptr + v._len;
-}
-
-// trait: ops::Eq
-template <class A, class B>
-constexpr auto operator==(const Slice<A>& a, const Slice<B>& b) noexcept -> bool {
-  if (a._len != b._len) return false;
-
-  for (auto i = 0UL; i < a._len; ++i) {
-    if (a._ptr[i] != b._ptr[i]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 template <class T>

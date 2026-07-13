@@ -4,6 +4,8 @@
 
 namespace sfc::string {
 
+using slice::Range;
+
 class [[nodiscard]] String {
   using Buf = List<u8>;
   Buf _buf{};
@@ -22,7 +24,7 @@ class [[nodiscard]] String {
   auto as_slice() const noexcept -> Slice<const u8>;
   auto as_mut_slice() noexcept -> Slice<u8>;
   auto as_str() const noexcept -> Str;
-  auto operator[](ops::Range ids) const noexcept -> Str;
+  auto operator[](Range ids) const noexcept -> Str;
 
  public:
   auto pop() noexcept -> Option<char32_t>;
