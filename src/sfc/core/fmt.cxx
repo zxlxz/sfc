@@ -123,6 +123,10 @@ SFC_TEST(flt) {
   sfc::assert_eq(format("{}", 3.14159), "3.141590");
   sfc::assert_eq(format("{}", -2.5), "-2.500000");
 
+  // edge
+  sfc::assert_eq(format("{.4}", 0.99994), "0.9999");
+  sfc::assert_eq(format("{.4}", 0.99995), "1.0000");
+
   // precision
   sfc::assert_eq(format("{.2}", 3.14159), "3.14");
   sfc::assert_eq(format("{.0}", 3.14159), "3");
@@ -137,6 +141,10 @@ SFC_TEST(exp) {
 
   sfc::assert_eq(format("{.2e}", 1234.5f), "1.23e+03");
   sfc::assert_eq(format("{.2e}", -1234.5f), "-1.23e+03");
+
+  // edge
+  sfc::assert_eq(format("{.3e}", 0.99994), "9.999e-01");
+  sfc::assert_eq(format("{.3e}", 0.99995), "1.000e+00");
 }
 
 SFC_TEST(flt_nan) {

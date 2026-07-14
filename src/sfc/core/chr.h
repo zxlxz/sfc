@@ -24,6 +24,14 @@ constexpr auto is_alpha(char ch) noexcept -> bool {
   return ('a' <= lower && lower <= 'z');
 }
 
+constexpr auto is_upcase(char ch) noexcept -> bool {
+  return 'A' <= ch && ch <= 'Z';
+}
+
+constexpr auto is_lowcase(char ch) noexcept -> bool {
+  return 'a' <= ch && ch <= 'z';
+}
+
 struct Chars : iter::Iterator<char32_t> {
   const u8* _ptr;
   const u8* _end;

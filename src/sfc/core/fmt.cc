@@ -3,111 +3,106 @@
 
 namespace sfc::fmt {
 
-static auto exp10(u32 n) -> f64 {
-  static constexpr f64 kTBL[] = {
+struct FixFloat {
+  u64 _int;  // int part
+  u64 _flt;  // flt part
+};
+
+struct ExpFloat {
+  u64 _base;  // fixed point value
+  i32 _iexp;  // exponent, the actual value is _val * 10^(-_exp)
+};
+
+static auto exp10(int n) -> f64 {
+  constexpr u32 kCNT = 32U;
+  constexpr f64 kTBL[] = {
       1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
       1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27, 1e28, 1e29, 1e30, 1e31,
   };
 
-  if (n == 0) {
+  auto u = n < 0 ? u32(-n) : u32(n);
+  if (u == 0) {
     return 1.0;
   }
 
   auto x = 1.0;
-  for (; n > 32; n -= 32) {
+  for (; u >= kCNT; u -= kCNT) {
     x *= 1e32;
   }
-  x *= kTBL[n];
+  x *= kTBL[u];
+
+  if (n < 0) {
+    x = 1.0 / x;
+  }
   return x;
 }
 
-struct FltPoint {
-  u64 _int;  // int part
-  u64 _flt;  // flt part
+static auto frexp10(f64 uflt, int* exp) {
+  auto e2 = 0;
+  __builtin_frexp(uflt, &e2);
 
- public:
-  static auto build(f64 t, u32 precision) -> FltPoint {
-    static constexpr auto kMaxPrecision = 20U;
-    if (precision > kMaxPrecision) {
-      precision = kMaxPrecision;
-    }
+  auto e10 = int(e2 * 0.301029995663981195);
+  auto m10 = uflt / exp10(e10);
 
-    const auto exp_val = fmt::exp10(precision);
-
-    // extract integer part
-    auto int_val = __builtin_floor(t);
-    auto flt_val = __builtin_round((t - int_val) * exp_val);
-    if (flt_val >= exp_val) {
-      flt_val -= exp_val;
-      int_val += 1;
-    }
-
-    // add 1000... to flt_val
-    // to ensure it has leading zeros when converted to string
-    flt_val += exp_val;
-
-    const auto int_part = num::trunc_to_int(int_val);
-    const auto flt_part = num::trunc_to_int(flt_val);
-
-    return FltPoint{
-        num::cast_unsigned(int_part),
-        num::cast_unsigned(flt_part),
-    };
-  }
-};
-
-struct FixPoint {
-  u64 _fix;  // fixed point value
-  i32 _exp;  // exponent, the actual value is _fix * 10^(-_exp)
-
- public:
-  static auto unpack_exp(f64 t) -> i32 {
-    auto n = 0;
-    if (t > 10.0) {
-      for (; t >= 1e10; n += 10) {
-        t *= 1e-10;
-      }
-      for (; t >= 10.0; n += 1) {
-        t *= 1e-1;
-      }
-      return n;
-    }
-
-    if (t < 1.00) {
-      if (t < 1e-200) {  // too small, treat as zero
-        return 0;
-      }
-      for (; t <= 1e-10; n -= 10) {
-        t *= 1e10;
-      }
-      for (; t < 1.00; n -= 1) {
-        t *= 1e1;
-      }
-      return n;
-    }
-    return 0;
+  if (m10 >= 10.0) {
+    m10 /= 10.0;
+    e10 += 1;
+  } else if (m10 < 1.0 && m10 != 0.0) {
+    m10 *= 10.0;
+    e10 -= 1;
   }
 
-  static auto build(f64 t, u32 precision) -> FixPoint {
-    static constexpr auto kMaxPrecision = 20U;
-    if (precision > kMaxPrecision) {
-      precision = kMaxPrecision;
-    }
+  *exp = e10;
+  return m10;
+}
 
-    const auto exp_cnt = FixPoint::unpack_exp(t);
-    const auto exp_factor = fmt::exp10(num::unsigned_abs(exp_cnt));
-    const auto uval = exp_cnt >= 0 ? t / exp_factor : t * exp_factor;
+static auto prec_ratio(u32 precision) -> u64 {
+  const u64 k10 = u64(1e10);  // 1e10
+  const u64 k19 = u64(1e19);  // 1e19
+  const u64 kTBL[10] = {1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U};
+  if (precision < 10) return kTBL[precision];
+  if (precision < 20) return k10 * kTBL[precision - 10];
+  return k19;
+}
 
-    const auto prec_ratio = fmt::exp10(precision);
-    const auto fix_sint = num::trunc_to_int(uval * prec_ratio);
-    const auto fix_uint = num::cast_unsigned(fix_sint);
-    if (f64(fix_sint) > prec_ratio * 10 && exp_cnt > 0) {
-      return FixPoint{fix_uint / 10, exp_cnt - 1};
-    }
-
-    return FixPoint{fix_uint, exp_cnt};
+static auto build_fix(f64 uflt, u32 precision) -> FixFloat {
+  const auto kMaxPrecision = 20U;
+  if (precision >= kMaxPrecision) {
+    precision = kMaxPrecision - 1;
   }
-};
+
+  // 1000...
+  const auto prec_ratio = fmt::prec_ratio(precision);
+
+  // extract integer part
+  auto int_part = u64(uflt);
+  auto flt_part = u64(__builtin_round((uflt - int_part) * f64(prec_ratio)));
+  if (flt_part >= prec_ratio) {
+    flt_part -= prec_ratio;
+    int_part += 1;
+  }
+
+  // add 1000... to flt_part
+  // to ensure it has leading zeros when converted to string
+  flt_part += prec_ratio;
+
+  return FixFloat{int_part, flt_part};
+}
+
+static auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
+  const auto prec_ratio = fmt::prec_ratio(precision);
+
+  auto exp_cnt = 0;
+  auto flt_val = frexp10(uflt, &exp_cnt);
+
+  auto int_part = u64(__builtin_round(flt_val * prec_ratio));
+  if (int_part / 10 >= prec_ratio) {
+    int_part /= 10;
+    exp_cnt += 1;
+  }
+
+  return ExpFloat{u64(int_part), exp_cnt};
+}
 
 struct RevBuf {
   char* _buf;
@@ -123,32 +118,31 @@ struct RevBuf {
 
   auto write_u64(u64 uval, char type = 0) noexcept -> Str {
     switch (type) {
-      default:  this->write_dec(uval); break;
-      case 'B': this->write_bin<2>(uval); break;
-      case 'b': this->write_bin<2>(uval); break;
-      case 'O': this->write_bin<8>(uval); break;
-      case 'o': this->write_bin<8>(uval); break;
-      case 'X': this->write_bin<16>(uval, true); break;
-      case 'x': this->write_bin<16>(uval, false); break;
+      default:  this->push_dec(uval); break;
+      case 'B': this->push_bin<2>(uval); break;
+      case 'b': this->push_bin<2>(uval); break;
+      case 'O': this->push_bin<8>(uval); break;
+      case 'o': this->push_bin<8>(uval); break;
+      case 'X': this->push_bin<16>(uval, true); break;
+      case 'x': this->push_bin<16>(uval, false); break;
     }
     return this->as_str();
   }
 
-  auto write_ptr(usize uval, char p = 'x') noexcept -> Str {
+  auto write_ptr(usize uval, bool upcase) noexcept -> Str {
     static const auto MIN_LEN = 12L;
 
-    this->write_bin<16>(uval);
+    this->push_bin<16>(uval, upcase);
     while (_cap - _pos < MIN_LEN) {
       this->push('0');
     }
-    this->push(p <= 'a' ? 'x' : 'X');
+    this->push(upcase ? 'X' : 'x');
     this->push('0');
     return this->as_str();
   }
 
   auto write_flt(f64 val, u32 precision, char type) -> Str {
-    static constexpr auto kMaxFlt = 1e30;
-    const auto use_exp = type == 'e' || type == 'E' || val > kMaxFlt;
+    constexpr auto kMaxFix = f64(num::Int<u64>::MAX);
 
     if (__builtin_isnan(val)) {
       return "nan";
@@ -158,17 +152,43 @@ struct RevBuf {
     }
 
     const auto uval = __builtin_fabs(val);
+    const auto upcase = chr::is_upcase(type);
+    const auto use_exp = type == 'e' || type == 'E' || uval >= kMaxFix;
     if (use_exp) {
-      const auto imp = FixPoint::build(uval, precision);
-      this->write_fix(imp, type);
+      const auto [base, iexp] = build_exp(uval, precision);
+      this->write_exp(base, iexp, upcase);
     } else {
-      const auto imp = FltPoint::build(uval, precision);
-      this->write_flt(imp);
+      const auto [int_part, flt_part] = build_fix(uval, precision);
+      this->write_fix(int_part, flt_part);
     }
     if (val < 0) {
       this->push('-');
     }
     return this->as_str();
+  }
+
+  void write_fix(u64 int_part, u64 flt_part) noexcept {
+    if (flt_part >= 10) {
+      this->push_dec(flt_part);
+      _buf[_pos] = '.';
+    }
+    this->push_dec(int_part);
+  }
+
+  void write_exp(u64 base, i32 exp, bool upcase) noexcept {
+    const auto uexp = exp < 0 ? u32(-exp) : u32(exp);
+    this->push_dec(uexp);
+    if (uexp < 10) this->push('0');
+    this->push(exp < 0 ? '-' : '+');
+
+    this->push(upcase ? 'E' : 'e');
+    this->push_dec(base);
+
+    if (base >= 10) {  // 12e3 -> 1.2e3
+      const auto c = _buf[_pos];
+      _buf[_pos] = '.';
+      this->push(c);
+    }
   }
 
  private:
@@ -177,7 +197,7 @@ struct RevBuf {
     _buf[--_pos] = c;
   }
 
-  void write_dec(u64 val) noexcept {
+  void push_dec(u64 val) noexcept {
     static const char DIGITS_1[] = "0123456789";
     static const char DIGITS_2[] =
         "0001020304050607080910111213141516171819"
@@ -203,52 +223,27 @@ struct RevBuf {
   }
 
   template <u32 RADIX>
-  void write_bin(u64 val, bool upcase = false) noexcept {
-    static constexpr auto UPCASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    static constexpr auto LOWCASE = "0123456789abcdefghijklmnopqrstuvwxyz";
-    static constexpr auto MASK = RADIX - 1;
+  void push_bin(u64 val, bool upcase = false) noexcept {
     static_assert((RADIX & (RADIX - 1)) == 0, "radix must be power of 2");
+    constexpr auto MASK = RADIX - 1;
+
+    const auto digits_upper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const auto digits_lower = "0123456789abcdefghijklmnopqrstuvwxyz";
 
     // write digits
-    const auto DIGITS = upcase ? UPCASE : LOWCASE;
+    const auto digits = upcase ? digits_upper : digits_lower;
     auto uval = val > 0 ? val : 0 - val;
     if (uval == 0) {
       this->push('0');
     } else {
       for (; uval != 0; uval /= RADIX) {
-        this->push(DIGITS[uval & MASK]);
+        this->push(digits[uval & MASK]);
       }
     }
 
     // write sign
     if constexpr (trait::sint_<decltype(val)>) {
       if (val < 0) this->push('-');
-    }
-  }
-
-  void write_flt(FltPoint flt) noexcept {
-    if (flt._flt >= 10) {
-      this->write_dec(flt._flt);
-      _buf[_pos] = '.';
-    }
-    this->write_dec(flt._int);
-  }
-
-  void write_fix(FixPoint fix, char type = 'e') noexcept {
-    const auto exp_sign = fix._exp < 0 ? '-' : '+';
-    const auto exp_char = type < 'a' ? 'E' : 'e';
-    const auto uexp = num::unsigned_abs(fix._exp);
-    this->write_dec(uexp);
-    if (uexp < 10) {
-      this->push('0');
-    }
-    this->push(exp_sign);
-    this->push(exp_char);
-    this->write_dec(fix._fix);
-    if (fix._fix >= 10) {
-      const auto c = _buf[_pos];
-      _buf[_pos] = '.';
-      this->push(c);
     }
   }
 };
@@ -366,10 +361,12 @@ void Debug::fmt(double val, Formatter& f) {
 }
 
 void Debug::fmt(const void* val, Formatter& f) {
+  const auto type = f.type();
+  const auto upcase = type == 'X' || type == 'P';
   const auto uval = __builtin_bit_cast(usize, val);
 
   char buf[16];
-  const auto s = RevBuf{buf}.write_ptr(uval, f.type());
+  const auto s = RevBuf{buf}.write_ptr(uval, upcase);
   f.write_str(s);
 }
 
