@@ -410,17 +410,17 @@ void Formatter::pad(Str s) {
   }
 }
 
-void Formatter::pad_num(bool is_neg, Str num_str) {
+void Formatter::pad_num(bool is_neg, Str body) {
   const auto sign = _spec.sign(is_neg);
   const auto prefix = _spec.prefix();
-  if (num_str._len >= _spec._width) {
+  if (body._len >= _spec._width) {
     this->write_str(sign);
     this->write_str(prefix);
-    this->write_str(num_str);
+    this->write_str(body);
     return;
   }
 
-  const auto npad = _spec._width - num_str._len;
+  const auto npad = _spec._width - body._len;
   const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
   const auto align = _spec.align(fill == '0' ? '=' : '>');
   switch (align) {
@@ -429,25 +429,25 @@ void Formatter::pad_num(bool is_neg, Str num_str) {
       this->write_chars(fill, npad);
       this->write_str(sign);
       this->write_str(prefix);
-      this->write_str(num_str);
+      this->write_str(body);
       break;
     case '<':
       this->write_str(sign);
       this->write_str(prefix);
-      this->write_str(num_str);
+      this->write_str(body);
       this->write_chars(fill, npad);
       break;
     case '=':
       this->write_str(sign);
       this->write_str(prefix);
       this->write_chars(fill, npad);
-      this->write_str(num_str);
+      this->write_str(body);
       break;
     case '^':
       this->write_chars(fill, (npad + 0) / 2);
       this->write_str(sign);
       this->write_str(prefix);
-      this->write_str(num_str);
+      this->write_str(body);
       this->write_chars(fill, (npad + 1) / 2);
   }
 }
