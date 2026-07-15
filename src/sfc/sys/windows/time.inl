@@ -7,9 +7,9 @@ namespace sfc::sys::windows {
 static constexpr auto NANOS_PER_SEC = 1000000000UL;
 
 struct Instant {
-  LONGLONG cnt;
+  i64 cnt;
 
-  static auto freq() -> LONGLONG {
+  static auto freq() -> i64 {
     auto val = ::LARGE_INTEGER{};
     if (!::QueryPerformanceFrequency(&val)) {
       return 1;
@@ -25,7 +25,7 @@ struct Instant {
     return Instant{cnt.QuadPart};
   }
 
-  auto nanos() const noexcept -> ULONG64 {
+  auto nanos() const noexcept -> u64 {
     static const auto freq = Instant::freq();
 
     const auto q = cnt / freq;
@@ -45,17 +45,17 @@ struct SystemTime {
     return SystemTime{file_time};
   }
 
-  static auto from_micros(ULONG64 micros) -> SystemTime {
+  static auto from_micros(u64 micros) -> SystemTime {
     const auto intervals = micros * TICKS_PER_MICROS;
     const auto file_time = FILETIME{
-        .dwLowDateTime = num::saturating_cast<u32>(intervals & 0xFFFFFFFFU),
-        .dwHighDateTime = num::saturating_cast<u32>(intervals >> 32),
+        .dwLowDateTime = u32(intervals & 0xFFFFFFFFU),
+        .dwHighDateTime = u32(intervals >> 32),
     };
     return SystemTime{file_time};
   }
 
-  auto as_micros() const noexcept -> ULONG64 {
-    const auto cnt = (ULONG64{t.dwHighDateTime} << 32) | ULONG64{t.dwLowDateTime};
+  auto as_micros() const noexcept -> u64 {
+    const auto cnt = (u64{t.dwHighDateTime} << 32) | u64{t.dwLowDateTime};
     return cnt / TICKS_PER_MICROS;
   }
 };
@@ -85,7 +85,9 @@ struct DateTime {
     };
   }
 
-  static auto from_utc(const SystemTime& sys_time) -> DateTime { return DateTime::from_filetime(sys_time.t); }
+  static auto from_utc(const SystemTime& sys_time) -> DateTime {
+    return DateTime::from_filetime(sys_time.t);
+  }
 
   static auto from_local(const SystemTime& sys_time) -> DateTime {
     auto local_time = FILETIME{};

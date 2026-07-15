@@ -28,9 +28,9 @@ struct OpenOptions {
 
     const auto handle = ::CreateFileW(path, access_mode, _share_mode, nullptr, create_mode, _flags, nullptr);
     if (handle == INVALID_HANDLE_VALUE) {
-      return Err{io::last_os_error()};
+      return io::last_os_error();
     }
-    return Ok{handle};
+    return handle;
   }
 };
 
@@ -63,7 +63,7 @@ struct Metadata {
 static inline auto lstat(const wchar_t* path) -> io::Result<Metadata> {
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
   if (!::GetFileAttributesExW(path, GetFileExInfoStandard, &attr)) {
-    return Err{io::last_os_error()};
+    return io::last_os_error();
   }
 
   const auto size = (SIZE_T(attr.nFileSizeHigh) << 32U) | attr.nFileSizeLow;
@@ -72,33 +72,29 @@ static inline auto lstat(const wchar_t* path) -> io::Result<Metadata> {
 }
 
 static inline auto unlink(const wchar_t* path) -> io::Result<> {
-  const auto ret = ::DeleteFileW(path);
-  if (!ret) {
-    return Err{io::last_os_error()};
+  if (auto ret = ::DeleteFileW(path); !ret) {
+    return io::last_os_error();
   }
   return Ok{};
 }
 
 static inline auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<> {
-  const auto ret = ::MoveFileW(old_path, new_path);
-  if (!ret) {
-    return Err{io::last_os_error()};
+  if (auto ret = ::MoveFileW(old_path, new_path); !ret) {
+    return io::last_os_error();
   }
   return Ok{};
 }
 
 static inline auto mkdir(const wchar_t* path) -> io::Result<> {
-  const auto ret = ::CreateDirectoryW(path, nullptr);
-  if (!ret) {
-    return Err{io::last_os_error()};
+  if (auto ret = ::CreateDirectoryW(path, nullptr); !ret) {
+    return io::last_os_error();
   }
   return Ok{};
 }
 
 static inline auto rmdir(const wchar_t* path) -> io::Result<> {
-  const auto ret = ::RemoveDirectoryW(path);
-  if (!ret) {
-    return Err{io::last_os_error()};
+  if (auto ret = ::RemoveDirectoryW(path); !ret) {
+    return io::last_os_error();
   }
   return Ok{};
 }

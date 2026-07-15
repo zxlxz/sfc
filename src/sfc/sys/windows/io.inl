@@ -86,22 +86,22 @@ struct File {
     const auto buf_ptr = buf._ptr;
     const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
-    auto bytes_read = 0UL;
-    if (!::ReadFile(_fd, buf_ptr, buf_len, &bytes_read, nullptr)) {
-      return Err{io::last_os_error()};
+    auto nread = 0UL;
+    if (!::ReadFile(_fd, buf_ptr, buf_len, &nread, nullptr)) {
+      return io::last_os_error();
     }
-    return Ok{bytes_read};
+    return usize{nread};
   }
 
   auto write(Slice<const u8> buf) -> io::Result<usize> {
     const auto buf_ptr = buf._ptr;
     const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
-    auto bytes_written = 0UL;
-    if (!::WriteFile(_fd, buf_ptr, buf_len, &bytes_written, nullptr)) {
-      return Err{io::last_os_error()};
+    auto nwrite = 0UL;
+    if (!::WriteFile(_fd, buf_ptr, buf_len, &nwrite, nullptr)) {
+      return io::last_os_error();
     }
-    return Ok{bytes_written};
+    return usize{nwrite};
   }
 
   auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
@@ -109,11 +109,11 @@ struct File {
 
     auto new_pos = LARGE_INTEGER{};
     if (!::SetFilePointerEx(_fd, old_pos, &new_pos, whence)) {
-      return Err{io::last_os_error()};
+      return io::last_os_error();
     }
 
     const auto ret_pos = num::cast_unsigned(new_pos.QuadPart);
-    return Ok{ret_pos};
+    return usize{ret_pos};
   }
 };
 
@@ -128,7 +128,8 @@ struct StdIo {
   }
 
   auto is_utf8_console() const -> bool {
-    return ::GetConsoleCP() == CP_UTF8;
+    const auto code_page = ::GetConsoleCP();
+    return code_page == CP_UTF8;
   }
 
   auto write_u8(Str u8_str) -> io::Result<usize> {
@@ -173,9 +174,9 @@ struct StdIo {
 
     auto nret = DWORD{};
     if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return io::Result<usize>{io::last_os_error()};
+      return io::last_os_error();
     }
-    return io::Result<usize>{usize{nret}};
+    return usize{nret};
   }
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
@@ -187,7 +188,7 @@ struct StdIo {
     wchar_t wbuf[kMaxBufLen];
     auto nret = DWORD{};
     if (!::ReadConsoleW(_handle, wbuf, max_read, &nret, nullptr)) {
-      return io::Result<usize>{io::last_os_error()};
+      return io::last_os_error();
     }
 
     const auto wstr = ffi::WStr{wbuf, nret};
@@ -197,7 +198,7 @@ struct StdIo {
     auto u8_cap = data._len;
     auto u8_len = 0UL;
     wstr.chars().for_each([&](char32_t ch) {
-      const auto n = chr::utf8_encode(ch, {u8_ptr + u8_len, u8_cap});
+      const auto n = chr::utf8_encode(ch, {u8_ptr + u8_len, u8_cap - u8_len});
       u8_len += n;
     });
 
