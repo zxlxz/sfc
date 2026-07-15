@@ -40,30 +40,82 @@ static inline auto io_error(DWORD code) -> io::Error {
   }
 }
 
-static inline auto wstr_encode(Slice<wchar_t> wbuf, Str cstr) -> DWORD {
-  auto wlen = 0UL;
-  cstr.chars().for_each([&](char32_t ch) {
-    wchar_t buf[2];
-    const auto cnt = ffi::wide_encode(buf, ch);
-    if (wlen + cnt >= wbuf._len) return;
-    ptr::copy_nonoverlapping(buf, wbuf._ptr + wlen, cnt);
-  });
+struct File {
+  HANDLE _fd;
 
-  return wlen;
-}
+ public:
+  File(HANDLE fd = nullptr) noexcept : _fd(fd) {}
 
-static inline auto wstr_decode(Slice<u8> cbuf, ffi::WStr wstr) -> usize {
-  auto u8_len = 0UL;
+  ~File() {
+    if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) return;
+    ::CloseHandle(_fd);
+  }
 
-  wstr.chars().for_each([&](char32_t ch) {
-    u8 buf[4];
-    const auto cnt = chr::utf8_encode(buf, ch);
-    if (u8_len + cnt >= cbuf._len) return;
-    ptr::copy_nonoverlapping(buf, cbuf._ptr + u8_len, cnt);
-  });
+  File(File&& other) noexcept : _fd(other._fd) {
+    other._fd = nullptr;
+  }
 
-  return u8_len;
-}
+  File& operator=(File&& other) noexcept {
+    if (this != &other) {
+      mem::swap(_fd, other._fd);
+    }
+    return *this;
+  }
+
+  auto is_valid() const -> bool {
+    return _fd != nullptr && _fd != INVALID_HANDLE_VALUE;
+  }
+
+  auto is_terminal() const -> bool {
+    auto mode = 0UL;
+    if (!::GetConsoleMode(_fd, &mode)) {
+      return false;
+    }
+    return mode != 0;
+  }
+
+  auto flush() -> io::Result<> {
+    const auto ret = ::FlushFileBuffers(_fd);
+    if (!ret) {
+      return {io::last_os_error()};
+    }
+    return Ok{};
+  }
+
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    const auto buf_ptr = buf._ptr;
+    const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+
+    auto bytes_read = 0UL;
+    if (!::ReadFile(_fd, buf_ptr, buf_len, &bytes_read, nullptr)) {
+      return Err{io::last_os_error()};
+    }
+    return Ok{bytes_read};
+  }
+
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    const auto buf_ptr = buf._ptr;
+    const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+
+    auto bytes_written = 0UL;
+    if (!::WriteFile(_fd, buf_ptr, buf_len, &bytes_written, nullptr)) {
+      return Err{io::last_os_error()};
+    }
+    return Ok{bytes_written};
+  }
+
+  auto seek(SSIZE_T offset, DWORD whence) -> io::Result<usize> {
+    const auto old_pos = LARGE_INTEGER{.QuadPart = offset};
+
+    auto new_pos = LARGE_INTEGER{};
+    if (!::SetFilePointerEx(_fd, old_pos, &new_pos, whence)) {
+      return Err{io::last_os_error()};
+    }
+
+    const auto ret_pos = num::cast_unsigned(new_pos.QuadPart);
+    return Ok{ret_pos};
+  }
+};
 
 struct StdIo {
   static constexpr auto kMaxBufLen = 4096UL;
@@ -91,11 +143,16 @@ struct StdIo {
   }
 
   auto write_u16(Str u8_str) -> io::Result<usize> {
-    wchar_t buf[kMaxBufLen];
-    const auto wlen = windows::wstr_encode(buf, u8_str);
+    wchar_t wbuf[kMaxBufLen];
+    u32 wlen = 0U;
+    u8_str.chars().for_each([&](char32_t ch) {
+      if (wlen >= kMaxBufLen) return;
+      const auto n = ffi::wide_encode(ch, {wbuf + wlen, kMaxBufLen - wlen});
+      wlen += u32(n);
+    });
 
     auto nwrite = DWORD{};
-    if (!::WriteConsoleW(_handle, buf, wlen, &nwrite, nullptr)) {
+    if (!::WriteConsoleW(_handle, wbuf, wlen, &nwrite, nullptr)) {
       return {io::last_os_error()};
     }
     return {usize{nwrite}};
@@ -127,15 +184,23 @@ struct StdIo {
     const auto max_read = cmp::min(max_wchar, kMaxBufLen);
 
     // read u16
-    wchar_t buf[kMaxBufLen];
+    wchar_t wbuf[kMaxBufLen];
     auto nret = DWORD{};
-    if (!::ReadConsoleW(_handle, buf, max_read, &nret, nullptr)) {
+    if (!::ReadConsoleW(_handle, wbuf, max_read, &nret, nullptr)) {
       return io::Result<usize>{io::last_os_error()};
     }
 
+    const auto wstr = ffi::WStr{wbuf, nret};
+
     // convert u16 to u8
-    const auto ws_len = usize{nret};
-    const auto u8_len = windows::wstr_decode(data, {buf, ws_len});
+    auto u8_ptr = data._ptr;
+    auto u8_cap = data._len;
+    auto u8_len = 0UL;
+    wstr.chars().for_each([&](char32_t ch) {
+      const auto n = chr::utf8_encode(ch, {u8_ptr + u8_len, u8_cap});
+      u8_len += n;
+    });
+
     return io::Result<usize>{u8_len};
   }
 
