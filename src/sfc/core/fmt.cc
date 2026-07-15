@@ -76,7 +76,7 @@ static auto build_fix(f64 uflt, u32 precision) -> FixFloat {
 
   // extract integer part
   auto int_part = u64(uflt);
-  auto flt_part = u64(__builtin_round((uflt - int_part) * f64(prec_ratio)));
+  auto flt_part = u64(__builtin_round((uflt - f64(int_part)) * f64(prec_ratio)));
   if (flt_part >= prec_ratio) {
     flt_part -= prec_ratio;
     int_part += 1;
@@ -95,7 +95,7 @@ static auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
   auto exp_cnt = 0;
   auto flt_val = frexp10(uflt, &exp_cnt);
 
-  auto int_part = u64(__builtin_round(flt_val * prec_ratio));
+  auto int_part = u64(__builtin_round(flt_val * f64(prec_ratio)));
   if (int_part / 10 >= prec_ratio) {
     int_part /= 10;
     exp_cnt += 1;
@@ -288,13 +288,13 @@ void Debug::fmt(char val, Formatter& f) {
 
 void Debug::fmt(char16_t val, Formatter& f) {
   u8 u8_buf[4] = {};
-  const auto u8_len = chr::utf8_encode(u8_buf, val);
+  const auto u8_len = chr::utf8_encode(val, u8_buf);
   f.write_str(Str::from_utf8({u8_buf, u8_len}));
 }
 
 void Debug::fmt(char32_t val, Formatter& f) {
   u8 u8_buf[4] = {};
-  const auto u8_len = chr::utf8_encode(u8_buf, val);
+  const auto u8_len = chr::utf8_encode(val, u8_buf);
   f.write_str(Str::from_utf8({u8_buf, u8_len}));
 }
 
