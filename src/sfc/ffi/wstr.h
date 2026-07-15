@@ -4,9 +4,9 @@
 
 namespace sfc::ffi {
 
-auto wide_codelen(wchar_t h) -> usize;
-auto wide_encode(wchar_t (&wbuf)[2], char32_t ch) -> usize;
-auto wide_decode(const wchar_t wbuf[], usize n) -> char32_t;
+auto wide_codelen(wchar_t h) -> u32;
+auto wide_encode(char32_t c, Slice<wchar_t> buf) -> u32;
+auto wide_decode(const wchar_t wbuf[], u32 n) -> char32_t;
 
 struct WChars : iter::Iterator<char32_t> {
   const wchar_t* _ptr;

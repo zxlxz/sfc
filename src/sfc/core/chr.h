@@ -1,19 +1,20 @@
 #pragma once
 
 #include "sfc/core/iter.h"
+#include "sfc/core/slice.h"
 #include "sfc/core/option.h"
 
 namespace sfc::chr {
 
 static constexpr char32_t INVALID = 0xFFFD;
 
-auto utf8_codelen(u8 h) -> usize;
-auto utf8_encode(u8 (&buf)[4], char32_t ch) -> usize;
-auto utf8_decode(const u8 buf[], usize buf_len) -> char32_t;
+auto utf8_codelen(u8 h) -> u32;
+auto utf8_encode(char32_t ch, Slice<u8> buf) -> u32;
+auto utf8_decode(const u8 buf[], u32 codelen) -> char32_t;
 
-auto utf16_codelen(u16 h) -> usize;
-auto utf16_encode(u16 (&buf)[2], char32_t ch) -> usize;
-auto utf16_decode(const u16 buf[], usize buf_len) -> char32_t;
+auto utf16_codelen(u16 h) -> u32;
+auto utf16_encode(char32_t ch, Slice<u16> buf) -> u32;
+auto utf16_decode(const u16 buf[], u32 codelen) -> char32_t;
 
 constexpr auto is_number(char ch) noexcept -> bool {
   return '0' <= ch && ch <= '9';

@@ -3,7 +3,7 @@
 
 namespace sfc::ffi {
 
-auto wide_codelen(wchar_t h) -> usize {
+auto wide_codelen(wchar_t h) -> u32 {
   if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
     return 1;
   }
@@ -13,22 +13,26 @@ auto wide_codelen(wchar_t h) -> usize {
   }
 }
 
-auto wide_encode(wchar_t (&wbuf)[2], char32_t ch) -> usize {
+auto wide_encode(char32_t ch, Slice<wchar_t> wbuf) -> u32 {
   if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
-    wbuf[0] = wchar_t(ch);
+    if (wbuf._len < 1) return 0;
+
+    wbuf._ptr[0] = wchar_t(ch);
     return 1;
   }
 
   if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
     u16 buf[2] = {};
-    const auto n = chr::utf16_encode(buf, ch);
-    wbuf[0] = wchar_t(buf[0]);
-    wbuf[1] = wchar_t(buf[1]);
+    const auto n = chr::utf16_encode(ch, buf);
+    if (wbuf._len < n) return 0;
+    for (auto i = 0UL; i < n; ++i) {
+      wbuf._ptr[i] = wchar_t(buf[i]);
+    }
     return n;
   }
 }
 
-auto wide_decode(const wchar_t wbuf[], usize n) -> char32_t {
+auto wide_decode(const wchar_t wbuf[], u32 n) -> char32_t {
   if (n == 0) return chr::INVALID;
   if (n == 1) return char32_t(wbuf[0]);
 
@@ -114,9 +118,9 @@ void WString::push_str(Str s) {
   }
 
   _buf.reserve(s.len());
-  s.chars().for_each([&](char32_t c) {
+  s.chars().for_each([&](char32_t ch) {
     wchar_t buf[2] = {};
-    const auto len = ffi::wide_encode(buf, c);
+    const auto len = ffi::wide_encode(ch, buf);
     _buf.extend_from_slice({buf, len});
   });
   _buf.push(0);
