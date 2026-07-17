@@ -44,6 +44,7 @@ struct Range {
   T _end;
 
  public:
+  constexpr Range(T end) : _start{0}, _end{end} {}
   constexpr Range(T start, T end) : _start{start}, _end{end} {}
   constexpr Range(T start, End) : _start{start}, _end{num::Int<T>::MAX} {}
 
