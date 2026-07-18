@@ -1,9 +1,5 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/env.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/env.inl"
-#endif
-
+#define _SFC_SYS_ENV_
+#include "sfc/sys.h"
 #include "sfc/env.h"
 #include "sfc/ffi/os_str.h"
 

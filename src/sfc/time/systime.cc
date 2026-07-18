@@ -1,16 +1,12 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/time.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/time.inl"
-#endif
-
+#define _SFC_SYS_TIME_
+#include "sfc/sys.h"
 #include "sfc/time/systime.h"
 
 namespace sfc::time {
 
 auto SystemTime::now() noexcept -> SystemTime {
   const auto sys_imp = sys::SystemTime::now();
-  return SystemTime{sys_imp.as_micros()};
+  return SystemTime{sys_imp.micros};
 }
 
 auto SystemTime::elapsed() const noexcept -> Duration {

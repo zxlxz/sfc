@@ -1,4 +1,3 @@
-
 #include "sfc/ffi/cstr.h"
 
 namespace sfc::ffi {

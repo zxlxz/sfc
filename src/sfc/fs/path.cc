@@ -1,9 +1,5 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/fs.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/fs.inl"
-#endif
-
+#define _SFC_SYS_FS_
+#include "sfc/sys.h"
 #include "sfc/fs/path.h"
 #include "sfc/ffi/os_str.h"
 
@@ -288,17 +284,18 @@ auto Metadata::file_len() const noexcept -> u64 {
 }
 
 auto Metadata::is_dir() const noexcept -> bool {
-  return sys::Metadata{_attr, _size}.is_dir();
+  const auto imp = sys::FileAttr{_attr};
+  return imp.is_dir();
 }
 
 auto Metadata::is_file() const noexcept -> bool {
-  return sys::Metadata{_attr, _size}.is_file();
+  const auto imp = sys::FileAttr{_attr};
+  return imp.is_file();
 }
 
 auto metadata(Path path) -> io::Result<Metadata> {
   const auto os_path = ffi::OsString::from(path.as_str());
-  const auto sys_meta = _TRY(sys::lstat(os_path.as_ptr()));
-  const auto meta = Metadata{sys_meta._attr, sys_meta._size};
+  const auto meta = _TRY(sys::lstat(os_path.as_ptr()));
   return {meta};
 }
 

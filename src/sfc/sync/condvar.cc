@@ -1,9 +1,5 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/sync.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/sync.inl"
-#endif
-
+#define _SFC_SYS_SYNC_
+#include "sfc/sys.h"
 #include "sfc/sync/condvar.h"
 
 namespace sfc::sync {

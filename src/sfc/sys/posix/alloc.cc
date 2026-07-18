@@ -1,10 +1,11 @@
-#pragma once
+#include <stddef.h>
+#include <stdlib.h>
 
-#include "sfc/sys/posix/mod.inl"
+#include "sfc/sys/posix/alloc.h"
 
 namespace sfc::sys::posix {
 
-auto alloc(mem::Layout layout) -> void* {
+auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.size == 0) {
     return nullptr;
   }
@@ -25,7 +26,7 @@ void dealloc(void* ptr, [[maybe_unused]] mem::Layout layout) noexcept {
   ::free(ptr);
 }
 
-auto realloc(void* ptr, mem::Layout layout, usize new_size) -> void* {
+auto realloc(void* ptr, mem::Layout layout, usize new_size) noexcept -> void* {
   if (layout.size == new_size) {
     return ptr;
   }
@@ -43,7 +44,7 @@ auto realloc(void* ptr, mem::Layout layout, usize new_size) -> void* {
   const auto aligned_size = num::align_up(new_size, layout.align);
   const auto new_ptr = ::aligned_alloc(layout.align, aligned_size);
   if (new_ptr && ptr && copy_size != 0) {
-    ::memcpy(new_ptr, ptr, copy_size);
+    __builtin_memcpy(new_ptr, ptr, copy_size);
   }
   ::free(ptr);
 

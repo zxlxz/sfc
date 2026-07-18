@@ -157,6 +157,7 @@ struct Fmts {
 struct Args {
   static constexpr auto kMaxLen = 16U;
   using write_fmt_t = void(const Fmts& fmts, fmt::Formatter& f, const void* args);
+
   Fmts _fmts;
   const void* _args[kMaxLen] = {};
   write_fmt_t* _write_fmt;
@@ -166,8 +167,9 @@ struct Args {
   Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {
     static_assert(sizeof...(T) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
 
-    _write_fmt = [](const Fmts& fmts, auto& f, const void* args) {
-      fmts.format_imp(f, *ptr::cast<const Tuple<const T&...>>(args));
+    using args_t = Tuple<const T&...>;
+    _write_fmt = [](const Fmts& fmts, fmt::Formatter& f, const void* args) {
+      fmts.format_imp(f, *(const args_t*)args);
     };
   }
 

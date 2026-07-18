@@ -1,9 +1,5 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/fs.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/fs.inl"
-#endif
-
+#define _SFC_SYS_FS_
+#include "sfc/sys.h"
 #include "sfc/fs/file.h"
 #include "sfc/ffi/os_str.h"
 
@@ -66,17 +62,7 @@ auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
 
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   const auto os_path = ffi::OsString::from(path.as_str());
-
-  const auto sys_opts = sys::OpenOptions{
-      ._append = append,
-      ._create = create,
-      ._create_new = create_new,
-      ._read = read,
-      ._write = write,
-      ._truncate = truncate,
-  };
-
-  const auto fd = _TRY(sys_opts.open(os_path.as_ptr()));
+  const auto fd = _TRY(sys::open(os_path.as_ptr(), *this));
   return {File::from_raw_fd(fd)};
 }
 
@@ -96,7 +82,6 @@ auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
 }  // namespace sfc::fs
 
 namespace sfc::io {
-
 template auto Read::read_exact(this fs::File&, Slice<u8>) -> Result<>;
 template auto Read::read_to_end(this fs::File&, List<u8>&) -> Result<usize>;
 template auto Read::read_to_string(this fs::File&, String&) -> Result<usize>;

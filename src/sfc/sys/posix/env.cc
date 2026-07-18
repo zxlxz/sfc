@@ -1,15 +1,23 @@
-#pragma once
 
-#include "sfc/sys/posix/mod.inl"
+#include <unistd.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <pwd.h>
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+#include "sfc/sys/posix/env.h"
 
 namespace sfc::sys::posix {
 
-static auto getenv(const char* key) -> ffi::CString {
+auto getenv(const char* key) -> ffi::CString {
   const auto c_val = Str::from_cstr(::getenv(key));
   return ffi::CString::from(c_val);
 }
 
-static auto setenv(const char* key, const char* val) -> bool {
+auto setenv(const char* key, const char* val) -> bool {
   if (val == nullptr) {
     return ::unsetenv(key) != -1;
   }
@@ -17,11 +25,11 @@ static auto setenv(const char* key, const char* val) -> bool {
   return ::setenv(key, val, 1) != -1;
 }
 
-static auto unsetenv(const char* key) -> bool {
+auto unsetenv(const char* key) -> bool {
   return ::unsetenv(key) != -1;
 }
 
-static auto home_dir() -> ffi::CString {
+auto home_dir() -> ffi::CString {
   const auto uid = getuid();
   const auto usr = getpwuid(uid);
   if (!usr || !usr->pw_dir) {
@@ -32,7 +40,7 @@ static auto home_dir() -> ffi::CString {
   return ffi::CString::from(c_home);
 }
 
-static auto temp_dir() -> ffi::CString {
+auto temp_dir() -> ffi::CString {
 #ifdef __APPLE__
   char buf[PATH_MAX];
   if (::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, sizeof(buf)) <= 0) {
@@ -45,7 +53,7 @@ static auto temp_dir() -> ffi::CString {
 #endif
 }
 
-static auto current_exe() -> ffi::CString {
+auto current_exe() -> ffi::CString {
   char buf[1024];
 #ifdef __APPLE__
   auto size = uint32_t{sizeof(buf)};
@@ -61,14 +69,14 @@ static auto current_exe() -> ffi::CString {
   return ffi::CString::from(c_exe);
 }
 
-static auto getcwd() -> ffi::CString {
+auto getcwd() -> ffi::CString {
   char buf[1024];
   const auto s = ::getcwd(buf, sizeof(buf));
   const auto c_cwd = Str::from_cstr(s);
   return ffi::CString::from(c_cwd);
 }
 
-static auto chdir(const char* path) -> bool {
+auto chdir(const char* path) -> bool {
   return ::chdir(path) != -1;
 }
 

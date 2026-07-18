@@ -1,64 +1,33 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/sys/windows/io.h"
+#include "sfc/sys/windows/sync.h"
+#include "sfc/sys/windows/thread.h"
 
-namespace sfc::sys::windows {
-
-using RawFd = void*;
-
-#ifndef _SFC_SYS_IO_
-class File {
-  void* _handle;
-
- public:
-  File();
-  ~File();
-
-  File(File&& other) noexcept;
-  File& operator=(File&& other) noexcept;
-};
+#ifdef _SFC_SYS_ALLOC_
+#include "sfc/sys/windows/alloc.h"
 #endif
 
-#ifndef _SFC_SYS_THREAD_
-struct Thread {
-  void* _handle;
-};
+#ifdef _SFC_SYS_ENV_
+#include "sfc/sys/windows/env.h"
 #endif
 
-#ifndef _SFC_SYS_SYNC_
-class Mutex {
-  struct Inn;
-  Inn* _ptr;
-
- public:
-  explicit Mutex();
-  ~Mutex();
-
-  Mutex(Mutex&& other) noexcept;
-  Mutex& operator=(Mutex&& other) noexcept;
-};
-
-class Condvar {
-  struct Inn;
-  Inn* _ptr;
-
- public:
-  Condvar();
-  ~Condvar();
-
-  Condvar(Condvar&& other) noexcept;
-  Condvar& operator=(Condvar&& other) noexcept;
-};
+#ifdef _SFC_SYS_BACKTRACE_
+#include "sfc/sys/windows/backtrace.h"
 #endif
 
-}  // namespace sfc::sys::windows
+#ifdef _SFC_SYS_TIME_
+#include "sfc/sys/windows/time.h"
+#endif
+
+#ifdef _SFC_SYS_FS_
+#include "sfc/sys/windows/fs.h"
+#endif
+
+#ifdef _SFC_SYS_LIBRARY_
+#include "sfc/sys/windows/library.h"
+#endif
 
 namespace sfc::sys {
-using windows::RawFd;
-using windows::File;
-
-using windows::Thread;
-
-using windows::Condvar;
-using windows::Mutex;
-}  // namespace sfc::sys
+using namespace windows;
+}

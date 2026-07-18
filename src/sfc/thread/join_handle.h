@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/sys.h"
 #include "sfc/thread/thread.h"
 
 namespace sfc::thread {
@@ -34,7 +34,6 @@ class JoinGuard {
 
 struct Builder {
   usize stack_size = 0;
-  Str name = {};
 
  public:
   auto spawn(Box<void()> f) -> JoinHandle;

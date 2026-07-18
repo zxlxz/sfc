@@ -1,10 +1,7 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/io.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/io.inl"
-#endif
-
 #include "sfc/io/mod.h"
+
+#define _SFC_SYS_IO_
+#include "sfc/sys.h"
 
 namespace sfc::io {
 

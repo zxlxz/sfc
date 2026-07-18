@@ -1,10 +1,7 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/alloc.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/alloc.inl"
-#endif
-
 #include "sfc/alloc/alloc.h"
+
+#define _SFC_SYS_ALLOC_
+#include "sfc/sys.h"
 
 namespace sfc::alloc {
 

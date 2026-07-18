@@ -1,8 +1,10 @@
 #pragma once
 
-#include "sfc/sys.h"
 #include "sfc/io/mod.h"
 #include "sfc/fs/path.h"
+
+#define _SFC_SYS_FS_
+#include "sfc/sys.h"
 
 namespace sfc::fs {
 

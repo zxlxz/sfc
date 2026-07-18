@@ -1,8 +1,5 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/io.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/io.inl"
-#endif
+#define _SFC_SYS_IO_
+#include "sfc/sys.h"
 
 #include "sfc/io/buf.h"
 #include "sfc/io/stdio.h"
@@ -60,10 +57,6 @@ class Stderr::Inn {
     return _inn.is_console();
   }
 
-  void flush() {
-    // Stderr is unbuffered, so just do nothing here.
-  }
-
   auto write_str(Str s) -> Result<> {
     auto buf = s.as_bytes();
     while (!buf.is_empty()) {
@@ -117,12 +110,10 @@ auto Stderr::is_terminal() -> bool {
   return inn.is_terminal();
 }
 
-void Stderr::flush() {
-  this->lock().flush();
-}
+void Stderr::flush() {}
 
 void Stderr::write_str(Str s) {
-  this->lock().write_str(s);
+  return this->lock().write_str(s);
 }
 
 auto Stderr::lock() -> LockGuard {
@@ -133,10 +124,7 @@ Stderr::LockGuard::LockGuard(Inn& inn) : _lock{inn.lock()} {}
 
 Stderr::LockGuard::~LockGuard() noexcept {}
 
-void Stderr::LockGuard::flush() {
-  auto& inn = Inn::instance();
-  return inn.flush();
-}
+void Stderr::LockGuard::flush() {}
 
 void Stderr::LockGuard::write_str(Str s) {
   auto& inn = Inn::instance();

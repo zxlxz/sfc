@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/fs.h"
+#include "sfc/fs/path.h"
 
 namespace sfc::env {
 

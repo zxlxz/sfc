@@ -1,13 +1,7 @@
-#if defined(__unix__) || defined(__APPLE__)
-#include "sfc/sys/posix/io.inl"
-#include "sfc/sys/posix/backtrace.inl"
-#elif defined(_WIN32)
-#include "sfc/sys/windows/io.inl"
-#include "sfc/sys/windows/backtrace.inl"
-#endif
+#define _SFC_SYS_BACKTRACE_
 
 #include "sfc/core/panic.h"
-#include "sfc/core/fmt.h"
+#include "sfc/sys.h"
 
 namespace sfc::panic {
 
@@ -27,7 +21,7 @@ static auto write_buf(fmt::SBuf buf, const auto& args) -> Str {
   return buf.as_str();
 }
 
-static auto idx2str(u32 idx) -> Str {
+static auto idx2str(usize idx) -> Str {
   static constexpr auto digits =
       " 0 1 2 3 4 5 6 7 8 9"
       "10111213141516171819"
@@ -54,7 +48,7 @@ void panic_imp(PanicInfo info) {
   panic::writeln(msg_str);
 
   auto bt = sys::Backtrace::capture();
-  for (auto idx = 0U; idx < bt._count; ++idx) {
+  for (auto idx : ops::Range{bt.len()}) {
     auto frame = bt.frame(idx);
     const auto idx_str = idx2str(idx);
     const auto fun_str = Str::from_cstr(frame.func);
