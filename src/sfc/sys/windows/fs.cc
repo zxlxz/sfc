@@ -15,7 +15,7 @@ auto FileAttr::is_file() const -> bool {
   return _attr & FILE_ATTRIBUTE_NORMAL;
 }
 
-auto open(const wchar_t* path, OpenOptions opts) -> io::Result<RawFd> {
+auto open(const wchar_t* path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const DWORD read_mode = opts.read ? GENERIC_READ : 0U;
   const DWORD write_mode = opts.write ? GENERIC_WRITE : 0U;
   const DWORD append_mode = opts.append ? FILE_APPEND_DATA : 0U;
@@ -38,14 +38,14 @@ auto open(const wchar_t* path, OpenOptions opts) -> io::Result<RawFd> {
   return handle;
 }
 
-auto lstat(const wchar_t* path) -> io::Result<Metadata> {
+auto lstat(const wchar_t* path) -> io::Result<fs::Metadata> {
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
   if (!::GetFileAttributesExW(path, GetFileExInfoStandard, &attr)) {
     return io::last_os_error();
   }
 
   const auto size = (u64{attr.nFileSizeHigh} << 32) | u64{attr.nFileSizeLow};
-  const auto meta = Metadata{attr.dwFileAttributes, size};
+  const auto meta = fs::Metadata{attr.dwFileAttributes, size};
   return Ok{meta};
 }
 
