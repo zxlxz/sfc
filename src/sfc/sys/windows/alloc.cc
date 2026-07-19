@@ -1,14 +1,12 @@
-#pragma once
-#include "sfc/sys/windows/mod.inl"
+#include <malloc.h>
+
+#include "sfc/sys/windows/alloc.h"
 
 namespace sfc::sys::windows {
 
-using mem::Layout;
+using max_align_t = double;  // see <cstddef>
 
-// see <cstddef>
-using max_align_t = double;
-
-static inline auto alloc(Layout layout) -> void* {
+auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.size == 0) {
     return nullptr;
   }
@@ -21,7 +19,7 @@ static inline auto alloc(Layout layout) -> void* {
   return ::_aligned_malloc(aligned_size, layout.align);
 }
 
-static inline void dealloc(void* ptr, Layout layout) noexcept {
+void dealloc(void* ptr, mem::Layout layout) noexcept {
   if (ptr == nullptr) {
     return;
   }
@@ -34,7 +32,7 @@ static inline void dealloc(void* ptr, Layout layout) noexcept {
   ::_aligned_free(ptr);
 }
 
-static inline auto realloc(void* ptr, Layout layout, usize new_size) -> void* {
+auto realloc(void* ptr, mem::Layout layout, usize new_size) noexcept -> void* {
   if (layout.size == new_size) {
     return ptr;
   }

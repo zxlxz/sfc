@@ -4,6 +4,17 @@
 
 namespace sfc::io {
 
+struct SeekFrom {
+  enum class Kind { Start = 0, Current = 1, End = 2 };
+  Kind _tag{};
+  i64 offset;
+
+ public:
+  static auto Start(u64 offset) -> SeekFrom;
+  static auto Current(i64 offset) -> SeekFrom;
+  static auto End(i64 offset) -> SeekFrom;
+};
+
 struct DynRead {
   class Self;
   Self& _self;
@@ -69,10 +80,6 @@ struct Write {
   }
 };
 
-struct SeekFrom {
-  enum Kind { Start = 0, Current = 1, End = 2 };
-  Kind _tag{};
-  i64 offset;
-};
+
 
 }  // namespace sfc::io

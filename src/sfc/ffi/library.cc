@@ -1,7 +1,8 @@
-#define _SFC_SYS_LIBRARY_
-#include "sfc/sys.h"
 #include "sfc/ffi/library.h"
 #include "sfc/ffi/os_str.h"
+
+#define _SFC_SYS_LIBRARY_
+#include "sfc/sys.h"
 
 namespace sfc::ffi {
 
@@ -39,7 +40,7 @@ auto Library::get(Str name) const -> void* {
     return nullptr;
   }
 
-  const auto os_name = ffi::OsString::from(name);
+  const auto os_name = ffi::CString::from(name);
   const auto sym = sys::get_symbol(_handle, os_name.as_ptr());
   return sym;
 }

@@ -1,5 +1,9 @@
-#include <stdint.h>
+#include <unistd.h>
 #include <pthread.h>
+
+#ifdef __linux__
+#include <sys/syscall.h>
+#endif
 
 #include "sfc/sys/posix/thread.h"
 

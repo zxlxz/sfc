@@ -57,7 +57,7 @@ auto File::flush() -> io::Result<> {
 }
 
 auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
-  return _inn.seek(pos.offset, pos._tag);
+  return _inn.seek(pos);
 }
 
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {

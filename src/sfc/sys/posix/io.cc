@@ -52,8 +52,17 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   return {nwrite};
 }
 
-auto File::seek(i64 offset, int whence) noexcept -> io::Result<usize> {
-  const auto ret = ::lseek(_fd, offset, whence);
+auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
+  const auto whence = [=]() {
+    switch (pos._tag) {
+      case io::SeekFrom::Kind::Start:   return SEEK_SET;
+      case io::SeekFrom::Kind::Current: return SEEK_CUR;
+      case io::SeekFrom::Kind::End:     return SEEK_END;
+    }
+    return SEEK_SET;
+  }();
+
+  const auto ret = ::lseek(_fd, pos.offset, whence);
   if (ret == -1) {
     return io::last_os_error();
   }

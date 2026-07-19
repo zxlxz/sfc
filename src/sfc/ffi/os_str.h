@@ -1,9 +1,9 @@
 #pragma once
 
+#include "sfc/ffi/cstr.h"
+
 #ifdef _WIN32
 #include "sfc/ffi/wstr.h"
-#else
-#include "sfc/ffi/cstr.h"
 #endif
 
 namespace sfc::ffi {
