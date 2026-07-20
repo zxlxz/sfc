@@ -6,6 +6,23 @@
 
 namespace sfc::ffi {
 
+static auto make_lib_path(Str name) -> String {
+  if (name.contains('/')) {  // this is a path, not a library name
+    return String::from(name);
+  }
+  if (name.contains('.')) {  // already has an extension, use it as is
+    return String::from(name);
+  }
+
+#ifdef _WIN32
+  return string::format("{}.dll", name);
+#elif defined(__APPLE__)
+  return string::format("lib{}.dylib", name);
+#else
+  return string::format("lib{}.so", name);
+#endif
+}
+
 Library::Library() noexcept {}
 
 Library::~Library() {
@@ -26,17 +43,9 @@ auto Library::operator=(Library&& other) noexcept -> Library& {
 }
 
 auto Library::load(Str path) -> Library {
-  auto os_path = ffi::OsString::from(path);
-  if (!path.contains(".")) {
-#ifdef _WIN32
-    os_path.push_str(".dll");
-#elif __APPLE__
-    os_path.push_str(".dylib");
-#else
-    os_path.push_str(".so");
-#endif
-  }
+  const auto lib_path = ffi::make_lib_path(path);
 
+  const auto os_path = ffi::OsString::from(lib_path.as_str());
   const auto handle = sys::load_library(os_path.as_ptr());
   auto res = Library{};
   res._handle = handle;
