@@ -24,8 +24,8 @@
 #include "sfc/sys/posix/fs.h"
 #endif
 
-#ifdef _SFC_SYS_LIBRARY_
-#include "sfc/sys/posix/library.h"
+#ifdef _SFC_SYS_FFI_
+#include "sfc/sys/posix/ffi.h"
 #endif
 
 namespace sfc::sys {

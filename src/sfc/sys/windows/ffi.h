@@ -7,6 +7,6 @@ namespace sfc::sys::windows {
 auto load_library(const wchar_t* path) -> void*;
 void unload_library(void* handle);
 
-auto get_symbol(void* handle, const char* name) -> void*;
+auto get_symbol(void* handle, const char* name) -> isize(*)();
 
 }  // namespace sfc::sys::windows

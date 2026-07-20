@@ -24,8 +24,8 @@
 #include "sfc/sys/windows/fs.h"
 #endif
 
-#ifdef _SFC_SYS_LIBRARY_
-#include "sfc/sys/windows/library.h"
+#ifdef _SFC_SYS_FFI_
+#include "sfc/sys/windows/ffi.h"
 #endif
 
 namespace sfc::sys {

@@ -2,7 +2,7 @@
 #undef min
 #undef max
 
-#include "sfc/sys/windows/library.h"
+#include "sfc/sys/windows/ffi.h"
 
 namespace sfc::sys::windows {
 
@@ -20,14 +20,14 @@ void unload_library(void* handle) {
   (void)::FreeLibrary(mod);
 }
 
-auto get_symbol(void* handle, const char* name) -> void* {
+auto get_symbol(void* handle, const char* name) -> isize(*)() {
   if (handle == nullptr || name == nullptr) {
     return nullptr;
   }
 
   const auto mod = HMODULE(handle);
   const auto sym = ::GetProcAddress(mod, name);
-  return ptr::cast<void>(sym);
+  return sym;
 }
 
 }  // namespace sfc::sys::windows

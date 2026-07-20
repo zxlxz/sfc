@@ -1,7 +1,7 @@
 #include "sfc/ffi/library.h"
 #include "sfc/ffi/os_str.h"
 
-#define _SFC_SYS_LIBRARY_
+#define _SFC_SYS_FFI_
 #include "sfc/sys.h"
 
 namespace sfc::ffi {
@@ -26,23 +26,31 @@ auto Library::operator=(Library&& other) noexcept -> Library& {
 }
 
 auto Library::load(Str path) -> Library {
-  const auto os_path = ffi::OsString::from(path);
+  auto os_path = ffi::OsString::from(path);
+  if (!path.contains(".")) {
+#ifdef _WIN32
+    os_path.push_str(".dll");
+#elif __APPLE__
+    os_path.push_str(".dylib");
+#else
+    os_path.push_str(".so");
+#endif
+  }
 
   const auto handle = sys::load_library(os_path.as_ptr());
-
   auto res = Library{};
   res._handle = handle;
   return res;
 }
 
-auto Library::get(Str name) const -> void* {
+auto Library::get(Str name) const -> Symbol {
   if (_handle == nullptr) {
     return nullptr;
   }
 
   const auto os_name = ffi::CString::from(name);
   const auto sym = sys::get_symbol(_handle, os_name.as_ptr());
-  return sym;
+  return Symbol(sym);
 }
 
 }  // namespace sfc::ffi
