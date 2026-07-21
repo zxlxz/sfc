@@ -62,6 +62,25 @@ struct Debug {
 
   static void fmt(const void* val, Formatter& f);
 
+  template <trait::class_ T>
+  static void fmt([[maybe_unused]] const T& val, auto& f) {
+    if constexpr (requires { val.fmt(f); }) {
+      val.fmt(f);
+    } else {
+      static_assert(__is_empty(T));
+      f.write_fmt("{}()", reflect::type_name<T>());
+    }
+  }
+
+  template <class T, usize N>
+  static void fmt(const T (&arr)[N], auto& f) {
+    if constexpr (requires { Str{arr}; }) {
+      Str{arr}.fmt(f);
+    } else {
+      Slice{arr}.fmt(f);
+    }
+  }
+
   template <trait::enum_ T>
   static void fmt(T val, auto& f) {
     using I = __underlying_type(T);
@@ -125,10 +144,6 @@ class Formatter {
   void write_val(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
-    } else if constexpr (requires { str::Str{val}; }) {
-      this->pad(Str{val});
-    } else if constexpr (requires { Slice{val}; }) {
-      Slice{val}.fmt(*this);
     } else {
       fmt::Debug::fmt(val, *this);
     }

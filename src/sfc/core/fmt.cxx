@@ -198,7 +198,7 @@ SFC_TEST(array) {
   sfc::assert_eq(format("{:?}", a), "[1, 2, 3]");
 
   char b[] = "abc";
-  sfc::assert_eq(format("{:?}", b), "abc");
+  sfc::assert_eq(format("{}", b), "2abc");
 }
 
 }  // namespace sfc::fmt::test

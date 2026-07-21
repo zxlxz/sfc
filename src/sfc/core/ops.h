@@ -100,15 +100,10 @@ auto end(Range<T>) -> End {
   return {};
 }
 
-template <class T>
-auto range(T start, T end) -> Range<T> {
-  return {start, end};
-}
 
 }  // namespace sfc::ops
 
 namespace sfc {
 using ops::$;
-using ops::range;
 using ops::FnOut;
 }  // namespace sfc
