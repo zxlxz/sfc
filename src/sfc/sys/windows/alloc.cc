@@ -14,7 +14,6 @@ auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.align <= alignof(max_align_t)) {
     return ::malloc(layout.size);
   }
-
   const auto aligned_size = num::align_up(layout.size, layout.align);
   return ::_aligned_malloc(aligned_size, layout.align);
 }

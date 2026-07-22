@@ -13,7 +13,10 @@ auto StackFrame::from_addr(const void* ptr) -> StackFrame {
   const auto proc = ::GetCurrentProcess();
   const auto addr = reinterpret_cast<ULONG_PTR>(ptr);
 
-  auto res = StackFrame{};
+  auto res = StackFrame{
+      nullptr,
+      "unknown",
+  };
 
   // file + line
   auto fl = ::IMAGEHLP_LINE64{};
@@ -25,7 +28,6 @@ auto StackFrame::from_addr(const void* ptr) -> StackFrame {
   }
 
   // function name
-
   struct SymbolInfo : SYMBOL_INFO {
     char _NameBuf[sizeof(StackFrame::func)] = {};
   };
@@ -34,10 +36,11 @@ auto StackFrame::from_addr(const void* ptr) -> StackFrame {
   sym.MaxNameLen = sizeof(sym._NameBuf);
 
   auto sym_disp = 0ULL;
-  if (::SymFromAddr(proc, addr, &sym_disp, &sym)) {
+  auto sym_stat = ::SymFromAddr(proc, addr, &sym_disp, &sym);
+  if (sym_stat) {
     const auto ret = ::UnDecorateSymbolName(sym.Name, res.func, sizeof(res.func), UNDNAME_COMPLETE);
     if (ret == 0 || ret > sizeof(res.func)) {
-      ::memcpy(res.func, sym.Name, sizeof(res.func) - 1);
+      ptr::copy_nonoverlapping(res.func, sym.Name, sizeof(res.func) - 1);
       res.func[sizeof(res.func) - 1] = '\0';
     }
   }
