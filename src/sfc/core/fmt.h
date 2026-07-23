@@ -33,9 +33,7 @@ struct DynWrite {
 
  public:
   template <class X>
-  static auto of(X& x) -> DynWrite {
-    return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write_str>{}};
-  }
+  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write_str{dyn::Fn<&X::write_str>{}} {}
 
  public:
   void write_str(Str s) {
@@ -106,8 +104,9 @@ class Formatter {
   Spec _spec = {};
 
  public:
-  Formatter(auto& out) : _out{DynWrite::of(out)} {}
+  explicit Formatter(auto& out) : _out{DynWrite{out}} {}
 
+ public:
   auto spec() const -> Spec {
     return _spec;
   }

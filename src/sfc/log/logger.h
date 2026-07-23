@@ -27,9 +27,7 @@ struct DynBackend {
 
  public:
   template <class X>
-  static auto of(X& x) -> DynBackend {
-    return DynBackend{dyn::Impl{x}, dyn::Fn<&X::push>{}, dyn::Fn<&X::flush>{}};
-  }
+  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _push{dyn::Fn<&X::push>{}}, _flush{dyn::Fn<&X::flush>{}} {}
 
  public:
   void push(Record record) {
@@ -46,7 +44,7 @@ class Logger {
   Level _level{Level::Info};
 
  public:
-  explicit Logger(auto& backend) : _backend{DynBackend::of(backend)} {}
+  explicit Logger(auto& backend) : _backend{backend} {}
 
  public:
   auto level() const -> Level;

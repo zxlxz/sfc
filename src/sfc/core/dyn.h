@@ -3,15 +3,10 @@
 
 namespace sfc::dyn {
 
-template <class X>
-struct Impl {
-  X& impl;
-
-  template <class Self>
-  operator Self&() const {
-    return (Self&)impl;
-  }
-};
+template<class Self>
+auto cast(auto& impl) -> Self& {
+  return *ptr::cast<Self>(&impl);
+}
 
 template <auto f>
 struct Fn {

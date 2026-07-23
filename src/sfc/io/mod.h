@@ -18,13 +18,11 @@ struct SeekFrom {
 struct DynRead {
   class Self;
   Self& _self;
-  Result<usize> (*_read)(Self&, Slice<u8> buf);
+  auto (*_read)(Self&, Slice<u8> buf) -> Result<usize>;
 
  public:
   template <class X>
-  static auto of(X& x) -> DynRead {
-    return DynRead{dyn::Impl{x}, dyn::Fn<&X::read>{}};
-  }
+  explicit DynRead(X& x) : _self{dyn::cast<Self>(x)}, _read{dyn::Fn<&X::read>{}} {}
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -36,16 +34,14 @@ struct DynRead {
 struct DynWrite {
   class Self;
   Self& _self;
-  Result<usize> (*_write)(Self&, Slice<const u8> buf);
-  Result<> (*_flush)(Self&){nullptr};
+  auto (*_write)(Self&, Slice<const u8> buf) -> Result<usize>;
+  auto (*_flush)(Self&) -> Result<>{nullptr};
 
  public:
   template <class X>
-  static auto of(X& x) -> DynWrite {
+  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::Fn<&X::write>{}} {
     if constexpr (requires { &X::flush; }) {
-      return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write>{}, dyn::Fn<&X::flush>{}};
-    } else {
-      return DynWrite{dyn::Impl{x}, dyn::Fn<&X::write>{}, nullptr};
+      this->_flush = dyn::Fn<&X::flush>{};
     }
   }
 
@@ -58,27 +54,26 @@ struct DynWrite {
 
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    return DynRead::of(self).read_exact(buf);
+    return DynRead{self}.read_exact(buf);
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    return DynRead::of(self).read_to_end(buf);
+    return DynRead{self}.read_to_end(buf);
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return DynRead::of(self).read_to_string(buf);
+    return DynRead{self}.read_to_string(buf);
   }
 };
 
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    return DynWrite::of(self).write_all(buf);
+    return DynWrite{self}.write_all(buf);
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {
-    return DynWrite::of(self).write_str(buf);
+    return DynWrite{self}.write_str(buf);
   }
 };
-
 
 }  // namespace sfc::io
