@@ -133,8 +133,9 @@ class Deserializer {
   friend class DeserializeObj;
   Str _buf;
 
-  auto next_token() -> Token;
   void consume(usize cnt);
+  auto peek_tok() -> Token;
+  auto pop_tok(Token tok) -> Result<>;
 
  public:
   Deserializer(Str s);
@@ -143,7 +144,6 @@ class Deserializer {
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
   auto deserialize_str() -> Result<Str>;
-  auto deserialize_key() -> Result<Str>;
   auto deserialize_u64() -> Result<u64>;
   auto deserialize_i64() -> Result<i64>;
   auto deserialize_f64() -> Result<f64>;
@@ -179,7 +179,6 @@ class DeserializeSeq {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
-  bool _opened{false};
   bool _finished{false};
 
  public:
@@ -187,19 +186,27 @@ class DeserializeSeq {
   ~DeserializeSeq();
 
  public:
-  auto next() -> Result<Option<Deserializer&>>;
+  auto next_imp() -> Result<bool>;
+
+  template <class T>
+  auto next_element() -> Result<Option<T>> {
+    const auto has_next = _TRY(this->next_imp());
+    if (!has_next) {
+      return Option<T>{};
+    }
+    auto element = _TRY(_des.deserialize_any<T>());
+    return {mem::move(element)};
+  }
 
   template <class Seq, class T>
   auto collect() -> Result<Seq> {
     auto seq = Seq{};
     while (true) {
-      auto visitor = _TRY(this->next());
-      if (!visitor) {
+      auto opt = _TRY(this->next_element<T>());
+      if (!opt) {
         break;
       }
-
-      auto val = _TRY(visitor->deserialize_any<T>());
-      seq.push(*mem::move(val));
+      seq.push(mem::move(opt).unwrap());
     }
     return {seq};
   }
@@ -209,26 +216,28 @@ class DeserializeObj {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
-  bool _opened{false};
   bool _finished{false};
 
  public:
   DeserializeObj(Deserializer& inn);
   ~DeserializeObj();
 
-  auto next() -> Result<Option<Deserializer&>>;
+  auto next_key() -> Result<Option<Str>>;
+
+  template <class T>
+  auto next_val() -> Result<T> {
+    return _des.deserialize_any<T>();
+  }
 
   template <class Obj, class K, class V>
   auto collect() -> Result<Obj> {
     auto obj = Obj{};
     while (true) {
-      auto x = _TRY(this->next());
-      if (!x) {
+      auto key = _TRY(this->next_key());
+      if (!key) {
         break;
       }
-
-      auto key = _TRY(x->deserialize_key());
-      auto val = _TRY(x->deserialize_any<V>());
+      auto val = _TRY(this->next_val<V>());
       obj.insert(key, mem::move(val));
     }
     return {obj};
@@ -237,17 +246,19 @@ class DeserializeObj {
 
 template <class V, class U>
 auto Deserializer::deserialize_seq(V&& visit) -> U {
+  _TRY(this->pop_tok(Token::ArrayBegin));
   auto imp = DeserializeSeq{*this};
   auto res = visit(imp);
-  if (res.is_err()) return res;
+  _TRY(this->pop_tok(Token::ArrayEnd));
   return res;
 }
 
 template <class V, class U>
 auto Deserializer::deserialize_obj(V&& visit) -> U {
+  _TRY(this->pop_tok(Token::ObjectBegin));
   auto imp = DeserializeObj{*this};
   auto res = visit(imp);
-  if (res.is_err()) return res;
+  _TRY(this->pop_tok(Token::ObjectEnd));
   return res;
 }
 

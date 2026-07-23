@@ -90,7 +90,11 @@ Deserializer::Deserializer(Str s) : _buf{s} {}
 
 Deserializer::~Deserializer() {}
 
-auto Deserializer::next_token() -> Token {
+void Deserializer::consume(usize cnt) {
+  _buf = _buf[{cnt, _buf._len}];
+}
+
+auto Deserializer::peek_tok() -> Token {
   _buf = _buf.trim_start();
 
   const auto ch = _buf[0];
@@ -110,8 +114,22 @@ auto Deserializer::next_token() -> Token {
   }
 }
 
-void Deserializer::consume(usize cnt) {
-  _buf = _buf[{cnt, _buf._len}];
+auto Deserializer::pop_tok(Token tok) -> Result<> {
+  const auto next_tok = this->peek_tok();
+  if (next_tok != tok) {
+    switch (tok) {
+      case Token::Comma:       return Error::ExpectedComma;
+      case Token::DoubleQuote: return Error::ExpectedDoubleQuote;
+      case Token::Colon:       return Error::ExpectedColon;
+      case Token::ArrayBegin:  return Error::ExpectedArrayBegin;
+      case Token::ArrayEnd:    return Error::ExpectedArrayEnd;
+      case Token::ObjectBegin: return Error::ExpectedObjectBegin;
+      case Token::ObjectEnd:   return Error::ExpectedObjectEnd;
+      default:                 return Error::InvalidKeyword;
+    }
+  }
+  this->consume(1);
+  return Ok{};
 }
 
 auto Deserializer::deserialize_null() -> Result<> {
@@ -123,7 +141,7 @@ auto Deserializer::deserialize_null() -> Result<> {
 }
 
 auto Deserializer::deserialize_bool() -> Result<bool> {
-  const auto tok = this->next_token();
+  const auto tok = this->peek_tok();
   switch (tok) {
     case Token::True:  this->consume(4); return {true};
     case Token::False: this->consume(5); return {false};
@@ -133,7 +151,7 @@ auto Deserializer::deserialize_bool() -> Result<bool> {
 }
 
 auto Deserializer::deserialize_str() -> Result<Str> {
-  const auto tok = this->next_token();
+  const auto tok = this->peek_tok();
   if (tok != Token::DoubleQuote) {
     return Error::ExpectedDoubleQuote;
   }
@@ -148,16 +166,6 @@ auto Deserializer::deserialize_str() -> Result<Str> {
   this->consume(res.len());
   this->consume(1);  // consume '"'
   return Ok{res};
-}
-
-auto Deserializer::deserialize_key() -> Result<Str> {
-  const auto s = _TRY(this->deserialize_str());
-  const auto next_tok = this->next_token();
-  if (next_tok != Token::Colon) {
-    return Error::ExpectedColon;
-  }
-  this->consume(1);  // consume ':'
-  return Ok{s};
 }
 
 auto Deserializer::deserialize_num() -> Result<Str> {
@@ -195,74 +203,50 @@ DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
 
 DeserializeSeq::~DeserializeSeq() {}
 
-auto DeserializeSeq::next() -> Result<Option<Deserializer&>> {
+auto DeserializeSeq::next_imp() -> Result<bool> {
   if (_finished) {
-    return Error::Finished;
+    return false;
   }
 
-  if (!_opened) {  // '['
-    const auto tok = _des.next_token();
-    if (tok != Token::ArrayBegin) {
-      return Error::ExpectedArrayBegin;
-    }
-    _des.consume(1);
-    _opened = true;
-  }
-
-  const auto tok = _des.next_token();
+  const auto tok = _des.peek_tok();
   if (tok == Token::ArrayEnd) {  // ']'
-    _des.consume(1);
     _finished = true;
-    return Option<Deserializer&>{};
+    return false;
   }
 
-  if (_count != 0 && tok != Token::Comma) {
-    return Error::ExpectedComma;
-  }
-
-  if (tok == Token::Comma) {
-    _des.consume(1);
+  if (_count != 0) {
+    _TRY(_des.pop_tok(Token::Comma));
   }
 
   _count += 1;
-  return Option<Deserializer&>{_des};
+  return true;
 }
 
 DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
 
 DeserializeObj::~DeserializeObj() {}
 
-auto DeserializeObj::next() -> Result<Option<Deserializer&>> {
+auto DeserializeObj::next_key() -> Result<Option<Str>> {
   if (_finished) {
-    return Error::Finished;
+    return Option<Str>{};
   }
 
-  if (!_opened) {  // '{'
-    const auto tok = _des.next_token();
-    if (tok != Token::ObjectBegin) {
-      return Error::ExpectedObjectBegin;
-    }
-    _des.consume(1);
-    _opened = true;
-  }
-
-  const auto tok = _des.next_token();
+  const auto tok = _des.peek_tok();
   if (tok == Token::ObjectEnd) {  // '}'
     _finished = true;
-    _des.consume(1);
-    return Option<Deserializer&>{};
+    return Option<Str>{};
   }
 
-  if (_count != 0 && tok != Token::Comma) {
-    return Error::ExpectedComma;
-  }
-
-  if (tok == Token::Comma) {
-    _des.consume(1);
+  if (_count != 0) {
+    _TRY(_des.pop_tok(Token::Comma));
   }
 
   _count += 1;
-  return Option<Deserializer&>{_des};
+
+  const auto key = _TRY(_des.deserialize_str());
+  _TRY(_des.pop_tok(Token::Colon));
+
+  return Option<Str>{key};
 }
 
 }  // namespace sfc::serde::json

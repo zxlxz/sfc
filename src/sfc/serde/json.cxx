@@ -74,11 +74,9 @@ SFC_TEST(deserialize_seq) {
   const int vals[] = {0, 1, 2};
   auto visit = [&](DeserializeSeq& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
-      auto x = seq.next().unwrap();
-      const auto val = _TRY(x->deserialize_any<int>());
-      sfc::assert_eq(val, vals[i]);
+      const auto val = _TRY(seq.next_element<int>());
+      sfc::assert_eq(val, Option{vals[i]});
     }
-    seq.next().unwrap();
     return Ok{};
   };
 
@@ -94,15 +92,12 @@ SFC_TEST(deserialize_map) {
 
   auto visit = [&](DeserializeObj& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
-      auto x = map.next().unwrap();
+      const auto key = _TRY(map.next_key());
+      sfc::assert_eq(key, Option{keys[i]});
 
-      const auto key = x->deserialize_key().unwrap();
-      sfc::assert_eq(key, keys[i]);
-
-      const auto val = x->deserialize_any<int>().unwrap();
+      const auto val = _TRY(map.next_val<int>());
       sfc::assert_eq(val, vals[i]);
     }
-    map.next().unwrap();
     return Ok{};
   };
 
