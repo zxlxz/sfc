@@ -350,6 +350,26 @@ auto List<T, A>::drain(Range ids) noexcept -> Drain {
   return Drain{*this, ids};
 }
 
+template <class T>
+auto begin(const List<T>& v) -> const T* {
+  return v.as_ptr();
+}
+
+template <class T>
+auto end(const List<T>& v) -> const T* {
+  return v.as_ptr() + v.len();
+}
+
+template <class T>
+auto begin(List<T>& v) -> T* {
+  return v.as_mut_ptr();
+}
+
+template <class T>
+auto end(List<T>& v) -> T* {
+  return v.as_mut_ptr() + v.len();
+}
+
 }  // namespace sfc::list
 
 namespace sfc {
