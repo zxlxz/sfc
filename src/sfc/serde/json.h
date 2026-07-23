@@ -39,7 +39,17 @@ auto to_str(Error err) -> Str;
 template <class T = Unit>
 using Result = result::Result<T, Error>;
 
+class Serializer;
+class SerializeSeq;
+class SerializeObj;
+
+class Deserializer;
+class DeserializeSeq;
+class DeserializeObj;
+
 class Serializer {
+  friend class SerializeSeq;
+  friend class SerializeObj;
   fmt::DynWrite _out;
 
  public:
@@ -53,10 +63,7 @@ class Serializer {
   void serialize_f64(f64 val);
   void serialize_str(Str val);
 
-  class SerializeSeq;
   auto serialize_seq() -> SerializeSeq;
-
-  class SerializeObj;
   auto serialize_obj() -> SerializeObj;
 
   template <class T>
@@ -81,10 +88,11 @@ class Serializer {
   }
 };
 
-class Serializer::SerializeSeq {
+class SerializeSeq {
   Serializer& _ser;
   usize _count = 0;
-  void serialize_next();
+
+  void serialize_imp();
 
  public:
   explicit SerializeSeq(Serializer& ser);
@@ -93,12 +101,12 @@ class Serializer::SerializeSeq {
   void operator=(const SerializeSeq&) = delete;
 
   void serialize_element(const auto& item) {
-    this->serialize_next();
+    this->serialize_imp();
     _ser.serialize_any(item);
   }
 };
 
-class Serializer::SerializeObj {
+class SerializeObj {
   Serializer& _ser;
   usize _count{0};
 
@@ -121,6 +129,8 @@ class Serializer::SerializeObj {
 };
 
 class Deserializer {
+  friend class DeserializeSeq;
+  friend class DeserializeObj;
   Str _buf;
 
   auto next_token() -> Token;
@@ -133,16 +143,15 @@ class Deserializer {
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
   auto deserialize_str() -> Result<Str>;
+  auto deserialize_key() -> Result<Str>;
   auto deserialize_u64() -> Result<u64>;
   auto deserialize_i64() -> Result<i64>;
   auto deserialize_f64() -> Result<f64>;
   auto deserialize_num() -> Result<Str>;
 
-  class DeserializeSeq;
   template <class V, class U = FnOut<V, DeserializeSeq&>>
   auto deserialize_seq(V&& visit) -> U;
 
-  class DeserializeObj;
   template <class V, class U = FnOut<V, DeserializeObj&>>
   auto deserialize_obj(V&& visit) -> U;
 
@@ -166,73 +175,61 @@ class Deserializer {
   }
 };
 
-class Deserializer::DeserializeSeq {
+class DeserializeSeq {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
   bool _opened{false};
   bool _finished{false};
-
-  auto next_imp() -> Result<bool>;
 
  public:
   DeserializeSeq(Deserializer& inn);
   ~DeserializeSeq();
 
-  template <class T>
-  auto next_element() -> Result<Option<T>> {
-    const auto has_next = _TRY(this->next_imp());
-    if (!has_next) {
-      return {Option<T>{}};
-    }
-
-    auto val = _TRY(_des.deserialize_any<T>());
-    _count += 1;
-    return {Option<T>{mem::move(val)}};
-  }
+ public:
+  auto next() -> Result<Option<Deserializer&>>;
 
   template <class Seq, class T>
   auto collect() -> Result<Seq> {
     auto seq = Seq{};
     while (true) {
-      auto opt = _TRY(this->next_element<T>());
-      if (!opt) break;
-      seq.push(*mem::move(opt));
+      auto visitor = _TRY(this->next());
+      if (!visitor) {
+        break;
+      }
+
+      auto val = _TRY(visitor->deserialize_any<T>());
+      seq.push(*mem::move(val));
     }
     return {seq};
   }
 };
 
-class Deserializer::DeserializeObj {
+class DeserializeObj {
   using Error = json::Error;
   Deserializer& _des;
   usize _count{0};
   bool _opened{false};
   bool _finished{false};
 
-  auto next_imp() -> Result<bool>;
-
  public:
   DeserializeObj(Deserializer& inn);
   ~DeserializeObj();
 
-  auto next_key() -> Result<Option<Str>>;
-
-  template <class T>
-  auto next_value() -> Result<T> {
-    auto res = _TRY(_des.deserialize_any<T>());
-    _count += 1;
-    return {mem::move(res)};
-  }
+  auto next() -> Result<Option<Deserializer&>>;
 
   template <class Obj, class K, class V>
   auto collect() -> Result<Obj> {
     auto obj = Obj{};
     while (true) {
-      auto key = _TRY(this->next_key());
-      if (!key) break;
-      auto val = _TRY(this->next_value<V>());
-      obj.insert(*key, mem::move(val));
+      auto x = _TRY(this->next());
+      if (!x) {
+        break;
+      }
+
+      auto key = _TRY(x->deserialize_key());
+      auto val = _TRY(x->deserialize_any<V>());
+      obj.insert(key, mem::move(val));
     }
     return {obj};
   }

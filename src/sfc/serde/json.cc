@@ -55,29 +55,29 @@ auto Serializer::serialize_obj() -> SerializeObj {
   return SerializeObj{*this};
 }
 
-Serializer::SerializeSeq::SerializeSeq(Serializer& ser) : _ser{ser} {
+SerializeSeq::SerializeSeq(Serializer& ser) : _ser{ser} {
   _ser._out.write_str("[");
 }
 
-Serializer::SerializeSeq::~SerializeSeq() {
+SerializeSeq::~SerializeSeq() {
   _ser._out.write_str("]");
 }
 
-void Serializer::SerializeSeq::serialize_next() {
+void SerializeSeq::serialize_imp() {
   if (_count++ != 0) {
     _ser._out.write_str(",");
   }
 }
 
-Serializer::SerializeObj::SerializeObj(Serializer& ser) : _ser{ser} {
+SerializeObj::SerializeObj(Serializer& ser) : _ser{ser} {
   _ser._out.write_str("{");
 }
 
-Serializer::SerializeObj::~SerializeObj() {
+SerializeObj::~SerializeObj() {
   _ser._out.write_str("}");
 }
 
-void Serializer::SerializeObj::serialize_key(Str val) {
+void SerializeObj::serialize_key(Str val) {
   if (_count++ != 0) {
     _ser._out.write_str(",");
   }
@@ -150,6 +150,16 @@ auto Deserializer::deserialize_str() -> Result<Str> {
   return Ok{res};
 }
 
+auto Deserializer::deserialize_key() -> Result<Str> {
+  const auto s = _TRY(this->deserialize_str());
+  const auto next_tok = this->next_token();
+  if (next_tok != Token::Colon) {
+    return Error::ExpectedColon;
+  }
+  this->consume(1);  // consume ':'
+  return Ok{s};
+}
+
 auto Deserializer::deserialize_num() -> Result<Str> {
   const auto is_spliter = [](char c) { return c == 0 || c == ',' || c == ']' || c == '}'; };
 
@@ -181,11 +191,11 @@ auto Deserializer::deserialize_f64() -> Result<f64> {
   return num_ret;
 }
 
-Deserializer::DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
+DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
 
-Deserializer::DeserializeSeq::~DeserializeSeq() {}
+DeserializeSeq::~DeserializeSeq() {}
 
-auto Deserializer::DeserializeSeq::next_imp() -> Result<bool> {
+auto DeserializeSeq::next() -> Result<Option<Deserializer&>> {
   if (_finished) {
     return Error::Finished;
   }
@@ -203,28 +213,28 @@ auto Deserializer::DeserializeSeq::next_imp() -> Result<bool> {
   if (tok == Token::ArrayEnd) {  // ']'
     _des.consume(1);
     _finished = true;
-    return false;
+    return Option<Deserializer&>{};
   }
 
-  if (_count == 0) {
-    return true;
+  if (_count != 0 && tok != Token::Comma) {
+    return Error::ExpectedComma;
   }
 
   if (tok == Token::Comma) {
     _des.consume(1);
-    return true;
   }
 
-  return Error::ExpectedComma;
+  _count += 1;
+  return Option<Deserializer&>{_des};
 }
 
-Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
+DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
 
-Deserializer::DeserializeObj::~DeserializeObj() {}
+DeserializeObj::~DeserializeObj() {}
 
-auto Deserializer::DeserializeObj::next_imp() -> Result<bool> {
+auto DeserializeObj::next() -> Result<Option<Deserializer&>> {
   if (_finished) {
-    return false;
+    return Error::Finished;
   }
 
   if (!_opened) {  // '{'
@@ -240,34 +250,19 @@ auto Deserializer::DeserializeObj::next_imp() -> Result<bool> {
   if (tok == Token::ObjectEnd) {  // '}'
     _finished = true;
     _des.consume(1);
-    return false;
+    return Option<Deserializer&>{};
   }
 
-  if (_count == 0) {
-    return true;
+  if (_count != 0 && tok != Token::Comma) {
+    return Error::ExpectedComma;
   }
 
   if (tok == Token::Comma) {
     _des.consume(1);
-    return true;
   }
 
-  return Error::ExpectedComma;
-}
-
-auto Deserializer::DeserializeObj::next_key() -> Result<Option<Str>> {
-  const auto has_next = _TRY(this->next_imp());
-  if (!has_next) {
-    return {Option<Str>{}};
-  }
-
-  const auto key = _TRY(_des.deserialize_str());
-  const auto tok = _des.next_token();
-  if (tok != Token::Colon) {
-    return Error::ExpectedColon;
-  }
-  _des.consume(1);  // consume ':'
-  return {Option{key}};
+  _count += 1;
+  return Option<Deserializer&>{_des};
 }
 
 }  // namespace sfc::serde::json

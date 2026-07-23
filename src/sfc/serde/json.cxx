@@ -72,12 +72,13 @@ SFC_TEST(deserialize_simple) {
 SFC_TEST(deserialize_seq) {
   const Str s = "[0,1,2]";
   const int vals[] = {0, 1, 2};
-  auto visit = [&](auto& seq) -> Result<> {
+  auto visit = [&](DeserializeSeq& seq) -> Result<> {
     for (auto i = 0U; i < 3; ++i) {
-      const auto val = seq.template next_element<int>().unwrap();
-      sfc::assert_eq(val, Option{vals[i]});
+      auto x = seq.next().unwrap();
+      const auto val = _TRY(x->deserialize_any<int>());
+      sfc::assert_eq(val, vals[i]);
     }
-    seq.template next_element<int>().unwrap();
+    seq.next().unwrap();
     return Ok{};
   };
 
@@ -91,15 +92,17 @@ SFC_TEST(deserialize_map) {
   const Str keys[] = {"a", "b"};
   const int vals[] = {1, 2};
 
-  auto visit = [&](auto& map) -> Result<> {
+  auto visit = [&](DeserializeObj& map) -> Result<> {
     for (auto i = 0U; i < 2; ++i) {
-      const auto key = map.next_key().ok();
-      sfc::assert_eq(key, Option{keys[i]});
+      auto x = map.next().unwrap();
 
-      const auto val = map.template next_value<int>();
-      sfc::assert_eq(auto{val}.ok(), Option{vals[i]});
+      const auto key = x->deserialize_key().unwrap();
+      sfc::assert_eq(key, keys[i]);
+
+      const auto val = x->deserialize_any<int>().unwrap();
+      sfc::assert_eq(val, vals[i]);
     }
-    map.next_key().unwrap();
+    map.next().unwrap();
     return Ok{};
   };
 
