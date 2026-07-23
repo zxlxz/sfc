@@ -56,6 +56,10 @@ class [[nodiscard]] Result {
   }
 
  public:
+  explicit operator bool() const noexcept {
+    return _1 == kSuccess;
+  }
+
   auto is_ok() const noexcept -> bool {
     return _1 == kSuccess;
   }
@@ -175,6 +179,11 @@ class [[nodiscard]] Result<T&, E> {
  public:
   Result(T& t) noexcept : _0{&t} {}
   Result(E e) noexcept : _1{e} {}
+
+ public:
+  explicit operator bool() const noexcept {
+    return _0 != nullptr;
+  }
 
   auto is_ok() const noexcept -> bool {
     return _0 != nullptr;
@@ -300,7 +309,7 @@ using result::Result;
 #define _TRY(expr)                          \
   ({                                        \
     auto _res = (expr);                     \
-    if (_res.is_err()) {                    \
+    if (!_res) {                            \
       return {_res.unwrap_err_unchecked()}; \
     }                                       \
     _res.unwrap_unchecked();                \

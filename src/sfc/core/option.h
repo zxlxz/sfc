@@ -31,6 +31,7 @@ class Option {
 
  public:
   Option() noexcept : _tag{false} {}
+  Option(None) noexcept : _tag{false} {}
   Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
 
   ~Option() requires(trait::tv_drop_<T>) = default;
@@ -53,15 +54,15 @@ class Option {
   }
 
  public:
+  explicit operator bool() const noexcept {
+    return _tag;
+  }
+
   auto is_none() const noexcept -> bool {
     return !_tag;
   }
 
   auto is_some() const noexcept -> bool {
-    return _tag;
-  }
-
-  operator bool() const noexcept {
     return _tag;
   }
 
@@ -83,6 +84,14 @@ class Option {
   auto operator*() -> T& {
     sfc::assert_(this->is_some(), "Option::operator*: deref None()");
     return _1;
+  }
+
+  auto unwrap_unchecked() noexcept -> T {
+    return mem::move(_1);
+  }
+
+  auto unwrap_err_unchecked() const -> None {
+    return {};
   }
 
  public:
@@ -141,7 +150,8 @@ class Option {
   }
 
  public:
-  auto operator==(const Option& other) const -> bool {
+  template <class U>
+  auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
     return _1 == *other;
@@ -170,17 +180,19 @@ class Option<T&> {
 
  public:
   constexpr Option() noexcept : _1{nullptr} {}
+  constexpr Option(None) noexcept : _1{nullptr} {}
   constexpr Option(T& val) noexcept : _1{&val} {}
+
+ public:
+  explicit operator bool() const noexcept {
+    return _1 != nullptr;
+  }
 
   auto is_none() const noexcept -> bool {
     return _1 == nullptr;
   }
 
   auto is_some() const noexcept -> bool {
-    return _1 != nullptr;
-  }
-
-  operator bool() const noexcept {
     return _1 != nullptr;
   }
 
@@ -198,6 +210,14 @@ class Option<T&> {
 
   auto operator*() -> T& {
     return *_1;
+  }
+
+  auto unwrap_unchecked() noexcept -> T& {
+    return *_1;
+  }
+
+  auto unwrap_err_unchecked() const -> None {
+    return {};
   }
 
  public:
@@ -248,7 +268,8 @@ class Option<T&> {
   }
 
  public:
-  auto operator==(const Option& other) const -> bool {
+  template <class U>
+  auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
     return *_1 == *other;
@@ -273,6 +294,9 @@ class Option<T&> {
     }
   }
 };
+
+template <class T>
+class Option<Option<T>>;
 
 template <class T>
 Option(T) -> Option<T>;
