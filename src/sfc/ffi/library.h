@@ -14,7 +14,7 @@ class Library {
   Library(Library&& other) noexcept;
   Library& operator=(Library&& other) noexcept;
 
-  static auto load(Str path) -> Library;
+  static auto load(Str path) -> Option<Library>;
 
  public:
   auto get(Str name) const -> Symbol;
