@@ -6,41 +6,41 @@ namespace sfc::io {
 
 auto to_str(Error e) noexcept -> Str {
   switch (e) {
-    case Error::Success:            return "Success";
-    case Error::NotFound:           return "NotFound";
-    case Error::PermissionDenied:   return "PermissionDenied";
-    case Error::ConnectionRefused:  return "ConnectionRefused";
-    case Error::ConnectionReset:    return "ConnectionReset";
-    case Error::ConnectionAborted:  return "ConnectionAborted";
-    case Error::NotConnected:       return "NotConnected";
-    case Error::AddrInUse:          return "AddrInUse";
-    case Error::AddrNotAvailable:   return "AddrNotAvailable";
-    case Error::NetworkUnreachable: return "NetworkUnreachable";
-    case Error::HostUnreachable:    return "HostUnreachable";
-    case Error::NetworkDown:        return "NetworkDown";
-    case Error::BrokenPipe:         return "BrokenPipe";
-    case Error::AlreadyExists:      return "AlreadyExists";
-    case Error::WouldBlock:         return "WouldBlock";
-    case Error::InvalidInput:       return "InvalidInput";
-    case Error::InvalidData:        return "InvalidData";
-    case Error::InvalidOperation:   return "InvalidOperation";
-    case Error::Interrupted:        return "Interrupted";
-    case Error::Unsupported:        return "Unsupported";
-    case Error::UnexpectedEof:      return "UnexpectedEof";
-    case Error::WriteZero:          return "WriteZero";
-    case Error::TimedOut:           return "TimedOut";
-    case Error::IsADirectory:       return "IsADirectory";
-    case Error::NotADirectory:      return "NotADirectory";
-    case Error::DirectoryNotEmpty:  return "DirectoryNotEmpty";
-    case Error::NotSeekable:        return "NotSeekable";
-    case Error::FileTooLarge:       return "FileTooLarge";
-    case Error::ResourceBusy:       return "ResourceBusy";
-    case Error::Deadlock:           return "Deadlock";
-    case Error::StorageFull:        return "StorageFull";
-    case Error::OutOfMemory:        return "OutOfMemory";
-    case Error::InProgress:         return "InProgress";
-    case Error::Other:              return "Other";
-    default:                 return "Unknown";
+    case Error::Success:            return "io::Error::Success";
+    case Error::NotFound:           return "io::Error::NotFound";
+    case Error::PermissionDenied:   return "io::Error::PermissionDenied";
+    case Error::ConnectionRefused:  return "io::Error::ConnectionRefused";
+    case Error::ConnectionReset:    return "io::Error::ConnectionReset";
+    case Error::ConnectionAborted:  return "io::Error::ConnectionAborted";
+    case Error::NotConnected:       return "io::Error::NotConnected";
+    case Error::AddrInUse:          return "io::Error::AddrInUse";
+    case Error::AddrNotAvailable:   return "io::Error::AddrNotAvailable";
+    case Error::NetworkUnreachable: return "io::Error::NetworkUnreachable";
+    case Error::HostUnreachable:    return "io::Error::HostUnreachable";
+    case Error::NetworkDown:        return "io::Error::NetworkDown";
+    case Error::BrokenPipe:         return "io::Error::BrokenPipe";
+    case Error::AlreadyExists:      return "io::Error::AlreadyExists";
+    case Error::WouldBlock:         return "io::Error::WouldBlock";
+    case Error::InvalidInput:       return "io::Error::InvalidInput";
+    case Error::InvalidData:        return "io::Error::InvalidData";
+    case Error::InvalidOperation:   return "io::Error::InvalidOperation";
+    case Error::Interrupted:        return "io::Error::Interrupted";
+    case Error::Unsupported:        return "io::Error::Unsupported";
+    case Error::UnexpectedEof:      return "io::Error::UnexpectedEof";
+    case Error::WriteZero:          return "io::Error::WriteZero";
+    case Error::TimedOut:           return "io::Error::TimedOut";
+    case Error::IsADirectory:       return "io::Error::IsADirectory";
+    case Error::NotADirectory:      return "io::Error::NotADirectory";
+    case Error::DirectoryNotEmpty:  return "io::Error::DirectoryNotEmpty";
+    case Error::NotSeekable:        return "io::Error::NotSeekable";
+    case Error::FileTooLarge:       return "io::Error::FileTooLarge";
+    case Error::ResourceBusy:       return "io::Error::ResourceBusy";
+    case Error::Deadlock:           return "io::Error::Deadlock";
+    case Error::StorageFull:        return "io::Error::StorageFull";
+    case Error::OutOfMemory:        return "io::Error::OutOfMemory";
+    case Error::InProgress:         return "io::Error::InProgress";
+    case Error::Other:              return "io::Error::Other";
+    default:                        return "io::Error::Unknown";
   }
 }
 
