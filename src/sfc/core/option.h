@@ -95,8 +95,8 @@ class Option {
   }
 
  public:
-  auto expect(const auto& msg) -> T {
-    sfc::assert_(this->is_some(), "Option::expect: {}", msg);
+  auto expect(const fmt::Fmts& fmts, const auto&... args) -> T {
+    sfc::assert_(this->is_some(), fmts, args...);
     return mem::move(_1);
   }
 
