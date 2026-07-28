@@ -32,7 +32,7 @@ static auto make_lib_path(Str name) -> String {
   const auto builder = LibPathBuilder{{}, ".dll"};
 #elif defined(__APPLE__)
   const auto builder = LibPathBuilder{"lib", ".dylib"};
-#else
+#elif defined(__unix__)
   const auto builder = LibPathBuilder{"lib", ".so"};
 #endif
   return builder.build(name);
