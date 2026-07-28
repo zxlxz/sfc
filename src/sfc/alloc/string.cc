@@ -58,10 +58,6 @@ auto String::operator[](Range ids) const noexcept -> Str {
   return Str::from_utf8(v);
 }
 
-auto String::operator*() const noexcept -> Str {
-  return Str::from_utf8(_buf.as_slice());
-}
-
 auto String::operator==(Str other) const noexcept -> bool {
   return this->as_str() == other;
 }

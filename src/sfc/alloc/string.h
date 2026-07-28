@@ -45,6 +45,11 @@ class [[nodiscard]] String {
     return _buf.iter_mut();
   }
 
+ public:
+  operator Str() const noexcept {
+    return this->as_str();
+  }
+
   auto find(auto&& p) const -> Option<usize> {
     return this->as_str().find(p);
   }
@@ -65,10 +70,12 @@ class [[nodiscard]] String {
     return this->as_str().ends_with(p);
   }
 
- public:
-  // trait: Deref<Str>
-  auto operator*() const noexcept -> Str;
+  template <class T>
+  auto parse() const -> Option<T> {
+    return this->as_str().template parse<T>();
+  }
 
+ public:
   // trait: ops::Eq
   auto operator==(Str other) const noexcept -> bool;
 
