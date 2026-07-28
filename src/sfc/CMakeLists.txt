@@ -1,4 +1,12 @@
-project(sfc)
+
+# config
+if (CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options(-Wall -Wextra -Wconversion)
+endif()
 
 # sfc
 add_library(sfc)
@@ -13,7 +21,7 @@ endif()
 
 target_sources(sfc PRIVATE ${_SFC_SRC})
 target_compile_features(sfc PUBLIC cxx_std_23)
-target_include_directories(sfc PUBLIC ${_SFC_INCLUDE})
+target_include_directories(sfc PUBLIC ${_SFC_PATH})
 
 # sfc-test
 add_executable(sfc-test)

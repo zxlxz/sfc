@@ -4,6 +4,9 @@ project(sfc)
 
 include(cmake/utils.cmake)
 
-enable_testing()
 add_subdirectory(src)
-add_subdirectory(tests)
+
+if (PROJECT_IS_TOP_LEVEL)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
