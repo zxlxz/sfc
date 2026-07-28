@@ -40,13 +40,37 @@ union _UnionData<A, B, C, D, E, F, G> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4
 
 template <class A, class B, class C, class D, class E, class F, class G, class H>
 union _UnionData<A, B, C, D, E, F, G, H> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7) };
+
+template <class A, class B, class C, class D, class E, class F, class G, class H, class I>
+union _UnionData<A, B, C, D, E, F, G, H, I> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J>
+union _UnionData<A, B, C, D, E, F, G, H, I, J> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14) };
+
+template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O, class P>
+union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; P _15) };
 // clang-format on
 
 #undef _UNION_IMPL
 
 template <class U, class... T>
 consteval auto union_tag() -> u32 {
-  static_assert(sizeof...(T) <= 8, "union_tag: too many types");
+  static_assert(sizeof...(T) <= 16, "union_tag: too many types");
 
   const bool vals[] = {trait::same_<U, T>..., false};
   for (u32 i = 0; i < sizeof...(T); ++i) {
@@ -57,7 +81,7 @@ consteval auto union_tag() -> u32 {
 
 template <u32 IDX>
 auto union_at(auto&& u) -> auto& {
-  static_assert(IDX <= 8, "union_at: index out of bounds");
+  static_assert(IDX < 16, "union_at: index out of bounds");
 
   if constexpr (IDX == 0) return u._0;
   if constexpr (IDX == 1) return u._1;
@@ -67,6 +91,14 @@ auto union_at(auto&& u) -> auto& {
   if constexpr (IDX == 5) return u._5;
   if constexpr (IDX == 6) return u._6;
   if constexpr (IDX == 7) return u._7;
+  if constexpr (IDX == 8) return u._8;
+  if constexpr (IDX == 9) return u._9;
+  if constexpr (IDX == 10) return u._10;
+  if constexpr (IDX == 11) return u._11;
+  if constexpr (IDX == 12) return u._12;
+  if constexpr (IDX == 13) return u._13;
+  if constexpr (IDX == 14) return u._14;
+  if constexpr (IDX == 15) return u._15;
 }
 
 template <class... T>
@@ -171,6 +203,14 @@ class Variant {
     if constexpr (CNT > 5) _tag == 5 ? f(trait::const_t<5U>{}) : void();
     if constexpr (CNT > 6) _tag == 6 ? f(trait::const_t<6U>{}) : void();
     if constexpr (CNT > 7) _tag == 7 ? f(trait::const_t<7U>{}) : void();
+    if constexpr (CNT > 8) _tag == 8 ? f(trait::const_t<8U>{}) : void();
+    if constexpr (CNT > 9) _tag == 9 ? f(trait::const_t<9U>{}) : void();
+    if constexpr (CNT > 10) _tag == 10 ? f(trait::const_t<10U>{}) : void();
+    if constexpr (CNT > 11) _tag == 11 ? f(trait::const_t<11U>{}) : void();
+    if constexpr (CNT > 12) _tag == 12 ? f(trait::const_t<12U>{}) : void();
+    if constexpr (CNT > 13) _tag == 13 ? f(trait::const_t<13U>{}) : void();
+    if constexpr (CNT > 14) _tag == 14 ? f(trait::const_t<14U>{}) : void();
+    if constexpr (CNT > 15) _tag == 15 ? f(trait::const_t<15U>{}) : void();
   }
 
  public:
