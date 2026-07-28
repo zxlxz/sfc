@@ -160,8 +160,8 @@ constexpr auto saturating_sub(T a, T b) -> T {
 
 template <trait::uint_ T>
 constexpr auto align_up(T val, T align) -> T {
-  const auto mask = T{align - 1};
-  return (val + mask) & ~mask;
+  const auto mask = T(align - T{1});
+  return T((val + mask) & ~mask);
 }
 
 template <trait::uint_ T>
