@@ -1,13 +1,4 @@
 
-# config
-if (CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  add_compile_options(-Wall -Wextra -Wconversion)
-endif()
-
 # sfc
 add_library(sfc)
 target_source_files(sfc . *.cc)
@@ -15,6 +6,7 @@ target_source_files(sfc . *.cc)
 if (NOT (LINUX OR APPLE))
   target_sources_exclude(sfc "posix/.*")
 endif()
+
 if(NOT WIN32)
   target_sources_exclude(sfc "windows/.*")
 endif()
