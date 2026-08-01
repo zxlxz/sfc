@@ -228,11 +228,8 @@ struct Slice {
   // trait: ops::Eq
   constexpr auto operator==(const Slice& v) const noexcept -> bool {
     if (_len != v._len) return false;
-
     for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != v._ptr[i]) {
-        return false;
-      }
+      if (_ptr[i] != v._ptr[i]) return false;
     }
     return true;
   }
@@ -243,7 +240,16 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize>
+    requires(trait::same_<const T, const u8>);
+
+  // trait: io::Write
+  auto write(Slice<const u8> buf) noexcept -> io::Result<usize>
+    requires(trait::same_<T, u8>);
+
+  // trait: io::Write
+  auto write_str(str::Str s) noexcept -> io::Result<>
+    requires(trait::same_<T, char>);
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {

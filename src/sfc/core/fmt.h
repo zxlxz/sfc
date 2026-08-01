@@ -6,26 +6,6 @@
 
 namespace sfc::fmt {
 
-struct SBuf {
-  char* _ptr;
-  usize _cap;
-  usize _len = 0;
-
- public:
-  template <usize N>
-  constexpr SBuf(char (&s)[N]) : _ptr{s}, _cap{N - 1} {}
-
-  auto as_str() const -> Str {
-    return Str{_ptr, _len};
-  }
-
-  void write_str(Str s) {
-    if (s._len == 0 || _len + s._len > _cap) return;
-    ptr::copy_nonoverlapping(s._ptr, _ptr + _len, s._len);
-    _len += s._len;
-  }
-};
-
 struct DynWrite {
   class Self;
   Self& _self;
@@ -33,7 +13,13 @@ struct DynWrite {
 
  public:
   template <class X>
-  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write_str{dyn::Fn<&X::write_str>{}} {}
+  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)} {
+    if constexpr (requires { x.write_str(Str{}); }) {
+      _write_str = [](Self& self, Str s) { (void)dyn::cast<X>(self).write_str(s); };
+    } else {
+      _write_str = [](Self& self, Str s) { (void)dyn::cast<X>(self).write(s.as_bytes()); };
+    }
+  }
 
  public:
   void write_str(Str s) {

@@ -47,8 +47,8 @@ auto DynRead::read_to_end(List<u8>& buf) -> Result<usize> {
   while (true) {
     buf.reserve(PROBE_SIZE);
 
-    auto spare = buf.spare_capacity_mut();
-    const auto read_cnt = _TRY(this->read(spare));
+    auto read_buf = buf.spare_capacity_mut();
+    const auto read_cnt = _TRY(this->read(read_buf));
     if (read_cnt == 0) {
       break;
     }
