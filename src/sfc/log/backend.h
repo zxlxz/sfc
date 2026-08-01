@@ -1,12 +1,13 @@
 #pragma once
 
 #include "sfc/fs/file.h"
+#include "sfc/log/logger.h"
 
 namespace sfc::log {
 
 class ConsoleBackend {
  public:
-  void write(Str time_str, Str level_str, const fmt::Args& args) noexcept;
+  void write(const Record& record) noexcept;
   void flush() noexcept;
 };
 
@@ -17,7 +18,7 @@ class FileBackend {
   FileBackend(fs::File file) noexcept;
   ~FileBackend() noexcept;
 
-  void write(Str time_str, Str level_str, const fmt::Args& args) noexcept;
+  void write(const Record& record) noexcept;
   void flush() noexcept;
 };
 
@@ -29,7 +30,7 @@ class GlobalBackend {
   ~GlobalBackend() noexcept;
 
   void set_file(fs::File file) noexcept;
-  void write(Str time_str, Str level_str, const fmt::Args& args) noexcept;
+  void write(const Record& record) noexcept;
   void flush() noexcept;
 };
 

@@ -4,12 +4,51 @@
 
 namespace sfc::log {
 
-void ConsoleBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
-  char buf[4096];
-  auto out = Slice{buf};
-  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
+static auto level_str(Level level) -> Str {
+  switch (level) {
+    case Level::Trace: return "TRACE";
+    case Level::Debug: return "DEBUG";
+    case Level::Info:  return "INFO ";
+    case Level::Warn:  return "WARN ";
+    case Level::Error: return "ERROR";
+    case Level::Fatal: return "FATAL";
+  }
+  return "INFO ";
+}
 
-  const auto msg = Str{buf, sizeof(buf) - out.len()};
+static auto time_str(time::SystemTime time) -> Str {
+  static thread_local char buf[32];
+  static thread_local auto out = Slice{buf};
+
+  // write seconds, only when the seconds changed
+  static thread_local auto prev_sec = u64{0};
+  if (auto secs = time.as_secs(); secs != prev_sec) {
+    prev_sec = secs;
+    const auto t = time::DateTime::from_local(time);
+    fmt::write(out, "{04}-{02}-{02} {02}:{02}:{02}.000", t.year, t.month, t.day, t.hour, t.minute, t.second);
+  }
+
+  if (auto millis = time.subsec_millis(); millis != 0) {
+    out._ptr -= 3;
+    out._len += 3;
+    fmt::write(out, "{03}", millis);
+  }
+
+  return Str{buf, sizeof(buf) - out.len()};
+}
+
+static auto format_record(Slice<char> buf, const Record& record) -> Str {
+  auto out = Slice{buf};
+
+  const auto time_str = log::time_str(record._time);
+  const auto level_str = log::level_str(record._level);
+  fmt::write(out, "{} [{}] {}\n", time_str, level_str, record._args);
+  return Str{buf._ptr, buf._len - out._len};
+}
+
+void ConsoleBackend::write(const Record& record) noexcept {
+  char buf[4096];
+  auto msg = log::format_record(buf, record);
   io::Stdout().write_str(msg);
 }
 
@@ -19,12 +58,9 @@ FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
 
 FileBackend::~FileBackend() noexcept {}
 
-void FileBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
+void FileBackend::write(const Record& record) noexcept {
   char buf[4096];
-  auto out = Slice{buf};
-  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
-
-  const auto msg = Str{buf, sizeof(buf) - out.len()};
+  auto msg = log::format_record(buf, record);
   (void)_file.write_str(msg);
 }
 
@@ -40,12 +76,10 @@ void GlobalBackend::set_file(fs::File file) noexcept {
   _file = mem::move(file);
 }
 
-void GlobalBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
+void GlobalBackend::write(const Record& record) noexcept {
   char buf[4096];
-  auto out = Slice{buf};
-  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
+  auto msg = log::format_record(buf, record);
 
-  const auto msg = Str{buf, sizeof(buf) - out.len()};
   if (_file.is_valid()) {
     (void)_file.write_str(msg);
   } else {
