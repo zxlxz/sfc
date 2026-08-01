@@ -14,11 +14,7 @@ struct DynWrite {
  public:
   template <class X>
   explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)} {
-    if constexpr (requires { x.write_str(Str{}); }) {
-      _write_str = [](Self& self, Str s) { (void)dyn::cast<X>(self).write_str(s); };
-    } else {
-      _write_str = [](Self& self, Str s) { (void)dyn::cast<X>(self).write(s.as_bytes()); };
-    }
+    _write_str = [](Self& self, Str s) { (void)((X&)self).write_str(s); };
   }
 
  public:

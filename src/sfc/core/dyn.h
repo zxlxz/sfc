@@ -3,9 +3,9 @@
 
 namespace sfc::dyn {
 
-template<class Self>
+template <class Self>
 auto cast(auto& impl) -> Self& {
-  return *ptr::cast<Self>(&impl);
+  return (Self&)(impl);
 }
 
 template <auto f>
