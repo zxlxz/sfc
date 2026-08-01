@@ -19,9 +19,9 @@ SFC_TEST(sfc_fmt_test) {
   const auto kMaxLoop = 1000000U;
   char buf[256U] = {};
   for (auto loop = 0U; loop < kMaxLoop; ++loop) {
-    auto out = fmt::SBuf{buf};
+    auto out = Slice{buf};
     fmt::write(out, "{}: int_val={}, float_val={:.2f}", "sfc_fmt_test", loop, double(loop) * 0.01);
-    buf[out._len] = 0;
+    out[0] = 0; // null terminate
   }
   io::println("buf = {}", Str::from_cstr(buf));
 }
