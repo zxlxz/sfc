@@ -7,31 +7,19 @@ namespace sfc::log {
 
 enum class Level { Trace, Debug, Info, Warn, Error, Fatal };
 
-struct Record {
-  time::SystemTime time;
-  Level level;
-  Str message;
-
- public:
-  auto level_str() const -> Str;
-  auto time_str() const -> Str;
-
-  void fmt(fmt::Formatter& f) const;
-};
-
 struct DynBackend {
   class Self;
   Self& _self;
-  void (*_push)(Self&, Record record);
+  void (*_write)(Self&, Str time, Str level, const fmt::Args& args);
   void (*_flush)(Self&);
 
  public:
   template <class X>
-  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _push{dyn::Fn<&X::push>{}}, _flush{dyn::Fn<&X::flush>{}} {}
+  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::Fn<&X::write>{}}, _flush{dyn::Fn<&X::flush>{}} {}
 
  public:
-  void push(Record record) {
-    return _push(_self, record);
+  void write(Str time, Str level, const fmt::Args& args) {
+    return _write(_self, time, level, args);
   }
 
   void flush() {

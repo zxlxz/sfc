@@ -1,14 +1,15 @@
 #include "sfc/log/backend.h"
+#include "sfc/log/logger.h"
 #include "sfc/io/stdio.h"
 
 namespace sfc::log {
 
-void ConsoleBackend::push(Record record) noexcept {
+void ConsoleBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
   char buf[4096];
-  auto out = fmt::SBuf{buf};
-  fmt::Formatter{out}.write_val(record);
+  auto out = Slice{buf};
+  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
 
-  const auto msg = out.as_str();
+  const auto msg = Str{buf, sizeof(buf) - out.len()};
   io::Stdout().write_str(msg);
 }
 
@@ -18,12 +19,12 @@ FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
 
 FileBackend::~FileBackend() noexcept {}
 
-void FileBackend::push(Record record) noexcept {
+void FileBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
   char buf[4096];
-  auto out = fmt::SBuf{buf};
-  fmt::Formatter{out}.write_val(record);
+  auto out = Slice{buf};
+  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
 
-  const auto msg = out.as_str();
+  const auto msg = Str{buf, sizeof(buf) - out.len()};
   (void)_file.write_str(msg);
 }
 
@@ -39,12 +40,12 @@ void GlobalBackend::set_file(fs::File file) noexcept {
   _file = mem::move(file);
 }
 
-void GlobalBackend::push(Record record) noexcept {
+void GlobalBackend::write(Str time_str, Str level_str, const fmt::Args& args) noexcept {
   char buf[4096];
-  auto out = fmt::SBuf{buf};
-  fmt::Formatter{out}.write_val(record);
+  auto out = Slice{buf};
+  fmt::write(out, "{} [{}] {}\n", time_str, level_str, args);
 
-  const auto msg = out.as_str();
+  const auto msg = Str{buf, sizeof(buf) - out.len()};
   if (_file.is_valid()) {
     (void)_file.write_str(msg);
   } else {
