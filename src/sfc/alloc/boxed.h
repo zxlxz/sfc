@@ -38,6 +38,10 @@ class [[nodiscard]] Box {
   }
 
  public:
+  auto is_null() const noexcept -> bool {
+    return _ptr == nullptr;
+  }
+
   auto as_ptr() const noexcept -> T* {
     return _ptr;
   }
