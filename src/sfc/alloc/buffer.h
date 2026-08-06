@@ -2,27 +2,25 @@
 
 #include "sfc/alloc/alloc.h"
 
-namespace sfc::alloc {
+namespace sfc::buffer {
 
-template <class T, class A = Global>
-class RawBuf {
+template <class T, class A = alloc::Global>
+class Buffer {
   T* _ptr{nullptr};
   usize _cap{0};
-  A _a{};
+  [[no_unique_address]] A _a{};
 
  public:
-  RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
+  Buffer(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
 
-  ~RawBuf() noexcept {
+  ~Buffer() noexcept {
     if (!_ptr) return;
-
-    const auto layout = Layout{}.array<T>(_cap);
-    _a.deallocate(_ptr, layout);
+    _a.deallocate(_ptr, this->layout());
   }
 
-  RawBuf(RawBuf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+  Buffer(Buffer&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
-  RawBuf& operator=(RawBuf&& other) noexcept {
+  Buffer& operator=(Buffer&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
@@ -31,16 +29,15 @@ class RawBuf {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> RawBuf {
-    const auto layout = Layout{}.array<T>(capacity);
-
-    auto res = RawBuf{};
-    res._ptr = ptr::cast<T>(alloc.allocate(layout));
-    res._cap = capacity;
+  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> Buffer {
+    auto res = Buffer{};
     res._a = alloc;
+    res._cap = capacity;
+    res._ptr = ptr::cast<T>(res._a.allocate(res.layout()));
     return res;
   }
 
+ public:
   auto ptr() const noexcept -> T* {
     return _ptr;
   }
@@ -61,6 +58,11 @@ class RawBuf {
     return _a;
   }
 
+  auto layout() -> mem::Layout {
+    return mem::Layout::array<T>(_cap);
+  }
+
+ public:
   void reserve(usize len, usize additional) noexcept {
     constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
     constexpr usize kMaxCap = num::Int<u32>::MAX;
@@ -73,7 +75,7 @@ class RawBuf {
 
     const auto fit_cap = cmp::max(req_cap, _cap * 2);
     const auto new_cap = cmp::max(fit_cap, kMinCap);
-    const auto layout = Layout{}.array<T>(_cap);
+    const auto layout = this->layout();
 
     _ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
@@ -85,7 +87,7 @@ class RawBuf {
       return;
     }
 
-    const auto layout = Layout{}.array<T>(_cap);
+    const auto layout = this->layout();
     _ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
@@ -95,14 +97,14 @@ class RawBuf {
       return;
     }
 
-    const auto layout = Layout{}.array<T>(_cap);
+    const auto layout = this->layout();
     _ptr = ptr::cast<T>(_a.shrink(_ptr, layout, new_cap * sizeof(T)));
     _cap = new_cap;
   }
 };
 
-}  // namespace sfc::alloc
+}  // namespace sfc::buffer
 
 namespace sfc {
-using alloc::RawBuf;
+using buffer::Buffer;
 }  // namespace sfc

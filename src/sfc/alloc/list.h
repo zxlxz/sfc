@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/rawbuf.h"
+#include "sfc/alloc/buffer.h"
 
 namespace sfc::list {
 
@@ -8,8 +8,8 @@ using slice::Range;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
-  using Inn = RawBuf<T, A>;
-  Inn _buf = {};
+  using Buf = Buffer<T, A>;
+  Buf _buf = {};
   usize _len = 0;
 
  public:
@@ -31,7 +31,7 @@ class [[nodiscard]] List {
 
   static auto with_capacity(usize capacity, A alloc = {}) noexcept -> List {
     auto res = List{};
-    res._buf = Inn::with_capacity(capacity, alloc);
+    res._buf = Buf::with_capacity(capacity, alloc);
     return res;
   }
 

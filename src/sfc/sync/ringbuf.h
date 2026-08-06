@@ -46,7 +46,7 @@ struct Cell {
 template <class T>
 class RingBuf {
   using Idx = AtomicIdx;
-  using Buf = alloc::RawBuf<Cell<T>>;
+  using Buf = Buffer<Cell<T>>;
   Idx _head{};
   Idx _tail{};
   Buf _buf{};

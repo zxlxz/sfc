@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/rawbuf.h"
+#include "sfc/alloc/buffer.h"
 
 namespace sfc::collections::queue {
 
@@ -31,7 +31,7 @@ struct Iter : iter::Iterator<T&> {
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
-  using Buf = RawBuf<T, A>;
+  using Buf = Buffer<T, A>;
   usize _pos{0};
   usize _len{0};
   Buf _buf{};
