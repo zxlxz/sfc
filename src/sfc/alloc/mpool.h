@@ -3,20 +3,21 @@
 #include "sfc/alloc/alloc.h"
 #include "sfc/alloc/boxed.h"
 
-namespace sfc::alloc {
+namespace sfc::mpool {
 
-class RawMPool {
+using mem::Layout;
+
+class RawPool {
   class Inn;
-  class Bucket;
   Box<Inn> _inn;
 
  public:
-  RawMPool() noexcept;
-  ~RawMPool() noexcept;
-  RawMPool(RawMPool&& other) noexcept;
-  RawMPool& operator=(RawMPool&& other) noexcept;
+  RawPool() noexcept;
+  ~RawPool() noexcept;
+  RawPool(RawPool&& other) noexcept;
+  RawPool& operator=(RawPool&& other) noexcept;
 
-  static auto with_capacity(usize cap) noexcept -> RawMPool;
+  static auto with_capacity(usize cap) noexcept -> RawPool;
 
  public:
   auto inner() -> Inn&;
@@ -26,8 +27,12 @@ class RawMPool {
   auto fast_alloc(usize size) -> void*;
   void fast_dealloc(void* ptr, usize size);
 
-  auto push(void* ptr, usize size) -> void;
-  auto pop() -> Tuple<void*, usize>;
+  struct Block {
+    void* addr;
+    usize size;
+  };
+  void push(Block block);
+  auto pop(bool force) -> Block;
 };
 
 template <class A>
@@ -35,14 +40,13 @@ class MPool {
   static constexpr usize kAlignSize = 16U;
 
   A _alloc{};
-  RawMPool _inn{};
+  RawPool _inn{};
 
  public:
   explicit MPool(A alloc = {}) : _alloc{mem::move(alloc)} {}
 
   ~MPool() noexcept {
-    // auto dealloc pooled blocks is dangerous
-    // user should dealloc pooled blocks manually.
+    this->recycling(usize{0}, true);
   }
 
   MPool(MPool&& other) noexcept = default;
@@ -66,29 +70,37 @@ class MPool {
       return ptr;
     }
 
-    this->sys_deallocate(size);
-    auto ptr = _alloc.allocate(Layout{size, kAlignSize});
-    _inn.push(ptr, size);
-    return ptr;
+    this->recycling(size, false);
+    return this->sys_allocate(size);
   }
 
-  void dealloc(void* ptr, Layout layout) {
+  void dealloc(void* ptr, mem::Layout layout) {
     _inn.fast_dealloc(ptr, layout.size);
   }
 
  private:
-  auto sys_deallocate(usize cap) -> bool {
+  auto sys_allocate(usize size) -> void* {
+    auto ptr = _alloc.allocate(mem::Layout{size, kAlignSize});
+    _inn.push({ptr, size});
+    return ptr;
+  }
+
+  void sys_deallocate(void* ptr, usize size) {
+    _alloc.deallocate(ptr, mem::Layout{size, kAlignSize});
+  }
+
+  auto recycling(usize cap, bool force) -> usize {
     auto amt = usize{0};
-    while (amt < cap) {
-      const auto [blk_ptr, blk_size] = _inn.pop();
-      if (blk_ptr == nullptr) {
+    while (force || amt < cap) {
+      const auto blk = _inn.pop(force);
+      if (blk.addr == nullptr) {
         break;
       }
-      _alloc.deallocate(blk_ptr, Layout{blk_size, kAlignSize});
-      amt += blk_size;
+      this->sys_deallocate(blk.addr, blk.size);
+      amt += blk.size;
     }
-    return amt >= cap;
+    return amt;
   }
 };
 
-}  // namespace sfc::alloc
+}  // namespace sfc::mpool

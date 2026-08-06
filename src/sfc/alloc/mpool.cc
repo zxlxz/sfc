@@ -2,15 +2,16 @@
 #include "sfc/alloc/list.h"
 #include "sfc/sync/mutex.h"
 
-namespace sfc::alloc {
+namespace sfc::mpool {
 
-class RawMPool::Bucket {
-  struct Block {
+class Bucket {
+  friend class RawPool;
+  struct Node {
     void* ptr;
     usize seq;
   };
   usize _block_size;
-  List<Block> _free_list;
+  List<Node> _free_list;
 
  public:
   explicit Bucket(usize block_size) noexcept : _block_size{block_size} {}
@@ -38,19 +39,7 @@ class RawMPool::Bucket {
   }
 
   void fast_dealloc(void* ptr, usize seq) {
-    _free_list.push(Block{ptr, seq});
-  }
-
-  auto block_size() const noexcept -> usize {
-    return _block_size;
-  }
-
-  auto free_count() const noexcept -> usize {
-    return _free_list.len();
-  }
-
-  auto free_size() const noexcept -> usize {
-    return _free_list.len() * _block_size;
+    _free_list.push({ptr, seq});
   }
 
   auto age(usize seq) const noexcept -> f64 {
@@ -72,7 +61,7 @@ class RawMPool::Bucket {
   }
 };
 
-class RawMPool::Inn {
+class RawPool::Inn {
   const usize _max_free_bytes;
 
   List<Bucket> _buckets{};
@@ -112,17 +101,17 @@ class RawMPool::Inn {
     _free_bytes += size;
   }
 
-  void push([[maybe_unused]] void* ptr, usize size) {
+  void push(Block blk) {
     auto lock = _mutex.lock();
-    _total_bytes += size;
+    _total_bytes += blk.size;
   }
 
-  auto pop() -> Tuple<void*, usize> {
+  auto pop(bool force) -> Block {
     auto lock = _mutex.lock();
 
     // If the free bytes is less than the max free bytes
     // we don't need to pop any block from the pool.
-    if (_free_bytes < _max_free_bytes) {
+    if (!force && _free_bytes < _max_free_bytes) {
       return {nullptr, 0U};
     }
 
@@ -136,16 +125,15 @@ class RawMPool::Inn {
       return {nullptr, 0U};
     }
 
-    const auto blk_size = bkt->block_size();
+    const auto blk_size = bkt->_block_size;
     _free_bytes -= blk_size;
     _total_bytes -= blk_size;
-
     return {blk_ptr, blk_size};
   }
 
  private:
   auto bucket(usize size) -> Bucket& {
-    auto opt = _buckets.iter_mut().find([&](auto& b) { return b.block_size() == size; });
+    auto opt = _buckets.iter_mut().find([&](auto& b) { return b._block_size == size; });
     if (opt.is_some()) {
       return *opt;
     }
@@ -173,29 +161,29 @@ class RawMPool::Inn {
   }
 };
 
-RawMPool::RawMPool() noexcept = default;
-RawMPool::~RawMPool() noexcept = default;
+RawPool::RawPool() noexcept = default;
+RawPool::~RawPool() noexcept = default;
 
-RawMPool::RawMPool(RawMPool&& other) noexcept = default;
-RawMPool& RawMPool::operator=(RawMPool&& other) noexcept = default;
+RawPool::RawPool(RawPool&& other) noexcept = default;
+RawPool& RawPool::operator=(RawPool&& other) noexcept = default;
 
-auto RawMPool::with_capacity(usize cap) noexcept -> RawMPool {
-  auto res = RawMPool{};
+auto RawPool::with_capacity(usize cap) noexcept -> RawPool {
+  auto res = RawPool{};
   res._inn = Box<Inn>::new_(cap);
   return res;
 }
 
-auto RawMPool::total_bytes() const noexcept -> usize {
+auto RawPool::total_bytes() const noexcept -> usize {
   auto* inn = _inn.as_ptr();
   return inn ? inn->total_bytes() : 0;
 }
 
-auto RawMPool::free_bytes() const noexcept -> usize {
+auto RawPool::free_bytes() const noexcept -> usize {
   auto* inn = _inn.as_ptr();
   return inn ? inn->free_bytes() : 0;
 }
 
-auto RawMPool::inner() -> Inn& {
+auto RawPool::inner() -> Inn& {
   const auto kMaxFreeBytes = 1ULL << 30U;  // 1GB
   if (_inn.is_null()) {
     _inn = Box<Inn>::new_(kMaxFreeBytes);
@@ -203,24 +191,24 @@ auto RawMPool::inner() -> Inn& {
   return *_inn;
 }
 
-auto RawMPool::fast_alloc(usize size) -> void* {
+auto RawPool::fast_alloc(usize size) -> void* {
   auto& inn = this->inner();
   return inn.fast_alloc(size);
 }
 
-void RawMPool::fast_dealloc(void* ptr, usize size) {
+void RawPool::fast_dealloc(void* ptr, usize size) {
   auto& inn = this->inner();
   inn.fast_dealloc(ptr, size);
 }
 
-auto RawMPool::push(void* ptr, usize size) -> void {
+auto RawPool::push(Block blk) -> void {
   auto& inn = this->inner();
-  inn.push(ptr, size);
+  inn.push(blk);
 }
 
-auto RawMPool::pop() -> Tuple<void*, usize> {
+auto RawPool::pop(bool force) -> Block {
   auto& inn = this->inner();
-  return inn.pop();
+  return inn.pop(force);
 }
 
-}  // namespace sfc::alloc
+}  // namespace sfc::mpool

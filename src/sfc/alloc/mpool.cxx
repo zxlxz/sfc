@@ -2,7 +2,7 @@
 #include "sfc/alloc/mpool.h"
 #include "sfc/test/test.h"
 
-namespace sfc::alloc::test {
+namespace sfc::mpool::test {
 
 // A fresh pool reports zero usage; allocate/dealloc round-trip is non-null.
 SFC_TEST(mpool_alloc_basic) {
