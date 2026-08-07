@@ -3,7 +3,7 @@
 #include "sfc/alloc/alloc.h"
 #include "sfc/alloc/boxed.h"
 
-namespace sfc::mpool {
+namespace sfc::mem_pool {
 
 using mem::Layout;
 
@@ -36,24 +36,22 @@ class RawPool {
 };
 
 template <class A>
-class MPool {
-  static constexpr usize kAlignSize = 16U;
-
+class Pool {
   A _alloc{};
   RawPool _inn{};
 
  public:
-  explicit MPool(A alloc = {}) : _alloc{mem::move(alloc)} {}
+  explicit Pool(A alloc = {}) : _alloc{mem::move(alloc)} {}
 
-  ~MPool() noexcept {
-    this->recycling(usize{0}, true);
+  ~Pool() noexcept {
+    this->recycling(0, true);
   }
 
-  MPool(MPool&& other) noexcept = default;
-  MPool& operator=(MPool&& other) noexcept = default;
+  Pool(Pool&& other) noexcept = default;
+  Pool& operator=(Pool&& other) noexcept = default;
 
-  static auto with_allocator(A alloc) noexcept -> MPool {
-    return MPool{mem::move(alloc)};
+  static auto with_allocator(A alloc) noexcept -> Pool {
+    return Pool{mem::move(alloc)};
   }
 
  public:
@@ -65,7 +63,7 @@ class MPool {
     return _inn.free_bytes();
   }
 
-  auto allocate(usize size) -> void* {
+  auto alloc(usize size) -> void* {
     if (auto ptr = _inn.fast_alloc(size)) {
       return ptr;
     }
@@ -74,19 +72,21 @@ class MPool {
     return this->sys_allocate(size);
   }
 
-  void dealloc(void* ptr, mem::Layout layout) {
-    _inn.fast_dealloc(ptr, layout.size);
+  void dealloc(void* ptr, usize size) {
+    _inn.fast_dealloc(ptr, size);
   }
 
  private:
   auto sys_allocate(usize size) -> void* {
-    auto ptr = _alloc.allocate(mem::Layout{size, kAlignSize});
+    constexpr usize kAlignSize = 16U;
+    auto ptr = _alloc.allocate(Layout{size, kAlignSize});
     _inn.push({ptr, size});
     return ptr;
   }
 
   void sys_deallocate(void* ptr, usize size) {
-    _alloc.deallocate(ptr, mem::Layout{size, kAlignSize});
+    constexpr usize kAlignSize = 16U;
+    _alloc.deallocate(ptr, Layout{size, kAlignSize});
   }
 
   auto recycling(usize cap, bool force) -> usize {
@@ -103,4 +103,24 @@ class MPool {
   }
 };
 
-}  // namespace sfc::mpool
+template <class A = alloc::Global>
+struct Allocator {
+  using Pool = mem_pool::Pool<A>;
+
+  static auto pool() noexcept -> Pool& {
+    static auto pool = Pool{};
+    return pool;
+  }
+
+  static void* allocate(Layout layout) {
+    auto& pool = Allocator::pool();
+    return pool.allocate(layout);
+  }
+
+  static void deallocate(void* ptr, Layout layout) {
+    auto& pool = Allocator::pool();
+    pool.dealloc(ptr, layout);
+  }
+};
+
+}  // namespace sfc::mem_pool

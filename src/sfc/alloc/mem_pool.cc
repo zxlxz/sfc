@@ -1,8 +1,8 @@
-#include "sfc/alloc/mpool.h"
+#include "sfc/alloc/mem_pool.h"
 #include "sfc/alloc/list.h"
 #include "sfc/sync/mutex.h"
 
-namespace sfc::mpool {
+namespace sfc::mem_pool {
 
 class Bucket {
   friend class RawPool;
@@ -211,4 +211,4 @@ auto RawPool::pop(bool force) -> Block {
   return inn.pop(force);
 }
 
-}  // namespace sfc::mpool
+}  // namespace sfc::mem_pool
