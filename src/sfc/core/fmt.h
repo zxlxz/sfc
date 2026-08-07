@@ -248,7 +248,9 @@ class DebugStruct {
   ~DebugStruct();
   DebugStruct(const DebugStruct&) = delete;
 
+ public:
   void push(Str key, Str value);
+
   auto field(Str key, const auto& value) -> DebugStruct& {
     this->push(key, {});
     _fmt.write_val(value);

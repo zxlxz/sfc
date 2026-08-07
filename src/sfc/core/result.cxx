@@ -51,12 +51,15 @@ SFC_TEST(unwrap) {
   sfc::assert_eq(Res{EA}.unwrap_err(), EA);
 }
 
-SFC_TEST(and_or) {
+SFC_TEST(and) {
   using Res = result::Result<int, E>;
 
   sfc::assert_eq((Res{1} & Res{2}), Res{2});
   sfc::assert_eq((Res{EA} & Res{2}), Res{EA});
+}
 
+SFC_TEST(or) {
+  using Res = result::Result<int, E>;
   sfc::assert_eq((Res{1} | Res{2}), Res{1});
   sfc::assert_eq((Res{EA} | Res{2}), Res{2});
 }

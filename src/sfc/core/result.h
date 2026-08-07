@@ -21,61 +21,67 @@ template <class T, class E>
 class [[nodiscard]] Result {
   static constexpr auto kSuccess = E{};
 
+  u8 _tag;
   union {
     T _0;
+    E _1;
   };
-  E _1{};
 
  public:
-  Result(T t) noexcept : _0{mem::move(t)} {}
-  Result(E e) noexcept : _1{mem::move(e)} {}
+  Result(T t) noexcept : _tag{0}, _0{mem::move(t)} {}
+  Result(E e) noexcept : _tag{1}, _1{mem::move(e)} {}
 
-  template <class U>
-  Result(Ok<U> ok) noexcept : _0{mem::move(ok._0)} {}
-
-  template <class F>
-  Result(Err<F> err) noexcept : _1{mem::move(err._1)} {}
+  Result(Ok<T> ok) noexcept : _tag{0}, _0{mem::move(ok._0)} {}
+  Result(Err<E> err) noexcept : _tag{1}, _1{mem::move(err._1)} {}
 
   ~Result() requires(trait::tv_drop_<T>) = default;
-  ~Result() {
-    if (_1 == kSuccess) mem::drop(_0);
-  }
-
   Result(const Result& other) requires(trait::tv_copy_<T>) = default;
-  Result(Result&& other) noexcept : _1{other._1} {
-    if (_1 == kSuccess) ptr::write(&_0, mem::move(other._0));
+  Result& operator=(const Result& other) requires(trait::tv_copy_<T>) = default;
+
+  ~Result() {
+    _tag == 0 ? mem::drop(_0) : mem::drop(_1);
   }
 
-  Result& operator=(const Result& other) requires(trait::tv_copy_<T>) = default;
+  Result(Result&& other) noexcept : _tag{other._tag} {
+    _tag == 0 ? ptr::write(&_0, mem::move(other._0)) : ptr::write(&_1, mem::move(other._1));
+  }
+
   Result& operator=(Result&& other) noexcept {
-    if (this == &other) return *this;
-    if (_1 == kSuccess) mem::drop(_0);
-    _1 = other._1;
-    if (_1 == kSuccess) ptr::write(&_0, mem::move(other._0));
+    if (this != &other) {
+      _tag == 0 ? mem::drop(_0) : mem::drop(_1);
+      _tag = other._tag;
+      _tag == 0 ? ptr::write(&_0, mem::move(other._0)) : ptr::write(&_1, mem::move(other._1));
+    }
     return *this;
   }
 
  public:
   explicit operator bool() const noexcept {
-    return _1 == kSuccess;
+    return _tag == 0;
   }
 
   auto is_ok() const noexcept -> bool {
-    return _1 == kSuccess;
+    return _tag == 0;
   }
 
   auto is_err() const noexcept -> bool {
-    return _1 != kSuccess;
+    return _tag == 1;
   }
 
   auto as_ok() const noexcept -> Option<const T&> {
-    if (_1 == kSuccess) return {_0};
-    return {};
+    return _tag == 0 ? Option<const T&>{_0} : Option<const T&>{};
   }
 
   auto as_err() const noexcept -> Option<const E&> {
-    if (_1 != kSuccess) return {_1};
-    return {};
+    return _tag == 0 ? Option<const E&>{_1} : Option<const E&>{};
+  }
+
+  auto as_ref() const -> Result<const T&, E> {
+    return _tag == 0 ? Result<const T&, E>{_0} : Result<const T&, E>{_1};
+  }
+
+  auto as_mut() -> Result<T&, E> {
+    return _tag == 0 ? Result<T&, E>{_0} : Result<T&, E>{_1};
   }
 
   auto unwrap_unchecked() noexcept -> T {
@@ -88,76 +94,69 @@ class [[nodiscard]] Result {
 
  public:
   auto unwrap() && -> T {
-    sfc::assert_(this->is_ok(), "called `Result::unwrap()` on Err({})", _1);
+    sfc::assert_(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
     return mem::move(_0);
   }
 
   auto unwrap_err() && -> E {
-    sfc::assert_(this->is_err(), "called `Result::unwrap_err()` on Ok({})", _0);
+    sfc::assert_(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
     return mem::move(_1);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (this->is_ok()) return mem::move(_0);
+    if (_tag == 0) return mem::move(_0);
     return mem::move(default_val);
   }
 
   auto expect(const auto& msg) -> T {
-    sfc::assert_(this->is_ok(), "{}: Err({})", msg, _1);
+    sfc::assert_(_tag == 0, "{}: Err({})", msg, _1);
     return mem::move(_0);
   }
 
   auto ok() && -> Option<T> {
-    if (this->is_err()) return {};
-    return mem::move(_0);
+    return _tag == 0 ? Option<T>{mem::move(_0)} : Option<T>{};
   }
 
   auto err() && -> Option<E> {
-    if (this->is_ok()) return {};
-    return mem::move(_1);
+    return _tag == 1 ? Option<E>{mem::move(_1)} : Option<E>{};
   }
 
   template <class U>
   auto operator&(Result<U, E> res) && -> Result<U, E> {
-    if (this->is_ok()) return mem::move(res);
-    return Result<U, E>{mem::move(_1)};
+    return _tag == 0 ? Result<U, E>{mem::move(res._0)} : Result<U, E>{mem::move(_1)};
   }
 
   template <class F>
   auto operator|(Result<T, F> res) && -> Result<T, F> {
-    if (this->is_ok()) return Result<T, F>{mem::move(_0)};
-    return mem::move(res);
+    return _tag == 0 ? Result<T, F>{mem::move(_0)} : mem::move(res);
   }
 
   template <class F, class ResultUE = FnOut<F, T>>
   auto and_then(F&& op) && -> ResultUE {
-    if (this->is_ok()) return op(mem::move(_0));
-    return ResultUE{mem::move(_1)};
+    return _tag == 0 ? op(mem::move(_0)) : ResultUE{mem::move(_1)};
   }
 
   template <class O, class ResultTF = FnOut<O>>
   auto or_else(O&& op) && -> ResultTF {
-    if (this->is_ok()) return ResultTF{mem::move(_0)};
-    return op();
+    return _tag == 0 ? ResultTF{mem::move(_0)} : op();
   }
 
   template <class F, class U = FnOut<F, T>>
   auto map(F&& op) && -> Result<U, E> {
-    if (this->is_ok()) return Result<U, E>{op(mem::move(_0))};
-    return Result<U, E>{mem::move(_1)};
+    return _tag == 0 ? Result<U, E>{op(mem::move(_0))} : Result<U, E>{mem::move(_1)};
   }
 
   template <class O, class F = FnOut<O, E>>
   auto map_err(O&& op) && -> Result<T, F> {
-    if (this->is_err()) return Result<T, F>{op(mem::move(_1))};
-    return Result<T, F>{mem::move(_0)};
+    return _tag == 1 ? Result<T, F>{op(mem::move(_1))} : Result<T, F>{mem::move(_0)};
   }
 
  public:
   // trait: ops::Eq
   auto operator==(const Result& other) const -> bool {
-    if (this->is_ok()) return other.is_ok() && _0 == other._0;
-    if (this->is_err()) return other.is_err() && _1 == other._1;
+    if (this == &other) return true;
+    if (_tag == 0 && other._tag == 0) return _0 == other._0;
+    if (_tag == 1 && other._tag == 1) return _1 == other._1;
     return false;
   }
 
@@ -179,6 +178,9 @@ class [[nodiscard]] Result<T&, E> {
  public:
   Result(T& t) noexcept : _0{&t} {}
   Result(E e) noexcept : _1{e} {}
+
+  Result(Ok<T&> ok) noexcept : _0{&ok._0} {}
+  Result(Err<E> err) noexcept : _1{err._1} {}
 
  public:
   explicit operator bool() const noexcept {
@@ -281,8 +283,9 @@ class [[nodiscard]] Result<T&, E> {
  public:
   // trait: ops::Eq
   auto operator==(const Result& other) const -> bool {
-    if (this->is_ok()) return other.is_ok() && *_0 == *other._0;
-    if (this->is_err()) return other.is_err() && _1 == other._1;
+    if (this == &other) return true;
+    if (_0 && other._0) return _0 == other._0 || *_0 == *other._0;
+    if (!_0 && !other._0) return _1 == other._1;
     return false;
   }
 
