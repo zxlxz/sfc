@@ -21,7 +21,7 @@ struct DynBackend {
 
  public:
   template <class X>
-  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::Fn<&X::write>{}}, _flush{dyn::Fn<&X::flush>{}} {}
+  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::fn<&X::write>(_self)}, _flush{dyn::fn<&X::flush>(_self)} {}
 
  public:
   void write(const Record& record) {

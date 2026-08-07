@@ -22,7 +22,7 @@ struct DynRead {
 
  public:
   template <class X>
-  explicit DynRead(X& x) : _self{dyn::cast<Self>(x)}, _read{dyn::Fn<&X::read>{}} {}
+  explicit DynRead(X& x) : _self{dyn::cast<Self>(x)}, _read{dyn::fn<&X::read>(_self)} {}
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -39,9 +39,9 @@ struct DynWrite {
 
  public:
   template <class X>
-  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::Fn<&X::write>{}} {
+  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::fn<&X::write>(_self)} {
     if constexpr (requires { &X::flush; }) {
-      this->_flush = dyn::Fn<&X::flush>{};
+      this->_flush = dyn::fn<&X::flush>(_self);
     }
   }
 
