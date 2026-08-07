@@ -114,12 +114,12 @@ struct Allocator {
 
   static void* allocate(Layout layout) {
     auto& pool = Allocator::pool();
-    return pool.allocate(layout);
+    return pool.alloc(layout.size);
   }
 
   static void deallocate(void* ptr, Layout layout) {
     auto& pool = Allocator::pool();
-    pool.dealloc(ptr, layout);
+    pool.dealloc(ptr, layout.size);
   }
 };
 
