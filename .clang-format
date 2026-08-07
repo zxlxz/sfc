@@ -20,7 +20,7 @@ BinPackParameters: false
 
 # break
 BreakConstructorInitializers: BeforeComma
-RequiresClausePosition: OwnLine
+RequiresClausePosition: SingleLine
 
 # Penalties
 PenaltyBreakOpenParenthesis: 21
