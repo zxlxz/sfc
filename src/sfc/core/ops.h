@@ -20,20 +20,33 @@ struct Fn;
 template <class R, class... T>
 struct Fn<R(T...)> {
   class Self {};
+  using Func = R (*)(Self&, T&&...);
+
   Self& _self;
-  R (*_call)(Self&, T&&...);
+  Func _func;
 
  public:
   template <class X>
-  static auto of(X& x) -> Fn {
-    return {(Self&)x, [](Self& self, T&&... t) { return ((X&)self)((T&&)t...); }};
+  explicit Fn(X& x, Func f) : _self{(Self&)x}, _func{f} {}
+
+  template <class X>
+  explicit Fn(X& x) : _self{(Self&)x} {
+    _func = [](Self& self, T&&... t) -> R { return ((X&)self)((T&&)t...); };
   }
 
  public:
   R operator()(T... t) const {
-    return _call(_self, (T&&)t...);
+    return _func(_self, (T&&)t...);
   }
 };
+
+template <auto f>
+auto fn(auto& x) {
+  auto conv = []<class X, class R, class... T>(const X& x, R (X::*)(T...)) {
+    return Fn<R(T...)>{x, [](X& self, T... t) -> R { return ((X&)self.*f)((T&&)t...); }};
+  };
+  return conv(x, f);
+}
 
 struct End {};
 static constexpr auto $ = End{};
@@ -64,15 +77,11 @@ struct Range {
     return _start == r._start && _end == r._end;
   }
 
-  void fmt(auto& f) const {
-    if (_end == num::Int<T>::MAX) {
-      f.write_fmt("{}..$", _start);
-    } else {
-      f.write_fmt("{}..{}", _start, _end);
-    }
+  // trait: cmp::Eq
+  auto operator==(End) const noexcept -> bool {
+    return _start == _end;
   }
 
- public:
   // trait: iter::Iter
   auto operator*() const noexcept -> T {
     return _start;
@@ -82,13 +91,16 @@ struct Range {
   void operator++() noexcept {
     ++_start;
   }
-};
 
-// trait: cmp::Eq(End)
-template <class T>
-auto operator!=(Range<T> self, End) noexcept -> bool {
-  return self._start != self._end;
-}
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    if (_end == num::Int<T>::MAX) {
+      f.write_fmt("{}..$", _start);
+    } else {
+      f.write_fmt("{}..{}", _start, _end);
+    }
+  }
+};
 
 template <class T>
 auto begin(Range<T> iter) -> Range<T> {
@@ -99,7 +111,6 @@ template <class T>
 auto end(Range<T>) -> End {
   return {};
 }
-
 
 }  // namespace sfc::ops
 
