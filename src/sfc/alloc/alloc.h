@@ -8,6 +8,7 @@ using mem::Layout;
 
 struct System {
   static void* allocate(Layout layout);
+  static void* alloc_zeroed(Layout layout);
   static void deallocate(void* ptr, Layout layout);
 
   static void* grow(void* ptr, Layout layout, usize new_size);
