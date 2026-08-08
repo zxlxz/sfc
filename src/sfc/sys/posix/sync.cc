@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-#include "sfc/sys/posix.h"
+#include "sfc/sys/posix/sync.h"
 
 namespace sfc::sys::posix {
 

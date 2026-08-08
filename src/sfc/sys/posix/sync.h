@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/time.h"
+#include "sfc/core.h"
 
 namespace sfc::sys::posix {
 

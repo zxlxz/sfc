@@ -1,5 +1,8 @@
 #pragma once
 
+#include "sfc/core.h"
+
+#define _SFC_SYS_THREAD_
 #include "sfc/sys.h"
 
 namespace sfc::thread {

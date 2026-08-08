@@ -3,8 +3,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "sfc/sys/posix/fs.h"
 #include "sfc/fs/file.h"
+#include "sfc/sys/posix/fs.h"
 
 namespace sfc::sys::posix {
 

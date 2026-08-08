@@ -14,8 +14,26 @@ auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.align <= alignof(max_align_t)) {
     return ::malloc(layout.size);
   }
+
   const auto aligned_size = num::align_up(layout.size, layout.align);
   return ::_aligned_malloc(aligned_size, layout.align);
+}
+
+auto alloc_zeroed(mem::Layout layout) noexcept -> void* {
+  if (layout.size == 0) {
+    return nullptr;
+  }
+
+  if (layout.align <= alignof(max_align_t)) {
+    return ::calloc(1, layout.size);
+  }
+
+  const auto aligned_size = num::align_up(layout.size, layout.align);
+  auto ptr = ::_aligned_malloc(aligned_size, layout.align);
+  if (ptr) {
+    __builtin_memset(ptr, 0, aligned_size);
+  }
+  return ptr;
 }
 
 void dealloc(void* ptr, mem::Layout layout) noexcept {

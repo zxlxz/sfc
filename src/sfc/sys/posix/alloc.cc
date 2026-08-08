@@ -18,6 +18,23 @@ auto alloc(mem::Layout layout) noexcept -> void* {
   return ::aligned_alloc(layout.align, aligned_size);
 }
 
+auto alloc_zeroed(mem::Layout layout) noexcept -> void* {
+  if (layout.size == 0) {
+    return nullptr;
+  }
+
+  if (layout.align <= alignof(max_align_t)) {
+    return ::calloc(1, layout.size);
+  }
+
+  const auto aligned_size = num::align_up(layout.size, layout.align);
+  auto ptr = ::aligned_alloc(layout.align, aligned_size);
+  if (ptr) {
+    __builtin_memset(ptr, 0, aligned_size);
+  }
+  return ptr;
+}
+
 void dealloc(void* ptr, [[maybe_unused]] mem::Layout layout) noexcept {
   if (ptr == nullptr) {
     return;

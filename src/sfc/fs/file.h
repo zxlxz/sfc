@@ -3,6 +3,7 @@
 #include "sfc/io/mod.h"
 #include "sfc/fs/path.h"
 
+#define _SFC_SYS_IO_
 #define _SFC_SYS_FS_
 #include "sfc/sys.h"
 

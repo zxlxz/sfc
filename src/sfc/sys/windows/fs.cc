@@ -2,8 +2,8 @@
 #undef min
 #undef max
 
-#include "sfc/sys/windows/fs.h"
 #include "sfc/fs/file.h"
+#include "sfc/sys/windows/fs.h"
 
 namespace sfc::sys::windows {
 
