@@ -1,126 +1,77 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
-#include "sfc/alloc/boxed.h"
+#include "sfc/alloc/list.h"
+#include "sfc/sync/mutex.h"
 
 namespace sfc::mem_pool {
 
 using mem::Layout;
 
-class RawPool {
-  class Inn;
-  Box<Inn> _inn;
+class Bucket;
+
+class Pool {
+ public:
+  explicit Pool(usize cap) noexcept;
+  virtual ~Pool() noexcept;
+
+  static auto global() -> Pool&;
 
  public:
-  RawPool() noexcept;
-  ~RawPool() noexcept;
-  RawPool(RawPool&& other) noexcept;
-  RawPool& operator=(RawPool&& other) noexcept;
-
-  static auto with_capacity(usize cap) noexcept -> RawPool;
-
- public:
-  auto inner() -> Inn&;
   auto total_bytes() const noexcept -> usize;
   auto free_bytes() const noexcept -> usize;
 
+  auto alloc(usize size) -> void*;
+  void dealloc(void* ptr, usize size);
+
+ protected:
+  auto bucket(usize size) -> Bucket&;
+  auto find_oldest_bucket() -> Bucket&;
+
   auto fast_alloc(usize size) -> void*;
   void fast_dealloc(void* ptr, usize size);
+  auto recycling(bool force, usize cap = 0) -> usize;
 
-  struct Block {
-    void* addr;
-    usize size;
-  };
-  void push(Block block);
-  auto pop(bool force) -> Block;
+  virtual auto slow_alloc(Layout layout) -> void* = 0;
+  virtual void slow_dealloc(void* ptr, Layout layout) = 0;
+
+ private:
+  const usize _cap;
+  mutable sync::Mutex _mutex{};
+  usize _seq{0};
+  usize _total_bytes{0};
+  usize _free_bytes{0};
+  List<Bucket> _buckets{};
 };
 
 template <class A>
-class Pool {
+class XPool : public Pool {
+  static constexpr auto kMaxFreeSize = usize{1} << 30;  // 1GB
   A _alloc{};
-  RawPool _inn{};
 
  public:
-  explicit Pool(A alloc = {}) : _alloc{mem::move(alloc)} {}
-
-  ~Pool() noexcept {
-    this->recycling(0, true);
-  }
-
-  Pool(Pool&& other) noexcept = default;
-  Pool& operator=(Pool&& other) noexcept = default;
-
-  static auto with_allocator(A alloc) noexcept -> Pool {
-    return Pool{mem::move(alloc)};
-  }
-
- public:
-  auto total_bytes() const noexcept -> usize {
-    return _inn.total_bytes();
-  }
-
-  auto free_bytes() const noexcept -> usize {
-    return _inn.free_bytes();
-  }
-
-  auto alloc(usize size) -> void* {
-    if (auto ptr = _inn.fast_alloc(size)) {
-      return ptr;
-    }
-
-    this->recycling(size, false);
-    return this->sys_allocate(size);
-  }
-
-  void dealloc(void* ptr, usize size) {
-    _inn.fast_dealloc(ptr, size);
-  }
+  explicit XPool(A a, usize cap = kMaxFreeSize) : Pool{cap}, _alloc{mem::move(a)} {}
+  ~XPool() noexcept {}
 
  private:
-  auto sys_allocate(usize size) -> void* {
-    constexpr usize kAlignSize = 16U;
-    auto ptr = _alloc.allocate(Layout{size, kAlignSize});
-    _inn.push({ptr, size});
-    return ptr;
+  void* slow_alloc(Layout layout) override {
+    return _alloc.allocate(layout);
   }
 
-  void sys_deallocate(void* ptr, usize size) {
-    constexpr usize kAlignSize = 16U;
-    _alloc.deallocate(ptr, Layout{size, kAlignSize});
-  }
-
-  auto recycling(usize cap, bool force) -> usize {
-    auto amt = usize{0};
-    while (force || amt < cap) {
-      const auto blk = _inn.pop(force);
-      if (blk.addr == nullptr) {
-        break;
-      }
-      this->sys_deallocate(blk.addr, blk.size);
-      amt += blk.size;
-    }
-    return amt;
+  void slow_dealloc(void* ptr, Layout layout) override {
+    return _alloc.deallocate(ptr, layout);
   }
 };
 
-template <class A = alloc::Global>
-struct Allocator {
-  using Pool = mem_pool::Pool<A>;
+class Allocator {
+  Pool* _pool{nullptr};
 
-  static auto pool() noexcept -> Pool& {
-    static auto pool = Pool{};
-    return pool;
-  }
+ public:
+  Allocator(Pool& pool = Pool::global());
+  ~Allocator();
 
-  static void* allocate(Layout layout) {
-    auto& pool = Allocator::pool();
-    return pool.alloc(layout.size);
-  }
-
-  static void deallocate(void* ptr, Layout layout) {
-    auto& pool = Allocator::pool();
-    pool.dealloc(ptr, layout.size);
-  }
+ public:
+  auto allocate(Layout layout) -> void*;
+  void deallocate(void* ptr, Layout layout);
 };
 
 }  // namespace sfc::mem_pool

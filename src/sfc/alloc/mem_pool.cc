@@ -4,12 +4,14 @@
 
 namespace sfc::mem_pool {
 
+static constexpr auto kDefaultAlign = alignof(double);
+
 class Bucket {
-  friend class RawPool;
   struct Node {
     void* ptr;
     usize seq;
   };
+
   usize _block_size;
   List<Node> _free_list;
 
@@ -30,6 +32,10 @@ class Bucket {
   }
 
  public:
+  auto block_size() const -> usize {
+    return _block_size;
+  }
+
   auto fast_alloc() -> void* {
     if (_free_list.is_empty()) {
       return nullptr;
@@ -43,172 +49,148 @@ class Bucket {
   }
 
   auto age(usize seq) const noexcept -> f64 {
-    if (_free_list.is_empty()) return 0;
+    if (_free_list.is_empty()) {
+      return 0;
+    }
 
     const auto seq0 = _free_list[0].seq;
-    if (seq < seq0) return 0;
+    if (seq < seq0) {
+      return 0;
+    }
 
     const auto age = f64(seq - seq0) * f64(_block_size >> 20U);
     return age;
   }
 
-  auto pop() -> void* {
+  struct Block {
+    void* ptr;
+    usize size;
+  };
+
+  auto pop_first() -> Block {
     if (_free_list.is_empty()) {
-      return nullptr;
+      return {nullptr, 0};
     }
     const auto [ptr, _] = _free_list.remove(0);
-    return ptr;
+    return {ptr, _block_size};
   }
 };
 
-class RawPool::Inn {
-  const usize _max_free_bytes;
+Pool::Pool(usize cap) noexcept : _cap{cap} {}
 
-  List<Bucket> _buckets{};
-  usize _seq{0};
-  usize _total_bytes{0};
-  usize _free_bytes{0};
-  mutable sync::Mutex _mutex{};
+Pool::~Pool() noexcept {}
 
- public:
-  explicit Inn(usize max_free_bytes) : _max_free_bytes{max_free_bytes} {}
-  ~Inn() {}
+auto Pool::total_bytes() const noexcept -> usize {
+  return _total_bytes;
+}
 
- public:
-  auto total_bytes() const noexcept -> usize {
-    return _total_bytes;
+auto Pool::free_bytes() const noexcept -> usize {
+  return _free_bytes;
+}
+
+auto Pool::bucket(usize size) -> Bucket& {
+  auto opt = _buckets.iter_mut().find([&](auto& b) { return b.block_size() == size; });
+  if (opt.is_some()) {
+    return *opt;
   }
 
-  auto free_bytes() const noexcept -> usize {
-    return _free_bytes;
-  }
+  auto& bkt = _buckets.push(Bucket{size});
+  return bkt;
+}
 
-  auto fast_alloc(usize size) -> void* {
-    auto lock = _mutex.lock();
-    auto& bkt = bucket(size);
+auto Pool::find_oldest_bucket() -> Bucket& {
+  Bucket* bkt = &_buckets[0];
 
-    auto ptr = bkt.fast_alloc();
-    if (ptr != nullptr) {
-      _free_bytes -= size;
+  auto max_age = 0.0;
+  for (auto& b : _buckets) {
+    const auto a = b.age(_seq);
+    if (a > max_age) {
+      max_age = a;
+      bkt = &b;
     }
+  }
+
+  return *bkt;
+}
+
+auto Pool::fast_alloc(usize size) -> void* {
+  auto lock = _mutex.lock();
+  auto& bkt = bucket(size);
+
+  auto ptr = bkt.fast_alloc();
+  if (ptr != nullptr) {
+    _free_bytes -= size;
+  }
+  return ptr;
+}
+
+void Pool::fast_dealloc(void* ptr, usize size) {
+  auto lock = _mutex.lock();
+  auto& bkt = bucket(size);
+  bkt.fast_dealloc(ptr, _seq++);
+  _free_bytes += size;
+}
+
+auto Pool::alloc(usize size) -> void* {
+  if (auto ptr = this->fast_alloc(size)) {
     return ptr;
   }
 
-  void fast_dealloc(void* ptr, usize size) {
-    auto lock = _mutex.lock();
-    auto& bkt = bucket(size);
-    bkt.fast_dealloc(ptr, _seq++);
-    _free_bytes += size;
+  this->recycling(false, size);
+  auto ptr = this->slow_alloc({size, kDefaultAlign});
+
+  // register
+  if (ptr) {
+    _total_bytes += size;
   }
 
-  void push(Block blk) {
-    auto lock = _mutex.lock();
-    _total_bytes += blk.size;
+  return ptr;
+}
+
+void Pool::dealloc(void* ptr, usize size) {
+  this->fast_dealloc(ptr, size);
+}
+
+auto Pool::recycling(bool force, usize cap) -> usize {
+  if (_buckets.is_empty()) {
+    return 0U;
   }
 
-  auto pop(bool force) -> Block {
-    auto lock = _mutex.lock();
-
-    // If the free bytes is less than the max free bytes
-    // we don't need to pop any block from the pool.
-    if (!force && _free_bytes < _max_free_bytes) {
-      return {nullptr, 0U};
+  auto amt = usize{0};
+  while (force || amt < cap) {
+    if (!force && _free_bytes < _cap) {
+      break;
     }
 
-    auto* bkt = this->find_oldest_bucket();
-    if (bkt == nullptr) {
-      return {nullptr, 0U};
+    auto& bucket = this->find_oldest_bucket();
+    const auto block = bucket.pop_first();
+    if (block.ptr == nullptr) {
+      break;
     }
 
-    const auto blk_ptr = bkt->pop();
-    if (blk_ptr == nullptr) {
-      return {nullptr, 0U};
-    }
-
-    const auto blk_size = bkt->_block_size;
-    _free_bytes -= blk_size;
-    _total_bytes -= blk_size;
-    return {blk_ptr, blk_size};
+    this->slow_dealloc(block.ptr, {block.size, kDefaultAlign});
+    _free_bytes -= block.size;
+    _total_bytes -= block.size;
+    amt += block.size;
   }
-
- private:
-  auto bucket(usize size) -> Bucket& {
-    auto opt = _buckets.iter_mut().find([&](auto& b) { return b._block_size == size; });
-    if (opt.is_some()) {
-      return *opt;
-    }
-
-    auto& bkt = _buckets.push(Bucket{size});
-    return bkt;
-  }
-
-  auto find_oldest_bucket() -> Bucket* {
-    if (_buckets.is_empty()) {
-      return nullptr;
-    }
-
-    auto max_age = 0.0;
-    Bucket* bkt = nullptr;
-    for (auto& b : _buckets) {
-      const auto a = b.age(_seq);
-      if (a > max_age) {
-        max_age = a;
-        bkt = &b;
-      }
-    }
-
-    return bkt;
-  }
-};
-
-RawPool::RawPool() noexcept = default;
-RawPool::~RawPool() noexcept = default;
-
-RawPool::RawPool(RawPool&& other) noexcept = default;
-RawPool& RawPool::operator=(RawPool&& other) noexcept = default;
-
-auto RawPool::with_capacity(usize cap) noexcept -> RawPool {
-  auto res = RawPool{};
-  res._inn = Box<Inn>::new_(cap);
-  return res;
+  return amt;
 }
 
-auto RawPool::total_bytes() const noexcept -> usize {
-  auto* inn = _inn.as_ptr();
-  return inn ? inn->total_bytes() : 0;
+auto Pool::global() -> Pool& {
+  static auto pool = XPool{alloc::Global{}};
+  return pool;
 }
 
-auto RawPool::free_bytes() const noexcept -> usize {
-  auto* inn = _inn.as_ptr();
-  return inn ? inn->free_bytes() : 0;
+Allocator::Allocator(Pool& pool) : _pool{&pool} {}
+
+Allocator::~Allocator() {}
+
+auto Allocator::allocate(Layout layout) -> void* {
+  return _pool->alloc(layout.size);
 }
 
-auto RawPool::inner() -> Inn& {
-  const auto kMaxFreeBytes = 1ULL << 30U;  // 1GB
-  if (_inn.is_null()) {
-    _inn = Box<Inn>::new_(kMaxFreeBytes);
-  }
-  return *_inn;
-}
-
-auto RawPool::fast_alloc(usize size) -> void* {
-  auto& inn = this->inner();
-  return inn.fast_alloc(size);
-}
-
-void RawPool::fast_dealloc(void* ptr, usize size) {
-  auto& inn = this->inner();
-  inn.fast_dealloc(ptr, size);
-}
-
-auto RawPool::push(Block blk) -> void {
-  auto& inn = this->inner();
-  inn.push(blk);
-}
-
-auto RawPool::pop(bool force) -> Block {
-  auto& inn = this->inner();
-  return inn.pop(force);
+void Allocator::deallocate(void* ptr, Layout layout) {
+  _pool->dealloc(ptr, layout.size);
 }
 
 }  // namespace sfc::mem_pool

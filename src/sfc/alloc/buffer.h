@@ -29,11 +29,19 @@ class Buffer {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = {}) noexcept -> Buffer {
+  static auto with_capacity(usize capacity, A alloc = {}) -> Buffer {
     auto res = Buffer{};
     res._a = alloc;
     res._cap = capacity;
     res._ptr = ptr::cast<T>(res._a.allocate(res.layout()));
+    return res;
+  }
+
+  static auto with_capacity_zeroed(usize capacity, A alloc={}) -> Buffer {
+    auto res = Buffer{};
+    res._a = alloc;
+    res._cap = capacity;
+    res._ptr = ptr::cast<T>(res._a.alloc_zeroed(res.layout()));
     return res;
   }
 

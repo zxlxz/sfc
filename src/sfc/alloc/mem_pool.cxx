@@ -6,7 +6,7 @@ namespace sfc::mem_pool::test {
 
 // A fresh pool reports zero usage; allocate/dealloc round-trip is non-null.
 SFC_TEST(mpool_alloc_basic) {
-  auto pool = Pool<alloc::Global>{};
+  auto pool = XPool{alloc::Global{}};
 
   sfc::assert_eq(pool.total_bytes(), 0U);
   sfc::assert_eq(pool.free_bytes(), 0U);
@@ -17,14 +17,13 @@ SFC_TEST(mpool_alloc_basic) {
   // Issuing a block increases outstanding bytes, nothing free yet.
   sfc::assert_ge(pool.total_bytes(), 64U);
   sfc::assert_eq(pool.free_bytes(), 0U);
-
   pool.dealloc(ptr, 64);
 }
 
 // After dealloc, the block lands in the free list: a subsequent allocate of
 // the same size is served from the cache (free_bytes drops back to 0).
 SFC_TEST(mpool_cache_reuse) {
-  auto pool = Pool<alloc::Global>{};
+  auto pool = XPool{alloc::Global{}};
 
   auto* p1 = pool.alloc(128);
   sfc::assert_ne(p1, nullptr);
@@ -43,7 +42,7 @@ SFC_TEST(mpool_cache_reuse) {
 // Distinct sizes are tracked in separate buckets; freeing two different sizes
 // yields the sum of both in free_bytes.
 SFC_TEST(mpool_distinct_sizes) {
-  auto pool = Pool<alloc::Global>{};
+  auto pool = XPool{alloc::Global{}};
 
   auto* a = pool.alloc(64);
   auto* b = pool.alloc(256);
@@ -65,7 +64,7 @@ SFC_TEST(mpool_distinct_sizes) {
 
 // Repeated allocate/dealloc churn keeps the pool stable and non-null.
 SFC_TEST(mpool_churn) {
-  auto pool = Pool<alloc::Global>{};
+  auto pool = XPool{alloc::Global{}};
 
   for (auto i = 0U; i < 1000; ++i) {
     auto* p = pool.alloc(64);
@@ -77,4 +76,12 @@ SFC_TEST(mpool_churn) {
   sfc::assert_eq(pool.free_bytes(), 64U);
 }
 
-}  // namespace sfc::alloc::test
+SFC_TEST(allocator) {
+  auto a = Allocator{};
+
+  const auto n = 16U;
+  auto* p = a.allocate(Layout::array<int>(n));
+  a.deallocate(p, Layout::array<int>(16));
+}
+
+}  // namespace sfc::mem_pool::test
