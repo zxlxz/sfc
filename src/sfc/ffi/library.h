@@ -17,11 +17,14 @@ class Library {
   static auto load(Str path) -> Option<Library>;
 
  public:
-  auto get(Str name) const -> Symbol;
+  auto symbol(Str name) const -> Symbol;
 
   template <class F>
-  auto get_func(Str name) const -> F {
-    const auto sym = this->get(name);
+  auto func(Str name) const -> Option<F> {
+    const auto sym = this->symbol(name);
+    if (sym == nullptr) {
+      return {};
+    }
     return F(sym);
   }
 };

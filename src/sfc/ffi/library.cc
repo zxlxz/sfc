@@ -74,7 +74,7 @@ auto Library::load(Str path) -> Option<Library> {
   return res;
 }
 
-auto Library::get(Str name) const -> Symbol {
+auto Library::symbol(Str name) const -> Symbol {
   if (_handle == nullptr) {
     return nullptr;
   }
