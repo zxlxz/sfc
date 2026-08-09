@@ -41,7 +41,7 @@ class Buffer {
     auto res = Buffer{};
     res._a = alloc;
     res._cap = capacity;
-    res._ptr = ptr::cast<T>(res._a.alloc_zeroed(res.layout()));
+    res._ptr = ptr::cast<T>(res._a.allocate_zeroed(res.layout()));
     return res;
   }
 

@@ -98,7 +98,7 @@ inline void drop(T* ptr, usize cnt = 1) noexcept {
 template <class T>
 inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
   if (cnt == 0) return;
-  __builtin_memset(dst, val, cnt * sizeof(T));
+  __builtin_memset((void*)dst, val, cnt * sizeof(T));
 }
 
 template <class T>

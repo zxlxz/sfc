@@ -74,6 +74,7 @@ class Allocator {
 
  public:
   auto allocate(Layout layout) -> void*;
+  auto allocate_zeroed(Layout layout) -> void*;
   void deallocate(void* ptr, Layout layout);
 };
 

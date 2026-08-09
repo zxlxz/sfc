@@ -189,6 +189,14 @@ auto Allocator::allocate(Layout layout) -> void* {
   return _pool->alloc(layout.size);
 }
 
+auto Allocator::allocate_zeroed(Layout layout) -> void* {
+  const auto p = _pool->alloc(layout.size);
+  if (p) {
+    ptr::write_bytes(ptr::cast<u8>(p), 0, layout.size);
+  }
+  return p;
+}
+
 void Allocator::deallocate(void* ptr, Layout layout) {
   _pool->dealloc(ptr, layout.size);
 }
