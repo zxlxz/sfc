@@ -37,7 +37,7 @@ class Buffer {
     return res;
   }
 
-  static auto with_capacity_zeroed(usize capacity, A alloc={}) -> Buffer {
+  static auto with_capacity_zeroed(usize capacity, A alloc = {}) -> Buffer {
     auto res = Buffer{};
     res._a = alloc;
     res._cap = capacity;
@@ -68,6 +68,14 @@ class Buffer {
 
   auto layout() const -> mem::Layout {
     return mem::Layout::array<T>(_cap);
+  }
+
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    return {ptr::cast<const u8>(_ptr), _cap * sizeof(T)};
+  }
+
+  auto as_mut_bytes() noexcept -> Slice<u8> {
+    return {ptr::cast<u8>(_ptr), _cap * sizeof(T)};
   }
 
  public:
