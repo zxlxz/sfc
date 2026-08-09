@@ -76,7 +76,7 @@ class Bucket {
   }
 };
 
-Pool::Pool(usize cap) noexcept : _cap{cap} {}
+Pool::Pool(usize cap) noexcept : _cap{cap}, _buckets{} {}
 
 Pool::~Pool() noexcept {}
 

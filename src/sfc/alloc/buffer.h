@@ -66,7 +66,7 @@ class Buffer {
     return _a;
   }
 
-  auto layout() -> mem::Layout {
+  auto layout() const -> mem::Layout {
     return mem::Layout::array<T>(_cap);
   }
 

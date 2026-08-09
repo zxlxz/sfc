@@ -9,8 +9,8 @@ using slice::Range;
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
   using Buf = Buffer<T, A>;
-  Buf _buf = {};
-  usize _len = 0;
+  Buf _buf{};
+  usize _len{0};
 
  public:
   List() noexcept {}

@@ -9,10 +9,13 @@ using mem::Layout;
 
 class Bucket;
 
-class Pool {
+class [[nodiscard]] Pool {
  public:
   explicit Pool(usize cap) noexcept;
   virtual ~Pool() noexcept;
+
+  Pool(const Pool&) = delete;
+  Pool& operator=(const Pool&) = delete;
 
   static auto global() -> Pool&;
 
@@ -40,11 +43,11 @@ class Pool {
   usize _seq{0};
   usize _total_bytes{0};
   usize _free_bytes{0};
-  List<Bucket> _buckets{};
+  List<Bucket> _buckets;
 };
 
 template <class A>
-class XPool : public Pool {
+class [[nodiscard]] XPool : public Pool {
   static constexpr auto kMaxFreeSize = usize{1} << 30;  // 1GB
   A _alloc{};
 
