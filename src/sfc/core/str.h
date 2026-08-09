@@ -6,6 +6,7 @@
 namespace sfc::str {
 
 using slice::Range;
+using chr::Chars;
 
 struct Str {
   const char* _ptr = nullptr;
@@ -18,11 +19,11 @@ struct Str {
 
   constexpr Str(const char* s) noexcept : _ptr{s}, _len{s == nullptr ? 0 : __builtin_strlen(s)} {}
 
-  static auto from_utf8(Slice<const u8> s) noexcept -> Str {
+  constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
     return Str{ptr::cast<const char>(s._ptr), s._len};
   }
 
-  static auto from_cstr(const char* s) noexcept -> Str {
+  constexpr static auto from_cstr(const char* s) noexcept -> Str {
     const auto n = s ? __builtin_strlen(s) : 0;
     return Str{s, n};
   }
@@ -76,13 +77,38 @@ struct Str {
   }
 
  public:
+  constexpr auto operator==(Str other) const noexcept -> bool {
+    return this->eq(other);
+  }
+
+  constexpr auto operator<=>(Str other) const noexcept -> int {
+    return this->cmp(other);
+  }
+
+  constexpr auto eq(Str s) const noexcept -> bool {
+    if (_len != s._len) return false;
+    if (_len == 0 || _ptr == s._ptr) return true;
+    return __builtin_memcmp(_ptr, s._ptr, _len) == 0;
+  }
+
+  constexpr auto cmp(Str other) const noexcept -> int {
+    const auto min_len = _len < other._len ? _len : other._len;
+    if (min_len != 0) {
+      const auto ret = __builtin_memcmp(_ptr, other._ptr, min_len);
+      if (ret != 0) {
+        return ret < 0 ? -1 : 1;
+      }
+    }
+    return _len == other._len ? 0 : (_len < other._len ? -1 : 1);
+  }
+
   using Iter = slice::Iter<const char>;
   auto iter() const noexcept -> slice::Iter<const char> {
     return Iter{_ptr, _len};
   }
 
-  auto chars() const noexcept -> chr::Chars {
-    return chr::Chars{ptr::cast<const u8>(_ptr), _len};
+  auto chars() const noexcept -> Chars {
+    return Chars{ptr::cast<const u8>(_ptr), _len};
   }
 
  public:
@@ -106,9 +132,6 @@ struct Str {
   auto rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>>;
 
  public:
-  auto operator==(Str other) const noexcept -> bool;
-  auto operator<=>(Str other) const noexcept -> int;
-
   // trait: fmt::Display
   void fmt(fmt::Formatter& f) const;
 
