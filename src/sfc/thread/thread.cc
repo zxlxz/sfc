@@ -1,5 +1,5 @@
 #include "sfc/thread/thread.h"
-#include "sfc/sys.h"
+#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 

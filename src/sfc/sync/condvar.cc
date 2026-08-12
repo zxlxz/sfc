@@ -1,5 +1,3 @@
-#define _SFC_SYS_SYNC_
-#include "sfc/sys.h"
 #include "sfc/sync/condvar.h"
 
 namespace sfc::sync {

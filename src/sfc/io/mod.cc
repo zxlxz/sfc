@@ -1,7 +1,5 @@
 #include "sfc/io/mod.h"
-
-#define _SFC_SYS_IO_
-#include "sfc/sys.h"
+#include "sfc/sys/io.h"
 
 namespace sfc::io {
 

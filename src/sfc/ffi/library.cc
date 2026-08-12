@@ -1,8 +1,6 @@
 #include "sfc/ffi/library.h"
 #include "sfc/ffi/os_str.h"
-
-#define _SFC_SYS_FFI_
-#include "sfc/sys.h"
+#include "sfc/sys/ffi.h"
 
 namespace sfc::ffi {
 

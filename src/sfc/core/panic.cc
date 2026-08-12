@@ -1,9 +1,7 @@
 #include "sfc/core/panic.h"
 #include "sfc/core/fmt.h"
-
-#define _SFC_SYS_IO_
-#define _SFC_SYS_BACKTRACE_
-#include "sfc/sys.h"
+#include "sfc/sys/io.h"
+#include "sfc/sys/backtrace.h"
 
 namespace sfc::panic {
 

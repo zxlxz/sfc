@@ -1,9 +1,7 @@
 #pragma once
 
 #include "sfc/core.h"
-
-#define _SFC_SYS_SYNC_
-#include "sfc/sys.h"
+#include "sfc/sys/sync.h"
 
 namespace sfc::sync {
 

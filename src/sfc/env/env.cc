@@ -1,7 +1,6 @@
-#define _SFC_SYS_ENV_
-#include "sfc/sys.h"
 #include "sfc/env.h"
 #include "sfc/ffi/os_str.h"
+#include "sfc/sys/env.h"
 
 namespace sfc::env {
 

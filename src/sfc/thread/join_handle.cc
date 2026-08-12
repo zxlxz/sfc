@@ -1,6 +1,6 @@
 #include "sfc/thread/join_handle.h"
 #include "sfc/ffi/os_str.h"
-#include "sfc/sys.h"
+#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 

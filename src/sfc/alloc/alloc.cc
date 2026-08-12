@@ -1,7 +1,5 @@
 #include "sfc/alloc/alloc.h"
-
-#define _SFC_SYS_ALLOC_
-#include "sfc/sys.h"
+#include "sfc/sys/alloc.h"
 
 namespace sfc::alloc {
 

@@ -1,8 +1,6 @@
-#define _SFC_SYS_IO_
-#include "sfc/sys.h"
-
 #include "sfc/io/buf.h"
 #include "sfc/io/stdio.h"
+#include "sfc/sys/io.h"
 #include "sfc/sync/mutex.h"
 
 namespace sfc::io {

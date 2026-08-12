@@ -1,6 +1,5 @@
-#define _SFC_SYS_TIME_
-#include "sfc/sys.h"
 #include "sfc/time/instant.h"
+#include "sfc/sys/time.h"
 
 namespace sfc::time {
 

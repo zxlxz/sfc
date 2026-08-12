@@ -1,7 +1,6 @@
-#define _SFC_SYS_FS_
-#include "sfc/sys.h"
 #include "sfc/fs/file.h"
 #include "sfc/ffi/os_str.h"
+#include "sfc/sys/fs.h"
 
 namespace sfc::fs {
 
