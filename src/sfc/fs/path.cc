@@ -1,6 +1,6 @@
 #include "sfc/fs/path.h"
+#include "sfc/fs/file.h"
 #include "sfc/ffi/os_str.h"
-#include "sfc/sys/fs.h"
 
 namespace sfc::fs {
 
@@ -272,67 +272,6 @@ auto PathBuf::operator*() const noexcept -> Path {
 
 void PathBuf::fmt(fmt::Formatter& f) const {
   _inn.fmt(f);
-}
-
-auto Metadata::exists() const noexcept -> bool {
-  return _attr != 0;
-}
-
-auto Metadata::file_len() const noexcept -> u64 {
-  return _size;
-}
-
-auto Metadata::is_dir() const noexcept -> bool {
-  const auto imp = sys::FileAttr{_attr};
-  return imp.is_dir();
-}
-
-auto Metadata::is_file() const noexcept -> bool {
-  const auto imp = sys::FileAttr{_attr};
-  return imp.is_file();
-}
-
-auto metadata(Path path) -> io::Result<Metadata> {
-  const auto os_path = ffi::OsString::from(path.as_str());
-  const auto meta = _TRY(sys::lstat(os_path.as_ptr()));
-  return {meta};
-}
-
-auto create_dir(Path path) -> io::Result<> {
-  if (path._inn.is_empty() || path.is_root()) {
-    return {io::Error::InvalidInput};
-  }
-
-  const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::mkdir(os_path.as_ptr());
-}
-
-auto create_dir_all(Path path) -> io::Result<> {
-  const auto err = fs::create_dir(path).err();
-  if (!err || *err == io::Error::AlreadyExists) {
-    return Ok{};
-  }
-
-  const auto parent = path.parent();
-  _TRY(fs::create_dir_all(parent));
-
-  return fs::create_dir(path);
-}
-
-auto remove_dir(Path path) -> io::Result<> {
-  const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::rmdir(os_path.as_ptr());
-}
-
-auto remove_file(Path path) -> io::Result<> {
-  const auto os_path = ffi::OsString::from(path.as_str());
-  return sys::unlink(os_path.as_ptr());
-}
-
-auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto os_old = ffi::OsString::from(old_path.as_str());
-  const auto os_new = ffi::OsString::from(new_path.as_str());
-  return sys::rename(os_old.as_ptr(), os_new.as_ptr());
 }
 
 }  // namespace sfc::fs

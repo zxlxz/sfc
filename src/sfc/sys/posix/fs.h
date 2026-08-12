@@ -21,7 +21,9 @@ struct FileAttr {
 
 auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd>;
 
+auto fstat(int fd) -> io::Result<fs::Metadata>;
 auto lstat(const char* path) -> io::Result<fs::Metadata>;
+
 auto unlink(const char* path) -> io::Result<>;
 auto rename(const char* old_path, const char* new_path) -> io::Result<>;
 auto mkdir(const char* path) -> io::Result<>;

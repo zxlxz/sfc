@@ -2,8 +2,6 @@
 #include <DbgHelp.h>
 #pragma comment(lib, "DbgHelp.lib")
 
-
-
 #include "sfc/sys/windows/backtrace.h"
 
 namespace sfc::sys::windows {

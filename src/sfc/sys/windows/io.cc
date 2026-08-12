@@ -27,6 +27,10 @@ auto File::is_valid() const noexcept -> bool {
   return _fd != nullptr && _fd != INVALID_HANDLE_VALUE;
 }
 
+auto File::as_raw_fd() const noexcept -> RawFd {
+  return _fd;
+}
+
 auto File::flush() noexcept -> io::Result<> {
   const auto ret = ::FlushFileBuffers(_fd);
   if (!ret) {

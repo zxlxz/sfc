@@ -68,25 +68,4 @@ class PathBuf {
   void fmt(fmt::Formatter& f) const;
 };
 
-struct Metadata {
-  u32 _attr = 0;
-  u64 _size = 0;
-
- public:
-  auto exists() const noexcept -> bool;
-  auto file_len() const noexcept -> u64;
-  auto is_dir() const noexcept -> bool;
-  auto is_file() const noexcept -> bool;
-};
-
-auto metadata(Path path) -> io::Result<Metadata>;
-
-auto create_dir(Path path) -> io::Result<>;
-auto create_dir_all(Path path) -> io::Result<>;
-
-auto remove_dir(Path path) -> io::Result<>;
-auto remove_file(Path path) -> io::Result<>;
-
-auto rename(Path from, Path to) -> io::Result<>;
-
 }  // namespace sfc::fs

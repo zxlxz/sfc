@@ -34,6 +34,18 @@ auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd> {
   return Ok{fd};
 }
 
+auto fstat(int fd) -> io::Result<fs::Metadata> {
+  struct stat st{};
+  if (::fstat(fd, &st) == -1) {
+    return io::last_os_error();
+  }
+
+  const auto attr = st.st_mode;
+  const auto size = u64(st.st_size);
+  const auto meta = fs::Metadata{attr, size};
+  return Ok{meta};
+}
+
 auto lstat(const char* path) -> io::Result<fs::Metadata> {
   struct stat st{};
   if (::lstat(path, &st) == -1) {
@@ -41,7 +53,7 @@ auto lstat(const char* path) -> io::Result<fs::Metadata> {
   }
 
   const auto attr = st.st_mode;
-  const auto size = num::cast_unsigned(st.st_size);
+  const auto size = u64(st.st_size);
   const auto meta = fs::Metadata{attr, size};
   return meta;
 }
