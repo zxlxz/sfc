@@ -1,7 +1,5 @@
 #include <Windows.h>
 #include <process.h>
-#undef min
-#undef max
 
 #include "sfc/sys/windows/thread.h"
 

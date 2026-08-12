@@ -89,8 +89,8 @@ class Buffer {
       return;
     }
 
-    const auto fit_cap = cmp::max(req_cap, _cap * 2);
-    const auto new_cap = cmp::max(fit_cap, kMinCap);
+    const auto fit_cap = (cmp::max)(req_cap, _cap * 2);
+    const auto new_cap = (cmp::max)(fit_cap, kMinCap);
     const auto layout = this->layout();
 
     _ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));

@@ -1,6 +1,4 @@
 #include <Windows.h>
-#undef min
-#undef max
 
 #include "sfc/sys/windows/sync.h"
 

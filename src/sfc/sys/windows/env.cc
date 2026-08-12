@@ -1,7 +1,4 @@
 #include <Windows.h>
-#undef min
-#undef max
-
 #include "sfc/sys/windows/env.h"
 
 namespace sfc::sys::windows {

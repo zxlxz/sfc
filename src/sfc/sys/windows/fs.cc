@@ -1,6 +1,4 @@
 #include <Windows.h>
-#undef min
-#undef max
 
 #include "sfc/fs/file.h"
 #include "sfc/sys/windows/fs.h"

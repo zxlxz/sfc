@@ -2,8 +2,7 @@
 #include <DbgHelp.h>
 #pragma comment(lib, "DbgHelp.lib")
 
-#undef min
-#undef max
+
 
 #include "sfc/sys/windows/backtrace.h"
 

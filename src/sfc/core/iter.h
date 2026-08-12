@@ -113,11 +113,11 @@ struct Iterator {
     return cnt;
   }
 
-  auto min(this auto self) -> Option<Item> {
+  auto (min)(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a < b ? a : b; });
   }
 
-  auto max(this auto self) -> Option<Item> {
+  auto (max)(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a > b ? a : b; });
   }
 

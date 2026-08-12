@@ -1,6 +1,4 @@
 #include <Windows.h>
-#undef min
-#undef max
 
 #include "sfc/ffi/wstr.h"
 #include "sfc/sys/windows/io.h"
@@ -159,7 +157,7 @@ struct StdIo {
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
     // in the worst case, each u16 character takes 3 u8 bytes
     const auto max_wchar = num::saturating_cast<DWORD>(data._len / 3);
-    const auto max_read = cmp::min(max_wchar, kMaxBufLen);
+    const auto max_read = (cmp::min)(max_wchar, kMaxBufLen);
 
     // read u16
     wchar_t wbuf[kMaxBufLen];
