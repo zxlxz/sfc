@@ -7,7 +7,7 @@ namespace sfc::sys {
 namespace posix {}
 namespace windows {}
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
 using namespace posix;
 #endif
 

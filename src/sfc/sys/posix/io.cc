@@ -23,6 +23,10 @@ File& File::operator=(File&& other) noexcept {
   return *this;
 }
 
+auto File::as_raw_fd() const -> int {
+  return _fd;
+}
+
 auto File::is_valid() const noexcept -> bool {
   return _fd != -1;
 }

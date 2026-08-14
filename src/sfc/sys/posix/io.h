@@ -17,6 +17,7 @@ class File {
   File& operator=(File&& other) noexcept;
 
  public:
+  auto as_raw_fd() const -> int;
   auto is_valid() const noexcept -> bool;
 
   auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
