@@ -70,16 +70,15 @@ struct FileName {
 };
 
 auto Path::as_str() const noexcept -> Str {
-  return _inn.as_str();
+  return _inn;
 }
 
 auto Path::file_name() const noexcept -> Str {
-  const auto s = _inn.as_str();
-  if (s.is_empty()) {
+  if (_inn.is_empty()) {
     return {};
   }
 
-  auto cmpts = Components{s};
+  auto cmpts = Components{_inn.as_str()};
   const auto last = cmpts.next_back().unwrap_or("");
   if (last == "" || last == "." || last == ".." || last == "/") {
     return {};
@@ -98,7 +97,7 @@ auto Path::file_stem() const noexcept -> Str {
 }
 
 auto Path::parent() const noexcept -> Path {
-  auto cmpts = fs::Components{_inn.as_str()};
+  auto cmpts = fs::Components{_inn};
   cmpts.next_back();
 
   return Path{cmpts._str};
@@ -111,11 +110,11 @@ auto Path::join(Str path) const noexcept -> PathBuf {
 }
 
 auto Path::is_root() const noexcept -> bool {
-  const auto s = _inn.as_str();
-  if (s.is_empty()) {
+  if (_inn.is_empty()) {
     return false;
   }
-  if (s == "/") {
+
+  if (_inn == "/") {
     return true;
   }
 
@@ -123,19 +122,17 @@ auto Path::is_root() const noexcept -> bool {
 }
 
 auto Path::is_absolute() const noexcept -> bool {
-  const auto s = _inn.as_str();
-
-  if (s.is_empty()) {
+  if (_inn.is_empty()) {
     return false;
   }
 
-  if (s.starts_with('/')) {
+  if (_inn.starts_with('/')) {
     return true;
   }
 
 #ifdef _WIN32
   // match [a-z]:
-  if (s[1] == ':' && chr::is_alpha(s[0])) {
+  if (_inn[1] == ':' && chr::is_alpha(_inn[0])) {
     return true;
   }
 #endif
@@ -143,8 +140,7 @@ auto Path::is_absolute() const noexcept -> bool {
 }
 
 auto Path::is_relative() const noexcept -> bool {
-  const auto s = _inn.as_str();
-  if (s.is_empty()) {
+  if (_inn.is_empty()) {
     return false;
   }
   return !this->is_absolute();
