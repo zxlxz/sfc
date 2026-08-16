@@ -11,8 +11,63 @@ namespace sfc::ops {
 template <class T>
 auto declval() -> T;
 
-template <class F, class... A>
-using FnOut = decltype(declval<F>()(declval<A>()...));
+template <class T, T... I>
+struct IntSeq {
+  static auto eq(const auto& a, const auto& b) -> bool {
+    return ((a[I] == b[I]) && ...);
+  }
+
+  static auto ne(const auto& a, const auto& b) -> bool {
+    return ((a[I] != b[I]) || ...);
+  }
+
+  static auto lt(const auto& a, const auto& b) -> bool {
+    return ((a[I] < b[I]) && ...);
+  }
+
+  static auto le(const auto& a, const auto& b) -> bool {
+    return ((a[I] <= b[I]) && ...);
+  }
+
+  static auto gt(const auto& a, const auto& b) -> bool {
+    return ((a[I] > b[I]) && ...);
+  }
+
+  static auto ge(const auto& a, const auto& b) -> bool {
+    return ((a[I] >= b[I]) && ...);
+  }
+
+  static auto all(const auto& a) -> bool {
+    return (a[I] && ...);
+  }
+
+  static auto any(const auto& a) -> bool {
+    return (a[I] || ...);
+  }
+
+  static auto accum(const auto& a) {
+    return (a[I] + ...);
+  }
+
+  static auto prod(const auto& a) {
+    return (a[I] * ...);
+  }
+
+  static auto dot(const auto& a, const auto& b) {
+    return ((a[I] * b[I]) + ...);
+  }
+};
+
+template <u32... I>
+using IdxSeq = IntSeq<u32, I...>;
+
+#if __has_builtin(__make_integer_seq)
+template <u32 N>
+using index_seq = __make_integer_seq<IntSeq, u32, N>;
+#else
+template <u32 N>
+using index_seq = IntSeq<u32, __integer_pack(N)...>{};
+#endif
 
 template <class>
 struct Fn;
@@ -47,6 +102,9 @@ auto fn(auto& x) {
   };
   return conv(x, f);
 }
+
+template <class F, class... A>
+using FnOut = decltype(declval<F>()(declval<A>()...));
 
 struct End {};
 static constexpr auto $ = End{};
