@@ -6,14 +6,14 @@ namespace sfc::log {
 
 static auto level_str(Level level) -> Str {
   switch (level) {
-    case Level::Trace: return "TRACE";
-    case Level::Debug: return "DEBUG";
-    case Level::Info:  return "INFO ";
-    case Level::Warn:  return "WARN ";
-    case Level::Error: return "ERROR";
-    case Level::Fatal: return "FATAL";
+    case Level::Trace: return "[TRACE]";
+    case Level::Debug: return "[DEBUG]";
+    case Level::Info:  return "[INFO] ";
+    case Level::Warn:  return "[WARN] ";
+    case Level::Error: return "[ERROR]";
+    case Level::Fatal: return "[FATAL]";
   }
-  return "INFO ";
+  return "[INFO] ";
 }
 
 static auto time_str(time::SystemTime time) -> Str {
@@ -42,7 +42,7 @@ static auto format_record(Slice<char> buf, const Record& record) -> Str {
 
   const auto time_str = log::time_str(record._time);
   const auto level_str = log::level_str(record._level);
-  fmt::write(out, "{} [{}] {}\n", time_str, level_str, record._args);
+  fmt::write(out, "{} {} {}\n", time_str, level_str, record._args);
   return Str{buf._ptr, buf._len - out._len};
 }
 
