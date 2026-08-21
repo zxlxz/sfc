@@ -66,7 +66,7 @@ template <u32 N>
 using index_seq = __make_integer_seq<IntSeq, u32, N>;
 #else
 template <u32 N>
-using index_seq = IntSeq<u32, __integer_pack(N)...>{};
+using index_seq = IntSeq<u32, __integer_pack(N)...>;
 #endif
 
 template <class>
