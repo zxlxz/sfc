@@ -4,6 +4,16 @@
 
 namespace sfc::ffi {
 
+struct Func {
+  void (*_func)();
+
+ public:
+  template <class F>
+  operator F() const {
+    return reinterpret_cast<F>(_func);
+  }
+};
+
 class Library {
   using Symbol = void (*)();
   void* _handle{nullptr};
@@ -17,16 +27,7 @@ class Library {
   static auto load(Str path) -> Option<Library>;
 
  public:
-  auto symbol(Str name) const -> Symbol;
-
-  template <class F>
-  auto func(Str name) const -> Option<F> {
-    const auto sym = this->symbol(name);
-    if (sym == nullptr) {
-      return {};
-    }
-    return F(sym);
-  }
+  auto func(Str name) const -> Func;
 };
 
 }  // namespace sfc::ffi

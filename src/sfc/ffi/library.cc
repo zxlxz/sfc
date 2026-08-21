@@ -72,14 +72,15 @@ auto Library::load(Str path) -> Option<Library> {
   return res;
 }
 
-auto Library::symbol(Str name) const -> Symbol {
+auto Library::func(Str name) const -> Func {
   if (_handle == nullptr) {
-    return nullptr;
+    return Func{nullptr};
   }
 
   const auto os_name = ffi::CString::from(name);
+
   const auto sym = sys::get_symbol(_handle, os_name.as_ptr());
-  return Symbol(sym);
+  return Func{(void (*)())sym};
 }
 
 }  // namespace sfc::ffi
