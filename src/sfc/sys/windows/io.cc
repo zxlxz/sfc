@@ -117,9 +117,9 @@ struct StdIo {
 
     auto nret = DWORD{};
     if (!::WriteFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return {io::last_os_error()};
+      return Err{io::last_os_error()};
     }
-    return {usize{nret}};
+    return Ok{usize{nret}};
   }
 
   auto write_u16(Str u8_str) -> io::Result<usize> {
@@ -133,9 +133,12 @@ struct StdIo {
 
     auto nwrite = DWORD{};
     if (!::WriteConsoleW(_handle, wbuf, wlen, &nwrite, nullptr)) {
-      return {io::last_os_error()};
+      return Err{io::last_os_error()};
     }
-    return {usize{nwrite}};
+
+    // if write success, assume all u8 bytes are written
+    // since we cannot know how many u8 bytes are written
+    return Ok{u8_str.len()};
   }
 
   auto write(Slice<const u8> data) -> io::Result<usize> {
@@ -153,9 +156,9 @@ struct StdIo {
 
     auto nret = DWORD{};
     if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return io::last_os_error();
+      return Err{io::last_os_error()};
     }
-    return usize{nret};
+    return Ok{usize{nret}};
   }
 
   auto read_u16(Slice<u8> data) -> io::Result<usize> {
@@ -167,7 +170,7 @@ struct StdIo {
     wchar_t wbuf[kMaxBufLen];
     auto nret = DWORD{};
     if (!::ReadConsoleW(_handle, wbuf, max_read, &nret, nullptr)) {
-      return io::last_os_error();
+      return Err{io::last_os_error()};
     }
 
     const auto wstr = ffi::WStr{wbuf, nret};
@@ -181,7 +184,7 @@ struct StdIo {
       u8_len += n;
     });
 
-    return io::Result<usize>{u8_len};
+    return Ok{usize{u8_len}};
   }
 
   auto read(Slice<u8> data) -> io::Result<usize> {
