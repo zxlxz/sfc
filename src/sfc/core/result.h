@@ -73,7 +73,7 @@ class [[nodiscard]] Result {
   }
 
   auto as_err() const noexcept -> Option<const E&> {
-    return _tag == 0 ? Option<const E&>{_1} : Option<const E&>{};
+    return _tag == 1 ? Option<const E&>{_1} : Option<const E&>{};
   }
 
   auto as_ref() const -> Result<const T&, E> {
