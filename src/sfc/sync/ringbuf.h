@@ -18,9 +18,17 @@ struct AtomicIdx {
 };
 
 template <class T>
-struct Cell {
+class Cell {
   Atomic<usize> _seq{0};
-  T _val{};
+  union {
+    T _val;
+  };
+
+ private:
+  Cell() = delete;
+  ~Cell() = delete;
+  Cell(const Cell&) = delete;
+  Cell& operator=(const Cell&) = delete;
 
  public:
   auto seq() const noexcept -> usize {
