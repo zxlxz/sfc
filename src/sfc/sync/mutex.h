@@ -23,15 +23,15 @@ class Mutex {
 
 class Mutex::Guard {
   friend class Mutex;
-  ptr::Unique<Mutex> _lock;
-
- private:
-  Guard(Mutex&);
+  Mutex* _lock{nullptr};
 
  public:
+  Guard() noexcept;
   ~Guard() noexcept;
-  Guard(Guard&&) noexcept = default;
-  Guard& operator=(Guard&&) noexcept = default;
+  Guard(Guard&&) noexcept;
+  Guard& operator=(Guard&&) noexcept;
+
+ public:
   auto inner() -> Inn&;
 };
 
@@ -62,15 +62,13 @@ class ReentrantLock {
 
 class ReentrantLock::Guard {
   friend class ReentrantLock;
-  ptr::Unique<ReentrantLock> _lock;
-
- private:
-  Guard(ReentrantLock&);
+  ReentrantLock* _lock{nullptr};
 
  public:
+  Guard() noexcept;
   ~Guard() noexcept;
-  Guard(Guard&&) noexcept = default;
-  Guard& operator=(Guard&&) noexcept = default;
+  Guard(Guard&&) noexcept;
+  Guard& operator=(Guard&&) noexcept;
 };
 
 }  // namespace sfc::sync

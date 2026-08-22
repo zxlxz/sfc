@@ -13,21 +13,38 @@ Mutex& Mutex::operator=(Mutex&& other) noexcept = default;
 
 auto Mutex::lock() noexcept -> Guard {
   _inn.lock();
-  return Guard{*this};
+
+  auto res = Guard{};
+  res._lock = this;
+  return res;
 }
 
 auto Mutex::try_lock() noexcept -> Option<Guard> {
   if (!_inn.try_lock()) {
     return {};
   }
-  return Guard{*this};
+
+  auto res = Guard{};
+  res._lock = this;
+  return res;
 }
 
-Mutex::Guard::Guard(Mutex& lock) : _lock{&lock} {}
+Mutex::Guard::Guard() noexcept : _lock{nullptr} {}
 
 Mutex::Guard::~Guard() noexcept {
   if (_lock == nullptr) return;
   _lock->_inn.unlock();
+}
+
+Mutex::Guard::Guard(Guard&& other) noexcept : _lock{other._lock} {
+  other._lock = nullptr;
+}
+
+Mutex::Guard& Mutex::Guard::operator=(Guard&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_lock, other._lock);
+  }
+  return *this;
 }
 
 auto Mutex::Guard::inner() -> sys::Mutex& {
@@ -88,7 +105,10 @@ ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
 auto ReentrantLock::lock() noexcept -> Guard {
   _inn.lock();
-  return Guard{*this};
+
+  auto res = Guard{};
+  res._lock = this;
+  return res;
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
@@ -96,14 +116,28 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   if (!ret) {
     return {};
   }
-  return Guard{*this};
+
+  auto res = Guard{};
+  res._lock = this;
+  return res;
 }
 
-ReentrantLock::Guard::Guard(ReentrantLock& lock) : _lock{&lock} {}
+ReentrantLock::Guard::Guard() noexcept : _lock{nullptr} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
   if (_lock == nullptr) return;
   _lock->_inn.unlock();
+}
+
+ReentrantLock::Guard::Guard(Guard&& other) noexcept : _lock{other._lock} {
+  other._lock = nullptr;
+}
+
+ReentrantLock::Guard& ReentrantLock::Guard::operator=(Guard&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_lock, other._lock);
+  }
+  return *this;
 }
 
 }  // namespace sfc::sync
