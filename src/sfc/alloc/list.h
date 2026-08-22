@@ -4,7 +4,7 @@
 
 namespace sfc::list {
 
-using slice::Range;
+using Range = ops::Range<usize>;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
@@ -124,6 +124,8 @@ class [[nodiscard]] List {
 
  public:
   void set_len(usize new_len) noexcept {
+    const auto cap = _buf.cap();
+    sfc::assert_(new_len <= cap, "List::set_len: new_len(={}) out of capacity(={})", new_len, cap);
     _len = new_len;
   }
 
