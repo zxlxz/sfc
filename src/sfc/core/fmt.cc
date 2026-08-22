@@ -261,7 +261,7 @@ auto Spec::sign(bool is_neg) const -> str::Str {
 }
 
 auto Spec::prefix() const -> str::Str {
-  if (_prefix != '#') {
+  if (_alt != '#') {
     return "";
   }
 
@@ -418,7 +418,7 @@ void Formatter::pad_num(bool is_neg, Str body) {
   }
 
   const auto npad = _spec._width - body._len;
-  const auto fill = _spec.fill(_spec._prefix ? '0' : ' ');
+  const auto fill = _spec.fill(_spec._alt ? '0' : ' ');
   const auto align = _spec.align(fill == '0' ? '=' : '>');
   switch (align) {
     default:
@@ -462,83 +462,104 @@ auto Formatter::debug_map() -> DebugMap {
 }
 
 auto Formatter::debug_tuple(Str name) -> DebugTuple {
-  this->write_str(name);
-  return DebugTuple{*this};
+  return DebugTuple{*this, name};
 }
 
 auto Formatter::debug_struct(Str name) -> DebugStruct {
-  this->write_str(name);
-  return DebugStruct{*this};
+  return DebugStruct{*this, name};
 }
 
-DebugList::DebugList(Formatter& fmt) : _fmt{fmt} {
-  _fmt.write_str("[");
+DebugBlock::DebugBlock(Formatter& fmt, Str name) : _fmt{fmt} {
+  if (!name.is_empty()) {
+    _fmt.write_str(name);
+    _fmt.write_char(' ');
+  }
+}
+
+DebugBlock::~DebugBlock() {}
+
+void DebugBlock::open(Str begin) {
+  _fmt.write_str(begin);
+  if (_fmt._spec._alt == '#') {
+    _fmt._indent_level += 1;
+  }
+}
+
+void DebugBlock::finish(Str end) {
+  if (_fmt._spec._alt == '#') {
+    _fmt._indent_level -= 1;
+  }
+
+  if (_fmt._spec._alt == '#' && _cnt > 0) {
+    _fmt.write_str("\n");
+    _fmt.write_chars(' ', _fmt._indent_level * 2);
+  }
+  _fmt.write_str(end);
+}
+
+void DebugBlock::next() {
+  _cnt += 1;
+
+  if (_fmt._spec._alt != '#') {
+    if (_cnt > 1) {
+      _fmt.write_str(", ");
+    }
+    return;
+  }
+
+  if (_cnt == 1) {
+    _fmt.write_str("\n");
+  } else {
+    _fmt.write_str(",\n");
+  }
+  _fmt.write_chars(' ', _fmt._indent_level * 2);
+}
+
+void DebugBlock::write_key(Str key, char ch) {
+  if (ch) _fmt.write_char(ch);
+  _fmt.write_str(key);
+  if (ch) _fmt.write_char(ch);
+  _fmt.write_str(": ");
+}
+
+DebugList::DebugList(Formatter& fmt) : _blk{fmt} {
+  _blk.open("[");
 }
 
 DebugList::~DebugList() {
-  _fmt.write_str("]");
+  _blk.finish("]");
 }
 
-void DebugList::push(Str s) {
-  if (_cnt++ != 0) _fmt.write_str(", ");
-  _fmt.write_str(s);
-}
-
-DebugSet::DebugSet(Formatter& fmt) : _fmt{fmt} {
-  _fmt.write_str("{");
+DebugSet::DebugSet(Formatter& fmt) : _blk{fmt} {
+  _blk.open("{");
 }
 
 DebugSet::~DebugSet() {
-  _fmt.write_str("}");
+  _blk.finish("}");
 }
 
-void DebugSet::push(Str s) {
-  if (_cnt++ != 0) _fmt.write_str(", ");
-  _fmt.write_str(s);
-}
-
-DebugMap::DebugMap(Formatter& fmt) : _fmt{fmt} {
-  _fmt.write_str("{");
+DebugMap::DebugMap(Formatter& fmt) : _blk{fmt} {
+  _blk.open("{");
 }
 
 DebugMap::~DebugMap() {
-  _fmt.write_str("}");
+  _blk.finish("}");
 }
 
-void DebugMap::push(Str key, Str value) {
-  if (_cnt++ != 0) _fmt.write_str(", ");
-  _fmt.write_str("\"");
-  _fmt.write_str(key);
-  _fmt.write_str("\": ");
-  _fmt.write_str(value);
-}
-
-DebugTuple::DebugTuple(Formatter& fmt) : _fmt{fmt} {
-  _fmt.write_str("(");
+DebugTuple::DebugTuple(Formatter& fmt, Str name) : _blk{fmt, name} {
+  _blk.open("(");
 }
 
 DebugTuple::~DebugTuple() {
-  _fmt.write_str(")");
+  _blk.finish(")");
 }
 
-void DebugTuple::push(Str s) {
-  if (_cnt++ != 0) _fmt.write_str(", ");
-  _fmt.write_str(s);
-}
-
-DebugStruct::DebugStruct(Formatter& fmt) : _fmt{fmt} {
-  _fmt.write_str("{");
+DebugStruct::DebugStruct(Formatter& fmt, Str name) : _blk{fmt, name} {
+  _blk.open("{");
 }
 
 DebugStruct::~DebugStruct() {
-  _fmt.write_str("}");
-}
-
-void DebugStruct::push(Str key, Str value) {
-  if (_cnt++ != 0) _fmt.write_str(", ");
-  _fmt.write_str(key);
-  _fmt.write_str(": ");
-  _fmt.write_str(value);
+  _blk.finish("}");
 }
 
 }  // namespace sfc::fmt

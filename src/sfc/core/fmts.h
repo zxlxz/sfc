@@ -29,7 +29,7 @@ struct Spec {
   char _fill = 0;
   char _align = 0;   // [<>^=]
   char _sign = 0;    // [+- ]
-  char _prefix = 0;  // [#]
+  char _alt = 0;  // [#]
   char _point = 0;   // [.]
   char _type = 0;    // [*]
 
@@ -112,7 +112,7 @@ struct Spec {
     }
 
     res._sign = p.extract('+', '-');
-    res._prefix = p.extract('#');
+    res._alt = p.extract('#');
     if (!res._fill) {
       res._fill = p.extract('0');
     }

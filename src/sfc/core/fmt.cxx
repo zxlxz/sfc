@@ -1,4 +1,5 @@
 #include "sfc/test/test.h"
+#include "sfc/io.h"
 
 namespace sfc::fmt::test {
 
@@ -199,6 +200,30 @@ SFC_TEST(array) {
 
   char b[] = "abc";
   sfc::assert_eq(format("{}", b), "abc");
+}
+
+struct PrettyStruct {
+  int a;
+  int b[3];
+
+ public:
+  void fmt(Formatter& f) const {
+    f.debug_struct("PrettyStruct").field("a", a).field("b", b);
+  }
+};
+
+SFC_TEST(pretty_struct) {
+  const auto s = PrettyStruct{42, {1, 2, 3}};
+  const auto text =
+      "PrettyStruct {\n"
+      "  a: 42,\n"
+      "  b: [\n"
+      "    1,\n"
+      "    2,\n"
+      "    3\n"
+      "  ]\n"
+      "}";
+  sfc::assert_eq(format("{#}", s), Str{text});
 }
 
 }  // namespace sfc::fmt::test
