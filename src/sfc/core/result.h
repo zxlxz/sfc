@@ -94,69 +94,69 @@ class [[nodiscard]] Result {
 
  public:
   auto unwrap() && -> T {
-    sfc::assert_(_tag == 0, "called `Result::unwrap()` on Err({})", _1);
+    sfc::assert_(this->is_ok(), "called `Result::unwrap()` on Err({})", _1);
     return mem::move(_0);
   }
 
   auto unwrap_err() && -> E {
-    sfc::assert_(_tag == 1, "called `Result::unwrap_err()` on Ok({})", _0);
+    sfc::assert_(this->is_err(), "called `Result::unwrap_err()` on Ok({})", _0);
     return mem::move(_1);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (_tag == 0) return mem::move(_0);
+    if (this->is_ok()) return mem::move(_0);
     return mem::move(default_val);
   }
 
   auto expect(const auto& msg) -> T {
-    sfc::assert_(_tag == 0, "{}: Err({})", msg, _1);
+    sfc::assert_(this->is_ok(), "{}: Err({})", msg, _1);
     return mem::move(_0);
   }
 
   auto ok() && -> Option<T> {
-    return _tag == 0 ? Option<T>{mem::move(_0)} : Option<T>{};
+    return this->is_ok() ? Option<T>{mem::move(_0)} : Option<T>{};
   }
 
   auto err() && -> Option<E> {
-    return _tag == 1 ? Option<E>{mem::move(_1)} : Option<E>{};
+    return this->is_err() ? Option<E>{mem::move(_1)} : Option<E>{};
   }
 
   template <class U>
   auto operator&(Result<U, E> res) && -> Result<U, E> {
-    return _tag == 0 ? Result<U, E>{mem::move(res._0)} : Result<U, E>{mem::move(_1)};
+    return this->is_ok() ? Result<U, E>{mem::move(res._0)} : Result<U, E>{mem::move(_1)};
   }
 
   template <class F>
   auto operator|(Result<T, F> res) && -> Result<T, F> {
-    return _tag == 0 ? Result<T, F>{mem::move(_0)} : mem::move(res);
+    return this->is_ok() ? Result<T, F>{mem::move(_0)} : mem::move(res);
   }
 
   template <class F, class ResultUE = FnOut<F, T>>
   auto and_then(F&& op) && -> ResultUE {
-    return _tag == 0 ? op(mem::move(_0)) : ResultUE{mem::move(_1)};
+    return this->is_ok() ? op(mem::move(_0)) : ResultUE{mem::move(_1)};
   }
 
   template <class O, class ResultTF = FnOut<O>>
   auto or_else(O&& op) && -> ResultTF {
-    return _tag == 0 ? ResultTF{mem::move(_0)} : op();
+    return this->is_ok() ? ResultTF{mem::move(_0)} : op();
   }
 
   template <class F, class U = FnOut<F, T>>
   auto map(F&& op) && -> Result<U, E> {
-    return _tag == 0 ? Result<U, E>{op(mem::move(_0))} : Result<U, E>{mem::move(_1)};
+    return this->is_ok() ? Result<U, E>{op(mem::move(_0))} : Result<U, E>{mem::move(_1)};
   }
 
   template <class O, class F = FnOut<O, E>>
   auto map_err(O&& op) && -> Result<T, F> {
-    return _tag == 1 ? Result<T, F>{op(mem::move(_1))} : Result<T, F>{mem::move(_0)};
+    return this->is_err() ? Result<T, F>{op(mem::move(_1))} : Result<T, F>{mem::move(_0)};
   }
 
  public:
   // trait: ops::Eq
   auto operator==(const Result& other) const -> bool {
     if (this == &other) return true;
-    if (_tag == 0 && other._tag == 0) return _0 == other._0;
-    if (_tag == 1 && other._tag == 1) return _1 == other._1;
+    if (this->is_ok() && other.is_ok()) return _0 == other._0;
+    if (this->is_err() && other.is_err()) return _1 == other._1;
     return false;
   }
 

@@ -46,10 +46,11 @@ class Option {
 
   Option& operator=(const Option& other) requires(trait::tv_copy_<T>) = default;
   Option& operator=(Option&& other) noexcept {
-    if (this == &other) return *this;
-    if (_tag) mem::drop(_1);
-    _tag = other._tag;
-    if (_tag) ptr::write(&_1, mem::move(other._1));
+    if (this != &other) {
+      if (_tag) mem::drop(_1);
+      _tag = other._tag;
+      if (_tag) ptr::write(&_1, mem::move(other._1));
+    }
     return *this;
   }
 
