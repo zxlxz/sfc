@@ -21,7 +21,7 @@ auto Mutex::try_lock() noexcept -> Option<Guard> {
     return {};
   }
 
-  return convert::into<Guard>(_inn);
+  return convert::construct<Guard>(_inn);
 }
 
 Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{&mtx} {}
@@ -98,7 +98,7 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
     return {};
   }
 
-  return convert::into<Guard>(_inn);
+  return convert::construct<Guard>(_inn);
 }
 
 ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{&inn} {}

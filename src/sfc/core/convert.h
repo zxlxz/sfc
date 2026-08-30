@@ -5,23 +5,18 @@
 namespace sfc::convert {
 
 template <class T, class F>
-class Into {
+struct Ctor {
   F _func;
 
- public:
-  Into(auto& func) noexcept : _func{func} {}
-  Into(const Into&) = delete;
-
- public:
-  auto operator()() && -> T {
+  auto operator()() -> T {
     return _func();
   }
 };
 
 template <class T, class... U>
-auto into(U&&... args) {
-  auto f = [&args...]() -> T { return T{static_cast<U&&>(args)...}; };
-  return Into<T, decltype(f)>{f};
+auto construct(U&&... args) {
+  auto f = [&]() -> T { return T{static_cast<U&&>(args)...}; };
+  return Ctor<T, decltype(f)>{._func = f};
 }
 
 }  // namespace sfc::convert

@@ -49,7 +49,7 @@ SFC_TEST(iter) {
   for (auto i = 0; i < 10; ++i) {
     sfc::assert_eq(iter.next(), Option{i});
   }
-  sfc::assert_eq(iter.next(), None{});
+  sfc::assert_eq(iter.next(), Option<int>{});
 }
 
 }  // namespace sfc::collections::queue::test

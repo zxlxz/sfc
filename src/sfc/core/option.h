@@ -33,11 +33,10 @@ class Option {
  public:
   Option() noexcept : _tag{false} {}
   Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
-
   Option(None) noexcept : _tag{false} {}
 
-  template <class X>
-  Option(convert::Into<T, X> f) noexcept : _tag{true}, _1{mem::move(f)()} {}
+  template <class U>
+  Option(convert::Ctor<T, U> f) noexcept : _tag{true}, _1{f()} {}
 
   ~Option() requires(trait::tv_copy_<T>) = default;
   ~Option() {
@@ -107,7 +106,7 @@ class Option {
   }
 
  public:
-  auto expect(const fmt::Fmts& fmts, const auto&... args) &&-> T {
+  auto expect(const fmt::Fmts& fmts, const auto&... args) && -> T {
     sfc::assert_(this->is_some(), fmts, args...);
     return mem::move(_1);
   }
@@ -319,6 +318,5 @@ Option(const char (&)[N]) -> Option<str::Str>;
 }  // namespace sfc::option
 
 namespace sfc {
-using option::None;
 using option::Option;
 }  // namespace sfc
