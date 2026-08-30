@@ -233,12 +233,15 @@ class DeserializeObj {
   auto collect() -> Result<Obj> {
     auto obj = Obj{};
     while (true) {
-      auto key = _TRY(this->next_key());
-      if (!key) {
+      auto key_opt = _TRY(this->next_key());
+      if (!key_opt) {
         break;
       }
+      auto key = *key_opt;
       auto val = _TRY(this->next_val<V>());
-      obj.insert(key, mem::move(val));
+
+      // if exists, don't update.
+      (void)obj.try_insert(key, mem::move(val));
     }
     return {obj};
   }

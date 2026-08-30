@@ -133,6 +133,7 @@ auto Deserializer::pop_tok(Token tok) -> Result<> {
 }
 
 auto Deserializer::deserialize_null() -> Result<> {
+  this->peek_tok();
   if (!_buf.starts_with("null")) {
     return Error::InvalidKeyword;
   }
@@ -169,6 +170,7 @@ auto Deserializer::deserialize_str() -> Result<Str> {
 }
 
 auto Deserializer::deserialize_num() -> Result<Str> {
+  this->peek_tok();
   const auto is_spliter = [](char c) { return c == 0 || c == ',' || c == ']' || c == '}'; };
 
   const auto pos = _buf.find(is_spliter).unwrap_or(_buf.len());
