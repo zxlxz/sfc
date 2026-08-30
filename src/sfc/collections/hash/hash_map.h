@@ -52,15 +52,17 @@ class HashMap {
   }
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
-    if (auto* p = _inn.try_insert({mem::move(key), mem::move(val)})) {
-      return p->val;
+    auto tmp = Entry{mem::move(key), mem::move(val)};
+    if (auto ref = _inn.try_insert(mem::move(tmp))) {
+      return ref->val;
     }
     return {};
   }
 
   auto insert(K key, V val) noexcept -> Option<V> {
-    if (auto* p = _inn.try_insert({mem::move(key), mem::move(val)})) {
-      return mem::replace(p->val, mem::move(val));
+    auto tmp = Entry{mem::move(key), mem::move(val)};
+    if (auto res = _inn.insert(mem::move(tmp))) {
+      return mem::move(res->val);
     }
     return {};
   }

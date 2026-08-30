@@ -2,9 +2,17 @@
 
 namespace sfc::collections::hash {
 
-HashTblStorage::HashTblStorage() {}
+static auto adjust_capacity(usize n) -> usize {
+  auto t = usize{8};
+  while (t < n) {
+    t <<= 1;
+  }
+  return t;
+}
 
-HashTblStorage::~HashTblStorage() {
+RawTbl::RawTbl() {}
+
+RawTbl::~RawTbl() {
   if (_ptr == nullptr) {
     return;
   }
@@ -17,10 +25,10 @@ HashTblStorage::~HashTblStorage() {
   _alloc.deallocate(_ptr, layout);
 }
 
-HashTblStorage::HashTblStorage(HashTblStorage&& other) noexcept
+RawTbl::RawTbl(RawTbl&& other) noexcept
     : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _alloc{mem::move(other._alloc)} {}
 
-HashTblStorage& HashTblStorage::operator=(HashTblStorage&& other) noexcept {
+RawTbl& RawTbl::operator=(RawTbl&& other) noexcept {
   if (this != &other) {
     mem::swap(_ptr, other._ptr);
     mem::swap(_cap, other._cap);
@@ -29,27 +37,25 @@ HashTblStorage& HashTblStorage::operator=(HashTblStorage&& other) noexcept {
   return *this;
 }
 
-auto HashTblStorage::with_capacity(usize min_cap, usize element_size) -> HashTblStorage {
-  static const usize kMinCap = 8U;
+auto RawTbl::with_capacity(usize min_cap, usize element_size) -> RawTbl {
   if (min_cap == 0) {
-    return HashTblStorage{};
+    return RawTbl{};
   }
 
-  const auto req_cap = cmp::max(min_cap, kMinCap);
-  const auto capacity = num::next_power_of_two(req_cap);
+  const auto capacity = adjust_capacity(min_cap);
   const auto ctrl_size = num::align_up(capacity, kAlign);
   const auto data_size = capacity * element_size;
   const auto layout = mem::Layout{ctrl_size + data_size, kAlign};
 
   auto a = alloc::Global{};
-  auto res = HashTblStorage{};
+  auto res = RawTbl{};
   res._cap = capacity;
   res._ptr = ptr::cast<u8>(a.allocate(layout));
   res._alloc = mem::move(a);
   return res;
 }
 
-void HashTblStorage::init(usize element_size) {
+void RawTbl::init(usize element_size) {
   if (_ptr == nullptr) {
     return;
   }

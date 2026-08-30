@@ -98,13 +98,24 @@ struct Bucket {
     return this->erase_at(idx);
   }
 
-  auto try_insert(u8 h2, T&& entry) -> T* {
+  auto try_insert(u8 h2, T&& entry) -> Option<T&> {
     const auto [ptr, idx] = this->search_for_insert(h2, entry.key);
-    if (!ptr) {
-      this->insert_at(idx, h2, mem::move(entry));
-      return nullptr;
+    if (ptr) {
+      return *ptr;
     }
-    return ptr;
+
+    this->insert_at(idx, h2, mem::move(entry));
+    return {};
+  }
+
+  auto insert(u8 h2, T&& entry) -> Option<T> {
+    const auto [ptr, idx] = this->search_for_insert(h2, entry.key);
+    if (ptr) {
+      return mem::replace(*ptr, mem::move(entry));
+    }
+
+    this->insert_at(idx, h2, mem::move(entry));
+    return {};
   }
 
   auto insert_new(u8 h2, T&& entry) -> bool {
@@ -117,7 +128,7 @@ struct Bucket {
   }
 };
 
-class HashTblStorage {
+class RawTbl {
   using A = alloc::Global;
   static constexpr usize kAlign = 16U;
 
@@ -126,13 +137,13 @@ class HashTblStorage {
   [[no_unique_address]] A _alloc{};
 
  public:
-  HashTblStorage();
-  ~HashTblStorage();
+  RawTbl();
+  ~RawTbl();
 
-  HashTblStorage(HashTblStorage&& other) noexcept;
-  HashTblStorage& operator=(HashTblStorage&& other) noexcept;
+  RawTbl(RawTbl&& other) noexcept;
+  RawTbl& operator=(RawTbl&& other) noexcept;
 
-  static auto with_capacity(usize min_cap, usize element_size) -> HashTblStorage;
+  static auto with_capacity(usize min_cap, usize element_size) -> RawTbl;
 
   void init(usize element_size);
 
@@ -158,7 +169,6 @@ class HashTblStorage {
 
 template <class T>
 class HashTbl {
-  using RawTbl = HashTblStorage;
   static constexpr f64 kLoadFactor = 0.75;
 
   RawTbl _buf;
@@ -209,16 +219,33 @@ class HashTbl {
     return this->bucket(h1).search_key(h2, key).ptr;
   }
 
-  auto try_insert(T&& entry) noexcept -> T* {
+  auto try_insert(T&& entry) noexcept -> Option<T&> {
     this->reserve(1);
 
     const auto [h1, h2] = this->hidx(entry.key);
-    const auto ptr = this->bucket(h1).try_insert(h2, mem::move(entry));
-    if (!ptr) {
-      _len += 1;
-      _rem -= 1;
+
+    auto bkt = this->bucket(h1);
+    if (auto res = bkt.try_insert(h2, mem::move(entry))) {
+      return res;
     }
-    return ptr;
+
+    _len += 1;
+    _rem -= 1;
+    return {};
+  }
+
+  auto insert(T&& entry) noexcept -> Option<T> {
+    this->reserve(1);
+
+    const auto [h1, h2] = this->hidx(entry.key);
+
+    auto bkt = this->bucket(h1);
+    if (auto res = bkt.insert(h2, mem::move(entry))) {
+      return res;
+    }
+    _len += 1;
+    _rem -= 1;
+    return {};
   }
 
   auto remove(const auto& key) noexcept -> Option<T> {

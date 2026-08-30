@@ -37,7 +37,8 @@ class HashSet {
 
   // Returns whether the value was newly inserted.
   auto insert(T val) noexcept -> bool {
-    return _inn.try_insert({mem::move(val)}) == nullptr;
+    const auto res = _inn.try_insert({mem::move(val)});
+    return !res;
   }
 
   // Returns whether the value was present in the set.
@@ -53,7 +54,7 @@ class HashSet {
   // trait: fmt::Display
   void fmt(auto& f) const {
     auto imp = f.debug_set();
-    _inn.for_each([&](const Entry& entry) { imp.entry(entry.key); });
+    _inn.iter().for_each([&](const Entry& entry) { imp.entry(entry.key); });
   }
 };
 
