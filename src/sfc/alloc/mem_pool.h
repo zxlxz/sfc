@@ -10,6 +10,13 @@ using mem::Layout;
 class Bucket;
 
 class [[nodiscard]] Pool {
+  const usize _cap;
+  mutable sync::Mutex _mutex{};
+  usize _seq{0};
+  usize _total_bytes{0};
+  usize _free_bytes{0};
+  List<Bucket> _buckets;
+
  public:
   explicit Pool(usize cap) noexcept;
   virtual ~Pool() noexcept;
@@ -32,18 +39,10 @@ class [[nodiscard]] Pool {
 
   auto fast_alloc(usize size) -> void*;
   void fast_dealloc(void* ptr, usize size);
-  auto recycling(bool force, usize cap = 0) -> usize;
+  auto recycling(bool force, usize cap) -> usize;
 
   virtual auto slow_alloc(Layout layout) -> void* = 0;
   virtual void slow_dealloc(void* ptr, Layout layout) = 0;
-
- private:
-  const usize _cap;
-  mutable sync::Mutex _mutex{};
-  usize _seq{0};
-  usize _total_bytes{0};
-  usize _free_bytes{0};
-  List<Bucket> _buckets;
 };
 
 template <class A>
@@ -53,7 +52,10 @@ class [[nodiscard]] XPool : public Pool {
 
  public:
   explicit XPool(A a, usize cap = kMaxFreeSize) : Pool{cap}, _alloc{mem::move(a)} {}
-  ~XPool() noexcept {}
+
+  ~XPool() noexcept {
+    this->recycling(true, 0);
+  }
 
  private:
   void* slow_alloc(Layout layout) override {

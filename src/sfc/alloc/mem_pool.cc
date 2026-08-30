@@ -58,7 +58,8 @@ class Bucket {
       return 0;
     }
 
-    const auto age = f64(seq - seq0) * f64(_block_size >> 20U);
+    const auto age_factor = cmp::max(1.0, f64(_block_size >> 20U));  // 1MB
+    const auto age = age_factor * f64(seq - seq0);
     return age;
   }
 
