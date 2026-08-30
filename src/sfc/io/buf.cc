@@ -142,9 +142,16 @@ auto WriteBuf::write(DynWrite write, Slice<const u8> buf) -> Result<usize> {
 auto WriteBuf::flush(DynWrite write) -> Result<> {
   while (!_buf.is_empty()) {
     const auto nwrite = _TRY(write.write(_buf.as_slice()));
+    if (nwrite == 0) {
+      break;
+    }
     _buf.drain({0, nwrite});
   }
-  _buf.clear();
+
+  if (!_buf.is_empty()) {
+    return Error::UnexpectedEof;
+  }
+
   return write.flush();
 }
 
