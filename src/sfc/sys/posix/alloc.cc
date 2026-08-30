@@ -48,14 +48,9 @@ auto realloc(void* ptr, mem::Layout layout, usize new_size) noexcept -> void* {
     return ptr;
   }
 
-  if (!num::is_power_of_two(layout.align)) {
-    return ptr;
-  }
-
   if (layout.align <= alignof(max_align_t)) {
     return ::realloc(ptr, new_size);
   }
-
 
   const auto copy_size = cmp::min(layout.size, new_size);
   const auto aligned_size = num::align_up(new_size, layout.align);

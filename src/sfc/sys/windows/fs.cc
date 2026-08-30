@@ -10,7 +10,7 @@ auto FileAttr::is_dir() const -> bool {
 }
 
 auto FileAttr::is_file() const -> bool {
-  return _attr & FILE_ATTRIBUTE_NORMAL;
+  return !this->is_dir();
 }
 
 auto open(const wchar_t* path, fs::OpenOptions opts) -> io::Result<RawFd> {

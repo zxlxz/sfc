@@ -6,7 +6,9 @@ namespace sfc::thread {
 
 JoinHandle::JoinHandle(sys::Thread thread) noexcept : _thread{thread} {}
 
-JoinHandle::~JoinHandle() noexcept {}
+JoinHandle::~JoinHandle() noexcept {
+  this->join();
+}
 
 JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thread{other._thread} {
   other._thread = {};
