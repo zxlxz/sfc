@@ -164,28 +164,4 @@ constexpr auto align_up(T val, T align) -> T {
   return T((val + mask) & ~mask);
 }
 
-template <trait::uint_ T>
-constexpr auto is_power_of_two(T val) -> bool {
-  return (val & (val - 1)) == 0;
-}
-
-template <trait::uint_ T>
-constexpr auto next_power_of_two(T n) -> T {
-  if (num::is_power_of_two(n)) return n;
-  auto t = T{1};
-  while (t < n)
-    t <<= 1;
-  return t;
-}
-
-template <trait::float_ T>
-constexpr auto trunc_to_int(T x) -> num::Float<T>::int_t {
-  if (sizeof(T) == sizeof(float)) {
-    return i32(x);
-  } else {
-    return i64(x);
-  }
-}
-
-
 }  // namespace sfc::num

@@ -21,15 +21,21 @@ auto Duration::from_nanos(u64 nanos) noexcept -> Duration {
 }
 
 auto Duration::from_secs_f32(f32 secs) noexcept -> Duration {
-  const auto nanos_f64 = secs * f64{NANOS_PER_SEC};
-  const auto nanos_u64 = num::cast_unsigned(num::trunc_to_int(nanos_f64));
-  return Duration{nanos_u64};
+  if (!(secs > 0)) {  // match secs<=0 or NaN
+    return Duration{0};
+  }
+
+  const auto nanos = secs * f64{NANOS_PER_SEC};
+  return Duration{u64(nanos)};
 }
 
 auto Duration::from_secs_f64(f64 secs) noexcept -> Duration {
-  const auto nanos_f64 = secs * f64{NANOS_PER_SEC};
-  const auto nanos_u64 = num::cast_unsigned(num::trunc_to_int(nanos_f64));
-  return Duration{nanos_u64};
+  if (!(secs > 0)) {  // match secs<=0 or NaN
+    return Duration{0};
+  }
+
+  const auto nanos = secs * f64{NANOS_PER_SEC};
+  return Duration{u64(nanos)};
 }
 
 auto Duration::as_secs() const noexcept -> u64 {

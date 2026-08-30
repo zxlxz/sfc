@@ -117,7 +117,10 @@ inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
 
 template <class T>
 inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  ptr::copy_nonoverlapping(src, dst, cnt);
+  if (cnt == 0) return;
+
+  // all sfc type is memoveable, so we can just copy the bytes
+  __builtin_memmove((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>

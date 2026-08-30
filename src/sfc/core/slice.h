@@ -142,6 +142,7 @@ struct Slice {
 
   void copy_from_slice(Slice<const T> src) noexcept {
     static_assert(__is_trivially_copyable(T));
+    sfc::assert_(_len == src._len, "Slice::copy_from_slice: self.len(={}) != src.len(={})", _len, src._len);
     ptr::copy_nonoverlapping(src._ptr, _ptr, _len);
   }
 
@@ -240,16 +241,13 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) noexcept -> io::Result<usize>
-    requires(trait::same_<const T, const u8>);
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize> requires(trait::same_<const T, const u8>);
 
   // trait: io::Write
-  auto write(Slice<const u8> buf) noexcept -> io::Result<usize>
-    requires(trait::same_<T, u8>);
+  auto write(Slice<const u8> buf) noexcept -> io::Result<usize> requires(trait::same_<T, u8>);
 
   // trait: io::Write
-  auto write_str(str::Str s) noexcept -> io::Result<>
-    requires(trait::same_<T, char>);
+  auto write_str(str::Str s) noexcept -> io::Result<> requires(trait::same_<T, char>);
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
@@ -335,8 +333,12 @@ struct Chunks : iter::Iterator<Slice<T>> {
   Chunks(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
 
   auto next() noexcept -> Option<Item> {
-    if (_ptr >= _end) return {};
-    const auto cnt = _ptr + _len <= _end ? _len : num::cast_unsigned(_end - _ptr);
+    if (_ptr >= _end || _len == 0) {  // _len==0 is invalid
+      return {};
+    }
+
+    const auto rem = usize(_end - _ptr);
+    const auto cnt = rem < _len ? rem : _len;
     _ptr += cnt;
     return Item{_ptr - cnt, cnt};
   }

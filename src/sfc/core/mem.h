@@ -47,12 +47,6 @@ inline void swap(T& x, T& y) noexcept {
 }
 
 template <class T>
-inline void forget(T& x) noexcept {
-  alignas(T) char tmp[sizeof(T)];
-  new (tmp) T{mem::move(x)};
-}
-
-template <class T>
 inline void assign(T& dst, T src) noexcept {
   dst = mem::move(src);
 }

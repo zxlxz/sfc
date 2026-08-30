@@ -63,10 +63,10 @@ using IdxSeq = IntSeq<u32, I...>;
 
 #if __has_builtin(__make_integer_seq)
 template <u32 N>
-using index_seq = __make_integer_seq<IntSeq, u32, N>;
+using make_index_seq = __make_integer_seq<IntSeq, u32, N>;
 #else
 template <u32 N>
-using index_seq = IntSeq<u32, __integer_pack(N)...>;
+using make_index_seq = IntSeq<u32, __integer_pack(N)...>;
 #endif
 
 template <class>

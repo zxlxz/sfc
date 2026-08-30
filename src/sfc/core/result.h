@@ -19,7 +19,10 @@ struct Err {
 
 template <class T, class E>
 class [[nodiscard]] Result {
-  static constexpr auto kSuccess = E{};
+  struct TE {
+    T _0;
+    E _1;
+  };
 
   u8 _tag;
   union {
@@ -34,9 +37,9 @@ class [[nodiscard]] Result {
   Result(Ok<T> ok) noexcept : _tag{0}, _0{mem::move(ok._0)} {}
   Result(Err<E> err) noexcept : _tag{1}, _1{mem::move(err._1)} {}
 
-  ~Result() requires(trait::tv_drop_<T>) = default;
-  Result(const Result& other) requires(trait::tv_copy_<T>) = default;
-  Result& operator=(const Result& other) requires(trait::tv_copy_<T>) = default;
+  ~Result() requires(trait::tv_drop_<TE>) = default;
+  Result(const Result& other) requires(trait::tv_copy_<TE>) = default;
+  Result& operator=(const Result& other) requires(trait::tv_copy_<TE>) = default;
 
   ~Result() {
     _tag == 0 ? mem::drop(_0) : mem::drop(_1);

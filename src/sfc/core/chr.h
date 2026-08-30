@@ -6,7 +6,7 @@
 
 namespace sfc::chr {
 
-static constexpr char32_t INVALID = 0xFFFD;
+constexpr char32_t INVALID = 0xFFFD;
 
 auto utf8_codelen(u8 h) -> u32;
 auto utf8_encode(char32_t ch, Slice<u8> buf) -> u32;

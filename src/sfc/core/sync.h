@@ -15,7 +15,7 @@ enum class Ordering {
 
 template <class T>
 struct Atomic {
-  T _val;
+  T _val{0};
 
  public:
   auto load(Ordering order = Ordering::SeqCst) const noexcept -> T {

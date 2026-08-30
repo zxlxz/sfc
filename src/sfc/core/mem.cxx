@@ -73,17 +73,6 @@ struct RefCount {
   }
 };
 
-SFC_TEST(forget) {
-  int cnt = 0;
-  {
-    auto a = RefCount{cnt};
-    sfc::assert_eq(cnt, 1);
-    mem::forget(a);
-    sfc::assert_eq(cnt, 1);
-  }
-  sfc::assert_eq(cnt, 1);
-}
-
 SFC_TEST(assign) {
   auto a = String::from("a");
   sfc::assert_eq(a, "a");

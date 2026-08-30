@@ -5,6 +5,7 @@
 #include "sfc/core/ops.h"
 #include "sfc/core/test.h"
 #include "sfc/core/tuple.h"
+#include "sfc/core/convert.h"
 
 namespace sfc::option {
 
@@ -31,25 +32,35 @@ class Option {
 
  public:
   Option() noexcept : _tag{false} {}
-  Option(None) noexcept : _tag{false} {}
   Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
 
-  ~Option() requires(trait::tv_drop_<T>) = default;
+  Option(None) noexcept : _tag{false} {}
+
+  template <class X>
+  Option(convert::Into<T, X> f) noexcept : _tag{true}, _1{mem::move(f)()} {}
+
+  ~Option() requires(trait::tv_copy_<T>) = default;
   ~Option() {
-    if (_tag) mem::drop(_1);
+    _tag ? mem::drop(_1) : void();
   }
 
   Option(const Option& other) requires(trait::tv_copy_<T>) = default;
+  Option& operator=(const Option& other) requires(trait::tv_copy_<T>) = default;
+
+  Option(Option&& other) noexcept requires(trait::tv_copy_<T>) = default;
   Option(Option&& other) noexcept : _tag{other._tag} {
-    if (_tag) ptr::write(&_1, mem::move(other._1));
+    _tag ? ptr::write(&_1, mem::move(other._1)) : void();
   }
 
-  Option& operator=(const Option& other) requires(trait::tv_copy_<T>) = default;
+  Option& operator=(Option&& other) noexcept requires(trait::tv_copy_<T>) = default;
   Option& operator=(Option&& other) noexcept {
     if (this != &other) {
-      if (_tag) mem::drop(_1);
-      _tag = other._tag;
-      if (_tag) ptr::write(&_1, mem::move(other._1));
+      if (_tag == other._tag) {
+        _tag ? mem::swap(_1, other._1) : void();
+      } else {
+        _tag ? mem::drop(_1) : ptr::write(&_1, mem::move(other._1));
+        _tag = other._tag;
+      }
     }
     return *this;
   }
@@ -96,22 +107,22 @@ class Option {
   }
 
  public:
-  auto expect(const fmt::Fmts& fmts, const auto&... args) -> T {
+  auto expect(const fmt::Fmts& fmts, const auto&... args) &&-> T {
     sfc::assert_(this->is_some(), fmts, args...);
     return mem::move(_1);
   }
 
-  auto unwrap() -> T {
+  auto unwrap() && -> T {
     sfc::assert_(this->is_some(), "Option::unwrap: not Some()");
     return mem::move(_1);
   }
 
-  auto unwrap_or(T default_val) -> T {
+  auto unwrap_or(T default_val) && -> T {
     if (this->is_some()) return mem::move(_1);
     return mem::move(default_val);
   }
 
-  auto unwrap_or_else(auto&& f) -> T {
+  auto unwrap_or_else(auto&& f) && -> T {
     if (this->is_some()) return mem::move(_1);
     return f();
   }
@@ -122,30 +133,30 @@ class Option {
     return {};
   }
 
-  auto operator|(Option<T> optb) -> Option<T> {
+  auto operator|(Option<T> optb) && -> Option<T> {
     if (this->is_some()) return mem::move(*this);
     return mem::move(optb);
   }
 
   template <class F, class OptionU = ops::FnOut<F, T>>
-  auto and_then(F&& op) -> OptionU {
+  auto and_then(F&& op) && -> OptionU {
     if (this->is_some()) return op(mem::move(_1));
     return {};
   }
 
-  auto or_else(auto&& f) -> Option<T> {
+  auto or_else(auto&& f) && -> Option<T> {
     if (this->is_some()) return mem::move(*this);
     return f();
   }
 
   template <class F, class U = ops::FnOut<F, T>>
-  auto map(F&& f) -> Option<U> {
+  auto map(F&& f) && -> Option<U> {
     if (this->is_some()) return f(mem::move(_1));
     return {};
   }
 
   template <class U>
-  auto map_or(U default_val, auto&& f) -> U {
+  auto map_or(U default_val, auto&& f) && -> U {
     if (this->is_some()) return f(mem::move(_1));
     return mem::move(default_val);
   }

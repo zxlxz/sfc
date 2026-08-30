@@ -89,25 +89,6 @@ SFC_TEST(align_up) {
   static_assert(num::align_up(4U, 4U) == 4U);
 }
 
-SFC_TEST(is_power_of_two) {
-  static_assert(num::is_power_of_two(0U));
-  static_assert(num::is_power_of_two(1U));
-  static_assert(num::is_power_of_two(2U));
-  static_assert(!num::is_power_of_two(3U));
-  static_assert(num::is_power_of_two(4U));
-  static_assert(!num::is_power_of_two(5U));
-  static_assert(num::is_power_of_two(8U));
-}
-
-SFC_TEST(next_power_of_two) {
-  static_assert(num::next_power_of_two(0U) == 0);
-  static_assert(num::next_power_of_two(1U) == 1);
-  static_assert(num::next_power_of_two(2U) == 2);
-  static_assert(num::next_power_of_two(3U) == 4);
-  static_assert(num::next_power_of_two(0x80000000U) == 0x80000000U);
-  static_assert(num::next_power_of_two(0x7FFFFFFFFU) == 0x800000000);
-}
-
 SFC_TEST(flt_eq) {
   sfc::assert_flt_eq(1.0, 1.0);
   sfc::assert_flt_eq(-1.0, -1.0);

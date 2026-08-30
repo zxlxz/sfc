@@ -57,9 +57,9 @@ static auto encode(char32_t ch, Slice<u8> buf) -> u32 {
 
 static auto decode(const u8 p[], u32 n) -> char32_t {
   static constexpr char32_t MX = 0x3F;  // 0b00111111
-  static constexpr char32_t M2 = 0x1F;  // 0b11111000
-  static constexpr char32_t M3 = 0x0F;  // 0b11110000
-  static constexpr char32_t M4 = 0x07;  // 0b11100000
+  static constexpr char32_t M2 = 0x1F;  // 0b00011111
+  static constexpr char32_t M3 = 0x0F;  // 0b00001111
+  static constexpr char32_t M4 = 0x07;  // 0b00000111
 
   switch (n) {
     case 1: {
