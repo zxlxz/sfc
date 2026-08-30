@@ -92,8 +92,10 @@ class Buffer {
     const auto fit_cap = (cmp::max)(req_cap, _cap * 2);
     const auto new_cap = (cmp::max)(fit_cap, kMinCap);
     const auto layout = this->layout();
+    const auto new_ptr = _a.grow(_ptr, layout, new_cap * sizeof(T));
+    sfc::assert_(new_ptr != nullptr, "RawBuf::reserve: grow failed");
 
-    _ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
+    _ptr = ptr::cast<T>(new_ptr);
     _cap = new_cap;
   }
 

@@ -229,7 +229,7 @@ class [[nodiscard]] List {
       return;
     }
     this->reserve(other._len);
-    ptr::copy_nonoverlapping(other._buf.ptr(), _buf.ptr() + _len, other._len);
+    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
     _len += other._len;
     other._len = 0;
   }
@@ -251,6 +251,8 @@ class [[nodiscard]] List {
   void extend_from_slice(Slice<const T> other) noexcept {
     static_assert(__is_trivially_copyable(T));
     this->reserve(other._len);
+
+    // note: other must not overlap with this list
     ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
     _len += other._len;
   }
