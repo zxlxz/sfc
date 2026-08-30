@@ -116,6 +116,10 @@ auto create_dir(Path path) -> io::Result<> {
 }
 
 auto create_dir_all(Path path) -> io::Result<> {
+  if (path.as_str() == "" || path.is_root()) {
+    return Ok{};
+  }
+
   const auto err = fs::create_dir(path).err();
   if (!err || *err == io::Error::AlreadyExists) {
     return Ok{};

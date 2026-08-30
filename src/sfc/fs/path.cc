@@ -252,8 +252,10 @@ void PathBuf::set_extension(Str new_ext) noexcept {
     _inn.truncate(_inn.len() - old_ext.len() - 1);
   }
 
-  _inn.push('.');
-  _inn.push_str(new_ext);
+  if (!new_ext.is_empty()) {
+    _inn.push('.');
+    _inn.push_str(new_ext);
+  }
 }
 
 auto PathBuf::join(Path path) const -> PathBuf {
