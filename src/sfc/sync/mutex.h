@@ -6,7 +6,9 @@
 namespace sfc::sync {
 
 class Mutex {
-  using Inn = sys::Mutex;
+  struct Inn {
+    sys::Mutex _imp;
+  };
   Inn _inn;
 
  public:
@@ -23,16 +25,17 @@ class Mutex {
 
 class Mutex::Guard {
   friend class Mutex;
-  Mutex* _lock{nullptr};
+  Inn* _inn{nullptr};
 
  public:
-  Guard() noexcept;
+  Guard(Inn& mtx) noexcept;
   ~Guard() noexcept;
-  Guard(Guard&&) noexcept;
-  Guard& operator=(Guard&&) noexcept;
+
+  Guard(Guard&&) noexcept = delete;
+  Guard& operator=(Guard&&) noexcept = delete;
 
  public:
-  auto inner() -> Inn&;
+  auto inner() -> sys::Mutex&;
 };
 
 class ReentrantLock {
@@ -62,13 +65,14 @@ class ReentrantLock {
 
 class ReentrantLock::Guard {
   friend class ReentrantLock;
-  ReentrantLock* _lock{nullptr};
+  Inn* _inn{nullptr};
 
  public:
-  Guard() noexcept;
+  Guard(Inn& inn) noexcept;
   ~Guard() noexcept;
-  Guard(Guard&&) noexcept;
-  Guard& operator=(Guard&&) noexcept;
+
+  Guard(Guard&&) noexcept = delete;
+  Guard& operator=(Guard&&) noexcept = delete;
 };
 
 }  // namespace sfc::sync

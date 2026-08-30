@@ -3,7 +3,7 @@
 
 namespace sfc::sync {
 
-Mutex::Mutex() noexcept : _inn{} {}
+Mutex::Mutex() noexcept : _inn{sys::Mutex{}} {}
 
 Mutex::~Mutex() noexcept {}
 
@@ -12,43 +12,27 @@ Mutex::Mutex(Mutex&& other) noexcept : _inn{mem::move(other._inn)} {}
 Mutex& Mutex::operator=(Mutex&& other) noexcept = default;
 
 auto Mutex::lock() noexcept -> Guard {
-  _inn.lock();
-
-  auto res = Guard{};
-  res._lock = this;
-  return res;
+  _inn._imp.lock();
+  return Guard{_inn};
 }
 
 auto Mutex::try_lock() noexcept -> Option<Guard> {
-  if (!_inn.try_lock()) {
+  if (!_inn._imp.try_lock()) {
     return {};
   }
 
-  auto res = Guard{};
-  res._lock = this;
-  return res;
+  return convert::into<Guard>(_inn);
 }
 
-Mutex::Guard::Guard() noexcept : _lock{nullptr} {}
+Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{&mtx} {}
 
 Mutex::Guard::~Guard() noexcept {
-  if (_lock == nullptr) return;
-  _lock->_inn.unlock();
-}
-
-Mutex::Guard::Guard(Guard&& other) noexcept : _lock{other._lock} {
-  other._lock = nullptr;
-}
-
-Mutex::Guard& Mutex::Guard::operator=(Guard&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_lock, other._lock);
-  }
-  return *this;
+  if (_inn == nullptr) return;
+  _inn->_imp.unlock();
 }
 
 auto Mutex::Guard::inner() -> sys::Mutex& {
-  return _lock->_inn;
+  return _inn->_imp;
 }
 
 void ReentrantLock::Inn::lock() {
@@ -105,10 +89,7 @@ ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
 auto ReentrantLock::lock() noexcept -> Guard {
   _inn.lock();
-
-  auto res = Guard{};
-  res._lock = this;
-  return res;
+  return Guard{_inn};
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
@@ -117,27 +98,14 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
     return {};
   }
 
-  auto res = Guard{};
-  res._lock = this;
-  return res;
+  return convert::into<Guard>(_inn);
 }
 
-ReentrantLock::Guard::Guard() noexcept : _lock{nullptr} {}
+ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{&inn} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  if (_lock == nullptr) return;
-  _lock->_inn.unlock();
-}
-
-ReentrantLock::Guard::Guard(Guard&& other) noexcept : _lock{other._lock} {
-  other._lock = nullptr;
-}
-
-ReentrantLock::Guard& ReentrantLock::Guard::operator=(Guard&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_lock, other._lock);
-  }
-  return *this;
+  if (_inn == nullptr) return;
+  _inn->unlock();
 }
 
 }  // namespace sfc::sync
