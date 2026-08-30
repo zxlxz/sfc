@@ -13,8 +13,11 @@ template <class T>
 class Option;
 
 struct None {
-  template <class T>
-  constexpr auto operator==(const Option<T>& other) const noexcept -> bool {
+  constexpr auto is_none() const noexcept -> bool {
+    return true;
+  }
+
+  constexpr auto operator==(const auto& other) const noexcept -> bool {
     return other.is_none();
   }
 
