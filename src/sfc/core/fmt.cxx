@@ -149,11 +149,11 @@ SFC_TEST(exp) {
 }
 
 SFC_TEST(flt_nan) {
-  sfc::assert_eq(format("{}", +__builtin_nan("")), "nan");
-  sfc::assert_eq(format("{}", -__builtin_nan("")), "nan");
+  sfc::assert_eq(format("{}", +__builtin_nan("")), "NaN");
+  sfc::assert_eq(format("{}", -__builtin_nan("")), "NaN");
 
-  sfc::assert_eq(format("{e}", +__builtin_nan("")), "nan");
-  sfc::assert_eq(format("{e}", -__builtin_nan("")), "nan");
+  sfc::assert_eq(format("{e}", +__builtin_nan("")), "NaN");
+  sfc::assert_eq(format("{e}", -__builtin_nan("")), "NaN");
 }
 
 SFC_TEST(flt_inf) {

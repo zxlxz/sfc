@@ -27,14 +27,14 @@ struct CStr {
 
 struct Spec {
   char _fill = 0;
-  char _align = 0;   // [<>^=]
-  char _sign = 0;    // [+- ]
-  char _alt = 0;  // [#]
-  char _point = 0;   // [.]
-  char _type = 0;    // [*]
+  char _align = 0;  // [<>^=]
+  char _sign = 0;   // [+- ]
+  char _alt = 0;    // [#]
+  char _point = 0;  // [.]
+  char _type = 0;   // [*]
 
-  u8 _width = 0;
-  u8 _precision = 0;
+  u8 _width = 0;      // max width=255
+  u8 _precision = 0;  // max precision is 255
 
  public:
   auto type(char default_type = 0) const -> char {
@@ -80,15 +80,16 @@ struct Spec {
       return this->match(c...) ? this->pop() : 0;
     }
 
-    constexpr auto extract_int() -> u32 {
-      auto res = 0U;
+    template <class T = u32>
+    constexpr auto extract_uint() -> T {
+      auto res = u64{0};
       for (; _ptr < _end; ++_ptr) {
         const auto c = *_ptr;
         if (!(c >= '0' && c <= '9')) break;
         const auto n = u32(c - '0');
         res = res * 10 + n;
       }
-      return res;
+      return num::saturating_cast<T>(res);
     }
   };
 
@@ -117,9 +118,9 @@ struct Spec {
       res._fill = p.extract('0');
     }
 
-    res._width = num::saturating_cast<u8>(p.extract_int());
+    res._width = p.extract_uint<u8>();
     if ((res._point = p.extract('.'))) {
-      res._precision = num::saturating_cast<u8>(p.extract_int());
+      res._precision = p.extract_uint<u8>();
     }
     res._type = p.pop();
     return res;

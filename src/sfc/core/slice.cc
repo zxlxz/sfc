@@ -6,9 +6,7 @@
 namespace sfc::slice {
 
 template <class T>
-auto Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize>
-  requires(trait::same_<const T, const u8>)
-{
+auto Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize> requires(trait::same_<const T, const u8>) {
   if (buf._len == 0 || _len == 0) {
     return usize{0};
   }
@@ -20,9 +18,7 @@ auto Slice<T>::read(Slice<u8> buf) noexcept -> io::Result<usize>
 }
 
 template <class T>
-auto Slice<T>::write(Slice<const u8> buf) noexcept -> io::Result<usize>
-  requires(trait::same_<T, u8>)
-{
+auto Slice<T>::write(Slice<const u8> buf) noexcept -> io::Result<usize> requires(trait::same_<T, u8>) {
   if (buf._len == 0 || _len == 0) {
     return usize{0};
   }
@@ -35,9 +31,7 @@ auto Slice<T>::write(Slice<const u8> buf) noexcept -> io::Result<usize>
 }
 
 template <class T>
-auto Slice<T>::write_str(Str buf) noexcept -> io::Result<>
-  requires(trait::same_<T, char>)
-{
+auto Slice<T>::write_str(Str buf) noexcept -> io::Result<> requires(trait::same_<T, char>) {
   if (buf._len == 0 || _len == 0) {
     return Ok();
   }
@@ -49,9 +43,9 @@ auto Slice<T>::write_str(Str buf) noexcept -> io::Result<>
 }
 
 template auto Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
-template auto Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
-
 template auto Slice<u8>::write(Slice<const u8> buf) noexcept -> io::Result<usize>;
+
+template auto Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
 
 template auto Slice<char>::write_str(Str s) noexcept -> io::Result<>;
 

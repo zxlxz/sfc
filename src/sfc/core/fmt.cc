@@ -143,12 +143,17 @@ struct RevBuf {
 
   auto write_flt(f64 val, u32 precision, char type) -> Str {
     constexpr auto kMaxFix = f64(num::Int<u64>::MAX);
+    constexpr auto kMaxPrec = 20U;
 
     if (__builtin_isnan(val)) {
-      return "nan";
+      return "NaN";
     }
     if (__builtin_isinf(val)) {
       return val > 0 ? Str{"inf"} : Str{"-inf"};
+    }
+
+    if (precision > kMaxPrec) {
+      precision = kMaxPrec;
     }
 
     const auto uval = __builtin_fabs(val);
@@ -341,19 +346,20 @@ void Debug::fmt(long long val, Formatter& f) {
 }
 
 void Debug::fmt(float val, Formatter& f) {
-  static constexpr auto kDefautlPrecision = 4U;
-  const auto uval = val < 0 ? -val : val;
-  const auto prec = f.precision().unwrap_or(kDefautlPrecision);
+  static constexpr auto kDefaultPrecision = 4U;
+  const auto prec = f.precision().unwrap_or(kDefaultPrecision);
 
+  const auto uval = val < 0 ? -val : val;
   char buf[8 * sizeof(val) + 16];
   const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
   f.pad_num(val < 0, s);
 }
 
 void Debug::fmt(double val, Formatter& f) {
-  static constexpr auto kDefautlPrecision = 6U;
+  static constexpr auto kDefaultPrecision = 6U;
+  const auto prec = f.precision().unwrap_or(kDefaultPrecision);
+
   const auto uval = val < 0 ? -val : val;
-  const auto prec = f.precision().unwrap_or(kDefautlPrecision);
 
   char buf[8 * sizeof(val) + 16];
   const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
@@ -365,7 +371,7 @@ void Debug::fmt(const void* val, Formatter& f) {
   const auto upcase = type == 'X' || type == 'P';
   const auto uval = __builtin_bit_cast(usize, val);
 
-  char buf[16];
+  char buf[32];
   const auto s = RevBuf{buf}.write_ptr(uval, upcase);
   f.write_str(s);
 }

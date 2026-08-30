@@ -118,25 +118,21 @@ auto StrSearcher::next() -> SearchStep {
     return {SearchStep::Match, {_finger, _finger}};
   }
 
-  auto is_match = [&]() {
-    const auto p = _haystack._ptr + _finger;
-    if (_finger + _needle._len > _haystack._len) return false;
-    if (p[0] != _needle._ptr[0]) return false;
-    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-  };
-
-  const auto old_finger = _finger;
-  if (is_match()) {
-    _finger += _needle._len;
-    return {SearchStep::Match, {old_finger, _finger}};
-  } else {
-    if (_finger + _needle._len < _haystack._len) {
-      _finger += 1;
-    } else {
-      _finger = _haystack._len;
-    }
+  if (_finger + _needle._len > _haystack._len) {
+    const auto old_finger = _finger;
+    _finger = _haystack._len;
     return {SearchStep::Reject, {old_finger, _finger}};
   }
+
+  const auto va = Slice{_haystack._ptr + _finger, _needle._len};
+  const auto vb = Slice{_needle._ptr, _needle._len};
+  if (va != vb) {
+    _finger += 1;
+    return {SearchStep::Reject, {_finger - 1, _finger}};
+  }
+
+  _finger += _needle._len;
+  return {SearchStep::Match, {_finger - _needle._len, _finger}};
 }
 
 auto StrSearcher::next_back() -> SearchStep {
@@ -148,25 +144,21 @@ auto StrSearcher::next_back() -> SearchStep {
     return {SearchStep::Match, {_finger_back, _finger_back}};
   }
 
-  auto is_match_back = [&]() {
-    const auto p = _haystack._ptr + _finger_back - _needle._len;
-    if (_finger_back < _needle._len) return false;
-    if (p[0] != _needle._ptr[0]) return false;
-    return __builtin_memcmp(p, _needle._ptr, _needle._len) == 0;
-  };
-
-  const auto old_finger_back = _finger_back;
-  if (is_match_back()) {
-    _finger_back -= _needle._len;
-    return {SearchStep::Match, {_finger_back, old_finger_back}};
-  } else {
-    if (_finger_back >= _needle._len) {
-      _finger_back -= _needle._len;
-    } else {
-      _finger_back = 0;
-    }
-    return {SearchStep::Reject, {_finger_back, old_finger_back}};
+  if (_finger_back < _needle._len) {
+    const auto old_finger_back = _finger_back;
+    _finger_back = 0;
+    return {SearchStep::Reject, {0, old_finger_back}};
   }
+
+  const auto va = Slice{_needle._ptr, _needle._len};
+  const auto vb = Slice{_haystack._ptr + _finger_back - _needle._len, _needle._len};
+  if (va != vb) {
+    _finger_back -= 1;
+    return {SearchStep::Reject, {_finger_back, _finger_back + 1}};
+  }
+
+  _finger_back -= _needle._len;
+  return {SearchStep::Match, {_finger_back, _finger_back + _needle._len}};
 }
 
 auto CharPredicateSearcher::next() -> SearchStep {
@@ -264,30 +256,36 @@ struct NumReader {
     return 10;
   }
 
-  template <class T>
-  auto next_int(u16 radix = 10) -> Tuple<T, u32> {
+  template <trait::uint_ T>
+  auto next_uint(u16 radix = 10) -> Tuple<T, u32> {
+    static constexpr auto kU64Max = num::Int<u64>::MAX;
+
     if (_ptr >= _end) {
       return {0, 0};
     }
 
-    auto cnt = 0U;
-    auto val = T{0};
-    for (; _ptr < _end; ++_ptr, ++cnt) {
-      const auto c = *_ptr | 32;  // to lower
-      const auto n = u16(c - '0');
+    auto n = 0U;
+    auto s = u64{0};
+    for (; _ptr + n < _end; ++n) {
+      const auto c = _ptr[n] | 32;  // to lower
+      const auto d = u16(c - '0');
       const auto x = u16(c - 'a' + 10);
-      const auto t = n <= 9 ? n : x;
+      const auto t = d <= 9 ? d : x;
       if (t >= radix) {
         break;
       }
-
-      const auto tmp = val * radix + t;
-      if (tmp < val) {
+      if (s > (kU64Max - t) / radix) {
         break;
       }
-      val = tmp;
+      s = s * radix + u16(t);
     }
-    return {val, cnt};
+
+    if (s > num::Int<T>::MAX) {
+      return {0, 0};
+    }
+
+    _ptr += n;
+    return {T(s), n};
   }
 };
 
@@ -306,7 +304,7 @@ struct FromStr<T> {
     if (sign == -1) return {};
 
     const auto radix = r.next_radix();
-    const auto [uval, cnt] = r.next_int<u64>(radix);
+    const auto [uval, cnt] = r.next_uint<u64>(radix);
     if (cnt == 0) return {};
     if (uval > kMaxVal) return {};
     if (!r.is_empty()) return {};
@@ -316,8 +314,7 @@ struct FromStr<T> {
 
 template <trait::sint_ T>
 struct FromStr<T> {
-  static constexpr auto kMaxVal = num::Int<T>::MAX;
-  static constexpr auto kMinVal = num::Int<T>::MIN;
+  static constexpr auto kMaxVal = u64(num::Int<T>::MAX);
 
   static auto from_str(Str s) -> Option<T> {
     if (s.is_empty()) {
@@ -327,13 +324,22 @@ struct FromStr<T> {
     auto r = NumReader{s.ptr(), s.ptr() + s.len()};
     const auto sign = r.next_sign();
     const auto radix = r.next_radix();
-    const auto [uval, cnt] = r.next_int<i64>(radix);
-    if (cnt == 0) return {};
-    const auto sval = sign * uval;
-    if (sign == +1 && uval > kMaxVal) return {};
-    if (sign == -1 && sval < kMinVal) return {};
-    if (!r.is_empty()) return {};
-    return T(sval);
+    const auto [uval, cnt] = r.next_uint<u64>(radix);
+    if (cnt == 0 || !r.is_empty()) {
+      return {};
+    }
+
+    if (sign > 0) {
+      if (uval > kMaxVal) return {};
+      return T(uval);
+    }
+
+    if (sign < 0) {
+      if (uval > kMaxVal + 1) return {};
+      return T(0U - uval);
+    }
+
+    return {};
   }
 };
 
@@ -356,7 +362,7 @@ struct FromStr<T> {
     }
 
     if (n < 16) {
-#ifndef __clang_analyzer__  // fuck clang-analyzer
+#ifndef __clang_analyzer__  // make clang-analyzer happy
       res *= TBL[n];
 #endif
     }
@@ -374,20 +380,20 @@ struct FromStr<T> {
 
     auto r = NumReader{s.ptr(), s.ptr() + s.len()};
     const auto sign = r.next_sign();
-    const auto [int_val, int_cnt] = r.next_int<i64>();
+    const auto [int_val, int_cnt] = r.next_uint<u64>();
     if (int_cnt == 0) return {};  // don't support float like ".123" or "-.456"
 
     auto flt_val = 0.0;
     auto exp_val = 1.0;
     if (r.next_point() != 0) {
-      const auto [tmp_val, digits_cnt] = r.next_int<i32>();
+      const auto [tmp_val, digits_cnt] = r.next_uint<u64>();
       flt_val = f64(tmp_val) * fast_exp10(-i32(digits_cnt));
     }
     if (r.next_exp() != 0) {
       const auto exp_sign = r.next_sign();
-      const auto [tmp_val, digits_cnt] = r.next_int<i32>();
+      const auto [tmp_val, digits_cnt] = r.next_uint<u16>();
       if (digits_cnt == 0) return {};
-      exp_val = fast_exp10(exp_sign * tmp_val);
+      exp_val = fast_exp10(exp_sign * int(tmp_val));
     }
 
     if (!r.is_empty()) return {};
