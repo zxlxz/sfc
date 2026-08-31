@@ -19,11 +19,7 @@ struct Err {
 
 template <class T, class E>
 class [[nodiscard]] Result {
-  struct TE {
-    T _0;
-    E _1;
-  };
-
+  using TE = tuple::Tuple<T, E>;
   u8 _tag;
   union {
     T _0;
@@ -38,17 +34,18 @@ class [[nodiscard]] Result {
   Result(Err<E> err) noexcept : _tag{1}, _1{mem::move(err._1)} {}
 
   ~Result() requires(trait::tv_drop_<TE>) = default;
-  Result(const Result& other) requires(trait::tv_copy_<TE>) = default;
-  Result& operator=(const Result& other) requires(trait::tv_copy_<TE>) = default;
-
   ~Result() {
     _tag == 0 ? mem::drop(_0) : mem::drop(_1);
   }
 
+  Result(const Result& other) requires(trait::tv_copy_<TE>) = default;
+  Result(Result&& other) requires(trait::tv_copy_<TE>) = default;
   Result(Result&& other) noexcept : _tag{other._tag} {
     _tag == 0 ? ptr::write(&_0, mem::move(other._0)) : ptr::write(&_1, mem::move(other._1));
   }
 
+  Result& operator=(const Result& other) requires(trait::tv_copy_<TE>) = default;
+  Result& operator=(Result&& other) requires(trait::tv_copy_<TE>) = default;
   Result& operator=(Result&& other) noexcept {
     if (this != &other) {
       _tag == 0 ? mem::drop(_0) : mem::drop(_1);

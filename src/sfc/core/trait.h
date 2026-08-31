@@ -62,6 +62,9 @@ using trait::same_;
 using trait::enum_;
 using trait::class_;
 
+using trait::tv_copy_;
+using trait::tv_drop_;
+
 using trait::int_;
 using trait::sint_;
 using trait::uint_;
