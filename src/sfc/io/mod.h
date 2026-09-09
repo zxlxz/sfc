@@ -17,13 +17,19 @@ struct SeekFrom {
 };
 
 struct DynRead {
-  class Self;
-  Self& _self;
-  auto (*_read)(Self&, Slice<u8> buf) -> Result<usize>;
+  using Read = auto(void*, Slice<u8> buf) -> Result<usize>;
+
+  void* _self;
+  Read* _read;
 
  public:
   template <class X>
-  explicit DynRead(X& x) : _self{dyn::cast<Self>(x)}, _read{dyn::fn<&X::read>(_self)} {}
+  static auto from(X& x) -> DynRead {
+    return DynRead{
+        ._self = &x,
+        ._read = [](void* p, auto... args) { return ((X*)p)->read(args...); },
+    };
+  }
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -33,17 +39,24 @@ struct DynRead {
 };
 
 struct DynWrite {
-  class Self;
-  Self& _self;
-  auto (*_write)(Self&, Slice<const u8> buf) -> Result<usize>;
-  auto (*_flush)(Self&) -> Result<>{nullptr};
+  using Write = auto(void*, Slice<const u8> buf) -> Result<usize>;
+  using Flush = auto(void*) -> Result<>;
+
+  void* _self;
+  Write* _write;
+  Flush* _flush{nullptr};
 
  public:
   template <class X>
-  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::fn<&X::write>(_self)} {
+  static auto from(X& x) -> DynWrite {
+    auto res = DynWrite {
+      ._self = &x,
+      ._write = [](void* p, auto... args) { return ((X*)p)->write(args...); },
+    };
     if constexpr (requires { &X::flush; }) {
-      this->_flush = dyn::fn<&X::flush>(_self);
+      res._flush = [](void* p) { return ((X*)p)->flush(); };
     }
+    return res;
   }
 
  public:
@@ -55,25 +68,25 @@ struct DynWrite {
 
 struct Read {
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    return DynRead{self}.read_exact(buf);
+    return DynRead::from(self).read_exact(buf);
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    return DynRead{self}.read_to_end(buf);
+    return DynRead::from(self).read_to_end(buf);
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return DynRead{self}.read_to_string(buf);
+    return DynRead::from(self).read_to_string(buf);
   }
 };
 
 struct Write {
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    return DynWrite{self}.write_all(buf);
+    return DynWrite::from(self).write_all(buf);
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {
-    return DynWrite{self}.write_str(buf);
+    return DynWrite::from(self).write_str(buf);
   }
 };
 

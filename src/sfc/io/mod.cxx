@@ -19,7 +19,7 @@ SFC_TEST(read) {
 
 SFC_TEST(read_exact) {
   auto sb = Str{"0123456789"}.as_bytes();
-  auto r = io::DynRead{sb};
+  auto r = io::DynRead::from(sb);
 
   u8 tmp[4] = {};
   sfc::assert_eq(r.read_exact(tmp).is_ok(), true);
@@ -34,7 +34,7 @@ SFC_TEST(read_exact) {
 
 SFC_TEST(read_to_end) {
   auto sb = Str{"0123456789"}.as_bytes();
-  auto r = io::DynRead{sb};
+  auto r = io::DynRead::from(sb);
 
   auto v = List<u8>{};
   sfc::assert_eq(r.read_to_end(v).is_ok(), true);
@@ -43,7 +43,7 @@ SFC_TEST(read_to_end) {
 
 SFC_TEST(read_to_string) {
   auto sb = Str{"0123456789"}.as_bytes();
-  auto r = io::DynRead{sb};
+  auto r = io::DynRead::from(sb);
 
   auto str = String{};
   sfc::assert_eq(r.read_to_string(str), usize{10});
@@ -69,7 +69,7 @@ SFC_TEST(write) {
 SFC_TEST(write_all) {
   u8 buf[32];
   auto out = Slice{buf};
-  auto w = io::DynWrite{out};
+  auto w = io::DynWrite::from(out);
 
   // Test write_all writes complete data
   sfc::assert_eq(w.write_all(Str{"0123456789"}.as_bytes()).is_ok(), true);
@@ -82,7 +82,7 @@ SFC_TEST(write_all) {
 SFC_TEST(write_str) {
   u8 buf[32];
   auto out = Slice{buf};
-  auto w = io::DynWrite{out};
+  auto w = io::DynWrite::from(out);
 
   // Test write_str
   sfc::assert_eq(w.write_str("hello").is_ok(), true);

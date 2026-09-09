@@ -81,7 +81,7 @@ class BufReader : public Read {
 
  public:
   auto read(Slice<u8> buf) -> Result<usize> {
-    return _buf.read(DynRead{_inn}, buf);
+    return _buf.read(DynRead::from(_inn), buf);
   }
 
   auto read_until(u8 byte, List<u8>& buf) -> Result<usize> {
@@ -139,11 +139,11 @@ class BufWriter : public Write {
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize> {
-    return _buf.write(DynWrite{_inn}, buf);
+    return _buf.write(DynWrite::from(_inn), buf);
   }
 
   auto flush() -> Result<> {
-    return _buf.flush(DynWrite{_inn});
+    return _buf.flush(DynWrite::from(_inn));
   }
 };
 
