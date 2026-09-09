@@ -83,54 +83,43 @@ class [[nodiscard]] Box {
 
 template <class R, class... T>
 class [[nodiscard]] Box<R(T...)> {
-  using dtor_t = void (*)(void*);
-  using call_t = R (*)(void*, T&&...);
-
-  struct Meta {
-    dtor_t _dtor = nullptr;
-    call_t _call = nullptr;
-
-    template <class X>
-    static constexpr auto of(const X&) -> const Meta& {
-      static const auto res = Meta{
-          [](void* p) { delete ptr::cast<X>(p); },
-          [](void* p, T&&... t) { return (*ptr::cast<X>(p))((T&&)(t)...); },
-      };
-      return res;
-    }
-  };
-
-  void* _data{nullptr};
-  const Meta* _meta{nullptr};
+  using Inn = ops::Fn<R(T...)>;
+  using Call = R (*)(void*, T&&...);
+  using Drop = void (*)(void*);
+  Inn _inn;
+  Drop _drop;
 
  public:
   Box() noexcept = default;
 
+  Box(Inn inn, Drop drop) noexcept : _inn{inn}, _drop{drop} {}
+
   ~Box() noexcept {
-    if (!_data) return;
-    (_meta->_dtor)(_data);
+    if (!_drop || !_inn._self) return;
+    (_drop)(_inn._self);
   }
 
-  Box(Box&& other) noexcept : _data{mem::take(other._data)}, _meta{mem::take(other._meta)} {}
+  Box(Box&& other) noexcept : _inn{other._inn}, _drop{other._drop} {
+    other._inn._self = nullptr;
+    other._drop = nullptr;
+  }
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      mem::swap(_data, other._data);
-      mem::swap(_meta, other._meta);
+      mem::swap(_inn, other._inn);
+      mem::swap(_drop, other._drop);
     }
     return *this;
   }
 
-  static auto new_(auto fn) noexcept -> Box {
-    auto res = Box{};
-    res._data = new auto{mem::move(fn)};
-    res._meta = &Meta::of(fn);
-    return res;
+  template <class Impl>
+  static auto new_(Impl impl) noexcept -> Box {
+    return Box{Inn::from(*new Impl{mem::move(impl)}), [](void* p) { delete (Impl*)(p); }};
   }
 
  public:
   auto operator()(T... args) -> R {
-    return (_meta->_call)(_data, (T&&)(args)...);
+    return _inn((T&&)(args)...);
   }
 };
 

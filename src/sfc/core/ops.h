@@ -74,19 +74,17 @@ struct Fn;
 
 template <class R, class... T>
 struct Fn<R(T...)> {
-  class Self {};
-  using Func = R (*)(Self&, T&&...);
-
-  Self& _self;
+  using Func = R (*)(void*, T&&...);
+  void* _self;
   Func _func;
 
  public:
   template <class X>
-  explicit Fn(X& x, Func f) : _self{(Self&)x}, _func{f} {}
+  explicit Fn(X& x, Func f) : _self{(void*)&x}, _func{f} {}
 
   template <class X>
-  explicit Fn(X& x) : _self{(Self&)x} {
-    _func = [](Self& self, T&&... t) -> R { return ((X&)self)((T&&)t...); };
+  static auto from(X& x) -> Fn {
+    return Fn{x, [](void* x, T&&... t) -> R { return (*((X*)x))((T&&)t...); }};
   }
 
  public:
@@ -98,7 +96,7 @@ struct Fn<R(T...)> {
 template <auto f>
 auto fn(auto& x) {
   auto conv = []<class X, class R, class... T>(const X& x, R (X::*)(T...)) {
-    return Fn<R(T...)>{x, [](X& self, T... t) -> R { return ((X&)self.*f)((T&&)t...); }};
+    return Fn<R(T...)>{x, [](X& x, T... t) -> R { return ((X&)x.*f)((T&&)t...); }};
   };
   return conv(x, f);
 }
