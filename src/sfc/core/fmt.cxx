@@ -195,11 +195,14 @@ SFC_TEST(cstr) {
 }
 
 SFC_TEST(array) {
-  int a[] = {1, 2, 3};
-  sfc::assert_eq(format("{:?}", a), "[1, 2, 3]");
+  int a1[] = {1, 2, 3};
+  sfc::assert_eq(format("{:?}", a1), "[1, 2, 3]");
 
-  char b[] = "abc";
-  sfc::assert_eq(format("{}", b), "abc");
+  int a2[][3] = {{1, 2, 3}, {4, 5, 6}};
+  sfc::assert_eq(format("{:?}", a2), "[[1, 2, 3], [4, 5, 6]]");
+
+  char s[] = "abc";
+  sfc::assert_eq(format("{}", s), "abc");
 }
 
 struct PrettyStruct {

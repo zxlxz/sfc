@@ -85,7 +85,8 @@ class DebugStruct;
 class Formatter {
   DynWrite _out;
   Spec _spec = {};
-  u32 _indent_level = 0;
+  u16 _depth = 0;
+  u16 _max_depth = 100;
 
  public:
   explicit Formatter(auto& out) : _out{DynWrite{out}} {}
@@ -107,6 +108,14 @@ class Formatter {
   auto precision() const -> Option<u32> {
     if (!_spec._point) return {};
     return _spec._precision;
+  }
+
+  auto depth() const -> u32 {
+    return _depth;
+  }
+
+  void set_depth_limit(u32 additional_depth) {
+    _max_depth = u16(_depth + additional_depth);
   }
 
  public:
@@ -157,6 +166,7 @@ class Formatter {
 class DebugBlock {
   Formatter& _fmt;
   u32 _cnt = 0;
+  u32 _indent_size = 2U;
 
  public:
   explicit DebugBlock(Formatter& fmt, Str name = "");

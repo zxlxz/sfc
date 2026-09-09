@@ -93,7 +93,7 @@ struct Spec {
     }
   };
 
-  // [[fill]align][sign]['#'][0][width][.][precision][type]
+  // [[fill]align][sign][#][0][width][.precision][type]
   consteval static auto from_cstr(CStr s) noexcept -> Spec {
     if (s._len == 0) {
       return {};

@@ -486,19 +486,24 @@ DebugBlock::~DebugBlock() {}
 
 void DebugBlock::open(Str begin) {
   _fmt.write_str(begin);
+
+  // depth++
   if (_fmt._spec._alt == '#') {
-    _fmt._indent_level += 1;
+    _fmt._depth += 1;
   }
 }
 
 void DebugBlock::finish(Str end) {
+  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+
+  // depth--
   if (_fmt._spec._alt == '#') {
-    _fmt._indent_level -= 1;
+    if (_fmt._depth > 0) _fmt._depth -= 1;
   }
 
-  if (_fmt._spec._alt == '#' && _cnt > 0) {
+  if (pretty_fmt && _cnt > 0) {
     _fmt.write_str("\n");
-    _fmt.write_chars(' ', _fmt._indent_level * 2);
+    _fmt.write_chars(' ', _fmt._depth * _indent_size);
   }
   _fmt.write_str(end);
 }
@@ -506,7 +511,8 @@ void DebugBlock::finish(Str end) {
 void DebugBlock::next() {
   _cnt += 1;
 
-  if (_fmt._spec._alt != '#') {
+  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  if (!pretty_fmt) {
     if (_cnt > 1) {
       _fmt.write_str(", ");
     }
@@ -518,7 +524,7 @@ void DebugBlock::next() {
   } else {
     _fmt.write_str(",\n");
   }
-  _fmt.write_chars(' ', _fmt._indent_level * 2);
+  _fmt.write_chars(' ', _fmt._depth * _indent_size);
 }
 
 void DebugBlock::write_key(Str key, char ch) {
