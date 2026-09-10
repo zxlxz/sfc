@@ -77,11 +77,11 @@
     <DisplayString Condition="_tag==1">Err({_1})</DisplayString>
   </Type>
 
-  <!-- sfc::collections::hash_tbl::HashTbl-->
-  <Type Name="sfc::collections::hash_tbl::HashTbl&lt;*,*&gt;">
+  <!-- sfc::collections::hash::HashTbl-->
+  <Type Name="sfc::collections::hash::HashTbl&lt;*&gt;">
     <Expand>
       <Item Name="[_len]">_len</Item>
-      <Item Name="[_cap]">_buf._cap</Item>
+      <Item Name="[_cap]">_cap</Item>
     </Expand>
   </Type>
 </AutoVisualizer>

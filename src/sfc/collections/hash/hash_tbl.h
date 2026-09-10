@@ -128,77 +128,62 @@ struct Bucket {
   }
 };
 
-class RawTbl {
-  using A = alloc::Global;
-  static constexpr usize kAlign = 16U;
-
-  u8* _ptr{nullptr};
-  usize _cap{0};
-  [[no_unique_address]] A _alloc{};
-
- public:
-  RawTbl();
-  ~RawTbl();
-
-  RawTbl(RawTbl&& other) noexcept;
-  RawTbl& operator=(RawTbl&& other) noexcept;
-
-  static auto with_capacity(usize min_cap, usize element_size) -> RawTbl;
-
-  void init(usize element_size);
-
- public:
-  auto cap() const noexcept -> usize {
-    return _cap;
-  }
-
-  auto mask() const noexcept -> usize {
-    return _cap - 1;
-  }
-
-  auto ctrl() const noexcept -> u8* {
-    return _ptr;
-  }
-
-  template <class T>
-  auto data() const noexcept -> T* {
-    const auto offset = num::align_up(_cap, kAlign);
-    return ptr::cast<T>(_ptr + offset);
-  }
-};
-
-template <class T>
+template <class T, class A = alloc::Global>
 class HashTbl {
   static constexpr f64 kLoadFactor = 0.75;
-
-  RawTbl _buf;
+  u8* _ptr{nullptr};
+  usize _cap{0};
   usize _len{0};
   usize _rem{0};
+  [[no_unique_address]] A _a{};
 
  public:
   HashTbl() noexcept = default;
 
   ~HashTbl() noexcept {
+    if (!_ptr) {
+      return;
+    }
+
     this->clear();
+    _a.deallocate(_ptr, HashTbl::layout(_cap));
   }
 
-  HashTbl(HashTbl&& other) noexcept : _buf{mem::move(other._buf)}, _len{other._len}, _rem{other._rem} {
-    other._len = 0;
-    other._rem = 0;
-  }
+  HashTbl(HashTbl&& other) noexcept
+      : _ptr{mem::take(other._ptr)}
+      , _cap{mem::take(other._cap)}
+      , _len{mem::take(other._len)}
+      , _rem{mem::take(other._rem)}
+      , _a{mem::move(other._a)} {}
 
   HashTbl& operator=(HashTbl&& other) noexcept {
-    if (this == &other) return *this;
-    mem::swap(_buf, other._buf);
-    mem::swap(_len, other._len);
-    mem::swap(_rem, other._rem);
+    if (this != &other) {
+      mem::swap(_ptr, other._ptr);
+      mem::swap(_cap, other._cap);
+      mem::swap(_len, other._len);
+      mem::swap(_rem, other._rem);
+      mem::swap(_a, other._a);
+    }
     return *this;
   }
 
   static auto with_capacity(usize min_cap) -> HashTbl {
+    static constexpr usize kMaxCap = num::Int<u32>::MAX;
+    if (min_cap == 0) {
+      return {};
+    }
+
+    sfc::assert_(min_cap <= kMaxCap, "HashTbl::with_capacity: min_cap(={}) > kMaxCap(={})", min_cap, kMaxCap);
+    auto new_cap = usize{8U};
+    while (new_cap < min_cap) {
+      new_cap <<= 1;
+    }
+
     auto res = HashTbl{};
-    res._buf = RawTbl::with_capacity(min_cap, sizeof(T));
+    res._ptr = ptr::cast<u8>(res._a.allocate(HashTbl::layout(new_cap)));
+    res._cap = new_cap;
     res.init();
+
     return res;
   }
 
@@ -207,7 +192,7 @@ class HashTbl {
   }
 
   auto cap() const noexcept -> usize {
-    return _buf.cap();
+    return _cap;
   }
 
   auto search(const auto& key) const -> T* {
@@ -223,7 +208,6 @@ class HashTbl {
     this->reserve(1);
 
     const auto [h1, h2] = this->hidx(entry.key);
-
     auto bkt = this->bucket(h1);
     if (auto res = bkt.try_insert(h2, mem::move(entry))) {
       return res;
@@ -238,7 +222,6 @@ class HashTbl {
     this->reserve(1);
 
     const auto [h1, h2] = this->hidx(entry.key);
-
     auto bkt = this->bucket(h1);
     if (auto res = bkt.insert(h2, mem::move(entry))) {
       return res;
@@ -262,7 +245,7 @@ class HashTbl {
   }
 
   void clear() noexcept {
-    if (_buf.cap() == 0) {
+    if (_len == 0) {
       return;
     }
     this->iter_mut().for_each([&](T& entry) { entry.~T(); });
@@ -279,30 +262,55 @@ class HashTbl {
 
   using Iter = hash::Iter<const T>;
   auto iter() const -> Iter {
-    return {{}, _buf.ctrl(), _buf.data<T>(), _buf.cap()};
+    return {{}, this->ctrl(), this->data(), _cap};
   }
 
   using IterMut = hash::Iter<T>;
   auto iter_mut() -> IterMut {
-    return {{}, _buf.ctrl(), _buf.data<T>(), _buf.cap()};
+    return {{}, this->ctrl(), this->data(), _cap};
   }
 
  private:
+  static constexpr usize kAlign = 16U;
+
+  static auto layout(usize cap) noexcept -> mem::Layout {
+    const auto ctrl_size = __builtin_align_up(cap, kAlign);
+    const auto data_size = cap * sizeof(T);
+    return mem::Layout{ctrl_size + data_size, kAlign};
+  }
+
+  auto ctrl() const noexcept -> u8* {
+    return _ptr;
+  }
+
+  auto data() const noexcept -> T* {
+    const auto ctrl_size = __builtin_align_up(_cap, kAlign);
+    return ptr::cast<T>(_ptr + ctrl_size);
+  }
+
+  void init() noexcept {
+    if (_ptr == nullptr) {
+      return;
+    }
+    const auto ctrl_size = __builtin_align_up(_cap, kAlign);
+    ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
+    _len = 0;
+    _rem = usize(f64(_cap) * kLoadFactor);
+  }
+
+  auto mask() const noexcept -> usize {
+    return _cap - 1;
+  }
+
   auto hidx(const auto& key) const noexcept -> Tuple<usize, u8> {
     const auto hx = Hash::hash(key);
-    const auto h1 = hx & (_buf.mask());
+    const auto h1 = hx & this->mask();
     const auto h2 = u8((hx >> 57) & 0x7F);
     return {h1, h2};
   }
 
   auto bucket(usize h1) const -> Bucket<T> {
-    return Bucket{_buf.ctrl(), _buf.data<T>(), _buf.mask(), h1};
-  }
-
-  void init() {
-    _len = 0;
-    _rem = usize(f64(_buf.cap()) * kLoadFactor);
-    _buf.init(sizeof(T));
+    return Bucket{this->ctrl(), this->data(), this->mask(), h1};
   }
 
   void rehash(usize max_len) {
@@ -310,7 +318,10 @@ class HashTbl {
     auto new_tbl = HashTbl::with_capacity(min_cap);
 
     // rehash all entries
-    this->iter_mut().for_each([&](T& entry) { new_tbl.rehash_insert(mem::move(entry)); });
+    this->iter_mut().for_each([&](T& entry) {
+      const auto ret = new_tbl.rehash_insert(mem::move(entry));
+      sfc::assert_(ret, "HashTbl::rehash failed");
+    });
     *this = mem::move(new_tbl);
   }
 
@@ -321,13 +332,11 @@ class HashTbl {
 
     const auto [h1, h2] = this->hidx(entry.key);
     const auto ret = this->bucket(h1).insert_new(h2, mem::move(entry));
-    if (!ret) {
-      return false;
+    if (ret) {
+      _len += 1;
+      _rem -= 1;
     }
-
-    _len += 1;
-    _rem -= 1;
-    return true;
+    return ret;
   }
 };
 
