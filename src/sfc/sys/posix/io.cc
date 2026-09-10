@@ -102,6 +102,14 @@ auto Stdout::write(Slice<const u8> buf) -> io::Result<usize> {
   return usize{nwrite};
 }
 
+auto Stdout::flush() -> io::Result<> {
+  const auto ret = ::fsync(STDOUT_FILENO);
+  if (ret == -1) {
+    return {io::last_os_error()};
+  }
+  return Ok{};
+}
+
 auto Stderr::is_console() -> bool {
   return ::isatty(STDERR_FILENO) == 1;
 }
@@ -114,6 +122,14 @@ auto Stderr::write(Slice<const u8> buf) -> io::Result<usize> {
 
   const auto nwrite = num::cast_unsigned(ret);
   return usize{nwrite};
+}
+
+auto Stderr::flush() -> io::Result<> {
+  const auto ret = ::fsync(STDERR_FILENO);
+  if (ret == -1) {
+    return {io::last_os_error()};
+  }
+  return Ok{};
 }
 
 auto os_error() -> int {
