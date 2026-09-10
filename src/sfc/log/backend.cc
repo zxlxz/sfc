@@ -4,6 +4,7 @@
 
 namespace sfc::log {
 
+namespace detail {
 static auto level_str(Level level) -> Str {
   switch (level) {
     case Level::Trace: return "[TRACE]";
@@ -17,38 +18,41 @@ static auto level_str(Level level) -> Str {
 }
 
 static auto time_str(time::SystemTime time) -> Str {
-  static thread_local char buf[32];
-  static thread_local auto out = Slice{buf};
+  static thread_local auto buf = fmt::Buf<32>{};
+  static thread_local auto prev_sec = u64{0};
+
+  const auto secs = time.as_secs();
+  const auto millis = time.subsec_millis();
 
   // write seconds, only when the seconds changed
-  static thread_local auto prev_sec = u64{0};
-  if (auto secs = time.as_secs(); secs != prev_sec) {
+  if (secs != prev_sec) {
     prev_sec = secs;
+    buf.truncate(0);
+
     const auto t = time::DateTime::from_local(time);
-    fmt::write(out, "{04}-{02}-{02} {02}:{02}:{02}.000", t.year, t.month, t.day, t.hour, t.minute, t.second);
+    fmt::write(buf, "{04}-{02}-{02} {02}:{02}:{02}.000", t.year, t.month, t.day, t.hour, t.minute, t.second);
   }
 
-  if (auto millis = time.subsec_millis(); millis != 0) {
-    out._ptr -= 3;
-    out._len += 3;
-    fmt::write(out, "{03}", millis);
+  if (millis != 0 && buf.len() > 3) {
+    buf.truncate(buf.len() - 3);
+    fmt::write(buf, "{03}", millis);
   }
 
-  return Str{buf, sizeof(buf) - out.len()};
+  return buf.as_str();
 }
 
-static auto format_record(Slice<char> buf, const Record& record) -> Str {
-  auto out = Slice{buf};
-
-  const auto time_str = log::time_str(record._time);
-  const auto level_str = log::level_str(record._level);
+static auto write_record(auto& out, const Record& record) -> Str {
+  const auto time_str = detail::time_str(record._time);
+  const auto level_str = detail::level_str(record._level);
   fmt::write(out, "{} {} {}\n", time_str, level_str, record._args);
-  return Str{buf._ptr, buf._len - out._len};
+  return out.as_str();
 }
+
+}  // namespace detail
 
 void ConsoleBackend::write(const Record& record) noexcept {
-  char buf[4096];
-  auto msg = log::format_record(buf, record);
+  auto buf = fmt::Buf<4096>{};
+  auto msg = detail::write_record(buf, record);
   io::Stdout().write_str(msg);
 }
 
@@ -59,8 +63,8 @@ FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
 FileBackend::~FileBackend() noexcept {}
 
 void FileBackend::write(const Record& record) noexcept {
-  char buf[4096];
-  auto msg = log::format_record(buf, record);
+  auto buf = fmt::Buf<4096>{};
+  auto msg = detail::write_record(buf, record);
   (void)_file.write_str(msg);
 }
 
@@ -77,8 +81,8 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 }
 
 void GlobalBackend::write(const Record& record) noexcept {
-  char buf[4096];
-  auto msg = log::format_record(buf, record);
+  auto buf = fmt::Buf<4096>{};
+  auto msg = detail::write_record(buf, record);
 
   if (_file.is_valid()) {
     (void)_file.write_str(msg);

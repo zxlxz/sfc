@@ -26,19 +26,21 @@ class File {
   auto seek(io::SeekFrom whence) noexcept -> io::Result<u64>;
 };
 
-struct StdIn {
+struct StdIn: io::Read {
   auto is_console() -> bool;
   auto read(Slice<u8> buf) -> io::Result<usize>;
 };
 
-struct Stdout {
+struct Stdout: io::Write {
   auto is_console() -> bool;
   auto write(Slice<const u8> buf) -> io::Result<usize>;
+  auto flush() -> io::Result<>;
 };
 
-struct Stderr {
+struct Stderr: io::Write {
   auto is_console() -> bool;
   auto write(Slice<const u8> buf) -> io::Result<usize>;
+  auto flush() -> io::Result<>;
 };
 
 auto os_error() -> u32;

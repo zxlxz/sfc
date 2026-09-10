@@ -216,6 +216,10 @@ auto Stdout::write(Slice<const u8> buf) -> io::Result<usize> {
   return imp.write(buf);
 }
 
+auto Stdout::flush() -> io::Result<> {
+  return Ok{};
+}
+
 auto Stderr::is_console() -> bool {
   auto& imp = StdIo::Error();
   return imp.is_console();
@@ -224,6 +228,10 @@ auto Stderr::is_console() -> bool {
 auto Stderr::write(Slice<const u8> buf) -> io::Result<usize> {
   auto& imp = StdIo::Error();
   return imp.write(buf);
+}
+
+auto Stderr::flush() -> io::Result<> {
+  return Ok{};
 }
 
 auto os_error() -> u32 {

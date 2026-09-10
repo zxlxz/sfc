@@ -16,20 +16,13 @@ struct SeekFrom {
   static auto End(i64 offset) -> SeekFrom;
 };
 
-struct DynRead {
-  using Read = auto(void*, Slice<u8> buf) -> Result<usize>;
-
+class DynRead final {
   void* _self;
-  Read* _read;
+  Result<usize> (*_read)(void*, Slice<u8> buf);
 
  public:
-  template <class X>
-  static auto from(X& x) -> DynRead {
-    return DynRead{
-        ._self = &x,
-        ._read = [](void* p, auto... args) { return ((X*)p)->read(args...); },
-    };
-  }
+  template <trait::not_<DynRead> X>
+  DynRead(X& x) : _self{&x}, _read{[](void* p, Slice<u8> buf) { return ((X*)p)->read(buf); }} {}
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
@@ -38,26 +31,17 @@ struct DynRead {
   auto read_to_string(String& buf) -> Result<usize>;
 };
 
-struct DynWrite {
-  using Write = auto(void*, Slice<const u8> buf) -> Result<usize>;
-  using Flush = auto(void*) -> Result<>;
-
+class DynWrite final {
   void* _self;
-  Write* _write;
-  Flush* _flush{nullptr};
+  Result<usize> (*_write)(void*, Slice<const u8> buf);
+  Result<> (*_flush)(void*);
 
  public:
-  template <class X>
-  static auto from(X& x) -> DynWrite {
-    auto res = DynWrite {
-      ._self = &x,
-      ._write = [](void* p, auto... args) { return ((X*)p)->write(args...); },
-    };
-    if constexpr (requires { &X::flush; }) {
-      res._flush = [](void* p) { return ((X*)p)->flush(); };
-    }
-    return res;
-  }
+  template <trait::not_<DynWrite> X>
+  DynWrite(X& x)
+      : _self{&x}
+      , _write{[](void* p, Slice<const u8> buf) { return ((X*)p)->write(buf); }}
+      , _flush{[](void* p) { return ((X*)p)->flush(); }} {}
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize>;
@@ -66,27 +50,29 @@ struct DynWrite {
   auto flush() -> Result<>;
 };
 
-struct Read {
+class Read {
+ public:
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    return DynRead::from(self).read_exact(buf);
+    return DynRead(self).read_exact(buf);
   }
 
   auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    return DynRead::from(self).read_to_end(buf);
+    return DynRead(self).read_to_end(buf);
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return DynRead::from(self).read_to_string(buf);
+    return DynRead(self).read_to_string(buf);
   }
 };
 
-struct Write {
+class Write {
+ public:
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    return DynWrite::from(self).write_all(buf);
+    return DynWrite(self).write_all(buf);
   }
 
   auto write_str(this auto& self, Str buf) -> Result<> {
-    return DynWrite::from(self).write_str(buf);
+    return DynWrite(self).write_str(buf);
   }
 };
 

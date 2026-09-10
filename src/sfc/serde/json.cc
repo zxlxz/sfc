@@ -30,15 +30,15 @@ void Serializer::serialize_bool(bool val) {
 }
 
 void Serializer::serialize_i64(i64 val) {
-  fmt::Formatter{_out}.write_val(val);
+  fmt::Formatter(_out).write_val(val);
 }
 
 void Serializer::serialize_u64(u64 val) {
-  fmt::Formatter{_out}.write_val(val);
+  fmt::Formatter(_out).write_val(val);
 }
 
 void Serializer::serialize_f64(f64 val) {
-  fmt::Formatter{_out}.write_val(val);
+  fmt::Formatter(_out).write_val(val);
 }
 
 void Serializer::serialize_str(Str val) {

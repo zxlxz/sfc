@@ -154,12 +154,3 @@ auto metadata(Path path) -> io::Result<Metadata> {
 }
 
 }  // namespace sfc::fs
-
-namespace sfc::io {
-template auto Read::read_exact(this fs::File&, Slice<u8>) -> Result<>;
-template auto Read::read_to_end(this fs::File&, List<u8>&) -> Result<usize>;
-template auto Read::read_to_string(this fs::File&, String&) -> Result<usize>;
-
-template auto Write::write_all(this fs::File&, Slice<const u8>) -> Result<>;
-template auto Write::write_str(this fs::File&, Str) -> Result<>;
-}  // namespace sfc::io

@@ -5,6 +5,28 @@ namespace sfc::fmt::test {
 
 using string::format;
 
+SFC_TEST(buf) {
+  auto buf = fmt::Buf<10>{};
+  sfc::assert_eq(buf.capacity(), 10U);
+  sfc::assert_eq(buf.len(), 0U);
+  sfc::assert_eq(buf.as_str(), "");
+
+  // write str
+  buf.write_str("what");
+  sfc::assert_eq(buf.len(), 4U);
+  sfc::assert_eq(buf.as_str(), "what");
+
+  // write str (overflow)
+  buf.write_str(" overflow");
+  sfc::assert_eq(buf.len(), 10U);
+  sfc::assert_eq(buf.as_str(), "what overf");
+
+  // truncate
+  buf.truncate(3);
+  sfc::assert_eq(buf.len(), 3U);
+  sfc::assert_eq(buf.as_str(), "wha");
+}
+
 SFC_TEST(str) {
   sfc::assert_eq(format("[{:5}]", "x"), "[x    ]");
   sfc::assert_eq(format("[{:<5}]", "x"), "[x    ]");

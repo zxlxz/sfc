@@ -1,25 +1,54 @@
 #pragma once
 
-#include "sfc/core/reflect.h"
+#include "sfc/core/cmp.h"
 #include "sfc/core/fmts.h"
-#include "sfc/core/dyn.h"
+#include "sfc/core/trait.h"
+#include "sfc/core/reflect.h"
 
 namespace sfc::fmt {
 
-struct DynWrite {
-  class Self;
-  Self& _self;
-  void (*_write_str)(Self&, Str);
+class DynWrite final {
+  void* _self;
+  void (*_write_str)(void*, Str);
 
  public:
-  template <class X>
-  explicit DynWrite(X& x) : _self{dyn::cast<Self>(x)} {
-    _write_str = [](Self& self, Str s) { (void)((X&)self).write_str(s); };
-  }
+  template <trait::not_<DynWrite> X>
+  DynWrite(X& x) : _self{&x}, _write_str{[](void* p, Str s) { (void)((X*)p)->write_str(s); }} {}
 
  public:
   void write_str(Str s) {
     _write_str(_self, s);
+  }
+};
+
+template <usize N>
+class Buf {
+  char _buf[N];
+  usize _len = 0;
+
+ public:
+  auto capacity() const -> usize {
+    return N;
+  }
+
+  auto len() const -> usize {
+    return _len;
+  }
+
+  auto as_str() const -> Str {
+    return Str{_buf, _len};
+  }
+
+ public:
+  void truncate(usize new_len) {
+    _len = (cmp::min)(new_len, _len);
+  }
+
+  void write_str(Str s) {
+    if (_len >= N) return;
+    const auto n = (cmp::min)(N - _len, s._len);
+    __builtin_memcpy(_buf + _len, s._ptr, n);
+    _len += n;
   }
 };
 
@@ -74,11 +103,9 @@ struct Debug {
   }
 };
 
-class DebugBlock;
 class DebugList;
 class DebugSet;
 class DebugMap;
-
 class DebugTuple;
 class DebugStruct;
 
@@ -89,50 +116,34 @@ class Formatter {
   u16 _max_depth = 100;
 
  public:
-  explicit Formatter(auto& out) : _out{DynWrite{out}} {}
+  explicit Formatter(DynWrite out) : _out{out} {}
 
  public:
-  auto spec() const -> Spec {
-    return _spec;
-  }
-
-  auto type() const -> char {
-    return _spec._type;
-  }
-
-  auto width() const -> Option<u32> {
-    if (!_spec._width) return {};
-    return _spec._width;
-  }
-
-  auto precision() const -> Option<u32> {
-    if (!_spec._point) return {};
-    return _spec._precision;
-  }
-
-  auto depth() const -> u32 {
-    return _depth;
-  }
-
-  void set_depth_limit(u32 additional_depth) {
-    _max_depth = u16(_depth + additional_depth);
-  }
+  auto spec() const -> Spec;
+  auto type() const -> char;
+  auto width() const -> Option<u32>;
+  auto precision() const -> Option<u32>;
+  auto depth() const -> u32;
+  void set_max_depth(u32 max_depth);
 
  public:
-  void write_str(Str s) {
-    if (s._len == 0) return;
-    _out.write_str(s);
-  }
-
-  void write_char(char c) {
-    _out.write_str({&c, 1});
-  }
-
+  void write_str(Str s);
+  void write_char(char c);
   void write_chars(char c, usize n);
 
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
 
+ public:
+  class Block;
+  auto debug_list() -> DebugList;
+  auto debug_set() -> DebugSet;
+  auto debug_map() -> DebugMap;
+
+  auto debug_tuple(Str name) -> DebugTuple;
+  auto debug_struct(Str name) -> DebugStruct;
+
+ public:
   void write_val(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
@@ -152,26 +163,17 @@ class Formatter {
     const auto xargs = Args{fmts, args...};
     xargs.fmt(*this);
   }
-
- public:
-  friend class DebugBlock;
-  auto debug_list() -> DebugList;
-  auto debug_set() -> DebugSet;
-  auto debug_map() -> DebugMap;
-
-  auto debug_tuple(Str name) -> DebugTuple;
-  auto debug_struct(Str name) -> DebugStruct;
 };
 
-class DebugBlock {
+class Formatter::Block {
   Formatter& _fmt;
   u32 _cnt = 0;
   u32 _indent_size = 2U;
 
  public:
-  explicit DebugBlock(Formatter& fmt, Str name = "");
-  ~DebugBlock();
-  DebugBlock(const DebugBlock&) = delete;
+  explicit Block(Formatter& fmt, Str name = "");
+  ~Block();
+  Block(const Block&) = delete;
 
  public:
   void open(Str begin);
@@ -186,7 +188,7 @@ class DebugBlock {
 };
 
 class DebugList {
-  DebugBlock _blk;
+  Formatter::Block _blk;
 
  public:
   explicit DebugList(Formatter& fmt);
@@ -205,7 +207,7 @@ class DebugList {
 };
 
 class DebugSet {
-  DebugBlock _blk;
+  Formatter::Block _blk;
 
  public:
   explicit DebugSet(Formatter& fmt);
@@ -226,7 +228,7 @@ class DebugSet {
 };
 
 class DebugMap {
-  DebugBlock _blk;
+  Formatter::Block _blk;
 
  public:
   explicit DebugMap(Formatter& fmt);
@@ -251,7 +253,7 @@ class DebugMap {
 };
 
 class DebugTuple {
-  DebugBlock _blk;
+  Formatter::Block _blk;
 
  public:
   explicit DebugTuple(Formatter& fmt, Str name);
@@ -267,7 +269,7 @@ class DebugTuple {
 };
 
 class DebugStruct {
-  DebugBlock _blk;
+  Formatter::Block _blk;
 
  public:
   explicit DebugStruct(Formatter& fmt, Str name);
@@ -299,6 +301,11 @@ void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
   } else {
     Formatter{out}.write_fmt(fmts, args...);
   }
+}
+
+void writeln(auto& out, const fmt::Fmts& fmts, const auto&... args) {
+  fmt::write(out, fmts, args...);
+  out.write_str("\n");
 }
 
 }  // namespace sfc::fmt

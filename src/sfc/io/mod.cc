@@ -63,6 +63,10 @@ auto DynWrite::write(Slice<const u8> buf) -> Result<usize> {
   return _write(_self, buf);
 }
 
+auto DynWrite::flush() -> Result<> {
+  return _flush(_self);
+}
+
 auto DynWrite::write_all(Slice<const u8> buf) -> Result<> {
   while (!buf.is_empty()) {
     const auto write_cnt = _TRY(this->write(buf));
@@ -76,11 +80,6 @@ auto DynWrite::write_all(Slice<const u8> buf) -> Result<> {
 
 auto DynWrite::write_str(Str buf) -> Result<> {
   return this->write_all(buf.as_bytes());
-}
-
-auto DynWrite::flush() -> Result<> {
-  if (!_flush) return Ok{};
-  return (_flush)(_self);
 }
 
 }  // namespace sfc::io

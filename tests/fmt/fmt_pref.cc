@@ -17,13 +17,12 @@ SFC_TEST(c_sprintf_test) {
 
 SFC_TEST(sfc_fmt_test) {
   const auto kMaxLoop = 1000000U;
-  char buf[256U] = {};
+  auto buf = fmt::Buf<256>{};
   for (auto loop = 0U; loop < kMaxLoop; ++loop) {
-    auto out = Slice{buf};
-    fmt::write(out, "{}: int_val={}, float_val={:.2f}", "sfc_fmt_test", loop, double(loop) * 0.01);
-    out[0] = 0; // null terminate
+    buf.truncate(0);
+    fmt::write(buf, "{}: int_val={}, float_val={:.2f}", "sfc_fmt_test", loop, double(loop) * 0.01);
   }
-  io::println("buf = {}", Str::from_cstr(buf));
+  io::println("buf = {}", buf.as_str());
 }
 
 SFC_TEST(cxx_format_test) {

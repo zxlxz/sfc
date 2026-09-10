@@ -247,7 +247,7 @@ struct Slice {
   auto write(Slice<const u8> buf) noexcept -> io::Result<usize> requires(trait::same_<T, u8>);
 
   // trait: io::Write
-  auto write_str(str::Str s) noexcept -> io::Result<> requires(trait::same_<T, char>);
+  auto flush() noexcept -> io::Result<> requires(trait::same_<T, u8>);
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {

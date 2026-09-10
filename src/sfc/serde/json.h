@@ -53,7 +53,7 @@ class Serializer {
   fmt::DynWrite _out;
 
  public:
-  explicit Serializer(auto& out) : _out{out} {}
+  explicit Serializer(fmt::DynWrite out) : _out{out} {}
 
  public:
   void serialize_null();

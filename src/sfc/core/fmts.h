@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/tuple.h"
+#include "sfc/core/num.h"
 
 namespace sfc::fmt {
 

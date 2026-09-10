@@ -30,23 +30,16 @@ auto Slice<T>::write(Slice<const u8> buf) noexcept -> io::Result<usize> requires
   return usize{amt};
 }
 
-template <class T>
-auto Slice<T>::write_str(Str buf) noexcept -> io::Result<> requires(trait::same_<T, char>) {
-  if (buf._len == 0 || _len == 0) {
-    return Ok();
-  }
-  const auto amt = _len < buf._len ? _len : buf._len;
-  ptr::copy_nonoverlapping(buf._ptr, _ptr, amt);
-  _ptr += amt;
-  _len -= amt;
-  return Ok();
+template<class T>
+auto Slice<T>::flush() noexcept -> io::Result<> requires(trait::same_<T, u8>) {
+  return Ok{};
 }
 
 template auto Slice<u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
 template auto Slice<u8>::write(Slice<const u8> buf) noexcept -> io::Result<usize>;
+template auto Slice<u8>::flush() noexcept -> io::Result<>;
 
 template auto Slice<const u8>::read(Slice<u8> buf) noexcept -> io::Result<usize>;
 
-template auto Slice<char>::write_str(Str s) noexcept -> io::Result<>;
 
 }  // namespace sfc::slice

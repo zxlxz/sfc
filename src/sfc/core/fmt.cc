@@ -376,6 +376,41 @@ void Debug::fmt(const void* val, Formatter& f) {
   f.write_str(s);
 }
 
+auto Formatter::spec() const -> Spec {
+  return _spec;
+}
+
+auto Formatter::type() const -> char {
+  return _spec._type;
+}
+
+auto Formatter::width() const -> Option<u32> {
+  if (!_spec._width) return {};
+  return _spec._width;
+}
+
+auto Formatter::precision() const -> Option<u32> {
+  if (!_spec._point) return {};
+  return _spec._precision;
+}
+
+auto Formatter::depth() const -> u32 {
+  return _depth;
+}
+
+void Formatter::set_max_depth(u32 max_depth) {
+  _max_depth = u16(max_depth);
+}
+
+void Formatter::write_str(Str s) {
+  if (s._len == 0) return;
+  _out.write_str(s);
+}
+
+void Formatter::write_char(char c) {
+  _out.write_str({&c, 1});
+}
+
 void Formatter::write_chars(char c, usize n) {
   static constexpr auto BUF_LEN = 8U;
   const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
@@ -475,16 +510,16 @@ auto Formatter::debug_struct(Str name) -> DebugStruct {
   return DebugStruct{*this, name};
 }
 
-DebugBlock::DebugBlock(Formatter& fmt, Str name) : _fmt{fmt} {
+Formatter::Block::Block(Formatter& fmt, Str name) : _fmt{fmt} {
   if (!name.is_empty()) {
     _fmt.write_str(name);
     _fmt.write_char(' ');
   }
 }
 
-DebugBlock::~DebugBlock() {}
+Formatter::Block::~Block() {}
 
-void DebugBlock::open(Str begin) {
+void Formatter::Block::open(Str begin) {
   _fmt.write_str(begin);
 
   // depth++
@@ -493,7 +528,7 @@ void DebugBlock::open(Str begin) {
   }
 }
 
-void DebugBlock::finish(Str end) {
+void Formatter::Block::finish(Str end) {
   const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
 
   // depth--
@@ -508,7 +543,7 @@ void DebugBlock::finish(Str end) {
   _fmt.write_str(end);
 }
 
-void DebugBlock::next() {
+void Formatter::Block::next() {
   _cnt += 1;
 
   const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
@@ -527,7 +562,7 @@ void DebugBlock::next() {
   _fmt.write_chars(' ', _fmt._depth * _indent_size);
 }
 
-void DebugBlock::write_key(Str key, char ch) {
+void Formatter::Block::write_key(Str key, char ch) {
   if (ch) _fmt.write_char(ch);
   _fmt.write_str(key);
   if (ch) _fmt.write_char(ch);

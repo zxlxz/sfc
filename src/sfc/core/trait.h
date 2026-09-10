@@ -26,6 +26,9 @@ template <class T, class U>
 concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
 #endif
 
+template<class T, class U>
+concept not_ = !same_<T, U>;
+
 template <class T, class... U>
 concept any_ = (same_<T, U> || ...);
 
