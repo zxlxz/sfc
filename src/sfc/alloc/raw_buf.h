@@ -2,25 +2,25 @@
 
 #include "sfc/alloc/alloc.h"
 
-namespace sfc::buffer {
+namespace sfc::raw_buf {
 
 template <class T, class A = alloc::Global>
-class Buffer {
+class RawBuf {
   T* _ptr{nullptr};
   usize _cap{0};
   [[no_unique_address]] A _a{};
 
  public:
-  Buffer(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
+  RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
 
-  ~Buffer() noexcept {
+  ~RawBuf() noexcept {
     if (!_ptr) return;
     _a.deallocate(_ptr, this->layout());
   }
 
-  Buffer(Buffer&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
+  RawBuf(RawBuf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
 
-  Buffer& operator=(Buffer&& other) noexcept {
+  RawBuf& operator=(RawBuf&& other) noexcept {
     if (this != &other) {
       mem::swap(_ptr, other._ptr);
       mem::swap(_cap, other._cap);
@@ -29,16 +29,16 @@ class Buffer {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = {}) -> Buffer {
-    auto res = Buffer{};
+  static auto with_capacity(usize capacity, A alloc = {}) -> RawBuf {
+    auto res = RawBuf{};
     res._a = alloc;
     res._cap = capacity;
     res._ptr = ptr::cast<T>(res._a.allocate(res.layout()));
     return res;
   }
 
-  static auto with_capacity_zeroed(usize capacity, A alloc = {}) -> Buffer {
-    auto res = Buffer{};
+  static auto with_capacity_zeroed(usize capacity, A alloc = {}) -> RawBuf {
+    auto res = RawBuf{};
     res._a = alloc;
     res._cap = capacity;
     res._ptr = ptr::cast<T>(res._a.allocate_zeroed(res.layout()));
@@ -121,8 +121,4 @@ class Buffer {
   }
 };
 
-}  // namespace sfc::buffer
-
-namespace sfc {
-using buffer::Buffer;
-}  // namespace sfc
+}  // namespace sfc::raw_buf

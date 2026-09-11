@@ -84,7 +84,7 @@ struct Fn<R(T...)> {
 
   template <class X>
   static auto from(X& x) -> Fn {
-    return Fn{x, [](void* x, T&&... t) -> R { return (*((X*)x))((T&&)t...); }};
+    return Fn{x, [](void* p, T&&... t) -> R { return (*((X*)p))((T&&)t...); }};
   }
 
  public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/buffer.h"
+#include "sfc/alloc/raw_buf.h"
 
 namespace sfc::list {
 
@@ -8,7 +8,7 @@ using Range = ops::Range<usize>;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
-  using Buf = Buffer<T, A>;
+  using Buf = raw_buf::RawBuf<T, A>;
   Buf _buf{};
   usize _len{0};
 

@@ -13,15 +13,17 @@ struct Record {
   fmt::Args _args;
 };
 
-struct DynBackend {
-  class Self;
-  Self& _self;
-  void (*_write)(Self&, const Record& record);
-  void (*_flush)(Self&);
+class DynBackend final {
+  void* _self;
+  void (*_write)(void*, const Record& record);
+  void (*_flush)(void*);
 
  public:
-  template <class X>
-  explicit DynBackend(X& x) : _self{dyn::cast<Self>(x)}, _write{dyn::fn<&X::write>(_self)}, _flush{dyn::fn<&X::flush>(_self)} {}
+  template <trait::not_<DynBackend> X>
+  DynBackend(X& x)
+      : _self{&x}
+      , _write{[](void* p, const Record& record) { ((X*)p)->write(record); }}
+      , _flush{[](void* p) { ((X*)p)->flush(); }} {}
 
  public:
   void write(const Record& record) {
@@ -38,7 +40,7 @@ class Logger {
   Level _level{Level::Info};
 
  public:
-  explicit Logger(auto& backend) : _backend{backend} {}
+  explicit Logger(DynBackend backend) : _backend{backend} {}
 
  public:
   auto level() const -> Level;

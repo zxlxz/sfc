@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/alloc/raw_buf.h"
 
 namespace sfc::sync::ringbuf {
 
@@ -54,7 +54,7 @@ class Cell {
 template <class T>
 class RingBuf {
   using Idx = AtomicIdx;
-  using Buf = Buffer<Cell<T>>;
+  using Buf = raw_buf::RawBuf<Cell<T>>;
   Idx _head{};
   Idx _tail{};
   Buf _buf{};
