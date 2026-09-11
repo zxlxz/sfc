@@ -274,7 +274,7 @@ class HashTbl {
   static constexpr usize kAlign = 16U;
 
   static auto layout(usize cap) noexcept -> mem::Layout {
-    const auto ctrl_size = __builtin_align_up(cap, kAlign);
+    const auto ctrl_size = num::align_up(cap, kAlign);
     const auto data_size = cap * sizeof(T);
     return mem::Layout{ctrl_size + data_size, kAlign};
   }
@@ -284,7 +284,7 @@ class HashTbl {
   }
 
   auto data() const noexcept -> T* {
-    const auto ctrl_size = __builtin_align_up(_cap, kAlign);
+    const auto ctrl_size = num::align_up(_cap, kAlign);
     return ptr::cast<T>(_ptr + ctrl_size);
   }
 
@@ -292,7 +292,7 @@ class HashTbl {
     if (_ptr == nullptr) {
       return;
     }
-    const auto ctrl_size = __builtin_align_up(_cap, kAlign);
+    const auto ctrl_size = num::align_up(_cap, kAlign);
     ptr::write_bytes(_ptr, CTRL_NUL, ctrl_size);
     _len = 0;
     _rem = usize(f64(_cap) * kLoadFactor);

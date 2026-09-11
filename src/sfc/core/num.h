@@ -147,15 +147,18 @@ constexpr auto unsigned_abs(T x) -> num::uint_t<T> {
   return U{0} - __builtin_bit_cast(U, x);
 }
 
-template <trait::uint_ T>
+template <trait::int_ T>
 constexpr auto saturating_add(T a, T b) -> T {
-  using Int = num::Int<T>;
-  return a > Int::MAX - b ? Int::MAX : a + b;
+  auto c = T{0};
+  const auto x = __builtin_add_overflow(a, b, &c);
+  return x ? num::Int<T>::MAX : c;
 }
 
-template <trait::uint_ T>
+template <trait::int_ T>
 constexpr auto saturating_sub(T a, T b) -> T {
-  return a < b ? 0U : a - b;
+  auto c = T{0};
+  const auto x = __builtin_sub_overflow(a, b, &c);
+  return x ? num::Int<T>::MIN : c;
 }
 
 template <trait::uint_ T>

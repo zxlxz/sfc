@@ -72,7 +72,23 @@ SFC_TEST(unsigned_abs) {
   static_assert(num::unsigned_abs(i64{-9223372036854775807LL - 1}) == 9223372036854775808ULL);
 }
 
+SFC_TEST(saturating_add) {
+  // sint
+  static_assert(num::saturating_add(1, 2) == 3);
+  static_assert(num::saturating_add(Int<i32>::MAX, 1) == Int<i32>::MAX);
+
+  // uint
+  static_assert(num::saturating_add(1U, 2U) == 3U);
+  static_assert(num::saturating_add(Int<u32>::MAX, 1U) == Int<u32>::MAX);
+}
+
 SFC_TEST(saturating_sub) {
+  // sint
+  static_assert(num::saturating_sub(1, 2) == -1);
+  static_assert(num::saturating_sub(2, 1) == 1);
+  static_assert(num::saturating_sub(Int<i32>::MIN, 1) == Int<i32>::MIN);
+
+  // uint
   static_assert(num::saturating_sub(1U, 2U) == 0);
   static_assert(num::saturating_sub(2U, 1U) == 1);
 }
