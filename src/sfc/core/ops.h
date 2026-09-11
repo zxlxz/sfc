@@ -74,32 +74,20 @@ struct Fn;
 
 template <class R, class... T>
 struct Fn<R(T...)> {
-  using Func = R (*)(void*, T&&...);
   void* _self;
-  Func _func;
+  R (*_func)(void*, T&&...);
 
  public:
-  template <class X>
-  explicit Fn(X& x, Func f) : _self{(void*)&x}, _func{f} {}
+  explicit Fn(void* p, R (*func)(void*, T&&...)) : _self{p}, _func{func} {}
 
-  template <class X>
-  static auto from(X& x) -> Fn {
-    return Fn{x, [](void* p, T&&... t) -> R { return (*((X*)p))((T&&)t...); }};
-  }
+  template <trait::not_<Fn> X>
+  explicit Fn(X& x) : _self{(void*)&x}, _func{[](void* p, T&&... t) -> R { return (*(X*)p)((T&&)t...); }} {}
 
  public:
   R operator()(T... t) const {
     return _func(_self, (T&&)t...);
   }
 };
-
-template <auto f>
-auto fn(auto& x) {
-  auto conv = []<class X, class R, class... T>(const X& x, R (X::*)(T...)) {
-    return Fn<R(T...)>{x, [](X& x, T... t) -> R { return ((X&)x.*f)((T&&)t...); }};
-  };
-  return conv(x, f);
-}
 
 template <class F, class... A>
 using FnOut = decltype(declval<F>()(declval<A>()...));

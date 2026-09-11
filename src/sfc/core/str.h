@@ -209,7 +209,7 @@ class CharPredicateSearcher : public Searcher {
   usize _finger_back = _haystack._len;
 
  public:
-  CharPredicateSearcher(Str haystack, auto& pred) : _haystack{haystack}, _pred{Pred::from(pred)} {}
+  CharPredicateSearcher(Str haystack, auto& pred) : _haystack{haystack}, _pred{Pred{pred}} {}
   auto next() -> SearchStep;
   auto next_back() -> SearchStep;
 };

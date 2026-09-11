@@ -84,15 +84,11 @@ class [[nodiscard]] Box {
 template <class R, class... T>
 class [[nodiscard]] Box<R(T...)> {
   using Inn = ops::Fn<R(T...)>;
-  using Call = R (*)(void*, T&&...);
-  using Drop = void (*)(void*);
   Inn _inn;
-  Drop _drop;
+  void (*_drop)(void*);
 
  public:
-  Box() noexcept = default;
-
-  Box(Inn inn, Drop drop) noexcept : _inn{inn}, _drop{drop} {}
+  Box() noexcept : _inn{nullptr, nullptr}, _drop{nullptr} {}
 
   ~Box() noexcept {
     if (!_drop || !_inn._self) return;
@@ -114,7 +110,10 @@ class [[nodiscard]] Box<R(T...)> {
 
   template <class Impl>
   static auto new_(Impl impl) noexcept -> Box {
-    return Box{Inn::from(*new Impl{mem::move(impl)}), [](void* p) { delete (Impl*)(p); }};
+    auto res = Box{};
+    res._inn = Inn(*new Impl{mem::move(impl)});
+    res._drop = [](void* p) { delete (Impl*)(p); };
+    return res;
   }
 
  public:
