@@ -323,6 +323,27 @@ class [[nodiscard]] List {
     auto visit = [&](auto&& seq) { return seq.template collect<List, T>(); };
     return des.deserialize_seq(visit);
   }
+
+ public:
+  // trait: ranged-for
+  friend auto begin(const List& self) -> const T* {
+    return self.as_ptr();
+  }
+
+  // trait: ranged-for
+  friend auto end(const List& self) -> const T* {
+    return self.as_ptr() + self.len();
+  }
+
+  // trait: ranged-for
+  friend auto begin(List& self) -> T* {
+    return self.as_mut_ptr();
+  }
+
+  // trait: ranged-for
+  friend auto end(List& self) -> T* {
+    return self.as_mut_ptr() + self.len();
+  }
 };
 
 template <class T, class A>
@@ -357,26 +378,6 @@ class List<T, A>::Drain {
 template <class T, class A>
 auto List<T, A>::drain(Range ids) noexcept -> Drain {
   return Drain{*this, ids};
-}
-
-template <class T>
-auto begin(const List<T>& v) -> const T* {
-  return v.as_ptr();
-}
-
-template <class T>
-auto end(const List<T>& v) -> const T* {
-  return v.as_ptr() + v.len();
-}
-
-template <class T>
-auto begin(List<T>& v) -> T* {
-  return v.as_mut_ptr();
-}
-
-template <class T>
-auto end(List<T>& v) -> T* {
-  return v.as_mut_ptr() + v.len();
 }
 
 }  // namespace sfc::list

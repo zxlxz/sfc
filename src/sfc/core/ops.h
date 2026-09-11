@@ -144,17 +144,16 @@ struct Range {
       f.write_fmt("{}..{}", _start, _end);
     }
   }
+
+ public:
+  friend auto begin(Range self) -> Range<T> {
+    return self;
+  }
+
+  friend auto end(Range) -> End {
+    return {};
+  }
 };
-
-template <class T>
-auto begin(Range<T> iter) -> Range<T> {
-  return iter;
-}
-
-template <class T>
-auto end(Range<T>) -> End {
-  return {};
-}
 
 }  // namespace sfc::ops
 

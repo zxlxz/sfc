@@ -185,22 +185,6 @@ struct Slice {
   }
 
  public:
-  auto begin() const noexcept -> const T* {
-    return _ptr;
-  }
-
-  auto begin() noexcept -> T* {
-    return _ptr;
-  }
-
-  auto end() const noexcept -> const T* {
-    return _ptr + _len;
-  }
-
-  auto end() noexcept -> T* {
-    return _ptr + _len;
-  }
-
   auto iter() const noexcept -> Iter<const T> {
     return {_ptr, _len};
   }
@@ -226,15 +210,6 @@ struct Slice {
   }
 
  public:
-  // trait: ops::Eq
-  constexpr auto operator==(const Slice& v) const noexcept -> bool {
-    if (_len != v._len) return false;
-    for (auto i = 0UL; i < _len; ++i) {
-      if (_ptr[i] != v._ptr[i]) return false;
-    }
-    return true;
-  }
-
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
@@ -256,6 +231,26 @@ struct Slice {
       imp.serialize_element(t);
     }
   }
+
+ public:
+  // trait: ops::Eq
+  auto operator==(Slice other) const noexcept -> bool {
+    if (_len != other._len) return false;
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] != other._ptr[i]) return false;
+    }
+    return true;
+  }
+
+  // trait: ranged-for
+  friend auto begin(Slice self) -> T* {
+    return self._ptr;
+  }
+
+  // trait: ranged-for
+  friend auto end(Slice self) -> T* {
+    return self._ptr + self._len;
+  }
 };
 
 template <class T, usize N>
@@ -263,17 +258,6 @@ Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
 Slice(T*, usize) -> Slice<T>;
-
-// ops::foreach
-template <class T>
-auto begin(Slice<T> v) -> const T* {
-  return v._ptr;
-}
-
-template <class T>
-auto end(Slice<T> v) -> const T* {
-  return v._ptr + v._len;
-}
 
 template <class T>
 struct Iter : iter::Iterator<T&> {

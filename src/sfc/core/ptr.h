@@ -44,8 +44,9 @@ struct Unique {
   }
 
  public:
-  auto operator==(T* ptr) const noexcept -> bool {
-    return _ptr == ptr;
+  // trait: ops::Eq
+  auto operator==(const Unique& other) const noexcept -> bool {
+    return _ptr == other._ptr;
   }
 };
 
