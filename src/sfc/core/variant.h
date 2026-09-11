@@ -5,217 +5,198 @@
 
 namespace sfc::variant {
 
-template <class... T>
-union _UnionData;
+namespace detail {
 
-#define _UNION_IMPL(...)    \
-  __VA_ARGS__;              \
-  constexpr _UnionData() {} \
-  constexpr ~_UnionData() {}
+template <class... T>
+struct Union;
 
 // clang-format off
+#define _UNION_FUNCS  \
+  constexpr Union() {}  \
+  constexpr ~Union() {}
+
 template<>
-union _UnionData<> { };
+struct Union<> { };
 
 template <class A>
-union _UnionData<A>{ _UNION_IMPL(A _0)};
+struct Union<A>{ union{A _0;}; _UNION_FUNCS };
 
 template <class A, class B>
-union _UnionData<A, B>{ _UNION_IMPL(A _0; B _1) };
+struct Union<A, B>{ union{A _0; B _1;}; _UNION_FUNCS };
 
 template <class A, class B, class C>
-union _UnionData<A, B, C> { _UNION_IMPL(A _0; B _1; C _2) };
+struct Union<A, B, C> { union{A _0; B _1; C _2;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D>
-union _UnionData<A, B, C, D> { _UNION_IMPL(A _0; B _1; C _2; D _3) };
+struct Union<A, B, C, D> { union{A _0; B _1; C _2; D _3;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D, class E>
-union _UnionData<A, B, C, D, E> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4) };
+struct Union<A, B, C, D, E> { union{A _0; B _1; C _2; D _3; E _4;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D, class E, class F>
-union _UnionData<A, B, C, D, E, F> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5) };
+struct Union<A, B, C, D, E, F> { union{A _0; B _1; C _2; D _3; E _4; F _5;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D, class E, class F, class G>
-union _UnionData<A, B, C, D, E, F, G> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6) };
+struct Union<A, B, C, D, E, F, G> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D, class E, class F, class G, class H>
-union _UnionData<A, B, C, D, E, F, G, H> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7) };
+struct Union<A, B, C, D, E, F, G, H> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7;}; _UNION_FUNCS };
 
 template <class A, class B, class C, class D, class E, class F, class G, class H, class I>
-union _UnionData<A, B, C, D, E, F, G, H, I> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8) };
+struct Union<A, B, C, D, E, F, G, H, I> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J>
-union _UnionData<A, B, C, D, E, F, G, H, I, J> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9) };
+struct Union<A, B, C, D, E, F, G, H, I, J> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K, L> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K, L, M> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K, L, M, N> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14;}; _UNION_FUNCS };
 
 template<class A, class B, class C, class D, class E, class F, class G, class H, class I, class J, class K, class L, class M, class N, class O, class P>
-union _UnionData<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> { _UNION_IMPL(A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; P _15) };
+struct Union<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> { union{A _0; B _1; C _2; D _3; E _4; F _5; G _6; H _7; I _8; J _9; K _10; L _11; M _12; N _13; O _14; P _15;}; _UNION_FUNCS };
 // clang-format on
 
 #undef _UNION_IMPL
 
-template <class U, class... T>
-consteval auto union_tag() -> u32 {
-  static_assert(sizeof...(T) <= 16, "union_tag: too many types");
+template <u32 I>
+struct tag_t {
+  static constexpr u32 VALUE = I;
 
-  const bool vals[] = {trait::same_<U, T>..., false};
-  for (u32 i = 0; i < sizeof...(T); ++i) {
-    if (vals[i]) return i;
+ public:
+  static auto operator[](auto&& self) -> auto& {
+    static_assert(I < 16, "Variant::at: index out of bounds");
+    if constexpr (I == 0) return self._0;
+    if constexpr (I == 1) return self._1;
+    if constexpr (I == 2) return self._2;
+    if constexpr (I == 3) return self._3;
+    if constexpr (I == 4) return self._4;
+    if constexpr (I == 5) return self._5;
+    if constexpr (I == 6) return self._6;
+    if constexpr (I == 7) return self._7;
+    if constexpr (I == 8) return self._8;
+    if constexpr (I == 9) return self._9;
+    if constexpr (I == 10) return self._10;
+    if constexpr (I == 11) return self._11;
+    if constexpr (I == 12) return self._12;
+    if constexpr (I == 13) return self._13;
+    if constexpr (I == 14) return self._14;
+    if constexpr (I == 15) return self._15;
   }
-  return 0xFF;
+};
+
+template <class U, class T, class... S>
+consteval auto idx() {
+  if constexpr (trait::same_<U, T>) {
+    return 0;
+  } else {
+    return 1 + idx<U, S...>();
+  }
 }
 
-template <u32 IDX>
-auto union_at(auto&& u) -> auto& {
-  static_assert(IDX < 16, "union_at: index out of bounds");
-
-  if constexpr (IDX == 0) return u._0;
-  if constexpr (IDX == 1) return u._1;
-  if constexpr (IDX == 2) return u._2;
-  if constexpr (IDX == 3) return u._3;
-  if constexpr (IDX == 4) return u._4;
-  if constexpr (IDX == 5) return u._5;
-  if constexpr (IDX == 6) return u._6;
-  if constexpr (IDX == 7) return u._7;
-  if constexpr (IDX == 8) return u._8;
-  if constexpr (IDX == 9) return u._9;
-  if constexpr (IDX == 10) return u._10;
-  if constexpr (IDX == 11) return u._11;
-  if constexpr (IDX == 12) return u._12;
-  if constexpr (IDX == 13) return u._13;
-  if constexpr (IDX == 14) return u._14;
-  if constexpr (IDX == 15) return u._15;
+template <class U, class... T>
+consteval auto tag() {
+  static constexpr u32 I = detail::idx<U, T...>();
+  return tag_t<I>{};
 }
+
+template <u32 N>
+static void imap(u32 I, auto&& f) {
+  if constexpr (N > 0) I == 0 ? f(tag_t<0U>{}) : void();
+  if constexpr (N > 1) I == 1 ? f(tag_t<1U>{}) : void();
+  if constexpr (N > 2) I == 2 ? f(tag_t<2U>{}) : void();
+  if constexpr (N > 3) I == 3 ? f(tag_t<3U>{}) : void();
+  if constexpr (N > 4) I == 4 ? f(tag_t<4U>{}) : void();
+  if constexpr (N > 5) I == 5 ? f(tag_t<5U>{}) : void();
+  if constexpr (N > 6) I == 6 ? f(tag_t<6U>{}) : void();
+  if constexpr (N > 7) I == 7 ? f(tag_t<7U>{}) : void();
+  if constexpr (N > 8) I == 8 ? f(tag_t<8U>{}) : void();
+  if constexpr (N > 9) I == 9 ? f(tag_t<9U>{}) : void();
+  if constexpr (N > 10) I == 10 ? f(tag_t<10U>{}) : void();
+  if constexpr (N > 11) I == 11 ? f(tag_t<11U>{}) : void();
+  if constexpr (N > 12) I == 12 ? f(tag_t<12U>{}) : void();
+  if constexpr (N > 13) I == 13 ? f(tag_t<13U>{}) : void();
+  if constexpr (N > 14) I == 14 ? f(tag_t<14U>{}) : void();
+  if constexpr (N > 15) I == 15 ? f(tag_t<15U>{}) : void();
+}
+
+}  // namespace detail
 
 template <class... T>
 class Variant {
-  static constexpr u32 CNT = sizeof...(T);
-  using Inn = _UnionData<T...>;
+  static constexpr u32 N = sizeof...(T);
+  using Inn = detail::Union<T...>;
   u8 _tag;
   Inn _inn;
 
  public:
-  template <class U>
-  explicit Variant(U val) noexcept : _tag{0xFF} {
-    static constexpr auto IDX = variant::union_tag<U, T...>();
-    auto& element = variant::union_at<IDX>(_inn);
-    ptr::write(&element, mem::move(val));
-    _tag = IDX;
+  template <trait::any_<T...> U>
+  explicit Variant(U arg) noexcept {
+    static constexpr auto I = detail::tag<U, T...>();
+    ptr::write(&I[_inn], mem::move(arg));
+    _tag = I.VALUE;
   }
 
   ~Variant() {
-    this->map_mut([&](auto& v) { mem::drop(v); });
+    detail::imap<N>(_tag, [&](auto I) { mem::drop(I[_inn]); });
     _tag = 0xFF;
   }
 
-  Variant(Variant&& other) noexcept : _tag{0xFF} {
-    other.imap([&](auto I) {
-      auto& dst = variant::union_at<I.VALUE>(_inn);
-      auto& src = variant::union_at<I.VALUE>(other._inn);
-      ptr::write(&dst, mem::move(src));
-      _tag = I.VALUE;
-    });
-  }
-
-  Variant(const Variant& other) noexcept : _tag{0xFF} {
-    other.imap([&](auto I) {
-      auto& dst = variant::union_at<I.VALUE>(_inn);
-      auto& src = variant::union_at<I.VALUE>(other._inn);
-      ptr::write(&dst, src);
-      _tag = I.VALUE;
-    });
+  Variant(Variant&& other) noexcept : _tag{other._tag} {
+    detail::imap<N>(_tag, [&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
   }
 
   Variant& operator=(Variant&& other) noexcept {
     if (this != &other) {
-      this->map_mut([&](auto& v) { mem::drop(v); });
-      other.imap([&](auto I) {
-        auto& dst = variant::union_at<I.VALUE>(_inn);
-        auto& src = variant::union_at<I.VALUE>(other._inn);
-        ptr::write(&dst, mem::move(src));
-        _tag = I.VALUE;
-      });
+      detail::imap<N>(_tag, [&](auto I) { mem::drop(I[_inn]); });
+      _tag = other._tag;
+      detail::imap<N>(_tag, [&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
     }
     return *this;
   }
 
-  Variant& operator=(const Variant& other) noexcept {
-    if (this != &other) {
-      this->map_mut([&](auto& v) { mem::drop(v); });
-      other.imap([&](auto I) {
-        auto& dst = variant::union_at<I.VALUE>(_inn);
-        auto& src = variant::union_at<I.VALUE>(other._inn);
-        ptr::write(&dst, src);
-        _tag = I.VALUE;
-      });
-    }
-    return *this;
-  }
-
+ public:
   template <class U>
   auto is() const noexcept -> bool {
-    static constexpr auto IDX = variant::union_tag<U, T...>();
-    return _tag == IDX;
+    static constexpr auto I = detail::tag<U, T...>();
+    return _tag == I.VALUE;
   }
 
   template <class U>
   auto as() const noexcept -> Option<const U&> {
-    static constexpr auto IDX = variant::union_tag<U, T...>();
-    if (_tag != IDX) return {};
-    return variant::union_at<IDX>(_inn);
+    static constexpr auto I = detail::tag<U, T...>();
+    if (_tag != I.VALUE) return {};
+    return I[_inn];
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
-    static constexpr auto IDX = variant::union_tag<U, T...>();
-    if (_tag != IDX) return {};
-    return variant::union_at<IDX>(_inn);
-  }
-
-  void map(auto&& f) const {
-    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
-  }
-
-  void map_mut(auto&& f) {
-    this->imap([&](auto I) { f(variant::union_at<I.VALUE>(_inn)); });
-  }
-
-  void imap(auto&& f) const {
-    if constexpr (CNT > 0) _tag == 0 ? f(trait::const_t<0U>{}) : void();
-    if constexpr (CNT > 1) _tag == 1 ? f(trait::const_t<1U>{}) : void();
-    if constexpr (CNT > 2) _tag == 2 ? f(trait::const_t<2U>{}) : void();
-    if constexpr (CNT > 3) _tag == 3 ? f(trait::const_t<3U>{}) : void();
-    if constexpr (CNT > 4) _tag == 4 ? f(trait::const_t<4U>{}) : void();
-    if constexpr (CNT > 5) _tag == 5 ? f(trait::const_t<5U>{}) : void();
-    if constexpr (CNT > 6) _tag == 6 ? f(trait::const_t<6U>{}) : void();
-    if constexpr (CNT > 7) _tag == 7 ? f(trait::const_t<7U>{}) : void();
-    if constexpr (CNT > 8) _tag == 8 ? f(trait::const_t<8U>{}) : void();
-    if constexpr (CNT > 9) _tag == 9 ? f(trait::const_t<9U>{}) : void();
-    if constexpr (CNT > 10) _tag == 10 ? f(trait::const_t<10U>{}) : void();
-    if constexpr (CNT > 11) _tag == 11 ? f(trait::const_t<11U>{}) : void();
-    if constexpr (CNT > 12) _tag == 12 ? f(trait::const_t<12U>{}) : void();
-    if constexpr (CNT > 13) _tag == 13 ? f(trait::const_t<13U>{}) : void();
-    if constexpr (CNT > 14) _tag == 14 ? f(trait::const_t<14U>{}) : void();
-    if constexpr (CNT > 15) _tag == 15 ? f(trait::const_t<15U>{}) : void();
+    static constexpr auto I = detail::tag<U, T...>();
+    if (_tag != I.VALUE) return {};
+    return I[_inn];
   }
 
  public:
+  void map(auto&& f) const {
+    detail::imap<N>(_tag, [&](auto I) { f(I[_inn]); });
+  }
+
+  void map_mut(auto&& f) {
+    detail::imap<N>(_tag, [&](auto I) { f(I[_inn]); });
+  }
+
   void fmt(auto& f) const {
-    this->map([&](const auto& t) { f.write_val(t); });
+    this->map([&](auto& val) { f.write_val(val); });
   }
 };
 

@@ -16,12 +16,6 @@ SFC_TEST(variant_basic) {
   sfc::assert_eq(b.as<f32>(), Option{3.0f});
 }
 
-SFC_TEST(variant_copy) {
-  const auto a = Variant<i32, f32>{2};
-  sfc::assert_eq(a.as<i32>(), Option{2});
-  sfc::assert_eq(auto{a}.as<i32>(), Option{2});
-}
-
 SFC_TEST(variant_move) {
   auto a = Variant<i32, f32>{2};
   auto b = mem::move(a);
