@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/string.h"
+#include "sfc/io/mod.h"
 
 namespace sfc::serde::json {
 
@@ -16,13 +16,13 @@ enum class Token {
   Null,         // 'null'
   True,         // 'true'
   False,        // 'false'
-  Other,        // number, etc.
+  Number,       // number
+  Other,        // other
 };
 
 enum class Error {
   Success,
-  Finished,             // finished parsing
-  EofWhileParsing,      // EOF while parsing keyword
+  IOError,              // I/O error
   ExpectedComma,        // expected ','
   ExpectedDoubleQuote,  // expected '"'
   ExpectedColon,        // expected ':'
@@ -39,6 +39,8 @@ auto to_str(Error err) -> Str;
 template <class T = Unit>
 using Result = result::Result<T, Error>;
 
+using Writer = io::DynWrite;
+
 class Serializer;
 class SerializeSeq;
 class SerializeObj;
@@ -50,12 +52,13 @@ class DeserializeObj;
 class Serializer {
   friend class SerializeSeq;
   friend class SerializeObj;
-  fmt::DynWrite _out;
+  io::DynWrite _out;
+
+  void write_str(Str s);
 
  public:
-  explicit Serializer(fmt::DynWrite out) : _out{out} {}
+  explicit Serializer(io::DynWrite out);
 
- public:
   void serialize_null();
   void serialize_bool(bool val);
   void serialize_i64(i64 val);
@@ -131,23 +134,28 @@ class SerializeObj {
 class Deserializer {
   friend class DeserializeSeq;
   friend class DeserializeObj;
-  Str _buf;
+  io::DynRead _reader;
+  u8 _peek_char{0};
 
-  void consume(usize cnt);
-  auto peek_tok() -> Token;
-  auto pop_tok(Token tok) -> Result<>;
+  auto peek() -> Result<u8>;
+  auto next() -> Result<u8>;
+  auto read_tok(char tok) -> Result<>;
+  auto read_key(Str s) -> Result<>;
+
+  auto peak_tok() -> Result<Token>;
+  auto next_tok() -> Result<Token>;
+  auto read_str() -> Result<String>;
+  auto read_num(Slice<u8> buf) -> Result<Str>;
 
  public:
-  Deserializer(Str s);
-  ~Deserializer();
+  Deserializer(io::DynRead r);
 
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
-  auto deserialize_str() -> Result<Str>;
   auto deserialize_u64() -> Result<u64>;
   auto deserialize_i64() -> Result<i64>;
   auto deserialize_f64() -> Result<f64>;
-  auto deserialize_num() -> Result<Str>;
+  auto deserialize_string() -> Result<String>;
 
   template <class V, class U = FnOut<V, DeserializeSeq&>>
   auto deserialize_seq(V&& visit) -> U;
@@ -167,8 +175,8 @@ class Deserializer {
       return this->deserialize_u64().map([](u64 v) { return num::saturating_cast<T>(v); });
     } else if constexpr (trait::float_<T>) {
       return this->deserialize_f64().map([](f64 v) { return T(v); });
-    } else if constexpr (requires { T{Str{}}; }) {
-      return this->deserialize_str().and_then([](Str s) { return T{s}; });
+    } else if constexpr (trait::same_<T, String>) {
+      return this->deserialize_string();
     } else {
       static_assert(false, "json::Deserializer::deserialize: not deserializable");
     }
@@ -222,7 +230,7 @@ class DeserializeObj {
   DeserializeObj(Deserializer& inn);
   ~DeserializeObj();
 
-  auto next_key() -> Result<Option<Str>>;
+  auto next_key() -> Result<Option<String>>;
 
   template <class T>
   auto next_val() -> Result<T> {
@@ -237,7 +245,7 @@ class DeserializeObj {
       if (!key_opt) {
         break;
       }
-      auto key = *key_opt;
+      auto key = mem::move(key_opt).unwrap();
       auto val = _TRY(this->next_val<V>());
 
       // if exists, don't update.
@@ -249,19 +257,19 @@ class DeserializeObj {
 
 template <class V, class U>
 auto Deserializer::deserialize_seq(V&& visit) -> U {
-  _TRY(this->pop_tok(Token::ArrayBegin));
+  _TRY(this->read_tok('['));
   auto imp = DeserializeSeq{*this};
   auto res = visit(imp);
-  _TRY(this->pop_tok(Token::ArrayEnd));
+  _TRY(this->read_tok(']'));
   return res;
 }
 
 template <class V, class U>
 auto Deserializer::deserialize_obj(V&& visit) -> U {
-  _TRY(this->pop_tok(Token::ObjectBegin));
+  _TRY(this->read_tok('{'));
   auto imp = DeserializeObj{*this};
   auto res = visit(imp);
-  _TRY(this->pop_tok(Token::ObjectEnd));
+  _TRY(this->read_tok('}'));
   return res;
 }
 
@@ -272,7 +280,7 @@ void to_writer(auto& writer, const auto& val) {
 
 auto to_string(const auto& val) -> String {
   auto buf = String{};
-  auto ser = Serializer{buf};
+  auto ser = Serializer{buf.as_mut_buf()};
   ser.serialize_any(val);
   return buf;
 }
