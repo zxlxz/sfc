@@ -10,11 +10,22 @@ SFC_TEST(visit) {
   sfc::assert_eq(t._2, Str{"abc"});
 }
 
-SFC_TEST(for_each) {
-  const auto t = Tuple{1, 2, 3};
-  auto sum = 0;
-  t.for_each([&sum](auto x) { sum += x; });
-  sfc::assert_eq(sum, 6);
+SFC_TEST(tuple_bind) {
+  auto a = 1;
+  auto b = 2.0;
+  auto c = Str{"abc"};
+  auto t = bind(a, b, c);
+  static_assert(trait::same_<decltype(t), Tuple<int&, double&, Str&>>);
+  sfc::assert_eq(t._0, 1);
+  sfc::assert_eq(t._1, 2.0);
+  sfc::assert_eq(t._2, Str{"abc"});
+}
+
+SFC_TEST(tuple_struct) {
+  const auto t = Tuple{1, 2.0};
+  auto [a, b] = t;
+  sfc::assert_eq(a, 1);
+  sfc::assert_eq(b, 2.0);
 }
 
 SFC_TEST(tuple_fmt) {

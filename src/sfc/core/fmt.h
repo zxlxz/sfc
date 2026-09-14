@@ -286,10 +286,11 @@ class DebugStruct {
 };
 
 void Fmts::format_imp(fmt::Formatter& f, const auto& args) const {
-  tuple::for_each_idx(args, [&](u32 idx, const auto& val) {
+  args.for_each([&, idx = 0U](const auto& val) mutable {
     if (idx >= _cnt) return;
     f.write_str({_fills[idx]._ptr, _fills[idx]._len});
     f.write_arg(_specs[idx], val);
+    ++idx;
   });
   f.write_str({_tail._ptr, _tail._len});
 }
