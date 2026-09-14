@@ -20,12 +20,6 @@ auto Str::trim() const noexcept -> Str {
   return this->trim_matches(is_space);
 }
 
-auto Str::hash() const noexcept -> usize {
-  auto hasher = hash::Hasher{};
-  hasher.write(this->as_bytes());
-  return hasher.finish();
-}
-
 void Str::fmt(fmt::Formatter& f) const {
   const auto type = f.type();
   if (type == 's' || type == '?') {

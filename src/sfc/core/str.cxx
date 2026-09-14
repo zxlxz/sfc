@@ -325,4 +325,13 @@ SFC_TEST(parse_exp) {
   sfc::assert_eq(Str{"1e-10"}.parse<f64>(), Option{1e-10});
 }
 
+SFC_TEST(hash) {
+  const auto s = Str{"hello"};
+
+  auto hasher = sfc::hash::DefaultHasher{};
+  s.hash(hasher);
+  const auto hash_value = hasher.finish();
+  sfc::assert_ne(hash_value, 0UL);
+}
+
 }  // namespace sfc::str::test

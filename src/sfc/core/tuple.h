@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/mod.h"
+#include "sfc/core/hash.h"
 
 namespace sfc::tuple {
 
@@ -83,6 +84,10 @@ struct Tuple : detail::Tuple<T...> {
   void fmt(auto& f) const {
     auto imp = f.debug_tuple("");
     this->for_each([&](const auto& val) { imp.field(val); });
+  }
+
+  void hash(auto& state) const {
+    this->for_each([&](auto& e) { state.write_any(e); });
   }
 
   void for_each(this auto&& self, auto&& f) {

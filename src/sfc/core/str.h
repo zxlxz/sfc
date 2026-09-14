@@ -145,7 +145,9 @@ struct Str {
   }
 
   // trait: hash::Hash
-  auto hash() const noexcept -> usize;
+  void hash(auto& state) const noexcept {
+    state.write(this->as_bytes());
+  }
 };
 
 template <class T>

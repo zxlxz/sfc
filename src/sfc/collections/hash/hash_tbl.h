@@ -303,7 +303,10 @@ class HashTbl {
   }
 
   auto hidx(const auto& key) const noexcept -> Tuple<usize, u8> {
-    const auto hx = Hash::hash(key);
+    auto h = DefaultHasher{};
+    h.write_any(key);
+
+    const auto hx = h.finish();
     const auto h1 = hx & this->mask();
     const auto h2 = u8((hx >> 57) & 0x7F);
     return {h1, h2};

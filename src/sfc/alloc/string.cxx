@@ -50,4 +50,13 @@ SFC_TEST(rfind) {
   sfc::assert_eq(s.rfind('d'), Option<usize>{});
 }
 
+SFC_TEST(hash) {
+  const auto s = String::from("hello");
+
+  auto hasher = sfc::hash::DefaultHasher{};
+  s.hash(hasher);
+  const auto hash_value = hasher.finish();
+  sfc::assert_ne(hash_value, 0UL);
+}
+
 }  // namespace sfc::string::test

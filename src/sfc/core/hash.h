@@ -1,11 +1,29 @@
 #pragma once
 
 #include "sfc/core/num.h"
-#include "sfc/core/mem.h"
 
 namespace sfc::hash {
 
-struct FNVHasher {
+struct Hasher {
+  template <class T>
+  void write_any(this auto& self, const T& val) {
+    if constexpr (requires { val.hash(self); }) {
+      val.hash(self);
+    } else if (trait::int_<T>) {
+      if constexpr (sizeof(T) == 1) {
+        self.write_u8(static_cast<u8>(val));
+      } else if constexpr (sizeof(T) == 2) {
+        self.write_u16(static_cast<u16>(val));
+      } else if constexpr (sizeof(T) == 4) {
+        self.write_u32(static_cast<u32>(val));
+      } else if constexpr (sizeof(T) == 8) {
+        self.write_u64(static_cast<u64>(val));
+      }
+    }
+  }
+};
+
+struct FNVHasher : Hasher {
   static constexpr u64 OFFSET = 0xcbf29ce484222325ULL;
   static constexpr u64 PRIME = 0x100000001b3ULL;
   u64 _state = OFFSET;
@@ -20,26 +38,10 @@ struct FNVHasher {
   void write_u64(u64 val) noexcept;
 };
 
-using Hasher = FNVHasher;
-
-struct Hash {
-  template <class T>
-  static auto hash(const T& val) noexcept -> u64 {
-    if constexpr (requires { val.hash(); }) {
-      return val.hash();
-    } else if constexpr (trait::int_<T>) {
-      auto hasher = Hasher{};
-      hasher.write(mem::as_bytes(val));
-      return hasher.finish();
-    } else {
-      static_assert(false, "Hash::hash: cannot hash value type");
-    }
-  }
-};
+using DefaultHasher = FNVHasher;
 
 }  // namespace sfc::hash
 
 namespace sfc {
-using hash::Hash;
-using hash::Hasher;
+using hash::DefaultHasher;
 }  // namespace sfc
