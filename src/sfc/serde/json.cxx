@@ -32,7 +32,7 @@ SFC_TEST(serialize_seq) {
 }
 
 SFC_TEST(serialize_map) {
-  auto map = Dict<Str, int>{};
+  auto map = collections::HashMap<Str, int>{};
   map.insert(Str{"a"}, 1);
   map.insert(Str{"b"}, 2);
   sfc::assert_eq(json::to_string(map), R"({"a":1,"b":2})");
