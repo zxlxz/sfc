@@ -17,6 +17,7 @@ static auto is_num_char(u8 ch) -> bool {
 auto to_str(Error e) -> Str {
   switch (e) {
     case Error::Success:             return "json::Error::Success";
+    case Error::Eof:                 return "json::Error::Eof";
     case Error::IOError:             return "json::Error::IOError";
     case Error::ExpectedComma:       return "json::Error::ExpectedComma";
     case Error::ExpectedDoubleQuote: return "json::Error::ExpectedDoubleQuote";
@@ -105,24 +106,31 @@ void SerializeObj::serialize_key(Str val) {
 
 Deserializer::Deserializer(io::DynRead r) : _reader{r} {}
 
-auto Deserializer::peek() -> Result<u8> {
-  auto ch = u8(_peek_char ? _peek_char : ' ');
+auto Deserializer::read_chr() -> Result<u8> {
+  _peek_char = ' ';
 
-  while (detail::is_blank(ch)) {
-    u8 buf[1] = {};
-    if (auto ret = _reader.read({buf}); ret.is_err()) {
-      return Error::IOError;
-    }
-    ch = buf[0];
+  u8 buf[1] = {0};
+
+  const auto ret = _reader.read({buf, 1});
+  if (ret.is_err()) {
+    return Err(Error::IOError);
   }
-  _peek_char = ch;
-  return Ok{ch};
+
+  const auto cnt = ret.as_ok().unwrap_or(0);
+  if (cnt == 0) {
+    return Err(Error::Eof);
+  }
+
+  return Ok(buf[0]);
 }
 
-auto Deserializer::peak_tok() -> Result<Token> {
-  const auto ch = _TRY(this->peek());
-  switch (ch) {
-    case 0:   return Token::Eof;
+auto Deserializer::peek_tok() -> Result<Token> {
+  // skip-blank
+  while (detail::is_blank(_peek_char)) {
+    _peek_char = _TRY(this->read_chr());
+  }
+
+  switch (_peek_char) {
     case ',': return Token::Comma;
     case ':': return Token::Colon;
     case '"': return Token::DoubleQuote;
@@ -133,116 +141,73 @@ auto Deserializer::peak_tok() -> Result<Token> {
     case 'n': return Token::Null;
     case 't': return Token::True;
     case 'f': return Token::False;
-    default:  return detail::is_num_char(ch) ? Token::Number : Token::Other;
+    case '+':
+    case '-':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9': return Token::Number;
+    default:  return Err(Error::InvalidKeyword);
   }
 }
 
-auto Deserializer::next_tok() -> Result<Token> {
-  const auto tok = _TRY(this->peak_tok());
-  switch (tok) {
-    case Token::Null:
-      _TRY(this->read_key("null"));
-      return tok;
-    case Token::True:
-      _TRY(this->read_key("true"));
-      return tok;
-    case Token::False:
-      _TRY(this->read_key("false"));
-      return tok;
-    case Token::Comma:
-    case Token::Colon:
-    case Token::ArrayBegin:
-    case Token::ArrayEnd:
-    case Token::ObjectBegin:
-    case Token::ObjectEnd:
-      _TRY(this->next());
-      return tok;
-    case Token::Eof:
-    case Token::DoubleQuote:
-    case Token::Number:
-    case Token::Other:
-      return tok;
-  }
-  return Error::InvalidKeyword;
-}
-
-auto Deserializer::next() -> Result<u8> {
-  if (_peek_char != 0) {
-    const auto ch = mem::take(_peek_char);
-    return Ok{ch};
+auto Deserializer::read_tok(Token expected) -> Result<Token> {
+  const auto tok = _TRY(this->peek_tok());
+  if (expected != Token::Unknown && tok != expected) {
+    switch (expected) {
+      case Token::Comma:       return Err(Error::ExpectedComma);
+      case Token::Colon:       return Err(Error::ExpectedColon);
+      case Token::ArrayBegin:  return Err(Error::ExpectedArrayBegin);
+      case Token::ArrayEnd:    return Err(Error::ExpectedArrayEnd);
+      case Token::ObjectBegin: return Err(Error::ExpectedObjectBegin);
+      case Token::ObjectEnd:   return Err(Error::ExpectedObjectEnd);
+      case Token::DoubleQuote: return Err(Error::ExpectedDoubleQuote);
+      default:                 return Err(Error::InvalidKeyword);
+    }
   }
 
-  u8 buf[1] = {};
-  if (auto ret = _reader.read({buf}); ret.is_err()) {
-    return Error::IOError;
-  }
-  return Ok{buf[0]};
-}
-
-auto Deserializer::read_tok(char tok) -> Result<> {
-  const auto ch = _TRY(this->peek());
-  if (ch == u8(tok)) {
-    _peek_char = 0;
+  auto read_out = [&]<u32 N>(const char (&s)[N]) -> Result<> {
+    _peek_char = ' ';
+    for (u32 i = 1; i < N - 1; ++i) {
+      const auto ch = _TRY(this->read_chr());
+      if (ch != s[i]) {
+        return Err(Error::InvalidKeyword);
+      }
+    }
     return Ok{};
-  }
+  };
 
   switch (tok) {
-    case ',': return Error::ExpectedComma;
-    case ':': return Error::ExpectedColon;
-    case '[': return Error::ExpectedArrayBegin;
-    case ']': return Error::ExpectedArrayEnd;
-    case '{': return Error::ExpectedObjectBegin;
-    case '}': return Error::ExpectedObjectEnd;
-    case '"': return Error::ExpectedDoubleQuote;
-  }
-  return Error::InvalidKeyword;
-}
-
-auto Deserializer::read_key(Str s) -> Result<> {
-  const auto cnt = s.len();
-  const auto ptr = s.as_ptr();
-
-  for (auto idx = 0U; idx < cnt; ++idx) {
-    const auto next_ch = _TRY(this->next());
-    if (next_ch != ptr[idx]) {
-      return Error::InvalidKeyword;
-    }
-  }
-  return Ok{};
-}
-
-auto Deserializer::read_num(Slice<u8> buf) -> Result<Str> {
-  const auto cnt = buf.len();
-
-  auto idx = 0U;
-  for (; idx < cnt;) {
-    const auto ch = _TRY(this->peek());
-    if (!detail::is_num_char(ch)) {
-      break;
-    }
-    _peek_char = 0;
-    buf[idx++] = ch;
+    case Token::Null:        _TRY(read_out("null")); break;
+    case Token::True:        _TRY(read_out("true")); break;
+    case Token::False:       _TRY(read_out("false")); break;
+    case Token::Comma:       _TRY(read_out(",")); break;
+    case Token::Colon:       _TRY(read_out(":")); break;
+    case Token::ArrayBegin:  _TRY(read_out("[")); break;
+    case Token::ArrayEnd:    _TRY(read_out("]")); break;
+    case Token::ObjectBegin: _TRY(read_out("{")); break;
+    case Token::ObjectEnd:   _TRY(read_out("}")); break;
+    case Token::DoubleQuote: break;
+    case Token::Number:      break;
+    case Token::Unknown:     break;
   }
 
-  if (idx == cnt && detail::is_num_char(_TRY(this->peek()))) {
-    return Error::InvalidNumber;
-  }
-
-  const auto s = Str::from_utf8({buf.as_ptr(), idx});
-  return Ok{s};
+  return tok;
 }
 
 auto Deserializer::read_str() -> Result<String> {
-  _TRY(this->read_tok('"'));
+  _TRY(this->read_tok());  // eat '"'
+
   auto res = String{};
   auto prev_char = u8(0);
-
   while (true) {
-    const auto ch = _TRY(this->next());
-    if (ch == 0) {
-      return Error::InvalidString;
-    }
-
+    const auto ch = _TRY(this->read_chr());
     if (prev_char == '\\') {
       switch (ch) {
         case '"':  res.push('"'); break;
@@ -255,43 +220,63 @@ auto Deserializer::read_str() -> Result<String> {
       prev_char = 0;
       continue;
     }
-
-    if (ch == '\\') {
-      prev_char = ch;
-      continue;
-    }
-
     if (ch == '"') {
-      break;
+      break;  // eat '"'
     }
-    res.push(ch);
+    if (ch != '\\') {
+      res.push(ch);
+    }
+    prev_char = ch;
   }
   return Ok{mem::move(res)};
 }
 
-auto Deserializer::deserialize_null() -> Result<> {
-  if (_TRY(this->next_tok()) == Token::Null) {
-    return Ok{};
+auto Deserializer::read_num(Slice<u8> buf) -> Result<Str> {
+  const auto cnt = buf.len();
+
+  auto idx = 0U;
+  if (idx < cnt) {
+    buf[idx++] = _peek_char;
   }
-  return Error::InvalidKeyword;
+
+  for (; idx < cnt;) {
+    const auto ret = this->read_chr();
+    if (auto err = ret.as_err()) {
+      break;
+    }
+    const auto ch = ret.as_ok().unwrap_or(0);
+    if (!detail::is_num_char(ch)) {
+      _peek_char = ch;
+      break;
+    }
+    buf[idx++] = ch;
+  }
+  const auto s = Str::from_utf8({buf.as_ptr(), idx});
+  return Ok{s};
+}
+
+auto Deserializer::deserialize_null() -> Result<> {
+  const auto tok = this->peek_tok();
+  if (tok != Token::Null) {
+    return Error::InvalidKeyword;
+  }
+
+  _TRY(this->read_tok());
+  return Ok{};
 }
 
 auto Deserializer::deserialize_bool() -> Result<bool> {
-  switch (_TRY(this->next_tok())) {
-    case Token::True: {
-      return {true};
-    }
-    case Token::False: {
-      return {false};
-    }
-    default: {
-      return Error::InvalidKeyword;
-    }
+  const auto tok = _TRY(this->peek_tok());
+  if (tok != Token::True && tok != Token::False) {
+    return Error::InvalidKeyword;
   }
+
+  _TRY(this->read_tok());
+  return tok == Token::True;
 }
 
 auto Deserializer::deserialize_i64() -> Result<i64> {
-  if (_TRY(this->peak_tok()) != Token::Number) {
+  if (_TRY(this->peek_tok()) != Token::Number) {
     return Error::InvalidNumber;
   }
 
@@ -302,7 +287,7 @@ auto Deserializer::deserialize_i64() -> Result<i64> {
 }
 
 auto Deserializer::deserialize_u64() -> Result<u64> {
-  if (_TRY(this->peak_tok()) != Token::Number) {
+  if (_TRY(this->peek_tok()) != Token::Number) {
     return Error::InvalidNumber;
   }
 
@@ -313,7 +298,7 @@ auto Deserializer::deserialize_u64() -> Result<u64> {
 }
 
 auto Deserializer::deserialize_f64() -> Result<f64> {
-  if (_TRY(this->peak_tok()) != Token::Number) {
+  if (_TRY(this->peek_tok()) != Token::Number) {
     return Error::InvalidNumber;
   }
 
@@ -324,12 +309,12 @@ auto Deserializer::deserialize_f64() -> Result<f64> {
 }
 
 auto Deserializer::deserialize_string() -> Result<String> {
-  if (_TRY(this->peak_tok()) != Token::DoubleQuote) {
+  const auto tok = _TRY(this->peek_tok());
+  if (tok != Token::DoubleQuote) {
     return Error::ExpectedDoubleQuote;
   }
 
-  auto str = this->read_str();
-  return str;
+  return this->read_str();
 }
 
 DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
@@ -341,16 +326,18 @@ auto DeserializeSeq::next_imp() -> Result<bool> {
     return false;
   }
 
-  const auto tok = _TRY(_des.peak_tok());
+  const auto tok = _TRY(_des.peek_tok());
   if (tok == Token::ArrayEnd) {
+    _TRY(_des.read_tok());
     _finished = true;
     return false;
   }
 
   if (_count != 0) {
-    if (_TRY(_des.next_tok()) != Token::Comma) {
+    if (tok != Token::Comma) {
       return Error::ExpectedComma;
     }
+    _TRY(_des.read_tok());
   }
 
   _count += 1;
@@ -366,23 +353,22 @@ auto DeserializeObj::next_key() -> Result<Option<String>> {
     return Option<String>{};
   }
 
-  const auto tok = _TRY(_des.peak_tok());
+  const auto tok = _TRY(_des.peek_tok());
   if (tok == Token::ObjectEnd) {
     _finished = true;
     return Option<String>{};
   }
 
   if (_count != 0) {
-    if (_TRY(_des.next_tok()) != Token::Comma) {
+    if (tok != Token::Comma) {
       return Error::ExpectedComma;
     }
+    _TRY(_des.read_tok());
   }
 
   _count += 1;
-
   auto key = _TRY(_des.deserialize_string());
-  _TRY(_des.read_tok(':'));
-
+  _TRY(_des.read_tok(Token::Colon));
   return Option<String>{mem::move(key)};
 }
 

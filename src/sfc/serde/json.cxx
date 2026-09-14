@@ -101,7 +101,7 @@ SFC_TEST(serde_seq) {
     const int vals[] = {0, 1, 2};
     sfc::assert_eq(json::to_string(vals), "[0,1,2]");
 
-    auto buf = Str{"[0,1,2]"}.as_bytes();
+    auto buf = Str{" [0,  1,2]"}.as_bytes();
     auto des = Deserializer{buf};
     auto ret = des.deserialize_seq([&](DeserializeSeq& seq) -> Result<> {
       for (auto i = 0U; i < 3; ++i) {
@@ -122,7 +122,7 @@ SFC_TEST(serde_map) {
     dict.insert(Str{"b"}, 2);
     sfc::assert_eq(json::to_string(dict), "{\"a\":1,\"b\":2}");
 
-    auto buf = Str{"{\"a\":1,\"b\":2}"}.as_bytes();
+    auto buf = Str{" {\"a\":1,  \"b\"  : 2}"}.as_bytes();
     auto des = Deserializer{buf};
 
     const Str keys[] = {Str{"a"}, Str{"b"}};

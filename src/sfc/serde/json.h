@@ -5,23 +5,23 @@
 namespace sfc::serde::json {
 
 enum class Token {
-  Eof,
   Comma,        // ','
   Colon,        // ':'
-  DoubleQuote,  // '"'
   ArrayBegin,   // '['
   ArrayEnd,     // ']'
   ObjectBegin,  // '{'
   ObjectEnd,    // '}'
+  DoubleQuote,  // '"'
   Null,         // 'null'
   True,         // 'true'
   False,        // 'false'
   Number,       // number
-  Other,        // other
+  Unknown,      // unknown token
 };
 
 enum class Error {
   Success,
+  Eof,                  // end of file
   IOError,              // I/O error
   ExpectedComma,        // expected ','
   ExpectedDoubleQuote,  // expected '"'
@@ -135,15 +135,11 @@ class Deserializer {
   friend class DeserializeSeq;
   friend class DeserializeObj;
   io::DynRead _reader;
-  u8 _peek_char{0};
+  u8 _peek_char{' '};
 
-  auto peek() -> Result<u8>;
-  auto next() -> Result<u8>;
-  auto read_tok(char tok) -> Result<>;
-  auto read_key(Str s) -> Result<>;
-
-  auto peak_tok() -> Result<Token>;
-  auto next_tok() -> Result<Token>;
+  auto read_chr() -> Result<u8>;
+  auto peek_tok() -> Result<Token>;
+  auto read_tok(Token tok = Token::Unknown) -> Result<Token>;
   auto read_str() -> Result<String>;
   auto read_num(Slice<u8> buf) -> Result<Str>;
 
@@ -257,19 +253,19 @@ class DeserializeObj {
 
 template <class V, class U>
 auto Deserializer::deserialize_seq(V&& visit) -> U {
-  _TRY(this->read_tok('['));
+  _TRY(this->read_tok(Token::ArrayBegin));
   auto imp = DeserializeSeq{*this};
   auto res = visit(imp);
-  _TRY(this->read_tok(']'));
+  _TRY(this->read_tok(Token::ArrayEnd));
   return res;
 }
 
 template <class V, class U>
 auto Deserializer::deserialize_obj(V&& visit) -> U {
-  _TRY(this->read_tok('{'));
+  _TRY(this->read_tok(Token::ObjectBegin));
   auto imp = DeserializeObj{*this};
   auto res = visit(imp);
-  _TRY(this->read_tok('}'));
+  _TRY(this->read_tok(Token::ObjectEnd));
   return res;
 }
 
