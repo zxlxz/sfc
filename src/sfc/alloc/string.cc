@@ -53,6 +53,10 @@ auto String::as_str() const noexcept -> Str {
   return Str::from_utf8(_buf.as_slice());
 }
 
+auto String::operator[](usize idx) const noexcept -> u8 {
+  return _buf[idx];
+}
+
 auto String::operator[](Range ids) const noexcept -> Str {
   const auto v = _buf[ids];
   return Str::from_utf8(v);
