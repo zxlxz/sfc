@@ -1,36 +1,34 @@
 #pragma once
 
-#include "sfc/io/mod.h"
+#include "sfc/alloc.h"
 
 namespace sfc::serde::json {
 
 enum class Token {
-  Eof,
   Comma,        // ','
   Colon,        // ':'
-  DoubleQuote,  // '"'
+  Null,         // 'null'
+  True,         // 'true'
+  False,        // 'false'
+  String,       // string ".*"
+  Number,       // number [0-9*]
   ArrayBegin,   // '['
   ArrayEnd,     // ']'
   ObjectBegin,  // '{'
   ObjectEnd,    // '}'
-  Null,         // 'null'
-  True,         // 'true'
-  False,        // 'false'
-  Number,       // number
   Other,        // other
 };
 
 enum class Error {
   Success,
-  IOError,              // I/O error
+  InvalidToken,         // invalid token
+  UnexpectedEof,        // unexpected end of file
   ExpectedComma,        // expected ','
-  ExpectedDoubleQuote,  // expected '"'
   ExpectedColon,        // expected ':'
   ExpectedArrayBegin,   // expected '['
   ExpectedArrayEnd,     // expected ']'
   ExpectedObjectBegin,  // expected '{'
   ExpectedObjectEnd,    // expected '}'
-  InvalidKeyword,       // invalid keyword (true, false, null)
   InvalidNumber,        // invalid number format
   InvalidString,        // invalid string format (e.g. invalid escape sequence)
 };
@@ -38,8 +36,6 @@ auto to_str(Error err) -> Str;
 
 template <class T = Unit>
 using Result = result::Result<T, Error>;
-
-using Writer = io::DynWrite;
 
 class Serializer;
 class SerializeSeq;
@@ -52,12 +48,13 @@ class DeserializeObj;
 class Serializer {
   friend class SerializeSeq;
   friend class SerializeObj;
-  io::DynWrite _out;
+  String _buf;
 
-  void write_str(Str s);
+  void write_tok(Token tok);
 
  public:
-  explicit Serializer(io::DynWrite out);
+  auto as_str() const -> Str;
+  auto into_string() && -> String;
 
   void serialize_null();
   void serialize_bool(bool val);
@@ -134,28 +131,21 @@ class SerializeObj {
 class Deserializer {
   friend class DeserializeSeq;
   friend class DeserializeObj;
-  io::DynRead _reader;
-  u8 _peek_char{0};
+  Str _buf;
 
-  auto peek() -> Result<u8>;
-  auto next() -> Result<u8>;
-  auto read_tok(char tok) -> Result<>;
-  auto read_key(Str s) -> Result<>;
-
-  auto peak_tok() -> Result<Token>;
-  auto next_tok() -> Result<Token>;
-  auto read_str() -> Result<String>;
-  auto read_num(Slice<u8> buf) -> Result<Str>;
+  auto peek_tok() -> Result<Token>;
+  auto next_tok() -> Result<Str>;
+  auto read_tok(Token expected) -> Result<>;
 
  public:
-  Deserializer(io::DynRead r);
+  static auto from_str(Str buf) -> Deserializer;
 
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
   auto deserialize_u64() -> Result<u64>;
   auto deserialize_i64() -> Result<i64>;
   auto deserialize_f64() -> Result<f64>;
-  auto deserialize_string() -> Result<String>;
+  auto deserialize_str() -> Result<Str>;
 
   template <class V, class U = FnOut<V, DeserializeSeq&>>
   auto deserialize_seq(V&& visit) -> U;
@@ -176,7 +166,7 @@ class Deserializer {
     } else if constexpr (trait::float_<T>) {
       return this->deserialize_f64().map([](f64 v) { return T(v); });
     } else if constexpr (trait::same_<T, String>) {
-      return this->deserialize_string();
+      return this->deserialize_str();
     } else {
       static_assert(false, "json::Deserializer::deserialize: not deserializable");
     }
@@ -230,10 +220,17 @@ class DeserializeObj {
   DeserializeObj(Deserializer& inn);
   ~DeserializeObj();
 
-  auto next_key() -> Result<Option<String>>;
+ public:
+  auto next_imp() -> Result<bool>;
+  auto next_key() -> Result<Option<Str>>;
 
   template <class T>
   auto next_val() -> Result<T> {
+    const auto colon = _TRY(_des.peek_tok());
+    if (colon != Token::Colon) {
+      return Error::ExpectedColon;
+    }
+    _TRY(_des.next_tok());
     return _des.deserialize_any<T>();
   }
 
@@ -245,11 +242,11 @@ class DeserializeObj {
       if (!key_opt) {
         break;
       }
-      auto key = mem::move(key_opt).unwrap();
+      auto key = String::from(*key_opt);
       auto val = _TRY(this->next_val<V>());
 
       // if exists, don't update.
-      (void)obj.try_insert(key, mem::move(val));
+      (void)obj.try_insert(mem::move(key), mem::move(val));
     }
     return {obj};
   }
@@ -257,19 +254,19 @@ class DeserializeObj {
 
 template <class V, class U>
 auto Deserializer::deserialize_seq(V&& visit) -> U {
-  _TRY(this->read_tok('['));
+  _TRY(this->read_tok(Token::ArrayBegin));
   auto imp = DeserializeSeq{*this};
   auto res = visit(imp);
-  _TRY(this->read_tok(']'));
+  _TRY(this->read_tok(Token::ArrayEnd));
   return res;
 }
 
 template <class V, class U>
 auto Deserializer::deserialize_obj(V&& visit) -> U {
-  _TRY(this->read_tok('{'));
+  _TRY(this->read_tok(Token::ObjectBegin));
   auto imp = DeserializeObj{*this};
   auto res = visit(imp);
-  _TRY(this->read_tok('}'));
+  _TRY(this->read_tok(Token::ObjectEnd));
   return res;
 }
 
@@ -279,10 +276,9 @@ void to_writer(auto& writer, const auto& val) {
 }
 
 auto to_string(const auto& val) -> String {
-  auto buf = String{};
-  auto ser = Serializer{buf.as_mut_buf()};
+  auto ser = Serializer{};
   ser.serialize_any(val);
-  return buf;
+  return mem::move(ser).into_string();
 }
 
 }  // namespace sfc::serde::json
