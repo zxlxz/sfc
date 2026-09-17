@@ -7,7 +7,7 @@ namespace sfc::num {
 template <trait::int_ T>
 struct Int;
 
-template <trait::float_ T>
+template <trait::flt_ T>
 struct Float;
 
 template <class T>

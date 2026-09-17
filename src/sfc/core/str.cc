@@ -337,7 +337,7 @@ struct FromStr<T> {
   }
 };
 
-template <trait::float_ T>
+template <trait::flt_ T>
 struct FromStr<T> {
   static auto fast_exp10(i32 p) -> f64 {
     static constexpr f64 TBL[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};

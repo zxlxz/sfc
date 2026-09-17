@@ -26,7 +26,7 @@ template <class T, class U>
 concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
 #endif
 
-template<class T, class U>
+template <class T, class U>
 concept not_ = !same_<T, U>;
 
 template <class T, class... U>
@@ -42,7 +42,10 @@ template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept float_ = any_<T, float, double>;
+concept flt_ = any_<T, float, double>;
+
+template <class T>
+concept num_ = int_<T> || flt_<T>;
 
 template <class T>
 concept tv_copy_ = __is_trivially_copyable(T);
@@ -71,5 +74,5 @@ using trait::tv_drop_;
 using trait::int_;
 using trait::sint_;
 using trait::uint_;
-using trait::float_;
+using trait::flt_;
 }  // namespace sfc
