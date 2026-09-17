@@ -30,7 +30,7 @@ SFC_TEST(serde_int) {
     sfc::assert_eq(json::to_string(123), "123");
 
     auto des = Deserializer::from_str("123");
-    sfc::assert_eq(des.deserialize_i64().ok(), Option{123});
+    sfc::assert_eq(des.deserialize_any<i64>().ok(), Option{123});
   }
 
   // -123 -> i64
@@ -38,7 +38,7 @@ SFC_TEST(serde_int) {
     sfc::assert_eq(json::to_string(-123), "-123");
 
     auto des = Deserializer::from_str("-123");
-    sfc::assert_eq(des.deserialize_i64().ok(), Option{-123});
+    sfc::assert_eq(des.deserialize_any<i64>().ok(), Option{-123});
   }
 
   // -123 -> u64
@@ -46,7 +46,7 @@ SFC_TEST(serde_int) {
     sfc::assert_eq(json::to_string(-123), "-123");
 
     auto des = Deserializer::from_str("-123");
-    sfc::assert_eq(des.deserialize_u64().ok(), Option<u64>{});
+    sfc::assert_eq(des.deserialize_any<u64>().ok(), Option<u64>{});
   }
 }
 
@@ -56,7 +56,7 @@ SFC_TEST(serde_flt) {
     sfc::assert_eq(json::to_string(1.2), "1.200000");
 
     auto des = Deserializer::from_str("1.2");
-    sfc::assert_eq(des.deserialize_f64().ok(), Option{1.2});
+    sfc::assert_eq(des.deserialize_any<f64>().ok(), Option{1.2});
   }
 
   // -1.2
@@ -64,7 +64,7 @@ SFC_TEST(serde_flt) {
     sfc::assert_eq(json::to_string(-1.2), "-1.200000");
 
     auto des = Deserializer::from_str("-1.2");
-    sfc::assert_eq(des.deserialize_f64().ok(), Option{-1.2});
+    sfc::assert_eq(des.deserialize_any<f64>().ok(), Option{-1.2});
   }
 }
 
@@ -93,40 +93,32 @@ SFC_TEST(serde_seq) {
     sfc::assert_eq(json::to_string(vals), "[0, 1, 2]");
 
     auto des = Deserializer::from_str("[0,1,2]");
-    auto ret = des.deserialize_seq([&](DeserializeSeq& seq) -> Result<> {
-      for (auto i = 0U; i < 3; ++i) {
-        const auto val = seq.next_element<int>().unwrap();
-        sfc::assert_eq(val, Option{vals[i]});
-      }
-      return Ok{};
-    });
-    sfc::assert_eq(ret.is_ok(), true);
+    auto list = List<int>::deserialize(des).unwrap();
+
+    sfc::assert_eq(list.len(), 3U);
+    for (auto i = 0U; i < 3; ++i) {
+      sfc::assert_eq(list[i], vals[i]);
+    }
   }
 }
 
 SFC_TEST(serde_map) {
   // {"a":1,"b":2}
   {
-    auto dict = collections::HashMap<Str, int>{};
-    dict.insert(Str{"a"}, 1);
-    dict.insert(Str{"b"}, 2);
+    auto dict = collections::HashMap<String, int>{};
+    dict.insert(String::from("a"), 1);
+    dict.insert(String::from("b"), 2);
     sfc::assert_eq(json::to_string(dict), "{\"a\": 1, \"b\": 2}");
 
     auto des = Deserializer::from_str("{\"a\":1,\"b\":2}");
+    dict.clear();
+    sfc::assert_eq(dict.len(), 0U);
 
-    const Str keys[] = {Str{"a"}, Str{"b"}};
-    const int vals[] = {1, 2};
-    auto ret = des.deserialize_obj([&](DeserializeObj& map) -> Result<> {
-      for (auto i = 0U; i < 2; ++i) {
-        const auto key = _TRY(map.next_key());
-        sfc::assert_eq(key, Option{keys[i]});
+    dict = collections::HashMap<String, int>::deserialize(des).unwrap();
+    sfc::assert_eq(dict.len(), 2U);
 
-        const auto val = _TRY(map.next_val<int>());
-        sfc::assert_eq(val, vals[i]);
-      }
-      return Ok{};
-    });
-    sfc::assert_eq(ret.is_ok(), true);
+    sfc::assert_eq(dict.get(Str{"a"}), Option{1});
+    sfc::assert_eq(dict.get(Str{"b"}), Option{2});
   }
 }
 

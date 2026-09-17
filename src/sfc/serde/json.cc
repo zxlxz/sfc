@@ -76,17 +76,22 @@ void Serializer::serialize_bool(bool val) {
   this->write_tok(tok);
 }
 
-void Serializer::serialize_i64(i64 val) {
+void Serializer::serialize_num(trait::num_ auto val) {
   fmt::write(_buf, "{}", val);
 }
 
-void Serializer::serialize_u64(u64 val) {
-  fmt::write(_buf, "{}", val);
-}
+template void Serializer::serialize_num(short);
+template void Serializer::serialize_num(int);
+template void Serializer::serialize_num(long);
+template void Serializer::serialize_num(long long);
 
-void Serializer::serialize_f64(f64 val) {
-  fmt::write(_buf, "{}", val);
-}
+template void Serializer::serialize_num(unsigned short);
+template void Serializer::serialize_num(unsigned int);
+template void Serializer::serialize_num(unsigned long);
+template void Serializer::serialize_num(unsigned long long);
+
+template void Serializer::serialize_num(float);
+template void Serializer::serialize_num(double);
 
 void Serializer::serialize_str(Str val) {
   fmt::write(_buf, "\"{}\"", val);
@@ -292,35 +297,14 @@ auto Deserializer::deserialize_bool() -> Result<bool> {
   return {val};
 }
 
-auto Deserializer::deserialize_i64() -> Result<i64> {
+auto Deserializer::deserialize_num() -> Result<Str> {
   const auto tok = _TRY(this->peek_tok());
   if (tok != Token::Number) {
     return Error::InvalidNumber;
   }
 
   const auto num_str = _TRY(this->next_tok());
-  const auto num_val = num_str.parse<i64>().ok_or(Error::InvalidNumber);
-  return num_val;
-}
-
-auto Deserializer::deserialize_u64() -> Result<u64> {
-  const auto tok = _TRY(this->peek_tok());
-  if (tok != Token::Number) {
-    return Error::InvalidNumber;
-  }
-  const auto num_str = _TRY(this->next_tok());
-  const auto num_val = num_str.parse<u64>().ok_or(Error::InvalidNumber);
-  return num_val;
-}
-
-auto Deserializer::deserialize_f64() -> Result<f64> {
-  const auto tok = _TRY(this->peek_tok());
-  if (tok != Token::Number) {
-    return Error::InvalidNumber;
-  }
-  const auto num_str = _TRY(this->next_tok());
-  const auto num_val = num_str.parse<f64>().ok_or(Error::InvalidNumber);
-  return num_val;
+  return num_str;
 }
 
 auto Deserializer::deserialize_str() -> Result<Str> {
@@ -336,11 +320,37 @@ auto Deserializer::deserialize_str() -> Result<Str> {
   return str[{1, str._len - 1}];
 }
 
-DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
+auto Deserializer::deserialize_seq() -> Result<DeserializeSeq> {
+  _TRY(this->read_tok(Token::ArrayBegin));
+  auto imp = DeserializeSeq{*this};
+  return imp;
+}
 
-DeserializeSeq::~DeserializeSeq() {}
+auto Deserializer::deserialize_obj() -> Result<DeserializeObj> {
+  _TRY(this->read_tok(Token::ObjectBegin));
+  auto imp = DeserializeObj{*this};
+  return imp;
+}
 
-auto DeserializeSeq::next_imp() -> Result<bool> {
+auto Deserializer::deserialize_dict() -> Result<DeserializeObj> {
+  _TRY(this->read_tok(Token::ObjectBegin));
+  auto imp = DeserializeObj{*this};
+  return imp;
+}
+
+Deserializer::DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
+
+auto Deserializer::DeserializeSeq::end() -> Result<> {
+  if (_finished) {
+    return Ok{};
+  }
+
+  _TRY(_des.read_tok(Token::ArrayEnd));
+  _finished = true;
+  return Ok{};
+}
+
+auto Deserializer::DeserializeSeq::next_imp() -> Result<bool> {
   if (_finished) {
     return false;
   }
@@ -360,11 +370,19 @@ auto DeserializeSeq::next_imp() -> Result<bool> {
   return true;
 }
 
-DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
+Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
 
-DeserializeObj::~DeserializeObj() {}
+auto Deserializer::DeserializeObj::end() -> Result<> {
+  if (_finished) {
+    return Ok{};
+  }
 
-auto DeserializeObj::next_imp() -> Result<bool> {
+  _TRY(_des.read_tok(Token::ObjectEnd));
+  _finished = true;
+  return Ok{};
+}
+
+auto Deserializer::DeserializeObj::next_imp() -> Result<bool> {
   if (_finished) {
     return false;
   }
@@ -382,7 +400,7 @@ auto DeserializeObj::next_imp() -> Result<bool> {
   return true;
 }
 
-auto DeserializeObj::next_key() -> Result<Option<Str>> {
+auto Deserializer::DeserializeObj::next_key() -> Result<Option<Str>> {
   const auto has_next = _TRY(this->next_imp());
   if (!has_next) {
     return Option<Str>{};

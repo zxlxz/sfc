@@ -42,8 +42,6 @@ class SerializeSeq;
 class SerializeObj;
 
 class Deserializer;
-class DeserializeSeq;
-class DeserializeObj;
 
 class Serializer {
   friend class SerializeSeq;
@@ -58,10 +56,8 @@ class Serializer {
 
   void serialize_null();
   void serialize_bool(bool val);
-  void serialize_i64(i64 val);
-  void serialize_u64(u64 val);
-  void serialize_f64(f64 val);
   void serialize_str(Str val);
+  void serialize_num(trait::num_ auto val);
 
   auto serialize_seq() -> SerializeSeq;
   auto serialize_obj() -> SerializeObj;
@@ -72,12 +68,8 @@ class Serializer {
       return val.serialize(*this);
     } else if constexpr (trait::same_<T, bool>) {
       return this->serialize_bool(val);
-    } else if constexpr (trait::sint_<T>) {
-      return this->serialize_i64(val);
-    } else if constexpr (trait::uint_<T>) {
-      return this->serialize_u64(val);
-    } else if constexpr (trait::float_<T>) {
-      return this->serialize_f64(val);
+    } else if constexpr (trait::num_<T>) {
+      return this->serialize_num(val);
     } else if constexpr (requires { Str{val}; }) {
       return this->serialize_str(val);
     } else if constexpr (requires { Slice{val}; }) {
@@ -129,8 +121,6 @@ class SerializeObj {
 };
 
 class Deserializer {
-  friend class DeserializeSeq;
-  friend class DeserializeObj;
   Str _buf;
 
   auto peek_tok() -> Result<Token>;
@@ -138,20 +128,23 @@ class Deserializer {
   auto read_tok(Token expected) -> Result<>;
 
  public:
+  template <class T = Unit>
+  using Result = json::Result<T>;
+
   static auto from_str(Str buf) -> Deserializer;
 
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
-  auto deserialize_u64() -> Result<u64>;
-  auto deserialize_i64() -> Result<i64>;
-  auto deserialize_f64() -> Result<f64>;
+  auto deserialize_num() -> Result<Str>;
   auto deserialize_str() -> Result<Str>;
 
-  template <class V, class U = FnOut<V, DeserializeSeq&>>
-  auto deserialize_seq(V&& visit) -> U;
+  class DeserializeSeq;
 
-  template <class V, class U = FnOut<V, DeserializeObj&>>
-  auto deserialize_obj(V&& visit) -> U;
+  auto deserialize_seq() -> Result<DeserializeSeq>;
+
+  class DeserializeObj;
+  auto deserialize_obj() -> Result<DeserializeObj>;
+  auto deserialize_dict() -> Result<DeserializeObj>;
 
   template <class T>
   auto deserialize_any() -> Result<T> {
@@ -159,12 +152,9 @@ class Deserializer {
       return T::deserialize(*this);
     } else if constexpr (trait::same_<T, bool>) {
       return this->deserialize_bool();
-    } else if constexpr (trait::sint_<T>) {
-      return this->deserialize_i64().map([](i64 v) { return num::saturating_cast<T>(v); });
-    } else if constexpr (trait::uint_<T>) {
-      return this->deserialize_u64().map([](u64 v) { return num::saturating_cast<T>(v); });
-    } else if constexpr (trait::float_<T>) {
-      return this->deserialize_f64().map([](f64 v) { return T(v); });
+    } else if constexpr (trait::int_<T> || trait::flt_<T>) {
+      const auto num_str = _TRY(this->deserialize_num());
+      return num_str.parse<T>().ok_or(json::Error::InvalidNumber);
     } else if constexpr (trait::same_<T, String>) {
       return this->deserialize_str();
     } else {
@@ -173,18 +163,13 @@ class Deserializer {
   }
 };
 
-class DeserializeSeq {
-  using Error = json::Error;
+class Deserializer::DeserializeSeq {
   Deserializer& _des;
   usize _count{0};
   bool _finished{false};
 
  public:
-  DeserializeSeq(Deserializer& inn);
-  ~DeserializeSeq();
-
- public:
-  auto next_imp() -> Result<bool>;
+  auto end() -> Result<>;
 
   template <class T>
   auto next_element() -> Result<Option<T>> {
@@ -196,79 +181,64 @@ class DeserializeSeq {
     return {mem::move(element)};
   }
 
-  template <class Seq, class T>
-  auto collect() -> Result<Seq> {
-    auto seq = Seq{};
+  template <class T>
+  auto for_each(auto&& f) -> Result<> {
     while (true) {
-      auto opt = _TRY(this->next_element<T>());
-      if (!opt) {
+      const auto has_next = _TRY(this->next_imp());
+      if (!has_next) {
         break;
       }
-      seq.push(mem::move(opt).unwrap());
+      auto element = _TRY(_des.deserialize_any<T>());
+      f(mem::move(element));
     }
-    return {seq};
+    return Ok{};
   }
+
+ private:
+  friend class Deserializer;
+  DeserializeSeq(Deserializer& inn);
+  auto next_imp() -> Result<bool>;
 };
 
-class DeserializeObj {
-  using Error = json::Error;
+class Deserializer::DeserializeObj {
   Deserializer& _des;
   usize _count{0};
   bool _finished{false};
 
  public:
-  DeserializeObj(Deserializer& inn);
-  ~DeserializeObj();
-
- public:
-  auto next_imp() -> Result<bool>;
-  auto next_key() -> Result<Option<Str>>;
+  auto end() -> Result<>;
 
   template <class T>
   auto next_val() -> Result<T> {
-    const auto colon = _TRY(_des.peek_tok());
-    if (colon != Token::Colon) {
-      return Error::ExpectedColon;
-    }
-    _TRY(_des.next_tok());
+    _TRY(_des.read_tok(Token::Colon));
     return _des.deserialize_any<T>();
   }
 
-  template <class Obj, class K, class V>
-  auto collect() -> Result<Obj> {
-    auto obj = Obj{};
+  template <class T>
+  auto for_each(auto&& f) -> Result<> {
+    auto key = String{};
     while (true) {
+      key.clear();
       auto key_opt = _TRY(this->next_key());
       if (!key_opt) {
         break;
       }
-      auto key = String::from(*key_opt);
-      auto val = _TRY(this->next_val<V>());
+      key.push_str(*key_opt);
 
-      // if exists, don't update.
-      (void)obj.try_insert(mem::move(key), mem::move(val));
+      auto val = _TRY(this->next_val<T>());
+      f(key.as_str(), mem::move(val));
     }
-    return {obj};
+    _TRY(this->end());
+    return Ok{};
   }
+
+ private:
+  friend class Deserializer;
+
+  DeserializeObj(Deserializer& inn);
+  auto next_imp() -> Result<bool>;
+  auto next_key() -> Result<Option<Str>>;
 };
-
-template <class V, class U>
-auto Deserializer::deserialize_seq(V&& visit) -> U {
-  _TRY(this->read_tok(Token::ArrayBegin));
-  auto imp = DeserializeSeq{*this};
-  auto res = visit(imp);
-  _TRY(this->read_tok(Token::ArrayEnd));
-  return res;
-}
-
-template <class V, class U>
-auto Deserializer::deserialize_obj(V&& visit) -> U {
-  _TRY(this->read_tok(Token::ObjectBegin));
-  auto imp = DeserializeObj{*this};
-  auto res = visit(imp);
-  _TRY(this->read_tok(Token::ObjectEnd));
-  return res;
-}
 
 void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};

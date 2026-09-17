@@ -319,9 +319,13 @@ class [[nodiscard]] List {
   }
 
   // trait:: serde::Deserialize
-  static auto deserialize(auto& des) {
-    auto visit = [&](auto&& seq) { return seq.template collect<List, T>(); };
-    return des.deserialize_seq(visit);
+  template <class D>
+  static auto deserialize(D& des) -> D::template Result<List> {
+    auto res = List{};
+
+    auto imp = _TRY(des.deserialize_seq());
+    _TRY(imp.template for_each<T>([&](T val) { res.push(mem::move(val)); }));
+    return res;
   }
 
  public:

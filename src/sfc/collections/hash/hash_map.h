@@ -90,9 +90,17 @@ class HashMap {
 
   // trait: serde::Deserialize
   template <class D>
-  static auto deserialize(D& des) {
-    auto visit = [&](auto& map) { return map.template collect<HashMap, K, V>(); };
-    return des.deserialize_map(visit);
+  static auto deserialize(D& des) -> D::template Result<HashMap> {
+    auto res = HashMap{};
+    auto imp = _TRY(des.deserialize_dict());
+    _TRY(imp.template for_each<V>([&](auto key, V val) {
+      if constexpr (trait::same_<K, String>) {
+        res.insert(String::from(key), mem::move(val));
+      } else {
+        res.insert(key, mem::move(val));
+      }
+    }));
+    return res;
   }
 };
 
