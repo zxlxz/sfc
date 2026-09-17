@@ -79,7 +79,9 @@ class [[nodiscard]] String {
 
  public:
   // trait: ops::Eq
-  auto operator==(Str other) const noexcept -> bool;
+  friend auto operator==(const String& a, const String& b) noexcept -> bool;
+  friend auto operator==(const String& a, Str b) noexcept -> bool;
+  friend auto operator==(Str a, const String& b) noexcept -> bool;
 
   // trait: Clone
   auto clone() const noexcept -> String;

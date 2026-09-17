@@ -62,8 +62,16 @@ auto String::operator[](Range ids) const noexcept -> Str {
   return Str::from_utf8(v);
 }
 
-auto String::operator==(Str other) const noexcept -> bool {
-  return this->as_str() == other;
+auto operator==(const String& a, const String& b) noexcept -> bool {
+  return a.as_str() == b.as_str();
+}
+
+auto operator==(const String& a, Str b) noexcept -> bool {
+  return a.as_str() == b;
+}
+
+auto operator==(Str a, const String& b) noexcept -> bool {
+  return a == b.as_str();
 }
 
 auto String::clone() const noexcept -> String {
