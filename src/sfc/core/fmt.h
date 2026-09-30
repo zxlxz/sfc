@@ -7,17 +7,31 @@
 
 namespace sfc::fmt {
 
-class DynWrite final {
-  void* _self;
-  void (*_write_str)(void*, Str);
+struct Write {
+  class Dyn;
+};
+
+class Write::Dyn : public Write {
+  struct VTbl {
+    void (*write_str)(void*, Str);
+
+    template <class X>
+    static auto of() -> const VTbl& {
+      static const auto vtbl = VTbl{
+          .write_str = [](void* x, Str s) { return ((X*)(x))->write_str(s); },
+      };
+      return vtbl;
+    }
+  };
+  const VTbl& _vtbl;
+  void* _impl;
 
  public:
-  template <trait::not_<DynWrite> X>
-  DynWrite(X& x) : _self{&x}, _write_str{[](void* p, Str s) { (void)((X*)p)->write_str(s); }} {}
+  template <trait::not_<Dyn> X>
+  Dyn(X& x) : _vtbl{VTbl::of<X>()}, _impl{&x} {}
 
- public:
   void write_str(Str s) {
-    _write_str(_self, s);
+    (_vtbl.write_str)(_impl, s);
   }
 };
 
@@ -110,13 +124,13 @@ class DebugTuple;
 class DebugStruct;
 
 class Formatter {
-  DynWrite _out;
+  Write::Dyn _out;
   Spec _spec = {};
   u16 _depth = 0;
   u16 _max_depth = 100;
 
  public:
-  explicit Formatter(DynWrite out) : _out{out} {}
+  explicit Formatter(Write::Dyn out) : _out{out} {}
 
  public:
   auto spec() const -> Spec;

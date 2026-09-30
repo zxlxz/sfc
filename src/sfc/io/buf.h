@@ -22,12 +22,12 @@ class ReadBuf {
 
   void consume(usize amount);
 
-  auto fill_buf(DynRead read) -> Result<Slice<const u8>>;
-  auto skip_until(DynRead read, u8 byte) -> Result<usize>;
+  auto fill_buf(Read::Dyn read) -> Result<Slice<const u8>>;
+  auto skip_until(Read::Dyn read, u8 byte) -> Result<usize>;
 
-  auto read(DynRead read, Slice<u8> buf) -> Result<usize>;
-  auto read_until(DynRead read, u8 byte, List<u8>& buf) -> Result<usize>;
-  auto read_line(DynRead read, String& buf) -> Result<usize>;
+  auto read(Read::Dyn read, Slice<u8> buf) -> Result<usize>;
+  auto read_until(Read::Dyn read, u8 byte, List<u8>& buf) -> Result<usize>;
+  auto read_line(Read::Dyn read, String& buf) -> Result<usize>;
 };
 
 class WriteBuf {
@@ -42,8 +42,8 @@ class WriteBuf {
   auto spare_capacity() const -> usize;
   auto buffer() const -> Slice<const u8>;
 
-  auto write(DynWrite write, Slice<const u8> buf) -> Result<usize>;
-  auto flush(DynWrite write) -> Result<>;
+  auto write(Write::Dyn write, Slice<const u8> buf) -> Result<usize>;
+  auto flush(Write::Dyn write) -> Result<>;
 };
 
 template <class R>

@@ -2,6 +2,7 @@
 
 #include "sfc/core/mod.h"
 #include "sfc/core/cmp.h"
+#include "sfc/core/dyn.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"
 #include "sfc/core/num.h"

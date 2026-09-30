@@ -13,34 +13,46 @@ struct Record {
   fmt::Args _args;
 };
 
-class DynBackend final {
+struct Backend {
+  class Dyn;
+};
+
+class Backend::Dyn {
+  struct VTbl {
+    void (*write)(void*, const Record& record);
+    void (*flush)(void*);
+
+    template <class X>
+    static auto of() -> const VTbl& {
+      static const auto vtbl = VTbl{
+          .write = [](void* x, const Record& record) { return ((X*)(x))->write(record); },
+          .flush = [](void* x) { return ((X*)(x))->flush(); },
+      };
+      return vtbl;
+    }
+  };
+  const VTbl& _vtbl;
   void* _self;
-  void (*_write)(void*, const Record& record);
-  void (*_flush)(void*);
 
  public:
-  template <trait::not_<DynBackend> X>
-  DynBackend(X& x)
-      : _self{&x}
-      , _write{[](void* p, const Record& record) { ((X*)p)->write(record); }}
-      , _flush{[](void* p) { ((X*)p)->flush(); }} {}
+  template <trait::not_<Dyn> X>
+  Dyn(X& x) : _vtbl{VTbl::of<X>()}, _self{&x} {}
 
- public:
   void write(const Record& record) {
-    return _write(_self, record);
+    return (_vtbl.write)(_self, record);
   }
 
   void flush() {
-    return _flush(_self);
+    return (_vtbl.flush)(_self);
   }
 };
 
 class Logger {
-  DynBackend _backend;
+  Backend::Dyn _backend;
   Level _level{Level::Info};
 
  public:
-  explicit Logger(DynBackend backend) : _backend{backend} {}
+  explicit Logger(Backend::Dyn backend) : _backend{backend} {}
 
  public:
   auto level() const -> Level;

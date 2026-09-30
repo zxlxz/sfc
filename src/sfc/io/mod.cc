@@ -22,13 +22,9 @@ auto last_os_error() noexcept -> Error {
   return io_err;
 }
 
-auto DynRead::read(Slice<u8> buf) -> Result<usize> {
-  return _read(_self, buf);
-}
-
-auto DynRead::read_exact(Slice<u8> buf) -> Result<> {
+auto Read::read_exact(this Dyn self, Slice<u8> buf) -> Result<> {
   while (!buf.is_empty()) {
-    const auto cnt = _TRY(this->read(buf));
+    const auto cnt = _TRY(self.read(buf));
     if (cnt == 0) {
       return {io::Error::UnexpectedEof};
     }
@@ -38,7 +34,7 @@ auto DynRead::read_exact(Slice<u8> buf) -> Result<> {
   return Ok{};
 }
 
-auto DynRead::read_to_end(List<u8>& buf) -> Result<usize> {
+auto Read::read_to_end(this Dyn self, List<u8>& buf) -> Result<usize> {
   static constexpr auto PROBE_SIZE = 256U;
 
   const auto old_len = buf.len();
@@ -46,7 +42,7 @@ auto DynRead::read_to_end(List<u8>& buf) -> Result<usize> {
     buf.reserve(PROBE_SIZE);
 
     auto read_buf = buf.spare_capacity_mut();
-    const auto read_cnt = _TRY(this->read(read_buf));
+    const auto read_cnt = _TRY(self.read(read_buf));
     if (read_cnt == 0) {
       break;
     }
@@ -55,21 +51,13 @@ auto DynRead::read_to_end(List<u8>& buf) -> Result<usize> {
   return Ok{usize{buf.len() - old_len}};
 }
 
-auto DynRead::read_to_string(String& buf) -> Result<usize> {
-  return this->read_to_end(buf.as_mut_buf());
+auto Read::read_to_string(this Dyn self, String& buf) -> Result<usize> {
+  return self.read_to_end(buf.as_mut_buf());
 }
 
-auto DynWrite::write(Slice<const u8> buf) -> Result<usize> {
-  return _write(_self, buf);
-}
-
-auto DynWrite::flush() -> Result<> {
-  return _flush(_self);
-}
-
-auto DynWrite::write_all(Slice<const u8> buf) -> Result<> {
+auto Write::write_all(this Dyn self, Slice<const u8> buf) -> Result<> {
   while (!buf.is_empty()) {
-    const auto write_cnt = _TRY(this->write(buf));
+    const auto write_cnt = _TRY(self.write(buf));
     if (write_cnt == 0) {
       return Error::WriteZero;
     }
@@ -78,8 +66,8 @@ auto DynWrite::write_all(Slice<const u8> buf) -> Result<> {
   return Ok{};
 }
 
-auto DynWrite::write_str(Str buf) -> Result<> {
-  return this->write_all(buf.as_bytes());
+auto Write::write_str(this Dyn self, Str buf) -> Result<> {
+  return self.write_all(buf.as_bytes());
 }
 
 }  // namespace sfc::io
