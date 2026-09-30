@@ -41,7 +41,7 @@ void ReadBuf::consume(usize amount) {
   _pos = cmp::min(_pos + amount, _buf.len());
 }
 
-auto ReadBuf::fill_buf(DynRead read) -> Result<Slice<const u8>> {
+auto ReadBuf::fill_buf(Read::Dyn read) -> Result<Slice<const u8>> {
   if (_pos == _buf.len()) {
     this->backshift();
 
@@ -52,7 +52,7 @@ auto ReadBuf::fill_buf(DynRead read) -> Result<Slice<const u8>> {
   return {this->buffer()};
 }
 
-auto ReadBuf::skip_until(DynRead read, u8 byte) -> Result<usize> {
+auto ReadBuf::skip_until(Read::Dyn read, u8 byte) -> Result<usize> {
   auto nread = usize{0};
   while (true) {
     const auto available = _TRY(this->fill_buf(read));
@@ -68,7 +68,7 @@ auto ReadBuf::skip_until(DynRead read, u8 byte) -> Result<usize> {
   return {nread};
 }
 
-auto ReadBuf::read(DynRead read, Slice<u8> buf) -> Result<usize> {
+auto ReadBuf::read(Read::Dyn read, Slice<u8> buf) -> Result<usize> {
   if (!this->has_data_left() && buf.len() >= _buf.capacity()) {
     this->discard_buffer();
     return read.read(buf);
@@ -80,7 +80,7 @@ auto ReadBuf::read(DynRead read, Slice<u8> buf) -> Result<usize> {
   return {nread};
 }
 
-auto ReadBuf::read_until(DynRead read, u8 byte, List<u8>& buf) -> Result<usize> {
+auto ReadBuf::read_until(Read::Dyn read, u8 byte, List<u8>& buf) -> Result<usize> {
   auto nread = usize{0};
   while (true) {
     const auto available = _TRY(this->fill_buf(read));
@@ -97,7 +97,7 @@ auto ReadBuf::read_until(DynRead read, u8 byte, List<u8>& buf) -> Result<usize> 
   return {nread};
 }
 
-auto ReadBuf::read_line(DynRead read, String& buf) -> Result<usize> {
+auto ReadBuf::read_line(Read::Dyn read, String& buf) -> Result<usize> {
   return this->read_until(read, '\n', buf.as_mut_buf());
 }
 
@@ -123,7 +123,7 @@ auto WriteBuf::buffer() const -> Slice<const u8> {
   return _buf.as_slice();
 }
 
-auto WriteBuf::write(DynWrite write, Slice<const u8> buf) -> Result<usize> {
+auto WriteBuf::write(Write::Dyn write, Slice<const u8> buf) -> Result<usize> {
   const auto buf_len = buf.len();
   if (buf_len > this->spare_capacity()) {
     _TRY(this->flush(write));
@@ -139,7 +139,7 @@ auto WriteBuf::write(DynWrite write, Slice<const u8> buf) -> Result<usize> {
   return {buf_len};
 }
 
-auto WriteBuf::flush(DynWrite write) -> Result<> {
+auto WriteBuf::flush(Write::Dyn write) -> Result<> {
   while (!_buf.is_empty()) {
     const auto nwrite = _TRY(write.write(_buf.as_slice()));
     if (nwrite == 0) {

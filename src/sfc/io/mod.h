@@ -16,64 +16,48 @@ struct SeekFrom {
   static auto End(i64 offset) -> SeekFrom;
 };
 
-class DynRead final {
-  void* _self;
-  Result<usize> (*_read)(void*, Slice<u8> buf);
-
- public:
-  template <trait::not_<DynRead> X>
-  DynRead(X& x) : _self{&x}, _read{[](void* p, Slice<u8> buf) { return ((X*)p)->read(buf); }} {}
-
- public:
-  auto read(Slice<u8> buf) -> Result<usize>;
-  auto read_exact(Slice<u8> buf) -> Result<>;
-  auto read_to_end(List<u8>& buf) -> Result<usize>;
-  auto read_to_string(String& buf) -> Result<usize>;
+struct Read {
+  struct Dyn;
+  auto read_exact(this Dyn self, Slice<u8> buf) -> Result<>;
+  auto read_to_end(this Dyn self, List<u8>& buf) -> Result<usize>;
+  auto read_to_string(this Dyn self, String& buf) -> Result<usize>;
 };
 
-class DynWrite final {
-  void* _self;
-  Result<usize> (*_write)(void*, Slice<const u8> buf);
-  Result<> (*_flush)(void*);
-
- public:
-  template <trait::not_<DynWrite> X>
-  DynWrite(X& x)
-      : _self{&x}
-      , _write{[](void* p, Slice<const u8> buf) { return ((X*)p)->write(buf); }}
-      , _flush{[](void* p) { return ((X*)p)->flush(); }} {}
-
- public:
-  auto write(Slice<const u8> buf) -> Result<usize>;
-  auto write_all(Slice<const u8> buf) -> Result<>;
-  auto write_str(Str buf) -> Result<>;
-  auto flush() -> Result<>;
+struct Write {
+  struct Dyn;
+  auto write_all(this Dyn self, Slice<const u8> buf) -> Result<>;
+  auto write_str(this Dyn self, Str buf) -> Result<>;
 };
 
-class Read {
+struct Read::Dyn : Read {
  public:
-  auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    return DynRead(self).read_exact(buf);
+  template <trait::not_<Dyn> X>
+  Dyn(X& x) : _impl{&x} {
+    _read = [](Dyn& x, auto... u) { return ((X*)(x._impl))->read(u...); };
   }
 
-  auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    return DynRead(self).read_to_end(buf);
-  }
+  auto read(this Dyn& self, Slice<u8> buf) -> Result<usize>;
 
-  auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return DynRead(self).read_to_string(buf);
-  }
+ private:
+  void* _impl;
+  decltype(&Dyn::read) _read;
 };
 
-class Write {
+struct Write::Dyn : Write {
  public:
-  auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    return DynWrite(self).write_all(buf);
+  template <trait::not_<Dyn> X>
+  Dyn(X& x) : _impl{&x} {
+    _write = [](Dyn& x, auto... u) { return ((X*)(x._impl))->write(u...); };
+    _flush = [](Dyn& x, auto... u) { return ((X*)(x._impl))->flush(u...); };
   }
 
-  auto write_str(this auto& self, Str buf) -> Result<> {
-    return DynWrite(self).write_str(buf);
-  }
+  auto write(this Dyn& self, Slice<const u8> buf) -> Result<usize>;
+  auto flush(this Dyn& self) -> Result<>;
+
+ private:
+  void* _impl;
+  decltype(&Dyn::write) _write;
+  decltype(&Dyn::flush) _flush;
 };
 
 }  // namespace sfc::io
