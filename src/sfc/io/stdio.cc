@@ -6,7 +6,7 @@
 namespace sfc::io {
 
 class Stdout::Inn {
-  BufWriter<sys::Stdout> _inn{{}};
+  BufWriter<sys::Stdout> _inn{BufWriter<sys::Stdout>::new_({})};
   sync::ReentrantLock _mtx{};
 
  public:

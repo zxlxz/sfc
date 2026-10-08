@@ -3,6 +3,7 @@
 
 namespace sfc::fmt {
 
+namespace detail {
 struct FixFloat {
   u64 _int;  // int part
   u64 _flt;  // flt part
@@ -13,7 +14,7 @@ struct ExpFloat {
   i32 _iexp;  // exponent, the actual value is _val * 10^(-_exp)
 };
 
-static auto exp10(int n) -> f64 {
+auto exp10(int n) -> f64 {
   constexpr u32 kCNT = 32U;
   constexpr f64 kTBL[] = {
       1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
@@ -37,7 +38,7 @@ static auto exp10(int n) -> f64 {
   return x;
 }
 
-static auto frexp10(f64 uflt, int* exp) {
+auto frexp10(f64 uflt, int* exp) {
   auto e2 = 0;
   __builtin_frexp(uflt, &e2);
 
@@ -56,7 +57,7 @@ static auto frexp10(f64 uflt, int* exp) {
   return m10;
 }
 
-static auto prec_ratio(u32 precision) -> u64 {
+auto prec_ratio(u32 precision) -> u64 {
   const u64 k10 = u64(1e10);  // 1e10
   const u64 k19 = u64(1e19);  // 1e19
   const u64 kTBL[10] = {1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U};
@@ -65,14 +66,14 @@ static auto prec_ratio(u32 precision) -> u64 {
   return k19;
 }
 
-static auto build_fix(f64 uflt, u32 precision) -> FixFloat {
+auto build_fix(f64 uflt, u32 precision) -> FixFloat {
   const auto kMaxPrecision = 20U;
   if (precision >= kMaxPrecision) {
     precision = kMaxPrecision - 1;
   }
 
   // 1000...
-  const auto prec_ratio = fmt::prec_ratio(precision);
+  const auto prec_ratio = detail::prec_ratio(precision);
 
   // extract integer part
   auto int_part = u64(uflt);
@@ -89,8 +90,8 @@ static auto build_fix(f64 uflt, u32 precision) -> FixFloat {
   return FixFloat{int_part, flt_part};
 }
 
-static auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
-  const auto prec_ratio = fmt::prec_ratio(precision);
+auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
+  const auto prec_ratio = detail::prec_ratio(precision);
 
   auto exp_cnt = 0;
   auto flt_val = frexp10(uflt, &exp_cnt);
@@ -253,6 +254,8 @@ struct RevBuf {
   }
 };
 
+}  // namespace detail
+
 auto Spec::sign(bool is_neg) const -> str::Str {
   if (is_neg) {
     return "-";
@@ -305,19 +308,19 @@ void Debug::fmt(char32_t val, Formatter& f) {
 
 void Debug::fmt(unsigned int val, Formatter& f) {
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
 void Debug::fmt(unsigned long val, Formatter& f) {
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
 void Debug::fmt(unsigned long long val, Formatter& f) {
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(val, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
@@ -325,7 +328,7 @@ void Debug::fmt(int val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -333,7 +336,7 @@ void Debug::fmt(long val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -341,7 +344,7 @@ void Debug::fmt(long long val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
   char buf[8 * sizeof(val) + 8];
-  const auto s = RevBuf{buf}.write_u64(uval, f.type());
+  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -351,7 +354,7 @@ void Debug::fmt(float val, Formatter& f) {
 
   const auto uval = val < 0 ? -val : val;
   char buf[8 * sizeof(val) + 16];
-  const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
+  const auto s = detail::RevBuf{buf}.write_flt(uval, prec, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -362,7 +365,7 @@ void Debug::fmt(double val, Formatter& f) {
   const auto uval = val < 0 ? -val : val;
 
   char buf[8 * sizeof(val) + 16];
-  const auto s = RevBuf{buf}.write_flt(uval, prec, f.type());
+  const auto s = detail::RevBuf{buf}.write_flt(uval, prec, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -372,7 +375,7 @@ void Debug::fmt(const void* val, Formatter& f) {
   const auto uval = __builtin_bit_cast(usize, val);
 
   char buf[32];
-  const auto s = RevBuf{buf}.write_ptr(uval, upcase);
+  const auto s = detail::RevBuf{buf}.write_ptr(uval, upcase);
   f.write_str(s);
 }
 

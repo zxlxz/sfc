@@ -6,8 +6,8 @@ namespace sfc::io::test {
 
 SFC_TEST(buf_read) {
   auto buf = Str{"0123456789"}.as_bytes();
-  auto read = io::Read::Dyn{buf};
-  auto buf_read = BufReader{read};
+  auto dyn_read = Dyn<Read>{buf};
+  auto buf_read = BufReader<Dyn<Read>>::new_(dyn_read);
 
   // read
   {
@@ -25,8 +25,8 @@ SFC_TEST(buf_read) {
 
 SFC_TEST(buf_write) {
   auto buf = List<u8>::with_capacity(256);
-  auto write = io::Write::Dyn{buf};
-  auto buf_write = BufWriter{write};
+  auto dyn_write = Dyn<Write>{buf};
+  auto buf_write = BufWriter<Dyn<Write>>::new_(dyn_write);
 
   sfc::assert_eq(buf_write.write(Str{"0123"}.as_bytes()).ok(), Option{4UZ});
   sfc::assert_eq(buf.len(), 0U);

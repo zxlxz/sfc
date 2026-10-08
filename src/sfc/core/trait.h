@@ -61,6 +61,18 @@ concept tv_drop_ = __has_trivial_destructor(T);
 template <class T, class... U>
 concept AsRef = requires(const U&... args) { T{args...}; };
 
+template <class Trait>
+class Dyn : public Trait {
+  friend Trait;
+  using VTbl = typename Trait::VTbl;
+  const VTbl* _vtbl;
+  void* _impl;
+
+ public:
+  template <trait::not_<Dyn> X>
+  Dyn(X& impl) : _vtbl{&Trait::template vtbl<X>}, _impl{&impl} {}
+};
+
 }  // namespace sfc::trait
 
 namespace sfc {
@@ -75,4 +87,6 @@ using trait::int_;
 using trait::sint_;
 using trait::uint_;
 using trait::flt_;
+
+using trait::Dyn;
 }  // namespace sfc

@@ -22,12 +22,11 @@ class ReadBuf {
 
   void consume(usize amount);
 
-  auto fill_buf(Read::Dyn read) -> Result<Slice<const u8>>;
-  auto skip_until(Read::Dyn read, u8 byte) -> Result<usize>;
-
-  auto read(Read::Dyn read, Slice<u8> buf) -> Result<usize>;
-  auto read_until(Read::Dyn read, u8 byte, List<u8>& buf) -> Result<usize>;
-  auto read_line(Read::Dyn read, String& buf) -> Result<usize>;
+  auto fill_buf(Dyn<Read> read) -> Result<Slice<const u8>>;
+  auto skip_until(Dyn<Read> read, u8 byte) -> Result<usize>;
+  auto read(Dyn<Read> read, Slice<u8> buf) -> Result<usize>;
+  auto read_until(Dyn<Read> read, u8 byte, List<u8>& buf) -> Result<usize>;
+  auto read_line(Dyn<Read> read, String& buf) -> Result<usize>;
 };
 
 class WriteBuf {
@@ -42,25 +41,25 @@ class WriteBuf {
   auto spare_capacity() const -> usize;
   auto buffer() const -> Slice<const u8>;
 
-  auto write(Write::Dyn write, Slice<const u8> buf) -> Result<usize>;
-  auto flush(Write::Dyn write) -> Result<>;
+  auto write(Dyn<Write> write, Slice<const u8> buf) -> Result<usize>;
+  auto flush(Dyn<Write> write) -> Result<>;
 };
 
 template <class R>
 class BufReader : public Read {
-  static constexpr usize DEFAULT_BUFF_SIZE = 256U;
-  R _inn;
+ public:
   ReadBuf _buf;
+  R _inn;
 
  public:
-  explicit BufReader(R inn) noexcept : _inn{mem::move(inn)}, _buf{ReadBuf::with_capacity(DEFAULT_BUFF_SIZE)} {}
+  static auto new_(R inn) -> BufReader {
+    static constexpr usize DEFAULT_BUFF_SIZE = 256U;
+    return BufReader::with_capacity(DEFAULT_BUFF_SIZE, mem::move(inn));
+  }
 
-  explicit BufReader(R inn, ReadBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
-
-  ~BufReader() noexcept = default;
-
-  BufReader(BufReader&&) noexcept = default;
-  BufReader& operator=(BufReader&&) noexcept = default;
+  static auto with_capacity(usize capacity, R inn) -> BufReader {
+    return BufReader{._buf = ReadBuf::with_capacity(capacity), ._inn = mem::move(inn)};
+  }
 
  public:
   auto buffer() const -> Slice<const u8> {
@@ -99,25 +98,22 @@ class BufReader : public Read {
 
 template <class W>
 class BufWriter : public Write {
-  static constexpr usize DEFAULT_BUF_SIZE = 256;
-  W _inn;
+ public:
   WriteBuf _buf;
+  W _inn;
 
  public:
-  explicit BufWriter(W inn) noexcept : _inn{mem::move(inn)}, _buf{WriteBuf::with_capacity(DEFAULT_BUF_SIZE)} {}
-
-  explicit BufWriter(W inn, WriteBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
-
   ~BufWriter() noexcept {
     (void)this->flush();
   }
 
-  BufWriter(BufWriter&&) noexcept = default;
-  BufWriter& operator=(BufWriter&&) noexcept = default;
+  static auto new_(W inn) -> BufWriter {
+    static constexpr usize DEFAULT_BUF_SIZE = 256;
+    return BufWriter::with_capacity(DEFAULT_BUF_SIZE, mem::move(inn));
+  }
 
   static auto with_capacity(usize capacity, W inn) -> BufWriter {
-    auto buf = WriteBuf::with_capacity(capacity);
-    return BufWriter{inn, mem::move(buf)};
+    return BufWriter{._buf = WriteBuf::with_capacity(capacity), ._inn = mem::move(inn)};
   }
 
  public:
