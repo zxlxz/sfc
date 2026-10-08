@@ -7,31 +7,33 @@
 
 namespace sfc::fmt {
 
-struct Write {
+class Write {
+  struct VTbl {
+    void (*write_str)(void*, Str);
+  };
+
+  template <class X>
+  static auto vtbl() -> const VTbl& {
+    static const VTbl vtbl = {
+        .write_str = [](void* x, Str s) { return ((X*)(x))->write_str(s); },
+    };
+    return vtbl;
+  }
+
+ public:
   class Dyn;
 };
 
 class Write::Dyn : public Write {
-  struct VTbl {
-    void (*write_str)(void*, Str);
-
-    template <class X>
-    static auto of() -> const VTbl& {
-      static const auto vtbl = VTbl{
-          .write_str = [](void* x, Str s) { return ((X*)(x))->write_str(s); },
-      };
-      return vtbl;
-    }
-  };
-  const VTbl& _vtbl;
+  const VTbl* _vtbl;
   void* _impl;
 
  public:
   template <trait::not_<Dyn> X>
-  Dyn(X& x) : _vtbl{VTbl::of<X>()}, _impl{&x} {}
+  Dyn(X& x) : _vtbl{&Write::vtbl<X>()}, _impl{&x} {}
 
   void write_str(Str s) {
-    (_vtbl.write_str)(_impl, s);
+    (_vtbl->write_str)(_impl, s);
   }
 };
 

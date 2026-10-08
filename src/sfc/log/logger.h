@@ -13,37 +13,39 @@ struct Record {
   fmt::Args _args;
 };
 
-struct Backend {
-  class Dyn;
-};
-
-class Backend::Dyn {
+class Backend {
   struct VTbl {
     void (*write)(void*, const Record& record);
     void (*flush)(void*);
-
-    template <class X>
-    static auto of() -> const VTbl& {
-      static const auto vtbl = VTbl{
-          .write = [](void* x, const Record& record) { return ((X*)(x))->write(record); },
-          .flush = [](void* x) { return ((X*)(x))->flush(); },
-      };
-      return vtbl;
-    }
   };
-  const VTbl& _vtbl;
+
+  template <class X>
+  static auto vtbl() -> const VTbl& {
+    static const VTbl vtbl = {
+        .write = [](void* x, const Record& record) { return ((X*)(x))->write(record); },
+        .flush = [](void* x) { return ((X*)(x))->flush(); },
+    };
+    return vtbl;
+  }
+
+ public:
+  class Dyn;
+};
+
+class Backend::Dyn : public Backend {
+  const VTbl* _vtbl;
   void* _self;
 
  public:
   template <trait::not_<Dyn> X>
-  Dyn(X& x) : _vtbl{VTbl::of<X>()}, _self{&x} {}
+  Dyn(X& x) : _vtbl{&Backend::vtbl<X>()}, _self{&x} {}
 
   void write(const Record& record) {
-    return (_vtbl.write)(_self, record);
+    return (_vtbl->write)(_self, record);
   }
 
   void flush() {
-    return (_vtbl.flush)(_self);
+    return (_vtbl->flush)(_self);
   }
 };
 
