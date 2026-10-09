@@ -12,12 +12,12 @@ Mutex::Mutex(Mutex&& other) noexcept : _inn{mem::move(other._inn)} {}
 Mutex& Mutex::operator=(Mutex&& other) noexcept = default;
 
 auto Mutex::lock() noexcept -> Guard {
-  _inn._imp.lock();
+  _inn.lock();
   return Guard{_inn};
 }
 
 auto Mutex::try_lock() noexcept -> Option<Guard> {
-  if (!_inn._imp.try_lock()) {
+  if (!_inn.try_lock()) {
     return {};
   }
 
@@ -28,58 +28,23 @@ Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{&mtx} {}
 
 Mutex::Guard::~Guard() noexcept {
   if (_inn == nullptr) return;
-  _inn->_imp.unlock();
+  _inn->unlock();
+}
+
+Mutex::Guard::Guard(Guard&& other) noexcept : _inn{mem::take(other._inn)} {}
+
+Mutex::Guard& Mutex::Guard::operator=(Guard&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_inn, other._inn);
+  }
+  return *this;
 }
 
 auto Mutex::Guard::inner() -> sys::Mutex& {
-  return _inn->_imp;
+  return *_inn;
 }
 
-void ReentrantLock::Inn::lock() {
-  const auto current_id = thread::current_id();
-  const auto ownner_id = _owner.load(Ordering::Acquire);
-  if (ownner_id == current_id) {
-    _count += 1;
-    return;
-  }
-
-  _imp.lock();
-  _owner.store(current_id, Ordering::Release);
-  _count = 1;
-}
-
-bool ReentrantLock::Inn::try_lock() {
-  const auto current_id = thread::current_id();
-  const auto ownner_id = _owner.load(Ordering::Acquire);
-  if (ownner_id == current_id) {
-    _count += 1;
-    return true;
-  }
-
-  if (!_imp.try_lock()) {
-    return false;
-  }
-
-  _owner.store(current_id, Ordering::Release);
-  _count = 1;
-  return true;
-}
-
-void ReentrantLock::Inn::unlock() {
-  const auto current_id = thread::current_id();
-  const auto ownner_id = _owner.load(Ordering::Acquire);
-  if (ownner_id != current_id) {
-    return;
-  }
-
-  _count -= 1;
-  if (_count == 0) {
-    _owner.store(0, Ordering::Release);
-    _imp.unlock();
-  }
-}
-
-ReentrantLock::ReentrantLock() noexcept : _inn{} {}
+ReentrantLock::ReentrantLock() noexcept : _inn{sys::Mutex{}} {}
 
 ReentrantLock::~ReentrantLock() noexcept {}
 
@@ -88,24 +53,63 @@ ReentrantLock::ReentrantLock(ReentrantLock&&) noexcept = default;
 ReentrantLock& ReentrantLock::operator=(ReentrantLock&&) noexcept = default;
 
 auto ReentrantLock::lock() noexcept -> Guard {
+  const auto current_id = thread::current_id();
+  const auto ownner_id = _inn._owner.load(Ordering::Relaxed);
+  if (ownner_id == current_id) {
+    _inn._count += 1;
+    return Guard{_inn};
+  }
+
   _inn.lock();
+  _inn._owner.store(current_id, Ordering::Relaxed);
+  _inn._count = 1;
   return Guard{_inn};
 }
 
 auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
-  const auto ret = _inn.try_lock();
-  if (!ret) {
+  const auto current_id = thread::current_id();
+  const auto ownner_id = _inn._owner.load(Ordering::Relaxed);
+  if (ownner_id == current_id) {
+    _inn._count += 1;
+    return Guard{_inn};
+  }
+
+  if (!_inn.try_lock()) {
     return {};
   }
 
-  return convert::construct<Guard>(_inn);
+  _inn._owner.store(current_id, Ordering::Relaxed);
+  _inn._count = 1;
+  return Guard{_inn};
 }
 
 ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{&inn} {}
 
 ReentrantLock::Guard::~Guard() noexcept {
-  if (_inn == nullptr) return;
-  _inn->unlock();
+  if (_inn == nullptr) {
+    return;
+  }
+
+  const auto current_id = thread::current_id();
+  const auto ownner_id = _inn->_owner.load(Ordering::Relaxed);
+  if (ownner_id != current_id) {
+    return;
+  }
+
+  _inn->_count -= 1;
+  if (_inn->_count == 0) {
+    _inn->_owner.store(0, Ordering::Relaxed);
+    _inn->unlock();
+  }
+}
+
+ReentrantLock::Guard::Guard(Guard&& other) noexcept : _inn{mem::take(other._inn)} {}
+
+ReentrantLock::Guard& ReentrantLock::Guard::operator=(Guard&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_inn, other._inn);
+  }
+  return *this;
 }
 
 }  // namespace sfc::sync
