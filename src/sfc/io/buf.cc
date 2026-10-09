@@ -2,6 +2,12 @@
 
 namespace sfc::io {
 
+ReadBuf::ReadBuf() = default;
+ReadBuf::~ReadBuf() = default;
+
+ReadBuf::ReadBuf(ReadBuf&&) noexcept = default;
+ReadBuf& ReadBuf::operator=(ReadBuf&&) noexcept = default;
+
 auto ReadBuf::with_capacity(usize capacity) -> ReadBuf {
   auto res = ReadBuf{};
   res._buf.reserve(capacity);
@@ -100,6 +106,12 @@ auto ReadBuf::read_until(Dyn<Read> read, u8 byte, List<u8>& buf) -> Result<usize
 auto ReadBuf::read_line(Dyn<Read> read, String& buf) -> Result<usize> {
   return this->read_until(read, '\n', buf.as_mut_buf());
 }
+
+WriteBuf::WriteBuf() = default;
+WriteBuf::~WriteBuf() = default;
+
+WriteBuf::WriteBuf(WriteBuf&&) noexcept = default;
+WriteBuf& WriteBuf::operator=(WriteBuf&&) noexcept = default;
 
 auto WriteBuf::with_capacity(usize capacity) -> WriteBuf {
   auto res = WriteBuf{};

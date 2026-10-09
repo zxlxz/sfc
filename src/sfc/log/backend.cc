@@ -53,7 +53,7 @@ static auto write_record(auto& out, const Record& record) -> Str {
 void ConsoleBackend::write(const Record& record) noexcept {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
-  io::Stdout().write_str(msg);
+  io::stdout().write_str(msg);
 }
 
 void ConsoleBackend::flush() noexcept {}
@@ -87,7 +87,7 @@ void GlobalBackend::write(const Record& record) noexcept {
   if (_file.is_valid()) {
     (void)_file.write_str(msg);
   } else {
-    io::Stdout().write_str(msg);
+    io::stdout().write_str(msg);
   }
 }
 

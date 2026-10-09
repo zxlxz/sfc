@@ -9,6 +9,11 @@ class ReadBuf {
   usize _pos = 0;
 
  public:
+  ReadBuf();
+  ~ReadBuf();
+  ReadBuf(ReadBuf&&) noexcept;
+  ReadBuf& operator=(ReadBuf&&) noexcept;
+
   static auto with_capacity(usize capacity) -> ReadBuf;
 
  public:
@@ -33,6 +38,11 @@ class WriteBuf {
   List<u8> _buf{};
 
  public:
+  WriteBuf();
+  ~WriteBuf();
+  WriteBuf(WriteBuf&&) noexcept;
+  WriteBuf& operator=(WriteBuf&&) noexcept;
+
   static auto with_capacity(usize capacity) -> WriteBuf;
 
  public:
@@ -47,18 +57,22 @@ class WriteBuf {
 
 template <class R>
 class BufReader : public Read {
- public:
-  ReadBuf _buf;
+  static constexpr usize DEFAULT_BUFF_SIZE = 256U;
+
   R _inn;
+  ReadBuf _buf;
 
  public:
+  explicit BufReader(R inn, ReadBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
+
+  ~BufReader() {}
+
   static auto new_(R inn) -> BufReader {
-    static constexpr usize DEFAULT_BUFF_SIZE = 256U;
-    return BufReader::with_capacity(DEFAULT_BUFF_SIZE, mem::move(inn));
+    return BufReader{mem::move(inn), ReadBuf::with_capacity(DEFAULT_BUFF_SIZE)};
   }
 
   static auto with_capacity(usize capacity, R inn) -> BufReader {
-    return BufReader{._buf = ReadBuf::with_capacity(capacity), ._inn = mem::move(inn)};
+    return BufReader{mem::move(inn), ReadBuf::with_capacity(capacity)};
   }
 
  public:
@@ -98,22 +112,23 @@ class BufReader : public Read {
 
 template <class W>
 class BufWriter : public Write {
- public:
-  WriteBuf _buf;
+  static constexpr usize DEFAULT_BUF_SIZE = 256;
   W _inn;
+  WriteBuf _buf;
 
  public:
+  explicit BufWriter(W inn, WriteBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
+
   ~BufWriter() noexcept {
     (void)this->flush();
   }
 
   static auto new_(W inn) -> BufWriter {
-    static constexpr usize DEFAULT_BUF_SIZE = 256;
-    return BufWriter::with_capacity(DEFAULT_BUF_SIZE, mem::move(inn));
+    return BufWriter{mem::move(inn), WriteBuf::with_capacity(DEFAULT_BUF_SIZE)};
   }
 
   static auto with_capacity(usize capacity, W inn) -> BufWriter {
-    return BufWriter{._buf = WriteBuf::with_capacity(capacity), ._inn = mem::move(inn)};
+    return BufWriter{mem::move(inn), WriteBuf::with_capacity(capacity)};
   }
 
  public:

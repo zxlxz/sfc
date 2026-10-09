@@ -72,13 +72,17 @@ class Stderr::Inn {
   }
 };
 
+Stdout::Stdout() : _inn{Inn::instance()} {}
+
+Stdout::~Stdout() {}
+
 auto Stdout::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  return inn.is_terminal();
+  return _inn.is_terminal();
 }
 
 auto Stdout::lock() -> LockGuard {
-  return LockGuard{Inn::instance()};
+  auto guard = _inn.lock();
+  return LockGuard{_inn, mem::move(guard)};
 }
 
 void Stdout::flush() {
@@ -89,44 +93,55 @@ void Stdout::write_str(Str s) {
   return this->lock().write_str(s);
 }
 
-Stdout::LockGuard::LockGuard(Inn& inn) : _lock{inn.lock()} {}
+Stdout::LockGuard::LockGuard(Inn& inn, sync::ReentrantLock::Guard lock) : _inn{inn}, _lock{mem::move(lock)} {}
 
 Stdout::LockGuard::~LockGuard() noexcept {}
 
 void Stdout::LockGuard::flush() {
-  auto& inn = Inn::instance();
-  return inn.flush();
+  return _inn.flush();
 }
 
 void Stdout::LockGuard::write_str(Str s) {
-  auto& inn = Inn::instance();
-  (void)inn.write_str(s);
+  (void)_inn.write_str(s);
 }
+
+Stderr::Stderr() : _inn{Inn::instance()} {}
+
+Stderr::~Stderr() {}
 
 auto Stderr::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  return inn.is_terminal();
+  return _inn.is_terminal();
 }
 
-void Stderr::flush() {}
+auto Stderr::lock() -> LockGuard {
+  auto lock = _inn.lock();
+  return LockGuard{_inn, mem::move(lock)};
+}
 
 void Stderr::write_str(Str s) {
   return this->lock().write_str(s);
 }
 
-auto Stderr::lock() -> LockGuard {
-  return LockGuard{Inn::instance()};
-}
+void Stderr::flush() {}
 
-Stderr::LockGuard::LockGuard(Inn& inn) : _lock{inn.lock()} {}
+Stderr::LockGuard::LockGuard(Inn& inn, sync::ReentrantLock::Guard lock) : _inn{inn}, _lock{mem::move(lock)} {}
 
 Stderr::LockGuard::~LockGuard() noexcept {}
 
 void Stderr::LockGuard::flush() {}
 
 void Stderr::LockGuard::write_str(Str s) {
-  auto& inn = Inn::instance();
-  (void)inn.write_str(s);
+  (void)_inn.write_str(s);
+}
+
+auto stdout() -> Stdout& {
+  static auto res = Stdout{};
+  return res;
+}
+
+auto stderr() -> Stderr& {
+  static auto res = Stderr{};
+  return res;
 }
 
 }  // namespace sfc::io
