@@ -44,54 +44,53 @@ static auto time_str(time::SystemTime time) -> Str {
 static auto write_record(auto& out, const Record& record) -> Str {
   const auto time_str = detail::time_str(record._time);
   const auto level_str = detail::level_str(record._level);
-  fmt::write(out, "{} {} {}\n", time_str, level_str, record._args);
+  fmt::write(out, "{} {} {}\n", time_str, level_str, record._message);
   return out.as_str();
 }
 
 }  // namespace detail
 
-void ConsoleBackend::write(const Record& record) noexcept {
+void ConsoleBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
   io::stdout().write_str(msg);
 }
 
-void ConsoleBackend::flush() noexcept {}
+void ConsoleBackend::flush() {}
 
-FileBackend::FileBackend(fs::File file) noexcept : _file{mem::move(file)} {}
+auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
+  auto backend = FileBackend{};
+  backend._file = _TRY(fs::File::create(path));
+  return backend;
+}
 
-FileBackend::~FileBackend() noexcept {}
-
-void FileBackend::write(const Record& record) noexcept {
+void FileBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
   (void)_file.write_str(msg);
 }
 
-void FileBackend::flush() noexcept {
+void FileBackend::flush() {
   (void)_file.flush();
 }
 
-GlobalBackend::GlobalBackend() noexcept {}
-
-GlobalBackend::~GlobalBackend() noexcept {}
-
-void GlobalBackend::set_file(fs::File file) noexcept {
-  _file = mem::move(file);
+auto GlobalBackend::set_path(fs::Path path) noexcept -> io::Result<> {
+  _file = _TRY(fs::File::create(path));
+  return Ok{};
 }
 
-void GlobalBackend::write(const Record& record) noexcept {
+void GlobalBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
 
-  if (_file.is_valid()) {
+  if (_file.is_none()) {
     (void)_file.write_str(msg);
   } else {
     io::stdout().write_str(msg);
   }
 }
 
-void GlobalBackend::flush() noexcept {
+void GlobalBackend::flush() {
   (void)_file.flush();
 }
 

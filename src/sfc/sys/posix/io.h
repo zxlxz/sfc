@@ -18,7 +18,7 @@ class File {
 
  public:
   auto as_raw_fd() const -> int;
-  auto is_valid() const noexcept -> bool;
+  auto is_none() const noexcept -> bool;
 
   auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;

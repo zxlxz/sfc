@@ -22,13 +22,6 @@ auto Metadata::is_file() const noexcept -> bool {
   return imp.is_file();
 }
 
-File::File() noexcept : _inn{} {}
-
-File::~File() noexcept {}
-
-File::File(File&&) noexcept = default;
-File& File::operator=(File&& other) noexcept = default;
-
 auto File::from_raw_fd(sys::RawFd fd) -> File {
   auto res = File{};
   res._inn = sys::File{fd};
@@ -49,12 +42,12 @@ auto File::create(Path path) noexcept -> io::Result<File> {
   return opts.open(path);
 }
 
-auto File::as_raw_fd() const noexcept -> sys::RawFd {
-  return _inn.as_raw_fd();
+auto File::is_none() const noexcept -> bool {
+  return _inn.is_none();
 }
 
-auto File::is_valid() const -> bool {
-  return _inn.is_valid();
+auto File::as_raw_fd() const noexcept -> sys::RawFd {
+  return _inn.as_raw_fd();
 }
 
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
@@ -72,7 +65,7 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
 }
 
 auto File::flush() -> io::Result<> {
-  if (!_inn.is_valid()) {
+  if (!_inn.is_none()) {
     return Ok{};
   }
   return _inn.flush();

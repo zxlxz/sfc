@@ -27,7 +27,7 @@ auto File::as_raw_fd() const -> int {
   return _fd;
 }
 
-auto File::is_valid() const noexcept -> bool {
+auto File::is_none() const noexcept -> bool {
   return _fd != -1;
 }
 

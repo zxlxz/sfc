@@ -23,8 +23,8 @@ File& File::operator=(File&& other) noexcept {
   return *this;
 }
 
-auto File::is_valid() const noexcept -> bool {
-  return _fd != nullptr && _fd != INVALID_HANDLE_VALUE;
+auto File::is_none() const noexcept -> bool {
+  return _fd == nullptr || _fd == INVALID_HANDLE_VALUE;
 }
 
 auto File::as_raw_fd() const noexcept -> RawFd {

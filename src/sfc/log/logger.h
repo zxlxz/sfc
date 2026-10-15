@@ -10,26 +10,26 @@ enum class Level { Trace, Debug, Info, Warn, Error, Fatal };
 struct Record {
   time::SystemTime _time;
   Level _level;
-  fmt::Args _args;
+  Str _message;
 };
 
 class Backend {
   friend Dyn<Backend>;
 
   struct VTbl {
-    void (*write)(void*, const Record& record);
+    void (*push)(void*, const Record& record);
     void (*flush)(void*);
   };
 
   template <class X>
   static constexpr VTbl vtbl = {
-      .write = [](void* x, const Record& record) { return ((X*)(x))->write(record); },
+      .push = [](void* x, const Record& record) { return ((X*)(x))->push(record); },
       .flush = [](void* x) { return ((X*)(x))->flush(); },
   };
 
  public:
-  auto write(this auto& self, const Record& record) -> void {
-    return (self._vtbl->write)(self._impl, record);
+  auto push(this auto& self, const Record& record) -> void {
+    return (self._vtbl->push)(self._impl, record);
   }
 
   auto flush(this auto& self) -> void {

@@ -20,21 +20,16 @@ struct Metadata {
 };
 
 class [[nodiscard]] File : public io::Read, public io::Write {
-  sys::File _inn;
+  sys::File _inn = {};
 
  public:
-  File() noexcept;
-  ~File() noexcept;
-  File(File&&) noexcept;
-  File& operator=(File&&) noexcept;
-
   static auto from_raw_fd(sys::RawFd fd) -> File;
   static auto open(Path path) noexcept -> io::Result<File>;
   static auto create(Path path) noexcept -> io::Result<File>;
 
  public:
+  auto is_none() const noexcept -> bool;
   auto as_raw_fd() const noexcept -> sys::RawFd;
-  auto is_valid() const -> bool;
 
   auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;

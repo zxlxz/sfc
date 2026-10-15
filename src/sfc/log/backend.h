@@ -7,31 +7,29 @@ namespace sfc::log {
 
 class ConsoleBackend {
  public:
-  void write(const Record& record) noexcept;
-  void flush() noexcept;
+  void push(const Record& record);
+  void flush();
 };
 
 class FileBackend {
   fs::File _file;
 
  public:
-  FileBackend(fs::File file) noexcept;
-  ~FileBackend() noexcept;
+  static auto create(fs::Path path) -> io::Result<FileBackend>;
 
-  void write(const Record& record) noexcept;
-  void flush() noexcept;
+ public:
+  void push(const Record& record);
+  void flush();
 };
 
 class GlobalBackend {
   fs::File _file;
 
  public:
-  explicit GlobalBackend() noexcept;
-  ~GlobalBackend() noexcept;
+  auto set_path(fs::Path path) noexcept -> io::Result<>;
 
-  void set_file(fs::File file) noexcept;
-  void write(const Record& record) noexcept;
-  void flush() noexcept;
+  void push(const Record& record);
+  void flush();
 };
 
 }  // namespace sfc::log
