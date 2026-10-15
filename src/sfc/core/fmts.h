@@ -5,28 +5,35 @@
 
 namespace sfc::fmt {
 
-struct CStr {
+struct FmtSegment {
   const char* _ptr;
   usize _len;
 
-  consteval CStr() : _ptr{nullptr}, _len{0} {}
-  consteval CStr(const char* s) : _ptr{s}, _len{__builtin_strlen(s)} {}
-  constexpr CStr(const char* p, usize n) : _ptr{p}, _len{n} {}
-
-  consteval auto find(char c, u32 pos) const -> u32 {
+ public:
+  constexpr auto find(char c, u32 pos = 0) const -> u32 {
     while (pos < _len && _ptr[pos] != c) {
       pos++;
     }
     return pos;
   }
 
- public:
-  void fmt(auto& f) const {
-    f.write_str({_ptr, _len});
+  constexpr auto read(usize cnt) -> FmtSegment {
+    const auto res = FmtSegment{_ptr, cnt};
+    _ptr += cnt;
+    _len -= cnt;
+    return res;
+  }
+
+  constexpr auto read_to(char c, bool include = false) -> FmtSegment {
+    const auto pos = this->find(c);
+    if (pos == _len) {
+      return {nullptr, 0};
+    }
+    return this->read(pos + (include ? 1 : 0));
   }
 };
 
-struct Spec {
+struct FmtOptions {
   char _fill = 0;
   char _align = 0;  // [<>^=]
   char _sign = 0;   // [+- ]
@@ -95,16 +102,15 @@ struct Spec {
   };
 
   // [[fill]align][sign][#][0][width][.precision][type]
-  consteval static auto from_cstr(CStr s) noexcept -> Spec {
+  consteval static auto from_str(auto s) noexcept -> FmtOptions {
     if (s._len == 0) {
       return {};
     }
 
-    auto res = Spec{};
-
     auto p = Parser{s._ptr, s._ptr + s._len};
     p.extract(':');
 
+    auto res = FmtOptions{};
     res._fill = p.pop();
     res._align = p.extract('<', '>', '=', '^');
     if (res._fill && !res._align) {
@@ -131,52 +137,37 @@ struct Spec {
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
 
-  CStr _str;
   usize _cnt = 0;
-  CStr _fills[kMaxLen] = {};
-  Spec _specs[kMaxLen] = {};
-  CStr _tail = {};
+  FmtSegment _segment[kMaxLen + 1] = {};
+  FmtOptions _options[kMaxLen] = {};
 
  public:
-  consteval Fmts(const char* s) noexcept : _str{s} {
+  consteval Fmts(const char* p) noexcept {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    auto p = 0U;
+    auto s = FmtSegment{p, __builtin_strlen(p)};
     for (_cnt = 0U; _cnt < kMaxLen; ++_cnt) {
-      const auto a = _str.find('{', p);
-      const auto b = _str.find('}', a);
-      if (b == _str._len) break;
-      _fills[_cnt] = CStr{_str._ptr + p, a - p};
-      _specs[_cnt] = Spec::from_cstr({_str._ptr + a + 1, b - a - 1});
-      p = b + 1;
+      const auto seg = s.read_to('{');
+      const auto opt = s.read_to('}', true);
+      if (opt._len == 0 || opt._ptr[0] != '{') break;
+      _segment[_cnt] = seg;
+      _options[_cnt] = FmtOptions::from_str(FmtSegment{opt._ptr + 1, opt._len - 2});
     }
-    _tail = CStr{_str._ptr + p, _str._len - p};
+    _segment[_cnt] = s;
 #endif
   }
-
-  void format_imp(fmt::Formatter& f, const auto& args) const;
 };
 
 struct Args {
   static constexpr auto kMaxLen = 16U;
-  using write_fmt_t = void(const Fmts& fmts, fmt::Formatter& f, const void* args);
-
   Fmts _fmts;
   const void* _args[kMaxLen] = {};
-  write_fmt_t* _write_fmt;
+  void (*_fmt)(const Args& self, fmt::Formatter& f);
 
  public:
-  template <class... T>
-  Args(const Fmts& fmts, const T&... args) : _fmts{fmts}, _args{&args...} {
-    static_assert(sizeof...(T) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
+  Args(const Fmts& fmts, const auto&... args);
 
-    using args_t = Tuple<const T&...>;
-    _write_fmt = [](const Fmts& fmts, fmt::Formatter& f, const void* args) {
-      fmts.format_imp(f, *(const args_t*)args);
-    };
-  }
-
-  void fmt(auto& f) const {
-    _write_fmt(_fmts, f, _args);
+  void fmt(fmt::Formatter& f) const {
+    _fmt(*this, f);
   }
 };
 

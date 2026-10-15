@@ -106,15 +106,14 @@ auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
 }
 
 struct RevBuf {
-  char* _buf;
-  usize _cap;
-  usize _pos = _cap;
+  static constexpr usize kBufSize = 128;
+
+  char _buf[kBufSize];
+  usize _pos = kBufSize;
 
  public:
-  RevBuf(Slice<char> buf) noexcept : _buf{buf._ptr}, _cap{buf._len} {}
-
   auto as_str() const -> Str {
-    return Str{_buf + _pos, _cap - _pos};
+    return Str{_buf + _pos, kBufSize - _pos};
   }
 
   auto write_u64(u64 uval, char type = 0) noexcept -> Str {
@@ -134,7 +133,7 @@ struct RevBuf {
     static const auto MIN_LEN = 12L;
 
     this->push_bin<16>(uval, upcase);
-    while (_cap - _pos < MIN_LEN) {
+    while (kBufSize - _pos < MIN_LEN) {
       this->push('0');
     }
     this->push(upcase ? 'X' : 'x');
@@ -256,7 +255,7 @@ struct RevBuf {
 
 }  // namespace detail
 
-auto Spec::sign(bool is_neg) const -> str::Str {
+auto FmtOptions::sign(bool is_neg) const -> str::Str {
   if (is_neg) {
     return "-";
   }
@@ -268,7 +267,7 @@ auto Spec::sign(bool is_neg) const -> str::Str {
   }
 }
 
-auto Spec::prefix() const -> str::Str {
+auto FmtOptions::prefix() const -> str::Str {
   if (_alt != '#') {
     return "";
   }
@@ -307,44 +306,44 @@ void Debug::fmt(char32_t val, Formatter& f) {
 }
 
 void Debug::fmt(unsigned int val, Formatter& f) {
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
 void Debug::fmt(unsigned long val, Formatter& f) {
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
 void Debug::fmt(unsigned long long val, Formatter& f) {
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(val, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(val, f.type());
   f.pad_num(false, s);
 }
 
 void Debug::fmt(int val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
 void Debug::fmt(long val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
 void Debug::fmt(long long val, Formatter& f) {
   const auto uval = num::unsigned_abs(val);
 
-  char buf[8 * sizeof(val) + 8];
-  const auto s = detail::RevBuf{buf}.write_u64(uval, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_u64(uval, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -353,8 +352,8 @@ void Debug::fmt(float val, Formatter& f) {
   const auto prec = f.precision().unwrap_or(kDefaultPrecision);
 
   const auto uval = val < 0 ? -val : val;
-  char buf[8 * sizeof(val) + 16];
-  const auto s = detail::RevBuf{buf}.write_flt(uval, prec, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_flt(uval, prec, f.type());
   f.pad_num(val < 0, s);
 }
 
@@ -364,9 +363,13 @@ void Debug::fmt(double val, Formatter& f) {
 
   const auto uval = val < 0 ? -val : val;
 
-  char buf[8 * sizeof(val) + 16];
-  const auto s = detail::RevBuf{buf}.write_flt(uval, prec, f.type());
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_flt(uval, prec, f.type());
   f.pad_num(val < 0, s);
+}
+
+void Debug::fmt([[maybe_unused]] decltype(nullptr) val, Formatter& f) {
+  f.write_str("nullptr");
 }
 
 void Debug::fmt(const void* val, Formatter& f) {
@@ -374,27 +377,32 @@ void Debug::fmt(const void* val, Formatter& f) {
   const auto upcase = type == 'X' || type == 'P';
   const auto uval = __builtin_bit_cast(usize, val);
 
-  char buf[32];
-  const auto s = detail::RevBuf{buf}.write_ptr(uval, upcase);
+  auto buf = detail::RevBuf{};
+  const auto s = buf.write_ptr(uval, upcase);
   f.write_str(s);
 }
 
-auto Formatter::spec() const -> Spec {
-  return _spec;
+void Debug::fmt(const char* val, Formatter& f) {
+  const auto s = Str::from_cstr(val);
+  s.fmt(f);
+}
+
+auto Formatter::spec() const -> FmtOptions {
+  return _opts;
 }
 
 auto Formatter::type() const -> char {
-  return _spec._type;
+  return _opts._type;
 }
 
 auto Formatter::width() const -> Option<u32> {
-  if (!_spec._width) return {};
-  return _spec._width;
+  if (!_opts._width) return {};
+  return _opts._width;
 }
 
 auto Formatter::precision() const -> Option<u32> {
-  if (!_spec._point) return {};
-  return _spec._precision;
+  if (!_opts._point) return {};
+  return _opts._precision;
 }
 
 auto Formatter::depth() const -> u32 {
@@ -424,15 +432,15 @@ void Formatter::write_chars(char c, usize n) {
 }
 
 void Formatter::pad(Str s) {
-  if (_spec._width <= s._len) {
+  if (_opts._width <= s._len) {
     this->write_str(s);
     return;
   }
 
-  const auto fill = _spec.fill();
-  const auto npad = _spec._width - s._len;
+  const auto fill = _opts.fill();
+  const auto npad = _opts._width - s._len;
 
-  switch (_spec._align) {
+  switch (_opts._align) {
     default:
     case '<':
       this->write_str(s);
@@ -452,18 +460,18 @@ void Formatter::pad(Str s) {
 }
 
 void Formatter::pad_num(bool is_neg, Str body) {
-  const auto sign = _spec.sign(is_neg);
-  const auto prefix = _spec.prefix();
-  if (body._len >= _spec._width) {
+  const auto sign = _opts.sign(is_neg);
+  const auto prefix = _opts.prefix();
+  if (body._len >= _opts._width) {
     this->write_str(sign);
     this->write_str(prefix);
     this->write_str(body);
     return;
   }
 
-  const auto npad = _spec._width - body._len;
-  const auto fill = _spec.fill(_spec._alt ? '0' : ' ');
-  const auto align = _spec.align(fill == '0' ? '=' : '>');
+  const auto npad = _opts._width - body._len;
+  const auto fill = _opts.fill(_opts._alt ? '0' : ' ');
+  const auto align = _opts.align(fill == '0' ? '=' : '>');
   switch (align) {
     default:
     case '>':
@@ -526,16 +534,16 @@ void Formatter::Block::open(Str begin) {
   _fmt.write_str(begin);
 
   // depth++
-  if (_fmt._spec._alt == '#') {
+  if (_fmt._opts._alt == '#') {
     _fmt._depth += 1;
   }
 }
 
 void Formatter::Block::finish(Str end) {
-  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = (_fmt._opts._alt == '#') && (_fmt._depth <= _fmt._max_depth);
 
   // depth--
-  if (_fmt._spec._alt == '#') {
+  if (_fmt._opts._alt == '#') {
     if (_fmt._depth > 0) _fmt._depth -= 1;
   }
 
@@ -549,7 +557,7 @@ void Formatter::Block::finish(Str end) {
 void Formatter::Block::next() {
   _cnt += 1;
 
-  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = (_fmt._opts._alt == '#') && (_fmt._depth <= _fmt._max_depth);
   if (!pretty_fmt) {
     if (_cnt > 1) {
       _fmt.write_str(", ");

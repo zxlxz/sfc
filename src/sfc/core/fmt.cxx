@@ -190,7 +190,7 @@ SFC_TEST(flt_inf) {
 }
 
 enum class E1 { A, B };
-static auto to_str(E1 val) -> Str {
+auto to_str(E1 val) -> Str {
   switch (val) {
     case E1::A: return "A";
     case E1::B: return "B";

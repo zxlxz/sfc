@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/cmp.h"
+#include "sfc/core/str.h"
 #include "sfc/core/fmts.h"
 #include "sfc/core/trait.h"
 #include "sfc/core/reflect.h"
@@ -12,11 +12,12 @@ struct Write {
     void (*write_str)(void*, Str);
   };
 
-  template<class X>
+  template <class X>
   static constexpr auto vtbl = VTbl{
       .write_str = [](void* x, auto... u) { return ((X*)(x))->write_str(u...); },
   };
 
+ public:
   void write_str(this auto& self, Str s) {
     return (self._vtbl->write_str)(self._impl, s);
   }
@@ -42,12 +43,12 @@ class Buf {
 
  public:
   void truncate(usize new_len) {
-    _len = (cmp::min)(new_len, _len);
+    _len = new_len < _len ? new_len : _len;
   }
 
   void write_str(Str s) {
     if (_len >= N) return;
-    const auto n = (cmp::min)(N - _len, s._len);
+    const auto n = s._len < (N - _len) ? s._len : (N - _len);
     __builtin_memcpy(_buf + _len, s._ptr, n);
     _len += n;
   }
@@ -70,7 +71,9 @@ struct Debug {
   static void fmt(float val, Formatter& f);
   static void fmt(double val, Formatter& f);
 
+  static void fmt(decltype(nullptr) val, Formatter& f);
   static void fmt(const void* val, Formatter& f);
+  static void fmt(const char* val, Formatter& f);
 
   template <trait::class_ T>
   static void fmt([[maybe_unused]] const T& val, auto& f) {
@@ -112,15 +115,15 @@ class DebugStruct;
 
 class Formatter {
   Dyn<Write> _out;
-  Spec _spec = {};
+  FmtOptions _opts = {};
   u16 _depth = 0;
   u16 _max_depth = 100;
 
  public:
-  explicit Formatter(Dyn<Write> out) : _out{out} {}
+  explicit Formatter(auto& out, FmtOptions opts = {}) : _out{out}, _opts{opts} {}
 
  public:
-  auto spec() const -> Spec;
+  auto spec() const -> FmtOptions;
   auto type() const -> char;
   auto width() const -> Option<u32>;
   auto precision() const -> Option<u32>;
@@ -153,11 +156,11 @@ class Formatter {
     }
   }
 
-  void write_arg(Spec spec, const auto& val) {
-    auto old_spec = _spec;
-    _spec = spec;
+  void write_arg(FmtOptions opts, const auto& val) {
+    const auto old_opts = _opts;
+    _opts = opts;
     this->write_val(val);
-    _spec = old_spec;
+    _opts = old_opts;
   }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
@@ -286,23 +289,29 @@ class DebugStruct {
   }
 };
 
-void Fmts::format_imp(fmt::Formatter& f, const auto& args) const {
-  args.for_each([&, idx = 0U](const auto& val) mutable {
-    if (idx >= _cnt) return;
-    f.write_str({_fills[idx]._ptr, _fills[idx]._len});
-    f.write_arg(_specs[idx], val);
-    ++idx;
-  });
-  f.write_str({_tail._ptr, _tail._len});
+Args::Args(const Fmts& fmts, const auto&... args) : _fmts{fmts}, _args{&args...} {
+  static_assert(sizeof...(args) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
+
+#if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
+  using args_t = decltype(tuple::bind(args...));
+  _fmt = [](const Args& self, fmt::Formatter& f) {
+    const auto& fmts = self._fmts;
+    const auto& args = *(const args_t*)self._args;
+    args.for_each([&, idx = 0U](const auto& val) mutable {
+      if (idx >= fmts._cnt) return;
+      f.write_str({fmts._segment[idx]._ptr, fmts._segment[idx]._len});
+      f.write_arg(fmts._options[idx], val);
+      ++idx;
+    });
+    const auto tail = fmts._segment[fmts._cnt];
+    f.write_str({tail._ptr, tail._len});
+  };
+#endif
 }
 
 // macro: write!(out, arg...)
 void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
-  if constexpr (requires { out.write_fmt(fmts, args...); }) {
-    out.write_fmt(fmts, args...);
-  } else {
-    Formatter{out}.write_fmt(fmts, args...);
-  }
+  Formatter{out}.write_fmt(fmts, args...);
 }
 
 void writeln(auto& out, const fmt::Fmts& fmts, const auto&... args) {

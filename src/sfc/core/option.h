@@ -310,7 +310,7 @@ class Option<T&> {
 };
 
 template <class T>
-class Option<Option<T>>;
+class Option<Option<T>>;  // disable
 
 template <class T>
 Option(T) -> Option<T>;

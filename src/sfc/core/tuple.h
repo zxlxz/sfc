@@ -70,15 +70,7 @@ struct Tuple : detail::Tuple<T...> {
   using Inn = detail::Tuple<T...>;
 
  public:
-  Tuple(T... args) noexcept : Inn{(T&&)(args)...} {}
-
-  ~Tuple() = default;
-
-  Tuple(const Tuple&) = default;
-  Tuple(Tuple&&) = default;
-
-  Tuple& operator=(const Tuple&) = default;
-  Tuple& operator=(Tuple&&) = default;
+  constexpr Tuple(T... args) noexcept : Inn{(T&&)(args)...} {}
 
  public:
   void fmt(auto& f) const {

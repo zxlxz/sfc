@@ -34,44 +34,44 @@ void assert_(AssertCondition cond, const fmt::Fmts& fmts, const auto&... args) {
 
 void assert_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a == b) return;
-  test::assert_failed(loc, fmt::CStr{"=="}, a, b);
+  test::assert_failed(loc, "==", a, b);
 }
 
 void assert_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a != b) return;
-  test::assert_failed(loc, fmt::CStr{"!="}, a, b);
+  test::assert_failed(loc, "!=", a, b);
 }
 
 void assert_lt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a < b) return;
-  test::assert_failed(loc, fmt::CStr{"<"}, a, b);
+  test::assert_failed(loc, "<", a, b);
 }
 
 void assert_le(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a <= b) return;
-  test::assert_failed(loc, fmt::CStr{"<="}, a, b);
+  test::assert_failed(loc, "<=", a, b);
 }
 
 void assert_gt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a > b) return;
-  test::assert_failed(loc, fmt::CStr{">"}, a, b);
+  test::assert_failed(loc, ">", a, b);
 }
 
 void assert_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
   if (a >= b) return;
-  test::assert_failed(loc, fmt::CStr{">="}, a, b);
+  test::assert_failed(loc, ">=", a, b);
 }
 
 inline void assert_flt_eq(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
   const auto diff = a - b;
   if (-eps < diff && diff < eps) return;
-  test::assert_failed(loc, fmt::CStr{"=="}, a, b);
+  test::assert_failed(loc, "==", a, b);
 }
 
 inline void assert_flt_ne(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
   const auto diff = a - b;
   if (diff < -eps || eps < diff) return;
-  test::assert_failed(loc, fmt::CStr{"!="}, a, b);
+  test::assert_failed(loc, "!=", a, b);
 }
 
 }  // namespace sfc::test
