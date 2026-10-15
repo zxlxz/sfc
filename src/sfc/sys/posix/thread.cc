@@ -66,12 +66,12 @@ void ThisThread::sleep(time::Duration dur) noexcept {
   (void)::nanosleep(&ts, nullptr);
 }
 
-auto Thread::is_valid() const -> bool {
-  return _handle != 0;
+auto Thread::is_none() const -> bool {
+  return _handle == 0;
 }
 
 void Thread::join() {
-  if (_handle == 0) {
+  if (this->is_none()) {
     return;
   }
 
@@ -81,7 +81,7 @@ void Thread::join() {
 }
 
 void Thread::detach() {
-  if (_handle == 0) {
+  if (this->is_none()) {
     return;
   }
 

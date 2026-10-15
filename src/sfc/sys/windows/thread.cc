@@ -33,12 +33,12 @@ auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
   return Thread{handle};
 }
 
-auto Thread::is_valid() const -> bool {
+auto Thread::is_none() const -> bool {
   return _handle != nullptr && _handle != INVALID_HANDLE_VALUE;
 }
 
 void Thread::join() {
-  if (!this->is_valid()) return;
+  if (!this->is_none()) return;
 
   const auto ret = ::WaitForSingleObject(_handle, INFINITE);
   ::CloseHandle(_handle);
@@ -46,7 +46,7 @@ void Thread::join() {
 }
 
 void Thread::detach() {
-  if (!this->is_valid()) return;
+  if (!this->is_none()) return;
   (void)::CloseHandle(_handle);
 }
 

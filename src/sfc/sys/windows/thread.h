@@ -7,12 +7,13 @@ namespace sfc::sys::windows {
 struct Thread {
   void* _handle{nullptr};
 
+ public:
   Thread() noexcept = default;
   explicit Thread(void* handle) noexcept;
-
   static auto spawn(usize stack_size, Box<void()> f) -> Thread;
 
-  auto is_valid() const -> bool;
+ public:
+  auto is_none() const -> bool;
   void join();
   void detach();
 };

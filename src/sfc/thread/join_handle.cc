@@ -23,11 +23,11 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 }
 
 auto JoinHandle::is_finished() const -> bool {
-  return !_thread.is_valid();
+  return !_thread.is_none();
 }
 
 void JoinHandle::join() {
-  if (!_thread.is_valid()) {
+  if (!_thread.is_none()) {
     return;
   }
 

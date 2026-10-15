@@ -15,7 +15,7 @@ struct Thread {
 
  public:
   static auto spawn(usize stack_size, Box<void()> f) -> Thread;
-  auto is_valid() const -> bool;
+  auto is_none() const -> bool;
   void join();
   void detach();
 };
