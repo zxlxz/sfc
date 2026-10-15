@@ -18,10 +18,9 @@ auto Mutex::lock() noexcept -> Guard {
 
 auto Mutex::try_lock() noexcept -> Option<Guard> {
   if (!_inn.try_lock()) {
-    return {};
+    return None{};
   }
-
-  return convert::construct<Guard>(_inn);
+  return Guard{_inn};
 }
 
 Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{&mtx} {}
@@ -75,7 +74,7 @@ auto ReentrantLock::try_lock() noexcept -> Option<Guard> {
   }
 
   if (!_inn.try_lock()) {
-    return {};
+    return None{};
   }
 
   _inn._owner.store(current_id, Ordering::Relaxed);

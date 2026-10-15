@@ -28,6 +28,7 @@ struct Str {
     return Str{s, n};
   }
 
+ public:
   constexpr auto ptr() const noexcept -> const char* {
     return _ptr;
   }
@@ -147,6 +148,16 @@ struct Str {
   // trait: hash::Hash
   void hash(auto& state) const noexcept {
     state.write(this->as_bytes());
+  }
+};
+
+struct AsStr {
+  static auto as_str(const auto& self) -> Str {
+    if constexpr (requires { Str{self}; }) {
+      return Str{self};
+    } else {
+      return self.as_str();
+    }
   }
 };
 

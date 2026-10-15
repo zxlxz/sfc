@@ -82,10 +82,6 @@ void String::write_str(Str s) noexcept {
   this->push_str(s);
 }
 
-void String::fmt(fmt::Formatter& f) const {
-  this->as_str().fmt(f);
-}
-
 void String::push_str(Str s) noexcept {
   if (s._len == 0) return;
   _buf.extend_from_slice(s.as_bytes());

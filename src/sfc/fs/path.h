@@ -62,10 +62,14 @@ class PathBuf {
 
  public:
   // trait: deref<Path>
-  auto operator*() const noexcept -> Path;
+  auto operator*() const noexcept -> Path {
+    return this->as_path();
+  }
 
   // trait: fmt::Display
-  void fmt(fmt::Formatter& f) const;
+  void fmt(auto& f) const {
+    this->as_path().fmt(f);
+  }
 };
 
 }  // namespace sfc::fs

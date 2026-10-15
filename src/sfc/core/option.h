@@ -38,9 +38,6 @@ class Option {
   Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
   Option(None) noexcept : _tag{false} {}
 
-  template <class U>
-  Option(convert::Ctor<T, U> f) noexcept : _tag{true}, _1{f()} {}
-
   ~Option() requires(trait::tv_copy_<T>) = default;
   ~Option() {
     _tag ? mem::drop(_1) : void();
@@ -322,4 +319,5 @@ Option(const char (&)[N]) -> Option<str::Str>;
 
 namespace sfc {
 using option::Option;
+using option::None;
 }  // namespace sfc

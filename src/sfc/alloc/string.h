@@ -47,11 +47,6 @@ class [[nodiscard]] String {
     return _buf.iter_mut();
   }
 
- public:
-  operator Str() const noexcept {
-    return this->as_str();
-  }
-
   auto find(auto&& p) const -> Option<usize> {
     return this->as_str().find(p);
   }
@@ -83,14 +78,21 @@ class [[nodiscard]] String {
   friend auto operator==(const String& a, Str b) noexcept -> bool;
   friend auto operator==(Str a, const String& b) noexcept -> bool;
 
+  // trait: Deref<Str>
+  auto operator*() const noexcept -> Str {
+    return this->as_str();
+  }
+
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    return this->as_str().fmt(f);
+  }
+
   // trait: Clone
   auto clone() const noexcept -> String;
 
   // trait: fmt::Write
   void write_str(Str s) noexcept;
-
-  // trait: fmt::Display
-  void fmt(fmt::Formatter& f) const;
 
   // trait: serde::Serialize
   void serialize(auto& s) const {

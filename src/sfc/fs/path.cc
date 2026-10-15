@@ -264,12 +264,4 @@ auto PathBuf::join(Path path) const -> PathBuf {
   return res;
 }
 
-auto PathBuf::operator*() const noexcept -> Path {
-  return this->as_path();
-}
-
-void PathBuf::fmt(fmt::Formatter& f) const {
-  _inn.fmt(f);
-}
-
 }  // namespace sfc::fs

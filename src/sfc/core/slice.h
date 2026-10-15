@@ -35,6 +35,10 @@ struct Slice {
   template <usize N>
   constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
 
+  template <class U>
+  constexpr Slice(Slice<U> other) noexcept : _ptr{other._ptr}, _len{other._len} {}
+
+ public:
   constexpr auto ptr() const noexcept -> T* {
     return _ptr;
   }
@@ -63,10 +67,6 @@ struct Slice {
   auto as_mut_bytes() noexcept -> Slice<u8> {
     static_assert(__is_trivially_copyable(T));
     return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
-  }
-
-  operator Slice<const T>() const noexcept {
-    return {_ptr, _len};
   }
 
  public:

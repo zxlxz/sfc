@@ -108,14 +108,15 @@ class SerializeObj {
   SerializeObj(const SerializeObj&) = delete;
   SerializeObj& operator=(const SerializeObj&) = delete;
 
+ public:
   void serialize_key(Str key);
 
   void serialize_value(const auto& val) {
     _ser.serialize_any(val);
   }
 
-  void serialize_entry(Str key, const auto& val) {
-    this->serialize_key(key);
+  void serialize_entry(const auto& key, const auto& val) {
+    this->serialize_key(str::AsStr::as_str(key));
     this->serialize_value(val);
   }
 };

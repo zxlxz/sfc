@@ -4,19 +4,15 @@
 
 namespace sfc::convert {
 
-template <class T, class F>
-struct Ctor {
-  F _func;
+template <class T>
+struct AsRef {
+  T _ref;
 
-  auto operator()() -> T {
-    return _func();
+ public:
+  static auto as_ref(const auto& self) -> T {
+    return T{self};
   }
 };
 
-template <class T, class... U>
-auto construct(U&&... args) {
-  auto f = [&]() -> T { return T{static_cast<U&&>(args)...}; };
-  return Ctor<T, decltype(f)>{._func = f};
-}
 
 }  // namespace sfc::convert
