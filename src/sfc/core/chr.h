@@ -8,13 +8,16 @@ namespace sfc::chr {
 
 constexpr char32_t INVALID = 0xFFFD;
 
-auto utf8_codelen(u8 h) -> u32;
-auto utf8_encode(char32_t ch, Slice<u8> buf) -> u32;
-auto utf8_decode(const u8 buf[], u32 codelen) -> char32_t;
+struct Decode {
+  char32_t ch;
+  u32 len;
+};
 
-auto utf16_codelen(u16 h) -> u32;
-auto utf16_encode(char32_t ch, Slice<u16> buf) -> u32;
-auto utf16_decode(const u16 buf[], u32 codelen) -> char32_t;
+auto encode_utf8(Slice<u8> buf, char32_t ch) -> str::Str;
+auto decode_utf8(Slice<const u8> buf) -> Decode;
+
+auto encode_utf16(Slice<u16> buf, char32_t ch) -> Slice<u16>;
+auto decode_utf16(Slice<const u16> buf) -> Decode;
 
 constexpr auto is_number(char ch) noexcept -> bool {
   return '0' <= ch && ch <= '9';
@@ -39,6 +42,9 @@ struct Chars : iter::Iterator<char32_t> {
 
  public:
   Chars(const u8* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
+
+ public:
+  auto len() const -> usize;
   auto next() noexcept -> Option<char32_t>;
   auto next_back() noexcept -> Option<char32_t>;
 };

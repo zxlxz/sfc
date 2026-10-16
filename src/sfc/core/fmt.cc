@@ -294,15 +294,17 @@ void Debug::fmt(char val, Formatter& f) {
 }
 
 void Debug::fmt(char16_t val, Formatter& f) {
-  u8 u8_buf[4] = {};
-  const auto u8_len = chr::utf8_encode(val, u8_buf);
-  f.write_str(Str::from_utf8({u8_buf, u8_len}));
+  u8 buf[4] = {};
+
+  const auto str = chr::encode_utf8(buf, val);
+  f.write_str(str);
 }
 
 void Debug::fmt(char32_t val, Formatter& f) {
-  u8 u8_buf[4] = {};
-  const auto u8_len = chr::utf8_encode(val, u8_buf);
-  f.write_str(Str::from_utf8({u8_buf, u8_len}));
+  u8 buf[4] = {};
+
+  const auto str = chr::encode_utf8(buf, val);
+  f.write_str(str);
 }
 
 void Debug::fmt(unsigned int val, Formatter& f) {

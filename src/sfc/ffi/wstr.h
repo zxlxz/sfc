@@ -4,16 +4,19 @@
 
 namespace sfc::ffi {
 
-auto wide_codelen(wchar_t h) -> u32;
-auto wide_encode(char32_t c, Slice<wchar_t> buf) -> u32;
-auto wide_decode(const wchar_t wbuf[], u32 n) -> char32_t;
+struct WStr;
+auto encode_wide(Slice<wchar_t> buf, char32_t c) -> WStr;
+auto decode_wide(Slice<const wchar_t> buf) -> chr::Decode;
 
 struct WChars : iter::Iterator<char32_t> {
   const wchar_t* _ptr;
-  const wchar_t* _end;
+  usize _len;
 
  public:
-  WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _end{p + n} {}
+  WChars(const wchar_t* p, usize n) noexcept : _ptr{p}, _len{n} {}
+
+ public:
+  auto len() const -> usize;
   auto next() noexcept -> Option<char32_t>;
 };
 
@@ -41,6 +44,7 @@ class WString {
  public:
   void clear();
   void push_str(Str s);
+  void push_wstr(WStr s);
   auto into_string() const -> String;
 };
 

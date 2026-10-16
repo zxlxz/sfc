@@ -18,7 +18,7 @@ void panic_imp(PanicInfo info) {
     fmter.write_fmt(" {2}: {}\n", idx, frame.func);
   }
 
-  auto out = sys::Stderr{};
+  auto out = sys::StdIo::Error();
   (void)out.write(buf.as_str().as_bytes());
 
   throw info;

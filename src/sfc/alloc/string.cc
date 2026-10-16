@@ -114,14 +114,13 @@ auto String::pop() noexcept -> Option<char32_t> {
 void String::push(char32_t c) noexcept {
   // ansii code point, just push as u8
   if (c < 0x80) {
-    const auto byte = static_cast<u8>(c);
-    _buf.push(byte);
+    _buf.push(u8(c));
     return;
   }
 
   u8 buf[4] = {};
-  const auto code_len = chr::utf8_encode(c, buf);
-  _buf.extend_from_slice({buf, code_len});
+  const auto str = chr::encode_utf8(buf, c);
+  this->push_str(str);
 }
 
 }  // namespace sfc::string

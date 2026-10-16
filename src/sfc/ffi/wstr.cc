@@ -3,59 +3,50 @@
 
 namespace sfc::ffi {
 
-auto wide_codelen(wchar_t h) -> u32 {
-  if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
-    return 1;
+auto encode_wide(Slice<wchar_t> wbuf, char32_t ch) -> WStr {
+  if (wbuf._len == 0) {
+    return {nullptr, 0};
   }
 
-  if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
-    return chr::utf16_codelen(u16(h));
-  }
-}
-
-auto wide_encode(char32_t ch, Slice<wchar_t> wbuf) -> u32 {
   if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
-    if (wbuf._len < 1) return 0;
-
     wbuf._ptr[0] = wchar_t(ch);
-    return 1;
+    return {wbuf._ptr, 1};
   }
 
   if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
-    u16 buf[2] = {};
-    const auto n = chr::utf16_encode(ch, buf);
-    if (wbuf._len < n) return 0;
-    for (auto i = 0UL; i < n; ++i) {
-      wbuf._ptr[i] = wchar_t(buf[i]);
-    }
-    return n;
+    auto u16_buf = Slice{ptr::cast<u16>(wbuf._ptr), wbuf._len};
+    auto u16_str = chr::encode_utf16(u16_buf, ch);
+    return {ptr::cast<wchar_t>(u16_str._ptr), u16_str._len};
   }
 }
 
-auto wide_decode(const wchar_t wbuf[], u32 n) -> char32_t {
-  if (n == 0) return chr::INVALID;
-  if (n == 1) return char32_t(wbuf[0]);
+auto decode_wide(Slice<const wchar_t> wbuf) -> chr::Decode {
+  if (wbuf._len == 0) {
+    return {chr::INVALID, 0};
+  }
+
+  if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
+    return {char32_t(wbuf[0]), 1};
+  }
 
   if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
-    if (n == 2) {
-      u16 buf[2] = {u16(wbuf[0]), u16(wbuf[1])};
-      return chr::utf16_decode(buf, n);
-    }
+    auto u16_buf = Slice{ptr::cast<const u16>(wbuf._ptr), wbuf._len};
+    return chr::decode_utf16(u16_buf);
   }
-  return chr::INVALID;
 }
 
-auto WChars::next() noexcept -> Option<Item> {
-  if (_ptr == _end) return {};
+auto WChars::len() const -> usize {
+  return _len;
+}
 
-  const auto n = ffi::wide_codelen(*_ptr);
-  if (n == 0 || _ptr + n > _end) {
-    _ptr = _end;
+auto WChars::next() noexcept -> Option<char32_t> {
+  if (_len == 0) {
     return {};
   }
 
-  const auto ch = ffi::wide_decode(_ptr, n);
+  const auto [ch, n] = ffi::decode_wide({_ptr, _len});
   _ptr += n;
+  _len -= n;
   return ch;
 }
 
@@ -68,10 +59,7 @@ auto WStr::to_string() const -> String {
     return {};
   }
 
-  // each wchar_t takes 1-4 u8 bytes
-  // reserve 2x here is a balance between memory usage and performance for most cases
-  static constexpr auto kRatio = 2U;
-  auto res = String::with_capacity(kRatio * _len);
+  auto res = String::with_capacity(_len);
   auto chars = WChars{_ptr, _len};
   chars.for_each([&](char32_t ch) { res.push(ch); });
   return res;
@@ -112,20 +100,29 @@ void WString::push_str(Str s) {
     return;
   }
 
+  _buf.reserve(s.len());
+  s.chars().for_each([&](char32_t ch) {
+    wchar_t buf[2] = {};
+    const auto wstr = ffi::encode_wide(buf, ch);
+    this->push_wstr(wstr);
+  });
+
+  return;
+}
+
+void WString::push_wstr(WStr s) {
+  if (s._len == 0) {
+    return;
+  }
+
   // pop trailing null character
   if (!_buf.is_empty()) {
     _buf.pop();
   }
 
-  _buf.reserve(s.len());
-  s.chars().for_each([&](char32_t ch) {
-    wchar_t buf[2] = {};
-    const auto len = ffi::wide_encode(ch, buf);
-    _buf.extend_from_slice({buf, len});
-  });
+  _buf.reserve(s._len);
+  _buf.extend_from_slice({s._ptr, s._len});
   _buf.push(0);
-
-  return;
 }
 
 // using this name, just make CString and WString have the same API

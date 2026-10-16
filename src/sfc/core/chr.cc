@@ -1,4 +1,5 @@
 #include "sfc/core/chr.h"
+#include "sfc/core/str.h"
 
 namespace sfc::chr {
 
@@ -23,7 +24,7 @@ static auto codelen(u8 h) -> u32 {
 }
 
 // ch: [0x000000, 0x10FFFF]
-static auto encode(char32_t ch, Slice<u8> buf) -> u32 {
+static auto encode(Slice<u8> buf, char32_t ch) -> u32 {
   static constexpr u8 MASK = 0x3F;  // 0b00111111
 
   if (ch <= 0x7FU && buf._len >= 1) {
@@ -55,13 +56,14 @@ static auto encode(char32_t ch, Slice<u8> buf) -> u32 {
   return 0;
 }
 
-static auto decode(const u8 p[], u32 n) -> char32_t {
+static auto decode(Slice<const u8> buf) -> char32_t {
   static constexpr char32_t MX = 0x3F;  // 0b00111111
   static constexpr char32_t M2 = 0x1F;  // 0b00011111
   static constexpr char32_t M3 = 0x0F;  // 0b00001111
   static constexpr char32_t M4 = 0x07;  // 0b00000111
 
-  switch (n) {
+  const auto p = buf._ptr;
+  switch (buf._len) {
     case 1: {
       const auto a = p[0];
       return char32_t{a};
@@ -101,7 +103,7 @@ static auto codelen(u16 h) -> u32 {
   return 1;                  // [0xE000, 0xFFFF]  single code unit
 }
 
-static auto encode(char32_t ch, Slice<u16> buf) -> u32 {
+static auto encode(Slice<u16> buf, char32_t ch) -> u32 {
   static constexpr char32_t NBIT = 10;     // 10bit
   static constexpr char32_t MASK = 0x3FF;  // 10bit
   static constexpr char32_t C1 = 0x10000;  // max(u16) + 1
@@ -123,10 +125,11 @@ static auto encode(char32_t ch, Slice<u16> buf) -> u32 {
   return 0;
 }
 
-static auto decode(const u16 p[], usize n) -> char32_t {
+static auto decode(Slice<const u16> buf) -> char32_t {
   static constexpr char32_t MASK = 0x3FF;  // 10bit
 
-  switch (n) {
+  const auto p = buf._ptr;
+  switch (buf._len) {
     case 1: {
       const auto ch = p[0];
       return char32_t{ch};
@@ -143,41 +146,61 @@ static auto decode(const u16 p[], usize n) -> char32_t {
 
 }  // namespace utf16
 
-auto utf8_codelen(u8 h) -> u32 {
-  return utf8::codelen(h);
+auto encode_utf8(Slice<u8> buf, char32_t ch) -> str::Str {
+  const auto n = utf8::encode(buf, ch);
+  return str::Str::from_utf8({buf._ptr, n});
 }
 
-auto utf8_encode(char32_t ch, Slice<u8> buf) -> u32 {
-  return utf8::encode(ch, buf);
+auto decode_utf8(Slice<const u8> buf) -> Decode {
+  if (buf._len == 0) {
+    return {chr::INVALID, 0};
+  }
+
+  const auto len = utf8::codelen(buf._ptr[0]);
+  if (len > buf._len) {
+    return {chr::INVALID, u32(buf._len)};
+  }
+
+  const auto ch = utf8::decode({buf._ptr, len});
+  return {ch, len};
 }
 
-auto utf8_decode(const u8 p[], u32 n) -> char32_t {
-  return utf8::decode(p, n);
+auto encode_utf16(Slice<u16> buf, char32_t ch) -> Slice<u16> {
+  const auto n = utf16::encode(buf, ch);
+  return {buf._ptr, n};
 }
 
-auto utf16_codelen(u16 h) -> u32 {
-  return utf16::codelen(h);
+auto decode_utf16(Slice<const u16> buf) -> Decode {
+  if (buf._len == 0) {
+    return {chr::INVALID, 0};
+  }
+
+  const auto len = utf16::codelen(buf._ptr[0]);
+  if (len > buf._len) {
+    return {chr::INVALID, 0};
+  }
+
+  const auto ch = utf16::decode({buf._ptr, len});
+  return {ch, len};
 }
 
-auto utf16_encode(char32_t ch, Slice<u16> buf) -> u32 {
-  return utf16::encode(ch, buf);
-}
-
-auto utf16_decode(const u16 p[], u32 n) -> char32_t {
-  return utf16::decode(p, n);
+auto Chars::len() const -> usize {
+  return static_cast<usize>(_end - _ptr);
 }
 
 auto Chars::next() noexcept -> Option<char32_t> {
-  if (_ptr == _end) return {};
+  if (_ptr >= _end) {
+    return {};
+  }
 
-  const auto n = utf8::codelen(*_ptr);
-  if (n == 0 || _ptr + n > _end) {
+  const auto u8_len = utf8::codelen(*_ptr);
+  if (_ptr + u8_len > _end) {
     _ptr = _end;
     return {};
   }
 
-  const auto ch = chr::utf8_decode(_ptr, n);
-  _ptr += n;
+  const auto ch = utf8::decode({_ptr, u8_len});
+  _ptr += u8_len;
   return ch;
 }
 
@@ -196,7 +219,7 @@ auto Chars::next_back() noexcept -> Option<char32_t> {
     return {};
   }
 
-  const auto ch = utf8::decode(p, n);
+  const auto ch = utf8::decode({p, n});
   _end = p;
   return ch;
 }

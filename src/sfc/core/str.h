@@ -20,7 +20,7 @@ struct Str {
   constexpr Str(const char* s) noexcept : _ptr{s}, _len{s == nullptr ? 0 : __builtin_strlen(s)} {}
 
   constexpr static auto from_utf8(Slice<const u8> s) noexcept -> Str {
-    return Str{ptr::cast<const char>(s._ptr), s._len};
+    return Str{(const char*)s._ptr, s._len};
   }
 
   constexpr static auto from_cstr(const char* s) noexcept -> Str {
