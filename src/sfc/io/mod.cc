@@ -4,8 +4,7 @@
 namespace sfc::io {
 
 auto SeekFrom::Start(u64 offset) -> SeekFrom {
-  const auto off = num::saturating_cast<i64>(offset);
-  return SeekFrom{Kind::Start, off};
+  return SeekFrom{Kind::Start, i64(offset)};
 }
 
 auto SeekFrom::Current(i64 offset) -> SeekFrom {

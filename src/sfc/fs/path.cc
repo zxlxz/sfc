@@ -193,10 +193,6 @@ void PathBuf::clear() noexcept {
   _inn.clear();
 }
 
-void PathBuf::reserve(usize additional) noexcept {
-  _inn.reserve(additional);
-}
-
 void PathBuf::push(Path path) noexcept {
   if (path.is_absolute()) {
     _inn.clear();

@@ -114,7 +114,7 @@ template <class W>
 class BufWriter : public Write {
   static constexpr usize DEFAULT_BUF_SIZE = 256;
   W _inn;
-  WriteBuf _buf;
+  WriteBuf _buf = WriteBuf::with_capacity(DEFAULT_BUF_SIZE);
 
  public:
   explicit BufWriter(W inn, WriteBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}

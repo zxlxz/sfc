@@ -50,7 +50,6 @@ class PathBuf {
  public:
   auto clone() const -> PathBuf;
   void clear() noexcept;
-  void reserve(usize additional) noexcept;
 
   void push(Path path) noexcept;
   auto pop() noexcept -> bool;
@@ -71,5 +70,6 @@ class PathBuf {
     this->as_path().fmt(f);
   }
 };
+
 
 }  // namespace sfc::fs

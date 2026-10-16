@@ -58,11 +58,9 @@ void ConsoleBackend::push(const Record& record) {
 
 void ConsoleBackend::flush() {}
 
-auto FileBackend::create(fs::Path path) -> io::Result<FileBackend> {
-  auto backend = FileBackend{};
-  backend._file = _TRY(fs::File::create(path));
-  return backend;
-}
+FileBackend::FileBackend(fs::File file) : _file{mem::move(file)} {}
+
+FileBackend::~FileBackend() = default;
 
 void FileBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
@@ -74,24 +72,26 @@ void FileBackend::flush() {
   (void)_file.flush();
 }
 
-auto GlobalBackend::set_path(fs::Path path) noexcept -> io::Result<> {
-  _file = _TRY(fs::File::create(path));
-  return Ok{};
+void GlobalBackend::set_file(fs::File file) noexcept {
+  _file = mem::move(file);
 }
 
 void GlobalBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
 
-  if (_file.is_none()) {
-    (void)_file.write_str(msg);
-  } else {
+  if (!_file) {
     io::stdout().write_str(msg);
+    return;
   }
+
+  (void)_file->write_str(msg);
 }
 
 void GlobalBackend::flush() {
-  (void)_file.flush();
+  if (_file) {
+    (void)_file->flush();
+  }
 }
 
 auto global() -> Logger& {

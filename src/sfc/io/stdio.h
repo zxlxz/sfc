@@ -14,7 +14,7 @@
 namespace sfc::io {
 
 class Stdout {
-  class Inn;
+  struct Inn;
   Inn& _inn;
 
  public:
@@ -31,7 +31,7 @@ class Stdout {
 };
 
 class Stderr {
-  class Inn;
+  struct Inn;
   Inn& _inn;
 
  public:
@@ -41,6 +41,7 @@ class Stderr {
  public:
   class LockGuard;
   auto lock() -> LockGuard;
+
   auto is_terminal() -> bool;
   void flush();
   void write_str(Str s);

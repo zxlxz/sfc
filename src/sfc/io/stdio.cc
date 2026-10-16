@@ -5,8 +5,8 @@
 
 namespace sfc::io {
 
-class Stdout::Inn {
-  BufWriter<sys::Stdout> _inn{BufWriter<sys::Stdout>::new_({})};
+struct Stdout::Inn {
+  BufWriter<sys::StdIo> _inn{_inn.new_(sys::StdIo::Output())};
   sync::ReentrantLock _mtx{};
 
  public:
@@ -41,8 +41,8 @@ class Stdout::Inn {
   }
 };
 
-class Stderr::Inn {
-  sys::Stderr _inn{};
+struct Stderr::Inn {
+  sys::StdIo _inn{sys::StdIo::Error()};
   sync::ReentrantLock _mtx{};
 
  public:

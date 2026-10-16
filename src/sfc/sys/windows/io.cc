@@ -5,41 +5,79 @@
 
 namespace sfc::sys::windows {
 
-File::File(void* fd) noexcept : _fd(fd) {}
+template <class R>
+struct WBufReader {
+  static constexpr usize BUF_LEN = 256U;
+  R& _inn;
+  wchar_t _buf[BUF_LEN] = {};
+  ffi::WChars _wchars = {_buf, 0};
 
-File::~File() noexcept {
-  if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) return;
-  ::CloseHandle(_fd);
-}
+ public:
+  auto read_char() -> io::Result<char32_t> {
+    _TRY(fill_buf());
 
-File::File(File&& other) noexcept : _fd(other._fd) {
-  other._fd = nullptr;
-}
-
-File& File::operator=(File&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_fd, other._fd);
+    const auto ch = _wchars.next();
+    if (!ch) {
+      return io::Error::UnexpectedEof;
+    }
+    return *ch;
   }
-  return *this;
-}
 
-auto File::is_none() const noexcept -> bool {
-  return _fd == nullptr || _fd == INVALID_HANDLE_VALUE;
-}
+ private:
+  auto fill_buf() -> io::Result<> {
+    if (_wchars.len() > 0) {
+      return Ok{};
+    }
 
-auto File::as_raw_fd() const noexcept -> RawFd {
-  return _fd;
-}
+    const auto nread = _TRY(_inn.readw({_buf, BUF_LEN}));
+    if (nread == 0) {
+      return io::Error::UnexpectedEof;
+    }
 
-auto File::flush() noexcept -> io::Result<> {
-  const auto ret = ::FlushFileBuffers(_fd);
-  if (!ret) {
-    return {io::last_os_error()};
+    _wchars = {_buf, nread};
+    return Ok{};
   }
+};
+
+template <class W>
+struct WBufWriter {
+  static constexpr usize BUF_LEN = 256U;
+
+  W& _inn;
+  wchar_t _buf[BUF_LEN] = {};
+  usize _len{0};
+
+ public:
+  auto write_char(char32_t ch) -> io::Result<> {
+    if (_len + 2 >= BUF_LEN) {
+      _TRY(flush());
+    }
+    const auto wstr = ffi::encode_wide({_buf + _len, BUF_LEN - _len}, ch);
+    _len += wstr._len;
+    return Ok{};
+  }
+
+  auto flush() -> io::Result<> {
+    _TRY(_inn.writew({_buf, _len}));
+    _len = 0;
+    return Ok{};
+  }
+};
+
+auto File::close() -> io::Result<> {
+  if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) {
+    return Ok{};
+  }
+
+  if (!::CloseHandle(_fd)) {
+    return io::last_os_error();
+  }
+
+  _fd = nullptr;
   return Ok{};
 }
 
-auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+auto File::read(Slice<u8> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
@@ -50,7 +88,7 @@ auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   return usize{nread};
 }
 
-auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
+auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
@@ -61,7 +99,15 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   return usize{nwrite};
 }
 
-auto File::seek(io::SeekFrom pos) noexcept -> io::Result<u64> {
+auto File::flush() -> io::Result<> {
+  const auto ret = ::FlushFileBuffers(_fd);
+  if (!ret) {
+    return io::last_os_error();
+  }
+  return Ok{};
+}
+
+auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
   const auto move_method = [=] -> DWORD {
     switch (pos._tag) {
       case io::SeekFrom::Kind::Start:   return FILE_BEGIN;
@@ -80,158 +126,87 @@ auto File::seek(io::SeekFrom pos) noexcept -> io::Result<u64> {
   return u64{ret_pos};
 }
 
-struct StdIo {
-  static constexpr auto kMaxBufLen = 4096UL;
-  HANDLE _handle;
-
- public:
-  static auto Input() -> StdIo& {
-    static auto res = StdIo{::GetStdHandle(STD_INPUT_HANDLE)};
-    return res;
-  }
-
-  static auto Output() -> StdIo& {
-    static auto res = StdIo{::GetStdHandle(STD_OUTPUT_HANDLE)};
-    return res;
-  }
-
-  static auto Error() -> StdIo& {
-    static auto res = StdIo{::GetStdHandle(STD_ERROR_HANDLE)};
-    return res;
-  }
-
- public:
-  auto is_console() const -> bool {
-    auto mode = DWORD{};
-    return ::GetConsoleMode(_handle, &mode);
-  }
-
-  auto is_utf8_console() const -> bool {
-    const auto code_page = ::GetConsoleCP();
-    return code_page == CP_UTF8;
-  }
-
-  auto write_u8(Str u8_str) -> io::Result<usize> {
-    const auto buf = u8_str._ptr;
-    const auto buf_len = num::saturating_cast<DWORD>(u8_str._len);
-
-    auto nret = DWORD{};
-    if (!::WriteFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return Err{io::last_os_error()};
-    }
-    return Ok{usize{nret}};
-  }
-
-  auto write_u16(Str u8_str) -> io::Result<usize> {
-    wchar_t wbuf[kMaxBufLen];
-    u32 wlen = 0U;
-    u8_str.chars().for_each([&](char32_t ch) {
-      if (wlen >= kMaxBufLen) return;
-      const auto n = ffi::wide_encode(ch, {wbuf + wlen, kMaxBufLen - wlen});
-      wlen += u32(n);
-    });
-
-    auto nwrite = DWORD{};
-    if (!::WriteConsoleW(_handle, wbuf, wlen, &nwrite, nullptr)) {
-      return Err{io::last_os_error()};
-    }
-
-    // if write success, assume all u8 bytes are written
-    // since we cannot know how many u8 bytes are written
-    return Ok{u8_str.len()};
-  }
-
-  auto write(Slice<const u8> data) -> io::Result<usize> {
-    const auto u8_str = Str::from_utf8(data);
-    if (!this->is_console() || this->is_utf8_console()) {
-      return this->write_u8(u8_str);
-    } else {
-      return this->write_u16(u8_str);
-    }
-  }
-
-  auto read_u8(Slice<u8> data) -> io::Result<usize> {
-    const auto buf = data._ptr;
-    const auto buf_len = num::saturating_cast<DWORD>(data._len);
-
-    auto nret = DWORD{};
-    if (!::ReadFile(_handle, buf, buf_len, &nret, nullptr)) {
-      return Err{io::last_os_error()};
-    }
-    return Ok{usize{nret}};
-  }
-
-  auto read_u16(Slice<u8> data) -> io::Result<usize> {
-    // in the worst case, each u16 character takes 3 u8 bytes
-    const auto max_wchar = num::saturating_cast<DWORD>(data._len / 3);
-    const auto max_read = (cmp::min)(max_wchar, kMaxBufLen);
-
-    // read u16
-    wchar_t wbuf[kMaxBufLen];
-    auto nret = DWORD{};
-    if (!::ReadConsoleW(_handle, wbuf, max_read, &nret, nullptr)) {
-      return Err{io::last_os_error()};
-    }
-
-    const auto wstr = ffi::WStr{wbuf, nret};
-
-    // convert u16 to u8
-    auto u8_ptr = data._ptr;
-    auto u8_cap = data._len;
-    auto u8_len = 0UL;
-    wstr.chars().for_each([&](char32_t ch) {
-      const auto n = chr::utf8_encode(ch, {u8_ptr + u8_len, u8_cap - u8_len});
-      u8_len += n;
-    });
-
-    return Ok{usize{u8_len}};
-  }
-
-  auto read(Slice<u8> data) -> io::Result<usize> {
-    if (!this->is_console() || this->is_utf8_console()) {
-      return this->read_u8(data);
-    } else {
-      return this->read_u16(data);
-    }
-  }
-};
-
-auto StdIn::is_console() -> bool {
-  auto& imp = StdIo::Input();
-  return imp.is_console();
+auto StdIo::Input() -> StdIo {
+  const auto fd = ::GetStdHandle(STD_INPUT_HANDLE);
+  return StdIo{fd};
 }
 
-auto StdIn::read(Slice<u8> data) -> io::Result<usize> {
-  auto& imp = StdIo::Input();
-  return imp.read(data);
+auto StdIo::Output() -> StdIo {
+  const auto fd = ::GetStdHandle(STD_OUTPUT_HANDLE);
+  return StdIo{fd};
 }
 
-auto Stdout::is_console() -> bool {
-  auto& imp = StdIo::Output();
-  return imp.is_console();
+auto StdIo::Error() -> StdIo {
+  const auto fd = ::GetStdHandle(STD_ERROR_HANDLE);
+  return StdIo{fd};
 }
 
-auto Stdout::write(Slice<const u8> buf) -> io::Result<usize> {
-  auto& imp = StdIo::Output();
-  return imp.write(buf);
+auto StdIo::is_console() const -> bool {
+  auto mode = DWORD{};
+  return ::GetConsoleMode(_file._fd, &mode);
 }
 
-auto Stdout::flush() -> io::Result<> {
+auto StdIo::is_utf8_console() const -> bool {
+  const auto code_page = ::GetConsoleCP();
+  return code_page == CP_UTF8;
+}
+
+auto StdIo::flush() -> io::Result<> {
   return Ok{};
 }
 
-auto Stderr::is_console() -> bool {
-  auto& imp = StdIo::Error();
-  return imp.is_console();
+auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
+  const auto buf_ptr = buf._ptr;
+  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+
+  auto nret = DWORD{};
+  if (!::ReadConsoleW(_file._fd, buf_ptr, buf_len, &nret, nullptr)) {
+    return io::last_os_error();
+  }
+  return usize{nret};
 }
 
-auto Stderr::write(Slice<const u8> buf) -> io::Result<usize> {
-  auto& imp = StdIo::Error();
-  return imp.write(buf);
+auto StdIo::writew(Slice<const wchar_t> buf) -> io::Result<usize> {
+  const auto buf_ptr = buf._ptr;
+  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+
+  auto nret = DWORD{};
+  if (!::WriteConsoleW(_file._fd, buf_ptr, buf_len, &nret, nullptr)) {
+    return Err{io::last_os_error()};
+  }
+
+  return usize{buf._len};
 }
 
-auto Stderr::flush() -> io::Result<> {
-  return Ok{};
+auto StdIo::read(Slice<u8> buf) -> io::Result<usize> {
+  if (this->is_utf8_console()) {
+    return this->read(buf);
+  }
+
+  auto tmp = buf;
+  auto rbuf = WBufReader{*this};
+  while (tmp.len() >= 3) {
+    const auto ch = _TRY(rbuf.read_char());
+    const auto cnt = chr::encode_utf8(tmp, ch)._len;
+    tmp = tmp[{cnt, $}];
+  }
+
+  return usize{buf._len - tmp._len};
+}
+
+auto StdIo::write(Slice<const u8> buf) -> io::Result<usize> {
+  if (this->is_utf8_console()) {
+    return _file.write(buf);
+  }
+
+  auto wbuf = WBufWriter{*this};
+
+  auto chars = Str::from_utf8(buf).chars();
+  while (auto ch = chars.next()) {
+    _TRY(wbuf.write_char(*ch));
+  }
+  _TRY(wbuf.flush());
+  return usize{buf._len};
 }
 
 auto os_error() -> u32 {
@@ -261,6 +236,7 @@ auto io_error(u32 code) -> io::Error {
     case ERROR_INVALID_FUNCTION:  return io::Error::InvalidOperation;
     case ERROR_OPERATION_ABORTED: return io::Error::Interrupted;
     case ERROR_NOT_SUPPORTED:     return io::Error::Unsupported;
+    case ERROR_NO_MORE_FILES:
     case ERROR_HANDLE_EOF:        return io::Error::UnexpectedEof;
     case ERROR_DISK_FULL:         return io::Error::StorageFull;
     case ERROR_DIRECTORY:         return io::Error::NotADirectory;

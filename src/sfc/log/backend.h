@@ -15,7 +15,11 @@ class FileBackend {
   fs::File _file;
 
  public:
-  static auto create(fs::Path path) -> io::Result<FileBackend>;
+  explicit FileBackend(fs::File file);
+  ~FileBackend();
+
+  FileBackend(FileBackend&&) noexcept = default;
+  FileBackend& operator=(FileBackend&&) noexcept = default;
 
  public:
   void push(const Record& record);
@@ -23,10 +27,10 @@ class FileBackend {
 };
 
 class GlobalBackend {
-  fs::File _file;
+  Option<fs::File> _file;
 
  public:
-  auto set_path(fs::Path path) noexcept -> io::Result<>;
+  void set_file(fs::File file) noexcept;
 
   void push(const Record& record);
   void flush();
