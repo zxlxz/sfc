@@ -32,8 +32,6 @@ class WCString {
 
  public:
   auto as_ptr() const -> const wchar_t*;
-  auto as_wstr() const -> WStr;
-  auto as_wcstr() const -> WCStr;
 
   void push(char32_t c);
   void push_str(Str s);

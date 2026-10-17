@@ -40,16 +40,19 @@ auto WCStr::to_string() const -> String {
   return str.to_string();
 }
 
+auto WCString::from_str(Str s) -> WCString {
+  if (s.is_empty()) {
+    return {};
+  }
+
+  auto wcstr = WCString{};
+  wcstr._buf.reserve(s.len());
+  s.chars().for_each([&](char32_t ch) { wcstr.push(ch); });
+  return wcstr;
+}
+
 auto WCString::as_ptr() const -> const wchar_t* {
   return _buf.as_ptr();
-}
-
-auto WCString::as_wstr() const -> WStr {
-  return WStr{_buf.as_ptr(), _buf.len()};
-}
-
-auto WCString::as_wcstr() const -> WCStr {
-  return WCStr{_buf.as_ptr()};
 }
 
 void WCString::push(char32_t c) {
@@ -83,7 +86,8 @@ void WCString::push_str(Str s) {
 }
 
 auto WCString::into_string() const -> String {
-  return this->as_wstr().to_string();
+  const auto ws = WCStr{_buf.as_ptr()};
+  return ws.to_string();
 }
 
 }  // namespace sfc::ffi

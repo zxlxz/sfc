@@ -8,7 +8,7 @@ using ffi::OsString;
 
 auto var(Str key) -> String {
   const auto os_key = OsString::from_str(key);
-  return sys::getenv(os_key.as_ptr()).into_string();
+  return sys::getenv(os_key.as_ptr());
 }
 
 auto set_var(Str key, Str val) -> bool {
@@ -23,22 +23,22 @@ auto remove_var(Str key) -> bool {
 }
 
 auto home_dir() -> fs::PathBuf {
-  auto s = sys::home_dir().into_string();
+  auto s = sys::home_dir();
   return fs::PathBuf::from(mem::move(s));
 }
 
 auto temp_dir() -> fs::PathBuf {
-  auto s = sys::temp_dir().into_string();
+  auto s = sys::temp_dir();
   return fs::PathBuf::from(mem::move(s));
 }
 
 auto current_exe() -> fs::PathBuf {
-  auto s = sys::current_exe().into_string();
+  auto s = sys::current_exe();
   return fs::PathBuf::from(mem::move(s));
 }
 
 auto current_dir() -> fs::PathBuf {
-  auto s = sys::getcwd().into_string();
+  auto s = sys::getcwd();
   return fs::PathBuf::from(mem::move(s));
 }
 

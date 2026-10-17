@@ -29,10 +29,6 @@ auto CString::as_ptr() const -> const char* {
   return ptr::cast<const char>(p);
 }
 
-auto CString::as_cstr() const -> CStr {
-  return CStr{_buf.as_ptr()};
-}
-
 void CString::push_str(Str s) {
   if (s._len == 0) {
     return;

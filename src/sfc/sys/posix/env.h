@@ -1,16 +1,16 @@
 #pragma once
 
-#include "sfc/ffi.h"
+#include "sfc/alloc/string.h"
 
 namespace sfc::sys::posix {
 
-auto getenv(const char* key) -> ffi::CString;
+auto getenv(const char* key) -> String;
 auto setenv(const char* key, const char* val) -> bool;
 auto unsetenv(const char* key) -> bool;
-auto home_dir() -> ffi::CString;
-auto temp_dir() -> ffi::CString;
-auto current_exe() -> ffi::CString;
-auto getcwd() -> ffi::CString;
+auto home_dir() -> String;
+auto temp_dir() -> String;
+auto current_exe() -> String;
+auto getcwd() -> String;
 auto chdir(const char* path) -> bool;
 
 }  // namespace sfc::sys::posix

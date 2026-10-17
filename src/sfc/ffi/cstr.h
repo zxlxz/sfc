@@ -24,7 +24,6 @@ class CString {
 
  public:
   auto as_ptr() const -> const char*;
-  auto as_cstr() const -> CStr;
 
   void push_str(Str s);
   auto into_string() && -> String;
