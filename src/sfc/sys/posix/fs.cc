@@ -1,6 +1,8 @@
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/stat.h>
 
 #include "sfc/fs/file.h"
@@ -10,12 +12,20 @@ namespace sfc::sys::posix {
 
 using stat_t = struct stat;
 
-auto FileAttr::is_dir() const -> bool {
+auto FileAttr::exists() const noexcept -> bool {
+  return _attr != 0;
+}
+
+auto FileAttr::is_dir() const noexcept -> bool {
   return S_ISDIR(_attr);
 }
 
-auto FileAttr::is_file() const -> bool {
+auto FileAttr::is_file() const noexcept -> bool {
   return S_ISREG(_attr);
+}
+
+auto FileAttr::is_link() const noexcept -> bool {
+  return S_ISLNK(_attr);
 }
 
 auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd> {
@@ -85,6 +95,42 @@ auto rmdir(const char* path) -> io::Result<> {
     return io::last_os_error();
   }
   return Ok{};
+}
+
+auto ReadDir::open(const char* path) -> io::Result<ReadDir> {
+  auto dir = ::opendir(path);
+  if (!dir) {
+    return io::last_os_error();
+  }
+
+  return ReadDir{dir};
+}
+
+auto ReadDir::close() -> io::Result<> {
+  if (_dir == nullptr) {
+    return Ok{};
+  }
+
+  const auto ret = ::closedir(_dir);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  _dir = nullptr;
+  return Ok{};
+}
+
+auto ReadDir::next() -> Option<DirEntry> {
+  auto dirent = ::readdir(_dir);
+  if (!dirent) {
+    return None{};
+  }
+
+  auto entry = DirEntry{
+      .attr = u32(DTTOIF(dirent->d_type)),
+      .size = 0,
+  };
+  strncpy(entry.path, dirent->d_name, sizeof(entry.path) - 1);
+  return entry;
 }
 
 }  // namespace sfc::sys::posix

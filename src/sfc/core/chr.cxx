@@ -42,26 +42,25 @@ SFC_TEST(encode_utf8) {
 }
 
 SFC_TEST(decode_utf8) {
-  auto decode = [](Slice<const char8_t> s) {
-    const auto p = ptr::cast<const u8>(s._ptr);
-    const auto [c, n] = chr::decode_utf8({p, s._len - 1});
-    return c;
+  auto decode = [](Str s) {
+    auto chars = s.chars();
+    return chars.next().unwrap_or(chr::INVALID);
   };
 
   // 1-byte
-  sfc::assert_eq(decode(u8"A"), char32_t{'A'});
+  sfc::assert_eq(decode("A"), char32_t{'A'});
 
   // 2-byte: é (0xC3 0xA9)
-  sfc::assert_eq(decode(u8"é"), char32_t{U'é'});
+  sfc::assert_eq(decode("é"), char32_t{U'é'});
 
   // 3-byte: 中 (0xE4 0xB8 0xAD)
-  sfc::assert_eq(decode(u8"中"), char32_t{U'中'});
+  sfc::assert_eq(decode("中"), char32_t{U'中'});
 
   // 4-byte: 😀 (0xF0 0x9F 0x98 0x80)
-  sfc::assert_eq(decode(u8"😀"), char32_t{0x1F600});
+  sfc::assert_eq(decode("😀"), char32_t{0x1F600});
 
   // Invalid n=0
-  sfc::assert_eq(decode(u8""), chr::INVALID);
+  sfc::assert_eq(decode(""), chr::INVALID);
 }
 
 SFC_TEST(encode_utf16) {
@@ -83,14 +82,13 @@ SFC_TEST(encode_utf16) {
 }
 
 SFC_TEST(decode_utf16) {
-  auto decode = [](Slice<const char16_t> s) {
-    const auto p = ptr::cast<const u16>(s._ptr);
-    const auto [c, n] = chr::decode_utf16({p, s._len - 1});
-    return c;
+  auto decode = [](Slice<const char16_t> v) {
+    const auto s = Slice{ptr::cast<const u16>(v._ptr), v._len - 1};
+    return chr::decode_utf16(s).next().unwrap_or(chr::INVALID);
   };
 
-  sfc::assert_eq(decode(u"A"), U'A');
-  sfc::assert_eq(decode(u"😀"), U'\U0001F600');
+  sfc::assert_eq(decode(u"\u0041"), U'A');
+  sfc::assert_eq(decode(u"\U0001F600"), U'\U0001F600');
   sfc::assert_eq(decode(u""), chr::INVALID);
 }
 

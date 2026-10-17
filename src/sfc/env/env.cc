@@ -4,44 +4,46 @@
 
 namespace sfc::env {
 
+using ffi::OsString;
+
 auto var(Str key) -> String {
-  const auto os_key = ffi::OsString::from(key);
+  const auto os_key = OsString::from_str(key);
   return sys::getenv(os_key.as_ptr()).into_string();
 }
 
 auto set_var(Str key, Str val) -> bool {
-  const auto os_key = ffi::OsString::from(key);
-  const auto os_val = ffi::OsString::from(val);
+  const auto os_key = OsString::from_str(key);
+  const auto os_val = OsString::from_str(val);
   return sys::setenv(os_key.as_ptr(), os_val.as_ptr());
 }
 
 auto remove_var(Str key) -> bool {
-  const auto os_key = ffi::OsString::from(key);
+  const auto os_key = OsString::from_str(key);
   return sys::unsetenv(os_key.as_ptr());
 }
 
 auto home_dir() -> fs::PathBuf {
-  const auto s = sys::home_dir().into_string();
-  return fs::PathBuf::from(s.as_str());
+  auto s = sys::home_dir().into_string();
+  return fs::PathBuf::from(mem::move(s));
 }
 
 auto temp_dir() -> fs::PathBuf {
-  const auto s = sys::temp_dir().into_string();
-  return fs::PathBuf::from(s.as_str());
+  auto s = sys::temp_dir().into_string();
+  return fs::PathBuf::from(mem::move(s));
 }
 
 auto current_exe() -> fs::PathBuf {
-  const auto s = sys::current_exe().into_string();
-  return fs::PathBuf::from(s.as_str());
+  auto s = sys::current_exe().into_string();
+  return fs::PathBuf::from(mem::move(s));
 }
 
 auto current_dir() -> fs::PathBuf {
-  const auto s = sys::getcwd().into_string();
-  return fs::PathBuf::from(s.as_str());
+  auto s = sys::getcwd().into_string();
+  return fs::PathBuf::from(mem::move(s));
 }
 
 auto set_current_dir(fs::Path path) -> bool {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   const auto ret = sys::chdir(os_path.as_ptr());
   return ret;
 }

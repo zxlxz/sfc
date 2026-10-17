@@ -12,9 +12,11 @@
 
 namespace sfc::sys::posix {
 
-auto getenv(const char* key) -> ffi::CString {
-  const auto c_val = Str::from_cstr(::getenv(key));
-  return ffi::CString::from(c_val);
+using ffi::CString;
+
+auto getenv(const char* key) -> CString {
+  const auto c_val = ::getenv(key);
+  return CString::from(c_val);
 }
 
 auto setenv(const char* key, const char* val) -> bool {
@@ -29,31 +31,29 @@ auto unsetenv(const char* key) -> bool {
   return ::unsetenv(key) != -1;
 }
 
-auto home_dir() -> ffi::CString {
+auto home_dir() -> CString {
   const auto uid = getuid();
   const auto usr = getpwuid(uid);
   if (!usr || !usr->pw_dir) {
     return {};
   }
 
-  const auto c_home = Str::from_cstr(usr->pw_dir);
-  return ffi::CString::from(c_home);
+  return CString::from(usr->pw_dir);
 }
 
-auto temp_dir() -> ffi::CString {
+auto temp_dir() -> CString {
 #ifdef __APPLE__
   char buf[PATH_MAX];
   if (::confstr(_CS_DARWIN_USER_TEMP_DIR, buf, sizeof(buf)) <= 0) {
     return {};
   }
-  const auto c_temp = Str::from_cstr(buf);
-  return ffi::CString::from(c_temp);
+  return CString::from(buf);
 #else
   return ffi::CString::from("/tmp");
 #endif
 }
 
-auto current_exe() -> ffi::CString {
+auto current_exe() -> CString {
   char buf[1024];
 #ifdef __APPLE__
   auto size = uint32_t{sizeof(buf)};
@@ -65,15 +65,13 @@ auto current_exe() -> ffi::CString {
     return {};
   }
 #endif
-  const auto c_exe = Str::from_cstr(buf);
-  return ffi::CString::from(c_exe);
+  return CString::from(buf);
 }
 
-auto getcwd() -> ffi::CString {
+auto getcwd() -> CString {
   char buf[1024];
   const auto s = ::getcwd(buf, sizeof(buf));
-  const auto c_cwd = Str::from_cstr(s);
-  return ffi::CString::from(c_cwd);
+  return CString::from(s);
 }
 
 auto chdir(const char* path) -> bool {

@@ -146,23 +146,85 @@ static auto decode(Slice<const u16> buf) -> char32_t {
 
 }  // namespace utf16
 
+auto Chars::len() const -> usize {
+  return _buf._len;
+}
+
+auto Chars::next() noexcept -> Option<char32_t> {
+  if (_buf._len == 0) {
+    return {};
+  }
+
+  const auto n = utf8::codelen(*_buf._ptr);
+  if (n > _buf._len) {
+    _buf = {};
+    return {};
+  }
+
+  // invalid code point length
+  if (n == 0) {
+    _buf = {_buf._ptr + 1, _buf._len - 1};
+    return chr::INVALID;
+  }
+
+  const auto ch = utf8::decode({_buf._ptr, n});
+  _buf = {_buf._ptr + n, _buf._len - n};
+  return ch;
+}
+
+auto Chars::next_back() noexcept -> Option<char32_t> {
+  if (_buf._len == 0) {
+    return {};
+  }
+
+  // reverse find the start of the last code point
+  auto p = _buf._ptr + _buf._len - 1;
+  while (p > _buf._ptr && utf8::is_continuation(*p)) {
+    --p;
+  }
+
+  const auto u8_len = utf8::codelen(*p);
+
+  // not enough bytes for the last code point
+  if (_buf._len < u8_len) {
+    _buf = {};
+    return {};
+  }
+
+  // invalid code point at the end of the buffer
+  if (p + u8_len != _buf._ptr + _buf._len) {
+    _buf._len -= 1;
+    return chr::INVALID;
+  }
+
+  _buf._len -= u8_len;
+  const auto ch = utf8::decode({p, u8_len});
+  return ch;
+}
+
+auto U16Chars::len() const -> usize {
+  return _buf._len;
+}
+
+auto U16Chars::next() noexcept -> Option<char32_t> {
+  if (_buf._len == 0) {
+    return {};
+  }
+
+  const auto n = utf16::codelen(*_buf._ptr);
+  if (_buf._len < n) {
+    _buf = {};
+    return {};
+  }
+
+  const auto ch = utf16::decode({_buf._ptr, n});
+  _buf = {_buf._ptr + n, _buf._len - n};
+  return ch;
+}
+
 auto encode_utf8(Slice<u8> buf, char32_t ch) -> str::Str {
   const auto n = utf8::encode(buf, ch);
   return str::Str::from_utf8({buf._ptr, n});
-}
-
-auto decode_utf8(Slice<const u8> buf) -> Decode {
-  if (buf._len == 0) {
-    return {chr::INVALID, 0};
-  }
-
-  const auto len = utf8::codelen(buf._ptr[0]);
-  if (len > buf._len) {
-    return {chr::INVALID, u32(buf._len)};
-  }
-
-  const auto ch = utf8::decode({buf._ptr, len});
-  return {ch, len};
 }
 
 auto encode_utf16(Slice<u16> buf, char32_t ch) -> Slice<u16> {
@@ -170,58 +232,8 @@ auto encode_utf16(Slice<u16> buf, char32_t ch) -> Slice<u16> {
   return {buf._ptr, n};
 }
 
-auto decode_utf16(Slice<const u16> buf) -> Decode {
-  if (buf._len == 0) {
-    return {chr::INVALID, 0};
-  }
-
-  const auto len = utf16::codelen(buf._ptr[0]);
-  if (len > buf._len) {
-    return {chr::INVALID, 0};
-  }
-
-  const auto ch = utf16::decode({buf._ptr, len});
-  return {ch, len};
-}
-
-auto Chars::len() const -> usize {
-  return static_cast<usize>(_end - _ptr);
-}
-
-auto Chars::next() noexcept -> Option<char32_t> {
-  if (_ptr >= _end) {
-    return {};
-  }
-
-  const auto u8_len = utf8::codelen(*_ptr);
-  if (_ptr + u8_len > _end) {
-    _ptr = _end;
-    return {};
-  }
-
-  const auto ch = utf8::decode({_ptr, u8_len});
-  _ptr += u8_len;
-  return ch;
-}
-
-auto Chars::next_back() noexcept -> Option<char32_t> {
-  if (_ptr == _end) return {};
-
-  // rev find the start of the last code point
-  auto p = _end - 1;
-  while (p > _ptr && utf8::is_continuation(*p)) {
-    --p;
-  }
-
-  const auto n = utf8::codelen(*p);
-  if (p + n != _end) {
-    _end = p;
-    return {};
-  }
-
-  const auto ch = utf8::decode({p, n});
-  _end = p;
-  return ch;
+auto decode_utf16(Slice<const u16> buf) -> U16Chars {
+  return U16Chars{{}, buf};
 }
 
 }  // namespace sfc::chr

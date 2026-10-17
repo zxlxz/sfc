@@ -14,7 +14,7 @@ struct WBufReader {
 
  public:
   auto read_char() -> io::Result<char32_t> {
-    _TRY(fill_buf());
+    _TRY(this->fill_buf());
 
     const auto ch = _wchars.next();
     if (!ch) {
@@ -128,22 +128,22 @@ auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
 
 auto StdIo::Input() -> StdIo {
   const auto fd = ::GetStdHandle(STD_INPUT_HANDLE);
-  return StdIo{fd};
+  return StdIo{{fd}};
 }
 
 auto StdIo::Output() -> StdIo {
   const auto fd = ::GetStdHandle(STD_OUTPUT_HANDLE);
-  return StdIo{fd};
+  return StdIo{{fd}};
 }
 
 auto StdIo::Error() -> StdIo {
   const auto fd = ::GetStdHandle(STD_ERROR_HANDLE);
-  return StdIo{fd};
+  return StdIo{{fd}};
 }
 
 auto StdIo::is_console() const -> bool {
   auto mode = DWORD{};
-  return ::GetConsoleMode(_file._fd, &mode);
+  return ::GetConsoleMode(_fd, &mode);
 }
 
 auto StdIo::is_utf8_console() const -> bool {
@@ -160,7 +160,7 @@ auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
   const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
   auto nret = DWORD{};
-  if (!::ReadConsoleW(_file._fd, buf_ptr, buf_len, &nret, nullptr)) {
+  if (!::ReadConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {
     return io::last_os_error();
   }
   return usize{nret};
@@ -171,7 +171,7 @@ auto StdIo::writew(Slice<const wchar_t> buf) -> io::Result<usize> {
   const auto buf_len = num::saturating_cast<DWORD>(buf._len);
 
   auto nret = DWORD{};
-  if (!::WriteConsoleW(_file._fd, buf_ptr, buf_len, &nret, nullptr)) {
+  if (!::WriteConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {
     return Err{io::last_os_error()};
   }
 
@@ -180,11 +180,11 @@ auto StdIo::writew(Slice<const wchar_t> buf) -> io::Result<usize> {
 
 auto StdIo::read(Slice<u8> buf) -> io::Result<usize> {
   if (this->is_utf8_console()) {
-    return this->read(buf);
+    return File::read(buf);
   }
 
-  auto tmp = buf;
   auto rbuf = WBufReader{*this};
+  auto tmp = buf;
   while (tmp.len() >= 3) {
     const auto ch = _TRY(rbuf.read_char());
     const auto cnt = chr::encode_utf8(tmp, ch)._len;
@@ -196,11 +196,10 @@ auto StdIo::read(Slice<u8> buf) -> io::Result<usize> {
 
 auto StdIo::write(Slice<const u8> buf) -> io::Result<usize> {
   if (this->is_utf8_console()) {
-    return _file.write(buf);
+    return File::write(buf);
   }
 
   auto wbuf = WBufWriter{*this};
-
   auto chars = Str::from_utf8(buf).chars();
   while (auto ch = chars.next()) {
     _TRY(wbuf.write_char(*ch));

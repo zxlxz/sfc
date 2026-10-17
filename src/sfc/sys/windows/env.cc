@@ -3,7 +3,9 @@
 
 namespace sfc::sys::windows {
 
-static auto build_wstring(auto&& f, unsigned capacity = 0) -> ffi::WString {
+using ffi::WString;
+
+static auto build_wstring(auto&& f, unsigned capacity = 0) -> WString {
   if (capacity == 0) {
     capacity = f(nullptr, 0);
   }
@@ -20,10 +22,8 @@ static auto build_wstring(auto&& f, unsigned capacity = 0) -> ffi::WString {
   return res;
 }
 
-auto getenv(const wchar_t* key) -> ffi::WString {
-  auto f = [&](wchar_t* buf, DWORD buf_len) {
-    return ::GetEnvironmentVariableW(key, buf, buf_len);
-  };
+auto getenv(const wchar_t* key) -> WString {
+  auto f = [&](wchar_t* buf, DWORD buf_len) { return ::GetEnvironmentVariableW(key, buf, buf_len); };
   return build_wstring(f);
 }
 
@@ -37,24 +37,22 @@ auto unsetenv(const wchar_t* key) -> bool {
   return bool(ret);
 }
 
-auto home_dir() -> ffi::WString {
-  auto f = [&](wchar_t* buf, DWORD buf_len) {
-    return ::GetEnvironmentVariableW(L"USERPROFILE", buf, buf_len);
-  };
+auto home_dir() -> WString {
+  auto f = [&](wchar_t* buf, DWORD buf_len) { return ::GetEnvironmentVariableW(L"USERPROFILE", buf, buf_len); };
   return build_wstring(f);
 }
 
-auto temp_dir() -> ffi::WString {
+auto temp_dir() -> WString {
   auto f = [](wchar_t* buf, DWORD buf_len) { return ::GetTempPathW(buf_len, buf); };
   return build_wstring(f);
 }
 
-auto current_exe() -> ffi::WString {
+auto current_exe() -> WString {
   auto f = [](wchar_t* buf, DWORD buf_len) { return ::GetModuleFileNameW(nullptr, buf, buf_len); };
   return build_wstring(f, MAX_PATH);
 }
 
-auto getcwd() -> ffi::WString {
+auto getcwd() -> WString {
   auto f = [](wchar_t* buf, DWORD buf_len) { return ::GetCurrentDirectoryW(buf_len, buf); };
   return build_wstring(f);
 }

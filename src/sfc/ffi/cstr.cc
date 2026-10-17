@@ -2,27 +2,26 @@
 
 namespace sfc::ffi {
 
-auto CString::from(Str s) -> CString {
-  if (s.is_empty()) {
-    return {};
-  }
+auto CStr::to_str() const -> Str {
+  const auto n = _inn ? __builtin_strlen(_inn) : 0;
+  return Str{_inn, n};
+}
 
+auto CStr::to_string() const -> String {
+  const auto s = this->to_str();
+  return String::from(s);
+}
+
+auto CString::from(CStr s) -> CString {
   auto res = CString{};
-  auto& buf = res._buf;
-  buf.reserve(s.len() + 1);
-  buf.extend_from_slice(s.as_bytes());
-  buf.push(0);
+  res.push_str(s.to_str());
   return res;
 }
 
-auto CString::buf() -> Buf& {
-  return _buf;
-}
-
-auto CString::len() const -> usize {
-  const auto n = _buf.len();
-  // exclude the trailing null character if exists
-  return n == 0 ? 0 : n - 1;
+auto CString::from_str(Str s) -> CString {
+  auto res = CString{};
+  res.push_str(s);
+  return res;
 }
 
 auto CString::as_ptr() const -> const char* {
@@ -31,9 +30,7 @@ auto CString::as_ptr() const -> const char* {
 }
 
 auto CString::as_cstr() const -> CStr {
-  const auto p = this->as_ptr();
-  const auto n = this->len();
-  return CStr{p, n};
+  return CStr{_buf.as_ptr()};
 }
 
 void CString::push_str(Str s) {
@@ -45,18 +42,18 @@ void CString::push_str(Str s) {
     _buf.pop();
   }
 
-  _buf.extend_from_slice(s.as_bytes());
+  _buf.extend_from_slice({s._ptr, s._len});
   _buf.push(0);
 }
 
 auto CString::into_string() && -> String {
-  auto buf = mem::move(_buf);
-
   // remove the trailing null character if exists
-  if (!buf.is_empty()) {
-    buf.pop();
+  if (!_buf.is_empty()) {
+    _buf.pop();
   }
-  return String::from_buf(mem::move(buf));
+
+  auto& u8_buf = *ptr::cast<List<u8>>(&_buf);
+  return String::from_utf8(mem::move(u8_buf));
 }
 
 }  // namespace sfc::ffi

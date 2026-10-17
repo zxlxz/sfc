@@ -5,35 +5,10 @@
 
 namespace sfc::sys::posix {
 
-File::File(int fd) noexcept : _fd(fd) {}
-
-File::~File() noexcept {
-  if (_fd == -1) return;
-  ::close(_fd);
-}
-
-File::File(File&& other) noexcept : _fd(other._fd) {
-  other._fd = -1;
-}
-
-File& File::operator=(File&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_fd, other._fd);
-  }
-  return *this;
-}
-
-auto File::as_raw_fd() const -> int {
-  return _fd;
-}
-
-auto File::is_none() const noexcept -> bool {
-  return _fd != -1;
-}
-
-auto File::flush() noexcept -> io::Result<> {
-  if (::fsync(_fd) == -1) {
-    return {io::last_os_error()};
+auto File::close() noexcept -> io::Result<> {
+  const auto ret = ::close(_fd);
+  if (ret == -1) {
+    return io::last_os_error();
   }
   return Ok{};
 }
@@ -41,7 +16,7 @@ auto File::flush() noexcept -> io::Result<> {
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   const auto nret = ::read(_fd, buf._ptr, buf._len);
   if (nret == -1) {
-    return Err{io::last_os_error()};
+    return io::last_os_error();
   }
   const auto nread = num::cast_unsigned(nret);
   return Ok{nread};
@@ -50,10 +25,17 @@ auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   const auto nret = ::write(_fd, buf._ptr, buf._len);
   if (nret == -1) {
-    return {io::last_os_error()};
+    return io::last_os_error();
   }
-  const auto nwrite = num::cast_unsigned(nret);
-  return {nwrite};
+  return Ok{usize(nret)};
+}
+
+auto File::flush() noexcept -> io::Result<> {
+  const auto ret = ::fsync(_fd);
+  if (ret == -1) {
+    return io::last_os_error();
+  }
+  return Ok{};
 }
 
 auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
@@ -66,70 +48,28 @@ auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
     return SEEK_SET;
   }();
 
-  const auto ret = ::lseek(_fd, pos.offset, whence);
-  if (ret == -1) {
-    return io::last_os_error();
-  }
-  const auto nseek = num::cast_unsigned(ret);
-  return {usize{nseek}};
-}
-
-auto StdIn::is_console() -> bool {
-  return ::isatty(STDIN_FILENO) == 1;
-}
-
-auto StdIn::read(Slice<u8> data) -> io::Result<usize> {
-  const auto nret = ::read(STDIN_FILENO, data._ptr, data._len);
+  const auto nret = ::lseek(_fd, pos.offset, whence);
   if (nret == -1) {
     return io::last_os_error();
   }
-
-  const auto nread = num::cast_unsigned(nret);
-  return usize{nread};
+  return Ok{usize(nret)};
 }
 
-auto Stdout::is_console() -> bool {
-  return ::isatty(STDOUT_FILENO) == 1;
+auto StdIo::is_console() -> bool {
+  const auto ret = ::isatty(_fd);
+  return ret == 1;
 }
 
-auto Stdout::write(Slice<const u8> buf) -> io::Result<usize> {
-  const auto ret = ::write(STDOUT_FILENO, buf._ptr, buf._len);
-  if (ret == -1) {
-    return io::last_os_error();
-  }
-
-  const auto nwrite = num::cast_unsigned(ret);
-  return usize{nwrite};
+auto StdIo::Input() noexcept -> StdIo {
+  return StdIo{{._fd = 0}};
 }
 
-auto Stdout::flush() -> io::Result<> {
-  const auto ret = ::fsync(STDOUT_FILENO);
-  if (ret == -1) {
-    return {io::last_os_error()};
-  }
-  return Ok{};
+auto StdIo::Output() noexcept -> StdIo {
+  return StdIo{{._fd = 1}};
 }
 
-auto Stderr::is_console() -> bool {
-  return ::isatty(STDERR_FILENO) == 1;
-}
-
-auto Stderr::write(Slice<const u8> buf) -> io::Result<usize> {
-  const auto ret = ::write(STDERR_FILENO, buf._ptr, buf._len);
-  if (ret == -1) {
-    return io::last_os_error();
-  }
-
-  const auto nwrite = num::cast_unsigned(ret);
-  return usize{nwrite};
-}
-
-auto Stderr::flush() -> io::Result<> {
-  const auto ret = ::fsync(STDERR_FILENO);
-  if (ret == -1) {
-    return {io::last_os_error()};
-  }
-  return Ok{};
+auto StdIo::Error() noexcept -> StdIo {
+  return StdIo{{._fd = 2}};
 }
 
 auto os_error() -> int {

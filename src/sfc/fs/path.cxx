@@ -48,13 +48,13 @@ SFC_TEST(is_relative) {
 }
 
 SFC_TEST(push) {
-  auto p = PathBuf::from("tmp");
+  auto p = PathBuf::from_str("tmp");
   p.push(Path{"foo.txt"});
   sfc::assert_eq(p.as_str(), "tmp/foo.txt");
 }
 
 SFC_TEST(pop) {
-  auto p = PathBuf::from("tmp/foo.txt");
+  auto p = PathBuf::from_str("tmp/foo.txt");
 
   p.pop();
   sfc::assert_eq(p.as_str(), "tmp");
@@ -66,13 +66,13 @@ SFC_TEST(join) {
 }
 
 SFC_TEST(set_file_name) {
-  auto p = PathBuf::from("tmp/foo.txt");
+  auto p = PathBuf::from_str("tmp/foo.txt");
   p.set_file_name("bar.txt");
   sfc::assert_eq(p.as_str(), "tmp/bar.txt");
 }
 
 SFC_TEST(set_extension) {
-  auto p = PathBuf::from("tmp/foo.txt");
+  auto p = PathBuf::from_str("tmp/foo.txt");
   p.set_extension("md");
   sfc::assert_eq(p.as_str(), "tmp/foo.md");
 }

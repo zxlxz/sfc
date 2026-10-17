@@ -15,9 +15,20 @@ auto String::from(Str s) noexcept -> String {
   return res;
 }
 
-auto String::from_buf(Buf buf) -> String {
+auto String::from_utf8(List<u8> v) -> String {
   auto res = String{};
-  res._buf = mem::move(buf);
+  res._buf = mem::move(v);
+  return res;
+}
+
+auto String::from_utf16(Slice<const u16> v) -> String {
+  if (v.is_empty()) {
+    return String{};
+  }
+
+  auto res = String{};
+  res.reserve(v.len());
+  chr::decode_utf16(v).for_each([&](char32_t c) { res.push(c); });
   return res;
 }
 
@@ -106,8 +117,7 @@ auto String::pop() noexcept -> Option<char32_t> {
 
   auto chars = this->as_str().chars();
   const auto ret = chars.next_back();
-  const auto len = num::cast_unsigned(chars._end - chars._ptr);
-  _buf.truncate(len);
+  _buf.truncate(chars.len());
   return ret;
 }
 

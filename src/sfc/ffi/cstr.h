@@ -5,23 +5,27 @@
 namespace sfc::ffi {
 
 struct CStr {
-  const char* _ptr;
-  usize _len;
+  const char* _inn;
+
+ public:
+  CStr(const char* p) : _inn{p} {}
+
+ public:
+  auto to_str() const -> Str;
+  auto to_string() const -> String;
 };
 
 class CString {
-  using Buf = List<u8>;
-  Buf _buf;
+  List<char> _buf;
 
  public:
-  static auto from(Str s) -> CString;
+  static auto from(CStr s) -> CString;
+  static auto from_str(Str s) -> CString;
 
-  auto buf() -> Buf&;
-  auto len() const -> usize;
+ public:
   auto as_ptr() const -> const char*;
   auto as_cstr() const -> CStr;
 
- public:
   void push_str(Str s);
   auto into_string() && -> String;
 };

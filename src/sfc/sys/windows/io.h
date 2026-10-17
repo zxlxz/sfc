@@ -11,17 +11,13 @@ struct File {
 
  public:
   auto close() -> io::Result<>;
-
   auto read(Slice<u8> buf) -> io::Result<usize>;
   auto write(Slice<const u8> buf) -> io::Result<usize>;
   auto flush() -> io::Result<>;
-
   auto seek(io::SeekFrom whence) -> io::Result<u64>;
 };
 
-struct StdIo {
-  File _file;
-
+struct StdIo : File {
  public:
   static auto Input() -> StdIo;
   static auto Output() -> StdIo;
@@ -29,15 +25,14 @@ struct StdIo {
 
  public:
   auto is_console() const -> bool;
-  auto is_utf8_console() const -> bool;
-
   auto read(Slice<u8> buf) -> io::Result<usize>;
-  auto readw(Slice<wchar_t> buf) -> io::Result<usize>;
-
   auto write(Slice<const u8> buf) -> io::Result<usize>;
-  auto writew(Slice<const wchar_t> buf) -> io::Result<usize>;
-
   auto flush() -> io::Result<>;
+
+ private:
+  auto is_utf8_console() const -> bool;
+  auto readw(Slice<wchar_t> buf) -> io::Result<usize>;
+  auto writew(Slice<const wchar_t> buf) -> io::Result<usize>;
 };
 
 auto os_error() -> u32;

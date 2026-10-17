@@ -4,20 +4,22 @@
 
 namespace sfc::ffi {
 
+using ffi::OsString;
+
 struct LibPathBuilder {
   Str prefix;
   Str suffix;
 
-  auto build(Str name) const -> String {
+  auto build(Str name) const -> OsString {
     if (name.contains('/')) {  // this is a path, not a library name
-      return String::from(name);
+      return OsString::from_str(name);
     }
 
     if (name.contains('.')) {  // already has an extension, use it as is
-      return String::from(name);
+      return OsString::from_str(name);
     }
 
-    auto res = String{};
+    auto res = OsString{};
     if (!name.starts_with(prefix)) res.push_str(prefix);
     res.push_str(name);
     if (!name.ends_with(suffix)) res.push_str(suffix);
@@ -25,7 +27,7 @@ struct LibPathBuilder {
   }
 };
 
-static auto make_lib_path(Str name) -> String {
+static auto make_lib_path(Str name) -> OsString {
 #ifdef _WIN32
   const auto builder = LibPathBuilder{{}, ".dll"};
 #elif defined(__APPLE__)
@@ -61,8 +63,7 @@ auto Library::load(Str path) -> Option<Library> {
   }
 
   const auto lib_path = ffi::make_lib_path(path);
-  const auto os_path = ffi::OsString::from(lib_path.as_str());
-  const auto handle = sys::load_library(os_path.as_ptr());
+  const auto handle = sys::load_library(lib_path.as_ptr());
   if (handle == nullptr) {
     return {};
   }
@@ -77,7 +78,7 @@ auto Library::func(Str name) const -> Func {
     return Func{nullptr};
   }
 
-  const auto os_name = ffi::CString::from(name);
+  const auto os_name = ffi::CString::from_str(name);
 
   const auto sym = sys::get_symbol(_handle, os_name.as_ptr());
   return Func{(void (*)())sym};

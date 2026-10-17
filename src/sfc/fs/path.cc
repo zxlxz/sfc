@@ -104,7 +104,7 @@ auto Path::parent() const noexcept -> Path {
 }
 
 auto Path::join(Str path) const noexcept -> PathBuf {
-  auto res = PathBuf::from(_inn);
+  auto res = PathBuf::from_str(_inn);
   res.push(Path{path});
   return res;
 }
@@ -169,7 +169,13 @@ void Path::fmt(fmt::Formatter& f) const {
   _inn.fmt(f);
 }
 
-auto PathBuf::from(Str s) noexcept -> PathBuf {
+auto PathBuf::from(String s) -> PathBuf {
+  auto res = PathBuf{};
+  res._inn = mem::move(s);
+  return res;
+}
+
+auto PathBuf::from_str(Str s) -> PathBuf {
   auto res = PathBuf{};
   res.push(Path{s});
   return res;

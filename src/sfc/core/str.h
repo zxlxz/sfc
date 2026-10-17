@@ -109,7 +109,7 @@ struct Str {
   }
 
   auto chars() const noexcept -> Chars {
-    return Chars{ptr::cast<const u8>(_ptr), _len};
+    return Chars{{}, this->as_bytes()};
   }
 
  public:

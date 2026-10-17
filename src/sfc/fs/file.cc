@@ -5,6 +5,8 @@
 
 namespace sfc::fs {
 
+using ffi::OsString;
+
 auto Metadata::file_len() const noexcept -> u64 {
   return _size;
 }
@@ -26,7 +28,7 @@ auto Metadata::is_link() const noexcept -> bool {
 }
 
 auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   const auto fd = _TRY(sys::open(os_path.as_ptr(), *this));
   return {File::from_raw_fd(fd)};
 }
@@ -67,7 +69,8 @@ ReadDir::~ReadDir() {
   if (_inn == nullptr) {
     return;
   }
-  (void)sys::close_dir(_inn);
+  (void)_inn->close();
+  delete _inn;
 }
 
 ReadDir::ReadDir(ReadDir&& other) noexcept : _inn{mem::take(other._inn)} {}
@@ -79,35 +82,35 @@ ReadDir& ReadDir::operator=(ReadDir&& other) noexcept {
   return *this;
 }
 
-auto ReadDir::next() -> Option<Entry> {
+auto ReadDir::next() -> Option<DirEntry> {
   if (_inn == nullptr) {
     return {};
   }
 
-  const auto entry = sys::read_dir(_inn);
-  if (!entry) {
+  const auto sys_entry = _inn->next();
+  if (!sys_entry) {
     return {};
   }
 
-  const auto attr = entry->_attr;
-  const auto size = entry->_size;
-  const auto path = entry->_path;
+  const auto os_path = ffi::OsStr{sys_entry->path};
+  const auto fs_meta = fs::Metadata{
+      ._attr = u32(sys_entry->attr),
+      ._size = u64(sys_entry->size),
+  };
 
-  const auto path = Path{ffi::OsString::from(entry->name).as_str()};
-  const auto meta = _TRY(fs::metadata(path));
-  return {{.path = mem::move(path), .meta = mem::move(meta)}};
+  auto dir_entry = DirEntry{
+      .path = PathBuf::from(os_path.to_string()),
+      .meta = mem::move(fs_meta),
+  };
+  return dir_entry;
 }
 
 auto ReadDir::open(Path path) -> io::Result<ReadDir> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
 
-  auto inn = _TRY(sys::open_dir(os_path.as_ptr()));
-  if (inn == nullptr) {
-    return {io::Error::InvalidInput};
-  }
-
-  auto res = ReadDir{*static_cast<Inn*>(inn)};
-  return res;
+  auto sys = _TRY(sys::ReadDir::open(os_path.as_ptr()));
+  auto inn = new Inn{sys};
+  return ReadDir{*inn};
 }
 
 auto read(Path path) noexcept -> io::Result<List<u8>> {
@@ -130,7 +133,7 @@ auto create_dir(Path path) -> io::Result<> {
     return {io::Error::InvalidInput};
   }
 
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   return sys::mkdir(os_path.as_ptr());
 }
 
@@ -151,23 +154,23 @@ auto create_dir_all(Path path) -> io::Result<> {
 }
 
 auto remove_dir(Path path) -> io::Result<> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   return sys::rmdir(os_path.as_ptr());
 }
 
 auto remove_file(Path path) -> io::Result<> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   return sys::unlink(os_path.as_ptr());
 }
 
 auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto os_old = ffi::OsString::from(old_path.as_str());
-  const auto os_new = ffi::OsString::from(new_path.as_str());
+  const auto os_old = OsString::from_str(old_path.as_str());
+  const auto os_new = OsString::from_str(new_path.as_str());
   return sys::rename(os_old.as_ptr(), os_new.as_ptr());
 }
 
 auto metadata(Path path) -> io::Result<Metadata> {
-  const auto os_path = ffi::OsString::from(path.as_str());
+  const auto os_path = OsString::from_str(path.as_str());
   const auto meta = _TRY(sys::lstat(os_path.as_ptr()));
   return {meta};
 }

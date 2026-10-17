@@ -13,7 +13,8 @@ class [[nodiscard]] String {
  public:
   static auto with_capacity(usize capacity) noexcept -> String;
   static auto from(Str s) noexcept -> String;
-  static auto from_buf(Buf buf) -> String;
+  static auto from_utf8(List<u8> buf) -> String;
+  static auto from_utf16(Slice<const u16> buf) -> String;
 
   auto capacity() const noexcept -> usize;
   auto len() const noexcept -> usize;

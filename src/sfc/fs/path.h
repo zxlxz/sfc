@@ -42,7 +42,8 @@ class PathBuf {
   String _inn = {};
 
  public:
-  static auto from(Str s) noexcept -> PathBuf;
+  static auto from(String s) -> PathBuf;
+  static auto from_str(Str s) -> PathBuf;
 
   auto as_path() const noexcept -> Path;
   auto as_str() const noexcept -> Str;
@@ -70,6 +71,5 @@ class PathBuf {
     this->as_path().fmt(f);
   }
 };
-
 
 }  // namespace sfc::fs

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sfc/core.h"
-#include "sfc/ffi/wstr.h"
+#include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
 struct Metadata;
@@ -26,10 +26,6 @@ struct DirEntry {
   wchar_t _path[260] = {};
   u32 _attr = 0;
   usize _size = 0;
-
- public:
-  auto attr() const -> u32;
-  auto path_buf() const -> PathBuf;
 };
 
 struct ReadDir {

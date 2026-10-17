@@ -22,15 +22,6 @@ auto FileAttr::is_link() const noexcept -> bool {
   return (_attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
 }
 
-auto DirEntry::attr() const -> u32 {
-  return _attr;
-}
-
-auto DirEntry::path() const -> ffi::WStr {
-  const auto len = wcslen(_path);
-  return ffi::WStr{_path, len};
-}
-
 auto open(const wchar_t* path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const DWORD read_mode = opts.read ? GENERIC_READ : 0U;
   const DWORD write_mode = opts.write ? GENERIC_WRITE : 0U;

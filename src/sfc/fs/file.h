@@ -48,6 +48,11 @@ class [[nodiscard]] File : public io::File {
   auto metadata() noexcept -> io::Result<Metadata>;
 };
 
+struct DirEntry {
+  PathBuf path = {};
+  Metadata meta = {};
+};
+
 class [[nodiscard]] ReadDir {
   struct Inn;
   Inn* _inn;
@@ -62,11 +67,7 @@ class [[nodiscard]] ReadDir {
   static auto open(Path path) -> io::Result<ReadDir>;
 
  public:
-  struct Entry {
-    PathBuf path = {};
-    Metadata meta = {};
-  };
-  auto next() -> Option<Entry>;
+  auto next() -> Option<DirEntry>;
 };
 
 auto read(Path path) noexcept -> io::Result<List<u8>>;
