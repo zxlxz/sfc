@@ -5,7 +5,21 @@
 namespace sfc::thread {
 
 void SysThread::join() {
+  if (_raw == ThreadHandle{}) {
+    return;
+  }
+
   sys::Thread{_raw}.join();
+  _raw = {};
+}
+
+void SysThread::detach() {
+  if (_raw == ThreadHandle{}) {
+    return;
+  }
+
+  sys::Thread{_raw}.detach();
+  _raw = {};
 }
 
 auto current() -> Thread {

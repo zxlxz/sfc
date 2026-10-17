@@ -17,6 +17,7 @@ struct SysThread {
 
  public:
   void join();
+  void detach();
 };
 
 struct Thread {

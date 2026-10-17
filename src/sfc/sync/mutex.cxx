@@ -22,8 +22,10 @@ SFC_TEST(mutex) {
   };
 
   {
-    auto t1 = thread::spawn_joined([&]() { thread_func(); });
-    auto t2 = thread::spawn_joined([&]() { thread_func(); });
+    auto t1 = thread::spawn([&]() { thread_func(); });
+    auto t2 = thread::spawn([&]() { thread_func(); });
+    t1.join();
+    t2.join();
   }
 
   for (auto i = 0U; i < list.len(); ++i) {
@@ -66,8 +68,10 @@ SFC_TEST(reentrant_lock) {
   };
 
   {
-    auto t1 = thread::spawn_joined([&]() { push("a"); });
-    auto t2 = thread::spawn_joined([&]() { push("b"); });
+    auto t1 = thread::spawn([&]() { push("a"); });
+    auto t2 = thread::spawn([&]() { push("b"); });
+    t1.join();
+    t2.join();
   }
 
   for (auto i = 0UL; i < list.len(); ++i) {

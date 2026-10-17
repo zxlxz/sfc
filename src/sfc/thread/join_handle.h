@@ -21,17 +21,6 @@ class JoinHandle {
   void join();
 };
 
-class JoinGuard {
-  JoinHandle _handle;
-
- public:
-  explicit JoinGuard(JoinHandle handle) noexcept;
-  ~JoinGuard() noexcept;
-
-  JoinGuard(JoinGuard&& other) noexcept;
-  JoinGuard& operator=(JoinGuard&& other) noexcept;
-};
-
 struct Builder {
   usize stack_size = 0;
 
@@ -42,10 +31,6 @@ struct Builder {
 auto spawn(auto f) -> JoinHandle {
   auto b = Builder{};
   return b.spawn(Box<void()>::new_(mem::move(f)));
-}
-
-auto spawn_joined(auto f) {
-  return JoinGuard{thread::spawn(mem::move(f))};
 }
 
 }  // namespace sfc::thread

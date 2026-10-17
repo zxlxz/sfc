@@ -10,7 +10,7 @@ SFC_TEST(condvar_notify_one) {
   auto ready = false;
 
   {
-    auto t1 = thread::spawn_joined([&]() {
+    auto t1 = thread::spawn([&]() {
       auto lock = mtx.lock();
       while (!ready) {
         cv.wait(lock);
@@ -24,6 +24,8 @@ SFC_TEST(condvar_notify_one) {
       ready = true;
       cv.notify_one();
     }
+
+    t1.join();
   }
 
   thread::sleep_ms(5);
@@ -36,15 +38,14 @@ SFC_TEST(condvar_notify_all) {
   auto ready = false;
   auto finished = 0U;
 
-  auto threads = List<thread::JoinGuard>{};
   for (auto i = 0U; i < kThreadCnt; ++i) {
-    threads.push(thread::spawn_joined([&]() {
+    (void)thread::spawn([&]() {
       auto lock = mtx.lock();
       while (!ready) {
         cv.wait(lock);
       }
       ++finished;
-    }));
+    });
   }
 
   thread::sleep_ms(5);
@@ -72,7 +73,7 @@ SFC_TEST(condvar_wait_timeout) {
     sfc::assert_eq(result, false);
   }
 
-  auto t1 = thread::spawn_joined([&]() {
+  auto t1 = thread::spawn([&]() {
     auto lock = mtx.lock();
     while (!ready) {
       auto result = cv.wait_timeout(lock, time::Duration::from_millis(100));
@@ -89,6 +90,7 @@ SFC_TEST(condvar_wait_timeout) {
     ready = true;
     cv.notify_one();
   }
+  t1.join();
 }
 
 SFC_TEST(condvar_wait_while) {
@@ -96,7 +98,7 @@ SFC_TEST(condvar_wait_while) {
   auto cv = Condvar{};
   auto count = 0U;
 
-  auto t1 = thread::spawn_joined([&]() {
+  auto t1 = thread::spawn([&]() {
     auto lock = mtx.lock();
     cv.wait_while(lock, [&]() { return count < 5U; });
     sfc::assert_eq(count, 5U);
@@ -112,6 +114,7 @@ SFC_TEST(condvar_wait_while) {
       thread::sleep_ms(2);
     }
   }
+  t1.join();
 }
 
 SFC_TEST(condvar_producer_consumer) {
@@ -124,7 +127,7 @@ SFC_TEST(condvar_producer_consumer) {
   auto consumed = 0U;
 
   {
-    auto producer = thread::spawn_joined([&]() {
+    auto producer = thread::spawn([&]() {
       for (auto i = 0; i < (int)CNT; ++i) {
         auto lock = mtx.lock();
         cv.wait_while(lock, [&]() { return list.len() >= 5U; });
@@ -134,7 +137,7 @@ SFC_TEST(condvar_producer_consumer) {
       }
     });
 
-    auto consumer = thread::spawn_joined([&]() {
+    auto consumer = thread::spawn([&]() {
       for (auto i = 0; i < (int)CNT; ++i) {
         auto lock = mtx.lock();
         cv.wait_while(lock, [&]() { return list.is_empty(); });
@@ -143,6 +146,8 @@ SFC_TEST(condvar_producer_consumer) {
         cv.notify_one();
       }
     });
+    producer.join();
+    consumer.join();
   }
 
   sfc::assert_eq(list.is_empty(), true);
