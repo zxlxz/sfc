@@ -1,42 +1,34 @@
 #pragma once
 
+#include <Windows.h>
+
 #include "sfc/core.h"
 
 namespace sfc::sys::windows {
 
-class Mutex {
-  struct Inn;
-  Inn* _ptr{nullptr};
+struct Mutex {
+  SRWLOCK _raw;
 
  public:
-  explicit Mutex();
-  ~Mutex();
-
-  Mutex(Mutex&& other) noexcept;
-  Mutex& operator=(Mutex&& other) noexcept;
+  void init();
+  void destroy();
 
  public:
-  void* raw();
   void lock();
   void unlock();
   auto try_lock() -> bool;
 };
 
-class Condvar {
-  struct Inn;
-  Inn* _ptr{nullptr};
+struct Condvar {
+  CONDITION_VARIABLE _raw;
 
  public:
-  Condvar();
-  ~Condvar();
-
-  Condvar(Condvar&& other) noexcept;
-  Condvar& operator=(Condvar&& other) noexcept;
+  void init();
+  void destroy();
 
  public:
   void notify_one();
   void notify_all();
-
   void wait(Mutex& mtx);
   auto wait_timeout(Mutex& mtx, time::Duration dur) -> bool;
 };

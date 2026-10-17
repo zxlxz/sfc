@@ -1,13 +1,9 @@
-#include <pthread.h>
 #include <errno.h>
+#include <pthread.h>
 
-#define _SFC_SYNC_IMP_
 #include "sfc/sys/posix/sync.h"
 
 namespace sfc::sys::posix {
-
-static_assert(sizeof(pthread_mutex_t) == sizeof(_opaque_mutex_t), "Mutex size mismatch");
-static_assert(sizeof(pthread_cond_t) == sizeof(_opaque_cond_t), "Condvar size mismatch");
 
 void Mutex::init() {
   (void)::pthread_mutex_init(&_raw, nullptr);
@@ -37,7 +33,7 @@ void Condvar::init() {
   auto attr = pthread_condattr_t{};
   (void)::pthread_condattr_init(&attr);
 #ifndef __APPLE__
-  (void)::pthread_condattr_setclock(&attr, Condvar::Inn::kClock);
+  (void)::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
 #endif
   (void)::pthread_cond_init(&_raw, &attr);
   (void)::pthread_condattr_destroy(&attr);

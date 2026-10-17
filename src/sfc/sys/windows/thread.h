@@ -4,10 +4,8 @@
 
 namespace sfc::sys::windows {
 
-using ThreadHandle = void*;
-
 struct Thread {
-  ThreadHandle _handle{nullptr};
+  void* _handle{nullptr};
 
  public:
   static auto spawn(usize stack_size, Box<void()> f) -> Thread;
