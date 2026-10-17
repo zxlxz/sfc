@@ -9,20 +9,24 @@ SFC_TEST(condvar_notify_one) {
   auto cv = Condvar{};
   auto ready = false;
 
-  auto t1 = thread::spawn_joined([&]() {
-    auto lock = mtx.lock();
-    while (!ready) {
-      cv.wait(lock);
+  {
+    auto t1 = thread::spawn_joined([&]() {
+      auto lock = mtx.lock();
+      while (!ready) {
+        cv.wait(lock);
+      }
+    });
+
+    thread::sleep_ms(5);
+
+    {
+      auto lock = mtx.lock();
+      ready = true;
+      cv.notify_one();
     }
-  });
+  }
 
   thread::sleep_ms(5);
-
-  {
-    auto lock = mtx.lock();
-    ready = true;
-    cv.notify_one();
-  }
 }
 
 SFC_TEST(condvar_notify_all) {

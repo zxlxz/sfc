@@ -1,16 +1,16 @@
 #pragma once
 
+#include "sfc/alloc.h"
 #include "sfc/thread/thread.h"
-#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 
 class JoinHandle {
   friend struct Builder;
-  sys::Thread _thread{};
+  SysThread _thrd{0};
 
  public:
-  explicit JoinHandle(sys::Thread thread) noexcept;
+  explicit JoinHandle(SysThread thrd) noexcept;
   ~JoinHandle() noexcept;
 
   JoinHandle(JoinHandle&& other) noexcept;

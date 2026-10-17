@@ -66,25 +66,13 @@ void ThisThread::sleep(time::Duration dur) noexcept {
   (void)::nanosleep(&ts, nullptr);
 }
 
-auto Thread::is_none() const -> bool {
-  return _handle == 0;
-}
-
 void Thread::join() {
-  if (this->is_none()) {
-    return;
-  }
-
   // just join, don't change thrd, the caller should handle it
   const auto err = ::pthread_join(_handle, nullptr);
   sfc::assert_(err == 0, "Thread::join: pthread_join failed, err={}", err);
 }
 
 void Thread::detach() {
-  if (this->is_none()) {
-    return;
-  }
-
   // just detach, don't change thrd, the caller should handle it
   const auto err = ::pthread_detach(_handle);
   sfc::assert_(err == 0, "Thread::detach: pthread_detach failed, err={}", err);

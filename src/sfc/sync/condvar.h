@@ -6,7 +6,8 @@
 namespace sfc::sync {
 
 class Condvar {
-  sys::Condvar _inn;
+  struct Inn;
+  Inn* _inn{nullptr};
 
  public:
   explicit Condvar() noexcept;

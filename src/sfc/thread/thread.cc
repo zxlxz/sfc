@@ -1,7 +1,12 @@
-#include "sfc/thread/thread.h"
 #include "sfc/sys/thread.h"
 
+#include "sfc/thread/thread.h"
+
 namespace sfc::thread {
+
+void SysThread::join() {
+  sys::Thread{_raw}.join();
+}
 
 auto current() -> Thread {
   const auto tid = thread::current_id();

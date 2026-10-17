@@ -1,38 +1,39 @@
+#include "sfc/sys/thread.h"
+
 #include "sfc/thread/join_handle.h"
 #include "sfc/ffi/os_str.h"
-#include "sfc/sys/thread.h"
 
 namespace sfc::thread {
 
-JoinHandle::JoinHandle(sys::Thread thread) noexcept : _thread{thread} {}
+JoinHandle::JoinHandle(SysThread thrd) noexcept : _thrd{thrd} {}
 
 JoinHandle::~JoinHandle() noexcept {
   this->join();
 }
 
-JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thread{other._thread} {
-  other._thread = {};
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{other._thrd} {
+  other._thrd = {};
 }
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
   if (this == &other) {
     return *this;
   }
-  mem::swap(_thread, other._thread);
+  mem::swap(_thrd, other._thrd);
   return *this;
 }
 
 auto JoinHandle::is_finished() const -> bool {
-  return !_thread.is_none();
+  return _thrd._raw == ThreadHandle{};
 }
 
 void JoinHandle::join() {
-  if (!_thread.is_none()) {
+  if (this->is_finished()) {
     return;
   }
 
-  _thread.join();
-  _thread = {};
+  _thrd.join();
+  _thrd = {};
 }
 
 JoinGuard::JoinGuard(JoinHandle handle) noexcept : _handle{mem::move(handle)} {}
@@ -47,7 +48,7 @@ JoinGuard& JoinGuard::operator=(JoinGuard&&) noexcept = default;
 
 auto Builder::spawn(Box<void()> fun) -> JoinHandle {
   auto thrd = sys::Thread::spawn(stack_size, mem::move(fun));
-  return JoinHandle{sys::Thread{thrd}};
+  return JoinHandle{SysThread{thrd._handle}};
 }
 
 }  // namespace sfc::thread

@@ -2,6 +2,8 @@
 
 #include "sfc/alloc.h"
 
+struct _opaque_pthread_t;
+
 namespace sfc::sys::posix {
 
 #ifdef __APPLE__
@@ -11,11 +13,10 @@ using ThreadHandle = unsigned long;
 #endif
 
 struct Thread {
-  ThreadHandle _handle{0};
+  ThreadHandle _handle{};
 
  public:
   static auto spawn(usize stack_size, Box<void()> f) -> Thread;
-  auto is_none() const -> bool;
   void join();
   void detach();
 };

@@ -4,34 +4,51 @@
 
 namespace sfc::sys::posix {
 
-class Mutex {
-  struct Inn;
-  Inn* _ptr{nullptr};
+struct _opaque_mutex_t {
+#if defined(__APPLE__)  // apple
+  long __sig;
+  char __opaque[56];
+#elif defined(__linux__)  // linux
+  char __opaque[40];
+#endif
+};
+
+struct _opaque_cond_t {
+#if defined(__APPLE__)  // apple
+  long __sig;
+  char __opaque[40];
+#elif defined(__linux__)  // linux
+  char __opaque[48];
+#endif
+};
+
+struct Mutex {
+#ifdef _SFC_SYNC_IMP_
+  pthread_mutex_t _raw;
+#else
+  _opaque_mutex_t _raw;
+#endif
 
  public:
-  explicit Mutex();
-  ~Mutex();
-
-  Mutex(Mutex&& other) noexcept;
-  Mutex& operator=(Mutex&& other) noexcept;
+  void init();
+  void destroy();
 
  public:
-  auto inn() -> Inn&;
   void lock();
   void unlock();
   auto try_lock() -> bool;
 };
 
 class Condvar {
-  struct Inn;
-  Inn* _ptr;
+#ifdef _SFC_SYNC_IMP_
+  pthread_cond_t _raw;
+#else
+  _opaque_cond_t _raw;
+#endif
 
  public:
-  Condvar();
-  ~Condvar();
-
-  Condvar(Condvar&& other) noexcept;
-  Condvar& operator=(Condvar&& other) noexcept;
+  void init();
+  void destroy();
 
  public:
   void notify_one();

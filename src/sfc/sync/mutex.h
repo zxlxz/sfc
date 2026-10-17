@@ -1,21 +1,12 @@
 #pragma once
 
 #include "sfc/core.h"
-#include "sfc/sys/sync.h"
 
 namespace sfc::sync {
 
-struct Tid {
-  Atomic<u32> _0{0};
-
- public:
-  auto contains(u32 owner) const -> bool;
-  void set(u32 owner);
-};
-
 class Mutex {
-  struct Inn : sys::Mutex {};
-  mutable Inn _inn;
+  struct Inn;
+  Inn* _inn{nullptr};
 
  public:
   explicit Mutex() noexcept;
@@ -30,11 +21,8 @@ class Mutex {
 };
 
 class ReentrantLock {
-  struct Inn : sys::Mutex {
-    Tid _owner{0};
-    u32 _count{0};
-  };
-  mutable Inn _inn;
+  struct Inn;
+  Inn* _inn{nullptr};
 
  public:
   explicit ReentrantLock() noexcept;
@@ -58,7 +46,7 @@ class Mutex::Guard {
   Guard& operator=(Guard&&) noexcept = delete;
 
  public:
-  auto inner() const -> sys::Mutex&;
+  auto inner() const -> Inn&;
 };
 
 class ReentrantLock::Guard {

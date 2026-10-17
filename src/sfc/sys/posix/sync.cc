@@ -1,160 +1,77 @@
 #include <pthread.h>
 #include <errno.h>
 
+#define _SFC_SYNC_IMP_
 #include "sfc/sys/posix/sync.h"
 
 namespace sfc::sys::posix {
 
-struct Mutex::Inn {
-  pthread_mutex_t _0;
+static_assert(sizeof(pthread_mutex_t) == sizeof(_opaque_mutex_t), "Mutex size mismatch");
+static_assert(sizeof(pthread_cond_t) == sizeof(_opaque_cond_t), "Condvar size mismatch");
 
- public:
-  Inn() {
-    (void)::pthread_mutex_init(&_0, nullptr);
-  }
-
-  ~Inn() {
-    (void)::pthread_mutex_destroy(&_0);
-  }
-
-  Inn(const Inn&) = delete;
-  Inn& operator=(const Inn&) = delete;
-};
-
-Mutex::Mutex() {
-  _ptr = new Inn{};
+void Mutex::init() {
+  (void)::pthread_mutex_init(&_raw, nullptr);
 }
 
-Mutex::~Mutex() {
-  if (_ptr == nullptr) return;
-  delete _ptr;
-}
-
-Mutex::Mutex(Mutex&& other) noexcept : _ptr{mem::take(other._ptr)} {}
-
-Mutex& Mutex::operator=(Mutex&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_ptr, other._ptr);
-  }
-  return *this;
-}
-
-auto Mutex::inn() -> Inn& {
-  return *_ptr;
+void Mutex::destroy() {
+  (void)::pthread_mutex_destroy(&_raw);
 }
 
 void Mutex::lock() {
-  auto& sys_mtx = _ptr->_0;
-  const auto err = ::pthread_mutex_lock(&sys_mtx);
+  const auto err = ::pthread_mutex_lock(&_raw);
   sfc::assert_(err == 0, "sync::Mutex::lock: failed, err={}", err);
 }
 
 void Mutex::unlock() {
-  auto& sys_mtx = _ptr->_0;
-  const auto err = ::pthread_mutex_unlock(&sys_mtx);
+  const auto err = ::pthread_mutex_unlock(&_raw);
   sfc::assert_(err == 0, "sync::Mutex::unlock: failed, err={}", err);
 }
 
 auto Mutex::try_lock() -> bool {
-  auto& sys_mtx = _ptr->_0;
-  const auto err = ::pthread_mutex_trylock(&sys_mtx);
+  const auto err = ::pthread_mutex_trylock(&_raw);
   sfc::assert_(err == 0 || err == EBUSY, "sync::Mutex::try_lock: failed, err={}", err);
   return err == 0;
 }
 
-struct CondvarAttr {
-  pthread_condattr_t _0;
-
- public:
-  CondvarAttr() {
-    (void)::pthread_condattr_init(&_0);
-  }
-
-  ~CondvarAttr() {
-    (void)::pthread_condattr_destroy(&_0);
-  }
-
-  CondvarAttr(const CondvarAttr&) = delete;
-  CondvarAttr& operator=(const CondvarAttr&) = delete;
-
- public:
-  void set_clock([[maybe_unused]] int clock) {
+void Condvar::init() {
+  auto attr = pthread_condattr_t{};
+  (void)::pthread_condattr_init(&attr);
 #ifndef __APPLE__
-    (void)::pthread_condattr_setclock(&_0, clock);
+  (void)::pthread_condattr_setclock(&attr, Condvar::Inn::kClock);
 #endif
-  }
-};
+  (void)::pthread_cond_init(&_raw, &attr);
+  (void)::pthread_condattr_destroy(&attr);
+}
 
-struct Condvar::Inn {
+void Condvar::destroy() {
+  (void)::pthread_cond_destroy(&_raw);
+}
+
+void Condvar::notify_one() {
+  const auto err = ::pthread_cond_signal(&_raw);
+  sfc::assert_(err == 0, "sync::Condvar::notify_one: failed, err={}", err);
+}
+
+void Condvar::notify_all() {
+  const auto err = ::pthread_cond_broadcast(&_raw);
+  sfc::assert_(err == 0, "sync::Condvar::notify_all: failed, err={}", err);
+}
+
+void Condvar::wait(Mutex& mtx) {
+  const auto err = ::pthread_cond_wait(&_raw, &mtx._raw);
+  sfc::assert_(err == 0, "sync::Condvar::wait: failed, err={}", err);
+}
+
+auto Condvar::wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
 #ifdef __APPLE__
   static constexpr auto kClock = CLOCK_REALTIME;
 #else
   static constexpr auto kClock = CLOCK_MONOTONIC;
 #endif
 
-  pthread_cond_t _0;
-
- public:
-  Inn() {
-    auto attr = CondvarAttr{};
-    attr.set_clock(kClock);
-    (void)::pthread_cond_init(&_0, &attr._0);
-  }
-
-  ~Inn() {
-    (void)::pthread_cond_destroy(&_0);
-  }
-
-  Inn(const Inn&) = delete;
-  Inn& operator=(const Inn&) = delete;
-};
-
-Condvar::Condvar() {
-  _ptr = new Inn{};
-}
-
-Condvar::~Condvar() {
-  if (_ptr == nullptr) return;
-  delete _ptr;
-}
-
-Condvar::Condvar(Condvar&& other) noexcept : _ptr{mem::take(other._ptr)} {}
-
-Condvar& Condvar::operator=(Condvar&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_ptr, other._ptr);
-  }
-  return *this;
-}
-
-void Condvar::notify_one() {
-  auto& sys_cond = _ptr->_0;
-  const auto err = ::pthread_cond_signal(&sys_cond);
-  sfc::assert_(err == 0, "sync::Condvar::notify_one: failed, err={}", err);
-}
-
-void Condvar::notify_all() {
-  auto& sys_cond = _ptr->_0;
-  const auto err = ::pthread_cond_broadcast(&sys_cond);
-  sfc::assert_(err == 0, "sync::Condvar::notify_all: failed, err={}", err);
-}
-
-void Condvar::wait(Mutex& mtx) {
-  auto& sys_cond = _ptr->_0;
-  auto& sys_mutex = mtx.inn()._0;
-
-  const auto err = ::pthread_cond_wait(&sys_cond, &sys_mutex);
-  sfc::assert_(err == 0, "sync::Condvar::wait: failed, err={}", err);
-}
-
-auto Condvar::wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
-  auto& sys_cond = _ptr->_0;
-  auto& sys_mutex = mtx.inn()._0;
-
   struct timespec sys_time{};
-  if (::clock_gettime(Inn::kClock, &sys_time) == -1) {
-    const auto err = errno;
-    sfc::assert_(false, "sync::Condvar::wait_timeout: clock_gettime failed, err={}", err);
+  if (::clock_gettime(kClock, &sys_time) == -1) {
+    sfc::assert_(false, "sync::Condvar::wait_timeout: clock_gettime failed, err={}", errno);
   }
 
   sys_time.tv_sec += dur.as_secs();
@@ -164,7 +81,7 @@ auto Condvar::wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
     sys_time.tv_nsec -= long(time::NANOS_PER_SEC);
   }
 
-  const auto err = ::pthread_cond_timedwait(&sys_cond, &sys_mutex, &sys_time);
+  const auto err = ::pthread_cond_timedwait(&_raw, &mtx._raw, &sys_time);
   sfc::assert_(err == 0 || err == ETIMEDOUT, "sync::Condvar::wait_timeout: failed, err={}", err);
   return err == 0;
 }
