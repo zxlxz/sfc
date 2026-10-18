@@ -15,12 +15,12 @@ struct Thread {
   void detach();
 };
 
-struct ThisThread {
-  static auto id() noexcept -> u32;
-  static auto set_name(const char* name) -> bool;
+namespace this_thread {
+auto id() noexcept -> u32;
+auto set_name(const char* name) -> bool;
 
-  static void yield();
-  static void sleep(time::Duration dur) noexcept;
-};
+void yield();
+void sleep(time::Duration dur) noexcept;
+};  // namespace this_thread
 
 }  // namespace sfc::sys::windows

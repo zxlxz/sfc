@@ -22,10 +22,9 @@ SFC_TEST(mutex) {
   };
 
   {
-    auto t1 = thread::spawn([&]() { thread_func(); });
-    auto t2 = thread::spawn([&]() { thread_func(); });
-    t1.join();
-    t2.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { thread_func(); });
+    scope.spawn([&]() { thread_func(); });
   }
 
   for (auto i = 0U; i < list.len(); ++i) {
@@ -68,10 +67,9 @@ SFC_TEST(reentrant_lock) {
   };
 
   {
-    auto t1 = thread::spawn([&]() { push("a"); });
-    auto t2 = thread::spawn([&]() { push("b"); });
-    t1.join();
-    t2.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { push("a"); });
+    scope.spawn([&]() { push("b"); });
   }
 
   for (auto i = 0UL; i < list.len(); ++i) {

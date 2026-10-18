@@ -27,10 +27,9 @@ SFC_TEST(s1r1) {
   };
 
   {
-    auto s1 = thread::spawn([&]() { sender(); });
-    auto r1 = thread::spawn([&]() { receiver(); });
-    s1.join();
-    r1.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { sender(); });
+    scope.spawn([&]() { receiver(); });
   }
 
   sfc::assert_eq(recv_cnt, CNT);
@@ -82,12 +81,10 @@ SFC_TEST(s2r1) {
   };
 
   {
-    auto p1 = thread::spawn([&]() { sender(+1); });
-    auto p2 = thread::spawn([&]() { sender(-1); });
-    auto r1 = thread::spawn([&]() { receiver(); });
-    p1.join();
-    p2.join();
-    r1.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { sender(+1); });
+    scope.spawn([&]() { sender(-1); });
+    scope.spawn([&]() { receiver(); });
   }
 
   sfc::assert_eq(recv_cnt, 2 * u32{CNT});
@@ -115,12 +112,10 @@ SFC_TEST(s1r2) {
   };
 
   {
-    auto c1 = thread::spawn([&]() { receiver(CNT); });
-    auto c2 = thread::spawn([&]() { receiver(CNT); });
-    auto s1 = thread::spawn([&]() { sender(); });
-    c1.join();
-    c2.join();
-    s1.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { receiver(CNT); });
+    scope.spawn([&]() { receiver(CNT); });
+    scope.spawn([&]() { sender(); });
   }
 
   sfc::assert_eq(recv_cnt.load(), 2 * CNT);
@@ -149,14 +144,11 @@ SFC_TEST(s2r2) {
   };
 
   {
-    auto p1 = thread::spawn([&]() { sender(+1); });
-    auto p2 = thread::spawn([&]() { sender(-1); });
-    auto c1 = thread::spawn([&]() { receiver(); });
-    auto c2 = thread::spawn([&]() { receiver(); });
-    p1.join();
-    p2.join();
-    c1.join();
-    c2.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { sender(+1); });
+    scope.spawn([&]() { sender(-1); });
+    scope.spawn([&]() { receiver(); });
+    scope.spawn([&]() { receiver(); });
   }
 
   sfc::assert_eq(recv_cnt.load(), 2 * u32{CNT});

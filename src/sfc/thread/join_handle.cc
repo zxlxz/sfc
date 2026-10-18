@@ -5,32 +5,52 @@
 
 namespace sfc::thread {
 
-JoinHandle::JoinHandle(SysThread thrd) noexcept : _thrd{thrd} {}
+struct JoinHandle::Inn {
+  sys::Thread _native;
+};
+
+JoinHandle::JoinHandle(Inn inn) noexcept : _inn{new Inn{inn}} {}
 
 JoinHandle::~JoinHandle() noexcept {
-  _thrd.detach();
+  if (_inn == nullptr) {
+    return;
+  }
+
+  _inn->_native.detach();
+  delete _inn;
 }
 
-JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _thrd{mem::take(other._thrd)} {}
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _inn{mem::take(other._inn)} {}
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
   if (this != &other) {
-    mem::swap(_thrd, other._thrd);
+    mem::swap(_inn, other._inn);
   }
   return *this;
 }
 
-auto JoinHandle::is_finished() const -> bool {
-  return _thrd._raw == ThreadHandle{};
-}
-
 void JoinHandle::join() {
-  _thrd.join();
+  if (_inn == nullptr) {
+    return;
+  }
+  _inn->_native.join();
+
+  delete _inn;
+  _inn = nullptr;
 }
 
-auto Builder::spawn(Box<void()> fun) -> JoinHandle {
+auto Builder::spawn_imp(Box<void()> fun) -> JoinHandle {
   auto thrd = sys::Thread::spawn(stack_size, mem::move(fun));
-  return JoinHandle{SysThread{thrd._handle}};
+  auto inn = JoinHandle::Inn{._native = mem::move(thrd)};
+  return JoinHandle{mem::move(inn)};
+}
+
+Scope::Scope() {}
+
+Scope::~Scope() {
+  for (auto& handle : _handles) {
+    handle.join();
+  }
 }
 
 }  // namespace sfc::thread

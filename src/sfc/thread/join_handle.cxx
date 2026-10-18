@@ -5,15 +5,14 @@
 
 namespace sfc::thread::test {
 
-SFC_TEST(spawn_joind) {
+SFC_TEST(spawn) {
   auto n1 = 0;
   auto n2 = 0;
 
   {
-    auto t1 = thread::spawn([&]() { n1 += 1; });
-    auto t2 = thread::spawn([&]() { n2 += 1; });
-    t1.join();
-    t2.join();
+    auto scope = thread::Scope{};
+    scope.spawn([&]() { n1 += 1; });
+    scope.spawn([&]() { n2 += 1; });
   }
 
   sfc::assert_eq(n1, 1);

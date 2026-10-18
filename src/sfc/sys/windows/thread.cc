@@ -5,8 +5,6 @@
 
 namespace sfc::sys::windows {
 
-Thread::Thread(void* handle) noexcept : _handle{handle} {}
-
 struct ThreadData {
   Box<void()> _fun;
 };
@@ -19,6 +17,8 @@ static unsigned __stdcall start_routine(void* p) {
   (func)();
   return 0;
 }
+
+Thread::Thread(void* handle) noexcept : _handle{handle} {}
 
 auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
   auto data = new ThreadData{mem::move(obj)};
@@ -50,12 +50,12 @@ void Thread::detach() {
   (void)::CloseHandle(_handle);
 }
 
-auto ThisThread::id() noexcept -> u32 {
+auto this_thread::id() noexcept -> u32 {
   const auto tid = ::GetCurrentThreadId();
   return u32(tid);
 }
 
-auto ThisThread::set_name(const char* name) -> bool {
+auto this_thread::set_name(const char* name) -> bool {
   if (name == nullptr) {
     return true;
   }
@@ -72,19 +72,20 @@ auto ThisThread::set_name(const char* name) -> bool {
   return SUCCEEDED(hres);
 }
 
-void ThisThread::yield() {
+void this_thread::yield() {
   (void)::SwitchToThread();
 }
 
-void ThisThread::sleep(time::Duration dur) noexcept {
-  const auto millis = num::saturating_cast<DWORD>(dur.as_millis());
+void this_thread::sleep(time::Duration dur) noexcept {
+  const auto ms_u64 = dur.as_millis();
+  const auto ms_u32 = u32(cmp::min(ms_u64, U32::MAX));
 
-  if (millis == 0) {
+  if (ms_u32 == 0) {
     ::SwitchToThread();
     return;
   }
 
-  ::Sleep(millis);
+  ::Sleep(ms_u32);
 }
 
 }  // namespace sfc::sys::windows

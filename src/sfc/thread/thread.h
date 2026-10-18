@@ -1,24 +1,8 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/time.h"
 
 namespace sfc::thread {
-
-#if defined(_WIN32)
-using ThreadHandle = void*;
-#elif defined(__APPLE__)
-using ThreadHandle = struct _opaque_pthread_t*;
-#elif defined(__linux__)
-using ThreadHandle = unsigned long;
-#endif
-
-struct SysThread {
-  ThreadHandle _raw{0};
-
- public:
-  void join();
-  void detach();
-};
 
 struct Thread {
   u32 id;
@@ -31,5 +15,6 @@ void yield_now();
 
 void sleep(time::Duration dur);
 void sleep_ms(u32 ms);
+void sleep_until(time::Instant deadline);
 
 }  // namespace sfc::thread
