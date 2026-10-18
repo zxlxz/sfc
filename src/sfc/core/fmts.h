@@ -2,6 +2,7 @@
 
 #include "sfc/core/tuple.h"
 #include "sfc/core/num.h"
+#include "sfc/core/cmp.h"
 
 namespace sfc::fmt {
 
@@ -94,10 +95,9 @@ struct FmtOptions {
       for (; _ptr < _end; ++_ptr) {
         const auto c = *_ptr;
         if (!(c >= '0' && c <= '9')) break;
-        const auto n = u32(c - '0');
-        res = res * 10 + n;
+        res = res * 10 + u32(c - '0');
       }
-      return num::saturating_cast<T>(res);
+      return T(cmp::min(res, num::Int<T>::MAX));
     }
   };
 

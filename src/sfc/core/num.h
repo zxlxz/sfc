@@ -105,17 +105,15 @@ struct Int<long long> {
   static constexpr sint_t MIN = -0x7FFFFFFFFFFFFFFF - 1;
 };
 
-template <>
-struct Float<float> {
-  using float_t = float;
-  using int_t = int;
-};
+using I8 = num::Int<i8>;
+using I16 = num::Int<i16>;
+using I32 = num::Int<i32>;
+using I64 = num::Int<i64>;
 
-template <>
-struct Float<double> {
-  using float_t = double;
-  using int_t = long long;
-};
+using U8 = num::Int<u8>;
+using U16 = num::Int<u16>;
+using U32 = num::Int<u32>;
+using U64 = num::Int<u64>;
 
 template <trait::uint_ T>
 constexpr auto cast_signed(T x) -> num::sint_t<T> {
@@ -125,19 +123,6 @@ constexpr auto cast_signed(T x) -> num::sint_t<T> {
 template <trait::sint_ T>
 constexpr auto cast_unsigned(T x) -> num::uint_t<T> {
   return __builtin_bit_cast(num::uint_t<T>, x);
-}
-
-template <trait::int_ T, trait::int_ F>
-constexpr auto saturating_cast(F x) -> T {
-  if constexpr (u64(Int<F>::MAX) > u64(Int<T>::MAX)) {
-    if (x > Int<T>::MAX) return Int<T>::MAX;
-  }
-
-  if constexpr (i64(Int<F>::MIN) < i64(Int<T>::MIN)) {
-    if (x < Int<T>::MIN) return Int<T>::MIN;
-  }
-
-  return T(x);
 }
 
 template <trait::sint_ T>
@@ -168,3 +153,15 @@ constexpr auto align_up(T val, T align) -> T {
 }
 
 }  // namespace sfc::num
+
+namespace sfc {
+using num::U8;
+using num::U16;
+using num::U32;
+using num::U64;
+
+using num::I8;
+using num::I16;
+using num::I32;
+using num::I64;
+}  // namespace sfc

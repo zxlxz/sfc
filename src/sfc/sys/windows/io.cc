@@ -79,7 +79,7 @@ auto File::close() -> io::Result<> {
 
 auto File::read(Slice<u8> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
-  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+  const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nread = 0UL;
   if (!::ReadFile(_fd, buf_ptr, buf_len, &nread, nullptr)) {
@@ -90,7 +90,7 @@ auto File::read(Slice<u8> buf) -> io::Result<usize> {
 
 auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
-  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+  const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nwrite = 0UL;
   if (!::WriteFile(_fd, buf_ptr, buf_len, &nwrite, nullptr)) {
@@ -157,7 +157,7 @@ auto StdIo::flush() -> io::Result<> {
 
 auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
-  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+  const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nret = DWORD{};
   if (!::ReadConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {
@@ -168,7 +168,7 @@ auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
 
 auto StdIo::writew(Slice<const wchar_t> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
-  const auto buf_len = num::saturating_cast<DWORD>(buf._len);
+  const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nret = DWORD{};
   if (!::WriteConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {

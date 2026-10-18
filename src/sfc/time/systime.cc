@@ -25,17 +25,17 @@ auto SystemTime::as_secs() const noexcept -> u64 {
 
 auto SystemTime::subsec_nanos() const noexcept -> u32 {
   const auto nanos = _micros % MICROS_PER_SEC * NANOS_PER_MICRO;
-  return num::saturating_cast<u32>(nanos);
+  return u32(nanos);
 }
 
 auto SystemTime::subsec_micros() const noexcept -> u32 {
   const auto micros = _micros % MICROS_PER_SEC;
-  return num::saturating_cast<u32>(micros);
+  return u32(micros);
 }
 
 auto SystemTime::subsec_millis() const noexcept -> u32 {
   const auto millis = _micros % MICROS_PER_SEC / MICROS_PER_MILLI;
-  return num::saturating_cast<u32>(millis);
+  return u32(millis);
 }
 
 auto SystemTime::operator==(SystemTime other) const noexcept -> bool {
