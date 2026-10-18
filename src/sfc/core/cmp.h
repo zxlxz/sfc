@@ -1,16 +1,24 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
 
 namespace sfc::cmp {
 
 template <class T>
-auto (min)(T a, T b) -> T {
+constexpr auto min(T a, trait::arg_t<T> b) -> T {
   return a < b ? a : b;
 }
 
 template <class T>
-auto (max)(T a, T b) -> T {
+constexpr auto max(T a, trait::arg_t<T> b) -> T {
   return a > b ? a : b;
 }
 

@@ -5,7 +5,12 @@
 namespace sfc::trait {
 
 template <class T>
-struct type_t {};
+struct type_t {
+  using Type = T;
+};
+
+template <class T>
+using arg_t = typename type_t<T>::Type;
 
 template <auto X>
 struct const_t {
