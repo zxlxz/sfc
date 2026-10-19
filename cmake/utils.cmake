@@ -12,13 +12,12 @@ function(list_source_files VARIABLE DIR)
   set(${VARIABLE} ${_SOURCES} PARENT_SCOPE)
 endfunction()
 
-
-function(target_source_files TARGET DIR)
-  list_source_files(_SOURCES ${DIR} ${ARGN})
+function(target_source_files TARGET DIR PATTERNS)
+  list_source_files(_SOURCES ${DIR} ${PATTERNS})
   target_sources(${TARGET} PRIVATE ${_SOURCES})
 endfunction()
 
-function(target_sources_exclude TARGET PATTERN)
+function(target_source_exclude TARGET PATTERN)
   get_target_property(_SOURCES ${TARGET} SOURCES)
   list(FILTER _SOURCES EXCLUDE REGEX ${PATTERN})
   set_target_properties(${TARGET} PROPERTIES SOURCES "${_SOURCES}")
