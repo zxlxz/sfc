@@ -193,6 +193,7 @@ class Option<T&> {
   constexpr Option() noexcept : _1{nullptr} {}
   constexpr Option(None) noexcept : _1{nullptr} {}
   constexpr Option(T& val) noexcept : _1{&val} {}
+  constexpr Option(T* ptr) noexcept : _1{ptr} {}
 
  public:
   explicit operator bool() const noexcept {
@@ -312,8 +313,10 @@ class Option<Option<T>>;  // disable
 template <class T>
 Option(T) -> Option<T>;
 
-template <usize N>
-Option(const char (&)[N]) -> Option<str::Str>;
+template <class T>
+Option(T*) -> Option<T&>;
+
+Option(const char*) -> Option<str::Str>;
 
 }  // namespace sfc::option
 
