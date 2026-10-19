@@ -98,6 +98,14 @@ auto rmdir(const wchar_t* path) -> io::Result<> {
   return Ok{};
 }
 
+auto DirEntry::from(auto s) -> DirEntry {
+  auto res = DirEntry{};
+  res.attr = s.dwFileAttributes;
+  res.size = combine_u64(s.nFileSizeHigh, s.nFileSizeLow);
+  wcscat_s(res.path, s.cFileName);
+  return res;
+}
+
 auto ReadDir::open(const wchar_t* path) -> io::Result<ReadDir> {
   wchar_t pattern[MAX_PATH + 4] = {};
   wcscat_s(pattern, path);
@@ -109,10 +117,9 @@ auto ReadDir::open(const wchar_t* path) -> io::Result<ReadDir> {
     return io::last_os_error();
   }
 
-  const auto attr = data.dwFileAttributes;
-  const auto size = combine_u64(data.nFileSizeHigh, data.nFileSizeLow);
-  auto res = ReadDir{handle, {.path = {}, .attr = attr, .size = size}};
-  wcscpy_s(res._entry.path, pattern);
+  auto res = ReadDir{};
+  res._handle = handle;
+  res._first_entry = DirEntry::from(data);
   return res;
 }
 
@@ -129,16 +136,17 @@ auto ReadDir::next() -> Option<DirEntry> {
     return {};
   }
 
+  // check if the first entry has already been returned
+  if (_first_entry.attr != 0) {
+    return mem::take(_first_entry);
+  }
+
   WIN32_FIND_DATAW data{};
   if (!::FindNextFileW(_handle, &data)) {
     return {};
   }
 
-  const auto attr = data.dwFileAttributes;
-  const auto size = combine_u64(data.nFileSizeHigh, data.nFileSizeLow);
-  auto entry = DirEntry{.path = {}, .attr = attr, .size = size};
-  wcscat_s(entry.path, data.cFileName);
-  return entry;
+  return DirEntry::from(data);
 }
 
 }  // namespace sfc::sys::windows

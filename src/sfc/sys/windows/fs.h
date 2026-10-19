@@ -26,11 +26,13 @@ struct DirEntry {
   wchar_t path[260] = {};
   u32 attr = 0;
   usize size = 0;
+
+  static auto from(auto s) -> DirEntry;
 };
 
 struct ReadDir {
   void* _handle = nullptr;
-  DirEntry _entry = {{}, 0, 0};
+  DirEntry _first_entry = {{}, 0, 0};
 
  public:
   static auto open(const wchar_t* path) -> io::Result<ReadDir>;
