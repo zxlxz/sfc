@@ -39,6 +39,10 @@ class [[nodiscard]] String {
   void truncate(usize len) noexcept;
   void clear() noexcept;
 
+  void extend(auto iter) {
+    _buf.extend(mem::move(iter));
+  }
+
  public:
   auto iter() const noexcept {
     return _buf.iter();

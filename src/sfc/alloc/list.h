@@ -41,12 +41,6 @@ class [[nodiscard]] List {
     return res;
   }
 
-  static auto from_iter(auto&& iter) -> List {
-    auto res = List{};
-    res.extend(iter);
-    return res;
-  }
-
   auto as_ptr() const noexcept -> const T* {
     return _buf.ptr();
   }
