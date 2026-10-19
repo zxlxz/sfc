@@ -1,10 +1,8 @@
 
 # sfc
 add_library(sfc)
-target_compile_features(sfc PUBLIC cxx_std_23)
-target_compile_options(sfc PRIVATE -Wall -Wextra -Wconversion)
 target_include_directories(sfc PUBLIC ${_SFC_PATH})
-
+target_compile_features(sfc PUBLIC cxx_std_23)
 target_source_files(sfc  . "*.cc")
 target_source_exclude(sfc "sys/.*")
 
