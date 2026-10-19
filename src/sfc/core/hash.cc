@@ -15,19 +15,23 @@ void FNVHasher::write(slice::Slice<const u8> bytes) noexcept {
 }
 
 void FNVHasher::write_u8(u8 val) noexcept {
-  this->write(mem::as_bytes(val));
+  const auto bytes = Slice{(const u8*)&val, sizeof(val)};
+  this->write(bytes);
 }
 
 void FNVHasher::write_u16(u16 val) noexcept {
-  this->write(mem::as_bytes(val));
+  const auto bytes = Slice{(const u8*)&val, sizeof(val)};
+  this->write(bytes);
 }
 
 void FNVHasher::write_u32(u32 val) noexcept {
-  this->write(mem::as_bytes(val));
+  const auto bytes = Slice{(const u8*)&val, sizeof(val)};
+  this->write(bytes);
 }
 
 void FNVHasher::write_u64(u64 val) noexcept {
-  this->write(mem::as_bytes(val));
+  const auto bytes = Slice{(const u8*)&val, sizeof(val)};
+  this->write(bytes);
 }
 
 }  // namespace sfc::hash

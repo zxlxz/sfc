@@ -99,19 +99,4 @@ SFC_TEST(take) {
   sfc::assert_eq(b, 2);
 }
 
-SFC_TEST(as_bytes) {
-  u32 v[2] = {0x12345678, 0x9abcdef0};
-  const auto s = Slice{mem::as_bytes(v)};
-  sfc::assert_eq(s.len(), sizeof(v));
-  sfc::assert_eq(s[0], 0x78);
-  sfc::assert_eq(s[1], 0x56);
-  sfc::assert_eq(s[2], 0x34);
-  sfc::assert_eq(s[3], 0x12);
-
-  sfc::assert_eq(s[4], 0xf0);
-  sfc::assert_eq(s[5], 0xde);
-  sfc::assert_eq(s[6], 0xbc);
-  sfc::assert_eq(s[7], 0x9a);
-}
-
 }  // namespace sfc::mem::test
