@@ -76,22 +76,15 @@ struct Iterator {
 
   template <class F>
   auto reduce(this auto self, F&& f) -> Option<Item> {
-    auto opt = self.next();
-    if (!opt) return {};
-
-    if constexpr (!trait::same_<Item, Item&>) {
-      auto res_val = mem::move(opt).unwrap();
-      while (auto x = self.next()) {
-        res_val = f(res_val, *x);
-      }
-      return res_val;
-    } else {
-      auto res_ptr = &*opt;
-      while (auto x = self.next()) {
-        res_ptr = &f(*res_ptr, *x);
-      }
-      return *res_ptr;
+    auto res = self.next();
+    if (!res) {
+      return {};
     }
+
+    while (auto x = self.next()) {
+      res = f(*res, *x);
+    }
+    return res;
   }
 
   auto all(this auto self, auto&& f) -> bool {
@@ -113,11 +106,11 @@ struct Iterator {
     return cnt;
   }
 
-  auto (min)(this auto self) -> Option<Item> {
+  auto min(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a < b ? a : b; });
   }
 
-  auto (max)(this auto self) -> Option<Item> {
+  auto max(this auto self) -> Option<Item> {
     return self.reduce([](auto& a, auto& b) -> Item { return a > b ? a : b; });
   }
 
@@ -131,7 +124,9 @@ struct Iterator {
 
   template <class B>
   auto collect(this auto self) -> B {
-    return B::from_iter(mem::move(self));
+    auto res = B{};
+    res.extend(mem::move(self));
+    return res;
   }
 
   template <class Self, class F>

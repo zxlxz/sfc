@@ -14,10 +14,10 @@ SFC_TEST(reduce) {
   const int v[] = {0, 1, 2, 3, 4, 5};
 
   auto min_ref = Slice{v}.iter().reduce([](auto& a, auto& b) -> auto& { return a < b ? a : b; });
-  sfc::assert_eq(min_ref, Option<const int&>{v[0]});
+  sfc::assert_eq(min_ref, Option{v[0]});
 
   auto max_ref = Slice{v}.iter().reduce([](auto& a, auto& b) -> auto& { return a > b ? a : b; });
-  sfc::assert_eq(max_ref, Option<const int&>{v[5]});
+  sfc::assert_eq(max_ref, Option{v[5]});
 }
 
 SFC_TEST(find) {
