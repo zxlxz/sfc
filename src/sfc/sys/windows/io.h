@@ -25,14 +25,15 @@ struct StdIo : File {
 
  public:
   auto is_console() const -> bool;
-  auto read(Slice<u8> buf) -> io::Result<usize>;
-  auto write(Slice<const u8> buf) -> io::Result<usize>;
-  auto flush() -> io::Result<>;
-
- private:
   auto is_utf8_console() const -> bool;
-  auto readw(Slice<wchar_t> buf) -> io::Result<usize>;
-  auto writew(Slice<const wchar_t> buf) -> io::Result<usize>;
+
+  auto read(Slice<u8> buf) -> io::Result<usize>;
+  auto read_u16(Slice<u16> buf) -> io::Result<usize>;
+
+  auto write(Slice<const u8> buf) -> io::Result<usize>;
+  auto write_u16(Slice<const u16> buf) -> io::Result<usize>;
+
+  auto flush() -> io::Result<>;
 };
 
 auto os_error() -> u32;

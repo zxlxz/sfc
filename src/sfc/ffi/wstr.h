@@ -4,8 +4,6 @@
 
 namespace sfc::ffi {
 
-using chr::U16Chars;
-
 struct WStr {
   const wchar_t* _ptr;
   usize _len;

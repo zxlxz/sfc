@@ -5,6 +5,10 @@
 
 namespace sfc::sys::windows {
 
+static auto combine_u64(u32 high, u32 low) -> u64 {
+  return (u64{high} << 32) | u64{low};
+}
+
 auto FileAttr::exists() const noexcept -> bool {
   return _attr != 0;
 }
@@ -50,7 +54,7 @@ auto fstat(void* fd) -> io::Result<fs::Metadata> {
     return io::last_os_error();
   }
 
-  const auto size = (u64{attr.nFileSizeHigh} << 32) | u64{attr.nFileSizeLow};
+  const auto size = combine_u64(attr.nFileSizeHigh, attr.nFileSizeLow);
   const auto meta = fs::Metadata{attr.dwFileAttributes, size};
   return Ok{meta};
 }
@@ -61,7 +65,7 @@ auto lstat(const wchar_t* path) -> io::Result<fs::Metadata> {
     return io::last_os_error();
   }
 
-  const auto size = (u64{attr.nFileSizeHigh} << 32) | u64{attr.nFileSizeLow};
+  const auto size = combine_u64(attr.nFileSizeHigh, attr.nFileSizeLow);
   const auto meta = fs::Metadata{attr.dwFileAttributes, size};
   return Ok{meta};
 }
@@ -94,7 +98,7 @@ auto rmdir(const wchar_t* path) -> io::Result<> {
   return Ok{};
 }
 
-auto open_dir(const wchar_t* path) -> io::Result<ReadDir*> {
+auto ReadDir::open(const wchar_t* path) -> io::Result<ReadDir> {
   wchar_t pattern[MAX_PATH + 4] = {};
   wcscat_s(pattern, path);
   wcscat_s(pattern, L"\\*");
@@ -105,43 +109,35 @@ auto open_dir(const wchar_t* path) -> io::Result<ReadDir*> {
     return io::last_os_error();
   }
 
-  auto res = new ReadDir{
-      .handle = handle,
-      .entry = {._path = {}, ._attr = data.dwFileAttributes},
-  };
-  wcscpy_s(res->entry._path, pattern);
-  return Ok{res};
+  const auto attr = data.dwFileAttributes;
+  const auto size = combine_u64(data.nFileSizeHigh, data.nFileSizeLow);
+  auto res = ReadDir{handle, {.path = {}, .attr = attr, .size = size}};
+  wcscpy_s(res._entry.path, pattern);
+  return res;
 }
 
-auto close_dir(ReadDir* dir) -> io::Result<> {
-  if (dir == nullptr) {
-    return Ok{};
+auto ReadDir::close() -> io::Result<> {
+  if (_handle != nullptr) {
+    ::FindClose(_handle);
   }
-
-  if (dir->handle != nullptr) {
-    ::FindClose(dir->handle);
-  }
-
-  delete dir;
 
   return Ok{};
 }
 
-auto read_dir(ReadDir* dir) -> Option<DirEntry> {
-  if (dir == nullptr) {
-    return {};
-  }
-  if (dir->handle == nullptr || dir->handle == INVALID_HANDLE_VALUE) {
+auto ReadDir::next() -> Option<DirEntry> {
+  if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
     return {};
   }
 
   WIN32_FIND_DATAW data{};
-  if (!::FindNextFileW(dir->handle, &data)) {
+  if (!::FindNextFileW(_handle, &data)) {
     return {};
   }
 
-  auto entry = DirEntry{._path = {}, ._attr = data.dwFileAttributes};
-  wcscat_s(entry._path, data.cFileName);
+  const auto attr = data.dwFileAttributes;
+  const auto size = combine_u64(data.nFileSizeHigh, data.nFileSizeLow);
+  auto entry = DirEntry{.path = {}, .attr = attr, .size = size};
+  wcscat_s(entry.path, data.cFileName);
   return entry;
 }
 

@@ -5,15 +5,14 @@ namespace sfc::sys::windows {
 
 static constexpr u32 BUF_SIZE = 1024U;
 
-static auto make_string(const wchar_t* buf, u32 len) -> String {
-  const auto wstr = Slice{(const u16*)buf, len};
-  return String::from_utf16(wstr);
+static auto make_string(Slice<const wchar_t> wstr) -> String {
+  return String::from_utf16({(const u16*)wstr._ptr, wstr._len});
 }
 
 auto getenv(const wchar_t* key) -> String {
   wchar_t buf[BUF_SIZE];
   const auto len = ::GetEnvironmentVariableW(key, buf, BUF_SIZE);
-  return make_string(buf, len);
+  return make_string({buf, len});
 }
 
 auto setenv(const wchar_t* key, const wchar_t* val) -> bool {
@@ -29,25 +28,25 @@ auto unsetenv(const wchar_t* key) -> bool {
 auto home_dir() -> String {
   wchar_t buf[BUF_SIZE];
   const auto len = ::GetEnvironmentVariableW(L"USERPROFILE", buf, BUF_SIZE);
-  return make_string(buf, len);
+  return make_string({buf, len});
 }
 
 auto temp_dir() -> String {
   wchar_t buf[BUF_SIZE];
   const auto len = ::GetTempPathW(BUF_SIZE, buf);
-  return make_string(buf, len);
+  return make_string({buf, len});
 }
 
 auto current_exe() -> String {
   wchar_t buf[BUF_SIZE];
   const auto len = ::GetModuleFileNameW(nullptr, buf, BUF_SIZE);
-  return make_string(buf, len);
+  return make_string({buf, len});
 }
 
 auto getcwd() -> String {
   wchar_t buf[BUF_SIZE];
   const auto len = ::GetCurrentDirectoryW(BUF_SIZE, buf);
-  return make_string(buf, len);
+  return make_string({buf, len});
 }
 
 auto chdir(const wchar_t* path) -> bool {

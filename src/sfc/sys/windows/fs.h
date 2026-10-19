@@ -23,14 +23,21 @@ struct FileAttr {
 };
 
 struct DirEntry {
-  wchar_t _path[260] = {};
-  u32 _attr = 0;
-  usize _size = 0;
+  wchar_t path[260] = {};
+  u32 attr = 0;
+  usize size = 0;
 };
 
 struct ReadDir {
-  void* handle = nullptr;
-  DirEntry entry = {{}, {}};
+  void* _handle = nullptr;
+  DirEntry _entry = {{}, 0, 0};
+
+ public:
+  static auto open(const wchar_t* path) -> io::Result<ReadDir>;
+
+ public:
+  auto close() -> io::Result<>;
+  auto next() -> Option<DirEntry>;
 };
 
 auto open(const wchar_t* path, fs::OpenOptions opts) -> io::Result<RawFd>;
@@ -42,9 +49,5 @@ auto unlink(const wchar_t* path) -> io::Result<>;
 auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<>;
 auto mkdir(const wchar_t* path) -> io::Result<>;
 auto rmdir(const wchar_t* path) -> io::Result<>;
-
-auto open_dir(const wchar_t* path) -> io::Result<ReadDir*>;
-auto close_dir(ReadDir* dir) -> io::Result<>;
-auto read_dir(ReadDir* dir) -> Option<DirEntry>;
 
 }  // namespace sfc::sys::windows

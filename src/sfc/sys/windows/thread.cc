@@ -18,8 +18,6 @@ static unsigned __stdcall start_routine(void* p) {
   return 0;
 }
 
-Thread::Thread(void* handle) noexcept : _handle{handle} {}
-
 auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
   auto data = new ThreadData{mem::move(obj)};
 

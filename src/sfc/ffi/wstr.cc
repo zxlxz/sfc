@@ -3,6 +3,8 @@
 
 namespace sfc::ffi {
 
+using chr::U16Chars;
+
 auto wstrlen(const wchar_t* s) -> usize {
   if (s == nullptr) {
     return 0;
@@ -41,14 +43,9 @@ auto WCStr::to_string() const -> String {
 }
 
 auto WCString::from_str(Str s) -> WCString {
-  if (s.is_empty()) {
-    return {};
-  }
-
-  auto wcstr = WCString{};
-  wcstr._buf.reserve(s.len());
-  s.chars().for_each([&](char32_t ch) { wcstr.push(ch); });
-  return wcstr;
+  auto res = WCString{};
+  res.push_str(s);
+  return res;
 }
 
 auto WCString::as_ptr() const -> const wchar_t* {
@@ -66,9 +63,8 @@ void WCString::push(char32_t c) {
 
   if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
     u16 buf[2] = {};
-    const auto u16_str = chr::encode_utf16(buf, c);
-    const auto u16_len = u16_str._len;
-    _buf.extend_from_slice({(wchar_t*)buf, u16_len});
+    const auto u16s = chr::encode_utf16(buf, c);
+    _buf.extend_from_slice({(const wchar_t*)u16s._ptr, u16s._len});
   }
 
   _buf.push(0);

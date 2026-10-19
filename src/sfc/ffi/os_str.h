@@ -9,8 +9,8 @@
 namespace sfc::ffi {
 
 #ifdef _WIN32
-using OsStr = U16Str;
-using OsString = U16String;
+using OsStr = WCStr;
+using OsString = WCString;
 #else
 using OsStr = CStr;
 using OsString = CString;

@@ -5,18 +5,20 @@
 
 namespace sfc::sys::windows {
 
+using chr::U16Chars;
+
 template <class R>
 struct WBufReader {
   static constexpr usize BUF_LEN = 256U;
   R& _inn;
-  wchar_t _buf[BUF_LEN] = {};
-  ffi::WChars _wchars = {_buf, 0};
+  u16 _buf[BUF_LEN] = {};
+  U16Chars _rem = {{}, {_buf, 0}};
 
  public:
   auto read_char() -> io::Result<char32_t> {
     _TRY(this->fill_buf());
 
-    const auto ch = _wchars.next();
+    const auto ch = _rem.next();
     if (!ch) {
       return io::Error::UnexpectedEof;
     }
@@ -25,16 +27,17 @@ struct WBufReader {
 
  private:
   auto fill_buf() -> io::Result<> {
-    if (_wchars.len() > 0) {
+    auto& buf = _rem._buf;
+    if (buf._len > 0) {
       return Ok{};
     }
 
-    const auto nread = _TRY(_inn.readw({_buf, BUF_LEN}));
+    const auto nread = _TRY(_inn.read_u16({_buf, BUF_LEN}));
     if (nread == 0) {
       return io::Error::UnexpectedEof;
     }
 
-    _wchars = {_buf, nread};
+    buf = {_buf, nread};
     return Ok{};
   }
 };
@@ -44,21 +47,21 @@ struct WBufWriter {
   static constexpr usize BUF_LEN = 256U;
 
   W& _inn;
-  wchar_t _buf[BUF_LEN] = {};
-  usize _len{0};
+  u16 _buf[BUF_LEN] = {};
+  usize _len = 0;
 
  public:
   auto write_char(char32_t ch) -> io::Result<> {
     if (_len + 2 >= BUF_LEN) {
       _TRY(flush());
     }
-    const auto wstr = ffi::encode_wide({_buf + _len, BUF_LEN - _len}, ch);
-    _len += wstr._len;
+    const auto rem = chr::encode_utf16({_buf + _len, BUF_LEN - _len}, ch);
+    _len += rem._len;
     return Ok{};
   }
 
   auto flush() -> io::Result<> {
-    _TRY(_inn.writew({_buf, _len}));
+    _TRY(_inn.write_u16({_buf, _len}));
     _len = 0;
     return Ok{};
   }
@@ -155,7 +158,7 @@ auto StdIo::flush() -> io::Result<> {
   return Ok{};
 }
 
-auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
+auto StdIo::read_u16(Slice<u16> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
@@ -166,7 +169,7 @@ auto StdIo::readw(Slice<wchar_t> buf) -> io::Result<usize> {
   return usize{nret};
 }
 
-auto StdIo::writew(Slice<const wchar_t> buf) -> io::Result<usize> {
+auto StdIo::write_u16(Slice<const u16> buf) -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
