@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dirent.h>
+
 #include "sfc/core.h"
 #include "sfc/ffi/os_str.h"
 
@@ -29,12 +31,7 @@ struct DirEntry {
 };
 
 struct ReadDir {
-#ifdef _DIRENT_H_
-  using dir_t = DIR*;
-#else
-  using dir_t = void*;
-#endif
-  dir_t _dir = nullptr;
+  DIR* _dir = nullptr;
 
  public:
   static auto open(const char* path) -> io::Result<ReadDir>;
