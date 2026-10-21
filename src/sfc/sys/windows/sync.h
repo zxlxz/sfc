@@ -1,13 +1,21 @@
 #pragma once
 
-#include <Windows.h>
-
 #include "sfc/core.h"
+
+#ifndef _WINDOWS_
+struct _RTL_SRWLOCK {
+  void* Ptr;
+};
+
+struct _RTL_CONDITION_VARIABLE {
+  void* Ptr;
+};
+#endif
 
 namespace sfc::sys::windows {
 
 struct Mutex {
-  SRWLOCK _raw;
+  _RTL_SRWLOCK _raw;
 
  public:
   void init();
@@ -20,7 +28,7 @@ struct Mutex {
 };
 
 struct Condvar {
-  CONDITION_VARIABLE _raw;
+  _RTL_CONDITION_VARIABLE _raw;
 
  public:
   void init();

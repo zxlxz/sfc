@@ -26,10 +26,10 @@ struct Builder {
  public:
   auto spawn(auto f) -> JoinHandle {
     auto box_fn = Box<void()>::new_(mem::move(f));
-    return spawn_imp(mem::move(box_fn));
+    return this->spawn_unchecked(mem::move(box_fn));
   }
 
-  auto spawn_imp(Box<void()>) -> JoinHandle;
+  auto spawn_unchecked(Box<void()>) -> JoinHandle;
 };
 
 class Scope {

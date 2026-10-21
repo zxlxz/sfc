@@ -9,30 +9,28 @@ struct ThreadData {
   Box<void()> _fun;
 };
 
-static unsigned __stdcall start_routine(void* p) {
+static auto thread_start(void* p) -> DWORD {
   auto data = ptr::cast<ThreadData>(p);
   auto func = mem::move(data->_fun);
   delete data;
-
   (func)();
   return 0;
 }
 
-auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
+auto Thread::new_(usize stack_size, Box<void()> obj) -> Thread {
   auto data = new ThreadData{mem::move(obj)};
 
-  const auto thrd = ::_beginthreadex(nullptr, unsigned(stack_size), &start_routine, data, 0, nullptr);
-  if (thrd == 0) {
+  const auto handle = ::CreateThread(nullptr, stack_size, &thread_start, data, 0, nullptr);
+  if (handle == nullptr || handle == INVALID_HANDLE_VALUE) {
     delete data;
     return {};
   }
 
-  const auto handle = reinterpret_cast<void*>(thrd);
   return Thread{handle};
 }
 
 void Thread::join() {
-  if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
+  if (_handle == nullptr) {
     return;
   }
 

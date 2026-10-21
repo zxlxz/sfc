@@ -39,8 +39,8 @@ void JoinHandle::join() {
   _inn = nullptr;
 }
 
-auto Builder::spawn_imp(Box<void()> fun) -> JoinHandle {
-  auto thrd = sys::Thread::spawn(stack_size, mem::move(fun));
+auto Builder::spawn_unchecked(Box<void()> fun) -> JoinHandle {
+  auto thrd = sys::Thread::new_(stack_size, mem::move(fun));
   auto inn = JoinHandle::Inn{._native = mem::move(thrd)};
   return JoinHandle{mem::move(inn)};
 }

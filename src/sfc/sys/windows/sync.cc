@@ -1,12 +1,8 @@
 #include <Windows.h>
 
-#define _SFC_SYNC_IMP_
 #include "sfc/sys/windows/sync.h"
 
 namespace sfc::sys::windows {
-
-static_assert(sizeof(SRWLOCK) == sizeof(Mutex::_raw));
-static_assert(sizeof(CONDITION_VARIABLE) == sizeof(Condvar::_raw));
 
 void Mutex::init() {
   ::InitializeSRWLock(&_raw);

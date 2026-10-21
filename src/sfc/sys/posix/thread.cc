@@ -13,11 +13,10 @@ struct ThreadData {
   Box<void()> _fun;
 };
 
-static void* start_routine(void* p) {
+static void* thread_start(void* p) {
   auto data = ptr::cast<ThreadData>(p);
   auto func = mem::move(data->_fun);
   delete data;
-
   (func)();
   return nullptr;
 }
@@ -34,7 +33,7 @@ void Thread::detach() {
   sfc::assert_(err == 0, "Thread::detach: pthread_detach failed, err={}", err);
 }
 
-auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
+auto Thread::new_(usize stack_size, Box<void()> obj) -> Thread {
   auto attr = pthread_attr_t{};
   ::pthread_attr_init(&attr);
   ::pthread_attr_setstacksize(&attr, stack_size);
@@ -42,7 +41,7 @@ auto Thread::spawn(usize stack_size, Box<void()> obj) -> Thread {
   auto data = new ThreadData{mem::move(obj)};
 
   auto thr = pthread_t{};
-  const auto err = ::pthread_create(&thr, &attr, &start_routine, data);
+  const auto err = ::pthread_create(&thr, &attr, &thread_start, data);
   ::pthread_attr_destroy(&attr);
 
   if (err != 0) {

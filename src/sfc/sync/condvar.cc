@@ -1,4 +1,3 @@
-#define _SFC_SYNC_IMP_
 #include "sfc/sys/sync.h"
 #include "sfc/sync/condvar.h"
 
@@ -19,7 +18,6 @@ Condvar::~Condvar() noexcept {
 
   _inn->destroy();
   delete _inn;
-  _inn = nullptr;
 }
 
 Condvar::Condvar(Condvar&&) noexcept = default;

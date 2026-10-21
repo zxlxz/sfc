@@ -8,7 +8,7 @@ struct Thread {
   void* _handle{nullptr};
 
  public:
-  static auto spawn(usize stack_size, Box<void()> f) -> Thread;
+  static auto new_(usize stack_size, Box<void()> f) -> Thread;
 
  public:
   void join();

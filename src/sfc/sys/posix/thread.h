@@ -1,17 +1,20 @@
 #pragma once
 
-#include <pthread.h>
 #include "sfc/alloc.h"
 
-struct _opaque_pthread_;
+struct _opaque_pthread_t;
 
 namespace sfc::sys::posix {
 
 struct Thread {
-  pthread_t _handle;
+#ifdef __APPLE__
+  struct _opaque_pthread_t* _handle;
+#else
+  unsigned long _handle;
+#endif
 
  public:
-  static auto spawn(usize stack_size, Box<void()> f) -> Thread;
+  static auto new_(usize stack_size, Box<void()> f) -> Thread;
   void join();
   void detach();
 };
