@@ -5,7 +5,7 @@
 namespace sfc::sync {
 
 class Mutex {
-  struct Inn;
+  class Inn;
   Inn* _inn{nullptr};
 
  public:
@@ -21,7 +21,7 @@ class Mutex {
 };
 
 class ReentrantLock {
-  struct Inn;
+  class Inn;
   Inn* _inn{nullptr};
 
  public:

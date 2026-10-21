@@ -5,11 +5,30 @@
 
 namespace sfc::sys::posix {
 
-void Mutex::init() {
+class CondAttr {
+  friend class Condvar;
+  pthread_condattr_t _raw;
+
+ public:
+  explicit CondAttr() {
+    (void)::pthread_condattr_init(&_raw);
+
+#ifndef __APPLE__
+    (void)::pthread_condattr_setclock(&_raw, CLOCK_MONOTONIC);
+#endif
+  }
+
+  ~CondAttr() {
+    (void)::pthread_condattr_destroy(&_raw);
+  }
+
+};
+
+Mutex::Mutex() {
   (void)::pthread_mutex_init(&_raw, nullptr);
 }
 
-void Mutex::destroy() {
+Mutex::~Mutex() {
   (void)::pthread_mutex_destroy(&_raw);
 }
 
@@ -29,17 +48,12 @@ auto Mutex::try_lock() -> bool {
   return err == 0;
 }
 
-void Condvar::init() {
-  auto attr = pthread_condattr_t{};
-  (void)::pthread_condattr_init(&attr);
-#ifndef __APPLE__
-  (void)::pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-#endif
-  (void)::pthread_cond_init(&_raw, &attr);
-  (void)::pthread_condattr_destroy(&attr);
+Condvar::Condvar() {
+  auto attr = CondAttr{};
+  (void)::pthread_cond_init(&_raw, &attr._raw);
 }
 
-void Condvar::destroy() {
+Condvar::~Condvar() {
   (void)::pthread_cond_destroy(&_raw);
 }
 

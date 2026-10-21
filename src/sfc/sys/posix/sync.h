@@ -5,12 +5,18 @@
 
 namespace sfc::sys::posix {
 
-struct Mutex {
+class Condvar;
+
+class Mutex {
+  friend class Condvar;
   pthread_mutex_t _raw;
 
  public:
-  void init();
-  void destroy();
+  explicit Mutex();
+  ~Mutex();
+
+  Mutex(const Mutex&) = delete;
+  Mutex& operator=(const Mutex&) = delete;
 
  public:
   void lock();
@@ -18,12 +24,15 @@ struct Mutex {
   auto try_lock() -> bool;
 };
 
-struct Condvar {
+class Condvar {
   pthread_cond_t _raw;
 
  public:
-  void init();
-  void destroy();
+  explicit Condvar();
+  ~Condvar();
+
+  Condvar(const Condvar&) = delete;
+  Condvar& operator=(const Condvar&) = delete;
 
  public:
   void notify_one();

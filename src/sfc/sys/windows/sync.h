@@ -14,12 +14,18 @@ struct _RTL_CONDITION_VARIABLE {
 
 namespace sfc::sys::windows {
 
-struct Mutex {
+class Condvar;
+
+class Mutex {
+  friend class Condvar;
   _RTL_SRWLOCK _raw;
 
  public:
-  void init();
-  void destroy();
+  explicit Mutex();
+  ~Mutex();
+
+  Mutex(const Mutex&) = delete;
+  Mutex& operator=(const Mutex&) = delete;
 
  public:
   void lock();
@@ -27,12 +33,15 @@ struct Mutex {
   auto try_lock() -> bool;
 };
 
-struct Condvar {
+class Condvar {
   _RTL_CONDITION_VARIABLE _raw;
 
  public:
-  void init();
-  void destroy();
+  explicit Condvar();
+  ~Condvar();
+
+  Condvar(const Condvar&) = delete;
+  Condvar& operator=(const Condvar&) = delete;
 
  public:
   void notify_one();

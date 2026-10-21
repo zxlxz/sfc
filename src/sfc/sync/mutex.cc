@@ -17,23 +17,54 @@ struct Tid {
   }
 };
 
-struct Mutex::Inn : sys::Mutex {};
+class Mutex::Inn : public sys::Mutex {};
 
-struct ReentrantLock::Inn : sys::Mutex {
+class ReentrantLock::Inn {
+  sys::Mutex _mutex;
   Tid _owner{0};
-  u32 _count{0};
+  u32 _lock_count{0};
+
+ public:
+  void lock() {
+    const auto current_id = thread::current_id();
+    if (_owner.contains(current_id)) {
+      _lock_count += 1;
+    } else {
+      _mutex.lock();
+      _owner.set(current_id);
+      _lock_count = 1;
+    }
+  }
+
+  bool try_lock() {
+    const auto current_id = thread::current_id();
+    if (_owner.contains(current_id)) {
+      _lock_count += 1;
+    } else if (_mutex.try_lock()) {
+      _owner.set(current_id);
+      _lock_count = 1;
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  void unlock() {
+    _lock_count -= 1;
+    if (_lock_count == 0) {
+      _owner.set(0);
+      _mutex.unlock();
+    }
+  }
 };
 
-Mutex::Mutex() noexcept : _inn{new Inn{}} {
-  _inn->init();
-}
+Mutex::Mutex() noexcept : _inn{new Inn()} {}
 
 Mutex::~Mutex() noexcept {
   if (_inn == nullptr) {
     return;
   }
 
-  _inn->destroy();
   delete _inn;
   _inn = nullptr;
 }
@@ -74,16 +105,13 @@ auto Mutex::Guard::inner() const -> Inn& {
   return *_inn;
 }
 
-ReentrantLock::ReentrantLock() noexcept : _inn{new Inn{}} {
-  _inn->init();
-}
+ReentrantLock::ReentrantLock() noexcept : _inn{new Inn{}} {}
 
 ReentrantLock::~ReentrantLock() noexcept {
   if (_inn == nullptr) {
     return;
   }
 
-  _inn->destroy();
   delete _inn;
   _inn = nullptr;
 }
@@ -98,31 +126,15 @@ ReentrantLock& ReentrantLock::operator=(ReentrantLock&& other) noexcept {
 }
 
 auto ReentrantLock::lock() const noexcept -> Guard {
-  const auto current_id = thread::current_id();
-  if (_inn->_owner.contains(current_id)) {
-    _inn->_count += 1;
-    return Guard{*_inn};
-  }
-
   _inn->lock();
-  _inn->_owner.set(current_id);
-  _inn->_count = 1;
   return Guard{*_inn};
 }
 
 auto ReentrantLock::try_lock() const noexcept -> Option<Guard> {
-  const auto current_id = thread::current_id();
-  if (_inn->_owner.contains(current_id)) {
-    _inn->_count += 1;
-    return Guard{*_inn};
-  }
-
-  if (!_inn->try_lock()) {
+  const auto ret = _inn->try_lock();
+  if (!ret) {
     return None{};
   }
-
-  _inn->_owner.set(current_id);
-  _inn->_count = 1;
   return Guard{*_inn};
 }
 
@@ -135,11 +147,7 @@ ReentrantLock::Guard::~Guard() noexcept {
     return;
   }
 
-  _inn->_count -= 1;
-  if (_inn->_count == 0) {
-    _inn->_owner.set(0);
-    _inn->unlock();
-  }
+  _inn->unlock();
 }
 
 }  // namespace sfc::sync

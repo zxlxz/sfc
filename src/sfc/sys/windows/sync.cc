@@ -4,11 +4,11 @@
 
 namespace sfc::sys::windows {
 
-void Mutex::init() {
+Mutex::Mutex() {
   ::InitializeSRWLock(&_raw);
 }
 
-void Mutex::destroy() {}
+Mutex::~Mutex() {}
 
 void Mutex::lock() {
   ::AcquireSRWLockExclusive(&_raw);
@@ -23,11 +23,11 @@ auto Mutex::try_lock() -> bool {
   return bool(ret);
 }
 
-void Condvar::init() {
+Condvar::Condvar() {
   ::InitializeConditionVariable(&_raw);
 }
 
-void Condvar::destroy() {}
+Condvar::~Condvar() {}
 
 void Condvar::notify_one() {
   ::WakeConditionVariable(&_raw);

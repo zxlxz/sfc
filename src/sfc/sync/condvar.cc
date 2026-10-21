@@ -3,20 +3,17 @@
 
 namespace sfc::sync {
 
-struct Mutex::Inn : sys::Mutex {};
+class Mutex::Inn : public sys::Mutex {};
 
-struct Condvar::Inn : sys::Condvar {};
+class Condvar::Inn : public sys::Condvar {};
 
-Condvar::Condvar() noexcept : _inn{new Inn{}} {
-  _inn->init();
-}
+Condvar::Condvar() noexcept : _inn{new Inn()} {}
 
 Condvar::~Condvar() noexcept {
   if (_inn == nullptr) {
     return;
   }
 
-  _inn->destroy();
   delete _inn;
 }
 

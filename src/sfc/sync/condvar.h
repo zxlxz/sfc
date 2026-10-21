@@ -6,7 +6,7 @@
 namespace sfc::sync {
 
 class Condvar {
-  struct Inn;
+  class Inn;
   Inn* _inn{nullptr};
 
  public:
