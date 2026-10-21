@@ -83,42 +83,51 @@ class [[nodiscard]] Box {
 
 template <class R, class... T>
 class [[nodiscard]] Box<R(T...)> {
-  using Inn = ops::Fn<R(T...)>;
-  Inn _inn;
-  void (*_drop)(void*);
+  struct VTbl {
+    R (*call)(void*, T&&...);
+    void (*dtor)(void*);
+  };
+
+  template <class X>
+  static constexpr auto vtbl = VTbl{
+      .call = [](void* x, T&&... u) -> R { return (*(X*)(x))((T&&)(u)...); },
+      .dtor = [](void* x) { delete (X*)(x); },
+  };
+
+  const VTbl* _vptr;
+  void* _impl;
 
  public:
-  Box() noexcept : _inn{nullptr, nullptr}, _drop{nullptr} {}
+  Box() noexcept : _vptr{nullptr}, _impl{nullptr} {}
 
   ~Box() noexcept {
-    if (!_drop || !_inn._self) return;
-    (_drop)(_inn._self);
+    if (_impl == nullptr) {
+      return;
+    }
+    (_vptr->dtor)(_impl);
   }
 
-  Box(Box&& other) noexcept : _inn{other._inn}, _drop{other._drop} {
-    other._inn._self = nullptr;
-    other._drop = nullptr;
-  }
+  Box(Box&& other) noexcept : _vptr{mem::take(other._vptr)}, _impl{mem::take(other._impl)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      mem::swap(_inn, other._inn);
-      mem::swap(_drop, other._drop);
+      mem::swap(_vptr, other._vptr);
+      mem::swap(_impl, other._impl);
     }
     return *this;
   }
 
-  template <class Impl>
-  static auto new_(Impl impl) noexcept -> Box {
+  template <class X>
+  static auto new_(X impl) noexcept -> Box {
     auto res = Box{};
-    res._inn = Inn(*new Impl{mem::move(impl)});
-    res._drop = [](void* p) { delete (Impl*)(p); };
+    res._vptr = &Box::vtbl<X>;
+    res._impl = new X{mem::move(impl)};
     return res;
   }
 
  public:
   auto operator()(T... args) -> R {
-    return _inn((T&&)(args)...);
+    return (_vptr->call)(_impl, (T&&)(args)...);
   }
 };
 
