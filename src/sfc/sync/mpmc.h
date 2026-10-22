@@ -6,8 +6,7 @@ namespace sfc::sync::mpmc {
 
 template <class T>
 class Channel {
-  using Queue = RingBuf<T>;
-  Queue _queue{};
+  RingBuf<T> _ringbuf{};
   Atomic<bool> _closed{true};
 
  public:
@@ -21,9 +20,12 @@ class Channel {
   Channel& operator=(Channel&&) noexcept = default;
 
   static auto with_capacity(usize capacity) -> Channel {
-    if (capacity == 0) return {};
+    if (capacity == 0) {
+      return {};
+    }
+
     auto res = Channel{};
-    res._queue = Queue::with_capacity(capacity);
+    res._ringbuf = RingBuf<T>::with_capacity(capacity);
     res._closed.store(false);
     return res;
   }
@@ -38,35 +40,42 @@ class Channel {
   }
 
   auto send(T val) noexcept -> Option<T> {
-    const auto ret = this->try_send(val);
-    if (ret) {
-      return {};
+    while (true) {
+      if (this->is_closed()) {
+        break;
+      }
+      if (_ringbuf.try_push(val)) {
+        return {};
+      }
+      thread::yield_now();
     }
-    return Option{mem::move(val)};
+    return mem::move(val);
   }
 
   auto recv() noexcept -> Option<T> {
-    while (!this->is_closed()) {
-      if (auto opt = _queue.pop()) {
+    while (true) {
+      if (auto opt = _ringbuf.pop()) {
         return opt;
       }
-      sfc::thread::yield_now();
+      if (this->is_closed()) {
+        break;
+      }
+      thread::yield_now();
     }
     return {};
   }
 
-  auto try_send(T& val) noexcept -> bool {
-    while (!this->is_closed()) {
-      if (_queue.try_push(val)) {
-        return true;
+  auto try_send(T val) noexcept -> Option<T> {
+    if (!this->is_closed()) {
+      if (_ringbuf.try_push(val)) {
+        return {};
       }
-      sfc::thread::yield_now();
     }
-    return false;
+    return mem::move(val);
   }
 
   auto try_recv() noexcept -> Option<T> {
-    return _queue.pop();
+    return _ringbuf.pop();
   }
 };
 
