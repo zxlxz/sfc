@@ -7,16 +7,32 @@ namespace sfc::thread {
 
 struct JoinHandle::Inn {
   sys::Thread _native;
+
+ public:
+  explicit Inn(usize stack_size, Box<void()> f) {
+    _native = sys::Thread::new_(stack_size, mem::move(f));
+  }
+
+  ~Inn() {}
+
+ public:
+  void detach() {
+    _native.detach();
+  }
+
+  void join() {
+    _native.join();
+  }
 };
 
-JoinHandle::JoinHandle(Inn inn) noexcept : _inn{new Inn{inn}} {}
+JoinHandle::JoinHandle(Inn inn) noexcept : _inn{new Inn{mem::move(inn)}} {}
 
 JoinHandle::~JoinHandle() noexcept {
   if (_inn == nullptr) {
     return;
   }
 
-  _inn->_native.detach();
+  _inn->detach();
   delete _inn;
 }
 
@@ -33,16 +49,15 @@ void JoinHandle::join() {
   if (_inn == nullptr) {
     return;
   }
-  _inn->_native.join();
 
+  _inn->join();
   delete _inn;
   _inn = nullptr;
 }
 
 auto Builder::spawn_unchecked(Box<void()> fun) -> JoinHandle {
-  auto thrd = sys::Thread::new_(stack_size, mem::move(fun));
-  auto inn = JoinHandle::Inn{._native = mem::move(thrd)};
-  return JoinHandle{mem::move(inn)};
+  const auto inn = JoinHandle::Inn{stack_size, mem::move(fun)};
+  return JoinHandle{inn};
 }
 
 Scope::Scope() {}

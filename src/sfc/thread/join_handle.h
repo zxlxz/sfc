@@ -10,7 +10,7 @@ class JoinHandle {
   Inn* _inn;
 
  public:
-  explicit JoinHandle(Inn inn) noexcept;
+  JoinHandle(Inn inn) noexcept;
   ~JoinHandle() noexcept;
 
   JoinHandle(JoinHandle&& other) noexcept;
