@@ -116,9 +116,9 @@ auto String::pop() noexcept -> Option<char32_t> {
   }
 
   auto chars = this->as_str().chars();
-  const auto ret = chars.next_back();
+  const auto ch = chars.next_back();
   _buf.truncate(chars.len());
-  return ret;
+  return ch;
 }
 
 void String::push(char32_t c) noexcept {
