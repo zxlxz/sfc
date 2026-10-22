@@ -285,46 +285,60 @@ struct Iter : iter::Iterator<T&> {
 template <class T>
 struct Windows : iter::Iterator<Slice<T>> {
   using Item = Slice<T>;
-
-  T* _ptr;
-  T* _end;
-  usize _len;
+  Slice<T> _v;
+  usize _size;
 
  public:
-  Windows(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
+  Windows(Slice<T> v, usize size) noexcept : _v{v}, _size{size} {}
 
   auto next() noexcept -> Option<Item> {
-    if (_ptr + _len > _end) return {};
-    _ptr += 1;
-    return Item{_ptr - 1, _len};
+    if (_v._len < _size || _size == 0) {
+      return {};
+    }
+    const auto res = Slice{_v._ptr, _size};
+    _v = Slice{_v._ptr + 1, _v._len - 1};
+    return res;
   }
 
   auto next_back() noexcept -> Option<Item> {
-    if (_ptr + _len > _end) return {};
-    _end -= 1;
-    return Item{_end - _len + 1, _len};
+    if (_v._len < _size || _size == 0) {
+      return {};
+    }
+    const auto res = Slice{_v._ptr + _v._len - _size, _size};
+    _v = Slice{_v._ptr, _v._len - 1};
+    return res;
   }
 };
 
 template <class T>
 struct Chunks : iter::Iterator<Slice<T>> {
   using Item = Slice<T>;
-  T* _ptr;
-  T* _end;
-  usize _len;
+  Slice<T> _v;
+  usize _chunk_size;
 
  public:
-  Chunks(Slice<T> v, usize len) noexcept : _ptr{v._ptr}, _end{v._ptr + v._len}, _len{len} {}
+  Chunks(Slice<T> v, usize size) noexcept : _v{v}, _chunk_size{size} {}
 
   auto next() noexcept -> Option<Item> {
-    if (_ptr >= _end || _len == 0) {  // _len==0 is invalid
+    if (_v._len == 0 || _chunk_size == 0) {
       return {};
     }
 
-    const auto rem = usize(_end - _ptr);
-    const auto cnt = rem < _len ? rem : _len;
-    _ptr += cnt;
-    return Item{_ptr - cnt, cnt};
+    const auto chunksz = _v._len < _chunk_size ? _v._len : _chunk_size;
+    const auto [fst, snd] = _v.split_at(chunksz);
+    _v = snd;
+    return fst;
+  }
+
+  auto next_back() noexcept -> Option<Item> {
+    if (_v._len == 0 || _chunk_size == 0) {
+      return {};
+    }
+
+    const auto chunksz = _v._len < _chunk_size ? _v._len : _chunk_size;
+    const auto [fst, snd] = _v.split_at(_v._len - chunksz);
+    _v = fst;
+    return snd;
   }
 };
 
