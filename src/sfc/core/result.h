@@ -69,19 +69,23 @@ class [[nodiscard]] Result {
   }
 
   auto as_ok() const noexcept -> Option<const T&> {
-    return _tag == 0 ? Option<const T&>{_0} : Option<const T&>{};
+    if (_tag != 0) return {};
+    return _0;
   }
 
   auto as_err() const noexcept -> Option<const E&> {
-    return _tag == 1 ? Option<const E&>{_1} : Option<const E&>{};
+    if (_tag != 1) return {};
+    return _1;
   }
 
   auto as_ref() const -> Result<const T&, E> {
-    return _tag == 0 ? Result<const T&, E>{_0} : Result<const T&, E>{_1};
+    if (_tag == 0) return _0;
+    return _1;
   }
 
   auto as_mut() -> Result<T&, E> {
-    return _tag == 0 ? Result<T&, E>{_0} : Result<T&, E>{_1};
+    if (_tag == 0) return _0;
+    return _1;
   }
 
   auto unwrap_unchecked() noexcept -> T {
@@ -114,41 +118,49 @@ class [[nodiscard]] Result {
   }
 
   auto ok() && -> Option<T> {
-    return this->is_ok() ? Option<T>{mem::move(_0)} : Option<T>{};
+    if (this->is_ok()) return mem::move(_0);
+    return {};
   }
 
   auto err() && -> Option<E> {
-    return this->is_err() ? Option<E>{mem::move(_1)} : Option<E>{};
+    if (this->is_err()) return mem::move(_1);
+    return {};
   }
 
   template <class U>
   auto operator&(Result<U, E> res) && -> Result<U, E> {
-    return this->is_ok() ? Result<U, E>{mem::move(res._0)} : Result<U, E>{mem::move(_1)};
+    if (this->is_ok()) return mem::move(res);
+    return mem::move(_1);
   }
 
   template <class F>
   auto operator|(Result<T, F> res) && -> Result<T, F> {
-    return this->is_ok() ? Result<T, F>{mem::move(_0)} : mem::move(res);
+    if (this->is_err()) return mem::move(res);
+    return mem::move(_0);
   }
 
   template <class F, class ResultUE = FnOut<F, T>>
   auto and_then(F&& op) && -> ResultUE {
-    return this->is_ok() ? op(mem::move(_0)) : ResultUE{mem::move(_1)};
+    if (this->is_ok()) return op(mem::move(_0));
+    return mem::move(_1);
   }
 
   template <class O, class ResultTF = FnOut<O>>
   auto or_else(O&& op) && -> ResultTF {
-    return this->is_ok() ? ResultTF{mem::move(_0)} : op();
+    if (this->is_err()) return op();
+    return mem::move(_0);
   }
 
   template <class F, class U = FnOut<F, T>>
   auto map(F&& op) && -> Result<U, E> {
-    return this->is_ok() ? Result<U, E>{op(mem::move(_0))} : Result<U, E>{mem::move(_1)};
+    if (this->is_ok()) return op(mem::move(_0));
+    return mem::move(_1);
   }
 
   template <class O, class F = FnOut<O, E>>
   auto map_err(O&& op) && -> Result<T, F> {
-    return this->is_err() ? Result<T, F>{op(mem::move(_1))} : Result<T, F>{mem::move(_0)};
+    if (this->is_err()) return op(mem::move(_1));
+    return mem::move(_0);
   }
 
  public:
@@ -247,12 +259,12 @@ class [[nodiscard]] Result<T&, E> {
   template <class U>
   auto operator&(Result<U, E> res) -> Result<U, E> {
     if (this->is_ok()) return mem::move(res);
-    return Result<U, E>{_1};
+    return _1;
   }
 
   template <class F>
   auto operator|(Result<T&, F> res) -> Result<T&, F> {
-    if (this->is_ok()) return Result<T, F>{*_0};
+    if (this->is_ok()) return *_0;
     return res;
   }
 
@@ -264,20 +276,20 @@ class [[nodiscard]] Result<T&, E> {
 
   template <class O, class ResultTF = FnOut<O>>
   auto or_else(O&& op) -> ResultTF {
-    if (this->is_ok()) return ResultTF{*this->_0};
+    if (this->is_ok()) return _0;
     return op();
   }
 
   template <class F, class U = FnOut<F, T>>
   auto map(F&& op) -> Result<U, E> {
-    if (this->is_ok()) return Result<U, E>{op(*_0)};
-    return Result<U, E>{_1};
+    if (this->is_ok()) return op(*_0);
+    return _1;
   }
 
   template <class O, class F = FnOut<O, E>>
   auto map_err(O&& op) -> Result<T, F> {
-    if (this->is_err()) return Result<T, F>{op(_1)};
-    return Result<T, F>{*_0};
+    if (this->is_err()) return op(_1);
+    return *_0;
   }
 
  public:
@@ -317,6 +329,8 @@ using result::Result;
     }                                       \
     _res.unwrap_unchecked();                \
   })
+#else
+#error "compiler not supported for _TRY macro"
 #endif
 #endif
 

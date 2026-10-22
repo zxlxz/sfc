@@ -244,39 +244,47 @@ class Option<T&> {
   }
 
   auto unwrap_or(T& default_val) -> T& {
-    return this->is_some() ? *_1 : default_val;
+    if (this->is_some()) return *_1;
+    return default_val;
   }
 
   auto unwrap_or_else(auto&& f) -> T& {
-    return this->is_some() ? *_1 : f();
+    if (this->is_some()) return *_1;
+    return f();
   }
 
   template <class U>
   auto operator&(Option<U> optb) -> Option<U> {
-    return this->is_some() ? mem::move(optb) : Option<U>{};
+    if (this->is_some()) return mem::move(optb);
+    return {};
   }
 
   auto operator|(Option<T&> optb) && -> Option<T&> {
-    return this->is_some() ? *this : mem::move(optb);
+    if (this->is_some()) return *this;
+    return mem::move(optb);
   }
 
   template <class F, class OptionU = ops::FnOut<F, T&>>
   auto and_then(F&& op) -> OptionU {
-    return this->is_some() ? op(*_1) : OptionU{};
+    if (this->is_some()) return op(*_1);
+    return OptionU{};
   }
 
   auto or_else(auto&& f) -> Option<T&> {
-    return this->is_some() ? *this : f();
+    if (this->is_some()) return *this;
+    return f();
   }
 
   template <class F, class U = ops::FnOut<F, T&>>
   auto map(F&& f) -> Option<U> {
-    return this->is_some() ? Option<U>{f(*_1)} : Option<U>{};
+    if (this->is_some()) return Option<U>{f(*_1)};
+    return Option<U>{};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) -> U {
-    return this->is_some() ? f(*_1) : mem::move(default_val);
+    if (this->is_some()) return f(*_1);
+    return mem::move(default_val);
   }
 
  public:
@@ -287,14 +295,15 @@ class Option<T&> {
     return *_1 == *other;
   }
 
-  auto to_owned() -> Option<T> {
-    return this->is_some() ? Option<T>{*_1} : Option<T>{};
+  auto to_owned() const -> Option<T> {
+    if (this->is_none()) return {};
+    return T{*_1};
   }
 
   template <class E>
   auto ok_or(E err) -> result::Result<T&, E> {
     if (this->is_some()) return {*_1};
-    return {mem::move(err)};
+    return mem::move(err);
   }
 
   // trait: fmt::Display
