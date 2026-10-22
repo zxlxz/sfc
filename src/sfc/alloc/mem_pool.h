@@ -11,14 +11,17 @@ class Bucket;
 
 class [[nodiscard]] Pool {
   const usize _cap;
-  mutable sync::Mutex _mutex{};
+  const usize _align;
+
   usize _seq{0};
   usize _total_bytes{0};
   usize _free_bytes{0};
   List<Bucket> _buckets;
 
+  sync::Mutex _mutex{};
+
  public:
-  explicit Pool(usize cap) noexcept;
+  explicit Pool(usize cap, usize align = 64) noexcept;
   virtual ~Pool() noexcept;
 
   Pool(const Pool&) = delete;

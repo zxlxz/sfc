@@ -4,8 +4,6 @@
 
 namespace sfc::mem_pool {
 
-static constexpr auto kDefaultAlign = alignof(double);
-
 class Bucket {
   struct Node {
     void* ptr;
@@ -77,7 +75,7 @@ class Bucket {
   }
 };
 
-Pool::Pool(usize cap) noexcept : _cap{cap}, _buckets{} {}
+Pool::Pool(usize cap, usize align) noexcept : _cap{cap}, _align{align} {}
 
 Pool::~Pool() noexcept {}
 
@@ -138,7 +136,9 @@ auto Pool::alloc(usize size) -> void* {
   }
 
   this->recycling(false, size);
-  auto ptr = this->slow_alloc({size, kDefaultAlign});
+
+  const auto layout = Layout{size, _align};
+  auto ptr = this->slow_alloc(layout);
 
   // register
   if (ptr) {
@@ -169,7 +169,8 @@ auto Pool::recycling(bool force, usize cap) -> usize {
       break;
     }
 
-    this->slow_dealloc(block.ptr, {block.size, kDefaultAlign});
+    const auto layout = Layout{block.size, _align};
+    this->slow_dealloc(block.ptr, layout);
     _free_bytes -= block.size;
     _total_bytes -= block.size;
     amt += block.size;
