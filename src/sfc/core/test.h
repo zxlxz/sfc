@@ -20,6 +20,8 @@ void assert_(AssertCondition cond, const fmt::Fmts& fmts, const auto&... args) {
 }
 
 [[noreturn]] void assert_failed(SourceLoc loc, const auto& expr, const auto&... args) {
+  static_assert(sizeof...(args) <= 2, "assert_failed supports at most 2 additional arguments");
+
   if constexpr (sizeof...(args) == 0) {
     const auto fmts = fmt::Fmts{"assert failed: `{}`"};
     panic::panic_fmt(fmt::Args{fmts, expr}, loc);
