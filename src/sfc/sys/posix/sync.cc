@@ -10,11 +10,18 @@ class CondAttr {
   pthread_condattr_t _raw;
 
  public:
+#ifdef __APPLE__
+  static constexpr auto kClockId= CLOCK_REALTIME;
+#else
+  static constexpr auto kClockId= CLOCK_MONOTONIC;
+#endif
+
+ public:
   explicit CondAttr() {
     (void)::pthread_condattr_init(&_raw);
 
 #ifndef __APPLE__
-    (void)::pthread_condattr_setclock(&_raw, CLOCK_MONOTONIC);
+    (void)::pthread_condattr_setclock(&_raw, kClockId);
 #endif
   }
 
@@ -22,6 +29,8 @@ class CondAttr {
     (void)::pthread_condattr_destroy(&_raw);
   }
 
+  CondAttr(const CondAttr&) = delete;
+  CondAttr& operator=(const CondAttr&) = delete;
 };
 
 Mutex::Mutex() {
@@ -73,14 +82,8 @@ void Condvar::wait(Mutex& mtx) {
 }
 
 auto Condvar::wait_timeout(Mutex& mtx, time::Duration dur) -> bool {
-#ifdef __APPLE__
-  static constexpr auto kClock = CLOCK_REALTIME;
-#else
-  static constexpr auto kClock = CLOCK_MONOTONIC;
-#endif
-
   struct timespec sys_time{};
-  if (::clock_gettime(kClock, &sys_time) == -1) {
+  if (::clock_gettime(CondAttr::kClockId, &sys_time) == -1) {
     sfc::assert_(false, "sync::Condvar::wait_timeout: clock_gettime failed, err={}", errno);
   }
 
