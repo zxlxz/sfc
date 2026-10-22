@@ -66,3 +66,7 @@ inline auto take(T& dst) noexcept -> T {
 }
 
 }  // namespace sfc::mem
+
+namespace sfc {
+using mem::Layout;
+}

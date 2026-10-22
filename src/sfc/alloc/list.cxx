@@ -99,6 +99,22 @@ SFC_TEST(reserve) {
   sfc::assert_ge(v.capacity(), 16U);
 }
 
+SFC_TEST(shrink) {
+  auto v = List<int>::with_capacity(10);
+  sfc::assert_eq(v.capacity(), 10U);
+  v.shrink_to(5);
+  sfc::assert_ge(v.capacity(), 5U);
+}
+
+SFC_TEST(shrink_to_fit) {
+  auto v = List<int>::with_capacity(10);
+  sfc::assert_eq(v.capacity(), 10U);
+  v.push(1);
+  v.push(2);
+  v.shrink_to_fit();
+  sfc::assert_eq(v.capacity(), 2U);
+}
+
 SFC_TEST(drain) {
   int tmp[] = {0, 1, 2, 3, 4, 5};
 

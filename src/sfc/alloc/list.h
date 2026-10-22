@@ -175,12 +175,12 @@ class [[nodiscard]] List {
     _buf.reserve_exact(_len, additional);
   }
 
-  void shrink_to(usize cap) noexcept {
-    _buf.shrink_to(cap);
+  void shrink_to(usize min_cap) noexcept {
+    _buf.shrink_to_fit(min_cap);
   }
 
   void shrink_to_fit() noexcept {
-    _buf.shrink_to(_len);
+    _buf.shrink_to_fit(_len);
   }
 
   void clear() noexcept {

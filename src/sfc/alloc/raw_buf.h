@@ -6,12 +6,15 @@ namespace sfc::raw_buf {
 
 template <class T, class A = alloc::Global>
 class RawBuf {
+  static constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
+  static constexpr usize kMaxCap = usize{256ULL << 30};  // 256 GB
+
   T* _ptr{nullptr};
   usize _cap{0};
   [[no_unique_address]] A _a{};
 
  public:
-  RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
+  explicit RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
 
   ~RawBuf() noexcept {
     if (!_ptr) return;
@@ -30,18 +33,18 @@ class RawBuf {
   }
 
   static auto with_capacity(usize capacity, A alloc = {}) -> RawBuf {
-    auto res = RawBuf{};
-    res._a = alloc;
-    res._cap = capacity;
-    res._ptr = ptr::cast<T>(res._a.allocate(res.layout()));
+    const auto ptr = alloc.allocate(Layout::array<T>(capacity));
+
+    auto res = RawBuf{alloc};
+    res.set_ptr_and_cap(ptr, capacity);
     return res;
   }
 
   static auto with_capacity_zeroed(usize capacity, A alloc = {}) -> RawBuf {
-    auto res = RawBuf{};
-    res._a = alloc;
-    res._cap = capacity;
-    res._ptr = ptr::cast<T>(res._a.allocate_zeroed(res.layout()));
+    const auto ptr = alloc.allocate_zeroed(Layout::array<T>(capacity));
+
+    auto res = RawBuf{alloc};
+    res.set_ptr_and_cap(ptr, capacity);
     return res;
   }
 
@@ -66,22 +69,12 @@ class RawBuf {
     return _a;
   }
 
-  auto layout() const -> mem::Layout {
-    return mem::Layout::array<T>(_cap);
-  }
-
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    return {ptr::cast<const u8>(_ptr), _cap * sizeof(T)};
-  }
-
-  auto as_mut_bytes() noexcept -> Slice<u8> {
-    return {ptr::cast<u8>(_ptr), _cap * sizeof(T)};
+  auto layout() const -> Layout {
+    return Layout::array<T>(_cap);
   }
 
  public:
   void reserve(usize len, usize additional) noexcept {
-    constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
-    constexpr usize kMaxCap = num::Int<u32>::MAX;
     sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
 
     const auto req_cap = num::saturating_add(len, additional);
@@ -89,35 +82,51 @@ class RawBuf {
       return;
     }
 
-    const auto fit_cap = (cmp::max)(req_cap, _cap * 2);
-    const auto new_cap = (cmp::max)(fit_cap, kMinCap);
-    const auto layout = this->layout();
-    const auto new_ptr = _a.grow(_ptr, layout, new_cap * sizeof(T));
-    sfc::assert_(new_ptr != nullptr, "RawBuf::reserve: grow failed");
-
-    _ptr = ptr::cast<T>(new_ptr);
-    _cap = new_cap;
+    const auto min_cap = cmp::max(kMinCap, 2 * _cap);
+    const auto new_cap = cmp::max(req_cap, min_cap);
+    this->grow_unchecked(len, new_cap - len);
   }
 
   void reserve_exact(usize len, usize additional) noexcept {
+    sfc::assert_(additional <= kMaxCap, "RawBuf::reserve_exact: additional(={}) too large", additional);
+
     const auto new_cap = num::saturating_add(len, additional);
     if (new_cap <= _cap) {
       return;
     }
 
-    const auto layout = this->layout();
-    _ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
-    _cap = new_cap;
+    this->grow_unchecked(len, additional);
   }
 
-  void shrink_to(usize new_cap) noexcept {
+  void shrink_to_fit(usize new_cap) noexcept {
     if (new_cap >= _cap) {
       return;
     }
 
+    this->shrink_unchecked(new_cap);
+  }
+
+ private:
+  void set_ptr_and_cap(void* ptr, usize cap) noexcept {
+    if (cap != 0) {
+      sfc::assert_(ptr != nullptr, "RawBuf::set_ptr_and_cap: ptr is nullptr but cap(={}) != 0", cap);
+    }
+
+    _ptr = ptr::cast<T>(ptr);
+    _cap = cap;
+  }
+
+  void shrink_unchecked(usize new_cap) noexcept {
     const auto layout = this->layout();
-    _ptr = ptr::cast<T>(_a.shrink(_ptr, layout, new_cap * sizeof(T)));
-    _cap = new_cap;
+    const auto ptr = _a.shrink(_ptr, layout, new_cap * sizeof(T));
+    this->set_ptr_and_cap(ptr, new_cap);
+  }
+
+  void grow_unchecked(usize len, usize additional) noexcept {
+    const auto layout = this->layout();
+    const auto new_cap = len + additional;
+    const auto ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
+    this->set_ptr_and_cap(ptr, new_cap);
   }
 };
 
