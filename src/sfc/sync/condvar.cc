@@ -17,9 +17,14 @@ Condvar::~Condvar() noexcept {
   delete _inn;
 }
 
-Condvar::Condvar(Condvar&&) noexcept = default;
+Condvar::Condvar(Condvar&& other) noexcept : _inn{mem::take(other._inn)} {}
 
-Condvar& Condvar::operator=(Condvar&&) noexcept = default;
+Condvar& Condvar::operator=(Condvar&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_inn, other._inn);
+  }
+  return *this;
+}
 
 void Condvar::notify_one() noexcept {
   _inn->notify_one();
