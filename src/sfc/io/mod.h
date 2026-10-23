@@ -105,4 +105,13 @@ class Write {
   }
 };
 
+template <trait::tv_copy_ T>
+struct FromBytes {
+  static auto read_from(auto& read) -> Result<T> {
+    u8 buf[sizeof(T)];
+    _TRY(read.read_exact(buf));
+    return __builtin_bit_cast(T, buf);
+  }
+};
+
 }  // namespace sfc::io

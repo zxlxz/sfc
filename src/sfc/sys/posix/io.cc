@@ -3,14 +3,35 @@
 
 #include "sfc/sys/posix/io.h"
 
-namespace sfc::sys::posix {
+namespace sfc::io {
 
-auto File::close() noexcept -> io::Result<> {
-  const auto ret = ::close(_fd);
-  if (ret == -1) {
-    return io::last_os_error();
+File::File(int fd) noexcept: _fd{fd} {}
+
+File::~File() noexcept{
+  if (_fd == -1) {
+    return;
   }
-  return Ok{};
+
+  (void)::close(_fd);
+}
+
+File::File(File&& other) noexcept : _fd{other._fd} {
+  other._fd = -1;
+}
+
+File& File::operator=(File&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_fd, other._fd);
+  }
+  return *this;
+}
+
+auto File::from_raw_fd(RawFd fd) noexcept -> File {
+  return File{fd};
+}
+
+auto File::as_raw_fd() const noexcept -> RawFd {
+  return _fd;
 }
 
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
@@ -18,8 +39,7 @@ auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   if (nret == -1) {
     return io::last_os_error();
   }
-  const auto nread = num::cast_unsigned(nret);
-  return Ok{nread};
+  return usize(nret);
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
@@ -27,7 +47,7 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   if (nret == -1) {
     return io::last_os_error();
   }
-  return Ok{usize(nret)};
+  return usize(nret);
 }
 
 auto File::flush() noexcept -> io::Result<> {
@@ -38,12 +58,12 @@ auto File::flush() noexcept -> io::Result<> {
   return Ok{};
 }
 
-auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
+auto File::seek(SeekFrom pos) noexcept -> io::Result<u64> {
   const auto whence = [=]() {
     switch (pos._tag) {
-      case io::SeekFrom::Kind::Start:   return SEEK_SET;
-      case io::SeekFrom::Kind::Current: return SEEK_CUR;
-      case io::SeekFrom::Kind::End:     return SEEK_END;
+      case SeekFrom::Kind::Start:   return SEEK_SET;
+      case SeekFrom::Kind::Current: return SEEK_CUR;
+      case SeekFrom::Kind::End:     return SEEK_END;
     }
     return SEEK_SET;
   }();
@@ -52,24 +72,43 @@ auto File::seek(io::SeekFrom pos) noexcept -> io::Result<usize> {
   if (nret == -1) {
     return io::last_os_error();
   }
-  return Ok{usize(nret)};
+  return u64(nret);
 }
 
-auto StdIo::is_console() -> bool {
-  const auto ret = ::isatty(_fd);
-  return ret == 1;
-}
+}  // namespace sfc::io
+
+namespace sfc::sys::posix {
 
 auto StdIo::Input() noexcept -> StdIo {
-  return StdIo{{._fd = 0}};
+  static auto file = File{0};
+  return StdIo{file};
 }
 
 auto StdIo::Output() noexcept -> StdIo {
-  return StdIo{{._fd = 1}};
+  static auto file = File{1};
+  return StdIo{file};
 }
 
 auto StdIo::Error() noexcept -> StdIo {
-  return StdIo{{._fd = 2}};
+  static auto file = File{2};
+  return StdIo{file};
+}
+
+auto StdIo::is_console() -> bool {
+  const auto ret = ::isatty(_file.as_raw_fd());
+  return ret == 1;
+}
+
+auto StdIo::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+  return _file.read(buf);
+}
+
+auto StdIo::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
+  return _file.write(buf);
+}
+
+auto StdIo::flush() noexcept -> io::Result<> {
+  return _file.flush();
 }
 
 auto os_error() -> int {

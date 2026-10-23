@@ -3,84 +3,37 @@
 #include "sfc/ffi/wstr.h"
 #include "sfc/sys/windows/io.h"
 
-namespace sfc::sys::windows {
+namespace sfc::io {
 
-using chr::U16Chars;
+File::File(RawFd fd) noexcept : _fd{fd} {}
 
-template <class R>
-struct WBufReader {
-  static constexpr usize BUF_LEN = 256U;
-  R& _inn;
-  u16 _buf[BUF_LEN] = {};
-  U16Chars _rem = {{}, {_buf, 0}};
-
- public:
-  auto read_char() -> io::Result<char32_t> {
-    _TRY(this->fill_buf());
-
-    const auto ch = _rem.next();
-    if (!ch) {
-      return io::Error::UnexpectedEof;
-    }
-    return *ch;
-  }
-
- private:
-  auto fill_buf() -> io::Result<> {
-    auto& buf = _rem._buf;
-    if (buf._len > 0) {
-      return Ok{};
-    }
-
-    const auto nread = _TRY(_inn.read_u16({_buf, BUF_LEN}));
-    if (nread == 0) {
-      return io::Error::UnexpectedEof;
-    }
-
-    buf = {_buf, nread};
-    return Ok{};
-  }
-};
-
-template <class W>
-struct WBufWriter {
-  static constexpr usize BUF_LEN = 256U;
-
-  W& _inn;
-  u16 _buf[BUF_LEN] = {};
-  usize _len = 0;
-
- public:
-  auto write_char(char32_t ch) -> io::Result<> {
-    if (_len + 2 >= BUF_LEN) {
-      _TRY(flush());
-    }
-    const auto rem = chr::encode_utf16({_buf + _len, BUF_LEN - _len}, ch);
-    _len += rem._len;
-    return Ok{};
-  }
-
-  auto flush() -> io::Result<> {
-    _TRY(_inn.write_u16({_buf, _len}));
-    _len = 0;
-    return Ok{};
-  }
-};
-
-auto File::close() -> io::Result<> {
+File::~File() noexcept {
   if (_fd == nullptr || _fd == INVALID_HANDLE_VALUE) {
-    return Ok{};
+    return;
   }
-
-  if (!::CloseHandle(_fd)) {
-    return io::last_os_error();
-  }
-
-  _fd = nullptr;
-  return Ok{};
+  ::CloseHandle(_fd);
 }
 
-auto File::read(Slice<u8> buf) -> io::Result<usize> {
+File::File(File&& other) noexcept : _fd(other._fd) {
+  other._fd = nullptr;
+}
+
+File& File::operator=(File&& other) noexcept {
+  if (this != &other) {
+    mem::swap(_fd, other._fd);
+  }
+  return *this;
+}
+
+auto File::from_raw_fd(RawFd fd) noexcept -> File {
+  return File{fd};
+}
+
+auto File::as_raw_fd() const noexcept -> RawFd {
+  return _fd;
+}
+
+auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
@@ -91,7 +44,7 @@ auto File::read(Slice<u8> buf) -> io::Result<usize> {
   return usize{nread};
 }
 
-auto File::write(Slice<const u8> buf) -> io::Result<usize> {
+auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   const auto buf_ptr = buf._ptr;
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
@@ -102,7 +55,7 @@ auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   return usize{nwrite};
 }
 
-auto File::flush() -> io::Result<> {
+auto File::flush() noexcept -> io::Result<> {
   const auto ret = ::FlushFileBuffers(_fd);
   if (!ret) {
     return io::last_os_error();
@@ -110,12 +63,12 @@ auto File::flush() -> io::Result<> {
   return Ok{};
 }
 
-auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
+auto File::seek(SeekFrom pos) noexcept -> io::Result<u64> {
   const auto move_method = [=] -> DWORD {
     switch (pos._tag) {
-      case io::SeekFrom::Kind::Start:   return FILE_BEGIN;
-      case io::SeekFrom::Kind::Current: return FILE_CURRENT;
-      case io::SeekFrom::Kind::End:     return FILE_END;
+      case SeekFrom::Kind::Start:   return FILE_BEGIN;
+      case SeekFrom::Kind::Current: return FILE_CURRENT;
+      case SeekFrom::Kind::End:     return FILE_END;
     }
   }();
 
@@ -129,24 +82,96 @@ auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
   return u64{ret_pos};
 }
 
+}  // namespace sfc::io
+
+namespace sfc::sys::windows {
+
+using chr::U16Chars;
+
+template <class R>
+struct WBufReader {
+  R& _inn;
+
+ public:
+  auto read(Slice<u8> buf) -> io::Result<usize> {
+    static constexpr auto kBufLen = 256U;
+    u16 u16_buf[kBufLen] = {};
+
+    auto rem = buf;
+    while (!rem.is_empty()) {
+      // read: utf16
+      const auto u16_len = cmp::min((buf._len + 1) / 2, kBufLen);
+      const auto nread = _TRY(_inn.read_u16({u16_buf, u16_len}));
+      if (nread == 0) {
+        break;
+      }
+
+      // convert: utf16 -> utf8
+      chr::decode_utf16({u16_buf, nread}).for_each([&](char32_t ch) {
+        const auto v = chr::encode_utf8(rem, ch);
+        rem = Slice{rem._ptr + v._len, rem._len - v._len};
+      });
+    }
+
+    return buf._len - rem._len;
+  }
+};
+
+template <class W>
+struct WBufWriter {
+  static constexpr usize BUF_LEN = 256U;
+
+  W& _inn;
+  u16 _buf[BUF_LEN] = {};
+  usize _len = 0;
+
+ public:
+  auto write(Slice<const u8> buf) -> io::Result<usize> {
+    static constexpr auto kBufLen = 256U;
+
+    auto rem = chr::decode_utf8(buf);
+    while (!rem._buf.is_empty()) {
+      u16 u16_buf[kBufLen] = {};
+
+      // convert: utf8->utf16
+      auto u16_len = usize{0UL};
+      rem.try_for_each([&](char32_t ch) {
+        const auto v = chr::encode_utf16({u16_buf + u16_len, 2}, ch);
+        u16_len += v._len;
+        return v._len > 0 && u16_len + 2 <= kBufLen;
+      });
+
+      // write: utf16
+      _TRY(_inn.write_u16({u16_buf, u16_len}));
+    }
+    return buf._len;
+  }
+
+  auto flush() -> io::Result<> {
+    _TRY(_inn.write_u16({_buf, _len}));
+    _len = 0;
+    return Ok{};
+  }
+};
+
 auto StdIo::Input() -> StdIo {
-  const auto fd = ::GetStdHandle(STD_INPUT_HANDLE);
-  return StdIo{{fd}};
+  static auto file = File{::GetStdHandle(STD_INPUT_HANDLE)};
+  return StdIo{file};
 }
 
 auto StdIo::Output() -> StdIo {
-  const auto fd = ::GetStdHandle(STD_OUTPUT_HANDLE);
-  return StdIo{{fd}};
+  static auto file = File{::GetStdHandle(STD_OUTPUT_HANDLE)};
+  return StdIo{file};
 }
 
 auto StdIo::Error() -> StdIo {
-  const auto fd = ::GetStdHandle(STD_ERROR_HANDLE);
-  return StdIo{{fd}};
+  static auto file = File{::GetStdHandle(STD_ERROR_HANDLE)};
+  return StdIo{file};
 }
 
 auto StdIo::is_console() const -> bool {
   auto mode = DWORD{};
-  return ::GetConsoleMode(_fd, &mode);
+  return ::GetConsoleMode(_file.as_raw_fd(), &mode);
 }
 
 auto StdIo::is_utf8_console() const -> bool {
@@ -163,7 +188,7 @@ auto StdIo::read_u16(Slice<u16> buf) -> io::Result<usize> {
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nret = DWORD{};
-  if (!::ReadConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {
+  if (!::ReadConsoleW(_file.as_raw_fd(), buf_ptr, buf_len, &nret, nullptr)) {
     return io::last_os_error();
   }
   return usize{nret};
@@ -174,8 +199,8 @@ auto StdIo::write_u16(Slice<const u16> buf) -> io::Result<usize> {
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nret = DWORD{};
-  if (!::WriteConsoleW(_fd, buf_ptr, buf_len, &nret, nullptr)) {
-    return Err{io::last_os_error()};
+  if (!::WriteConsoleW(_file.as_raw_fd(), buf_ptr, buf_len, &nret, nullptr)) {
+    return io::last_os_error();
   }
 
   return usize{buf._len};
@@ -183,32 +208,20 @@ auto StdIo::write_u16(Slice<const u16> buf) -> io::Result<usize> {
 
 auto StdIo::read(Slice<u8> buf) -> io::Result<usize> {
   if (this->is_utf8_console()) {
-    return File::read(buf);
+    return _file.read(buf);
   }
 
   auto rbuf = WBufReader{*this};
-  auto tmp = buf;
-  while (tmp.len() >= 3) {
-    const auto ch = _TRY(rbuf.read_char());
-    const auto cnt = chr::encode_utf8(tmp, ch)._len;
-    tmp = tmp[{cnt, $}];
-  }
-
-  return usize{buf._len - tmp._len};
+  return rbuf.read(buf);
 }
 
 auto StdIo::write(Slice<const u8> buf) -> io::Result<usize> {
   if (this->is_utf8_console()) {
-    return File::write(buf);
+    return _file.write(buf);
   }
 
   auto wbuf = WBufWriter{*this};
-  auto chars = Str::from_utf8(buf).chars();
-  while (auto ch = chars.next()) {
-    _TRY(wbuf.write_char(*ch));
-  }
-  _TRY(wbuf.flush());
-  return usize{buf._len};
+  return wbuf.write(buf);
 }
 
 auto os_error() -> u32 {

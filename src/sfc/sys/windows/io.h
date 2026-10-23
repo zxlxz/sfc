@@ -1,23 +1,18 @@
 #pragma once
 
 #include "sfc/io/mod.h"
+#include "sfc/io/file.h"
 
 namespace sfc::sys::windows {
 
 using RawFd = void*;
+static constexpr RawFd kInvalidFd = nullptr;
 
-struct File {
-  void* _fd{nullptr};
+using File = io::File;
 
- public:
-  auto close() -> io::Result<>;
-  auto read(Slice<u8> buf) -> io::Result<usize>;
-  auto write(Slice<const u8> buf) -> io::Result<usize>;
-  auto flush() -> io::Result<>;
-  auto seek(io::SeekFrom whence) -> io::Result<u64>;
-};
+struct StdIo {
+  File& _file;
 
-struct StdIo : File {
  public:
   static auto Input() -> StdIo;
   static auto Output() -> StdIo;
