@@ -97,12 +97,22 @@ SFC_TEST(max_by_key) {
 }
 
 SFC_TEST(collect) {
-  const u32 v[] = {0, 1, 2, 3, 4, 5};
+  const int buf[] = {0, 1, 2, 3, 4, 5};
 
-  auto collected = Slice{v}.iter().collect<List<u32>>();
-  sfc::assert_eq(collected.len(), 6U);
-  for (auto i : v) {
-    sfc::assert_eq(collected[i], i);
+  auto v = Slice{buf}.iter().collect<List<int>>();
+  sfc::assert_eq(v.len(), 6U);
+  for (auto i : ops::Range(v.len())) {
+    sfc::assert_eq(v[i], int(i));
+  }
+}
+
+SFC_TEST(take) {
+  const int buf[] = {0, 1, 2, 3, 4, 5};
+
+  auto v = Slice{buf}.iter().take(3).collect<List<int>>();
+  sfc::assert_eq(v.len(), 3U);
+  for (auto i : ops::Range(v.len())) {
+    sfc::assert_eq(v[i], int(i));
   }
 }
 

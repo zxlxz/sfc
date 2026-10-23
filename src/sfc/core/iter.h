@@ -8,6 +8,9 @@ namespace sfc::iter {
 template <class I>
 struct Rev;
 
+template <class I>
+struct Take;
+
 template <class I, class F>
 struct Map;
 
@@ -51,17 +54,15 @@ struct Iterator {
     return {};
   }
 
-  void for_each(this auto self, auto&& f) {
+  void try_for_each(this auto self, auto&& f) {
     while (auto x = self.next()) {
-      f(*x);
+      if (!f(*x)) break;
     }
   }
 
-  void for_each_idx(this auto self, auto&& f) {
-    auto i = 0UL;
+  void for_each(this auto self, auto&& f) {
     while (auto x = self.next()) {
-      f(i, *x);
-      ++i;
+      f(*x);
     }
   }
 
@@ -122,11 +123,17 @@ struct Iterator {
     return self.reduce([&](auto& a, auto& b) -> Item { return f(a) > f(b) ? a : b; });
   }
 
+ public:
   template <class B>
   auto collect(this auto self) -> B {
     auto res = B{};
     res.extend(mem::move(self));
     return res;
+  }
+
+  template <class Self>
+  auto take(this Self self, usize n) -> Take<Self> {
+    return Take<Self>{{}, mem::move(self), n};
   }
 
   template <class Self, class F>
@@ -137,6 +144,22 @@ struct Iterator {
   template <class Self, class P>
   auto filter(this Self self, P pred) -> Filter<Self, P> {
     return Filter<Self, P>{{}, mem::move(self), mem::move<P>(pred)};
+  }
+};
+
+template <class I>
+struct Take : Iterator<typename I::Item> {
+  using Item = typename I::Item;
+  I _iter;
+  usize _n;
+
+ public:
+  auto next() noexcept -> Option<Item> {
+    if (_n == 0) {
+      return {};
+    }
+    _n -= 1;
+    return _iter.next();
   }
 };
 
