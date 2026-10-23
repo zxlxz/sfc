@@ -155,6 +155,8 @@ constexpr auto align_up(T val, T align) -> T {
 }  // namespace sfc::num
 
 namespace sfc {
+using num::Int;
+
 using num::U8;
 using num::U16;
 using num::U32;

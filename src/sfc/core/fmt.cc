@@ -296,15 +296,15 @@ void Debug::fmt(char val, Formatter& f) {
 void Debug::fmt(char16_t val, Formatter& f) {
   u8 buf[4] = {};
 
-  const auto str = chr::encode_utf8(buf, val);
-  f.write_str(str);
+  const auto v = chr::encode_utf8(buf, val);
+  f.write_str(Str::from_utf8(v));
 }
 
 void Debug::fmt(char32_t val, Formatter& f) {
   u8 buf[4] = {};
 
-  const auto str = chr::encode_utf8(buf, val);
-  f.write_str(str);
+  const auto v = chr::encode_utf8(buf, val);
+  f.write_str(Str::from_utf8(v));
 }
 
 void Debug::fmt(unsigned int val, Formatter& f) {

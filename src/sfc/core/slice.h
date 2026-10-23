@@ -4,14 +4,17 @@
 #include "sfc/core/ops.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ptr.h"
-#include "sfc/core/test.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/tuple.h"
 #include "sfc/core/option.h"
+#include "sfc/core/result.h"
 
 namespace sfc::slice {
 
 using Range = ops::Range<usize>;
+
+template <class T>
+struct Slice;
 
 template <class T>
 struct Iter;
@@ -21,6 +24,167 @@ struct Windows;
 
 template <class T>
 struct Chunks;
+
+template <class T>
+struct Slice<const T> {
+  const T* _ptr = nullptr;
+  usize _len = 0;
+
+ public:
+  constexpr Slice() noexcept = default;
+
+  constexpr Slice(const T* ptr, usize len) noexcept : _ptr{ptr}, _len{len} {}
+
+  template <usize N>
+  constexpr Slice(const T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
+
+  constexpr Slice(Slice<T> v) noexcept : _ptr{v._ptr}, _len{v._len} {}
+
+ public:
+  constexpr auto ptr() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  constexpr auto len() const noexcept -> usize {
+    return _len;
+  }
+
+  constexpr auto as_ptr() const noexcept -> const T* {
+    return _ptr;
+  }
+
+  constexpr auto is_empty() const noexcept -> bool {
+    return _len == 0;
+  }
+
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
+  }
+
+ public:
+  auto operator[](usize idx) const noexcept -> const T& {
+    sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
+    return _ptr[idx];
+  }
+
+  auto operator[](Range ids) const noexcept -> Slice<const T> {
+    ids = ids.wrap(_len);
+    return Slice<const T>{_ptr + ids._start, ids.len()};
+  }
+
+  auto first() const noexcept -> Option<const T&> {
+    if (_len == 0) return {};
+    return _ptr[0];
+  }
+
+  auto last() const noexcept -> Option<const T&> {
+    if (_len == 0) return {};
+    return _ptr[_len - 1];
+  }
+
+  auto split_at(usize mid) const noexcept -> Tuple<Slice<const T>, Slice<const T>> {
+    const auto x = mid < _len ? mid : _len;
+    return Tuple{Slice<const T>{_ptr, x}, Slice<const T>{_ptr + x, _len - x}};
+  }
+
+ public:
+  auto contains(const T& x) const noexcept -> bool {
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] == x) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  auto find(const T& x) const noexcept -> Option<usize> {
+    for (auto i = 0UL; i != _len; ++i) {
+      if (_ptr[i] == x) {
+        return i;
+      }
+    }
+    return {};
+  }
+
+  auto rfind(const T& x) const noexcept -> Option<usize> {
+    for (auto i = _len; i != 0U; --i) {
+      if (_ptr[i - 1] == x) {
+        return i - 1;
+      }
+    }
+    return {};
+  }
+
+  auto starts_with(Slice<const T> needle) const noexcept -> bool {
+    if (_len < needle._len) return false;
+    return needle == Slice{_ptr, needle._len};
+  }
+
+  auto ends_with(Slice<const T> needle) const -> bool {
+    if (_len < needle._len) return false;
+    return needle == Slice{_ptr + _len - needle._len, needle._len};
+  }
+
+ public:
+  auto iter() const noexcept -> Iter<const T> {
+    return {_ptr, _len};
+  }
+
+  auto windows(usize n) const noexcept -> Windows<const T> {
+    return {*this, n};
+  }
+
+  auto chunks(usize n) const noexcept -> Chunks<const T> {
+    return {*this, n};
+  }
+
+ public:
+  // trait: fmt::Display
+  void fmt(auto& f) const {
+    f.debug_list().entries(this->iter());
+  }
+
+  // trait: io::Read
+  auto read(Slice<T> buf) noexcept -> io::Result<usize> {
+    if (buf._len == 0 || _len == 0) {
+      return usize{0};
+    }
+    const auto amt = _len < buf._len ? _len : buf._len;
+    ptr::copy_nonoverlapping(_ptr, buf._ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return usize{amt};
+  }
+
+  // trait: serde::Serialize
+  void serialize(auto& ser) const {
+    auto imp = ser.serialize_seq();
+    for (const auto& t : *this) {
+      imp.serialize_element(t);
+    }
+  }
+
+ public:
+  // trait: ops::Eq
+  auto operator==(Slice other) const noexcept -> bool {
+    if (_len != other._len) return false;
+    for (auto i = 0UL; i < _len; ++i) {
+      if (_ptr[i] != other._ptr[i]) return false;
+    }
+    return true;
+  }
+
+  // trait: ranged-for
+  friend auto begin(Slice self) -> const T* {
+    return self._ptr;
+  }
+
+  // trait: ranged-for
+  friend auto end(Slice self) -> const T* {
+    return self._ptr + self._len;
+  }
+};
 
 template <class T>
 struct Slice {
@@ -34,9 +198,6 @@ struct Slice {
 
   template <usize N>
   constexpr Slice(T (&v)[N]) noexcept : _ptr{v}, _len{N} {}
-
-  template <class U>
-  constexpr Slice(Slice<U> other) noexcept : _ptr{other._ptr}, _len{other._len} {}
 
  public:
   constexpr auto ptr() const noexcept -> T* {
@@ -216,13 +377,33 @@ struct Slice {
   }
 
   // trait: io::Read
-  auto read(Slice<u8> buf) noexcept -> io::Result<usize> requires(trait::same_<const T, const u8>);
+  auto read(Slice buf) noexcept -> io::Result<usize> {
+    if (buf._len == 0 || _len == 0) {
+      return usize{0};
+    }
+    const auto amt = _len < buf._len ? _len : buf._len;
+    ptr::copy_nonoverlapping<T>(_ptr, buf._ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return usize{amt};
+  }
 
   // trait: io::Write
-  auto write(Slice<const u8> buf) noexcept -> io::Result<usize> requires(trait::same_<T, u8>);
+  auto write(Slice<const T> buf) noexcept -> io::Result<usize> {
+    if (buf._len == 0 || _len == 0) {
+      return usize{0};
+    }
+    const auto amt = _len < buf._len ? _len : buf._len;
+    ptr::copy_nonoverlapping<T>(buf._ptr, _ptr, amt);
+    _ptr += amt;
+    _len -= amt;
+    return usize{amt};
+  }
 
   // trait: io::Write
-  auto flush() noexcept -> io::Result<> requires(trait::same_<T, u8>);
+  auto flush() noexcept -> io::Result<> {
+    return result::Ok{};
+  }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {

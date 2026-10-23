@@ -3,14 +3,10 @@
 #include "sfc/core/ptr.h"
 #include "sfc/core/mem.h"
 #include "sfc/core/ops.h"
+#include "sfc/core/fmts.h"
 #include "sfc/core/test.h"
-#include "sfc/core/tuple.h"
-#include "sfc/core/convert.h"
 
 namespace sfc::option {
-
-template <class T>
-class Option;
 
 struct None {
   constexpr auto is_none() const noexcept -> bool {

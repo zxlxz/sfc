@@ -117,7 +117,7 @@ auto String::pop() noexcept -> Option<char32_t> {
 
   auto chars = this->as_str().chars();
   const auto ch = chars.next_back();
-  _buf.truncate(chars.len());
+  _buf.truncate(chars._buf._len);
   return ch;
 }
 
@@ -129,8 +129,8 @@ void String::push(char32_t c) noexcept {
   }
 
   u8 buf[4] = {};
-  const auto str = chr::encode_utf8(buf, c);
-  this->push_str(str);
+  const auto v = chr::encode_utf8(buf, c);
+  this->push_str(Str::from_utf8(v));
 }
 
 }  // namespace sfc::string

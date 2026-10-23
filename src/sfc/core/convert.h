@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/core/io.h"
 #include "sfc/core/trait.h"
 
 namespace sfc::convert {
@@ -14,5 +15,8 @@ struct AsRef {
   }
 };
 
-
 }  // namespace sfc::convert
+
+namespace sfc {
+using convert::AsRef;
+}

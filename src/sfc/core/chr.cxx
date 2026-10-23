@@ -4,41 +4,45 @@ namespace sfc::chr::test {
 
 SFC_TEST(encode_utf8) {
   u8 buf[4] = {};
+  auto encode = [&](char32_t c) {
+    const auto v = chr::encode_utf8(buf, c);
+    return Str::from_utf8(v);
+  };
 
   // 1-byte: ASCII
-  sfc::assert_eq(chr::encode_utf8(buf, U'A'), Str{"A"});
+  sfc::assert_eq(encode(U'A'), Str{"A"});
 
-  sfc::assert_eq(chr::encode_utf8(buf, 0x7F), Str{"\x7F"});
+  sfc::assert_eq(encode(0x7F), Str{"\x7F"});
 
   // 2-byte: U+00E9 (é)
-  sfc::assert_eq(chr::encode_utf8(buf, U'é'), Str{"\xC3\xA9"});
+  sfc::assert_eq(encode(U'é'), Str{"\xC3\xA9"});
 
   // 2-byte: boundary U+0080
-  sfc::assert_eq(chr::encode_utf8(buf, 0x80), Str{"\xC2\x80"});
+  sfc::assert_eq(encode(0x80), Str{"\xC2\x80"});
 
   // 2-byte: boundary U+07FF
-  sfc::assert_eq(chr::encode_utf8(buf, 0x07FF), Str{"\xDF\xBF"});
+  sfc::assert_eq(encode(0x07FF), Str{"\xDF\xBF"});
 
   // 3-byte: U+4E2D (中)
-  sfc::assert_eq(chr::encode_utf8(buf, 0x4E2D), Str{"\xE4\xB8\xAD"});
+  sfc::assert_eq(encode(0x4E2D), Str{"\xE4\xB8\xAD"});
 
   // 3-byte: boundary U+0800
-  sfc::assert_eq(chr::encode_utf8(buf, 0x800), Str{"\xE0\xA0\x80"});
+  sfc::assert_eq(encode(0x800), Str{"\xE0\xA0\x80"});
 
   // 3-byte: boundary U+FFFF
-  sfc::assert_eq(chr::encode_utf8(buf, 0xFFFF), Str{"\xEF\xBF\xBF"});
+  sfc::assert_eq(encode(0xFFFF), Str{"\xEF\xBF\xBF"});
 
   // 4-byte: U+1F600 (😀)
-  sfc::assert_eq(chr::encode_utf8(buf, 0x1F600), Str{"\xF0\x9F\x98\x80"});
+  sfc::assert_eq(encode(0x1F600), Str{"\xF0\x9F\x98\x80"});
 
   // 4-byte: boundary U+10000
-  sfc::assert_eq(chr::encode_utf8(buf, 0x10000), Str{"\xF0\x90\x80\x80"});
+  sfc::assert_eq(encode(0x10000), Str{"\xF0\x90\x80\x80"});
 
   // 4-byte: boundary U+10FFFF
-  sfc::assert_eq(chr::encode_utf8(buf, 0x10FFFF), Str{"\xF4\x8F\xBF\xBF"});
+  sfc::assert_eq(encode(0x10FFFF), Str{"\xF4\x8F\xBF\xBF"});
 
   // Invalid: above U+10FFFF
-  sfc::assert_eq(chr::encode_utf8(buf, 0x110000), Str{});
+  sfc::assert_eq(encode(0x110000), Str{});
 }
 
 SFC_TEST(decode_utf8) {

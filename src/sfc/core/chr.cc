@@ -146,10 +146,6 @@ static auto decode(Slice<const u16> buf) -> char32_t {
 
 }  // namespace utf16
 
-auto Chars::len() const -> usize {
-  return _buf._len;
-}
-
 auto Chars::next() noexcept -> Option<char32_t> {
   if (_buf._len == 0) {
     return {};
@@ -202,10 +198,6 @@ auto Chars::next_back() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto U16Chars::len() const -> usize {
-  return _buf._len;
-}
-
 auto U16Chars::next() noexcept -> Option<char32_t> {
   if (_buf._len == 0) {
     return {};
@@ -222,9 +214,13 @@ auto U16Chars::next() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto encode_utf8(Slice<u8> buf, char32_t ch) -> str::Str {
+auto encode_utf8(Slice<u8> buf, char32_t ch) -> Slice<u8> {
   const auto n = utf8::encode(buf, ch);
-  return str::Str::from_utf8({buf._ptr, n});
+  return {buf._ptr, n};
+}
+
+auto decode_utf8(Slice<const u8> buf) -> Chars {
+  return Chars{{}, buf};
 }
 
 auto encode_utf16(Slice<u16> buf, char32_t ch) -> Slice<u16> {
