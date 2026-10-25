@@ -398,7 +398,7 @@ struct Slice {
 
   // trait: io::Read
   auto read(Slice buf) noexcept -> io::Result<usize> {
-    if (buf._len == 0 || _len == 0) {
+    if (_len == 0 || buf._len == 0) {
       return usize{0};
     }
     const auto amt = _len < buf._len ? _len : buf._len;
@@ -410,7 +410,7 @@ struct Slice {
 
   // trait: io::Write
   auto write(Slice<const T> buf) noexcept -> io::Result<usize> {
-    if (buf._len == 0 || _len == 0) {
+    if (_len == 0 || buf._len == 0) {
       return usize{0};
     }
     const auto amt = _len < buf._len ? _len : buf._len;

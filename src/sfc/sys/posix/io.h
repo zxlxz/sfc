@@ -1,14 +1,26 @@
 #pragma once
 
 #include "sfc/io/mod.h"
-#include "sfc/io/file.h"
 
 namespace sfc::sys::posix {
 
-using io::File;
+using RawFd = int;
+static constexpr RawFd kInvalidFd = -1;
+
+struct File {
+  RawFd _fd = kInvalidFd;
+
+ public:
+  void close();
+
+  auto read(Slice<u8> buf) -> io::Result<usize>;
+  auto write(Slice<const u8> buf) -> io::Result<usize>;
+  auto flush() -> io::Result<>;
+  auto seek(io::SeekFrom pos) -> io::Result<u64>;
+};
 
 struct StdIo {
-  File& _file;
+  File _file;
 
  public:
   static auto Input() noexcept -> StdIo;

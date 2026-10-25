@@ -3,38 +3,18 @@
 
 #include "sfc/sys/posix/io.h"
 
-namespace sfc::io {
+namespace sfc::sys::posix {
 
-File::File(int fd) noexcept: _fd{fd} {}
-
-File::~File() noexcept{
+void File::close() {
   if (_fd == -1) {
     return;
   }
 
   (void)::close(_fd);
+  _fd = -1;
 }
 
-File::File(File&& other) noexcept : _fd{other._fd} {
-  other._fd = -1;
-}
-
-File& File::operator=(File&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_fd, other._fd);
-  }
-  return *this;
-}
-
-auto File::from_raw_fd(RawFd fd) noexcept -> File {
-  return File{fd};
-}
-
-auto File::as_raw_fd() const noexcept -> RawFd {
-  return _fd;
-}
-
-auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+auto File::read(Slice<u8> buf) -> io::Result<usize> {
   const auto nret = ::read(_fd, buf._ptr, buf._len);
   if (nret == -1) {
     return io::last_os_error();
@@ -42,7 +22,7 @@ auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
   return usize(nret);
 }
 
-auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
+auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   const auto nret = ::write(_fd, buf._ptr, buf._len);
   if (nret == -1) {
     return io::last_os_error();
@@ -50,7 +30,7 @@ auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
   return usize(nret);
 }
 
-auto File::flush() noexcept -> io::Result<> {
+auto File::flush() -> io::Result<> {
   const auto ret = ::fsync(_fd);
   if (ret == -1) {
     return io::last_os_error();
@@ -58,12 +38,12 @@ auto File::flush() noexcept -> io::Result<> {
   return Ok{};
 }
 
-auto File::seek(SeekFrom pos) noexcept -> io::Result<u64> {
+auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
   const auto whence = [=]() {
     switch (pos._tag) {
-      case SeekFrom::Kind::Start:   return SEEK_SET;
-      case SeekFrom::Kind::Current: return SEEK_CUR;
-      case SeekFrom::Kind::End:     return SEEK_END;
+      case io::SeekFrom::Kind::Start:   return SEEK_SET;
+      case io::SeekFrom::Kind::Current: return SEEK_CUR;
+      case io::SeekFrom::Kind::End:     return SEEK_END;
     }
     return SEEK_SET;
   }();
@@ -75,27 +55,23 @@ auto File::seek(SeekFrom pos) noexcept -> io::Result<u64> {
   return u64(nret);
 }
 
-}  // namespace sfc::io
-
-namespace sfc::sys::posix {
-
 auto StdIo::Input() noexcept -> StdIo {
-  static auto file = File{0};
-  return StdIo{file};
+  const auto fd = STDIN_FILENO;
+  return StdIo{._file = {fd}};
 }
 
 auto StdIo::Output() noexcept -> StdIo {
-  static auto file = File{1};
-  return StdIo{file};
+  const auto fd = STDOUT_FILENO;
+  return StdIo{._file = {fd}};
 }
 
 auto StdIo::Error() noexcept -> StdIo {
-  static auto file = File{2};
-  return StdIo{file};
+  const auto fd = STDERR_FILENO;
+  return StdIo{._file = {fd}};
 }
 
 auto StdIo::is_console() -> bool {
-  const auto ret = ::isatty(_file.as_raw_fd());
+  const auto ret = ::isatty(_file._fd);
   return ret == 1;
 }
 
