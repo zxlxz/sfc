@@ -17,13 +17,33 @@ template <class T>
 struct Slice;
 
 template <class T>
-struct Iter;
-
-template <class T>
 struct Windows;
 
 template <class T>
 struct Chunks;
+
+template <class T>
+struct Iter : iter::DoubleEndedIterator<T&> {
+  T* _ptr = nullptr;
+  T* _end = nullptr;
+
+ public:
+  Iter(T* ptr, usize len) noexcept : _ptr{ptr}, _end{ptr + len} {}
+
+  auto len() const noexcept -> usize {
+    return usize(_end - _ptr);
+  }
+
+  auto next() noexcept -> Option<T&> {
+    if (_ptr >= _end) return {};
+    return *_ptr++;
+  }
+
+  auto next_back() noexcept -> Option<T&> {
+    if (_ptr >= _end) return {};
+    return *--_end;
+  }
+};
 
 template <class T>
 struct Slice<const T> {
@@ -439,29 +459,6 @@ Slice(T (&)[N]) -> Slice<T>;
 
 template <class T>
 Slice(T*, usize) -> Slice<T>;
-
-template <class T>
-struct Iter : iter::Iterator<T&> {
-  T* _ptr = nullptr;
-  T* _end = nullptr;
-
- public:
-  Iter(T* ptr, usize len) noexcept : _ptr{ptr}, _end{ptr + len} {}
-
-  auto len() const noexcept -> usize {
-    return num::cast_unsigned(_end - _ptr);
-  }
-
-  auto next() noexcept -> Option<T&> {
-    if (_ptr >= _end) return {};
-    return *_ptr++;
-  }
-
-  auto next_back() noexcept -> Option<T&> {
-    if (_ptr >= _end) return {};
-    return *--_end;
-  }
-};
 
 template <class T>
 struct Windows : iter::Iterator<Slice<T>> {

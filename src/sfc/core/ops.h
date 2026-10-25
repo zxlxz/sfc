@@ -112,30 +112,10 @@ struct Range {
   }
 
   constexpr auto len() const noexcept -> usize {
-    return _start < _end ? usize{_end - _start} : 0UL;
+    return _start < _end ? usize(_end - _start) : 0UL;
   }
 
  public:
-  // trait: cmp::Eq
-  auto operator==(const Range& r) const noexcept -> bool {
-    return _start == r._start && _end == r._end;
-  }
-
-  // trait: cmp::Eq
-  auto operator==(End) const noexcept -> bool {
-    return _start == _end;
-  }
-
-  // trait: iter::Iter
-  auto operator*() const noexcept -> T {
-    return _start;
-  }
-
-  // trait: iter::Iter
-  void operator++() noexcept {
-    ++_start;
-  }
-
   // trait: fmt::Display
   void fmt(auto& f) const {
     if (_end == num::Int<T>::MAX) {
@@ -146,12 +126,30 @@ struct Range {
   }
 
  public:
-  friend auto begin(Range self) -> Range<T> {
-    return self;
+  struct Cursor {
+    T _val;
+
+   public:
+    auto operator==(const Cursor& other) const noexcept -> bool {
+      return _val == other._val;
+    }
+
+    auto operator*() const noexcept -> T {
+      return _val;
+    }
+
+    auto operator++() noexcept -> Cursor& {
+      ++_val;
+      return *this;
+    }
+  };
+
+  friend auto begin(Range self) -> Cursor {
+    return {self._start};
   }
 
-  friend auto end(Range) -> End {
-    return {};
+  friend auto end(Range self) -> Cursor {
+    return {self._end};
   }
 };
 
