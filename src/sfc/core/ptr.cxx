@@ -80,13 +80,13 @@ SFC_TEST(write_bytes) {
   sfc::assert_eq(x, 0x01010101U);
 }
 
-SFC_TEST(drop) {
+SFC_TEST(drop_in_place) {
   auto cnt = Cnt{};
 
   {
     auto t = RefCnt{cnt};
     sfc::assert_eq(cnt, Cnt{1, 0});
-    ptr::drop(&t);
+    ptr::drop_in_place(&t);
     sfc::assert_eq(cnt, Cnt{1, 1});
   }
 }

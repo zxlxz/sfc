@@ -151,20 +151,21 @@ class [[nodiscard]] List {
   auto swap_remove(usize idx) noexcept -> T {
     sfc::assert_(idx < _len, "List::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
+    const auto base_ptr = _buf.ptr();
+    auto value = ptr::read(&base_ptr[idx]);
+    ptr::copy(&base_ptr[_len - 1], &base_ptr[idx], 1);
     _len -= 1;
-    auto tmp = ptr::read(_buf.ptr() + _len);
-    if (idx == _len) {
-      return tmp;
-    }
-    return mem::replace(_buf[idx], mem::move(tmp));
+    return value;
   }
 
   void truncate(usize len) noexcept {
     if (len >= _len) {
       return;
     }
-    ptr::drop(_buf.ptr() + len, _len - len);
-    _len = len;
+
+    const auto remaining_len = _len - len;
+    this->_len = len;
+    ptr::drop_in_place(&_buf[len], remaining_len);
   }
 
   void reserve(usize additional) noexcept {
@@ -184,31 +185,32 @@ class [[nodiscard]] List {
   }
 
   void clear() noexcept {
-    ptr::drop(_buf.ptr(), _len);
+    auto elems = Slice{_buf.ptr(), _len};
     _len = 0;
+    ptr::drop_in_place(elems._ptr, elems._len);
   }
 
-  void insert(usize idx, T val) noexcept {
+  auto insert(usize idx, T val) noexcept -> T& {
     sfc::assert_(idx <= _len, "List::insert: idx(={}) out of ids([0,{}))", idx, _len);
-
     this->reserve(1);
-    const auto tail_ptr = _buf.ptr() + idx;
-    const auto tail_len = _len - idx;
-    ptr::shift_elements_right(tail_ptr, tail_len, 1);
-    ptr::write(_buf.ptr() + idx, mem::move(val));
-    _len += 1;
+
+    const auto p = _buf.ptr() + idx;
+    if (idx < _len) {
+      ptr::copy(p, p + 1, _len - idx);
+    }
+    ptr::write(p, mem::move(val));
+    this->set_len(_len + 1);
+    return *p;
   }
 
   auto remove(usize idx) noexcept -> T {
     sfc::assert_(idx < _len, "List::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
-    const auto hole_ptr = _buf.ptr() + idx;
-    const auto tail_ptr = hole_ptr + 1;
-    const auto tail_len = _len - idx - 1;
-    auto res = ptr::read(hole_ptr);
-    ptr::shift_elements_left(tail_ptr, tail_len, 1);
-    _len -= 1;
-    return res;
+    const auto p = _buf.ptr() + idx;
+    auto ret = ptr::read(p);
+    ptr::copy(p + 1, p, _len - idx - 1);
+    this->set_len(_len - 1);
+    return ret;
   }
 
   void resize(usize new_len, T value) noexcept {
@@ -223,9 +225,9 @@ class [[nodiscard]] List {
       return;
     }
     this->reserve(other._len);
-    ptr::uninit_move(other._buf.ptr(), _buf.ptr() + _len, other._len);
-    _len += other._len;
-    other._len = 0;
+    ptr::copy_nonoverlapping(other._buf.ptr(), _buf.ptr() + _len, other._len);
+    this->set_len(_len + other._len);
+    other.set_len(0);
   }
 
   void extend(auto&& iter) noexcept {
@@ -242,30 +244,30 @@ class [[nodiscard]] List {
     }
   }
 
+  /// clones and appends all elements in a slice to the List
+  /// @note: user must ensure that the slice does not overlap with the list's buffer.
   void extend_from_slice(Slice<const T> other) noexcept {
-    static_assert(__is_trivially_copyable(T));
     this->reserve(other._len);
-
-    // note: other must not overlap with this list
     ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
-    _len += other._len;
+    this->set_len(_len + other._len);
   }
 
   void retain(auto&& f) noexcept {
-    const auto idx = this->iter().position([&](const T& x) { return !f(x); }).unwrap_or(_len);
-    if (idx == _len) {
-      return;
-    }
-
-    const auto ptr = _buf.ptr();
-
-    auto cnt = idx;
-    for (auto i = idx + 1; i < _len; ++i) {
-      if (f(ptr[i])) {
-        ptr[cnt++] = mem::move(ptr[i]);
+    const auto p = _buf.ptr();
+    auto read = usize{0};
+    auto write = usize{0};
+    while (read < _len) {
+      if (f(p[read])) {
+        if (write != read) {
+          ptr::copy_nonoverlapping(p + read, p + write, 1);
+        }
+        write += 1;
+      } else {
+        ptr::drop_in_place(p + read, 1);
       }
+      read += 1;
     }
-    this->truncate(cnt);
+    this->set_len(write);
   }
 
   class Drain;
@@ -353,7 +355,7 @@ class List<T, A>::Drain {
   Drain(List& list, Range range) noexcept : _list{list}, _hole{list[range]} {}
 
   ~Drain() noexcept {
-    ptr::drop(_hole._ptr, _hole._len);
+    ptr::drop_in_place(_hole._ptr, _hole._len);
 
     const auto tail_ptr = _hole._ptr + _hole._len;
     const auto tail_pos = num::cast_unsigned(tail_ptr - _list.as_ptr());

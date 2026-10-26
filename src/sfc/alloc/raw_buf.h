@@ -74,22 +74,18 @@ class RawBuf {
  public:
   void reserve(usize len, usize additional) noexcept {
     sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
-
-    const auto req_cap = num::saturating_add(len, additional);
-    if (req_cap <= _cap) {
+    if (additional <= _cap - len) {
       return;
     }
 
     const auto min_cap = cmp::max(kMinCap, 2 * _cap);
-    const auto new_cap = cmp::max(req_cap, min_cap);
+    const auto new_cap = cmp::max(len + additional, min_cap);
     this->grow_unchecked(len, new_cap - len);
   }
 
   void reserve_exact(usize len, usize additional) noexcept {
     sfc::assert_(additional <= kMaxCap, "RawBuf::reserve_exact: additional(={}) too large", additional);
-
-    const auto new_cap = num::saturating_add(len, additional);
-    if (new_cap <= _cap) {
+    if (additional <= _cap - len) {
       return;
     }
 
@@ -117,15 +113,15 @@ class RawBuf {
   void shrink_unchecked(usize new_cap) noexcept {
     const auto old_layout = Layout::array<T>(_cap);
     const auto new_layout = Layout::array<T>(new_cap);
-    const auto ptr = _a.shrink(_ptr, old_layout, new_layout);
-    this->set_ptr_and_cap(ptr, new_cap);
+    const auto new_ptr = _a.shrink(_ptr, old_layout, new_layout);
+    this->set_ptr_and_cap(new_ptr, new_cap);
   }
 
   void grow_unchecked(usize len, usize additional) noexcept {
     const auto old_layout = Layout::array<T>(_cap);
     const auto new_layout = Layout::array<T>(len + additional);
-    const auto ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
-    this->set_ptr_and_cap(ptr, len + additional);
+    const auto new_ptr = _a.grow(_ptr, old_layout, new_layout);
+    this->set_ptr_and_cap(new_ptr, len + additional);
   }
 };
 

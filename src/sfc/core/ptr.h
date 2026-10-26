@@ -90,7 +90,7 @@ inline void write(T* dst, T val) noexcept {
 }
 
 template <class T>
-inline void drop(T* ptr, usize cnt = 1) noexcept {
+inline void drop_in_place(T* ptr, usize cnt = 1) noexcept {
   for (auto i = 0UL; i < cnt; ++i) {
     ptr[i].~T();
   }
@@ -102,38 +102,30 @@ inline void write_bytes(T* dst, u8 val, usize cnt) noexcept {
   __builtin_memset((void*)dst, val, cnt * sizeof(T));
 }
 
+/// all sfc type is memoveable, so we can just copy the bytes
 template <class T>
 inline void copy(const T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) return;
-  // all sfc type is memoveable, so we can just copy the bytes
+  if (cnt == 0 || src == dst) return;
   __builtin_memmove((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
+/// all sfc type is memoveable, so we can just copy the bytes
 template <class T>
 inline void copy_nonoverlapping(const T* src, T* dst, usize cnt) noexcept {
   if (cnt == 0) return;
-  // all sfc type is memoveable, so we can just copy the bytes
   __builtin_memcpy((void*)dst, (const void*)src, cnt * sizeof(T));
-}
-
-template <class T>
-inline void uninit_move(T* src, T* dst, usize cnt) noexcept {
-  if (cnt == 0) return;
-
-  // all sfc type is memoveable, so we can just copy the bytes
-  __builtin_memmove((void*)dst, (const void*)src, cnt * sizeof(T));
 }
 
 template <class T>
 inline void shift_elements_left(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
-  ptr::copy(ptr, ptr - offset, len);
+  __builtin_memmove((void*)(ptr - offset), (const void*)ptr, len * sizeof(T));
 }
 
 template <class T>
 inline void shift_elements_right(T* ptr, usize len, usize offset) noexcept {
   if (len == 0 || offset == 0) return;
-  ptr::copy(ptr, ptr + offset, len);
+  __builtin_memmove((void*)(ptr + offset), (const void*)ptr, len * sizeof(T));
 }
 
 }  // namespace sfc::ptr

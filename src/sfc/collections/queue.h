@@ -121,8 +121,8 @@ class [[nodiscard]] Queue {
       return;
     }
     auto [s1, s2] = this->as_mut_slices();
-    ptr::drop(s1._ptr, s1._len);
-    ptr::drop(s2._ptr, s2._len);
+    ptr::drop_in_place(s1._ptr, s1._len);
+    ptr::drop_in_place(s2._ptr, s2._len);
     _len = 0;
     _pos = 0;
   }
@@ -209,10 +209,10 @@ class [[nodiscard]] Queue {
     const auto head_len = old_cap - _pos;
     const auto tail_len = _len - head_len;
     if (head_len > tail_len && old_cap + tail_len <= new_cap) {
-      ptr::uninit_move(ptr, ptr + old_cap, tail_len);
+      ptr::copy(ptr, ptr + old_cap, tail_len);
     } else {
       const auto new_head = new_cap - head_len;
-      ptr::uninit_move(ptr + _pos, ptr + new_head, head_len);
+      ptr::copy(ptr + _pos, ptr + new_head, head_len);
       _pos = new_head;
     }
   }
