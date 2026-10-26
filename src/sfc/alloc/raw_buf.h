@@ -7,7 +7,7 @@ namespace sfc::raw_buf {
 template <class T, class A = alloc::Global>
 class RawBuf {
   static constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
-  static constexpr usize kMaxCap = usize{256ULL << 30};  // 256 GB
+  static constexpr usize kMaxCap = usize{1ULL << 40};  // 1TB
 
   T* _ptr{nullptr};
   usize _cap{0};
@@ -18,7 +18,9 @@ class RawBuf {
 
   ~RawBuf() noexcept {
     if (!_ptr) return;
-    _a.deallocate(_ptr, this->layout());
+
+    const auto layout = Layout::array<T>(_cap);
+    _a.deallocate(_ptr, layout);
   }
 
   RawBuf(RawBuf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
@@ -69,10 +71,6 @@ class RawBuf {
     return _a;
   }
 
-  auto layout() const -> Layout {
-    return Layout::array<T>(_cap);
-  }
-
  public:
   void reserve(usize len, usize additional) noexcept {
     sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
@@ -117,16 +115,17 @@ class RawBuf {
   }
 
   void shrink_unchecked(usize new_cap) noexcept {
-    const auto layout = this->layout();
-    const auto ptr = _a.shrink(_ptr, layout, new_cap * sizeof(T));
+    const auto old_layout = Layout::array<T>(_cap);
+    const auto new_layout = Layout::array<T>(new_cap);
+    const auto ptr = _a.shrink(_ptr, old_layout, new_layout);
     this->set_ptr_and_cap(ptr, new_cap);
   }
 
   void grow_unchecked(usize len, usize additional) noexcept {
-    const auto layout = this->layout();
-    const auto new_cap = len + additional;
-    const auto ptr = ptr::cast<T>(_a.grow(_ptr, layout, new_cap * sizeof(T)));
-    this->set_ptr_and_cap(ptr, new_cap);
+    const auto old_layout = Layout::array<T>(_cap);
+    const auto new_layout = Layout::array<T>(len + additional);
+    const auto ptr = ptr::cast<T>(_a.grow(_ptr, old_layout, new_layout));
+    this->set_ptr_and_cap(ptr, len + additional);
   }
 };
 

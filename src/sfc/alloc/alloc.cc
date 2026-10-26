@@ -3,7 +3,8 @@
 
 namespace sfc::alloc {
 
-constexpr auto kMaxAllocSize = usize{num::Int<i64>::MAX};
+// 1TB
+constexpr auto kMaxAllocSize = usize{1024ULL << 30};
 
 void* System::allocate(Layout layout) {
   if (layout.size == 0 || layout.size >= kMaxAllocSize) {
@@ -29,29 +30,29 @@ void System::deallocate(void* ptr, Layout layout) {
   sys::dealloc(ptr, layout);
 }
 
-void* System::grow(void* ptr, Layout layout, usize new_size) {
-  if (layout.size >= new_size) {
+void* System::grow(void* ptr, Layout old_layout, Layout new_layout) {
+  if (old_layout.size >= new_layout.size) {
     return ptr;
   }
 
-  if (layout.size == 0) {
-    return System::allocate(Layout{new_size, layout.align});
+  if (old_layout.size == 0) {
+    return this->allocate(new_layout);
   }
 
-  return sys::realloc(ptr, layout, new_size);
+  return sys::realloc(ptr, old_layout, new_layout.size);
 }
 
-void* System::shrink(void* ptr, Layout layout, usize new_size) {
-  if (layout.size <= new_size) {
+void* System::shrink(void* ptr, Layout old_layout, Layout new_layout) {
+  if (old_layout.size <= new_layout.size) {
     return ptr;
   }
 
-  if (new_size == 0) {
-    System::deallocate(ptr, layout);
+  if (new_layout.size == 0) {
+    this->deallocate(ptr, old_layout);
     return nullptr;
   }
 
-  return sys::realloc(ptr, layout, new_size);
+  return sys::realloc(ptr, old_layout, new_layout.size);
 }
 
 }  // namespace sfc::alloc

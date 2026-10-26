@@ -6,13 +6,21 @@ namespace sfc::alloc {
 
 using mem::Layout;
 
-struct System {
-  static void* allocate(Layout layout);
-  static void* alloc_zeroed(Layout layout);
-  static void deallocate(void* ptr, Layout layout);
+struct Allocator {
+  // require: allocate
+  // auto allocate(this auto& self, Layout layout) -> void*;
 
-  static void* grow(void* ptr, Layout layout, usize new_size);
-  static void* shrink(void* ptr, Layout layout, usize new_size);
+  // require: deallocate
+  // void deallocate(this auto& self, void* ptr, Layout layout);
+};
+
+struct System {
+  void* allocate(Layout layout);
+  void* alloc_zeroed(Layout layout);
+  void deallocate(void* ptr, Layout layout);
+
+  void* grow(void* ptr, Layout old_layout, Layout new_layout);
+  void* shrink(void* ptr, Layout old_layout, Layout new_layout);
 };
 
 using Global = System;
