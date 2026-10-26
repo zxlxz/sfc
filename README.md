@@ -71,6 +71,7 @@ Minimal example:
 
 ```cpp
 #include "sfc/alloc.h"
+#include "sfc/io.h"
 
 using namespace sfc;
 
@@ -88,25 +89,25 @@ int main() {
 
 ## 🔬 Testing
 
-Tests live next to sources (`*.cxx`) and are discovered via the single `sfc_test` runner.
+Tests live next to sources (`*.cxx`) and are discovered via the single `sfc-test` runner. A test is declared with the `SFC_TEST(name)` macro inside `namespace sfc::<module>::test`; it auto-registers via static initialization, with the enclosing namespace as its suite.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 
 # Run all tests
-./build/src/sfc_test[.exe]
+./build/src/sfc/sfc-test[.exe]
 
 # List all tests
-./build/src/sfc_test --gtest_list_tests
+./build/src/sfc/sfc-test[.exe] --gtest_list_tests
 
-# Build with AddressSanitizer
-cmake -B build-asan -DSFC_ENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-asan -j
-./build-asan/src/sfc_test
+# Run a single test — the filter is "suite.test_name"
+./build/src/sfc/sfc-test[.exe] --gtest_filter='sfc::alloc::test.global_grow'
 ```
 
-Test expectations use `sfc::expect_*` functions; a failure aborts fast with context.
+Filters must start with the full suite name (`sfc::<module>::test`) or use a wildcard (e.g. `sfc::alloc::test::*` runs a whole module) — a bare test name matches nothing.
+
+Test expectations use `sfc::assert_eq` / `assert_ne` / `assert_lt` / `assert_le` / `assert_gt` / `assert_ge` (plus `assert_flt_eq` for floats); a failure aborts fast with context.
 
 ---
 
@@ -124,7 +125,7 @@ io/           File, stdio, buffered I/O, error model
 log/          Core logging & pluggable backend structure
 serde/        JSON, Base64
 sync/         Mutex, Condvar, Atomics, MPMC queue
-sys/          System-level abstractions
+sys/          Raw OS layer; posix/ and windows/ impls selected by CMake
 thread/       Thread creation & join primitives
 time/         Clocks, durations
 ```
@@ -162,10 +163,10 @@ Star or watch the repo to follow progress. PRs welcome (see below).
 We optimize for small, reviewable changes.
 
 1. Fork & branch (`feat/xyz` or `fix/abc`).
-2. Write tests next to the code (`something.cxx`).
-3. Keep STL out (no `<vector>`, etc.).
-4. Use existing patterns for memory & error handling.
-5. Run test runner; ensure no regressions.
+2. Write tests next to the code (`something.cxx`) using `SFC_TEST` + `sfc::assert_*`.
+3. Keep STL out — only C library and OS headers; C++ facilities come from `sfc/core`.
+4. Use existing patterns for memory & error handling (`Result`/`Option` + panic, no exceptions).
+5. Run `sfc-test`; ensure no regressions and a clean `-Wall -Wextra -Wconversion` build.
 6. Open a PR with a concise rationale & benchmark notes if perf-related.
 
 Please avoid large refactors without prior discussion (issue first).
