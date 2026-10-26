@@ -24,9 +24,4 @@ void panic_imp(PanicInfo info) {
   throw info;
 }
 
-[[noreturn]] void panic_fmt(fmt::Args args, SourceLoc loc) {
-  const auto info = PanicInfo{args, loc};
-  panic::panic_imp(info);
-}
-
 }  // namespace sfc::panic

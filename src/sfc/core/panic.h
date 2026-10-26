@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/core/num.h"
 #include "sfc/core/fmts.h"
 
 namespace sfc::panic {
@@ -11,9 +10,9 @@ struct SourceLoc {
   int line;
 
  public:
-  consteval static auto current(const char* func = __builtin_FUNCTION(),
-                                const char* file = __builtin_FILE(),
-                                int line = __builtin_LINE()) -> SourceLoc {
+  static auto current(const char* func = __builtin_FUNCTION(),
+                      const char* file = __builtin_FILE(),
+                      int line = __builtin_LINE()) -> SourceLoc {
     return {func, file, line};
   }
 };
@@ -24,6 +23,10 @@ struct PanicInfo {
 };
 
 [[noreturn]] void panic_imp(PanicInfo info);
-[[noreturn]] void panic_fmt(fmt::Args args, SourceLoc loc = SourceLoc::current());
+
+[[noreturn]] void panic_fmt(SourceLoc loc, fmt::Fmts fmts, const auto&... args) {
+  const auto info = PanicInfo{{fmts, args...}, loc};
+  panic::panic_imp(info);
+}
 
 }  // namespace sfc::panic

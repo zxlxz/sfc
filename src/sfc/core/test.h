@@ -16,64 +16,47 @@ struct AssertCondition {
 
 void assert_(AssertCondition cond, const fmt::Fmts& fmts, const auto&... args) {
   if (cond._val) return;
-  panic::panic_fmt(fmt::Args{fmts, args...}, cond._loc);
-}
-
-[[noreturn]] void assert_failed(SourceLoc loc, const auto& expr, const auto&... args) {
-  static_assert(sizeof...(args) <= 2, "assert_failed supports at most 2 additional arguments");
-
-  if constexpr (sizeof...(args) == 0) {
-    const auto fmts = fmt::Fmts{"assert failed: `{}`"};
-    panic::panic_fmt(fmt::Args{fmts, expr}, loc);
-  } else if constexpr (sizeof...(args) == 1) {
-    const auto fmts = fmt::Fmts{"assert failed: `{}`\n  value: {}"};
-    panic::panic_fmt(fmt::Args{fmts, expr, args...}, loc);
-  } else if constexpr (sizeof...(args) == 2) {
-    const auto fmts = fmt::Fmts{"assert failed: `(left {} right)`\n  left: {},\n right: {}"};
-    panic::panic_fmt(fmt::Args{fmts, expr, args...}, loc);
-  }
+  panic::panic_fmt(cond._loc, fmts, args...);
 }
 
 void assert_eq(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a == b) return;
-  test::assert_failed(loc, "==", a, b);
+  const auto cond = AssertCondition{a == b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "==", a, b);
 }
 
 void assert_ne(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a != b) return;
-  test::assert_failed(loc, "!=", a, b);
+  const auto cond = AssertCondition{a != b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "!=", a, b);
 }
 
 void assert_lt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a < b) return;
-  test::assert_failed(loc, "<", a, b);
+  const auto cond = AssertCondition{a < b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "<", a, b);
 }
 
 void assert_le(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a <= b) return;
-  test::assert_failed(loc, "<=", a, b);
+  const auto cond = AssertCondition{a <= b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "<=", a, b);
 }
 
 void assert_gt(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a > b) return;
-  test::assert_failed(loc, ">", a, b);
+  const auto cond = AssertCondition{a > b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", ">", a, b);
 }
 
 void assert_ge(const auto& a, const auto& b, SourceLoc loc = SourceLoc::current()) {
-  if (a >= b) return;
-  test::assert_failed(loc, ">=", a, b);
+  const auto cond = AssertCondition{a >= b, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", ">=", a, b);
 }
 
 inline void assert_flt_eq(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
-  const auto diff = a - b;
-  if (-eps < diff && diff < eps) return;
-  test::assert_failed(loc, "==", a, b);
+  const auto cond = AssertCondition{__builtin_fabs(a - b) < eps, loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "==", a, b);
 }
 
 inline void assert_flt_ne(f64 a, f64 b, f64 eps = 1e-12, SourceLoc loc = SourceLoc::current()) {
-  const auto diff = a - b;
-  if (diff < -eps || eps < diff) return;
-  test::assert_failed(loc, "!=", a, b);
+  const auto cond = AssertCondition{!(__builtin_fabs(a - b) < eps), loc};
+  test::assert_(cond, "assert failed: `{}`\n  left: {},\n right: {}", "!=", a, b);
 }
 
 }  // namespace sfc::test
