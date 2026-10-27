@@ -6,35 +6,7 @@
 
 namespace sfc::fmt {
 
-struct FmtSegment {
-  const char* _ptr;
-  usize _len;
-
- public:
-  constexpr auto find(char c, u32 pos = 0) const -> u32 {
-    while (pos < _len && _ptr[pos] != c) {
-      pos++;
-    }
-    return pos;
-  }
-
-  constexpr auto read(usize cnt) -> FmtSegment {
-    const auto res = FmtSegment{_ptr, cnt};
-    _ptr += cnt;
-    _len -= cnt;
-    return res;
-  }
-
-  constexpr auto read_to(char c, bool include = false) -> FmtSegment {
-    const auto pos = this->find(c);
-    if (pos == _len) {
-      return {nullptr, 0};
-    }
-    return this->read(pos + (include ? 1 : 0));
-  }
-};
-
-struct FmtOptions {
+struct Spec {
   char _fill = 0;
   char _align = 0;  // [<>^=]
   char _sign = 0;   // [+- ]
@@ -102,7 +74,7 @@ struct FmtOptions {
   };
 
   // [[fill]align][sign][#][0][width][.precision][type]
-  consteval static auto from_str(auto s) noexcept -> FmtOptions {
+  consteval static auto from_str(auto s) noexcept -> Spec {
     if (s._len == 0) {
       return {};
     }
@@ -110,7 +82,7 @@ struct FmtOptions {
     auto p = Parser{s._ptr, s._ptr + s._len};
     p.extract(':');
 
-    auto res = FmtOptions{};
+    auto res = Spec{};
     res._fill = p.pop();
     res._align = p.extract('<', '>', '=', '^');
     if (res._fill && !res._align) {
@@ -136,23 +108,39 @@ struct FmtOptions {
 
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
+  struct Fill {
+    const char* _ptr;
+    usize _len;
+  };
 
-  usize _cnt = 0;
-  FmtSegment _segment[kMaxLen + 1] = {};
-  FmtOptions _options[kMaxLen] = {};
+  struct Item {
+    Fill _fill;
+    Spec _spec;
+  };
+
+  usize _len = 0;
+  Item _vals[kMaxLen] = {};
+  Fill _tail = {};
 
  public:
-  consteval Fmts(const char* p) noexcept {
+  consteval Fmts(const char* s) noexcept {
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
-    auto s = FmtSegment{p, __builtin_strlen(p)};
-    for (_cnt = 0U; _cnt < kMaxLen; ++_cnt) {
-      const auto seg = s.read_to('{');
-      const auto opt = s.read_to('}', true);
-      if (opt._len == 0 || opt._ptr[0] != '{') break;
-      _segment[_cnt] = seg;
-      _options[_cnt] = FmtOptions::from_str(FmtSegment{opt._ptr + 1, opt._len - 2});
+    auto read_to = [&](const char* p, char c) {
+      while (*p && *p != c) {
+        p++;
+      }
+      return p;
+    };
+
+    auto p = s;
+    for (_len = 0U; _len < kMaxLen; ++_len) {
+      const auto a = read_to(p, '{');
+      const auto b = read_to(a, '}');
+      if (*a != '{' || *b != '}') break;
+      _vals[_len] = {Fill{p, usize(a - p)}, Spec::from_str(Fill{a + 1, usize(b - a) - 1})};
+      p = b + 1;
     }
-    _segment[_cnt] = s;
+    _tail = Fill{p, __builtin_strlen(p)};
 #endif
   }
 };
@@ -161,12 +149,12 @@ struct Args {
   static constexpr auto kMaxLen = 16U;
   Fmts _fmts;
   const void* _args[kMaxLen] = {};
-  void (*_fmt)(const Args& self, fmt::Formatter& f);
+  void (*_fmt)(const Args& self, Formatter& f);
 
  public:
   Args(const Fmts& fmts, const auto&... args);
 
-  void fmt(fmt::Formatter& f) const {
+  void fmt(Formatter& f) const {
     _fmt(*this, f);
   }
 };

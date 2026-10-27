@@ -114,16 +114,17 @@ class DebugTuple;
 class DebugStruct;
 
 class Formatter {
+  friend struct fmt::Args;
   Dyn<Write> _out;
-  FmtOptions _opts = {};
+  Spec _spec = {};
   u16 _depth = 0;
   u16 _max_depth = 100;
 
  public:
-  explicit Formatter(auto& out, FmtOptions opts = {}) : _out{out}, _opts{opts} {}
+  explicit Formatter(auto& out, Spec spec = {}) : _out{out}, _spec{spec} {}
 
  public:
-  auto spec() const -> FmtOptions;
+  auto spec() const -> Spec;
   auto type() const -> char;
   auto width() const -> Option<u32>;
   auto precision() const -> Option<u32>;
@@ -154,13 +155,6 @@ class Formatter {
     } else {
       fmt::Debug::fmt(val, *this);
     }
-  }
-
-  void write_arg(FmtOptions opts, const auto& val) {
-    const auto old_opts = _opts;
-    _opts = opts;
-    this->write_val(val);
-    _opts = old_opts;
   }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
@@ -297,14 +291,16 @@ Args::Args(const Fmts& fmts, const auto&... args) : _fmts{fmts}, _args{&args...}
   _fmt = [](const Args& self, fmt::Formatter& f) {
     const auto& fmts = self._fmts;
     const auto& args = *(const args_t*)self._args;
+    const auto spec = f._spec;
     args.for_each([&, idx = 0U](const auto& val) mutable {
-      if (idx >= fmts._cnt) return;
-      f.write_str({fmts._segment[idx]._ptr, fmts._segment[idx]._len});
-      f.write_arg(fmts._options[idx], val);
-      ++idx;
+      if (idx >= fmts._len) return;
+      const auto [fill, spec] = fmts._vals[idx++];
+      f._spec = spec;
+      f.write_str({fill._ptr, fill._len});
+      f.write_val(val);
     });
-    const auto tail = fmts._segment[fmts._cnt];
-    f.write_str({tail._ptr, tail._len});
+    f.write_str({fmts._tail._ptr, fmts._tail._len});
+    f._spec = spec;
   };
 #endif
 }

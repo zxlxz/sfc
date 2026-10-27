@@ -255,7 +255,7 @@ struct RevBuf {
 
 }  // namespace detail
 
-auto FmtOptions::sign(bool is_neg) const -> str::Str {
+auto Spec::sign(bool is_neg) const -> str::Str {
   if (is_neg) {
     return "-";
   }
@@ -267,7 +267,7 @@ auto FmtOptions::sign(bool is_neg) const -> str::Str {
   }
 }
 
-auto FmtOptions::prefix() const -> str::Str {
+auto Spec::prefix() const -> str::Str {
   if (_alt != '#') {
     return "";
   }
@@ -389,22 +389,22 @@ void Debug::fmt(const char* val, Formatter& f) {
   s.fmt(f);
 }
 
-auto Formatter::spec() const -> FmtOptions {
-  return _opts;
+auto Formatter::spec() const -> Spec {
+  return _spec;
 }
 
 auto Formatter::type() const -> char {
-  return _opts._type;
+  return _spec._type;
 }
 
 auto Formatter::width() const -> Option<u32> {
-  if (!_opts._width) return {};
-  return _opts._width;
+  if (!_spec._width) return {};
+  return _spec._width;
 }
 
 auto Formatter::precision() const -> Option<u32> {
-  if (!_opts._point) return {};
-  return _opts._precision;
+  if (!_spec._point) return {};
+  return _spec._precision;
 }
 
 auto Formatter::depth() const -> u32 {
@@ -434,15 +434,15 @@ void Formatter::write_chars(char c, usize n) {
 }
 
 void Formatter::pad(Str s) {
-  if (_opts._width <= s._len) {
+  if (_spec._width <= s._len) {
     this->write_str(s);
     return;
   }
 
-  const auto fill = _opts.fill();
-  const auto npad = _opts._width - s._len;
+  const auto fill = _spec.fill();
+  const auto npad = _spec._width - s._len;
 
-  switch (_opts._align) {
+  switch (_spec._align) {
     default:
     case '<':
       this->write_str(s);
@@ -462,18 +462,18 @@ void Formatter::pad(Str s) {
 }
 
 void Formatter::pad_num(bool is_neg, Str body) {
-  const auto sign = _opts.sign(is_neg);
-  const auto prefix = _opts.prefix();
-  if (body._len >= _opts._width) {
+  const auto sign = _spec.sign(is_neg);
+  const auto prefix = _spec.prefix();
+  if (body._len >= _spec._width) {
     this->write_str(sign);
     this->write_str(prefix);
     this->write_str(body);
     return;
   }
 
-  const auto npad = _opts._width - body._len;
-  const auto fill = _opts.fill(_opts._alt ? '0' : ' ');
-  const auto align = _opts.align(fill == '0' ? '=' : '>');
+  const auto npad = _spec._width - body._len;
+  const auto fill = _spec.fill(_spec._alt ? '0' : ' ');
+  const auto align = _spec.align(fill == '0' ? '=' : '>');
   switch (align) {
     default:
     case '>':
@@ -536,16 +536,16 @@ void Formatter::Block::open(Str begin) {
   _fmt.write_str(begin);
 
   // depth++
-  if (_fmt._opts._alt == '#') {
+  if (_fmt._spec._alt == '#') {
     _fmt._depth += 1;
   }
 }
 
 void Formatter::Block::finish(Str end) {
-  const auto pretty_fmt = (_fmt._opts._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
 
   // depth--
-  if (_fmt._opts._alt == '#') {
+  if (_fmt._spec._alt == '#') {
     if (_fmt._depth > 0) _fmt._depth -= 1;
   }
 
@@ -559,7 +559,7 @@ void Formatter::Block::finish(Str end) {
 void Formatter::Block::next() {
   _cnt += 1;
 
-  const auto pretty_fmt = (_fmt._opts._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
   if (!pretty_fmt) {
     if (_cnt > 1) {
       _fmt.write_str(", ");
