@@ -15,6 +15,3 @@ out/
 *.log
 *.dat
 *.raw
-
-# config
-CLAUDE.md
