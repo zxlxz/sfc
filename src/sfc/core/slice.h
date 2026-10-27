@@ -8,19 +8,11 @@
 #include "sfc/core/tuple.h"
 #include "sfc/core/option.h"
 #include "sfc/core/result.h"
+#include "sfc/core/range.h"
 
 namespace sfc::slice {
 
-using Range = ops::Range<usize>;
-
-template <class T>
-struct Slice;
-
-template <class T>
-struct Windows;
-
-template <class T>
-struct Chunks;
+using Range = range::Range<usize>;
 
 template <class T>
 struct Iter : iter::DoubleEndedIterator<T&> {
@@ -30,6 +22,7 @@ struct Iter : iter::DoubleEndedIterator<T&> {
  public:
   Iter(T* ptr, usize len) noexcept : _ptr{ptr}, _end{ptr + len} {}
 
+ public:
   auto len() const noexcept -> usize {
     return usize(_end - _ptr);
   }
@@ -44,6 +37,15 @@ struct Iter : iter::DoubleEndedIterator<T&> {
     return *--_end;
   }
 };
+
+template <class T>
+struct Slice;
+
+template <class T>
+struct Chunks;
+
+template <class T>
+struct Windows;
 
 template <class T>
 struct Slice<const T> {

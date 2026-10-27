@@ -13,7 +13,7 @@ void panic_imp(PanicInfo info) {
   fmter.write_str("\n");
 
   auto bt = sys::Backtrace::capture();
-  for (auto idx : ops::Range{bt.len()}) {
+  for (auto idx : Range{bt.len()}) {
     auto frame = bt.frame(idx);
     fmter.write_fmt(" {2}: {}\n", idx, frame.func);
   }

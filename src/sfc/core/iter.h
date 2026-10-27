@@ -5,6 +5,8 @@
 
 namespace sfc::iter {
 
+struct End {};
+
 template <class I>
 struct Rev;
 

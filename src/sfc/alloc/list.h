@@ -4,7 +4,7 @@
 
 namespace sfc::list {
 
-using Range = ops::Range<usize>;
+using slice::Range;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {

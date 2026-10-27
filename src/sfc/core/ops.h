@@ -2,10 +2,6 @@
 
 #include "sfc/core/num.h"
 
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
-#endif
-
 namespace sfc::ops {
 
 template <class T>
@@ -72,90 +68,66 @@ using make_index_seq = IntSeq<u32, __integer_pack(N)...>;
 template <class>
 struct Fn;
 
+template <class>
+struct FnMut;
+
 template <class R, class... T>
 struct Fn<R(T...)> {
-  void* _self;
-  R (*_func)(void*, T&&...);
+  using mfn_t = R (*)(const void*, T&&...);
+  using pfn_t = R (*)(T...);
+
+  const void* _self;
+  union {
+    pfn_t _pfn;
+    mfn_t _mfn;
+  };
+
+  template <class X>
+  static constexpr auto kOpCall = [](const void* p, T&&... t) -> R { return (*(const X*)p)((T&&)t...); };
 
  public:
-  explicit Fn(void* p, R (*func)(void*, T&&...)) : _self{p}, _func{func} {}
+  explicit Fn(pfn_t pf) : _self{nullptr}, _pfn{pf} {}
 
-  template <trait::not_<Fn> X>
-  explicit Fn(X& x) : _self{(void*)&x}, _func{[](void* p, T&&... t) -> R { return (*(X*)p)((T&&)t...); }} {}
+  template <class X>
+  explicit Fn(const X& x, mfn_t mf = Fn::kOpCall<X>) : _self{&x}, _mfn{mf} {}
 
  public:
-  R operator()(T... t) const {
-    return _func(_self, (T&&)t...);
+  auto operator()(T... t) const -> R {
+    return _self ? _mfn(_self, (T&&)t...) : _pfn((T&&)t...);
+  }
+};
+
+template <class R, class... T>
+struct FnMut<R(T...)> {
+  using mfn_t = R (*)(void*, T&&...);
+  using pfn_t = R (*)(T...);
+
+  const void* _self;
+  union {
+    pfn_t _pfn;
+    mfn_t _mfn;
+  };
+
+  template <class X>
+  static constexpr auto kOpCall = [](void* p, T&&... t) -> R { return (*(X*)p)((T&&)t...); };
+
+ public:
+  explicit FnMut(pfn_t pf) : _self{nullptr}, _pfn{pf} {}
+
+  template <class X>
+  explicit FnMut(X& x, mfn_t mf = FnMut::kOpCall<X>) : _self{&x}, _mfn{mf} {}
+
+ public:
+  auto operator()(T... t) const -> R {
+    return _self ? _mfn(_self, (T&&)t...) : _pfn((T&&)t...);
   }
 };
 
 template <class F, class... A>
 using FnOut = decltype(declval<F>()(declval<A>()...));
 
-struct End {};
-static constexpr auto $ = End{};
-
-template <class T = usize>
-struct Range {
-  T _start;
-  T _end;
-
- public:
-  constexpr Range(T end) : _start{0}, _end{end} {}
-  constexpr Range(T start, T end) : _start{start}, _end{end} {}
-  constexpr Range(T start, End) : _start{start}, _end{num::Int<T>::MAX} {}
-
-  constexpr auto wrap(T len) const noexcept -> Range {
-    const auto s = _start < len ? _start : len;
-    const auto e = _end < len ? _end : len;
-    return {s, e};
-  }
-
-  constexpr auto len() const noexcept -> usize {
-    return _start < _end ? usize(_end - _start) : 0UL;
-  }
-
- public:
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    if (_end == num::Int<T>::MAX) {
-      f.write_fmt("{}..$", _start);
-    } else {
-      f.write_fmt("{}..{}", _start, _end);
-    }
-  }
-
- public:
-  struct Cursor {
-    T _val;
-
-   public:
-    auto operator==(const Cursor& other) const noexcept -> bool {
-      return _val == other._val;
-    }
-
-    auto operator*() const noexcept -> T {
-      return _val;
-    }
-
-    auto operator++() noexcept -> Cursor& {
-      ++_val;
-      return *this;
-    }
-  };
-
-  friend auto begin(Range self) -> Cursor {
-    return {self._start};
-  }
-
-  friend auto end(Range self) -> Cursor {
-    return {self._end};
-  }
-};
-
 }  // namespace sfc::ops
 
 namespace sfc {
-using ops::$;
 using ops::FnOut;
 }  // namespace sfc
