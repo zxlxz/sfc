@@ -6,33 +6,73 @@
 
 namespace sfc::test {
 
-enum class GTestResult {
+enum class Color {
+  RED = 1,
+  GREEN = 2,
+  YELLOW = 3,
+  BLUE = 4,
+  MAGENTA = 5,
+  CYAN = 6,
+  RESET = 7,
+};
+
+struct ColoredStr {
+  Str _str;
+  Color _fg_color;
+  bool _enable_color;
+
+ public:
+  void fmt(auto& f) const {
+    if (!_enable_color) {
+      f.write_str(_str);
+    } else {
+      f.write_str(fg(_fg_color));
+      f.write_str(_str);
+      f.write_str(fg(Color::RESET));
+    }
+  }
+
+ private:
+  auto fg(Color c) const -> Str {
+    switch (c) {
+      case Color::RED:     return "\033[31m";
+      case Color::GREEN:   return "\033[32m";
+      case Color::YELLOW:  return "\033[33m";
+      case Color::BLUE:    return "\033[34m";
+      case Color::MAGENTA: return "\033[35m";
+      case Color::CYAN:    return "\033[36m";
+      case Color::RESET:   return "\033[39m";
+      default:             return "";
+    }
+  }
+
+  auto bg(Color c) const -> Str {
+    switch (c) {
+      case Color::RED:     return "\033[41m";
+      case Color::GREEN:   return "\033[42m";
+      case Color::YELLOW:  return "\033[43m";
+      case Color::BLUE:    return "\033[44m";
+      case Color::MAGENTA: return "\033[45m";
+      case Color::CYAN:    return "\033[46m";
+      case Color::RESET:   return "\033[49m";
+      default:             return "";
+    }
+  }
+};
+
+enum class GTestStat {
   None,
   Passed,
   Failed,
 };
 
-class GTestCase {
-  Test _test;
-  Str _suite_name;
-  Str _test_name;
-  GTestResult _result{};
-  usize _duration_ms{};
+// GTestCase <-> TestFn
+struct GTestCase {
+  TestFn _inn;
+  GTestStat _stat = {};
+  time::Duration _duration = {};
 
  public:
-  GTestCase(Test test) : _test{test} {
-    _suite_name = _test.mod();
-    _test_name = _test.name();
-  }
-
-  auto name() const -> Str {
-    return _test_name;
-  }
-
-  auto result() const -> GTestResult {
-    return _result;
-  }
-
   auto match(Slice<const Str> pats) const -> bool {
     if (pats.is_empty()) {
       return true;
@@ -40,26 +80,47 @@ class GTestCase {
     return pats.iter().any([&](Str pat) { return this->match_imp(pat); });
   }
 
-  void run(bool use_color) {
-    _result = GTestResult::None;
-    this->show_result(use_color);
+  auto run(bool use_color) -> bool {
+    _stat = GTestStat::None;
+    _duration = {};
+
     const auto timer = time::Instant::now();
-    try {
-      _test.run();
-      _result = GTestResult::Passed;
-    } catch (...) {
-      _result = GTestResult::Failed;
+    this->show(use_color);
+    const auto passed = _inn.run();
+    _stat = passed ? GTestStat::Passed : GTestStat::Failed;
+    _duration = timer.elapsed();
+    this->show(use_color);
+    return passed;
+  }
+
+  void show(bool use_color) const {
+    switch (_stat) {
+      case GTestStat::None: {
+        const auto label = ColoredStr{"[ RUN      ]", Color::GREEN, use_color};
+        io::println("{} {}", label, *this);
+        break;
+      }
+      case GTestStat::Passed: {
+        const auto label = ColoredStr{"[       OK ]", Color::GREEN, use_color};
+        io::println("{} {} ({} ms)", label, *this, _duration.as_millis());
+        break;
+      }
+      case GTestStat::Failed: {
+        const auto label = ColoredStr{"[  FAILED  ]", Color::RED, use_color};
+        io::println("{} {} ({} ms)", label, *this, _duration.as_millis());
+        break;
+      }
     }
-    _duration_ms = timer.elapsed().as_millis();
-    this->show_result(use_color);
   }
 
  public:
   void fmt(auto& f) const {
-    if (_suite_name.is_empty()) {
-      f.write_fmt("{}", _test_name);
+    const auto mod = _inn._mod;
+    const auto fun = _inn._name;
+    if (mod.is_empty()) {
+      f.write_fmt("{}", fun);
     } else {
-      f.write_fmt("{}.{}", _suite_name, _test_name);
+      f.write_fmt("{}.{}", mod, fun);
     }
   }
 
@@ -75,59 +136,28 @@ class GTestCase {
       return true;
     }
 
-    if (pat_name == _test_name) {
+    if (pat_name == _inn._name) {
       return true;
     }
 
     return false;
   }
-
-  void show_result(bool use_color) {
-    switch (_result) {
-      case GTestResult::None: {
-        const auto s_run = !use_color ? Str{"[ RUN      ]"} : Str{"\033[32m[ RUN      ]\033[39m"};
-        io::println("{} {}", s_run, *this);
-        break;
-      }
-      case GTestResult::Passed: {
-        const auto s_suc = !use_color ? Str{"[       OK ]"} : Str{"\033[32m[       OK ]\033[39m"};
-        io::println("{} {} ({} ms)", s_suc, *this, _duration_ms);
-        break;
-      }
-      case GTestResult::Failed: {
-        const auto s_err = !use_color ? Str{"[  FAILED  ]"} : Str{"\033[31m[  FAILED  ]\033[39m"};
-        io::println("{} {} ({} ms)", s_err, *this, _duration_ms);
-        break;
-      }
-    }
-  }
 };
 
-class GTestSuite {
-  const Module& _mod;  // Module is global and never modified, so reference is safe
-  List<GTestCase> _cases{};
-  usize _run_cnt{0};
-  usize _passed_cnt{0};
-  usize _failed_cnt{0};
-  usize _duration_ms{};
+// GTestSuite <-> TestMod
+struct GTestSuite {
+  const TestMod& _mod;
+  List<GTestCase> _matchs{};
+
+  usize _run_cnt{};
+  usize _passed_cnt{};
+  usize _failed_cnt{};
+  time::Duration _duration{};
 
  public:
-  GTestSuite(const Module& mod) : _mod{mod} {}
+  GTestSuite(const TestMod& mod) : _mod{mod} {}
 
-  void filter(Slice<const Str> pats) {
-    _cases.clear();
-
-    if (!this->match(pats)) {
-      return;
-    }
-
-    for (auto& test : _mod.tests()) {
-      auto test_case = GTestCase{test};
-      if (!test_case.match(pats)) continue;
-      _cases.push(test_case);
-    }
-  }
-
+ public:
   auto match(Slice<const Str> pats) const -> bool {
     if (pats.is_empty()) {
       return true;
@@ -135,47 +165,49 @@ class GTestSuite {
     return pats.iter().any([&](Str pat) { return this->match_imp(pat); });
   }
 
-  auto cases() const noexcept -> Slice<const GTestCase> {
-    return _cases.as_slice();
-  }
+  auto filt(Slice<const Str> pats) -> usize {
+    _matchs.clear();
 
-  auto run_cnt() const -> usize {
-    return _run_cnt;
-  }
+    if (!this->match(pats)) {
+      return 0;
+    }
 
-  auto passed_cnt() const -> usize {
-    return _passed_cnt;
-  }
-
-  auto failed_cnt() const -> usize {
-    return _failed_cnt;
+    for (auto& test : _mod.tests()) {
+      auto test_case = GTestCase{test};
+      if (!test_case.match(pats)) continue;
+      _matchs.push(test_case);
+    }
+    return _matchs.len();
   }
 
   void run(bool use_color) {
-    _run_cnt = 0U;
-    _passed_cnt = 0U;
-    _failed_cnt = 0U;
+    _run_cnt = 0;
+    _passed_cnt = 0;
+    _failed_cnt = 0;
+    _duration = {};
 
-    this->show_run(use_color);
+    this->on_run_start(use_color);
     const auto timer = time::Instant::now();
-    for (auto& test_case : _cases.as_mut_slice()) {
-      _run_cnt++;
-      test_case.run(use_color);
-      switch (test_case.result()) {
-        case GTestResult::Passed: _passed_cnt++; break;
-        case GTestResult::Failed: _failed_cnt++; break;
-        default:                  break;
+    for (auto& test_case : _matchs.as_mut_slice()) {
+      _run_cnt += 1;
+
+      const auto passed = test_case.run(use_color);
+      if (passed) {
+        _passed_cnt += 1;
+      } else {
+        _failed_cnt += 1;
       }
     }
-    _duration_ms = timer.elapsed().as_millis();
-    this->show_result(use_color);
+    _duration = timer.elapsed();
+    this->on_run_end(use_color);
   }
 
   void show_fails(bool use_color) const {
-    const auto title = !use_color ? Str{"[  FAILED  ]"} : Str{"\033[31m[  FAILED  ]\033[39m"};
-    for (const auto& test_case : _cases.as_slice()) {
-      if (test_case.result() == GTestResult::Failed) {
-        io::println("{} {}", title, test_case);
+    const auto label_failed = ColoredStr{"[  FAILED  ]", Color::RED, use_color};
+
+    for (const auto& test_case : _matchs.as_slice()) {
+      if (test_case._stat == GTestStat::Failed) {
+        io::println("{} {}", label_failed, test_case);
       }
     }
   }
@@ -207,93 +239,27 @@ class GTestSuite {
     return false;
   }
 
-  void show_run(bool use_color) const {
-    const auto title = !use_color ? Str{"[----------]"} : Str{"\033[32m[----------]\033[39m"};
-    io::println("{} {} tests from {}", title, _cases.len(), _mod.name());
+  void on_run_start(bool use_color) const {
+    const auto label = ColoredStr{"[----------]", Color::GREEN, use_color};
+    io::println("{} {} tests from {}", label, _matchs.len(), _mod.name());
   }
 
-  void show_result(bool use_color) const {
-    const auto title = !use_color ? Str{"[----------]"} : Str{"\033[32m[----------]\033[39m"};
-    io::println("{} {} tests from {} ({} ms total)", title, _cases.len(), _mod.name(), _duration_ms);
+  void on_run_end(bool use_color) const {
+    const auto label = ColoredStr{"[----------]", Color::GREEN, use_color};
+
+    const auto test_cnt = _matchs.len();
+    const auto mod_name = _mod._name;
+    const auto dur_ms = _duration.as_millis();
+    io::println("{} {} tests from {} ({} ms total)", label, test_cnt, mod_name, dur_ms);
     io::println("");
   }
 };
 
-class GTestRunner {
-  List<GTestSuite> _suites{};
-  usize _case_cnt{};
+GTestApp::GTestApp() {}
 
-  usize _run_cnt{};
-  usize _passed_cnt{};
-  usize _failed_cnt{};
-  usize _duration_ms{};
+GTestApp::~GTestApp() {}
 
- public:
-  void collect_suites(Slice<const Str> pats) {
-    _suites.clear();
-    _case_cnt = 0;
-
-    for (auto& mod : test::modules()) {
-      auto suite = GTestSuite{mod};
-      suite.filter(pats);
-
-      const auto cases = suite.cases();
-      if (cases.is_empty()) {
-        continue;
-      }
-      _case_cnt += cases.len();
-      _suites.push(mem::move(suite));
-    }
-  }
-
-  void run(bool use_color) {
-    _run_cnt = {};
-    _passed_cnt = {};
-    _failed_cnt = {};
-    _duration_ms = {};
-
-    this->show_run(use_color);
-    const auto timer = time::Instant::now();
-    for (auto& suite : _suites.as_mut_slice()) {
-      suite.run(use_color);
-      _run_cnt += suite.run_cnt();
-      _passed_cnt += suite.passed_cnt();
-      _failed_cnt += suite.failed_cnt();
-    }
-    _duration_ms = timer.elapsed().as_millis();
-    this->show_result(use_color);
-    this->show_summary(use_color);
-  }
-
- private:
-  void show_run(bool use_color) const {
-    const auto title = !use_color ? Str{"[==========]"} : Str{"\033[32m[==========]\033[39m"};
-    io::println("{} Running {} tests from {} test suites.", title, _case_cnt, _suites.len());
-  }
-
-  void show_result(bool use_color) const {
-    const auto title = !use_color ? Str{"[==========]"} : Str{"\033[32m[==========]\033[39m"};
-    io::println("{} {} tests from {} test suites ran. ({} ms total)", title, _case_cnt, _suites.len(), _duration_ms);
-  }
-
-  void show_summary(bool use_color) {
-    const auto pass_title = !use_color ? Str{"[  PASSED  ]"} : Str{"\033[32m[  PASSED  ]\033[39m"};
-    const auto fail_title = !use_color ? Str{"[  FAILED  ]"} : Str{"\033[31m[  FAILED  ]\033[39m"};
-
-    io::println("{} {} tests.", pass_title, _passed_cnt);
-
-    if (_failed_cnt != 0) {
-      io::println("{} {} tests. listed below:", fail_title, _failed_cnt);
-      for (const auto& suite : _suites.as_slice()) {
-        suite.show_fails(use_color);
-      }
-      io::println("");
-      io::println("{} FAILED TESTS", _failed_cnt);
-    }
-  }
-};
-
-void gtest_help() {
+void GTestApp::show_help() {
   static constexpr char msg[] =
       "This program contains tests written using SFC Test. You can use the\n"
       "following command line flags to control its behavior: \n"
@@ -306,30 +272,72 @@ void gtest_help() {
   io::println(msg);
 }
 
-auto gtest_all_count() -> usize {
-  auto cnt = 0UZ;
-  for (const auto& mod : test::modules()) {
-    cnt += mod.count();
+void GTestApp::list(Str path) {
+  if (path.starts_with("xml:")) {
+    const auto xml_path = path[{4, $}];
+
+    const auto xml_str = GTestApp::list_xml();
+    fs::write(xml_path, xml_str.as_bytes()).expect(fmt::Args{"write xml to `{}` failed", xml_path});
+    return;
   }
-  return cnt;
+
+  const auto xml_str = GTestApp::list_xml();
+  io::println("{}", xml_str);
 }
 
-auto gtest_format_xml() -> String {
-  const auto all_cnt = test::gtest_all_count();
-  const auto all_suites = test::modules();
+void GTestApp::filt(Str filter) {
+  auto pats = split_pats(filter);
+
+  _suites.clear();
+  _case_cnt = 0;
+  for (auto& test_mod : test::mods()) {
+    auto suite = GTestSuite{test_mod};
+    const auto case_cnt = suite.filt(pats.as_slice());
+    if (case_cnt == 0) {
+      continue;
+    }
+    _case_cnt += case_cnt;
+    _suites.push(mem::move(suite));
+  }
+}
+
+auto GTestApp::run(bool use_color) -> bool {
+  _run_cnt = 0;
+  _passed_cnt = 0;
+  _failed_cnt = 0;
+  _duration_ms = 0;
+
+  this->on_run_start(use_color);
+  const auto timer = time::Instant::now();
+  for (auto& suite : _suites.as_mut_slice()) {
+    suite.run(use_color);
+    _run_cnt += suite._run_cnt;
+    _passed_cnt += suite._passed_cnt;
+    _failed_cnt += suite._failed_cnt;
+  }
+  _duration_ms = timer.elapsed().as_millis();
+  this->on_run_end(use_color);
+  this->show_summary(use_color);
+
+  return _failed_cnt == 0;
+}
+
+auto GTestApp::list_xml() -> String {
+  const auto all_suites = test::mods();
+  const auto total_cnt = all_suites.iter().fold(0UZ, [](usize n, auto& s) { return n + s.count(); });
 
   auto buf = String{};
   auto out = fmt::Formatter(buf);
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-  out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", all_cnt);
+  out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", total_cnt);
   for (auto& suite : all_suites) {
     auto tests = suite.tests();
-    out.write_fmt("<testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
+    out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
-      const auto name = test.name();
+      const auto name = test._name;
       const auto file = Str::from_cstr(test._loc.file);
       const auto line = test._loc.line;
-      out.write_fmt("<testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, file, line);
+      out.write_fmt("    <testcase name=\"{}\" file=\"{}\" line=\"{}\"/>\n", name, file, line);
     }
     out.write_str("  </testsuite>\n");
   }
@@ -337,27 +345,7 @@ auto gtest_format_xml() -> String {
   return buf;
 }
 
-void gtest_list_tests_xml(Str path) {
-  const auto xml = test::gtest_format_xml();
-  if (path.is_empty() || path == "-" || path == "stdout") {
-    io::println("{}", xml);
-    return;
-  }
-
-  auto file = fs::File::create(path).expect("create output file failed");
-  (void)file.write_str(xml.as_str());
-}
-
-void gtest_list_tests(Str uri) {
-  auto path = uri;
-  if (auto type = Str("xml:"); uri.starts_with(type)) {
-    path = uri[{type.len(), $}];
-  }
-
-  test::gtest_list_tests_xml(path);
-}
-
-auto gtest_split_pats(Str filter) -> List<Str> {
+auto GTestApp::split_pats(Str filter) -> List<Str> {
   auto find_pos = [](Str s) -> usize {
     for (auto p = 0U; p < s._len; p++) {
       switch (s[p]) {
@@ -376,16 +364,33 @@ auto gtest_split_pats(Str filter) -> List<Str> {
     pats.push(filter[{0, pos}]);
     filter = filter[{pos + 1, $}];
   }
-
   return pats;
 }
 
-void gtest_run(Str filter, bool color) {
-  const auto pats = gtest_split_pats(filter);
+void GTestApp::on_run_start(bool use_color) const {
+  const auto label = ColoredStr{"[==========]", Color::GREEN, use_color};
+  io::println("{} Running {} tests from {} test suites.", label, _case_cnt, _suites.len());
+}
 
-  auto runner = GTestRunner{};
-  runner.collect_suites(pats.as_slice());
-  runner.run(color);
+void GTestApp::on_run_end(bool use_color) const {
+  const auto label = ColoredStr{"[==========]", Color::GREEN, use_color};
+  io::println("{} tests from {} test suites ran. ({} ms total)", label, _run_cnt, _suites.len(), _duration_ms);
+}
+
+void GTestApp::show_summary(bool use_color) const {
+  const auto pass_title = ColoredStr{"[  PASSED  ]", Color::GREEN, use_color};
+  const auto fail_title = ColoredStr{"[  FAILED  ]", Color::RED, use_color};
+
+  io::println("{} {} tests.", pass_title, _passed_cnt);
+
+  if (_failed_cnt != 0) {
+    io::println("{} {} tests. listed below:", fail_title, _failed_cnt);
+    for (const auto& suite : _suites.as_slice()) {
+      suite.show_fails(use_color);
+    }
+    io::println("");
+    io::println("{} FAILED TESTS", fail_title);
+  }
 }
 
 }  // namespace sfc::test

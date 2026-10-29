@@ -5,26 +5,9 @@
 
 namespace sfc::test {
 
-void App::help() {
-  test::gtest_help();
-}
-
-void App::exec(Str filter, bool use_color) {
-  test::gtest_run(filter, use_color);
-}
-
-void App::list() const {
-  test::gtest_list_tests({});
-}
-
-void App::list_xml(Str path) const {
-  test::gtest_list_tests(path);
-}
-
 auto main(int argc, const char* argv[]) -> int {
   auto cmd = app::Clap{"sfc_test"};
   cmd.flag("h:help", "Show this help message");
-  cmd.flag("l:list", "List all tests");
   cmd.flag("gtest_list_tests", "List all tests instead of running them");
   cmd.opt("gtest_filter", "Run only tests matching the given pattern", "PATTERNS");
   cmd.opt("gtest_color", "Enable or disable colored output", "BOOL");
@@ -35,28 +18,26 @@ auto main(int argc, const char* argv[]) -> int {
     return -1;
   }
 
-  auto app = App{};
+  auto gtest = GTestApp{};
   if (cmd.get("help")) {
-    app.help();
-    return 0;
-  }
-
-  if (cmd.get("list")) {
-    app.list();
+    gtest.show_help();
     return 0;
   }
 
   if (cmd.get("gtest_list_tests")) {
-    const auto output = cmd.get("gtest_output").unwrap_or("stdout");
-    app.list_xml(output);
+    const auto out_path = cmd.get("gtest_output").unwrap_or("stdout");
+    gtest.list(out_path);
     return 0;
   }
 
+  const auto test_filter = cmd.get("gtest_filter").unwrap_or("");
+  gtest.filt(test_filter);
+
   const auto is_terminal = io::stdout().is_terminal();
-  const auto gtest_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
-  const auto gtest_filter = cmd.get("gtest_filter").unwrap_or("");
-  app.exec(gtest_filter, gtest_color);
-  return 0;
+  const auto use_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
+  const auto run_ret = gtest.run(use_color);
+
+  return run_ret ? 0 : -1;
 }
 
 }  // namespace sfc::test
