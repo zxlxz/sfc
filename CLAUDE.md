@@ -13,17 +13,10 @@ Scope: not all of Rust std is ported.
 ## Commands
 
 ```bash
-# Configure (Debug default in local build; CI uses Release)
+# build
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 
-# Build everything (library + test runner)
-cmake --build build -j
-
-# Build just the library or just tests
-cmake --build build --target sfc
-cmake --build build --target sfc-test
-
-# Run all tests (250+ tests, ~1s)
+# run test
 ./build/src/sfc/sfc-test.exe          # Windows
 ctest --test-dir build                # equivalent
 
@@ -38,7 +31,7 @@ ctest --test-dir build                # equivalent
 
 ## Hard constraints
 
-- **No C++ standard library headers.** Only C library headers (`stdio.h`, `stdlib.h`, `string.h`, …) and OS headers (`Windows.h`, `pthread.h`, …) may be `#include`d. Every C++ facility (containers, type traits, iterators, formatting) is defined inside `src/sfc/` — check `core/` for an existing primitive before writing one.
+- **No C++ standard library headers.** Only C library headers (`stdio.h`, `stdlib.h`, `string.h`, …) and OS headers (`Windows.h`, `pthread.h`, …) may be `#include`d in sys/*. Every C++ facility (containers, type traits, iterators, formatting) is defined inside `src/sfc/` — check `core/` for an existing primitive before writing one.
 - **Exceptions are avoided** in library code; use `Result<T,E>` / `Option<T>` + `panic`. (The test runner itself uses try/catch to catch panics.)
 - Warnings are errors-in-spirit: `-Wall -Wextra -Wconversion` is always on; keep new code clean under `-Wconversion`.
 
@@ -47,9 +40,10 @@ ctest --test-dir build                # equivalent
 Layering, bottom to top; each layer only calls the ones below it:
 
 1. **`sys/`** — raw OS layer. Platform-neutral contract headers (`sys/io.h`, `sys/fs.h`, `sys/backtrace.h`, …); implementations in `sys/posix/*.cc` or `sys/windows/*.cc`. CMake compiles exactly one platform directory (`LINUX OR APPLE` → posix, `WIN32` → windows). Higher modules never touch OS APIs directly — they call `sys::*`.
-2. **`core/`** — foundation types used by everything (`Option`, `Result`, `Tuple`, `Variant`, `Slice`, `Str`, `iter`, `fmt`, `hash`, `panic`, … — full list in the module map). Contract headers also live here: `core/io.h` (`io::Error`), `core/sync.h` (`Atomic<T>`, `Ordering`), `core/time.h`.
+2. **`core/`** — foundation types used by everything (`Option`, `Result`, `Tuple`, `Variant`, `Slice`, `Str`, `iter`, `fmt`, `hash`, `panic`, … — full list in the module map). Contract headers also live here: `core/io.h` (`io::Error`), `core/time.h`.
 3. **`alloc/`** — memory: allocator trait (`Allocator`, `System`, alias `Global`; `Layout`), owning types `Box`, `String`, `List<T>` (the vector replacement), `raw_buf`.
-4. **Everything else** — `io`, `fs`, `env`, `ffi`, `time`, `sync`, `thread`, `collections`, `serde`, `app`, `log` — built on core + alloc + sys.
+4. **`sync/`** — synchronization primitives, including `sync/atomic.h` (`Atomic<T>`, `Ordering`) and shared ownership `sync/arc.h` (`Arc<T>`).
+5. **Everything else** — `io`, `fs`, `env`, `ffi`, `time`, `thread`, `collections`, `serde`, `app`, `log` — built on core + alloc + sys + sync where needed.
 
 Shared ownership is always `Arc<T>` (`sync/arc.h`, atomic refcount) — there is no non-atomic `Rc`.
 
@@ -78,7 +72,7 @@ sfc namespaces mirror Rust modules: `sfc::<name>` ports Rust module `<name>`. Fi
 | `core::result` | `sfc::result` | `Result<T,E>`, `Ok`, `Err` | — |
 | `core::slice` | `sfc::slice` | `Slice<T>`, `Windows`, `Chunks` | — |
 | `core::str` | `sfc::str` | `Str`, `Pattern`, `Searcher` | — |
-| `core::fmt` | `sfc::fmt` | `Formatter`, `Write`, `Debug`, `DebugList/Set/Map/Tuple/Struct`, `Fmts`, `Args` | `write`, `writeln` |
+| `core::fmt` | `sfc::fmt` | `Formatter`, `Fmts`, `Args` | `write`, `writeln` |
 | `core::future` | `NOT_IMPL_YET` | — | — |
 
 **Rust alloc**
@@ -98,7 +92,7 @@ sfc namespaces mirror Rust modules: `sfc::<name>` ports Rust module `<name>`. Fi
 | `std::sync` | `sfc::sync` | `Arc`, `Mutex`, `ReentrantLock`, `Condvar`, `mpmc::Channel`, `RingBuf` | — |
 | `std::thread` | `sfc::thread` | `Thread`, `JoinHandle`, `Builder`, `Scope` | `spawn`, `current`, `current_id`, `yield_now`, `sleep`, `sleep_ms` |
 | `std::time` | `sfc::time` | `Instant`, `SystemTime`, `DateTime` | — |
-| `std::io` | `sfc::io` | `io::Error`, `Read`, `Write`, `SeekFrom`, `File`, `BufReader`, `BufWriter`, `Stdout`, `Stderr` | `stdout`, `stderr`, `print`, `println` |
+| `std::io` | `sfc::io` | `Error`, `Read`, `Write`, `SeekFrom`, `File`, `BufReader`, `BufWriter`, `Stdout`, `Stderr` | `stdout`, `stderr`, `print`, `println` |
 | `std::path` | `sfc::fs` | `Path`, `PathBuf` | — |
 | `std::fs` | `sfc::fs` | `File`, `Metadata`, `OpenOptions`, `DirEntry` | `read`, `write`, `metadata`, `create_dir` |
 | `std::env` | `sfc::env` | — | `var`, `set_var`, `remove_var`, `current_dir`, `home_dir`, `temp_dir` |

@@ -69,4 +69,11 @@ struct Atomic {
   }
 };
 
+inline void fence(Ordering order) noexcept {
+#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
+#else
+  __atomic_thread_fence(int(order));
+#endif
+}
+
 }  // namespace sfc::sync

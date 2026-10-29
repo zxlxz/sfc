@@ -1,4 +1,5 @@
 #include "sfc/sync/mutex.h"
+#include "sfc/sync/atomic.h"
 #include "sfc/sys/sync.h"
 #include "sfc/thread.h"
 

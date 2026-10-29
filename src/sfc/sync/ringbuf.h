@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/alloc/raw_buf.h"
+#include "sfc/sync/atomic.h"
 
 namespace sfc::sync::ringbuf {
 

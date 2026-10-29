@@ -1,21 +1,23 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/sync/atomic.h"
 
 namespace sfc::sync {
 
 template <class T>
 class [[nodiscard]] Arc {
   struct Inn {
-    sync::Atomic<u32> _cnt;
+    Atomic<u32> _cnt;
     T _val;
 
     auto inc_count() noexcept -> u32 {
-      return _cnt.fetch_add(1, sync::Ordering::Relaxed);
+      const auto val = _cnt.fetch_add(1, Ordering::Relaxed);
+      return val;
     }
 
     auto dec_count() noexcept -> u32 {
-      return _cnt.fetch_sub(1, sync::Ordering::Release);
+      const auto val = _cnt.fetch_sub(1, Ordering::Release);
+      return val;
     }
   };
   Inn* _ptr{nullptr};
@@ -27,6 +29,7 @@ class [[nodiscard]] Arc {
     if (_ptr == nullptr) return;
 
     if (_ptr->dec_count() == 1) {
+      sync::fence(Ordering::Acquire);
       delete _ptr;
     }
   }
@@ -45,11 +48,23 @@ class [[nodiscard]] Arc {
     return res;
   }
 
+  // trait: Clone
+  auto clone() const noexcept -> Arc {
+    if (_ptr == nullptr) {
+      return {};
+    }
+
+    _ptr->inc_count();
+    auto res = Arc{};
+    res._ptr = _ptr;
+    return res;
+  }
+
+ public:
   auto as_ptr() const noexcept -> const T* {
     return _ptr ? &_ptr->_val : nullptr;
   }
 
- public:
   // trait: Deref<const T*>
   auto operator->() const noexcept -> const T* {
     return &_ptr->_val;
@@ -68,16 +83,6 @@ class [[nodiscard]] Arc {
   // trait: Deref<T&>
   auto operator*() noexcept -> T& {
     return _ptr->_val;
-  }
-
-  // trait: Clone
-  auto clone() const noexcept -> Arc {
-    if (_ptr == nullptr) return {};
-
-    _ptr->inc_count();
-    auto res = Arc{};
-    res._ptr = _ptr;
-    return res;
   }
 };
 
