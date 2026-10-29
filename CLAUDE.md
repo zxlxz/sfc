@@ -1,59 +1,58 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for AI coding agents working in this repository.
 
 ## Project
 
-SFC (Standard Foundation for C++): a zero-STL, Rust-inspired C++23 foundational library — a curated port of Rust's std. Single static `sfc` library target plus a custom test runner. GPLv3.
+SFC (Standard Foundation for C++): a zero-STL, Rust-inspired C++23 foundational library — a curated port of Rust's std. One static library target `sfc` plus the `sfc-test` runner. GPLv3.
 
-Scope: not all of Rust std is ported.
-  - `borrow`, `pin`, `cell`: not fit c++
-  - `future`: too complex, not plan to impl.
+Not all of Rust std is ported:
+- `borrow`, `pin`, `cell`: don't fit C++.
+- `future`: too complex, not planned.
+- `net`: marked `NOT_IMPL_YET` in the module map.
 
 ## Commands
 
 ```bash
-# build
-cmake -B build -DCMAKE_BUILD_TYPE=Debug
-
-# run test
-./build/src/sfc/sfc-test.exe          # Windows
-ctest --test-dir build                # equivalent
-
-# List tests
-./build/src/sfc/sfc-test.exe --gtest_list_tests
-
-# Run one test — filter MUST be "suite.testname"
-./build/src/sfc/sfc-test.exe --gtest_filter='sfc::alloc::test.global_shrink'
+cmake -B build -DCMAKE_BUILD_TYPE=Debug   # configure
+cmake --build build                        # build libsfc.a and sfc-test
+ctest --test-dir build                     # run all tests
 ```
 
-**Filter quirk:** a bare test name (`--gtest_filter=global_shrink`) matches 0 tests — the pattern must start with the full suite name or be a wildcard. Use `sfc::<module>::test.<name>` or `sfc::<module>::test::*`.
+Test runner (Windows: `sfc-test.exe`):
+
+```bash
+build/src/sfc/sfc-test --gtest_filter='sfc::alloc::test.global_shrink'  # one test
+build/src/sfc/sfc-test --gtest_filter='sfc::alloc::test.*'              # one suite
+build/src/sfc/sfc-test --gtest_list_tests --gtest_output=xml:tests.xml  # list tests to a file
+```
+
+- Filter pattern is `<suite>.<test>` with the full suite name (`sfc::alloc::test`), or `<suite>.*`. A bare test name (`global_shrink`) and `<suite>::*` both match 0 tests.
+- `--gtest_output` only applies to `--gtest_list_tests`. Use the `xml:<file>` form; the bare form printed nothing when piped.
 
 ## Hard constraints
 
-- **No C++ standard library headers.** Only C library headers (`stdio.h`, `stdlib.h`, `string.h`, …) and OS headers (`Windows.h`, `pthread.h`, …) may be `#include`d in sys/*. Every C++ facility (containers, type traits, iterators, formatting) is defined inside `src/sfc/` — check `core/` for an existing primitive before writing one.
-- **Exceptions are avoided** in library code; use `Result<T,E>` / `Option<T>` + `panic`. (The test runner itself uses try/catch to catch panics.)
-- Warnings are errors-in-spirit: `-Wall -Wextra -Wconversion` is always on; keep new code clean under `-Wconversion`.
+- **No C++ standard library headers.** Only C headers (`stdio.h`, `string.h`, …) and OS headers (`Windows.h`, `pthread.h`, …) may be `#include`d, and only under `sys/`. Every other facility (containers, type traits, iterators, formatting) lives in `src/sfc/`; check `core/` and `alloc/` before writing a new primitive.
+- **No exceptions in library code.** Report failures with `Result<T,E>` / `Option<T>`, or `panic`. The test runner itself uses try/catch to catch panics (`src/sfc/test/test.cc`).
+- **Warnings stay clean.** `-Wall -Wextra -Wconversion` is set for all targets (`src/CMakeLists.txt`); new code must not add warnings.
 
 ## Architecture
 
-Layering, bottom to top; each layer only calls the ones below it:
+Layers, bottom to top; each layer only uses the ones below it. Paths are relative to `src/sfc/`.
 
-1. **`sys/`** — raw OS layer. Platform-neutral contract headers (`sys/io.h`, `sys/fs.h`, `sys/backtrace.h`, …); implementations in `sys/posix/*.cc` or `sys/windows/*.cc`. CMake compiles exactly one platform directory (`LINUX OR APPLE` → posix, `WIN32` → windows). Higher modules never touch OS APIs directly — they call `sys::*`.
-2. **`core/`** — foundation types used by everything (`Option`, `Result`, `Tuple`, `Variant`, `Slice`, `Str`, `iter`, `fmt`, `hash`, `panic`, … — full list in the module map). Contract headers also live here: `core/io.h` (`io::Error`), `core/time.h`.
-3. **`alloc/`** — memory: allocator trait (`Allocator`, `System`, alias `Global`; `Layout`), owning types `Box`, `String`, `List<T>` (the vector replacement), `raw_buf`.
-4. **`sync/`** — synchronization primitives, including `sync/atomic.h` (`Atomic<T>`, `Ordering`) and shared ownership `sync/arc.h` (`Arc<T>`).
-5. **Everything else** — `io`, `fs`, `env`, `ffi`, `time`, `thread`, `collections`, `serde`, `app`, `log` — built on core + alloc + sys + sync where needed.
+1. **`sys/`** — raw OS layer. Platform-neutral contracts (`sys/io.h`, `sys/fs.h`, `sys/backtrace.h`, …) with implementations in `sys/posix/*.cc` (Linux/macOS) or `sys/windows/*.cc` (Windows). CMake compiles exactly one platform directory. Only `sys/` calls OS APIs; higher modules call `sys::*`. Keep posix and windows in API parity.
+2. **`core/`** — foundation types used everywhere (`Option`, `Result`, `Tuple`, `Variant`, `Slice`, `Str`, `iter`, `fmt`, `hash`, `panic`, … see module map). Contract headers also live here: `core/io.h` (`io::Error`), `core/time.h`.
+3. **`alloc/`** — allocator trait (`Allocator`, `System`, alias `Global`, `Layout`), owning types `Box`, `String`, `List<T>` (the vector replacement), and `raw_buf`.
+4. **`sync/`** — `sync/atomic.h` (`Atomic<T>`, `Ordering`) and `sync/arc.h` (`Arc<T>`). Shared ownership is always `Arc<T>` (atomic refcount); there is no non-atomic `Rc`.
+5. **Everything else** — `io`, `fs`, `env`, `ffi`, `time`, `thread`, `collections`, `serde`, `app`, `log` — built on the layers above.
 
-Shared ownership is always `Arc<T>` (`sync/arc.h`, atomic refcount) — there is no non-atomic `Rc`.
+### File layout
 
-### Module file convention
-
-sfc namespaces mirror Rust modules: `sfc::<name>` ports Rust module `<name>`. File layout per unit: `name.h` (header) + `name.cc` (impl) + `name.cxx` (tests), named after the unit:
-
-- `core/` and `alloc/` units are flat: `sfc/core/<mod>.{h,cc,cxx}`, `sfc/alloc/<mod>.{h,cc,cxx}`.
-- Every other module is a directory: `sfc/<mod>/<unit>.{h,cc,cxx}`, with an umbrella header `sfc/<mod>.h` (e.g. `sfc/io.h`); `sfc/core.h` aggregates core.
-- Sources are glob-recursed via `target_source_files` in `cmake/utils.cmake` — new files are picked up on reconfigure, no CMakeLists edit needed.
+- Each unit has `name.h` (interface), `name.cc` (library code, compiled into `sfc`), and `name.cxx` (tests, compiled into `sfc-test`). The extension selects the target.
+- `core/` and `alloc/` are flat: `core/<unit>.*`, `alloc/<unit>.*`.
+- Other modules are directories `<mod>/<unit>.*` with an umbrella header `<mod>.h` (e.g. `io.h`); `core.h` aggregates `core/`.
+- Namespaces mirror Rust modules: `sfc::<name>` ports Rust module `<name>`.
+- Sources are globbed by `target_source_files` (`cmake/utils.cmake`, `CONFIGURE_DEPENDS`), so new files are picked up automatically; no CMakeLists edit is needed.
 
 ### Rust ↔ sfc module map
 
@@ -109,28 +108,35 @@ sfc namespaces mirror Rust modules: `sfc::<name>` ports Rust module `<name>`. Fi
 
 ### Tests
 
-Custom gtest-like framework in `src/sfc/test/`. Tests live next to the code in `.cxx` files:
+Custom gtest-like framework in `src/sfc/test/`. Tests live in the `.cxx` next to the code:
 
 ```cpp
 #include "sfc/test/test.h"
 
 namespace sfc::alloc::test {
 
-SFC_TEST(global_grow) {   // auto-registers via static init; suite = enclosing namespace
-  sfc::assert_eq(a, b);   // assert_eq/ne/lt/le/gt/ge, assert_flt_eq; aborts with context on failure
+SFC_TEST(global_grow) {  // registered at static init
+  sfc::assert_eq(a, b);  // assert_eq/ne/lt/le/gt/ge, assert_flt_eq (default epsilon 1e-12)
 }
 
 }  // namespace sfc::alloc::test
 ```
 
-The runner (`sfc-test`) derives suite/test names from the registration type name (`sfc::alloc::test::_global_grow` → suite `sfc::alloc::test`, test `global_grow`) and supports gtest-style flags (`--gtest_filter`, `--gtest_list_tests`, `--gtest_output=<file>` for XML).
+- Suite = enclosing namespace (`sfc::alloc::test`); test name = macro argument (`global_grow`).
+- A failed assert panics with its source location; the runner catches the panic and reports the test as failed.
 
-### Formatting & style
+## Style
 
-- clang-format: Google-based, 120 columns, **`SortIncludes: false`** — include order is deliberate, never re-sort.
-- Rust-flavored C++ style: `auto f() -> T` trailing returns, lowercase module/function names, PascalCase types, slice ranges written `s[{begin, end}]` with `$` meaning "to end" (e.g. `s[{2, $}]`).
-- Formattable types opt in via a `void fmt(auto& f) const` member; formatting uses `"{}"` placeholders (`io::println`, `f.write_fmt`) — no `<format>`, no iostreams.
+- Format with clang-format (`.clang-format`: Google-based, 120 columns). **`SortIncludes: false`**: include order is deliberate; never re-sort.
+- Trailing return types `auto f() -> T`; lowercase module and function names; PascalCase types.
+- Slice ranges are `s[{begin, end}]`; `$` means end, e.g. `s[{2, $}]`.
+- Formattable types define `void fmt(auto& f) const`; format with `"{}"` via `io::println` or `f.write_fmt`. No `<format>`, no iostreams.
 
-## CI
+## Verification
 
-GitHub Actions (`.github/workflows/cmake-single-platform.yml`): ubuntu, gcc-15, Release, `ctest`. Keep `sys/posix` and `sys/windows` implementations in API parity — CI only exercises posix.
+Before finishing a change:
+1. `cmake --build build` must add no new warnings (`-Wall -Wextra -Wconversion`).
+2. `ctest --test-dir build`, or a filtered `sfc-test` run while iterating.
+3. If you touched `sys/`, mirror the change in both `sys/posix` and `sys/windows`.
+
+CI (`.github/workflows/cmake-single-platform.yml`): Ubuntu, gcc-15, Release, `ctest`. Only posix is built and tested there.
