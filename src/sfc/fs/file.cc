@@ -47,7 +47,7 @@ auto File::from_raw_fd(io::RawFd fd) -> File {
 }
 
 auto File::open(Path path) noexcept -> io::Result<File> {
-  const auto opts = OpenOptions{.read = true, .write = true};
+  const auto opts = OpenOptions{.read = true, .write = false};
   return opts.open(path);
 }
 
