@@ -63,9 +63,6 @@ template <class T>
 concept tv_drop_ = __has_trivial_destructor(T);
 #endif
 
-template <class T, class... U>
-concept AsRef = requires(const U&... args) { T{args...}; };
-
 template <class Trait>
 class Dyn : public Trait {
   friend Trait;

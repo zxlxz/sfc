@@ -105,12 +105,17 @@ class Write {
   }
 };
 
-template <trait::tv_copy_ T>
-struct FromBytes {
-  static auto read_from(auto& read) -> Result<T> {
-    u8 buf[sizeof(T)];
-    _TRY(read.read_exact(buf));
-    return __builtin_bit_cast(T, buf);
+struct Pod {
+  template <trait::tv_copy_ T>
+  static auto read_from(auto& r) -> Result<T> {
+    auto val = T{};  // T default init
+    _TRY(r.read_exact(mem::as_bytes_mut(val)));
+    return val;
+  }
+
+  template <trait::tv_copy_ T>
+  static auto write_to(const T& self, auto& w) -> Result<> {
+    return w.write_all(mem::as_bytes(self));
   }
 };
 

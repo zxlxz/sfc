@@ -91,7 +91,7 @@ Layers, bottom to top; each layer only uses the ones below it. Paths are relativ
 | `std::sync` | `sfc::sync` | `Arc`, `Mutex`, `ReentrantLock`, `Condvar`, `mpmc::Channel`, `RingBuf` | — |
 | `std::thread` | `sfc::thread` | `Thread`, `JoinHandle`, `Builder`, `Scope` | `spawn`, `current`, `current_id`, `yield_now`, `sleep`, `sleep_ms` |
 | `std::time` | `sfc::time` | `Instant`, `SystemTime`, `DateTime` | — |
-| `std::io` | `sfc::io` | `Error`, `Read`, `Write`, `SeekFrom`, `File`, `BufReader`, `BufWriter`, `Stdout`, `Stderr` | `stdout`, `stderr`, `print`, `println` |
+| `std::io` | `sfc::io` | `Error`, `Read`, `Write`, `SeekFrom`, `File`, `BufReader`, `BufWriter`, `Stdout`, `Stderr`, `Pod` | `stdout`, `stderr`, `print`, `println` |
 | `std::path` | `sfc::fs` | `Path`, `PathBuf` | — |
 | `std::fs` | `sfc::fs` | `File`, `Metadata`, `OpenOptions`, `DirEntry` | `read`, `write`, `metadata`, `create_dir` |
 | `std::env` | `sfc::env` | — | `var`, `set_var`, `remove_var`, `current_dir`, `home_dir`, `temp_dir` |

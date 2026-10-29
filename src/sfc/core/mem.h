@@ -40,29 +40,39 @@ inline void swap(T& x, T& y) noexcept {
   if constexpr (requires { x.swap(y); }) {
     x.swap(y);
   } else {
-    auto z = mem::move(x);
-    x = mem::move(y);
-    y = mem::move(z);
+    auto z = static_cast<T&&>(x);
+    x = static_cast<T&&>(y);
+    y = static_cast<T&&>(z);
   }
 }
 
 template <class T>
 inline void assign(T& dst, T src) noexcept {
-  dst = mem::move(src);
+  dst = static_cast<T&&>(src);
 }
 
 template <class T>
 inline auto replace(T& dst, T src) noexcept -> T {
-  auto tmp = mem::move(dst);
-  dst = mem::move(src);
+  auto tmp = static_cast<T&&>(dst);
+  dst = static_cast<T&&>(src);
   return tmp;
 }
 
 template <class T>
 inline auto take(T& dst) noexcept -> T {
-  auto res = mem::move(dst);
+  auto res = static_cast<T&&>(dst);
   dst = T{};
   return res;
+}
+
+template <trait::tv_copy_ T>
+auto as_bytes(const T& self) -> const u8 (&)[sizeof(T)] {
+  return *(const u8(*)[sizeof(T)])(&self);
+}
+
+template <trait::tv_copy_ T>
+auto as_bytes_mut(T& self) -> u8 (&)[sizeof(T)] {
+  return *(u8(*)[sizeof(T)])(&self);
 }
 
 }  // namespace sfc::mem
