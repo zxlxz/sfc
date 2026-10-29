@@ -255,7 +255,7 @@ struct GTestSuite {
   }
 };
 
-GTestApp::GTestApp() {}
+GTestApp::GTestApp() : _suites{} {}
 
 GTestApp::~GTestApp() {}
 

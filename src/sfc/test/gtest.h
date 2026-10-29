@@ -7,7 +7,7 @@ namespace sfc::test {
 struct GTestSuite;
 
 class GTestApp {
-  List<GTestSuite> _suites{};
+  List<GTestSuite> _suites;
   usize _case_cnt{};
   usize _run_cnt{};
   usize _passed_cnt{};
@@ -17,6 +17,9 @@ class GTestApp {
  public:
   GTestApp();
   ~GTestApp();
+
+  GTestApp(const GTestApp&) = delete;
+  GTestApp& operator=(const GTestApp&) = delete;
 
  public:
   static void show_help();
