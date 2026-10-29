@@ -48,20 +48,16 @@ auto String::as_ptr() const noexcept -> const u8* {
   return _buf.as_ptr();
 }
 
-auto String::as_mut_buf() noexcept -> Buf& {
-  return _buf;
+auto String::as_str() const noexcept -> Str {
+  return Str::from_utf8(_buf.as_slice());
 }
 
-auto String::as_slice() const noexcept -> Slice<const u8> {
+auto String::as_bytes() const noexcept -> Slice<const u8> {
   return _buf.as_slice();
 }
 
-auto String::as_mut_slice() noexcept -> Slice<u8> {
-  return _buf.as_mut_slice();
-}
-
-auto String::as_str() const noexcept -> Str {
-  return Str::from_utf8(_buf.as_slice());
+auto String::as_mut_list() noexcept -> List<u8>& {
+  return _buf;
 }
 
 auto String::operator[](usize idx) const noexcept -> u8 {

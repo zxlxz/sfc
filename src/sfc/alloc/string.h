@@ -20,11 +20,10 @@ class [[nodiscard]] String {
   auto len() const noexcept -> usize;
   auto is_empty() const noexcept -> bool;
   auto as_ptr() const noexcept -> const u8*;
-  auto as_mut_buf() noexcept -> Buf&;
 
-  auto as_slice() const noexcept -> Slice<const u8>;
-  auto as_mut_slice() noexcept -> Slice<u8>;
   auto as_str() const noexcept -> Str;
+  auto as_bytes() const noexcept -> Slice<const u8>;
+  auto as_mut_list() noexcept -> List<u8>&;
 
   auto operator[](usize idx) const noexcept -> u8;
   auto operator[](Range ids) const noexcept -> Str;

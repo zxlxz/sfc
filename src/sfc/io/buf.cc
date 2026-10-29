@@ -104,7 +104,7 @@ auto ReadBuf::read_until(Dyn<Read> read, u8 byte, List<u8>& buf) -> Result<usize
 }
 
 auto ReadBuf::read_line(Dyn<Read> read, String& buf) -> Result<usize> {
-  return this->read_until(read, '\n', buf.as_mut_buf());
+  return this->read_until(read, '\n', buf.as_mut_list());
 }
 
 WriteBuf::WriteBuf() = default;

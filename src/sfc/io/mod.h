@@ -62,7 +62,7 @@ class Read {
   }
 
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return self.read_to_end(buf.as_mut_buf());
+    return self.read_to_end(buf.as_mut_list());
   }
 };
 
