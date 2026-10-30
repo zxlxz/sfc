@@ -14,7 +14,7 @@ void* System::allocate(Layout layout) {
   return sys::alloc(layout);
 }
 
-void* System::alloc_zeroed(Layout layout) {
+void* System::allocate_zeroed(Layout layout) {
   if (layout.size == 0 || layout.size >= kMaxAllocSize) {
     return nullptr;
   }

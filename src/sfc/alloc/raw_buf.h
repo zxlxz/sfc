@@ -14,7 +14,7 @@ class RawBuf {
   [[no_unique_address]] A _a{};
 
  public:
-  explicit RawBuf(A alloc = {}) noexcept : _a{mem::move(alloc)} {}
+  explicit RawBuf(A alloc = {}) noexcept : _a{alloc} {}
 
   ~RawBuf() noexcept {
     if (!_ptr) return;

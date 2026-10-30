@@ -16,7 +16,7 @@ struct Allocator {
 
 struct System {
   void* allocate(Layout layout);
-  void* alloc_zeroed(Layout layout);
+  void* allocate_zeroed(Layout layout);
   void deallocate(void* ptr, Layout layout);
 
   void* grow(void* ptr, Layout old_layout, Layout new_layout);
