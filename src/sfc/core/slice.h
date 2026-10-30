@@ -79,11 +79,6 @@ struct Slice<const T> {
     return _len == 0;
   }
 
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
-  }
-
  public:
   auto operator[](usize idx) const noexcept -> const T& {
     sfc::assert_(idx < _len, "Slice::[]: idx(={}) out of range(={})", idx, _len);
@@ -167,6 +162,12 @@ struct Slice<const T> {
     f.debug_list().entries(this->iter());
   }
 
+  // trait: AsRawBytes
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(trait::tv_copy_<T>);
+    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
+  }
+
   // trait: io::Read
   auto read(Slice<T> buf) noexcept -> io::Result<usize> {
     if (buf._len == 0 || _len == 0) {
@@ -240,16 +241,6 @@ struct Slice {
 
   constexpr auto is_empty() const noexcept -> bool {
     return _len == 0;
-  }
-
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
-  }
-
-  auto as_mut_bytes() noexcept -> Slice<u8> {
-    static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
  public:
@@ -396,6 +387,18 @@ struct Slice {
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
+  }
+
+  // trait: AsRawBytes
+  auto as_bytes() const noexcept -> Slice<const u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
+  }
+
+  // trait: AsRawBytes
+  auto as_bytes_mut() noexcept -> Slice<u8> {
+    static_assert(__is_trivially_copyable(T));
+    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
   // trait: io::Read

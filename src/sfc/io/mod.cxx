@@ -92,25 +92,4 @@ SFC_TEST(write_str) {
   sfc::assert_eq(w.write_str("").is_ok(), true);
 }
 
-SFC_TEST(pod) {
-  u8 buf[32] = "";
-
-  {
-    auto out = Slice{buf};
-    auto w = Dyn<Write>{out};
-    Pod::write_to(i32{0x12345678}, w).unwrap();
-    sfc::assert_eq(buf[0], 0x78);
-    sfc::assert_eq(buf[1], 0x56);
-    sfc::assert_eq(buf[2], 0x34);
-    sfc::assert_eq(buf[3], 0x12);
-  }
-
-  {
-    auto in = Slice{buf};
-    auto r = Dyn<Read>{in};
-    const auto val = Pod::read_from<i32>(r).unwrap();
-    sfc::assert_eq(val, 0x12345678);
-  }
-}
-
 }  // namespace sfc::io::test

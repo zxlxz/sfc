@@ -10,7 +10,7 @@ using RawFd = void*;
 using RawFd = int;
 #endif
 
-class [[nodiscard]] File : public io::Read, public io::Write {
+class [[nodiscard]] File : public io::Read, public io::Write, public io::Seek {
   RawFd _fd;
 
  public:
@@ -24,6 +24,7 @@ class [[nodiscard]] File : public io::Read, public io::Write {
  public:
   auto as_raw_fd() const noexcept -> RawFd;
 
+ public:
   auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;
   auto flush() noexcept -> io::Result<>;

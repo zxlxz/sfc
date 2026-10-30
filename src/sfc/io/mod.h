@@ -11,9 +11,17 @@ struct SeekFrom {
   i64 offset;
 
  public:
-  static auto Start(u64 offset) -> SeekFrom;
-  static auto Current(i64 offset) -> SeekFrom;
-  static auto End(i64 offset) -> SeekFrom;
+  static auto Start(u64 offset) -> SeekFrom {
+    return SeekFrom{Kind::Start, i64(offset)};
+  }
+
+  static auto Current(i64 offset) -> SeekFrom {
+    return SeekFrom{Kind::Current, offset};
+  }
+
+  static auto End(i64 offset) -> SeekFrom {
+    return SeekFrom{Kind::End, offset};
+  }
 };
 
 class Read {
@@ -64,6 +72,18 @@ class Read {
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
     return self.read_to_end(buf.as_mut_list());
   }
+
+  template <trait::tv_copy_ T>
+  auto read_raw(this auto& self, T val = T{}) -> Result<T> {
+    _TRY(self.read_exact(mem::as_bytes_mut(val)));
+    return Ok{val};
+  }
+
+  template <trait::tv_copy_ T>
+  auto read_raw_slice(this auto& self, Slice<T> buf) -> Result<> {
+    _TRY(self.read_exact(buf.as_bytes_mut()));
+    return Ok{};
+  }
 };
 
 class Write {
@@ -103,19 +123,42 @@ class Write {
   auto write_str(this auto& self, Str buf) -> Result<> {
     return self.write_all(buf.as_bytes());
   }
-};
 
-struct Pod {
   template <trait::tv_copy_ T>
-  static auto read_from(auto& r) -> Result<T> {
-    auto val = T{};  // T default init
-    _TRY(r.read_exact(mem::as_bytes_mut(val)));
-    return val;
+  auto write_raw(this auto& self, const T& val) -> Result<> {
+    _TRY(self.write_all(mem::as_bytes(val)));
+    return Ok{};
   }
 
   template <trait::tv_copy_ T>
-  static auto write_to(const T& self, auto& w) -> Result<> {
-    return w.write_all(mem::as_bytes(self));
+  auto write_raw_slice(this auto& self, Slice<const T> buf) -> Result<> {
+    _TRY(self.write_all(buf.as_bytes_mut()));
+    return Ok{};
+  }
+};
+
+class Seek {
+  friend Dyn<Write>;
+  struct VTbl {
+    Result<u64> (*seek)(void*, SeekFrom);
+  };
+
+  template <class X>
+  static constexpr auto vtbl = VTbl{
+      .seek = [](void* x, auto... u) { return ((X*)(x))->seek(u...); },
+  };
+
+ public:
+  auto seek(this auto& self, SeekFrom pos) -> Result<u64> {
+    return (self._vtbl->seek)(self._impl, pos);
+  }
+
+  auto seek_relative(this auto& self, i64 offset) -> Result<u64> {
+    return self.seek({SeekFrom::Current(offset)});
+  }
+
+  auto stream_position(this auto& self) -> Result<u64> {
+    return self.seek({SeekFrom::Current(0)});
   }
 };
 
