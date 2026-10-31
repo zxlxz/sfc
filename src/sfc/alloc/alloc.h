@@ -7,11 +7,6 @@ namespace sfc::alloc {
 using mem::Layout;
 
 struct Allocator {
-  // require: allocate
-  // auto allocate(this auto& self, Layout layout) -> void*;
-
-  // require: deallocate
-  // void deallocate(this auto& self, void* ptr, Layout layout);
 };
 
 struct System {

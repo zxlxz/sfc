@@ -35,10 +35,8 @@ class RawBuf {
   }
 
   static auto with_capacity(usize capacity, A alloc = {}) -> RawBuf {
-    const auto ptr = alloc.allocate(Layout::array<T>(capacity));
-
     auto res = RawBuf{alloc};
-    res.set_ptr_and_cap(ptr, capacity);
+    res.reserve_exact(0, capacity);
     return res;
   }
 
@@ -102,10 +100,6 @@ class RawBuf {
 
  private:
   void set_ptr_and_cap(void* ptr, usize cap) noexcept {
-    if (cap != 0) {
-      sfc::assert_(ptr != nullptr, "RawBuf::set_ptr_and_cap: ptr is nullptr but cap(={}) != 0", cap);
-    }
-
     _ptr = ptr::cast<T>(ptr);
     _cap = cap;
   }
