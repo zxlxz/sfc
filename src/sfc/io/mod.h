@@ -72,18 +72,6 @@ class Read {
   auto read_to_string(this auto& self, String& buf) -> Result<usize> {
     return self.read_to_end(buf.as_mut_list());
   }
-
-  template <trait::tv_copy_ T>
-  auto read_raw(this auto& self, T val = T{}) -> Result<T> {
-    _TRY(self.read_exact(mem::as_bytes_mut(val)));
-    return Ok{val};
-  }
-
-  template <trait::tv_copy_ T>
-  auto read_raw_slice(this auto& self, Slice<T> buf) -> Result<> {
-    _TRY(self.read_exact(buf.as_bytes_mut()));
-    return Ok{};
-  }
 };
 
 class Write {
@@ -122,18 +110,6 @@ class Write {
 
   auto write_str(this auto& self, Str buf) -> Result<> {
     return self.write_all(buf.as_bytes());
-  }
-
-  template <trait::tv_copy_ T>
-  auto write_raw(this auto& self, const T& val) -> Result<> {
-    _TRY(self.write_all(mem::as_bytes(val)));
-    return Ok{};
-  }
-
-  template <trait::tv_copy_ T>
-  auto write_raw_slice(this auto& self, Slice<const T> buf) -> Result<> {
-    _TRY(self.write_all(buf.as_bytes_mut()));
-    return Ok{};
   }
 };
 

@@ -162,12 +162,6 @@ struct Slice<const T> {
     f.debug_list().entries(this->iter());
   }
 
-  // trait: AsRawBytes
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    static_assert(trait::tv_copy_<T>);
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
-  }
-
   // trait: io::Read
   auto read(Slice<T> buf) noexcept -> io::Result<usize> {
     if (buf._len == 0 || _len == 0) {
@@ -387,18 +381,6 @@ struct Slice {
   // trait: fmt::Display
   void fmt(auto& f) const {
     f.debug_list().entries(this->iter());
-  }
-
-  // trait: AsRawBytes
-  auto as_bytes() const noexcept -> Slice<const u8> {
-    static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<const u8>(_ptr), _len * sizeof(T)};
-  }
-
-  // trait: AsRawBytes
-  auto as_bytes_mut() noexcept -> Slice<u8> {
-    static_assert(__is_trivially_copyable(T));
-    return {ptr::cast<u8>(_ptr), _len * sizeof(T)};
   }
 
   // trait: io::Read

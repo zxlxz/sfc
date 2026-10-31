@@ -65,16 +65,6 @@ inline auto take(T& dst) noexcept -> T {
   return res;
 }
 
-template <trait::tv_copy_ T>
-auto as_bytes(const T& self) -> const u8 (&)[sizeof(T)] {
-  return *(const u8(*)[sizeof(T)])(&self);
-}
-
-template <trait::tv_copy_ T>
-auto as_bytes_mut(T& self) -> u8 (&)[sizeof(T)] {
-  return *(u8(*)[sizeof(T)])(&self);
-}
-
 }  // namespace sfc::mem
 
 namespace sfc {
