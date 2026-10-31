@@ -64,14 +64,15 @@ concept tv_drop_ = __has_trivial_destructor(T);
 #endif
 
 template <class Trait>
-class Dyn : public Trait {
-  friend Trait;
-  using VTbl = typename Trait::VTbl;
-  const VTbl* _vtbl;
+struct Dyn : Trait {
+  const Trait::VTbl* _vtbl;
   void* _impl;
 
  public:
-  template <trait::not_<Dyn> X>
+  Dyn(Dyn&) noexcept = default;
+  Dyn(const Dyn&) noexcept = default;
+
+  template <class X>
   Dyn(X& impl) : _vtbl{&Trait::template vtbl<X>}, _impl{&impl} {}
 };
 

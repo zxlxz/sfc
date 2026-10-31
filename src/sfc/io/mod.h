@@ -25,7 +25,7 @@ struct SeekFrom {
 };
 
 class Read {
-  friend Dyn<Read>;
+ public:
   struct VTbl {
     Result<usize> (*_read)(void*, Slice<u8>);
   };
@@ -35,11 +35,11 @@ class Read {
       ._read = [](void* x, auto... u) { return ((X*)(x))->read(u...); },
   };
 
- public:
-  auto read(this auto& self, Slice<u8> buf) -> Result<usize> {
+  auto read(this Dyn<Read>& self, Slice<u8> buf) -> Result<usize> {
     return (self._vtbl->_read)(self._impl, buf);
   }
 
+ public:
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(self.read(buf));
@@ -75,7 +75,7 @@ class Read {
 };
 
 class Write {
-  friend Dyn<Write>;
+ public:
   struct VTbl {
     Result<usize> (*write)(void*, Slice<const u8>);
     Result<> (*flush)(void*);
@@ -87,15 +87,15 @@ class Write {
       .flush = [](void* x, auto... u) { return ((X*)(x))->flush(u...); },
   };
 
- public:
-  auto write(this auto& self, Slice<const u8> buf) -> Result<usize> {
+  auto write(this Dyn<Write>& self, Slice<const u8> buf) -> Result<usize> {
     return (self._vtbl->write)(self._impl, buf);
   }
 
-  auto flush(this auto& self) -> Result<> {
+  auto flush(this Dyn<Write>& self) -> Result<> {
     return (self._vtbl->flush)(self._impl);
   }
 
+ public:
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
     while (!buf.is_empty()) {
       const auto cnt = _TRY(self.write(buf));

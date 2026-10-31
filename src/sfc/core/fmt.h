@@ -7,7 +7,8 @@
 
 namespace sfc::fmt {
 
-struct Write {
+class Write {
+ public:
   struct VTbl {
     void (*write_str)(void*, Str);
   };
@@ -17,9 +18,8 @@ struct Write {
       .write_str = [](void* x, auto... u) { return ((X*)(x))->write_str(u...); },
   };
 
- public:
-  void write_str(this auto& self, Str s) {
-    return (self._vtbl->write_str)(self._impl, s);
+  void write_str(this Dyn<Write>& self, Str s) {
+    return (self._vtbl)->write_str(self._impl, s);
   }
 };
 

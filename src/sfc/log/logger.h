@@ -42,7 +42,7 @@ class Logger {
   Level _level{Level::Info};
 
  public:
-  explicit Logger(Dyn<Backend> backend) : _backend{backend} {}
+  explicit Logger(auto& backend) : _backend{backend} {}
 
  public:
   auto level() const -> Level;
