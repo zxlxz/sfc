@@ -69,6 +69,14 @@ class [[nodiscard]] List {
     return {_buf.ptr(), _len};
   }
 
+  auto operator*() const noexcept -> Slice<const T> {
+    return {_buf.ptr(), _len};
+  }
+
+  auto operator*() noexcept -> Slice<T> {
+    return {_buf.ptr(), _len};
+  }
+
  public:
   auto first() const noexcept -> Option<const T&> {
     return this->as_slice().first();

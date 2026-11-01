@@ -55,12 +55,12 @@ inline auto null() noexcept -> T* {
   return nullptr;
 }
 
-template <class U, class T>
-inline auto cast(T* ptr) noexcept -> U* {
-  if constexpr (__is_constructible(U*, T*)) {
-    return static_cast<U*>(ptr);
+template <class T, class F>
+inline auto cast(F* ptr) noexcept -> T* {
+  if constexpr (__is_constructible(T*, F*)) {
+    return static_cast<T*>(ptr);
   } else {
-    return reinterpret_cast<U*>(ptr);
+    return reinterpret_cast<T*>(ptr);
   }
 }
 

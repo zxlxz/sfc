@@ -152,6 +152,8 @@ class Formatter {
   void write_val(const auto& val) {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
+    } else if constexpr (requires { val->fmt(*this); }) {
+      val->fmt(*this);
     } else {
       fmt::Debug::fmt(val, *this);
     }
