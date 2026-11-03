@@ -72,17 +72,15 @@ struct Stderr::Inn {
   }
 };
 
-Stdout::Stdout() : _inn{Inn::instance()} {}
-
-Stdout::~Stdout() {}
-
 auto Stdout::is_terminal() -> bool {
-  return _inn.is_terminal();
+  auto& inn = Inn::instance();
+  return inn.is_terminal();
 }
 
 auto Stdout::lock() -> LockGuard {
-  auto guard = _inn.lock();
-  return LockGuard{_inn, mem::move(guard)};
+  auto& inn = Inn::instance();
+  auto guard = inn.lock();
+  return LockGuard{inn, mem::move(guard)};
 }
 
 void Stdout::flush() {
@@ -91,6 +89,25 @@ void Stdout::flush() {
 
 void Stdout::write_str(Str s) {
   return this->lock().write_str(s);
+}
+
+auto Stderr::is_terminal() -> bool {
+  auto& inn = Inn::instance();
+  return inn.is_terminal();
+}
+
+auto Stderr::lock() -> LockGuard {
+  auto& inn = Inn::instance();
+  auto lock = inn.lock();
+  return LockGuard{inn, mem::move(lock)};
+}
+
+void Stderr::write_str(Str s) {
+  return this->lock().write_str(s);
+}
+
+void Stderr::flush() {
+  return this->lock().flush();
 }
 
 Stdout::LockGuard::LockGuard(Inn& inn, sync::ReentrantLock::Guard lock) : _inn{inn}, _lock{mem::move(lock)} {}
@@ -105,25 +122,6 @@ void Stdout::LockGuard::write_str(Str s) {
   (void)_inn.write_str(s);
 }
 
-Stderr::Stderr() : _inn{Inn::instance()} {}
-
-Stderr::~Stderr() {}
-
-auto Stderr::is_terminal() -> bool {
-  return _inn.is_terminal();
-}
-
-auto Stderr::lock() -> LockGuard {
-  auto lock = _inn.lock();
-  return LockGuard{_inn, mem::move(lock)};
-}
-
-void Stderr::write_str(Str s) {
-  return this->lock().write_str(s);
-}
-
-void Stderr::flush() {}
-
 Stderr::LockGuard::LockGuard(Inn& inn, sync::ReentrantLock::Guard lock) : _inn{inn}, _lock{mem::move(lock)} {}
 
 Stderr::LockGuard::~LockGuard() noexcept {}
@@ -132,16 +130,6 @@ void Stderr::LockGuard::flush() {}
 
 void Stderr::LockGuard::write_str(Str s) {
   (void)_inn.write_str(s);
-}
-
-auto stdout() -> Stdout& {
-  static auto res = Stdout{};
-  return res;
-}
-
-auto stderr() -> Stderr& {
-  static auto res = Stderr{};
-  return res;
 }
 
 }  // namespace sfc::io

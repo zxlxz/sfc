@@ -53,7 +53,7 @@ static auto write_record(auto& out, const Record& record) -> Str {
 void ConsoleBackend::push(const Record& record) {
   auto buf = fmt::Buf<4096>{};
   auto msg = detail::write_record(buf, record);
-  io::stdout().write_str(msg);
+  io::Stdout().write_str(msg);
 }
 
 void ConsoleBackend::flush() {}
@@ -81,7 +81,7 @@ void GlobalBackend::push(const Record& record) {
   auto msg = detail::write_record(buf, record);
 
   if (!_file) {
-    io::stdout().write_str(msg);
+    io::Stdout().write_str(msg);
     return;
   }
 

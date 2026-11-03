@@ -3,23 +3,10 @@
 #include "sfc/io/mod.h"
 #include "sfc/sync/mutex.h"
 
-#ifdef stdout
-#undef stdout
-#endif
-
-#ifdef stderr
-#undef stderr
-#endif
-
 namespace sfc::io {
 
 class Stdout {
   struct Inn;
-  Inn& _inn;
-
- public:
-  explicit Stdout();
-  ~Stdout();
 
  public:
   class LockGuard;
@@ -32,11 +19,6 @@ class Stdout {
 
 class Stderr {
   struct Inn;
-  Inn& _inn;
-
- public:
-  explicit Stderr();
-  ~Stderr();
 
  public:
   class LockGuard;
@@ -52,7 +34,7 @@ class Stdout::LockGuard {
   sync::ReentrantLock::Guard _lock;
 
  public:
-  explicit LockGuard(Inn& inn, sync::ReentrantLock::Guard lock);
+  LockGuard(Inn& inn, sync::ReentrantLock::Guard lock);
   ~LockGuard() noexcept;
 
  public:
@@ -65,7 +47,7 @@ class Stderr::LockGuard {
   sync::ReentrantLock::Guard _lock;
 
  public:
-  explicit LockGuard(Inn& inn, sync::ReentrantLock::Guard lock);
+  LockGuard(Inn& inn, sync::ReentrantLock::Guard lock);
   ~LockGuard() noexcept;
 
  public:
@@ -73,28 +55,24 @@ class Stderr::LockGuard {
   void write_str(Str s);
 };
 
-auto stdout() -> Stdout&;
-
-auto stderr() -> Stderr&;
-
 void print(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = io::stdout().lock();
+  auto out = io::Stdout().lock();
   fmt::write(out, fmts, args...);
 }
 
 void println(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = io::stdout().lock();
+  auto out = io::Stdout().lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");
 }
 
 void eprint(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = io::stderr().lock();
+  auto out = io::Stderr().lock();
   fmt::write(out, fmts, args...);
 }
 
 void eprintln(const fmt::Fmts& fmts, const auto&... args) {
-  auto out = io::stderr().lock();
+  auto out = io::Stderr().lock();
   fmt::write(out, fmts, args...);
   out.write_str("\n");
 }

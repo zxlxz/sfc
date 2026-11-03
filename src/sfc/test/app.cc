@@ -33,7 +33,7 @@ auto main(int argc, const char* argv[]) -> int {
   const auto test_filter = cmd.get("gtest_filter").unwrap_or("");
   gtest.filt(test_filter);
 
-  const auto is_terminal = io::stdout().is_terminal();
+  const auto is_terminal = io::Stdout().is_terminal();
   const auto use_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
   const auto run_ret = gtest.run(use_color);
 

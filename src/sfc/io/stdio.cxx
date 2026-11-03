@@ -4,13 +4,13 @@
 namespace sfc::io::test {
 
 SFC_TEST(stdout) {
-  auto& out = stdout();
+  auto out = Stdout();
   out.write_str("  stdout test\n");
   out.flush();
 }
 
 SFC_TEST(stderr) {
-  auto& out = stderr();
+  auto out = Stderr();
   out.write_str("  stderr test\n");
   out.flush();
 }

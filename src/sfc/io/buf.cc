@@ -2,11 +2,15 @@
 
 namespace sfc::io {
 
-ReadBuf::ReadBuf() = default;
-ReadBuf::~ReadBuf() = default;
-
-ReadBuf::ReadBuf(ReadBuf&&) noexcept = default;
-ReadBuf& ReadBuf::operator=(ReadBuf&&) noexcept = default;
+namespace detail {
+inline auto memchr(Slice<const u8> buf, u8 byte) -> Option<usize> {
+  const auto ptr = (const u8*)__builtin_memchr(buf._ptr, byte, buf._len);
+  if (ptr == nullptr) {
+    return {};
+  }
+  return usize(ptr - buf._ptr);
+}
+}  // namespace detail
 
 auto ReadBuf::with_capacity(usize capacity) -> ReadBuf {
   auto res = ReadBuf{};
@@ -62,7 +66,7 @@ auto ReadBuf::skip_until(Dyn<Read> read, u8 byte) -> Result<usize> {
   auto nread = usize{0};
   while (true) {
     const auto available = _TRY(this->fill_buf(read));
-    const auto position = available.find(byte);
+    const auto position = detail::memchr(available, byte);
     const auto used = position ? *position + 1 : available.len();
     this->consume(used);
     nread += used;
@@ -90,7 +94,7 @@ auto ReadBuf::read_until(Dyn<Read> read, u8 byte, List<u8>& buf) -> Result<usize
   auto nread = usize{0};
   while (true) {
     const auto available = _TRY(this->fill_buf(read));
-    const auto position = available.find(byte);
+    const auto position = detail::memchr(available, byte);
     const auto used = position ? *position + 1 : available.len();
     buf.extend_from_slice(available[{0, used}]);
     this->consume(used);
@@ -106,12 +110,6 @@ auto ReadBuf::read_until(Dyn<Read> read, u8 byte, List<u8>& buf) -> Result<usize
 auto ReadBuf::read_line(Dyn<Read> read, String& buf) -> Result<usize> {
   return this->read_until(read, '\n', buf.as_mut_list());
 }
-
-WriteBuf::WriteBuf() = default;
-WriteBuf::~WriteBuf() = default;
-
-WriteBuf::WriteBuf(WriteBuf&&) noexcept = default;
-WriteBuf& WriteBuf::operator=(WriteBuf&&) noexcept = default;
 
 auto WriteBuf::with_capacity(usize capacity) -> WriteBuf {
   auto res = WriteBuf{};

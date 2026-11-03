@@ -9,11 +9,6 @@ class ReadBuf {
   usize _pos = 0;
 
  public:
-  ReadBuf();
-  ~ReadBuf();
-  ReadBuf(ReadBuf&&) noexcept;
-  ReadBuf& operator=(ReadBuf&&) noexcept;
-
   static auto with_capacity(usize capacity) -> ReadBuf;
 
  public:
@@ -38,11 +33,6 @@ class WriteBuf {
   List<u8> _buf{};
 
  public:
-  WriteBuf();
-  ~WriteBuf();
-  WriteBuf(WriteBuf&&) noexcept;
-  WriteBuf& operator=(WriteBuf&&) noexcept;
-
   static auto with_capacity(usize capacity) -> WriteBuf;
 
  public:
