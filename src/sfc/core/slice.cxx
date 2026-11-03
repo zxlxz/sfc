@@ -118,20 +118,6 @@ SFC_TEST(contains) {
   sfc::assert_eq(s.contains(4), false);
 }
 
-SFC_TEST(find) {
-  const int v[] = {1, 2, 3, 2};
-  const auto s = Slice{v};
-  sfc::assert_eq(s.find(2), Option{1UZ});
-  sfc::assert_eq(s.find(4), Option<usize>{});
-}
-
-SFC_TEST(rfind) {
-  const int v[] = {1, 2, 3, 2};
-  const auto s = Slice{v};
-  sfc::assert_eq(s.rfind(2), Option{3UZ});
-  sfc::assert_eq(s.rfind(4), Option<usize>{});
-}
-
 SFC_TEST(starts_with) {
   const int v[] = {1, 2, 3};
   const auto s = Slice{v};

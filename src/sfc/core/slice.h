@@ -115,24 +115,6 @@ struct Slice<const T> {
     return false;
   }
 
-  auto find(const T& x) const noexcept -> Option<usize> {
-    for (auto i = 0UL; i != _len; ++i) {
-      if (_ptr[i] == x) {
-        return i;
-      }
-    }
-    return {};
-  }
-
-  auto rfind(const T& x) const noexcept -> Option<usize> {
-    for (auto i = _len; i != 0U; --i) {
-      if (_ptr[i - 1] == x) {
-        return i - 1;
-      }
-    }
-    return {};
-  }
-
   auto starts_with(Slice<const T> needle) const noexcept -> bool {
     if (_len < needle._len) return false;
     return needle == Slice{_ptr, needle._len};
@@ -322,24 +304,6 @@ struct Slice {
       }
     }
     return false;
-  }
-
-  auto find(const T& x) const noexcept -> Option<usize> {
-    for (auto i = 0UL; i != _len; ++i) {
-      if (_ptr[i] == x) {
-        return i;
-      }
-    }
-    return {};
-  }
-
-  auto rfind(const T& x) const noexcept -> Option<usize> {
-    for (auto i = _len; i != 0U; --i) {
-      if (_ptr[i - 1] == x) {
-        return i - 1;
-      }
-    }
-    return {};
   }
 
   auto starts_with(Slice<const T> needle) const noexcept -> bool {
