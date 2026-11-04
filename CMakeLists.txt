@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 4.0)
 
 project(sfc)
 
+include(cmake/config.cmake)
 include(cmake/utils.cmake)
 
 enable_testing()
