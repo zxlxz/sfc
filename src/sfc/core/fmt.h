@@ -118,7 +118,6 @@ class Formatter {
   Dyn<Write> _out;
   Spec _spec = {};
   u16 _depth = 0;
-  u16 _max_depth = 100;
 
  public:
   explicit Formatter(auto& out, Spec spec = {}) : _out{out}, _spec{spec} {}
@@ -129,7 +128,6 @@ class Formatter {
   auto width() const -> Option<u32>;
   auto precision() const -> Option<u32>;
   auto depth() const -> u32;
-  void set_max_depth(u32 max_depth);
 
  public:
   void write_str(Str s);

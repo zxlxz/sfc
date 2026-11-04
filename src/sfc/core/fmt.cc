@@ -411,10 +411,6 @@ auto Formatter::depth() const -> u32 {
   return _depth;
 }
 
-void Formatter::set_max_depth(u32 max_depth) {
-  _max_depth = u16(max_depth);
-}
-
 void Formatter::write_str(Str s) {
   if (s._len == 0) return;
   _out.write_str(s);
@@ -542,7 +538,7 @@ void Formatter::Block::open(Str begin) {
 }
 
 void Formatter::Block::finish(Str end) {
-  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = _fmt._spec._alt == '#';
 
   // depth--
   if (_fmt._spec._alt == '#') {
@@ -559,7 +555,7 @@ void Formatter::Block::finish(Str end) {
 void Formatter::Block::next() {
   _cnt += 1;
 
-  const auto pretty_fmt = (_fmt._spec._alt == '#') && (_fmt._depth <= _fmt._max_depth);
+  const auto pretty_fmt = _fmt._spec._alt == '#';
   if (!pretty_fmt) {
     if (_cnt > 1) {
       _fmt.write_str(", ");
