@@ -8,7 +8,7 @@ template <class T>
 auto declval() -> T;
 
 template <class T, T... I>
-struct IntSeq {
+struct Ints {
   static auto eq(const auto& a, const auto& b) -> bool {
     return ((a[I] == b[I]) && ...);
   }
@@ -55,14 +55,14 @@ struct IntSeq {
 };
 
 template <u32... I>
-using IdxSeq = IntSeq<u32, I...>;
+using Idxs = Ints<u32, I...>;
 
 #if __has_builtin(__make_integer_seq)
 template <u32 N>
-using make_index_seq = __make_integer_seq<IntSeq, u32, N>;
+using IdxsFor = __make_integer_seq<Ints, u32, N>;
 #else
 template <u32 N>
-using make_index_seq = IntSeq<u32, __integer_pack(N)...>;
+using IdxsFor = Idxs<__integer_pack(N)...>;
 #endif
 
 template <class>
@@ -130,4 +130,6 @@ using FnOut = decltype(declval<F>()(declval<A>()...));
 
 namespace sfc {
 using ops::FnOut;
+using ops::Ints;
+using ops::Idxs;
 }  // namespace sfc
