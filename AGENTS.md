@@ -36,7 +36,7 @@ src/
 build/
 ```
 
-## Build and test
+## Build and Test
 
 ```shell
 cmake -B build                # configure
@@ -59,6 +59,7 @@ cmake --build build           # build
 - Don't include C++ standard headers or use `std::` types and functions.
 - Unit tests go in `<mod>.cxx`, in namespace `sfc::<mod>::test`.
 
+## UnitTest
 ```cpp
 #include "sfc/test/test.h"
 
