@@ -4,13 +4,13 @@
 
 namespace sfc::trait {
 
-template <class T>
-struct type_t {
-  using Type = T;
+template <class U>
+struct Type {
+  using T = U;
 };
 
 template <class T>
-using arg_t = typename type_t<T>::Type;
+using arg_t = typename Type<T>::T;
 
 template <auto X>
 struct const_t {
@@ -28,7 +28,7 @@ template <class T, class U>
 concept same_ = __is_same(T, U);
 #else
 template <class T, class U>
-concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
+concept same_ = __is_convertible_to(Type<T>*, Type<U>*);
 #endif
 
 template <class T, class U>

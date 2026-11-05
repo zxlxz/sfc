@@ -97,4 +97,23 @@ SFC_TEST(map_err) {
   sfc::assert_eq(Res{EA}.map_err(toEB), Res{EB});
 }
 
+SFC_TEST(ref) {
+  using Res = result::Result<int&, E>;
+
+  int x = 10;
+
+  {
+    auto ok = Res{x};
+    sfc::assert_eq(ok.as_ok(), Option{10});
+    sfc::assert_eq(ok.as_ok(), Option{10});
+    sfc::assert_eq(ok.as_err(), Option<E>{});
+  }
+
+  {
+    auto err = Res{EA};
+    sfc::assert_eq(err.as_ok(), Option<int>{});
+    sfc::assert_eq(err.as_err(), Option{EA});
+  }
+}
+
 }  // namespace sfc::result::test

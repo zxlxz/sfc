@@ -78,6 +78,10 @@ struct Range {
 
 }  // namespace sfc::range
 
+namespace sfc::ops {
+using range::Range;
+}  // namespace sfc::ops
+
 namespace sfc {
 using range::$;
 using range::Range;
