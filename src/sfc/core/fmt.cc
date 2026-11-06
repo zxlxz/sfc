@@ -512,63 +512,57 @@ auto Formatter::debug_map() -> DebugMap {
 }
 
 auto Formatter::debug_tuple(Str name) -> DebugTuple {
-  return DebugTuple{*this, name};
+  this->write_str(name);
+  return DebugTuple{*this};
 }
 
 auto Formatter::debug_struct(Str name) -> DebugStruct {
-  return DebugStruct{*this, name};
+  this->write_str(name);
+  return DebugStruct{*this};
 }
 
-Formatter::Block::Block(Formatter& fmt, Str name) : _fmt{fmt} {
-  if (!name.is_empty()) {
-    _fmt.write_str(name);
-    _fmt.write_char(' ');
-  }
-}
+void Formatter::Block::field(Str begin) {
+  const auto is_pretty = _fmt._spec._alt == '#';
 
-Formatter::Block::~Block() {}
+  if (_fields == 0) {
+    _fmt.write_str(begin);
 
-void Formatter::Block::open(Str begin) {
-  _fmt.write_str(begin);
-
-  // depth++
-  if (_fmt._spec._alt == '#') {
-    _fmt._depth += 1;
-  }
-}
-
-void Formatter::Block::finish(Str end) {
-  const auto pretty_fmt = _fmt._spec._alt == '#';
-
-  // depth--
-  if (_fmt._spec._alt == '#') {
-    if (_fmt._depth > 0) _fmt._depth -= 1;
+    if (is_pretty) {
+      _fmt._depth += 1;
+    }
   }
 
-  if (pretty_fmt && _cnt > 0) {
-    _fmt.write_str("\n");
+  if (is_pretty) {
+    if (_fields == 0) {
+      _fmt.write_str("\n");
+    } else {
+      _fmt.write_str(",\n");
+    }
     _fmt.write_chars(' ', _fmt._depth * _indent_size);
-  }
-  _fmt.write_str(end);
-}
-
-void Formatter::Block::next() {
-  _cnt += 1;
-
-  const auto pretty_fmt = _fmt._spec._alt == '#';
-  if (!pretty_fmt) {
-    if (_cnt > 1) {
+  } else {
+    if (_fields != 0) {
       _fmt.write_str(", ");
     }
-    return;
   }
 
-  if (_cnt == 1) {
-    _fmt.write_str("\n");
+  _fields += 1;
+}
+
+void Formatter::Block::finish(Str begin, Str end) {
+  const auto is_pretty = _fmt._spec._alt == '#';
+  const auto has_fields = _fields > 0;
+
+  if (has_fields) {
+    if (is_pretty) {
+      _fmt._depth -= 1;
+      _fmt.write_str("\n");
+      _fmt.write_chars(' ', _fmt._depth * _indent_size);
+    }
   } else {
-    _fmt.write_str(",\n");
+    _fmt.write_str(begin);
   }
-  _fmt.write_chars(' ', _fmt._depth * _indent_size);
+
+  _fmt.write_str(end);
 }
 
 void Formatter::Block::write_key(Str key, char ch) {
@@ -576,46 +570,6 @@ void Formatter::Block::write_key(Str key, char ch) {
   _fmt.write_str(key);
   if (ch) _fmt.write_char(ch);
   _fmt.write_str(": ");
-}
-
-DebugList::DebugList(Formatter& fmt) : _blk{fmt} {
-  _blk.open("[");
-}
-
-DebugList::~DebugList() {
-  _blk.finish("]");
-}
-
-DebugSet::DebugSet(Formatter& fmt) : _blk{fmt} {
-  _blk.open("{");
-}
-
-DebugSet::~DebugSet() {
-  _blk.finish("}");
-}
-
-DebugMap::DebugMap(Formatter& fmt) : _blk{fmt} {
-  _blk.open("{");
-}
-
-DebugMap::~DebugMap() {
-  _blk.finish("}");
-}
-
-DebugTuple::DebugTuple(Formatter& fmt, Str name) : _blk{fmt, name} {
-  _blk.open("(");
-}
-
-DebugTuple::~DebugTuple() {
-  _blk.finish(")");
-}
-
-DebugStruct::DebugStruct(Formatter& fmt, Str name) : _blk{fmt, name} {
-  _blk.open("{");
-}
-
-DebugStruct::~DebugStruct() {
-  _blk.finish("}");
 }
 
 }  // namespace sfc::fmt

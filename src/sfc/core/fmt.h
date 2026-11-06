@@ -107,11 +107,11 @@ struct Debug {
   }
 };
 
-class DebugList;
-class DebugSet;
-class DebugMap;
-class DebugTuple;
-class DebugStruct;
+struct DebugList;
+struct DebugSet;
+struct DebugMap;
+struct DebugTuple;
+struct DebugStruct;
 
 class Formatter {
   friend struct fmt::Args;
@@ -138,7 +138,7 @@ class Formatter {
   void pad_num(bool is_neg, Str num_str);
 
  public:
-  class Block;
+  struct Block;
   auto debug_list() -> DebugList;
   auto debug_set() -> DebugSet;
   auto debug_map() -> DebugMap;
@@ -163,20 +163,14 @@ class Formatter {
   }
 };
 
-class Formatter::Block {
+struct Formatter::Block {
   Formatter& _fmt;
-  u32 _cnt = 0;
+  u32 _fields = 0;
   u32 _indent_size = 2U;
 
  public:
-  explicit Block(Formatter& fmt, Str name = "");
-  ~Block();
-  Block(const Block&) = delete;
-
- public:
-  void open(Str begin);
-  void finish(Str end);
-  void next();
+  void field(Str open);
+  void finish(Str open, Str end);
 
   void write_key(Str key, char type = 0);
 
@@ -185,15 +179,12 @@ class Formatter::Block {
   }
 };
 
-class DebugList {
+struct DebugList {
   Formatter::Block _blk;
 
  public:
-  explicit DebugList(Formatter& fmt);
-  ~DebugList();
-
   auto entry(const auto& value) -> DebugList& {
-    _blk.next();
+    _blk.field("[");
     _blk.write_val(value);
     return *this;
   }
@@ -202,19 +193,18 @@ class DebugList {
     iter.for_each([&](auto&& val) { this->entry(val); });
     return *this;
   }
+
+  void finish() {
+    _blk.finish("[", "]");
+  }
 };
 
-class DebugSet {
+struct DebugSet {
   Formatter::Block _blk;
 
  public:
-  explicit DebugSet(Formatter& fmt);
-  ~DebugSet();
-  DebugSet(const DebugSet&) = delete;
-
- public:
   auto entry(const auto& value) -> DebugSet& {
-    _blk.next();
+    _blk.field("{");
     _blk.write_val(value);
     return *this;
   }
@@ -223,19 +213,18 @@ class DebugSet {
     iter.for_each([&](auto&& val) { this->entry(val); });
     return *this;
   }
+
+  void finish() {
+    _blk.finish("{", "}");
+  }
 };
 
-class DebugMap {
+struct DebugMap {
   Formatter::Block _blk;
 
  public:
-  explicit DebugMap(Formatter& fmt);
-  ~DebugMap();
-  DebugMap(const DebugMap&) = delete;
-
- public:
   auto entry(Str key, const auto& value) -> DebugMap& {
-    _blk.next();
+    _blk.field("{");
     _blk.write_key(key, '"');
     _blk.write_val(value);
     return *this;
@@ -248,38 +237,40 @@ class DebugMap {
     });
     return *this;
   }
-};
 
-class DebugTuple {
-  Formatter::Block _blk;
-
- public:
-  explicit DebugTuple(Formatter& fmt, Str name);
-  ~DebugTuple();
-  DebugTuple(const DebugTuple&) = delete;
-
- public:
-  auto field(const auto& value) -> DebugTuple& {
-    _blk.next();
-    _blk.write_val(value);
-    return *this;
+  void finish() {
+    _blk.finish("{", "}");
   }
 };
 
-class DebugStruct {
+struct DebugTuple {
   Formatter::Block _blk;
 
  public:
-  explicit DebugStruct(Formatter& fmt, Str name);
-  ~DebugStruct();
-  DebugStruct(const DebugStruct&) = delete;
+  auto field(const auto& value) -> DebugTuple& {
+    _blk.field("(");
+    _blk.write_val(value);
+    return *this;
+  }
+
+  void finish() {
+    _blk.finish("{", ")");
+  }
+};
+
+struct DebugStruct {
+  Formatter::Block _blk;
 
  public:
   auto field(Str key, const auto& value) -> DebugStruct& {
-    _blk.next();
+    _blk.field("{");
     _blk.write_key(key);
     _blk.write_val(value);
     return *this;
+  }
+
+  void finish() {
+    _blk.finish("{", "}");
   }
 };
 

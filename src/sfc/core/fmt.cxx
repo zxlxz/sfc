@@ -212,12 +212,13 @@ SFC_TEST(unnamed_enum) {
   sfc::assert_eq(format("{}", E2::Z), "sfc::fmt::test::E2(1)");
 }
 
-SFC_TEST(cstr) {
+SFC_TEST(str_) {
   sfc::assert_eq(format("{}", "hello"), "hello");
 }
 
-SFC_TEST(array) {
+SFC_TEST(list) {
   int a1[] = {1, 2, 3};
+  sfc::assert_eq(format("{}", Slice{a1, 0}), "[]");
   sfc::assert_eq(format("{:?}", a1), "[1, 2, 3]");
 
   int a2[][3] = {{1, 2, 3}, {4, 5, 6}};
@@ -233,14 +234,14 @@ struct PrettyStruct {
 
  public:
   void fmt(Formatter& f) const {
-    f.debug_struct("PrettyStruct").field("a", a).field("b", b);
+    f.debug_struct("PrettyStruct").field("a", a).field("b", b).finish();
   }
 };
 
 SFC_TEST(pretty_struct) {
   const auto s = PrettyStruct{42, {1, 2, 3}};
   const auto text =
-      "PrettyStruct {\n"
+      "PrettyStruct{\n"
       "  a: 42,\n"
       "  b: [\n"
       "    1,\n"

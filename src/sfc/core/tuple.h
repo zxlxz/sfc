@@ -75,6 +75,7 @@ struct Tuple : detail::Tuple<T...> {
   void fmt(auto& f) const {
     auto imp = f.debug_tuple("");
     this->for_each([&](const auto& val) { imp.field(val); });
+    imp.finish();
   }
 
   void hash(auto& state) const {

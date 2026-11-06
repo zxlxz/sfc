@@ -78,8 +78,7 @@ class HashMap {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    auto imp = f.debug_map();
-    _inn.iter().for_each([&](const Entry& entry) { imp.entry(entry.key, entry.val); });
+    f.debug_map().entries(_inn.iter()).finish();
   }
 
   // trait: serde::Serialize

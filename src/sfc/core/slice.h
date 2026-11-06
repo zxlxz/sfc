@@ -141,7 +141,7 @@ struct Slice<const T> {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_list().entries(this->iter());
+    f.debug_list().entries(this->iter()).finish();
   }
 
   // trait: io::Read
@@ -344,7 +344,7 @@ struct Slice {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_list().entries(this->iter());
+    f.debug_list().entries(this->iter()).finish();
   }
 
   // trait: io::Read

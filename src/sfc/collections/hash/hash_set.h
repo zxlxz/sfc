@@ -53,8 +53,7 @@ class HashSet {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    auto imp = f.debug_set();
-    _inn.iter().for_each([&](const Entry& entry) { imp.entry(entry.key); });
+    f.debug_set().entries(_inn.iter()).finish();
   }
 };
 

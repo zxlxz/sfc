@@ -59,7 +59,12 @@ cmake --build build           # build
 - Don't include C++ standard headers or use `std::` types and functions.
 - Unit tests go in `<mod>.cxx`, in namespace `sfc::<mod>::test`.
 
+## Code Review
+
+- compare with Rust's standard library implementation for similar patterns and idioms.
+
 ## UnitTest
+
 ```cpp
 #include "sfc/test/test.h"
 

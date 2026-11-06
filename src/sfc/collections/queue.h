@@ -185,7 +185,7 @@ class [[nodiscard]] Queue {
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_list().entries(this->iter());
+    f.debug_list().entries(this->iter()).finish();
   }
 
  private:
