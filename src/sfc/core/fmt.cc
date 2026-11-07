@@ -285,6 +285,24 @@ auto Spec::prefix() const -> str::Str {
   }
 }
 
+auto Buf::as_str() const -> Str {
+  const auto len = cmp::min(_len, _buf._len);
+  return Str{_buf._ptr, len};
+}
+
+void Buf::truncate(usize new_len) {
+  _len = cmp::min(new_len, _buf._len);
+}
+
+void Buf::write_str(Str s) noexcept {
+  if (_len >= _buf._len || s._len == 0) {
+    return;
+  }
+  const auto n = cmp::min(s._len, _buf._len - _len);
+  ptr::copy_nonoverlapping(s._ptr, _buf._ptr + _len, n);
+  _len += n;
+}
+
 void Debug::fmt(bool val, Formatter& f) {
   f.write_str(val ? Str{"true"} : Str{"false"});
 }

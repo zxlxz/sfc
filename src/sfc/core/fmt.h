@@ -36,22 +36,9 @@ struct Buf {
   usize _len = 0;
 
  public:
-  auto as_str() const -> Str {
-    return Str{_buf._ptr, cmp::min(_len, _buf._len)};
-  }
-
-  void truncate(usize new_len) {
-    _len = cmp::min(new_len, _len);
-  }
-
-  void write_str(Str s) {
-    if (_len >= _buf._len || s._len == 0) {
-      return;
-    }
-    const auto n = cmp::min(s._len, _buf._len - _len);
-    ptr::copy_nonoverlapping(s._ptr, _buf._ptr + _len, n);
-    _len += n;
-  }
+  auto as_str() const -> Str;
+  void truncate(usize new_len);
+  void write_str(Str s) noexcept;
 };
 
 struct Debug {
