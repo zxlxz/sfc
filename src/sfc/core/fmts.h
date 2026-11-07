@@ -47,18 +47,15 @@ struct Spec {
     const char* _end;
 
    public:
-    constexpr auto match(auto... c) const -> bool {
-      if (_ptr >= _end) return false;
-      return ((*_ptr == c) || ...);
-    }
-
     constexpr auto pop() -> char {
       if (_ptr >= _end) return 0;
       return *_ptr++;
     }
 
-    constexpr auto extract(auto... c) -> char {
-      return this->match(c...) ? this->pop() : 0;
+    constexpr auto pop_if(auto... c) -> char {
+      const auto t = _ptr < _end ? *_ptr : 0;
+      if (!((t == c) || ...)) return 0;
+      return *_ptr++;
     }
 
     template <class T = u32>
@@ -80,25 +77,25 @@ struct Spec {
     }
 
     auto p = Parser{s._ptr, s._ptr + s._len};
-    p.extract(':');
+    p.pop_if(':');
 
     auto res = Spec{};
     res._fill = p.pop();
-    res._align = p.extract('<', '>', '=', '^');
+    res._align = p.pop_if('<', '>', '=', '^');
     if (res._fill && !res._align) {
       p._ptr -= 1;
       res._fill = 0;
-      res._align = p.extract('<', '>', '=', '^');
+      res._align = p.pop_if('<', '>', '=', '^');
     }
 
-    res._sign = p.extract('+', '-');
-    res._alt = p.extract('#');
+    res._sign = p.pop_if('+', '-');
+    res._alt = p.pop_if('#');
     if (!res._fill) {
-      res._fill = p.extract('0');
+      res._fill = p.pop_if('0');
     }
 
     res._width = p.extract_uint<u8>();
-    if ((res._point = p.extract('.'))) {
+    if ((res._point = p.pop_if('.'))) {
       res._precision = p.extract_uint<u8>();
     }
     res._type = p.pop();
@@ -109,13 +106,13 @@ struct Spec {
 struct Fmts {
   static constexpr auto kMaxLen = 16U;
   struct Fill {
-    const char* _ptr;
-    usize _len;
+    const char* _ptr = nullptr;
+    usize _len = 0;
   };
 
   struct Item {
-    Fill _fill;
-    Spec _spec;
+    Fill _fill = {};
+    Spec _spec = {};
   };
 
   usize _len = 0;
