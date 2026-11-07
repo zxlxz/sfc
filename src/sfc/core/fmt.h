@@ -7,6 +7,8 @@
 
 namespace sfc::fmt {
 
+class Formatter;
+
 struct Write {
   struct Impl;
   struct VTbl {
@@ -29,33 +31,25 @@ struct Write::Impl {
   }
 };
 
-template <usize N>
-class Buf {
-  char _buf[N];
+struct Buf {
+  Slice<char> _buf;
   usize _len = 0;
 
  public:
-  auto capacity() const -> usize {
-    return N;
-  }
-
-  auto len() const -> usize {
-    return _len;
-  }
-
   auto as_str() const -> Str {
-    return Str{_buf, _len};
+    return Str{_buf._ptr, cmp::min(_len, _buf._len)};
   }
 
- public:
   void truncate(usize new_len) {
-    _len = new_len < _len ? new_len : _len;
+    _len = cmp::min(new_len, _len);
   }
 
   void write_str(Str s) {
-    if (_len >= N) return;
-    const auto n = s._len < (N - _len) ? s._len : (N - _len);
-    __builtin_memcpy(_buf + _len, s._ptr, n);
+    if (_len >= _buf._len || s._len == 0) {
+      return;
+    }
+    const auto n = cmp::min(s._len, _buf._len - _len);
+    ptr::copy_nonoverlapping(s._ptr, _buf._ptr + _len, n);
     _len += n;
   }
 };
@@ -120,10 +114,16 @@ struct DebugTuple;
 struct DebugStruct;
 
 class Formatter {
- public:
   Dyn<Write> _out;
   Spec _spec = {};
   u16 _depth = 0;
+
+ public:
+  explicit Formatter(auto& out) : _out{out} {}
+  ~Formatter() = default;
+
+  Formatter(const Formatter&) = delete;
+  Formatter& operator=(const Formatter&) = delete;
 
  public:
   auto spec() const -> Spec;
@@ -158,6 +158,12 @@ class Formatter {
     } else {
       fmt::Debug::fmt(val, *this);
     }
+  }
+
+  void write_arg(Spec spec, const auto& arg) {
+    mem::swap(_spec, spec);
+    this->write_val(arg);
+    mem::swap(_spec, spec);
   }
 
   void write_fmt(const Fmts& fmts, const auto&... args) {
@@ -285,23 +291,24 @@ Args::Args(const Fmts& fmts, const auto&... args) : _fmts{fmts}, _args{&args...}
   _fmt = [](const Args& self, fmt::Formatter& f) {
     const auto& fmts = self._fmts;
     const auto& args = *(const args_t*)self._args;
-    const auto spec = f._spec;
     args.for_each([&, idx = 0U](const auto& val) mutable {
       if (idx >= fmts._len) return;
       const auto [fill, spec] = fmts._vals[idx++];
-      f._spec = spec;
       f.write_str({fill._ptr, fill._len});
-      f.write_val(val);
+      f.write_arg(spec, val);
     });
     f.write_str({fmts._tail._ptr, fmts._tail._len});
-    f._spec = spec;
   };
 #endif
 }
 
 // macro: write!(out, arg...)
 void write(auto& out, const fmt::Fmts& fmts, const auto&... args) {
-  Formatter{out}.write_fmt(fmts, args...);
+  if constexpr (requires { out.write_fmt(fmts, args...); }) {
+    out.write_fmt(fmts, args...);
+  } else {
+    Formatter{out}.write_fmt(fmts, args...);
+  }
 }
 
 void writeln(auto& out, const fmt::Fmts& fmts, const auto&... args) {

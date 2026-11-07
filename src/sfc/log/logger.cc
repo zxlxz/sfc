@@ -28,9 +28,10 @@ void Logger::write_fmt(Level level, fmt::Args args) {
     return;
   }
 
-  const auto time = time::SystemTime::now();
+  char raw_buf[1024];
+  auto buf = fmt::Buf{raw_buf};
 
-  auto buf = fmt::Buf<4096>{};
+  const auto time = time::SystemTime::now();
   fmt::Formatter{buf}.write_val(args);
   _backend.push(Record{time, level, buf.as_str()});
 }

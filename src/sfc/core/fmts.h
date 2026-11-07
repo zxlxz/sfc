@@ -144,6 +144,7 @@ struct Fmts {
 
 struct Args {
   static constexpr auto kMaxLen = 16U;
+
   Fmts _fmts;
   const void* _args[kMaxLen] = {};
   void (*_fmt)(const Args& self, Formatter& f);

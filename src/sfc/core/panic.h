@@ -15,6 +15,9 @@ struct SourceLoc {
                       int line = __builtin_LINE()) -> SourceLoc {
     return {func, file, line};
   }
+
+ public:
+  void fmt(fmt::Formatter& f) const;
 };
 
 struct PanicInfo {

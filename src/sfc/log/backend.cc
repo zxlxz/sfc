@@ -18,7 +18,9 @@ static auto level_str(Level level) -> Str {
 }
 
 static auto time_str(time::SystemTime time) -> Str {
-  static thread_local auto buf = fmt::Buf<32>{};
+  static thread_local char raw_buf[32];
+
+  static thread_local auto buf = fmt::Buf{raw_buf};
   static thread_local auto prev_sec = u64{0};
 
   const auto secs = time.as_secs();
@@ -33,17 +35,20 @@ static auto time_str(time::SystemTime time) -> Str {
     fmt::write(buf, "{04}-{02}-{02} {02}:{02}:{02}.000", t.year, t.month, t.day, t.hour, t.minute, t.second);
   }
 
-  if (millis != 0 && buf.len() > 3) {
-    buf.truncate(buf.len() - 3);
+  if (millis != 0 && buf._len > 3) {
+    // drop the ".000" suffix (3 chars), then append the real millis
+    buf.truncate(buf._len - 3);
     fmt::write(buf, "{03}", millis);
   }
 
   return buf.as_str();
 }
 
-static auto write_record(auto& out, const Record& record) -> Str {
+static auto write_record(Slice<char> buf, const Record& record) -> Str {
   const auto time_str = detail::time_str(record._time);
   const auto level_str = detail::level_str(record._level);
+
+  auto out = fmt::Buf{buf};
   fmt::write(out, "{} {} {}\n", time_str, level_str, record._message);
   return out.as_str();
 }
@@ -51,7 +56,7 @@ static auto write_record(auto& out, const Record& record) -> Str {
 }  // namespace detail
 
 void ConsoleBackend::push(const Record& record) {
-  auto buf = fmt::Buf<4096>{};
+  char buf[1024];
   auto msg = detail::write_record(buf, record);
   io::Stdout().write_str(msg);
 }
@@ -63,7 +68,7 @@ FileBackend::FileBackend(fs::File file) : _file{mem::move(file)} {}
 FileBackend::~FileBackend() = default;
 
 void FileBackend::push(const Record& record) {
-  auto buf = fmt::Buf<4096>{};
+  char buf[1024];
   auto msg = detail::write_record(buf, record);
   (void)_file.write_str(msg);
 }
@@ -77,7 +82,7 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 }
 
 void GlobalBackend::push(const Record& record) {
-  auto buf = fmt::Buf<4096>{};
+  char buf[1024];
   auto msg = detail::write_record(buf, record);
 
   if (!_file) {

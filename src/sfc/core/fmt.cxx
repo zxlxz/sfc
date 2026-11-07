@@ -6,24 +6,21 @@ namespace sfc::fmt::test {
 using string::format;
 
 SFC_TEST(buf) {
-  auto buf = fmt::Buf<10>{};
-  sfc::assert_eq(buf.capacity(), 10U);
-  sfc::assert_eq(buf.len(), 0U);
+  char raw_buf[10];
+  auto buf = fmt::Buf{raw_buf};
+
   sfc::assert_eq(buf.as_str(), "");
 
   // write str
   buf.write_str("what");
-  sfc::assert_eq(buf.len(), 4U);
   sfc::assert_eq(buf.as_str(), "what");
 
   // write str (overflow)
   buf.write_str(" overflow");
-  sfc::assert_eq(buf.len(), 10U);
   sfc::assert_eq(buf.as_str(), "what overf");
 
   // truncate
   buf.truncate(3);
-  sfc::assert_eq(buf.len(), 3U);
   sfc::assert_eq(buf.as_str(), "wha");
 }
 

@@ -5,12 +5,16 @@
 
 namespace sfc::panic {
 
+void SourceLoc::fmt(fmt::Formatter& f) const {
+  f.write_fmt("{}:{}", Str::from_cstr(file), line);
+}
+
 void panic_imp(PanicInfo info) {
-  auto buf = fmt::Buf<4096>{};
-  auto fmter = fmt::Formatter{buf};
-  fmter.write_fmt("thread panicked at {}:{}\n", Str::from_cstr(info._loc.file), info._loc.line);
-  fmter.write_val(info._args);
-  fmter.write_str("\n");
+  char raw_buf[4096];
+  auto fmt_buf = fmt::Buf{raw_buf};
+
+  auto fmter = fmt::Formatter{fmt_buf};
+  fmter.write_fmt("thread panicked at {}\n{}\n", info._loc, info._args);
 
   auto bt = sys::Backtrace::capture();
   for (auto idx : Range{bt.len()}) {
@@ -18,8 +22,8 @@ void panic_imp(PanicInfo info) {
     fmter.write_fmt(" {2}: {}\n", idx, frame.func);
   }
 
-  auto out = sys::StdIo::Error();
-  (void)out.write(buf.as_str().as_bytes());
+  auto sys_out = sys::StdIo::Error();
+  (void)sys_out.write(fmt_buf.as_str().as_bytes());
 
   throw info;
 }
