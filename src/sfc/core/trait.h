@@ -64,16 +64,12 @@ concept tv_drop_ = __has_trivial_destructor(T);
 #endif
 
 template <class Trait>
-struct Dyn : Trait {
-  const Trait::VTbl* _vtbl;
-  void* _impl;
-
+struct Dyn : Trait::Impl, Trait {
  public:
-  Dyn(Dyn&) noexcept = default;
-  Dyn(const Dyn&) noexcept = default;
+  Dyn(const Dyn&) = default;
 
   template <class X>
-  Dyn(X& impl) : _vtbl{&Trait::template vtbl<X>}, _impl{&impl} {}
+  Dyn(X& x) : Trait::Impl{&Trait::template vtbl<X>, &x} {}
 };
 
 }  // namespace sfc::trait

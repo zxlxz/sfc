@@ -13,27 +13,31 @@ struct Record {
   Str _message;
 };
 
-class Backend {
-  friend Dyn<Backend>;
-
+struct Backend {
+  struct Impl;
   struct VTbl {
     void (*push)(void*, const Record& record);
     void (*flush)(void*);
   };
 
   template <class X>
-  static constexpr VTbl vtbl = {
-      .push = [](void* x, const Record& record) { return ((X*)(x))->push(record); },
-      .flush = [](void* x) { return ((X*)(x))->flush(); },
+  static constexpr auto vtbl = VTbl{
+      .push = [](void* x, const Record& record) { return ((X*)x)->push(record); },
+      .flush = [](void* x) { return ((X*)x)->flush(); },
   };
+};
+
+struct Backend::Impl {
+  const VTbl* _vtbl;
+  void* _impl;
 
  public:
-  auto push(this auto& self, const Record& record) -> void {
-    return (self._vtbl->push)(self._impl, record);
+  auto push(const Record& record) -> void {
+    return (_vtbl->push)(_impl, record);
   }
 
-  auto flush(this auto& self) -> void {
-    return (self._vtbl->flush)(self._impl);
+  void flush() {
+    return (_vtbl->flush)(_impl);
   }
 };
 

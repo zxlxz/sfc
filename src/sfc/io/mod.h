@@ -24,20 +24,16 @@ struct SeekFrom {
   }
 };
 
-class Read {
- public:
+struct Read {
+  struct Impl;
   struct VTbl {
-    Result<usize> (*_read)(void*, Slice<u8>);
+    Result<usize> (*read)(void*, Slice<u8>);
   };
 
   template <class X>
   static constexpr auto vtbl = VTbl{
-      ._read = [](void* x, auto... u) { return ((X*)(x))->read(u...); },
+      .read = [](void* x, Slice<u8> buf) { return ((X*)x)->read(buf); },
   };
-
-  auto read(this Dyn<Read>& self, Slice<u8> buf) -> Result<usize> {
-    return (self._vtbl->_read)(self._impl, buf);
-  }
 
  public:
   auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
@@ -74,8 +70,18 @@ class Read {
   }
 };
 
-class Write {
+struct Read::Impl {
+  const VTbl* _vtbl;
+  void* _impl;
+
  public:
+  auto read(Slice<u8> buf) -> Result<usize> {
+    return (_vtbl->read)(_impl, buf);
+  }
+};
+
+struct Write {
+  struct Impl;
   struct VTbl {
     Result<usize> (*write)(void*, Slice<const u8>);
     Result<> (*flush)(void*);
@@ -83,17 +89,9 @@ class Write {
 
   template <class X>
   static constexpr auto vtbl = VTbl{
-      .write = [](void* x, auto... u) { return ((X*)(x))->write(u...); },
-      .flush = [](void* x, auto... u) { return ((X*)(x))->flush(u...); },
+      .write = [](void* x, Slice<const u8> buf) { return ((X*)x)->write(buf); },
+      .flush = [](void* x) { return ((X*)x)->flush(); },
   };
-
-  auto write(this Dyn<Write>& self, Slice<const u8> buf) -> Result<usize> {
-    return (self._vtbl->write)(self._impl, buf);
-  }
-
-  auto flush(this Dyn<Write>& self) -> Result<> {
-    return (self._vtbl->flush)(self._impl);
-  }
 
  public:
   auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
@@ -113,8 +111,22 @@ class Write {
   }
 };
 
-class Seek {
-  friend Dyn<Write>;
+struct Write::Impl {
+  const VTbl* _vtbl;
+  void* _impl;
+
+ public:
+  auto write(Slice<const u8> buf) -> Result<usize> {
+    return (_vtbl->write)(_impl, buf);
+  }
+
+  auto flush() -> Result<> {
+    return (_vtbl->flush)(_impl);
+  }
+};
+
+struct Seek {
+  struct Impl;
   struct VTbl {
     Result<u64> (*seek)(void*, SeekFrom);
   };
@@ -125,16 +137,22 @@ class Seek {
   };
 
  public:
-  auto seek(this auto& self, SeekFrom pos) -> Result<u64> {
-    return (self._vtbl->seek)(self._impl, pos);
-  }
-
   auto seek_relative(this auto& self, i64 offset) -> Result<u64> {
     return self.seek({SeekFrom::Current(offset)});
   }
 
   auto stream_position(this auto& self) -> Result<u64> {
     return self.seek({SeekFrom::Current(0)});
+  }
+};
+
+struct Seek::Impl {
+  const VTbl* _vtbl;
+  void* _impl;
+
+ public:
+  auto seek(SeekFrom pos) -> Result<u64> {
+    return (_vtbl->seek)(_impl, pos);
   }
 };
 
