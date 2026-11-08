@@ -122,7 +122,7 @@ class Formatter {
  public:
   auto write_str(Str s) -> Formatter&;
   auto write_char(char c) -> Formatter&;
-  auto write_chars(char c, usize n) -> Formatter&;
+  auto write_pad(char c, usize n) -> Formatter&;
 
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
@@ -165,7 +165,6 @@ class Formatter {
 struct Formatter::Block {
   Formatter& _fmt;
   u32 _fields = 0;
-  u32 _indent_size = 2U;
 
  public:
   auto item(Str open) -> Formatter&;
@@ -174,6 +173,8 @@ struct Formatter::Block {
   void write_val(const auto& val) {
     _fmt.write_val(val);
   }
+
+  void indent();
 };
 
 struct DebugList {

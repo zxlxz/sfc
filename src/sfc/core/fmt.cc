@@ -4,6 +4,9 @@
 namespace sfc::fmt {
 
 namespace detail {
+
+constexpr u32 MAX_PRECISION = 20U;
+
 struct FixFloat {
   u64 _int;  // int part
   u64 _flt;  // flt part
@@ -15,8 +18,8 @@ struct ExpFloat {
 };
 
 auto exp10(int n) -> f64 {
-  constexpr u32 kCNT = 32U;
-  constexpr f64 kTBL[] = {
+  constexpr u32 TBL_LEN = 32U;
+  constexpr f64 EXP_TBL[] = {
       1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
       1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22, 1e23, 1e24, 1e25, 1e26, 1e27, 1e28, 1e29, 1e30, 1e31,
   };
@@ -27,10 +30,10 @@ auto exp10(int n) -> f64 {
   }
 
   auto x = 1.0;
-  for (; u >= kCNT; u -= kCNT) {
+  for (; u >= TBL_LEN; u -= TBL_LEN) {
     x *= 1e32;
   }
-  x *= kTBL[u];
+  x *= EXP_TBL[u];
 
   if (n < 0) {
     x = 1.0 / x;
@@ -58,18 +61,18 @@ auto frexp10(f64 uflt, int* exp) {
 }
 
 auto prec_ratio(u32 precision) -> u64 {
-  const u64 k10 = u64(1e10);  // 1e10
-  const u64 k19 = u64(1e19);  // 1e19
-  const u64 kTBL[10] = {1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U};
-  if (precision < 10) return kTBL[precision];
-  if (precision < 20) return k10 * kTBL[precision - 10];
-  return k19;
+  constexpr u64 EXP_10 = u64(1e10);   // 1e10
+  constexpr u64 EXP_MAX = u64(1e19);  // 1e19
+  constexpr u64 EXP_TBL[10] = {1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U};
+
+  if (precision < 10) return EXP_TBL[precision];
+  if (precision < 20) return EXP_10 * EXP_TBL[precision - 10];
+  return EXP_MAX;
 }
 
 auto build_fix(f64 uflt, u32 precision) -> FixFloat {
-  const auto kMaxPrecision = 20U;
-  if (precision >= kMaxPrecision) {
-    precision = kMaxPrecision - 1;
+  if (precision >= MAX_PRECISION) {
+    precision = MAX_PRECISION - 1;
   }
 
   // 1000...
@@ -106,14 +109,14 @@ auto build_exp(f64 uflt, u32 precision) -> ExpFloat {
 }
 
 struct RevBuf {
-  static constexpr usize kBufSize = 128;
+  static constexpr usize BUF_SIZE = 128;
 
-  char _buf[kBufSize];
-  usize _pos = kBufSize;
+  char _buf[BUF_SIZE];
+  usize _pos = BUF_SIZE;
 
  public:
   auto as_str() const -> Str {
-    return Str{_buf + _pos, kBufSize - _pos};
+    return Str{_buf + _pos, BUF_SIZE - _pos};
   }
 
   auto write_u64(u64 uval, char type = 0) noexcept -> Str {
@@ -130,10 +133,10 @@ struct RevBuf {
   }
 
   auto write_ptr(usize uval, bool upcase) noexcept -> Str {
-    static const auto MIN_LEN = 12L;
+    constexpr u32 MIN_LEN = 12;
 
     this->push_bin<16>(uval, upcase);
-    while (kBufSize - _pos < MIN_LEN) {
+    while (BUF_SIZE - _pos < MIN_LEN) {
       this->push('0');
     }
     this->push(upcase ? 'X' : 'x');
@@ -142,8 +145,7 @@ struct RevBuf {
   }
 
   auto write_flt(f64 val, u32 precision, char type) -> Str {
-    constexpr auto kMaxFix = f64(num::Int<u64>::MAX);
-    constexpr auto kMaxPrec = 20U;
+    constexpr auto MAX_UVAL = f64(num::Int<u64>::MAX);
 
     if (__builtin_isnan(val)) {
       return "NaN";
@@ -152,13 +154,13 @@ struct RevBuf {
       return val > 0 ? Str{"inf"} : Str{"-inf"};
     }
 
-    if (precision > kMaxPrec) {
-      precision = kMaxPrec;
+    if (precision > MAX_PRECISION) {
+      precision = MAX_PRECISION;
     }
 
     const auto uval = __builtin_fabs(val);
     const auto upcase = chr::is_upcase(type);
-    const auto use_exp = type == 'e' || type == 'E' || uval >= kMaxFix;
+    const auto use_exp = type == 'e' || type == 'E' || uval >= MAX_UVAL;
     if (use_exp) {
       const auto [base, iexp] = build_exp(uval, precision);
       this->write_exp(base, iexp, upcase);
@@ -368,8 +370,8 @@ void Debug::fmt(long long val, Formatter& f) {
 }
 
 void Debug::fmt(float val, Formatter& f) {
-  static constexpr auto kDefaultPrecision = 4U;
-  const auto prec = f.precision().unwrap_or(kDefaultPrecision);
+  constexpr u32 DEFAULT_PRECISION = 4U;
+  const auto prec = f.precision().unwrap_or(DEFAULT_PRECISION);
 
   const auto uval = val < 0 ? -val : val;
   auto buf = detail::RevBuf{};
@@ -378,8 +380,8 @@ void Debug::fmt(float val, Formatter& f) {
 }
 
 void Debug::fmt(double val, Formatter& f) {
-  static constexpr auto kDefaultPrecision = 6U;
-  const auto prec = f.precision().unwrap_or(kDefaultPrecision);
+  constexpr u32 DEFAULT_PRECISION = 6U;
+  const auto prec = f.precision().unwrap_or(DEFAULT_PRECISION);
 
   const auto uval = val < 0 ? -val : val;
 
@@ -441,61 +443,53 @@ auto Formatter::write_char(char c) -> Formatter& {
   return *this;
 }
 
-auto Formatter::write_chars(char c, usize n) -> Formatter& {
-  static constexpr auto BUF_LEN = 8U;
-  const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
-  for (auto i = 0U; i < n; i += BUF_LEN) {
-    const auto s = Str{buf, i + BUF_LEN < n ? BUF_LEN : n - i};
-    this->write_str(s);
+auto Formatter::write_pad(char c, usize n) -> Formatter& {
+  constexpr u32 BUF_LEN = 16;
+  char buf[BUF_LEN] = {c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c};
+
+  for (auto rem = n; rem > 0;) {
+    const auto chunk = rem < BUF_LEN ? rem : BUF_LEN;
+    this->write_str({buf, chunk});
+    rem -= chunk;
   }
   return *this;
 }
 
 void Formatter::pad(Str s) {
-  if (_spec._width <= s._len) {
-    this->write_str(s);
-    return;
-  }
-
-  const auto fill = _spec.fill();
-  const auto npad = _spec._width - s._len;
+  const auto pad_len = _spec._width < s._len ? 0 : _spec._width - s._len;
+  const auto pad_chr = _spec.fill();
 
   switch (_spec._align) {
     default:
     case '<':
       this->write_str(s);
-      this->write_chars(fill, npad);
+      this->write_pad(pad_chr, pad_len);
       break;
     case '>':
-      this->write_chars(fill, npad);
+      this->write_pad(pad_chr, pad_len);
       this->write_str(s);
       break;
     case '=':
     case '^':
-      this->write_chars(fill, (npad + 0) / 2);
+      this->write_pad(pad_chr, (pad_len + 0) / 2);
       this->write_str(s);
-      this->write_chars(fill, (npad + 1) / 2);
+      this->write_pad(pad_chr, (pad_len + 1) / 2);
       break;
   }
 }
 
 void Formatter::pad_num(bool is_neg, Str body) {
+  const auto pad_len = _spec._width < body._len ? 0 : _spec._width - body._len;
+  const auto pad_chr = _spec.fill(_spec._alt ? '0' : ' ');
+
   const auto sign = _spec.sign(is_neg);
   const auto prefix = _spec.prefix();
-  if (body._len >= _spec._width) {
-    this->write_str(sign);
-    this->write_str(prefix);
-    this->write_str(body);
-    return;
-  }
+  const auto align = _spec.align(pad_chr == '0' ? '=' : '>');
 
-  const auto npad = _spec._width - body._len;
-  const auto fill = _spec.fill(_spec._alt ? '0' : ' ');
-  const auto align = _spec.align(fill == '0' ? '=' : '>');
   switch (align) {
     default:
     case '>':
-      this->write_chars(fill, npad);
+      this->write_pad(pad_chr, pad_len);
       this->write_str(sign);
       this->write_str(prefix);
       this->write_str(body);
@@ -504,20 +498,20 @@ void Formatter::pad_num(bool is_neg, Str body) {
       this->write_str(sign);
       this->write_str(prefix);
       this->write_str(body);
-      this->write_chars(fill, npad);
+      this->write_pad(pad_chr, pad_len);
       break;
     case '=':
       this->write_str(sign);
       this->write_str(prefix);
-      this->write_chars(fill, npad);
+      this->write_pad(pad_chr, pad_len);
       this->write_str(body);
       break;
     case '^':
-      this->write_chars(fill, (npad + 0) / 2);
+      this->write_pad(pad_chr, (pad_len + 0) / 2);
       this->write_str(sign);
       this->write_str(prefix);
       this->write_str(body);
-      this->write_chars(fill, (npad + 1) / 2);
+      this->write_pad(pad_chr, (pad_len + 1) / 2);
   }
 }
 
@@ -560,7 +554,7 @@ auto Formatter::Block::item(Str begin) -> Formatter& {
     } else {
       _fmt.write_str(",\n");
     }
-    _fmt.write_chars(' ', _fmt._depth * _indent_size);
+    this->indent();
   } else {
     if (_fields != 0) {
       _fmt.write_str(", ");
@@ -572,6 +566,11 @@ auto Formatter::Block::item(Str begin) -> Formatter& {
   return _fmt;
 }
 
+void Formatter::Block::indent() {
+  constexpr u32 TAB_SIZE = 2U;
+  _fmt.write_pad(' ', _fmt._depth * TAB_SIZE);
+}
+
 void Formatter::Block::finish(Str begin, Str end) {
   const auto is_pretty = _fmt._spec._alt == '#';
   const auto has_fields = _fields > 0;
@@ -580,7 +579,7 @@ void Formatter::Block::finish(Str begin, Str end) {
     if (is_pretty) {
       _fmt._depth -= 1;
       _fmt.write_str("\n");
-      _fmt.write_chars(' ', _fmt._depth * _indent_size);
+      this->indent();
     }
   } else {
     _fmt.write_str(begin);
