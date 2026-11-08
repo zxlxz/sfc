@@ -429,22 +429,26 @@ auto Formatter::depth() const -> u32 {
   return _depth;
 }
 
-void Formatter::write_str(Str s) {
-  if (s._len == 0) return;
-  _out.write_str(s);
+auto Formatter::write_str(Str s) -> Formatter& {
+  if (s._len != 0) {
+    _out.write_str(s);
+  }
+  return *this;
 }
 
-void Formatter::write_char(char c) {
+auto Formatter::write_char(char c) -> Formatter& {
   _out.write_str({&c, 1});
+  return *this;
 }
 
-void Formatter::write_chars(char c, usize n) {
+auto Formatter::write_chars(char c, usize n) -> Formatter& {
   static constexpr auto BUF_LEN = 8U;
   const char buf[BUF_LEN] = {c, c, c, c, c, c, c, c};
   for (auto i = 0U; i < n; i += BUF_LEN) {
     const auto s = Str{buf, i + BUF_LEN < n ? BUF_LEN : n - i};
     this->write_str(s);
   }
+  return *this;
 }
 
 void Formatter::pad(Str s) {
@@ -539,7 +543,7 @@ auto Formatter::debug_struct(Str name) -> DebugStruct {
   return DebugStruct{*this};
 }
 
-void Formatter::Block::field(Str begin) {
+auto Formatter::Block::item(Str begin) -> Formatter& {
   const auto is_pretty = _fmt._spec._alt == '#';
 
   if (_fields == 0) {
@@ -564,6 +568,8 @@ void Formatter::Block::field(Str begin) {
   }
 
   _fields += 1;
+
+  return _fmt;
 }
 
 void Formatter::Block::finish(Str begin, Str end) {
@@ -583,11 +589,19 @@ void Formatter::Block::finish(Str begin, Str end) {
   _fmt.write_str(end);
 }
 
-void Formatter::Block::write_key(Str key, char ch) {
-  if (ch) _fmt.write_char(ch);
-  _fmt.write_str(key);
-  if (ch) _fmt.write_char(ch);
-  _fmt.write_str(": ");
+auto DebugMap::key(Str key) -> DebugMap& {
+  auto& fmter = _blk.item("{");
+  fmter.write_str("\"");
+  fmter.write_str(key);
+  fmter.write_str("\": ");
+  return *this;
+}
+
+auto DebugStruct::key(Str key) -> DebugStruct& {
+  auto& fmter = _blk.item("{");
+  fmter.write_str(key);
+  fmter.write_str(": ");
+  return *this;
 }
 
 }  // namespace sfc::fmt

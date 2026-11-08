@@ -120,9 +120,9 @@ class Formatter {
   auto depth() const -> u32;
 
  public:
-  void write_str(Str s);
-  void write_char(char c);
-  void write_chars(char c, usize n);
+  auto write_str(Str s) -> Formatter&;
+  auto write_char(char c) -> Formatter&;
+  auto write_chars(char c, usize n) -> Formatter&;
 
   void pad(Str s);
   void pad_num(bool is_neg, Str num_str);
@@ -137,7 +137,7 @@ class Formatter {
   auto debug_struct(Str name) -> DebugStruct;
 
  public:
-  void write_val(const auto& val) {
+  auto write_val(const auto& val) -> Formatter& {
     if constexpr (requires { val.fmt(*this); }) {
       val.fmt(*this);
     } else if constexpr (requires { val->fmt(*this); }) {
@@ -145,17 +145,20 @@ class Formatter {
     } else {
       fmt::Debug::fmt(val, *this);
     }
+    return *this;
   }
 
-  void write_arg(Spec spec, const auto& arg) {
+  auto write_arg(Spec spec, const auto& arg) -> Formatter& {
     mem::swap(_spec, spec);
     this->write_val(arg);
     mem::swap(_spec, spec);
+    return *this;
   }
 
-  void write_fmt(const Fmts& fmts, const auto&... args) {
+  auto write_fmt(const Fmts& fmts, const auto&... args) -> Formatter& {
     const auto xargs = Args{fmts, args...};
     xargs.fmt(*this);
+    return *this;
   }
 };
 
@@ -165,10 +168,8 @@ struct Formatter::Block {
   u32 _indent_size = 2U;
 
  public:
-  void field(Str open);
+  auto item(Str open) -> Formatter&;
   void finish(Str open, Str end);
-
-  void write_key(Str key, char type = 0);
 
   void write_val(const auto& val) {
     _fmt.write_val(val);
@@ -180,8 +181,7 @@ struct DebugList {
 
  public:
   auto entry(const auto& value) -> DebugList& {
-    _blk.field("[");
-    _blk.write_val(value);
+    _blk.item("[").write_val(value);
     return *this;
   }
 
@@ -195,13 +195,26 @@ struct DebugList {
   }
 };
 
+struct DebugTuple {
+  Formatter::Block _blk;
+
+ public:
+  auto field(const auto& value) -> DebugTuple& {
+    _blk.item("(").write_val(value);
+    return *this;
+  }
+
+  void finish() {
+    _blk.finish("(", ")");
+  }
+};
+
 struct DebugSet {
   Formatter::Block _blk;
 
  public:
   auto entry(const auto& value) -> DebugSet& {
-    _blk.field("{");
-    _blk.write_val(value);
+    _blk.item("{").write_val(value);
     return *this;
   }
 
@@ -219,10 +232,16 @@ struct DebugMap {
   Formatter::Block _blk;
 
  public:
+  auto key(Str key) -> DebugMap&;
+
+  auto value(const auto& val) -> DebugMap& {
+    _blk.write_val(val);
+    return *this;
+  }
+
   auto entry(Str key, const auto& value) -> DebugMap& {
-    _blk.field("{");
-    _blk.write_key(key, '"');
-    _blk.write_val(value);
+    this->key(key);
+    this->value(value);
     return *this;
   }
 
@@ -239,29 +258,20 @@ struct DebugMap {
   }
 };
 
-struct DebugTuple {
-  Formatter::Block _blk;
-
- public:
-  auto field(const auto& value) -> DebugTuple& {
-    _blk.field("(");
-    _blk.write_val(value);
-    return *this;
-  }
-
-  void finish() {
-    _blk.finish("{", ")");
-  }
-};
-
 struct DebugStruct {
   Formatter::Block _blk;
 
  public:
-  auto field(Str key, const auto& value) -> DebugStruct& {
-    _blk.field("{");
-    _blk.write_key(key);
+  auto key(Str key) -> DebugStruct&;
+
+  auto value(const auto& value) -> DebugStruct& {
     _blk.write_val(value);
+    return *this;
+  }
+
+  auto field(Str key, const auto& value) -> DebugStruct& {
+    this->key(key);
+    this->value(value);
     return *this;
   }
 
