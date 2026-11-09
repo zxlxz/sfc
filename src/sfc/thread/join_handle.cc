@@ -1,42 +1,32 @@
+#include "sfc/core/mem.h"
 #include "sfc/sys/thread.h"
 
 #include "sfc/thread/join_handle.h"
 #include "sfc/ffi/os_str.h"
+#include "sfc/sys/windows/thread.h"
 
 namespace sfc::thread {
 
-struct JoinHandle::Inn {
-  sys::Thread _native;
+// private func: cast from Inn to sys::Thread*
+auto* JoinHandle::Inn::operator->() {
+  static_assert(sizeof(Inn) == sizeof(sys::Thread));
+  static_assert(alignof(Inn) == alignof(sys::Thread));
+  return (sys::Thread*)this;
+}
 
- public:
-  explicit Inn(usize stack_size, Box<void()> f) {
-    _native = sys::Thread::new_(stack_size, mem::move(f));
-  }
-
-  ~Inn() {}
-
- public:
-  void detach() {
-    _native.detach();
-  }
-
-  void join() {
-    _native.join();
-  }
-};
-
-JoinHandle::JoinHandle(Inn inn) noexcept : _inn{new Inn{mem::move(inn)}} {}
+JoinHandle::JoinHandle(Inn inn) noexcept : _inn{inn} {}
 
 JoinHandle::~JoinHandle() noexcept {
-  if (_inn == nullptr) {
+  if (_inn._native == RawThread{}) {
     return;
   }
 
   _inn->detach();
-  delete _inn;
 }
 
-JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _inn{mem::take(other._inn)} {}
+JoinHandle::JoinHandle(JoinHandle&& other) noexcept : _inn{other._inn} {
+  other._inn._native = RawThread{};
+}
 
 JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
   if (this != &other) {
@@ -46,18 +36,17 @@ JoinHandle& JoinHandle::operator=(JoinHandle&& other) noexcept {
 }
 
 void JoinHandle::join() {
-  if (_inn == nullptr) {
+  if (_inn._native == RawThread{}) {
     return;
   }
 
   _inn->join();
-  delete _inn;
-  _inn = nullptr;
+  _inn._native = {};
 }
 
 auto Builder::spawn_unchecked(Box<void()> fun) -> JoinHandle {
-  const auto inn = JoinHandle::Inn{stack_size, mem::move(fun)};
-  return JoinHandle{inn};
+  auto sys_thread = sys::Thread::new_(stack_size, mem::move(fun));
+  return JoinHandle{{sys_thread._handle}};
 }
 
 Scope::Scope() {}

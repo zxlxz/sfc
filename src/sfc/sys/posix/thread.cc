@@ -22,12 +22,20 @@ static void* thread_start(void* p) {
 }
 
 void Thread::join() {
+  if (_handle == 0) {
+    return;
+  }
+
   // just join, don't change thrd, the caller should handle it
   const auto err = ::pthread_join(_handle, nullptr);
   sfc::assert_(err == 0, "Thread::join: pthread_join failed, err={}", err);
 }
 
 void Thread::detach() {
+  if (_handle == 0) {
+    return;
+  }
+
   // just detach, don't change thrd, the caller should handle it
   const auto err = ::pthread_detach(_handle);
   sfc::assert_(err == 0, "Thread::detach: pthread_detach failed, err={}", err);

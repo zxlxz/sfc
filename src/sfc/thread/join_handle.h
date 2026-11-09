@@ -2,15 +2,28 @@
 
 #include "sfc/alloc.h"
 
+struct _opaque_pthread_t;
+
 namespace sfc::thread {
+
+#ifdef _WIN32
+using RawThread = void*;
+#elif defined(__APPLE__)
+using RawThread = struct _opaque_pthread_t*;
+#else
+using RawThread = unsigned long;
+#endif
 
 class JoinHandle {
   friend struct Builder;
-  struct Inn;
-  Inn* _inn;
+  struct Inn {
+    RawThread _native;
+    auto* operator->();
+  };
+  Inn _inn;
 
  public:
-  JoinHandle(Inn inn) noexcept;
+  explicit JoinHandle(Inn inn) noexcept;
   ~JoinHandle() noexcept;
 
   JoinHandle(JoinHandle&& other) noexcept;

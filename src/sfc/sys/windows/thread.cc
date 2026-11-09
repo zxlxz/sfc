@@ -40,7 +40,7 @@ void Thread::join() {
 }
 
 void Thread::detach() {
-  if (_handle == nullptr || _handle == INVALID_HANDLE_VALUE) {
+  if (_handle == nullptr) {
     return;
   }
   (void)::CloseHandle(_handle);

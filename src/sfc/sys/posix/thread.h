@@ -8,9 +8,9 @@ namespace sfc::sys::posix {
 
 struct Thread {
 #ifdef __APPLE__
-  struct _opaque_pthread_t* _handle;
+  struct _opaque_pthread_t* _handle = nullptr;
 #else
-  unsigned long _handle;
+  unsigned long _handle = 0;
 #endif
 
  public:
