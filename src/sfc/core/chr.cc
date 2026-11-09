@@ -64,6 +64,9 @@ static auto decode(Slice<const u8> buf) -> char32_t {
 
   const auto p = buf._ptr;
   switch (buf._len) {
+    default: {
+      return chr::INVALID;
+    }
     case 1: {
       const auto a = p[0];
       return char32_t{a};
@@ -130,6 +133,9 @@ static auto decode(Slice<const u16> buf) -> char32_t {
 
   const auto p = buf._ptr;
   switch (buf._len) {
+    default: {
+      return chr::INVALID;
+    }
     case 1: {
       const auto ch = p[0];
       return char32_t{ch};

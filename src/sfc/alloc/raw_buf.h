@@ -120,3 +120,7 @@ class RawBuf {
 };
 
 }  // namespace sfc::raw_buf
+
+namespace sfc {
+using raw_buf::RawBuf;
+}

@@ -1,0 +1,20 @@
+CompileFlags:
+  Add: [-Wall, -Wextra]
+
+Diagnostics:
+  UnusedIncludes: None
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - performance-*
+    Remove:
+      - performance-enum-size
+      - bugprone-easily-swappable-parameters
+      - bugprone-macro-parentheses
+      - bugprone-reserved-identifier
+
+    FastCheckFilter: Strict
+
+Index:
+  Background: Build
+  StandardLibrary: true

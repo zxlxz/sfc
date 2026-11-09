@@ -95,7 +95,8 @@ struct Spec {
     }
 
     res._width = p.extract_uint<u8>();
-    if ((res._point = p.pop_if('.'))) {
+    if (char ch = p.pop_if('.')) {
+      res._point = ch;
       res._precision = p.extract_uint<u8>();
     }
     res._type = p.pop();

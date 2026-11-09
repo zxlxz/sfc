@@ -306,8 +306,8 @@ class HashTbl {
     auto h = DefaultHasher{};
     h.write_any(key);
 
-    const auto hx = h.finish();
-    const auto h1 = hx & this->mask();
+    const usize hx = h.finish();
+    const usize h1 = hx & this->mask();
     const auto h2 = u8((hx >> 57) & 0x7F);
     return {h1, h2};
   }
@@ -317,7 +317,7 @@ class HashTbl {
   }
 
   void rehash(usize max_len) {
-    const auto min_cap = usize(f64(max_len) / kLoadFactor + 0.5);
+    const usize min_cap = usize(__builtin_ceil(f64(max_len) / kLoadFactor));
     auto new_tbl = HashTbl::with_capacity(min_cap);
 
     // rehash all entries

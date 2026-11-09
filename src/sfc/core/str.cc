@@ -233,6 +233,7 @@ struct NumReader {
 
     const auto r = _ptr[1];
     switch (r) {
+      default:  return 10;
       case 'x':
       case 'X': _ptr += 2; return 16;
       case 'b':

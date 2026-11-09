@@ -122,20 +122,21 @@ struct RevBuf {
   auto write_u64(u64 uval, char type = 0) noexcept -> Str {
     switch (type) {
       default:  this->push_dec(uval); break;
-      case 'B': this->push_bin<2>(uval); break;
+      case 'B':
       case 'b': this->push_bin<2>(uval); break;
-      case 'O': this->push_bin<8>(uval); break;
+      case 'O':
       case 'o': this->push_bin<8>(uval); break;
-      case 'X': this->push_bin<16>(uval, true); break;
-      case 'x': this->push_bin<16>(uval, false); break;
+      case 'X':
+      case 'x': this->push_bin<16>(uval, type); break;
     }
     return this->as_str();
   }
 
-  auto write_ptr(usize uval, bool upcase) noexcept -> Str {
+  auto write_ptr(usize uval, char type) noexcept -> Str {
     constexpr u32 MIN_LEN = 12;
+    const auto upcase = 'A' <= type && type <= 'Z';
 
-    this->push_bin<16>(uval, upcase);
+    this->push_bin<16>(uval, type);
     while (BUF_SIZE - _pos < MIN_LEN) {
       this->push('0');
     }
@@ -230,7 +231,7 @@ struct RevBuf {
   }
 
   template <u32 RADIX>
-  void push_bin(u64 val, bool upcase = false) noexcept {
+  void push_bin(u64 val, char type = 0) noexcept {
     static_assert((RADIX & (RADIX - 1)) == 0, "radix must be power of 2");
     constexpr auto MASK = RADIX - 1;
 
@@ -238,6 +239,7 @@ struct RevBuf {
     const auto digits_lower = "0123456789abcdefghijklmnopqrstuvwxyz";
 
     // write digits
+    const auto upcase = 'A' <= type && type <= 'Z';
     const auto digits = upcase ? digits_upper : digits_lower;
     auto uval = val > 0 ? val : 0 - val;
     if (uval == 0) {
@@ -396,11 +398,10 @@ void Debug::fmt([[maybe_unused]] decltype(nullptr) val, Formatter& f) {
 
 void Debug::fmt(const void* val, Formatter& f) {
   const auto type = f.type();
-  const auto upcase = type == 'X' || type == 'P';
   const auto uval = __builtin_bit_cast(usize, val);
 
   auto buf = detail::RevBuf{};
-  const auto s = buf.write_ptr(uval, upcase);
+  const auto s = buf.write_ptr(uval, type);
   f.write_str(s);
 }
 
@@ -568,7 +569,8 @@ auto Formatter::Block::item(Str begin) -> Formatter& {
 
 void Formatter::Block::indent() {
   constexpr u32 TAB_SIZE = 2U;
-  _fmt.write_pad(' ', _fmt._depth * TAB_SIZE);
+  const auto indent_len = _fmt._depth * TAB_SIZE;
+  _fmt.write_pad(' ', indent_len);
 }
 
 void Formatter::Block::finish(Str begin, Str end) {

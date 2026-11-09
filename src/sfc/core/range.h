@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/core/num.h"
+#include "sfc/core/iter.h"
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"

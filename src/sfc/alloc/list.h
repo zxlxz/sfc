@@ -8,7 +8,7 @@ using slice::Range;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
-  using Buf = raw_buf::RawBuf<T, A>;
+  using Buf = RawBuf<T, A>;
   Buf _buf{};
   usize _len{0};
 

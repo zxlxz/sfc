@@ -218,27 +218,35 @@ auto Deserializer::next_tok() -> Result<Str> {
   };
 
   switch (_buf[0]) {
-    default:  return Error::InvalidToken;
-    case '[': return read(1);
-    case ']': return read(1);
-    case '{': return read(1);
-    case '}': return read(1);
-    case ',': return read(1);
-    case ':': return read(1);
-    case 'n':
+    default: {
+      return Error::InvalidToken;
+    }
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+    case ',':
+    case ':': {
+      return read(1);
+    }
+    case 'n': {
       if (!_buf.starts_with("null")) return Error::InvalidToken;
       return read(4);
-    case 't':
+    }
+    case 't': {
       if (!_buf.starts_with("true")) return Error::InvalidToken;
       return read(4);
-    case 'f':
+    }
+    case 'f': {
       if (!_buf.starts_with("false")) return Error::InvalidToken;
       return read(5);
-    case '"':
+    }
+    case '"': {
       if (auto len = string_len(); len != 0) {
         return read(len);
       }
       return Error::InvalidString;
+    }
     case '+':
     case '-':
     case '.':
@@ -251,11 +259,12 @@ auto Deserializer::next_tok() -> Result<Str> {
     case '6':
     case '7':
     case '8':
-    case '9':
+    case '9': {
       if (auto len = number_len(); len != 0) {
         return read(len);
       }
       return Error::InvalidNumber;
+    }
   }
 }
 

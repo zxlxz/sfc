@@ -1,6 +1,5 @@
 #include "sfc/io/file.h"
 #include "sfc/sys/io.h"
-#include "sfc/sys/windows/io.h"
 
 namespace sfc::io {
 
