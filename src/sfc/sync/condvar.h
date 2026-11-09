@@ -2,12 +2,13 @@
 
 #include "sfc/sync/mutex.h"
 #include "sfc/time.h"
+#include "sfc/alloc.h"
 
 namespace sfc::sync {
 
 class Condvar {
   class Inn;
-  Inn* _inn{nullptr};
+  Box<Inn> _inn{};
 
  public:
   explicit Condvar() noexcept;

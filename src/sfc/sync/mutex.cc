@@ -18,7 +18,10 @@ struct Tid {
   }
 };
 
-class Mutex::Inn : public sys::Mutex {};
+class Mutex::Inn : public sys::Mutex {
+ public:
+  using sys::Mutex::Mutex;
+};
 
 class ReentrantLock::Inn {
   sys::Mutex _mutex;
@@ -59,38 +62,24 @@ class ReentrantLock::Inn {
   }
 };
 
-Mutex::Mutex() noexcept : _inn{new Inn()} {}
+Mutex::Mutex() noexcept : _inn{Box<Inn>::new_()} {}
+Mutex::~Mutex() noexcept = default;
 
-Mutex::~Mutex() noexcept {
-  if (_inn == nullptr) {
-    return;
-  }
-
-  delete _inn;
-  _inn = nullptr;
-}
-
-Mutex::Mutex(Mutex&& other) noexcept : _inn{other._inn} {
-  other._inn = nullptr;
-}
-
-Mutex& Mutex::operator=(Mutex&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_inn, other._inn);
-  }
-  return *this;
-}
+Mutex::Mutex(Mutex&& other) noexcept = default;
+Mutex& Mutex::operator=(Mutex&& other) noexcept = default;
 
 auto Mutex::lock() const noexcept -> Guard {
-  _inn->lock();
-  return Guard{*_inn};
+  auto inn = ptr::cast_mut(&*_inn);
+  inn->lock();
+  return Guard{*inn};
 }
 
 auto Mutex::try_lock() const noexcept -> Option<Guard> {
-  if (!_inn->try_lock()) {
+  auto inn = ptr::cast_mut(&*_inn);
+  if (!inn->try_lock()) {
     return None{};
   }
-  return Guard{*_inn};
+  return Guard{*inn};
 }
 
 Mutex::Guard::Guard(Inn& mtx) noexcept : _inn{&mtx} {}
@@ -106,37 +95,26 @@ auto Mutex::Guard::inner() const -> Inn& {
   return *_inn;
 }
 
-ReentrantLock::ReentrantLock() noexcept : _inn{new Inn{}} {}
+ReentrantLock::ReentrantLock() noexcept : _inn{Box<Inn>::new_()} {}
 
-ReentrantLock::~ReentrantLock() noexcept {
-  if (_inn == nullptr) {
-    return;
-  }
+ReentrantLock::~ReentrantLock() noexcept = default;
 
-  delete _inn;
-  _inn = nullptr;
-}
-
-ReentrantLock::ReentrantLock(ReentrantLock&& other) noexcept : _inn{mem::take(other._inn)} {}
-
-ReentrantLock& ReentrantLock::operator=(ReentrantLock&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_inn, other._inn);
-  }
-  return *this;
-}
+ReentrantLock::ReentrantLock(ReentrantLock&& other) noexcept = default;
+ReentrantLock& ReentrantLock::operator=(ReentrantLock&& other) noexcept = default;
 
 auto ReentrantLock::lock() const noexcept -> Guard {
-  _inn->lock();
-  return Guard{*_inn};
+  auto inn = ptr::cast_mut(&*_inn);
+  inn->lock();
+  return Guard{*inn};
 }
 
 auto ReentrantLock::try_lock() const noexcept -> Option<Guard> {
-  const auto ret = _inn->try_lock();
+  auto inn = ptr::cast_mut(&*_inn);
+  const auto ret = inn->try_lock();
   if (!ret) {
     return None{};
   }
-  return Guard{*_inn};
+  return Guard{*inn};
 }
 
 ReentrantLock::Guard::Guard(Inn& inn) noexcept : _inn{&inn} {}

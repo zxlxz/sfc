@@ -1,12 +1,12 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/alloc.h"
 
 namespace sfc::sync {
 
 class Mutex {
   class Inn;
-  Inn* _inn{nullptr};
+  Box<Inn> _inn{};
 
  public:
   explicit Mutex() noexcept;
@@ -22,7 +22,7 @@ class Mutex {
 
 class ReentrantLock {
   class Inn;
-  Inn* _inn{nullptr};
+  Box<Inn> _inn{};
 
  public:
   explicit ReentrantLock() noexcept;

@@ -5,26 +5,16 @@ namespace sfc::sync {
 
 class Mutex::Inn : public sys::Mutex {};
 
-class Condvar::Inn : public sys::Condvar {};
+class Condvar::Inn : public sys::Condvar {
+ public:
+  using sys::Condvar::Condvar;
+};
 
-Condvar::Condvar() noexcept : _inn{new Inn()} {}
+Condvar::Condvar() noexcept : _inn{Box<Inn>::new_()} {}
+Condvar::~Condvar() noexcept = default;
 
-Condvar::~Condvar() noexcept {
-  if (_inn == nullptr) {
-    return;
-  }
-
-  delete _inn;
-}
-
-Condvar::Condvar(Condvar&& other) noexcept : _inn{mem::take(other._inn)} {}
-
-Condvar& Condvar::operator=(Condvar&& other) noexcept {
-  if (this != &other) {
-    mem::swap(_inn, other._inn);
-  }
-  return *this;
-}
+Condvar::Condvar(Condvar&&) noexcept = default;
+Condvar& Condvar::operator=(Condvar&&) noexcept = default;
 
 void Condvar::notify_one() noexcept {
   _inn->notify_one();
