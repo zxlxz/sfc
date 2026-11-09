@@ -33,7 +33,7 @@ auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
   return {File::from_raw_fd(fd)};
 }
 
-File::File(io::File other) noexcept : io::File{mem::move(other)} {}
+File::File(io::File file) noexcept : io::File{mem::move(file)} {}
 
 File::~File() = default;
 

@@ -11,7 +11,11 @@ using RawFd = int;
 #endif
 
 class [[nodiscard]] File : public io::Read, public io::Write, public io::Seek {
-  RawFd _fd;
+  struct Inn {
+    RawFd _fd;
+    auto* operator->();
+  };
+  Inn _inn;
 
  public:
   explicit File(RawFd fd) noexcept;

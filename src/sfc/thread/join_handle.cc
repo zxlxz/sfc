@@ -3,7 +3,6 @@
 
 #include "sfc/thread/join_handle.h"
 #include "sfc/ffi/os_str.h"
-#include "sfc/sys/windows/thread.h"
 
 namespace sfc::thread {
 

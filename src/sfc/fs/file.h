@@ -79,7 +79,7 @@ auto create_dir(Path path) -> io::Result<>;
 auto create_dir_all(Path path) -> io::Result<>;
 auto remove_dir(Path path) -> io::Result<>;
 auto remove_file(Path path) -> io::Result<>;
-auto rename(Path from, Path to) -> io::Result<>;
+auto rename(Path old_path, Path new_path) -> io::Result<>;
 
 auto read_dir(Path path) -> io::Result<ReadDir>;
 
