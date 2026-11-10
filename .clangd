@@ -1,5 +1,6 @@
-CompileFlags:
-  Add: [-Wall, -Wextra]
+Index:
+  Background: Build
+  StandardLibrary: true
 
 Diagnostics:
   UnusedIncludes: None
@@ -15,6 +16,15 @@ Diagnostics:
 
     FastCheckFilter: Strict
 
-Index:
-  Background: Build
-  StandardLibrary: true
+Completion:
+  AllScopes: true
+  ArgumentLists: Delimiters
+  HeaderInsertion: Never
+
+InlayHints:
+  Enabled: true
+  BlockEnd: false
+  Designators: false
+  DeducedTypes: false
+  ParameterNames: true
+  DefaultArguments: true
