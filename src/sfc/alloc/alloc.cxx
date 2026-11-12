@@ -37,4 +37,14 @@ SFC_TEST(global_shrink) {
   a.deallocate(new_ptr, Layout{}.array<u64>(16));
 }
 
+SFC_TEST(next_power_of_two) {
+  sfc::assert_eq(next_power_of_two(0), 0U);
+  sfc::assert_eq(next_power_of_two(1), 1U);
+  sfc::assert_eq(next_power_of_two(2), 2U);
+  sfc::assert_eq(next_power_of_two(3), 4U);
+  sfc::assert_eq(next_power_of_two(17), 32U);
+  sfc::assert_eq(next_power_of_two(1ULL << 40), 1ULL << 40);
+  sfc::assert_eq(next_power_of_two((1ULL << 40) + 1), 1ULL << 41);
+}
+
 }  // namespace sfc::alloc::test

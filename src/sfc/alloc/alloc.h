@@ -6,18 +6,19 @@ namespace sfc::alloc {
 
 using mem::Layout;
 
-struct Allocator {
-};
+struct Allocator {};
 
 struct System {
-  void* allocate(Layout layout);
-  void* allocate_zeroed(Layout layout);
+  auto allocate(Layout layout) -> void*;
+  auto allocate_zeroed(Layout layout) -> void*;
   void deallocate(void* ptr, Layout layout);
 
-  void* grow(void* ptr, Layout old_layout, Layout new_layout);
-  void* shrink(void* ptr, Layout old_layout, Layout new_layout);
+  auto grow(void* ptr, Layout old_layout, Layout new_layout) -> void*;
+  auto shrink(void* ptr, Layout old_layout, Layout new_layout) -> void*;
 };
 
 using Global = System;
+
+auto next_power_of_two(usize val) -> usize;
 
 }  // namespace sfc::alloc

@@ -167,17 +167,14 @@ class HashTbl {
     return *this;
   }
 
-  static auto with_capacity(usize min_cap) -> HashTbl {
-    static constexpr usize kMaxCap = num::Int<u32>::MAX;
-    if (min_cap == 0) {
+  static auto with_capacity(usize req_cap) -> HashTbl {
+    static constexpr usize kMinCap = 8U;
+    if (req_cap == 0) {
       return {};
     }
 
-    sfc::assert_(min_cap <= kMaxCap, "HashTbl::with_capacity: min_cap(={}) > kMaxCap(={})", min_cap, kMaxCap);
-    auto new_cap = usize{8U};
-    while (new_cap < min_cap) {
-      new_cap <<= 1;
-    }
+    const auto min_cap = cmp::max(kMinCap, req_cap);
+    const auto new_cap = alloc::next_power_of_two(min_cap);
 
     auto res = HashTbl{};
     res._ptr = ptr::cast<u8>(res._a.allocate(HashTbl::layout(new_cap)));

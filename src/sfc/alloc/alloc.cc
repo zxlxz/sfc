@@ -6,6 +6,20 @@ namespace sfc::alloc {
 // 1TB
 constexpr auto kMaxAllocSize = usize{1024ULL << 30};
 
+auto next_power_of_two(usize val) -> usize {
+  static constexpr usize kMaxPow2 = usize{1} << (sizeof(usize) * 8 - 1);
+  if (val == 0 || val > kMaxPow2) {
+    return 0;
+  }
+  if (val == 1) {
+    return 1;
+  }
+
+  const auto x = val - 1;
+  const auto y = kMaxPow2 >> (__builtin_clzll(x) - 1);
+  return y;
+}
+
 void* System::allocate(Layout layout) {
   if (layout.size == 0 || layout.size >= kMaxAllocSize) {
     return nullptr;
