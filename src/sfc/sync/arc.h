@@ -11,12 +11,12 @@ class [[nodiscard]] Arc {
     T _val;
 
     auto inc_count() noexcept -> u32 {
-      const auto val = _cnt.fetch_add(1, Ordering::Relaxed);
+      const auto val = _cnt.fetch_add<Ordering::Relaxed>(1);
       return val;
     }
 
     auto dec_count() noexcept -> u32 {
-      const auto val = _cnt.fetch_sub(1, Ordering::Release);
+      const auto val = _cnt.fetch_sub<Ordering::Release>(1);
       return val;
     }
   };
@@ -29,7 +29,7 @@ class [[nodiscard]] Arc {
     if (_ptr == nullptr) return;
 
     if (_ptr->dec_count() == 1) {
-      sync::fence(Ordering::Acquire);
+      sync::fence<Ordering::Acquire>();
       delete _ptr;
     }
   }

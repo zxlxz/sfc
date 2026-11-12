@@ -10,11 +10,11 @@ struct Tid {
 
  public:
   auto contains(u32 owner) const -> bool {
-    return owner == _0.load(Ordering::Relaxed);
+    return owner == _0.load<Ordering::Relaxed>();
   }
 
   void set(u32 owner) {
-    return _0.store(owner, Ordering::Relaxed);
+    return _0.store<Ordering::Relaxed>(owner);
   }
 };
 

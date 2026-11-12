@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sfc/sync/ringbuf.h"
+#include "sfc/thread/thread.h"
 
 namespace sfc::sync::mpmc {
 
@@ -32,11 +33,11 @@ class Channel {
 
  public:
   void close() {
-    _closed.exchange(true, Ordering::AcqRel);
+    _closed.exchange<Ordering::AcqRel>(true);
   }
 
   auto is_closed() const noexcept -> bool {
-    return _closed.load(Ordering::Acquire);
+    return _closed.load<Ordering::Acquire>();
   }
 
   auto send(T val) noexcept -> Option<T> {

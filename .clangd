@@ -13,7 +13,6 @@ Diagnostics:
       - bugprone-easily-swappable-parameters
       - bugprone-macro-parentheses
       - bugprone-reserved-identifier
-
     FastCheckFilter: Strict
 
 Completion:
@@ -26,5 +25,5 @@ InlayHints:
   BlockEnd: false
   Designators: false
   DeducedTypes: false
-  ParameterNames: true
+  ParameterNames: false
   DefaultArguments: true

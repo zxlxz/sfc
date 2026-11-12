@@ -5,12 +5,12 @@
 namespace sfc::sync {
 
 enum class Ordering {
-  Relaxed,
-  Consume,
-  Acquire,
-  Release,
-  AcqRel,
-  SeqCst,
+  Relaxed = 0,  // no ordering constraints
+  Consume = 1,  // load
+  Acquire = 2,  // load
+  Release = 3,  // store
+  AcqRel = 4,   // RMW (read-modify-write)
+  SeqCst = 5,   // sequentially consistent
 };
 
 template <class T>
@@ -18,62 +18,55 @@ struct Atomic {
   T _val{0};
 
  public:
-  auto load(Ordering order = Ordering::SeqCst) const noexcept -> T {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    return _val;
-#else
+  template <Ordering order = Ordering::SeqCst>
+  auto load() const noexcept -> T {
+    static_assert(order == Ordering::Relaxed || order == Ordering::Acquire || order == Ordering::SeqCst);
     return __atomic_load_n(&_val, int(order));
-#endif
   }
 
-  void store(T val, Ordering order = Ordering::SeqCst) noexcept {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    _val = val;
-#else
+  template <Ordering order = Ordering::SeqCst>
+  void store(T val) noexcept {
+    static_assert(order == Ordering::Relaxed || order == Ordering::Release || order == Ordering::SeqCst);
     return __atomic_store_n(&_val, val, int(order));
-#endif
   }
 
-  auto exchange(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    return mem::replace(_val, val);
-#else
+  template <Ordering order = Ordering::SeqCst>
+  auto exchange(T val) noexcept -> T {
+    static_assert(order != Ordering::Consume);
     return __atomic_exchange_n(&_val, val, int(order));
-#endif
   }
 
-  auto fetch_add(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    return mem::replace(_val, _val + val);
-#else
+  template <Ordering order = Ordering::SeqCst>
+  auto fetch_add(T val) noexcept -> T {
+    static_assert(order != Ordering::Consume);
     return __atomic_fetch_add(&_val, val, int(order));
-#endif
   }
 
-  auto fetch_sub(T val, Ordering order = Ordering::SeqCst) noexcept -> T {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    return mem::replace(_val, _val - val);
-#else
+  template <Ordering order = Ordering::SeqCst>
+  auto fetch_sub(T val) noexcept -> T {
+    static_assert(order != Ordering::Consume);
     return __atomic_fetch_sub(&_val, val, int(order));
-#endif
   }
 
-  auto compare_exchange(T current, T new_val, Ordering success, Ordering failure) noexcept -> bool {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-    if (_val != current) return false;
-    _val = new_val;
-    return true;
-#else
+  template <Ordering success = Ordering::SeqCst, Ordering failure = Ordering::Acquire>
+  auto compare_exchange(T current, T new_val) noexcept -> bool {
+    static_assert(success != Ordering::Consume);
+    static_assert(failure != Ordering::Consume && failure != Ordering::Release && failure != Ordering::AcqRel);
     return __atomic_compare_exchange_n(&_val, &current, new_val, 0, int(success), int(failure));
-#endif
+  }
+
+  template <Ordering success = Ordering::SeqCst, Ordering failure = Ordering::Acquire>
+  auto compare_exchange_weak(T current, T new_val) noexcept -> bool {
+    static_assert(success != Ordering::Consume);
+    static_assert(failure != Ordering::Consume && failure != Ordering::Release && failure != Ordering::AcqRel);
+    return __atomic_compare_exchange_n(&_val, &current, new_val, 1, int(success), int(failure));
   }
 };
 
-inline void fence(Ordering order) noexcept {
-#if defined(__INTELLISENSE__) || defined(__clang_analyzer__)
-#else
+template <Ordering order = Ordering::SeqCst>
+inline void fence() noexcept {
+  static_assert(order != Ordering::Consume);
   __atomic_thread_fence(int(order));
-#endif
 }
 
 }  // namespace sfc::sync

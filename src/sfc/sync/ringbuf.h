@@ -10,11 +10,11 @@ struct AtomicIdx {
 
  public:
   auto value() const noexcept -> usize {
-    return _val.load(Ordering::Acquire);
+    return _val.load<Ordering::Acquire>();
   }
 
   auto test_inc(usize val) noexcept -> bool {
-    return _val.compare_exchange(val, val + 1, Ordering::AcqRel, Ordering::Acquire);
+    return _val.compare_exchange<Ordering::AcqRel, Ordering::Acquire>(val, val + 1);
   }
 };
 
@@ -33,21 +33,21 @@ class Cell {
 
  public:
   auto seq() const noexcept -> usize {
-    return _seq.load(Ordering::Acquire);
+    return _seq.load<Ordering::Acquire>();
   }
 
   void init(usize idx) noexcept {
-    _seq.store(idx, Ordering::Relaxed);
+    _seq.store<Ordering::Relaxed>(idx);
   }
 
   void set(usize idx, T val) noexcept {
     ptr::write(&_val, mem::move(val));
-    _seq.store(idx, Ordering::Release);
+    _seq.store<Ordering::Release>(idx);
   }
 
   auto take(usize idx) noexcept -> T {
     const auto val = ptr::read(&_val);
-    _seq.store(idx, Ordering::Release);
+    _seq.store<Ordering::Release>(idx);
     return val;
   }
 };

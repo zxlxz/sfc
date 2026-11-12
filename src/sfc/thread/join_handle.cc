@@ -1,6 +1,5 @@
 #include "sfc/core/mem.h"
 #include "sfc/sys/thread.h"
-
 #include "sfc/thread/join_handle.h"
 #include "sfc/ffi/os_str.h"
 
