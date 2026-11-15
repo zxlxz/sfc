@@ -4,29 +4,19 @@
 
 namespace sfc::ffi {
 
-struct CStr {
-  const char* _inn;
-
- public:
-  CStr(const char* p) : _inn{p} {}
-
- public:
-  auto to_str() const -> Str;
-  auto to_string() const -> String;
-};
-
 class CString {
-  List<char> _buf;
+  char* _ptr = nullptr;
 
  public:
-  static auto from(CStr s) -> CString;
+  CString();
+  ~CString();
+  CString(CString&& other) noexcept;
+  CString& operator=(CString&& other) noexcept;
+
   static auto from_str(Str s) -> CString;
 
  public:
   auto as_ptr() const -> const char*;
-
-  void push_str(Str s);
-  auto into_string() && -> String;
 };
 
 }  // namespace sfc::ffi

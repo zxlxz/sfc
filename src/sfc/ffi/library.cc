@@ -1,42 +1,7 @@
 #include "sfc/ffi/library.h"
-#include "sfc/ffi/os_str.h"
 #include "sfc/sys/ffi.h"
 
 namespace sfc::ffi {
-
-using ffi::OsString;
-
-struct LibPathBuilder {
-  Str prefix;
-  Str suffix;
-
-  auto build(Str name) const -> OsString {
-    if (name.contains('/')) {  // this is a path, not a library name
-      return OsString::from_str(name);
-    }
-
-    if (name.contains('.')) {  // already has an extension, use it as is
-      return OsString::from_str(name);
-    }
-
-    auto res = OsString{};
-    if (!name.starts_with(prefix)) res.push_str(prefix);
-    res.push_str(name);
-    if (!name.ends_with(suffix)) res.push_str(suffix);
-    return res;
-  }
-};
-
-static auto make_lib_path(Str name) -> OsString {
-#ifdef _WIN32
-  const auto builder = LibPathBuilder{{}, ".dll"};
-#elif defined(__APPLE__)
-  const auto builder = LibPathBuilder{"lib", ".dylib"};
-#elif defined(__unix__)
-  const auto builder = LibPathBuilder{"lib", ".so"};
-#endif
-  return builder.build(name);
-}
 
 Library::Library() noexcept {}
 
@@ -62,14 +27,13 @@ auto Library::load(Str path) -> Option<Library> {
     return {};
   }
 
-  const auto lib_path = ffi::make_lib_path(path);
-  const auto handle = sys::load_library(lib_path.as_ptr());
-  if (handle == nullptr) {
+  const auto lib = sys::load_library(path);
+  if (lib == nullptr) {
     return {};
   }
 
   auto res = Library{};
-  res._handle = handle;
+  res._handle = lib;
   return res;
 }
 
@@ -78,10 +42,9 @@ auto Library::func(Str name) const -> Func {
     return Func{nullptr};
   }
 
-  const auto os_name = ffi::CString::from_str(name);
-
-  const auto sym = sys::get_symbol(_handle, os_name.as_ptr());
-  return Func{(void (*)())sym};
+  const auto sym = sys::get_symbol(_handle, name);
+  const auto sym_fun = ptr::cast<void()>(sym);
+  return Func{sym_fun};
 }
 
 }  // namespace sfc::ffi

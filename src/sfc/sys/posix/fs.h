@@ -1,9 +1,7 @@
 #pragma once
 
 #include <dirent.h>
-
-#include "sfc/core.h"
-#include "sfc/ffi/os_str.h"
+#include "sfc/sys/posix/mod.h"
 
 namespace sfc::fs {
 struct Metadata;
@@ -34,21 +32,21 @@ struct ReadDir {
   DIR* _dir = nullptr;
 
  public:
-  static auto open(const char* path) -> io::Result<ReadDir>;
+  static auto open(Str path) -> io::Result<ReadDir>;
 
  public:
   auto close() -> io::Result<>;
   auto next() -> Option<DirEntry>;
 };
 
-auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd>;
+auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd>;
 
-auto fstat(int fd) -> io::Result<fs::Metadata>;
-auto lstat(const char* path) -> io::Result<fs::Metadata>;
+auto fstat(RawFd fd) -> io::Result<fs::Metadata>;
+auto lstat(Str path) -> io::Result<fs::Metadata>;
 
-auto unlink(const char* path) -> io::Result<>;
-auto rename(const char* old_path, const char* new_path) -> io::Result<>;
-auto mkdir(const char* path) -> io::Result<>;
-auto rmdir(const char* path) -> io::Result<>;
+auto unlink(Str path) -> io::Result<>;
+auto rename(Str old_path, Str new_path) -> io::Result<>;
+auto mkdir(Str path) -> io::Result<>;
+auto rmdir(Str path) -> io::Result<>;
 
 }  // namespace sfc::sys::posix

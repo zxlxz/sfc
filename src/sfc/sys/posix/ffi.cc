@@ -1,25 +1,34 @@
 #include <dlfcn.h>
 
+#include "sfc/sys/posix/ffi.h"
+#include "sfc/ffi/cstr.h"
+
 namespace sfc::sys::posix {
 
-auto load_library(const char* path) -> void* {
-  const auto handle = ::dlopen(path, RTLD_LAZY | RTLD_LOCAL);
-  return handle;
+using ffi::CString;
+
+auto load_library(Str path) -> library_t {
+  const auto os_path = CString::from_str(path);
+  const auto lib_handle = ::dlopen(os_path.as_ptr(), RTLD_LAZY | RTLD_LOCAL);
+  return lib_handle;
 }
 
-void unload_library(void* handle) {
-  if (handle == nullptr) {
+void unload_library(library_t lib) {
+  if (lib == nullptr) {
     return;
   }
-  (void)::dlclose(handle);
+
+  ::dlclose(lib);
 }
 
-auto get_symbol(void* handle, const char* name) -> void* {
-  if (handle == nullptr || name == nullptr) {
+auto get_symbol(library_t lib, Str name) -> symbol_t {
+  if (lib == nullptr || name.is_empty()) {
     return nullptr;
   }
-  const auto sym = ::dlsym(handle, name);
-  return sym;
+
+  const auto os_name = CString::from_str(name);
+  const auto sym_handle = ::dlsym(lib, os_name.as_ptr());
+  return sym_handle;
 }
 
 }  // namespace sfc::sys::posix

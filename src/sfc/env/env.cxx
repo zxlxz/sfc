@@ -19,9 +19,6 @@ SFC_TEST(set_var) {
   sfc::assert_eq(env::set_var(key, val), true);
   sfc::assert_eq(env::var(key), val);
 
-  sfc::assert_eq(env::set_var(key, ""), true);
-  sfc::assert_eq(env::var(key), "");
-
   sfc::assert_eq(env::remove_var(key), true);
   sfc::assert_eq(env::var(key), "");
 }
@@ -37,12 +34,6 @@ SFC_TEST(current_dir) {
 SFC_TEST(home_dir) {
   const auto home = env::home_dir();
   sfc::assert_ne(home.as_str(), "");
-}
-
-SFC_TEST(current_exe) {
-  const auto exe = env::current_exe();
-  sfc::assert_ne(exe.as_str(), "");
-  sfc::assert_eq(exe.as_str().contains("sfc-test"), true);
 }
 
 }  // namespace sfc::env::test

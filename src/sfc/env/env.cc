@@ -1,51 +1,30 @@
 #include "sfc/env.h"
-#include "sfc/ffi/os_str.h"
 #include "sfc/sys/env.h"
 
 namespace sfc::env {
 
-using ffi::OsString;
-
 auto var(Str key) -> String {
-  const auto os_key = OsString::from_str(key);
-  return sys::getenv(os_key.as_ptr());
+  return sys::getenv(key);
 }
 
 auto set_var(Str key, Str val) -> bool {
-  const auto os_key = OsString::from_str(key);
-  const auto os_val = OsString::from_str(val);
-  return sys::setenv(os_key.as_ptr(), os_val.as_ptr());
+  return sys::setenv(key, val);
 }
 
 auto remove_var(Str key) -> bool {
-  const auto os_key = OsString::from_str(key);
-  return sys::unsetenv(os_key.as_ptr());
+  return sys::unsetenv(key);
 }
 
-auto home_dir() -> fs::PathBuf {
-  auto s = sys::home_dir();
-  return fs::PathBuf::from(mem::move(s));
+auto home_dir() -> String {
+  return sys::home_dir();
 }
 
-auto temp_dir() -> fs::PathBuf {
-  auto s = sys::temp_dir();
-  return fs::PathBuf::from(mem::move(s));
+auto current_dir() -> String {
+  return sys::getcwd();
 }
 
-auto current_exe() -> fs::PathBuf {
-  auto s = sys::current_exe();
-  return fs::PathBuf::from(mem::move(s));
-}
-
-auto current_dir() -> fs::PathBuf {
-  auto s = sys::getcwd();
-  return fs::PathBuf::from(mem::move(s));
-}
-
-auto set_current_dir(fs::Path path) -> bool {
-  const auto os_path = OsString::from_str(path.as_str());
-  const auto ret = sys::chdir(os_path.as_ptr());
-  return ret;
+auto set_current_dir(Str path) -> bool {
+  return sys::chdir(path);
 }
 
 }  // namespace sfc::env

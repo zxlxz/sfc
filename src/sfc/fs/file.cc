@@ -1,11 +1,9 @@
 #include "sfc/fs/file.h"
+#include "sfc/fs/path.h"
 #include "sfc/sys/io.h"
 #include "sfc/sys/fs.h"
-#include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
-
-using ffi::OsString;
 
 auto Metadata::file_len() const noexcept -> u64 {
   return _size;
@@ -27,9 +25,8 @@ auto Metadata::is_link() const noexcept -> bool {
   return sys::FileAttr{_attr}.is_link();
 }
 
-auto OpenOptions::open(Path path) const noexcept -> io::Result<File> {
-  const auto os_path = OsString::from_str(path.as_str());
-  const auto fd = _TRY(sys::open(os_path.as_ptr(), *this));
+auto OpenOptions::open(Str path) const noexcept -> io::Result<File> {
+  const auto fd = _TRY(sys::open(path, *this));
   return {File::from_raw_fd(fd)};
 }
 
@@ -46,12 +43,12 @@ auto File::from_raw_fd(io::RawFd fd) -> File {
   return res;
 }
 
-auto File::open(Path path) noexcept -> io::Result<File> {
+auto File::open(Str path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.read = true, .write = false};
   return opts.open(path);
 }
 
-auto File::create(Path path) noexcept -> io::Result<File> {
+auto File::create(Str path) noexcept -> io::Result<File> {
   const auto opts = OpenOptions{.create = true, .write = true, .truncate = true};
   return opts.open(path);
 }
@@ -92,28 +89,26 @@ auto ReadDir::next() -> Option<DirEntry> {
     return {};
   }
 
-  const auto os_path = ffi::OsStr{sys_entry->path};
-  const auto fs_meta = fs::Metadata{
+  const auto path = Str{sys_entry->path};
+  const auto meta = fs::Metadata{
       ._attr = u32(sys_entry->attr),
       ._size = u64(sys_entry->size),
   };
 
   auto dir_entry = DirEntry{
-      .path = PathBuf::from(os_path.to_string()),
-      .meta = mem::move(fs_meta),
+      .path = String::from(path),
+      .meta = mem::move(meta),
   };
   return dir_entry;
 }
 
-auto ReadDir::open(Path path) -> io::Result<ReadDir> {
-  const auto os_path = OsString::from_str(path.as_str());
-
-  auto sys = _TRY(sys::ReadDir::open(os_path.as_ptr()));
+auto ReadDir::open(Str path) -> io::Result<ReadDir> {
+  auto sys = _TRY(sys::ReadDir::open(path));
   auto inn = new Inn{sys};
   return ReadDir{*inn};
 }
 
-auto read(Path path) noexcept -> io::Result<List<u8>> {
+auto read(Str path) noexcept -> io::Result<List<u8>> {
   auto file = _TRY(File::open(path));
 
   auto buf = List<u8>{};
@@ -121,24 +116,22 @@ auto read(Path path) noexcept -> io::Result<List<u8>> {
   return mem::move(buf);
 }
 
-auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<> {
+auto write(Str path, Slice<const u8> buf) noexcept -> io::Result<> {
   auto file = _TRY(File::create(path));
-
   _TRY(file.write_all(buf));
   return Ok{};
 }
 
-auto create_dir(Path path) -> io::Result<> {
-  if (path._inn.is_empty() || path.is_root()) {
-    return {io::Error::InvalidInput};
+auto create_dir(Str path) -> io::Result<> {
+  if (path.is_empty()) {
+    return io::Error::InvalidInput;
   }
 
-  const auto os_path = OsString::from_str(path.as_str());
-  return sys::mkdir(os_path.as_ptr());
+  return sys::mkdir(path);
 }
 
-auto create_dir_all(Path path) -> io::Result<> {
-  if (path.as_str() == "" || path.is_root()) {
+auto create_dir_all(Str path) -> io::Result<> {
+  if (path.is_empty()) {
     return Ok{};
   }
 
@@ -147,35 +140,34 @@ auto create_dir_all(Path path) -> io::Result<> {
     return Ok{};
   }
 
-  const auto parent = path.parent();
-  _TRY(fs::create_dir_all(parent));
+  const auto parent = Path{path}.parent();
+  if (parent.as_str().is_empty()) {
+    return *err;
+  }
+
+  _TRY(fs::create_dir_all(parent.as_str()));
 
   return fs::create_dir(path);
 }
 
-auto remove_dir(Path path) -> io::Result<> {
-  const auto os_path = OsString::from_str(path.as_str());
-  return sys::rmdir(os_path.as_ptr());
+auto remove_dir(Str path) -> io::Result<> {
+  return sys::rmdir(path);
 }
 
-auto remove_file(Path path) -> io::Result<> {
-  const auto os_path = OsString::from_str(path.as_str());
-  return sys::unlink(os_path.as_ptr());
+auto remove_file(Str path) -> io::Result<> {
+  return sys::unlink(path);
 }
 
-auto rename(Path old_path, Path new_path) -> io::Result<> {
-  const auto os_old = OsString::from_str(old_path.as_str());
-  const auto os_new = OsString::from_str(new_path.as_str());
-  return sys::rename(os_old.as_ptr(), os_new.as_ptr());
+auto rename(Str old_path, Str new_path) -> io::Result<> {
+  return sys::rename(old_path, new_path);
 }
 
-auto metadata(Path path) -> io::Result<Metadata> {
-  const auto os_path = OsString::from_str(path.as_str());
-  const auto meta = _TRY(sys::lstat(os_path.as_ptr()));
+auto metadata(Str path) -> io::Result<Metadata> {
+  const auto meta = _TRY(sys::lstat(path));
   return {meta};
 }
 
-auto read_dir(Path path) -> io::Result<ReadDir> {
+auto read_dir(Str path) -> io::Result<ReadDir> {
   return ReadDir::open(path);
 }
 

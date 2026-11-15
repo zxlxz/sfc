@@ -5,11 +5,11 @@
 namespace sfc::fs::test {
 
 SFC_TEST(read_write) {
-  const auto path_buf = env::temp_dir().join("test_file.txt");
+  const auto file_path = Str{"test_file.txt"};
 
   // create, write
   {
-    auto file_res = File::create(path_buf.as_path());
+    auto file_res = File::create(file_path);
     sfc::assert_eq(file_res.is_ok(), true);
     auto file = mem::move(file_res).unwrap();
     (void)file.write_str("hello world");
@@ -17,7 +17,7 @@ SFC_TEST(read_write) {
 
   // open, read
   {
-    auto file_res = File::open(path_buf.as_path());
+    auto file_res = File::open(file_path);
     sfc::assert_eq(file_res.is_ok(), true);
     auto file = mem::move(file_res).unwrap();
 
@@ -26,6 +26,9 @@ SFC_TEST(read_write) {
     sfc::assert_eq(read_res.is_ok(), true);
     sfc::assert_eq(read_content.as_str(), Str{"hello world"});
   }
+
+  // remove file
+  fs::remove_file(file_path).unwrap();
 }
 
 }  // namespace sfc::fs::test

@@ -29,6 +29,8 @@ SFC_TEST(parrent) {
   sfc::assert_eq(Path{"/foo/"}.parent(), Path{"/"});
   sfc::assert_eq(Path{"/foo/bar"}.parent(), Path{"/foo"});
   sfc::assert_eq(Path{"/foo/bar/"}.parent(), Path{"/foo"});
+
+  sfc::assert_eq(Path{"foo"}.parent(), Path{""});
 }
 
 SFC_TEST(is_absolute) {
@@ -45,36 +47,6 @@ SFC_TEST(is_relative) {
   sfc::assert_eq(Path{"tmp/foo.txt"}.is_relative(), true);
   sfc::assert_eq(Path{"foo.txt/."}.is_relative(), true);
   sfc::assert_eq(Path{"foo.txt/.//"}.is_relative(), true);
-}
-
-SFC_TEST(push) {
-  auto p = PathBuf::from_str("tmp");
-  p.push(Path{"foo.txt"});
-  sfc::assert_eq(p.as_str(), "tmp/foo.txt");
-}
-
-SFC_TEST(pop) {
-  auto p = PathBuf::from_str("tmp/foo.txt");
-
-  p.pop();
-  sfc::assert_eq(p.as_str(), "tmp");
-}
-
-SFC_TEST(join) {
-  const auto p = Path{"tmp"};
-  sfc::assert_eq(p.join("foo.txt").as_str(), "tmp/foo.txt");
-}
-
-SFC_TEST(set_file_name) {
-  auto p = PathBuf::from_str("tmp/foo.txt");
-  p.set_file_name("bar.txt");
-  sfc::assert_eq(p.as_str(), "tmp/bar.txt");
-}
-
-SFC_TEST(set_extension) {
-  auto p = PathBuf::from_str("tmp/foo.txt");
-  p.set_extension("md");
-  sfc::assert_eq(p.as_str(), "tmp/foo.md");
 }
 
 }  // namespace sfc::fs::path::test

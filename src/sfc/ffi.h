@@ -1,3 +1,4 @@
 #pragma once
 
-#include "sfc/ffi/os_str.h"
+#include "sfc/ffi/cstr.h"
+#include "sfc/ffi/library.h"

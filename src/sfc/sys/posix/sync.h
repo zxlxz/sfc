@@ -1,7 +1,7 @@
 #pragma once
 
 #include <pthread.h>
-#include "sfc/core.h"
+#include "sfc/sys/posix/mod.h"
 
 namespace sfc::sys::posix {
 

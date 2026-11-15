@@ -1,10 +1,8 @@
 #pragma once
 
-#include "sfc/alloc.h"
+#include "sfc/core.h"
 
 namespace sfc::fs {
-
-class PathBuf;
 
 struct Path {
   Str _inn = {};
@@ -18,8 +16,6 @@ struct Path {
   auto file_stem() const noexcept -> Str;
   auto extension() const noexcept -> Str;
   auto parent() const noexcept -> Path;
-
-  auto join(Str path) const noexcept -> PathBuf;
 
  public:
   auto exists() const noexcept -> bool;
@@ -36,40 +32,6 @@ struct Path {
 
   // trait: fmt::Display
   void fmt(fmt::Formatter& f) const;
-};
-
-class PathBuf {
-  String _inn = {};
-
- public:
-  static auto from(String s) -> PathBuf;
-  static auto from_str(Str s) -> PathBuf;
-
-  auto as_path() const noexcept -> Path;
-  auto as_str() const noexcept -> Str;
-
- public:
-  auto clone() const -> PathBuf;
-  void clear() noexcept;
-
-  void push(Path path) noexcept;
-  auto pop() noexcept -> bool;
-
-  void set_file_name(Str file_name) noexcept;
-  void set_extension(Str extension) noexcept;
-
-  auto join(Path path) const -> PathBuf;
-
- public:
-  // trait: deref<Path>
-  auto operator*() const noexcept -> Path {
-    return this->as_path();
-  }
-
-  // trait: fmt::Display
-  void fmt(auto& f) const {
-    this->as_path().fmt(f);
-  }
 };
 
 }  // namespace sfc::fs

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/fs/path.h"
+#include "sfc/alloc.h"
 
 namespace sfc::env {
 
@@ -8,11 +8,9 @@ auto var(Str key) -> String;
 auto set_var(Str key, Str val) -> bool;
 auto remove_var(Str key) -> bool;
 
-auto home_dir() -> fs::PathBuf;
-auto temp_dir() -> fs::PathBuf;
+auto home_dir() -> String;
 
-auto current_exe() -> fs::PathBuf;
-auto current_dir() -> fs::PathBuf;
-auto set_current_dir(fs::Path path) -> bool;
+auto current_dir() -> String;
+auto set_current_dir(Str path) -> bool;
 
 }  // namespace sfc::env

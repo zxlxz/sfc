@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sfc/io/file.h"
-#include "sfc/fs/path.h"
 
 namespace sfc::fs {
 
@@ -29,7 +28,7 @@ struct OpenOptions {
   bool truncate = false;
 
  public:
-  auto open(Path path) const noexcept -> io::Result<File>;
+  auto open(Str path) const noexcept -> io::Result<File>;
 };
 
 class [[nodiscard]] File : public io::File {
@@ -41,15 +40,15 @@ class [[nodiscard]] File : public io::File {
   File& operator=(File&&) noexcept;
 
   static auto from_raw_fd(io::RawFd fd) -> File;
-  static auto open(Path path) noexcept -> io::Result<File>;
-  static auto create(Path path) noexcept -> io::Result<File>;
+  static auto open(Str path) noexcept -> io::Result<File>;
+  static auto create(Str path) noexcept -> io::Result<File>;
 
  public:
   auto metadata() noexcept -> io::Result<Metadata>;
 };
 
 struct DirEntry {
-  PathBuf path = {};
+  String path = {};
   Metadata meta = {};
 };
 
@@ -64,23 +63,23 @@ class [[nodiscard]] ReadDir {
   ReadDir(ReadDir&&) noexcept;
   ReadDir& operator=(ReadDir&&) noexcept;
 
-  static auto open(Path path) -> io::Result<ReadDir>;
+  static auto open(Str path) -> io::Result<ReadDir>;
 
  public:
   auto next() -> Option<DirEntry>;
 };
 
-auto read(Path path) noexcept -> io::Result<List<u8>>;
-auto write(Path path, Slice<const u8> buf) noexcept -> io::Result<>;
+auto read(Str path) noexcept -> io::Result<List<u8>>;
+auto write(Str path, Slice<const u8> buf) noexcept -> io::Result<>;
 
-auto metadata(Path path) -> io::Result<Metadata>;
+auto metadata(Str path) -> io::Result<Metadata>;
 
-auto create_dir(Path path) -> io::Result<>;
-auto create_dir_all(Path path) -> io::Result<>;
-auto remove_dir(Path path) -> io::Result<>;
-auto remove_file(Path path) -> io::Result<>;
-auto rename(Path old_path, Path new_path) -> io::Result<>;
+auto create_dir(Str path) -> io::Result<>;
+auto create_dir_all(Str path) -> io::Result<>;
+auto remove_dir(Str path) -> io::Result<>;
+auto remove_file(Str path) -> io::Result<>;
+auto rename(Str old_path, Str new_path) -> io::Result<>;
 
-auto read_dir(Path path) -> io::Result<ReadDir>;
+auto read_dir(Str path) -> io::Result<ReadDir>;
 
 }  // namespace sfc::fs

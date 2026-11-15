@@ -1,11 +1,15 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/sys/posix/mod.h"
 
 namespace sfc::sys::posix {
 
-auto load_library(const char* path) -> void*;
-void unload_library(void* handle);
-auto get_symbol(void* handle, const char* name) -> void*;
+using library_t = void*;
+using symbol_t = void*;
+
+auto load_library(Str path) -> library_t;
+void unload_library(library_t handle);
+
+auto get_symbol(library_t handle, Str name) -> symbol_t;
 
 }  // namespace sfc::sys::posix

@@ -7,9 +7,11 @@
 
 #include "sfc/fs/file.h"
 #include "sfc/sys/posix/fs.h"
+#include "sfc/ffi/cstr.h"
 
 namespace sfc::sys::posix {
 
+using ffi::CString;
 using stat_t = struct stat;
 
 auto FileAttr::exists() const noexcept -> bool {
@@ -28,7 +30,7 @@ auto FileAttr::is_link() const noexcept -> bool {
   return S_ISLNK(_attr);
 }
 
-auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd> {
+auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const auto mode = 0666;
 
   const auto access_flags = opts.write ? opts.read ? O_RDWR : O_WRONLY : O_RDONLY;
@@ -37,14 +39,15 @@ auto open(const char* path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const auto truncate_flags = opts.truncate ? O_TRUNC : 0;
   const auto flag = access_flags | create_flags | append_flags | truncate_flags;
 
-  const auto fd = ::open(path, flag, mode);
+  const auto c_path = CString::from_str(path);
+  const auto fd = ::open(c_path.as_ptr(), flag, mode);
   if (fd == -1) {
     return io::last_os_error();
   }
   return Ok{fd};
 }
 
-auto fstat(int fd) -> io::Result<fs::Metadata> {
+auto fstat(RawFd fd) -> io::Result<fs::Metadata> {
   struct stat st{};
   if (::fstat(fd, &st) == -1) {
     return io::last_os_error();
@@ -56,49 +59,62 @@ auto fstat(int fd) -> io::Result<fs::Metadata> {
   return Ok{meta};
 }
 
-auto lstat(const char* path) -> io::Result<fs::Metadata> {
+auto lstat(Str path) -> io::Result<fs::Metadata> {
+  const auto c_path = CString::from_str(path);
+
   struct stat st{};
-  if (::lstat(path, &st) == -1) {
+  const auto ret = ::lstat(c_path.as_ptr(), &st);
+  if (ret == -1) {
     return io::last_os_error();
   }
 
   const auto attr = st.st_mode;
   const auto size = u64(st.st_size);
   const auto meta = fs::Metadata{attr, size};
-  return meta;
+  return Ok{meta};
 }
 
-auto unlink(const char* path) -> io::Result<> {
-  if (::unlink(path) == -1) {
+auto unlink(Str path) -> io::Result<> {
+  const auto c_path = CString::from_str(path);
+  const auto ret = ::unlink(c_path.as_ptr());
+  if (ret == -1) {
     return io::last_os_error();
   }
   return Ok{};
 }
 
-auto rename(const char* old_path, const char* new_path) -> io::Result<> {
-  if (::rename(old_path, new_path) == -1) {
+auto rename(Str old_path, Str new_path) -> io::Result<> {
+  const auto c_old_path = CString::from_str(old_path);
+  const auto c_new_path = CString::from_str(new_path);
+  const auto ret = ::rename(c_old_path.as_ptr(), c_new_path.as_ptr());
+  if (ret == -1) {
     return io::last_os_error();
   }
   return Ok{};
 }
 
-auto mkdir(const char* path) -> io::Result<> {
+auto mkdir(Str path) -> io::Result<> {
   static constexpr auto kDirMode = 0755;
-  if (::mkdir(path, kDirMode) == -1) {
+  const auto c_path = CString::from_str(path);
+  const auto ret = ::mkdir(c_path.as_ptr(), kDirMode);
+  if (ret == -1) {
     return {io::last_os_error()};
   }
   return Ok{};
 }
 
-auto rmdir(const char* path) -> io::Result<> {
-  if (::rmdir(path) == -1) {
+auto rmdir(Str path) -> io::Result<> {
+  const auto c_path = CString::from_str(path);
+  const auto ret = ::rmdir(c_path.as_ptr());
+  if (ret == -1) {
     return io::last_os_error();
   }
   return Ok{};
 }
 
-auto ReadDir::open(const char* path) -> io::Result<ReadDir> {
-  auto dir = ::opendir(path);
+auto ReadDir::open(Str path) -> io::Result<ReadDir> {
+  const auto c_path = CString::from_str(path);
+  const auto dir = ::opendir(c_path.as_ptr());
   if (!dir) {
     return io::last_os_error();
   }

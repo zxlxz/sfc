@@ -1,6 +1,5 @@
 #include "sfc/fs/path.h"
 #include "sfc/fs/file.h"
-#include "sfc/ffi/os_str.h"
 
 namespace sfc::fs {
 
@@ -16,33 +15,23 @@ struct Components {
   Str _str;
 
  public:
-  auto len() const -> usize {
-    return _str.len();
-  }
-
-  auto next() noexcept -> Option<Str> {
-    if (_str.is_empty()) {
-      return {};
-    }
-
-    const auto [a, b] = _str.split_once(is_path_delim).unwrap_or({_str, {}});
-    _str = b;
-    return a.is_empty() ? Str{"/"} : a;
-  }
-
   auto next_back() noexcept -> Option<Str> {
-    if (_str.is_empty()) {
-      return {};
-    }
-
     _str = _str.trim_end_matches(is_path_delim);
     if (_str.is_empty()) {
-      return Str{"/"};
+      return {};
     }
 
-    const auto [a, b] = _str.rsplit_once(is_path_delim).unwrap_or({{}, _str});
-    _str = a.is_empty() ? Str{"/"} : a;
-    return b;
+    const auto pos = _str.rfind(is_path_delim);
+    if (!pos) {
+      const auto ret = _str;
+      _str = {};
+      return ret;
+    }
+
+    const auto ret = _str[{*pos + 1, $}];
+    const auto head = _str[{0, *pos + 1}].trim_end_matches(is_path_delim);
+    _str = head.is_empty() ? Str{"/"} : head;
+    return ret;
   }
 };
 
@@ -103,12 +92,6 @@ auto Path::parent() const noexcept -> Path {
   return Path{cmpts._str};
 }
 
-auto Path::join(Str path) const noexcept -> PathBuf {
-  auto res = PathBuf::from_str(_inn);
-  res.push(Path{path});
-  return res;
-}
-
 auto Path::is_root() const noexcept -> bool {
   if (_inn.is_empty()) {
     return false;
@@ -126,7 +109,7 @@ auto Path::is_absolute() const noexcept -> bool {
     return false;
   }
 
-  if (_inn.starts_with('/')) {
+  if (is_path_delim(_inn[0])) {
     return true;
   }
 
@@ -147,18 +130,28 @@ auto Path::is_relative() const noexcept -> bool {
 }
 
 auto Path::exists() const noexcept -> bool {
-  const auto m = fs::metadata(*this);
-  return m.is_ok();
+  const auto meta_ret = fs::metadata(_inn);
+  return meta_ret.is_ok();
 }
 
 auto Path::is_file() const noexcept -> bool {
-  const auto m = fs::metadata(*this);
-  return auto{m}.map([](const auto& m) { return m.is_file(); }).unwrap_or(false);
+  const auto meta_ret = fs::metadata(_inn);
+  if (meta_ret.is_err()) {
+    return false;
+  }
+
+  const auto& meta = *meta_ret.as_ok();
+  return meta.is_file();
 }
 
 auto Path::is_dir() const noexcept -> bool {
-  const auto m = fs::metadata(*this);
-  return auto{m}.map([](const auto& m) { return m.is_dir(); }).unwrap_or(false);
+  const auto meta_ret = fs::metadata(_inn);
+  if (meta_ret.is_err()) {
+    return false;
+  }
+
+  const auto& meta = *meta_ret.as_ok();
+  return meta.is_dir();
 }
 
 auto Path::operator==(const Path& p) const noexcept -> bool {
@@ -167,103 +160,6 @@ auto Path::operator==(const Path& p) const noexcept -> bool {
 
 void Path::fmt(fmt::Formatter& f) const {
   _inn.fmt(f);
-}
-
-auto PathBuf::from(String s) -> PathBuf {
-  auto res = PathBuf{};
-  res._inn = mem::move(s);
-  return res;
-}
-
-auto PathBuf::from_str(Str s) -> PathBuf {
-  auto res = PathBuf{};
-  res.push(Path{s});
-  return res;
-}
-
-auto PathBuf::as_path() const noexcept -> Path {
-  return Path{_inn.as_str()};
-}
-
-auto PathBuf::as_str() const noexcept -> Str {
-  return _inn.as_str();
-}
-
-auto PathBuf::clone() const -> PathBuf {
-  auto res = PathBuf{};
-  res._inn = _inn.clone();
-  return res;
-}
-
-void PathBuf::clear() noexcept {
-  _inn.clear();
-}
-
-void PathBuf::push(Path path) noexcept {
-  if (path.is_absolute()) {
-    _inn.clear();
-  }
-
-  auto cmpts = Components{path._inn};
-  while (auto x = cmpts.next()) {
-    const auto s = *x;
-    // skip empty or '.', but don't normalize '..'
-    if (s == "" || s == ".") {
-      continue;
-    }
-    // use '/' for all platforms!, don't use ugly '\'
-    if (!_inn.is_empty() && !_inn.ends_with('/')) {
-      _inn.push('/');
-    }
-    _inn.push_str(s);
-  }
-}
-
-auto PathBuf::pop() noexcept -> bool {
-  if (_inn.is_empty()) {
-    return false;
-  }
-
-  auto cmpts = Components{_inn.as_str()};
-  while (auto s = cmpts.next_back()) {
-    if (!s->is_empty()) {
-      break;
-    }
-  }
-
-  _inn.truncate(cmpts.len());
-  return true;
-}
-
-void PathBuf::set_file_name(Str new_file_name) noexcept {
-  const auto old_name = this->as_path().file_name();
-  if (!old_name.is_empty()) {
-    _inn.truncate(_inn.len() - old_name.len());
-  }
-  this->push(Path{new_file_name});
-}
-
-void PathBuf::set_extension(Str new_ext) noexcept {
-  const auto file_name = FileName{this->as_path().file_name()};
-  if (file_name.is_empty()) {
-    return;
-  }
-
-  const auto old_ext = file_name.extension();
-  if (!old_ext.is_empty()) {
-    _inn.truncate(_inn.len() - old_ext.len() - 1);
-  }
-
-  if (!new_ext.is_empty()) {
-    _inn.push('.');
-    _inn.push_str(new_ext);
-  }
-}
-
-auto PathBuf::join(Path path) const -> PathBuf {
-  auto res = this->clone();
-  res.push(path);
-  return res;
 }
 
 }  // namespace sfc::fs
