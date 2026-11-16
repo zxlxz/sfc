@@ -5,31 +5,6 @@
 
 namespace sfc::fs {
 
-auto Metadata::file_len() const noexcept -> u64 {
-  return _size;
-}
-
-auto Metadata::exists() const noexcept -> bool {
-  return sys::FileAttr{_attr}.exists();
-}
-
-auto Metadata::is_dir() const noexcept -> bool {
-  return sys::FileAttr{_attr}.is_dir();
-}
-
-auto Metadata::is_file() const noexcept -> bool {
-  return sys::FileAttr{_attr}.is_file();
-}
-
-auto Metadata::is_link() const noexcept -> bool {
-  return sys::FileAttr{_attr}.is_link();
-}
-
-auto OpenOptions::open(Str path) const noexcept -> io::Result<File> {
-  const auto fd = _TRY(sys::open(path, *this));
-  return {File::from_raw_fd(fd)};
-}
-
 File::File(io::File file) noexcept : io::File{mem::move(file)} {}
 
 File::~File() = default;
@@ -58,6 +33,31 @@ auto File::metadata() noexcept -> io::Result<fs::Metadata> {
   return sys::fstat(fd);
 }
 
+auto OpenOptions::open(Str path) const noexcept -> io::Result<File> {
+  const auto fd = _TRY(sys::open(path, *this));
+  return {File::from_raw_fd(fd)};
+}
+
+auto Metadata::file_size() const noexcept -> u64 {
+  return _size;
+}
+
+auto Metadata::exists() const noexcept -> bool {
+  return _attr != 0;
+}
+
+auto Metadata::is_dir() const noexcept -> bool {
+  return sys::FileAttr{_attr}.is_dir();
+}
+
+auto Metadata::is_file() const noexcept -> bool {
+  return sys::FileAttr{_attr}.is_file();
+}
+
+auto Metadata::is_link() const noexcept -> bool {
+  return sys::FileAttr{_attr}.is_link();
+}
+
 struct ReadDir::Inn : sys::ReadDir {};
 
 ReadDir::ReadDir(Inn& inn) noexcept : _inn{&inn} {}
@@ -84,22 +84,16 @@ auto ReadDir::next() -> Option<DirEntry> {
     return {};
   }
 
-  const auto sys_entry = _inn->next();
-  if (!sys_entry) {
+  const auto entry_opt = _inn->next();
+  if (!entry_opt) {
     return {};
   }
 
-  const auto path = Str{sys_entry->path};
-  const auto meta = fs::Metadata{
-      ._attr = u32(sys_entry->attr),
-      ._size = u64(sys_entry->size),
+  const auto& entry = *entry_opt;
+  return DirEntry{
+      .path = Str::from_cstr(entry._name),
+      .meta = {._size = entry._size, ._attr = entry._attr},
   };
-
-  auto dir_entry = DirEntry{
-      .path = String::from(path),
-      .meta = mem::move(meta),
-  };
-  return dir_entry;
 }
 
 auto ReadDir::open(Str path) -> io::Result<ReadDir> {

@@ -23,7 +23,7 @@ struct FileAttr {
 };
 
 struct DirEntry {
-  char path[1024] = {};
+  const char* name;
   u32 attr = 0;
   usize size = 0;
 };

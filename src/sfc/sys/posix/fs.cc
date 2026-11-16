@@ -142,10 +142,10 @@ auto ReadDir::next() -> Option<DirEntry> {
   }
 
   auto entry = DirEntry{
+      .name = dirent->d_name,
       .attr = u32(DTTOIF(dirent->d_type)),
       .size = 0,
   };
-  strncpy(entry.path, dirent->d_name, sizeof(entry.path) - 1);
   return entry;
 }
 

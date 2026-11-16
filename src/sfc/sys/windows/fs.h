@@ -1,7 +1,8 @@
 #pragma once
 
-#include "sfc/core.h"
-#include "sfc/ffi/os_str.h"
+#include "sfc/sys/windows/mod.h"
+
+struct _WIN32_FIND_DATAW;
 
 namespace sfc::fs {
 struct Metadata;
@@ -16,40 +17,40 @@ struct FileAttr {
   u32 _attr;
 
  public:
-  auto exists() const noexcept -> bool;
   auto is_dir() const noexcept -> bool;
   auto is_file() const noexcept -> bool;
   auto is_link() const noexcept -> bool;
 };
 
 struct DirEntry {
-  wchar_t path[260] = {};
-  u32 attr = 0;
-  usize size = 0;
-
-  static auto from(auto s) -> DirEntry;
+  const char* _name = nullptr;
+  u64 _size = 0;
+  u32 _attr = 0;
 };
 
 struct ReadDir {
   void* _handle = nullptr;
-  DirEntry _first_entry = {{}, 0, 0};
+  u64 _index = 0;
+  u64 _file_size = 0;
+  u32 _file_attr = 0;
+  char _file_name[256];
 
  public:
-  static auto open(const wchar_t* path) -> io::Result<ReadDir>;
+  static auto open(Str path) -> io::Result<ReadDir>;
 
  public:
   auto close() -> io::Result<>;
   auto next() -> Option<DirEntry>;
 };
 
-auto open(const wchar_t* path, fs::OpenOptions opts) -> io::Result<RawFd>;
+auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd>;
 
-auto fstat(void* handle) -> io::Result<fs::Metadata>;
-auto lstat(const wchar_t* path) -> io::Result<fs::Metadata>;
+auto fstat(RawFd fd) -> io::Result<fs::Metadata>;
+auto lstat(Str path) -> io::Result<fs::Metadata>;
 
-auto unlink(const wchar_t* path) -> io::Result<>;
-auto rename(const wchar_t* old_path, const wchar_t* new_path) -> io::Result<>;
-auto mkdir(const wchar_t* path) -> io::Result<>;
-auto rmdir(const wchar_t* path) -> io::Result<>;
+auto unlink(Str path) -> io::Result<>;
+auto rename(Str old_path, Str new_path) -> io::Result<>;
+auto mkdir(Str path) -> io::Result<>;
+auto rmdir(Str path) -> io::Result<>;
 
 }  // namespace sfc::sys::windows

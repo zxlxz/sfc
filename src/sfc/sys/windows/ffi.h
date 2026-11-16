@@ -1,12 +1,15 @@
 #pragma once
 
-#include "sfc/core.h"
+#include "sfc/sys/windows/mod.h"
 
 namespace sfc::sys::windows {
 
-auto load_library(const wchar_t* path) -> void*;
-void unload_library(void* handle);
+using module_t = void*;
+using symbol_t = isize (*)();
 
-auto get_symbol(void* handle, const char* name) -> isize(*)();
+auto load_library(Str path) -> module_t;
+void unload_library(module_t handle);
+
+auto get_symbol(module_t handle, Str name) -> symbol_t;
 
 }  // namespace sfc::sys::windows

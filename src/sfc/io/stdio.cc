@@ -6,7 +6,7 @@
 namespace sfc::io {
 
 struct Stdout::Inn {
-  BufWriter<sys::StdIo> _inn{_inn.new_(sys::StdIo::Output())};
+  BufWriter<sys::File> _inn{_inn.new_(sys::stdout())};
   sync::ReentrantLock _mtx{};
 
  public:
@@ -42,12 +42,12 @@ struct Stdout::Inn {
 };
 
 struct Stderr::Inn {
-  sys::StdIo _inn{sys::StdIo::Error()};
+  sys::File _inn{sys::stderr()};
   sync::ReentrantLock _mtx{};
 
  public:
   static auto instance() -> Inn& {
-    static auto res = Stderr::Inn{};
+    static auto res = Inn{};
     return res;
   }
 

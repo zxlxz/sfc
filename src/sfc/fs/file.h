@@ -4,32 +4,7 @@
 
 namespace sfc::fs {
 
-class File;
-
-struct Metadata {
-  u32 _attr = {};
-  u64 _size = 0;
-
- public:
-  auto file_len() const noexcept -> u64;
-
-  auto exists() const noexcept -> bool;
-  auto is_dir() const noexcept -> bool;
-  auto is_file() const noexcept -> bool;
-  auto is_link() const noexcept -> bool;
-};
-
-struct OpenOptions {
-  bool append = false;
-  bool create = false;
-  bool create_new = false;
-  bool read = false;
-  bool write = false;
-  bool truncate = false;
-
- public:
-  auto open(Str path) const noexcept -> io::Result<File>;
-};
+struct Metadata;
 
 class [[nodiscard]] File : public io::File {
  public:
@@ -47,8 +22,32 @@ class [[nodiscard]] File : public io::File {
   auto metadata() noexcept -> io::Result<Metadata>;
 };
 
+struct OpenOptions {
+  bool append = false;
+  bool create = false;
+  bool create_new = false;
+  bool read = false;
+  bool write = false;
+  bool truncate = false;
+
+ public:
+  auto open(Str path) const noexcept -> io::Result<File>;
+};
+
+struct Metadata {
+  u64 _size = 0;
+  u32 _attr = 0;
+
+ public:
+  auto file_size() const noexcept -> u64;
+  auto exists() const noexcept -> bool;
+  auto is_dir() const noexcept -> bool;
+  auto is_file() const noexcept -> bool;
+  auto is_link() const noexcept -> bool;
+};
+
 struct DirEntry {
-  String path = {};
+  Str path = {};
   Metadata meta = {};
 };
 

@@ -3,55 +3,64 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 BUF_SIZE = 1024U;
+static constexpr u32 kMaxKey = 256U;
+static constexpr u32 kMaxVal = 4096U;
+static constexpr u32 kMaxPath = 1024U;
 
-static auto make_string(Slice<const wchar_t> wstr) -> String {
-  return String::from_utf16({(const u16*)wstr._ptr, wstr._len});
+auto getenv(Str key) -> String {
+  const auto os_key = FixedWStr<kMaxKey>::from_str(key);
+  if (!os_key) {
+    return {};
+  }
+
+  wchar_t val_buf[kMaxVal];
+  const auto val_len = ::GetEnvironmentVariableW(os_key, val_buf, kMaxVal);
+  return windows::make_string({val_buf, val_len});
 }
 
-auto getenv(const wchar_t* key) -> String {
-  wchar_t buf[BUF_SIZE];
-  const auto len = ::GetEnvironmentVariableW(key, buf, BUF_SIZE);
-  return make_string({buf, len});
-}
+auto setenv(Str key, Str val) -> bool {
+  const auto os_key = FixedWStr<kMaxKey>::from_str(key);
+  const auto os_val = FixedWStr<kMaxVal>::from_str(val);
+  if (!os_key || !os_val) {
+    return false;
+  }
 
-auto setenv(const wchar_t* key, const wchar_t* val) -> bool {
-  const auto ret = ::SetEnvironmentVariableW(key, val);
+  const auto ret = ::SetEnvironmentVariableW(os_key, os_val);
   return bool(ret);
 }
 
-auto unsetenv(const wchar_t* key) -> bool {
-  const auto ret = ::SetEnvironmentVariableW(key, nullptr);
+auto unsetenv(Str key) -> bool {
+  const auto os_key = FixedWStr<kMaxKey>::from_str(key);
+  if (!os_key) {
+    return false;
+  }
+  const auto ret = ::SetEnvironmentVariableW(os_key, nullptr);
   return bool(ret);
 }
 
 auto home_dir() -> String {
-  wchar_t buf[BUF_SIZE];
-  const auto len = ::GetEnvironmentVariableW(L"USERPROFILE", buf, BUF_SIZE);
-  return make_string({buf, len});
-}
+  wchar_t path_buf[kMaxPath];
 
-auto temp_dir() -> String {
-  wchar_t buf[BUF_SIZE];
-  const auto len = ::GetTempPathW(BUF_SIZE, buf);
-  return make_string({buf, len});
-}
-
-auto current_exe() -> String {
-  wchar_t buf[BUF_SIZE];
-  const auto len = ::GetModuleFileNameW(nullptr, buf, BUF_SIZE);
-  return make_string({buf, len});
+  const auto path_len = ::GetEnvironmentVariableW(L"USERPROFILE", path_buf, kMaxPath);
+  const auto os_path = Slice{path_buf, path_len};
+  return windows::make_string(os_path);
 }
 
 auto getcwd() -> String {
-  wchar_t buf[BUF_SIZE];
-  const auto len = ::GetCurrentDirectoryW(BUF_SIZE, buf);
-  return make_string({buf, len});
+  wchar_t path_buf[kMaxPath];
+
+  const auto path_len = ::GetCurrentDirectoryW(kMaxPath, path_buf);
+  const auto os_path = Slice{path_buf, path_len};
+  return windows::make_string(os_path);
 }
 
-auto chdir(const wchar_t* path) -> bool {
-  const auto ret = ::SetCurrentDirectoryW(path);
-  return bool(ret);
+auto chdir(Str path) -> bool {
+  const auto os_path = FixedWStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return false;
+  }
+
+  return ::SetCurrentDirectoryW(os_path);
 }
 
 }  // namespace sfc::sys::windows

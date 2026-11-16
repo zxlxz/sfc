@@ -15,10 +15,9 @@ Library::~Library() {
 Library::Library(Library&& other) noexcept : _handle{mem::take(other._handle)} {}
 
 auto Library::operator=(Library&& other) noexcept -> Library& {
-  if (this == &other) {
-    return *this;
+  if (this != &other) {
+    mem::swap(_handle, other._handle);
   }
-  mem::swap(_handle, other._handle);
   return *this;
 }
 

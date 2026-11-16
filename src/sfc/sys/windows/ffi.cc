@@ -4,27 +4,39 @@
 
 namespace sfc::sys::windows {
 
-auto load_library(const wchar_t* path) -> void* {
-  const auto mod = ::LoadLibraryW(path);
-  return mod;
-}
+static constexpr u32 kMaxPath = 1024U;
+static constexpr u32 kMaxName = 256U;
 
-void unload_library(void* handle) {
-  if (handle == nullptr) {
-    return;
-  }
-
-  const auto mod = HMODULE(handle);
-  (void)::FreeLibrary(mod);
-}
-
-auto get_symbol(void* handle, const char* name) -> isize(*)() {
-  if (handle == nullptr || name == nullptr) {
+auto load_library(Str path) -> module_t {
+  const auto os_path = FixedWStr<kMaxPath>::from_str(path);
+  if (!os_path) {
     return nullptr;
   }
 
-  const auto mod = HMODULE(handle);
-  const auto sym = ::GetProcAddress(mod, name);
+  const auto mod = ::LoadLibraryW(os_path);
+  return mod;
+}
+
+void unload_library(module_t lib) {
+  if (lib == nullptr) {
+    return;
+  }
+
+  const auto mod = HMODULE(lib);
+  (void)::FreeLibrary(mod);
+}
+
+auto get_symbol(module_t mod, Str name) -> symbol_t {
+  if (mod == nullptr) {
+    return nullptr;
+  }
+
+  const auto c_name = FixedCStr<kMaxName>::from_str(name);
+  if (!c_name) {
+    return nullptr;
+  }
+
+  const auto sym = ::GetProcAddress(HMODULE(mod), c_name);
   return sym;
 }
 

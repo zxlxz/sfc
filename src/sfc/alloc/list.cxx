@@ -96,7 +96,9 @@ SFC_TEST(reserve) {
     v.push(i);
   }
   v.reserve(1);
-  sfc::assert_ge(v.capacity(), 16U);
+
+  sfc::assert_ge(v.capacity(), 10U);
+  sfc::assert_le(v.capacity(), 20U);
 }
 
 SFC_TEST(shrink) {
