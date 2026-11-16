@@ -6,7 +6,7 @@
 namespace sfc::io {
 
 struct Stdout::Inn {
-  BufWriter<sys::File> _inn{_inn.new_(sys::stdout())};
+  BufWriter<sys::File> _inn{_inn.new_(sys::Stdout())};
   sync::ReentrantLock _mtx{};
 
  public:
@@ -42,7 +42,7 @@ struct Stdout::Inn {
 };
 
 struct Stderr::Inn {
-  sys::File _inn{sys::stderr()};
+  sys::File _inn{sys::Stderr()};
   sync::ReentrantLock _mtx{};
 
  public:

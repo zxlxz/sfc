@@ -6,8 +6,6 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 kMaxPath = 1024U;
-
 inline auto combine_u64(u32 high, u32 low) -> u64 {
   return (u64(high) << 32) | u64(low);
 }
@@ -41,7 +39,9 @@ auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd> {
 
 auto fstat(RawFd fd) -> io::Result<fs::Metadata> {
   auto attr = BY_HANDLE_FILE_INFORMATION{};
-  if (!::GetFileInformationByHandle(fd, &attr)) {
+
+  const auto ret = ::GetFileInformationByHandle(fd, &attr);
+  if (!ret) {
     return io::last_os_error();
   }
 
@@ -72,7 +72,8 @@ auto unlink(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  if (auto ret = ::DeleteFileW(os_path); !ret) {
+  const auto ret = ::DeleteFileW(os_path);
+  if (!ret) {
     return io::last_os_error();
   }
   return Ok{};
@@ -85,7 +86,8 @@ auto rename(Str old_path, Str new_path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  if (auto ret = ::MoveFileW(os_old_path, os_new_path); !ret) {
+  const auto ret = ::MoveFileW(os_old_path, os_new_path);
+  if (!ret) {
     return io::last_os_error();
   }
   return Ok{};
@@ -97,7 +99,8 @@ auto mkdir(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  if (auto ret = ::CreateDirectoryW(os_path, nullptr); !ret) {
+  const auto ret = ::CreateDirectoryW(os_path, nullptr);
+  if (!ret) {
     return io::last_os_error();
   }
 
@@ -110,7 +113,8 @@ auto rmdir(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  if (auto ret = ::RemoveDirectoryW(os_path); !ret) {
+  const auto ret = ::RemoveDirectoryW(os_path);
+  if (!ret) {
     return io::last_os_error();
   }
   return Ok{};

@@ -7,11 +7,9 @@
 
 #include "sfc/fs/file.h"
 #include "sfc/sys/posix/fs.h"
-#include "sfc/ffi/cstr.h"
 
 namespace sfc::sys::posix {
 
-using ffi::CString;
 using stat_t = struct stat;
 
 auto FileAttr::exists() const noexcept -> bool {
@@ -31,7 +29,12 @@ auto FileAttr::is_link() const noexcept -> bool {
 }
 
 auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd> {
-  const auto mode = 0666;
+  constexpr auto kFileMode = 0666;
+
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
 
   const auto access_flags = opts.write ? opts.read ? O_RDWR : O_WRONLY : O_RDONLY;
   const auto create_flags = opts.create_new ? O_CREAT | O_EXCL : (opts.create ? O_CREAT : 0);
@@ -39,11 +42,11 @@ auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const auto truncate_flags = opts.truncate ? O_TRUNC : 0;
   const auto flag = access_flags | create_flags | append_flags | truncate_flags;
 
-  const auto c_path = CString::from_str(path);
-  const auto fd = ::open(c_path.as_ptr(), flag, mode);
+  const auto fd = ::open(os_path, flag, kFileMode);
   if (fd == -1) {
     return io::last_os_error();
   }
+
   return Ok{fd};
 }
 
@@ -53,30 +56,35 @@ auto fstat(RawFd fd) -> io::Result<fs::Metadata> {
     return io::last_os_error();
   }
 
-  const auto attr = st.st_mode;
-  const auto size = u64(st.st_size);
-  const auto meta = fs::Metadata{attr, size};
+  const auto meta = fs::Metadata{u64(st.st_size), st.st_mode};
   return Ok{meta};
 }
 
 auto lstat(Str path) -> io::Result<fs::Metadata> {
-  const auto c_path = CString::from_str(path);
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
 
   struct stat st{};
-  const auto ret = ::lstat(c_path.as_ptr(), &st);
+  const auto ret = ::lstat(os_path, &st);
   if (ret == -1) {
     return io::last_os_error();
   }
 
   const auto attr = st.st_mode;
   const auto size = u64(st.st_size);
-  const auto meta = fs::Metadata{attr, size};
+  const auto meta = fs::Metadata{size, attr};
   return Ok{meta};
 }
 
 auto unlink(Str path) -> io::Result<> {
-  const auto c_path = CString::from_str(path);
-  const auto ret = ::unlink(c_path.as_ptr());
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto ret = ::unlink(os_path);
   if (ret == -1) {
     return io::last_os_error();
   }
@@ -84,9 +92,13 @@ auto unlink(Str path) -> io::Result<> {
 }
 
 auto rename(Str old_path, Str new_path) -> io::Result<> {
-  const auto c_old_path = CString::from_str(old_path);
-  const auto c_new_path = CString::from_str(new_path);
-  const auto ret = ::rename(c_old_path.as_ptr(), c_new_path.as_ptr());
+  const auto os_old_path = FixedCStr<kMaxPath>::from_str(old_path);
+  const auto os_new_path = FixedCStr<kMaxPath>::from_str(new_path);
+  if (!os_old_path || !os_new_path) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto ret = ::rename(os_old_path, os_new_path);
   if (ret == -1) {
     return io::last_os_error();
   }
@@ -95,26 +107,41 @@ auto rename(Str old_path, Str new_path) -> io::Result<> {
 
 auto mkdir(Str path) -> io::Result<> {
   static constexpr auto kDirMode = 0755;
-  const auto c_path = CString::from_str(path);
-  const auto ret = ::mkdir(c_path.as_ptr(), kDirMode);
+
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto ret = ::mkdir(os_path, kDirMode);
   if (ret == -1) {
     return {io::last_os_error()};
   }
+
   return Ok{};
 }
 
 auto rmdir(Str path) -> io::Result<> {
-  const auto c_path = CString::from_str(path);
-  const auto ret = ::rmdir(c_path.as_ptr());
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto ret = ::rmdir(os_path);
   if (ret == -1) {
     return io::last_os_error();
   }
+
   return Ok{};
 }
 
 auto ReadDir::open(Str path) -> io::Result<ReadDir> {
-  const auto c_path = CString::from_str(path);
-  const auto dir = ::opendir(c_path.as_ptr());
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return io::Error::InvalidInput;
+  }
+
+  const auto dir = ::opendir(os_path);
   if (!dir) {
     return io::last_os_error();
   }
@@ -136,17 +163,19 @@ auto ReadDir::close() -> io::Result<> {
 }
 
 auto ReadDir::next() -> Option<DirEntry> {
-  auto dirent = ::readdir(_dir);
+  const auto dirent = ::readdir(_dir);
   if (!dirent) {
     return None{};
   }
 
-  auto entry = DirEntry{
-      .name = dirent->d_name,
-      .attr = u32(DTTOIF(dirent->d_type)),
-      .size = 0,
+  const auto file_size = 0;  // posix: file_size not support on dirent
+  const auto file_attr = u32(DTTOIF(dirent->d_type));
+
+  return DirEntry{
+      ._name = dirent->d_name,
+      ._size = file_size,
+      ._attr = file_attr,
   };
-  return entry;
 }
 
 }  // namespace sfc::sys::posix

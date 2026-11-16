@@ -5,19 +5,19 @@
 #include <sys/param.h>
 
 #include "sfc/sys/posix/env.h"
-#include "sfc/ffi/cstr.h"
 
 namespace sfc::sys::posix {
 
-using ffi::CString;
+static constexpr u32 kMaxKey = 256U;
+static constexpr u32 kMaxVal = 4096U;
 
 auto getenv(Str key) -> String {
-  if (key.is_empty()) {
+  const auto c_key = FixedCStr<kMaxKey>::from_str(key);
+  if (!c_key) {
     return {};
   }
 
-  const auto c_key = CString::from_str(key);
-  const auto c_val = ::getenv(c_key.as_ptr());
+  const auto c_val = ::getenv(c_key);
   if (c_val == nullptr) {
     return {};
   }
@@ -26,15 +26,23 @@ auto getenv(Str key) -> String {
 }
 
 auto setenv(Str key, Str val) -> bool {
-  const auto c_key = CString::from_str(key);
-  const auto c_val = CString::from_str(val);
-  const auto ret = ::setenv(c_key.as_ptr(), c_val.as_ptr(), 1);
+  const auto c_key = FixedCStr<kMaxKey>::from_str(key);
+  const auto c_val = FixedCStr<kMaxVal>::from_str(val);
+  if (!c_key || val._len >= kMaxVal - 1) {
+    return false;
+  }
+
+  const auto ret = ::setenv(c_key, c_val, 1);
   return ret != -1;
 }
 
 auto unsetenv(Str key) -> bool {
-  const auto c_key = CString::from_str(key);
-  const auto ret = ::unsetenv(c_key.as_ptr());
+  const auto c_key = FixedCStr<kMaxKey>::from_str(key);
+  if (!c_key) {
+    return false;
+  }
+
+  const auto ret = ::unsetenv(c_key);
   return ret != -1;
 }
 
@@ -51,13 +59,16 @@ auto home_dir() -> String {
 }
 
 auto chdir(Str path) -> bool {
-  const auto c_path = CString::from_str(path);
-  const auto ret = ::chdir(c_path.as_ptr());
+  const auto c_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!c_path) {
+    return false;
+  }
+  const auto ret = ::chdir(c_path);
   return ret != -1;
 }
 
 auto getcwd() -> String {
-  char buf[MAXPATHLEN];
+  char buf[kMaxPath];
   const auto p = ::getcwd(buf, sizeof(buf));
   if (p == nullptr) {
     return {};

@@ -4,6 +4,8 @@
 
 namespace sfc::sys::windows {
 
+static constexpr u32 kMaxPath = 1024;
+
 using cstr_t = const char*;
 using wstr_t = const wchar_t*;
 
@@ -28,6 +30,10 @@ struct FixedCStr {
   }
 
  public:
+  explicit operator bool() const {
+    return _buf[0] != '\0';
+  }
+
   operator cstr_t() const {
     return _buf;
   }
@@ -45,6 +51,10 @@ struct FixedWStr {
   }
 
  public:
+  explicit operator bool() const {
+    return _buf[0] != L'\0';
+  }
+
   operator wstr_t() const {
     return _buf;
   }

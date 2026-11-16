@@ -67,17 +67,17 @@ auto File::is_console() const -> bool {
   return ::GetConsoleMode(_fd, &mode);
 }
 
-auto stdin() -> File {
+auto Stdin() -> File {
   const auto handle = ::GetStdHandle(STD_INPUT_HANDLE);
   return File{._fd = handle};
 }
 
-auto stdout() -> File {
+auto Stdout() -> File {
   const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
   return File{._fd = handle};
 }
 
-auto stderr() -> File {
+auto Stderr() -> File {
   const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
   return File{._fd = handle};
 }

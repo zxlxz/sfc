@@ -23,9 +23,9 @@ struct FileAttr {
 };
 
 struct DirEntry {
-  const char* name;
-  u32 attr = 0;
-  usize size = 0;
+  const char* _name;
+  usize _size = 0;
+  u32 _attr = 0;
 };
 
 struct ReadDir {

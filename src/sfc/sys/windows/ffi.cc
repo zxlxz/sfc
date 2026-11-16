@@ -4,7 +4,6 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 kMaxPath = 1024U;
 static constexpr u32 kMaxName = 256U;
 
 auto load_library(Str path) -> module_t {
@@ -27,7 +26,7 @@ void unload_library(module_t lib) {
 }
 
 auto get_symbol(module_t mod, Str name) -> symbol_t {
-  if (mod == nullptr) {
+  if (mod == nullptr || name.is_empty()) {
     return nullptr;
   }
 

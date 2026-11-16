@@ -1,15 +1,18 @@
 #include <dlfcn.h>
 
 #include "sfc/sys/posix/ffi.h"
-#include "sfc/ffi/cstr.h"
 
 namespace sfc::sys::posix {
 
-using ffi::CString;
+static constexpr u32 kMaxName = 256U;
 
 auto load_library(Str path) -> library_t {
-  const auto os_path = CString::from_str(path);
-  const auto lib_handle = ::dlopen(os_path.as_ptr(), RTLD_LAZY | RTLD_LOCAL);
+  const auto os_path = FixedCStr<kMaxPath>::from_str(path);
+  if (!os_path) {
+    return nullptr;
+  }
+
+  const auto lib_handle = ::dlopen(os_path, RTLD_LAZY | RTLD_LOCAL);
   return lib_handle;
 }
 
@@ -26,8 +29,12 @@ auto get_symbol(library_t lib, Str name) -> symbol_t {
     return nullptr;
   }
 
-  const auto os_name = CString::from_str(name);
-  const auto sym_handle = ::dlsym(lib, os_name.as_ptr());
+  const auto os_name = FixedCStr<kMaxName>::from_str(name);
+  if (!os_name) {
+    return nullptr;
+  }
+
+  const auto sym_handle = ::dlsym(lib, os_name);
   return sym_handle;
 }
 

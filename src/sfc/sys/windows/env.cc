@@ -5,7 +5,6 @@ namespace sfc::sys::windows {
 
 static constexpr u32 kMaxKey = 256U;
 static constexpr u32 kMaxVal = 4096U;
-static constexpr u32 kMaxPath = 1024U;
 
 auto getenv(Str key) -> String {
   const auto os_key = FixedWStr<kMaxKey>::from_str(key);
@@ -21,7 +20,7 @@ auto getenv(Str key) -> String {
 auto setenv(Str key, Str val) -> bool {
   const auto os_key = FixedWStr<kMaxKey>::from_str(key);
   const auto os_val = FixedWStr<kMaxVal>::from_str(val);
-  if (!os_key || !os_val) {
+  if (!os_key || val._len >= kMaxVal - 1) {
     return false;
   }
 

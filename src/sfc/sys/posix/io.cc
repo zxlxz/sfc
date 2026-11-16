@@ -55,36 +55,21 @@ auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
   return u64(nret);
 }
 
-auto StdIo::Input() noexcept -> StdIo {
-  const auto fd = STDIN_FILENO;
-  return StdIo{._file = {fd}};
-}
-
-auto StdIo::Output() noexcept -> StdIo {
-  const auto fd = STDOUT_FILENO;
-  return StdIo{._file = {fd}};
-}
-
-auto StdIo::Error() noexcept -> StdIo {
-  const auto fd = STDERR_FILENO;
-  return StdIo{._file = {fd}};
-}
-
-auto StdIo::is_console() -> bool {
-  const auto ret = ::isatty(_file._fd);
+auto File::is_console() const -> bool {
+  const auto ret = ::isatty(_fd);
   return ret == 1;
 }
 
-auto StdIo::read(Slice<u8> buf) noexcept -> io::Result<usize> {
-  return _file.read(buf);
+auto Stdin() -> File {
+  return File{._fd = STDIN_FILENO};
 }
 
-auto StdIo::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
-  return _file.write(buf);
+auto Stdout() -> File {
+  return File{._fd = STDOUT_FILENO};
 }
 
-auto StdIo::flush() noexcept -> io::Result<> {
-  return _file.flush();
+auto Stderr() -> File {
+  return File{._fd = STDERR_FILENO};
 }
 
 auto os_error() -> int {

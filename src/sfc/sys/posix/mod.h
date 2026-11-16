@@ -2,7 +2,9 @@
 
 #include "sfc/core.h"
 
-namespace sfc::sys::windows {
+namespace sfc::sys::posix {
+
+static constexpr u32 kMaxPath = 1024;
 
 using cstr_t = const char*;
 
@@ -23,9 +25,13 @@ struct FixedCStr {
   }
 
  public:
+  explicit operator bool() const {
+    return _buf[0] != '\0';
+  }
+
   operator cstr_t() const {
     return _buf;
   }
 };
 
-}  // namespace sfc::sys::windows
+}  // namespace sfc::sys::posix

@@ -22,7 +22,7 @@ void panic_imp(PanicInfo info) {
     fmter.write_fmt(" {2}: {}\n", idx, frame.func);
   }
 
-  auto sys_out = sys::stderr();
+  auto sys_out = sys::Stderr();
   (void)sys_out.write(fmt_buf.as_str().as_bytes());
 
   throw info;
