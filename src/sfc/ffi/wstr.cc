@@ -63,7 +63,7 @@ void WCString::push(char32_t c) {
 
   if constexpr (sizeof(wchar_t) == sizeof(char16_t)) {
     u16 buf[2] = {};
-    const auto u16s = chr::encode_utf16(buf, c);
+    const auto u16s = chr::encode_utf16(c, buf);
     _buf.extend_from_slice({(const wchar_t*)u16s._ptr, u16s._len});
   }
 

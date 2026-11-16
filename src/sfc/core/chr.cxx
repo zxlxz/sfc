@@ -5,7 +5,7 @@ namespace sfc::chr::test {
 SFC_TEST(encode_utf8) {
   u8 buf[4] = {};
   auto encode = [&](char32_t c) {
-    const auto v = chr::encode_utf8(buf, c);
+    const auto v = chr::encode_utf8(c, buf);
     return Str::from_utf8(v);
   };
 
@@ -70,7 +70,7 @@ SFC_TEST(decode_utf8) {
 SFC_TEST(encode_utf16) {
   u16 buf[3] = {0, 0, 0};
   auto encode = [&](char32_t ch) -> Slice<const char16_t> {
-    const auto ws = chr::encode_utf16(buf, ch);
+    const auto ws = chr::encode_utf16(ch, buf);
     if (ws.is_empty()) {
       return {};
     }

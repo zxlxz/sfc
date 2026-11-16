@@ -6,7 +6,6 @@ namespace sfc::raw_buf {
 
 template <class T, class A = alloc::Global>
 class RawBuf {
-  static constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
   static constexpr usize kMaxCap = usize{1ULL << 40};  // 1TB
 
   T* _ptr{nullptr};
@@ -71,13 +70,16 @@ class RawBuf {
 
  public:
   void reserve(usize len, usize additional) noexcept {
+    static constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
+
     sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
     if (additional <= _cap - len) {
       return;
     }
 
-    const auto min_cap = cmp::max(kMinCap, 2 * _cap);
-    const auto new_cap = cmp::max(len + additional, min_cap);
+    const auto req_cap = len + additional;
+    const auto min_cap = cmp::max(kMinCap, _cap + (_cap + 1) / 2);
+    const auto new_cap = cmp::max(req_cap, min_cap);
     this->grow_unchecked(len, new_cap - len);
   }
 

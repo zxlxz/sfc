@@ -125,7 +125,7 @@ void String::push(char32_t c) noexcept {
   }
 
   u8 buf[4] = {};
-  const auto v = chr::encode_utf8(buf, c);
+  const auto v = chr::encode_utf8(c, buf);
   this->push_str(Str::from_utf8(v));
 }
 
