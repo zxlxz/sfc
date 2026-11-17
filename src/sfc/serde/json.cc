@@ -3,8 +3,7 @@
 namespace sfc::serde::json {
 
 auto decode_string(Str s) -> String {
-  auto buf = String{};
-  buf.reserve(s.len());
+  auto buf = String::with_capacity(s._len);
 
   auto prev_char = ' ';
   for (auto c : s.as_bytes()) {
@@ -42,6 +41,18 @@ auto to_str(Error e) -> Str {
     case Error::InvalidString:       return "json::Error::InvalidString";
   }
   return "json::Error::Unknown";
+}
+
+Serializer::Serializer(String buf) : _buf{mem::move(buf)} {}
+
+Serializer::~Serializer() {}
+
+Serializer::Serializer(Serializer&&) noexcept = default;
+
+Serializer& Serializer::operator=(Serializer&&) noexcept = default;
+
+auto Serializer::new_() -> Serializer {
+  return Serializer{String::new_()};
 }
 
 auto Serializer::as_str() const -> Str {

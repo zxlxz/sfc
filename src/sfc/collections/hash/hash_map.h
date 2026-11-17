@@ -4,21 +4,31 @@
 
 namespace sfc::collections::hash {
 
-template <class K, class V>
+template <class K, class V, class A = Global>
 class HashMap {
   struct Entry {
     K key;
     V val;
   };
-  HashTbl<Entry> _inn;
+  HashTbl<Entry, A> _inn;
+
+  explicit HashMap(HashTbl<Entry, A> inn) : _inn(mem::move(inn)) {}
 
  public:
-  static auto with_capacity(usize min_capacity) -> HashMap {
-    auto res = HashMap{};
-    res._inn.reserve(min_capacity);
-    return res;
+  HashMap(HashMap&&) noexcept = default;
+  ~HashMap() = default;
+
+  HashMap& operator=(HashMap&&) noexcept = default;
+
+  static auto new_(A alloc = {}) -> HashMap {
+    return HashMap{HashTbl<Entry, A>::new_(alloc)};
   }
 
+  static auto with_capacity(usize min_capacity, A alloc = {}) -> HashMap {
+    return HashMap{HashTbl<Entry, A>::with_capacity(min_capacity, alloc)};
+  }
+
+ public:
   auto len() const noexcept -> usize {
     return _inn.len();
   }
@@ -90,7 +100,7 @@ class HashMap {
   // trait: serde::Deserialize
   template <class D>
   static auto deserialize(D& des) -> D::template Result<HashMap> {
-    auto res = HashMap{};
+    auto res = HashMap::new_();
     auto imp = _TRY(des.deserialize_dict());
     _TRY(imp.template for_each<V>([&](auto key, V val) {
       if constexpr (trait::same_<K, String>) {

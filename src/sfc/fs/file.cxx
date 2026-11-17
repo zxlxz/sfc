@@ -21,7 +21,7 @@ SFC_TEST(read_write) {
     sfc::assert_eq(file_res.is_ok(), true);
     auto file = mem::move(file_res).unwrap();
 
-    String read_content;
+    auto read_content = String::new_();
     auto read_res = file.read_to_string(read_content);
     sfc::assert_eq(read_res.is_ok(), true);
     sfc::assert_eq(read_content.as_str(), Str{"hello world"});

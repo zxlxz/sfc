@@ -9,7 +9,7 @@ static constexpr u32 kMaxVal = 4096U;
 auto getenv(Str key) -> String {
   const auto os_key = FixedWStr<kMaxKey>::from_str(key);
   if (!os_key) {
-    return {};
+    return String::new_();
   }
 
   wchar_t val_buf[kMaxVal];

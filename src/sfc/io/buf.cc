@@ -12,9 +12,16 @@ inline auto memchr(Slice<const u8> buf, u8 byte) -> Option<usize> {
 }
 }  // namespace detail
 
+ReadBuf::ReadBuf(List<u8> buf) : _buf{mem::move(buf)}, _pos{0} {}
+
+ReadBuf::~ReadBuf() = default;
+
+ReadBuf::ReadBuf(ReadBuf&& other) noexcept = default;
+
+ReadBuf& ReadBuf::operator=(ReadBuf&& other) noexcept = default;
+
 auto ReadBuf::with_capacity(usize capacity) -> ReadBuf {
-  auto res = ReadBuf{};
-  res._buf.reserve(capacity);
+  auto res = ReadBuf{List<u8>::with_capacity(capacity)};
   return res;
 }
 
@@ -111,9 +118,16 @@ auto ReadBuf::read_line(Dyn<Read> read, String& buf) -> Result<usize> {
   return this->read_until(read, '\n', buf.as_mut_list());
 }
 
+WriteBuf::WriteBuf(List<u8> buf) : _buf{mem::move(buf)} {}
+
+WriteBuf::~WriteBuf() = default;
+
+WriteBuf::WriteBuf(WriteBuf&& other) noexcept = default;
+
+WriteBuf& WriteBuf::operator=(WriteBuf&& other) noexcept = default;
+
 auto WriteBuf::with_capacity(usize capacity) -> WriteBuf {
-  auto res = WriteBuf{};
-  res._buf.reserve(capacity);
+  auto res = WriteBuf{List<u8>::with_capacity(capacity)};
   return res;
 }
 

@@ -29,15 +29,14 @@ struct Iter : iter::Iterator<T&> {
   }
 };
 
-template <class T, class A = alloc::Global>
+template <class T, class A = Global>
 class [[nodiscard]] Queue {
-  using Buf = raw_buf::RawBuf<T, A>;
   usize _pos{0};
   usize _len{0};
-  Buf _buf{};
+  RawBuf<T, A> _buf{};
 
  public:
-  Queue() noexcept = default;
+  explicit Queue(RawBuf<T, A> buf) noexcept : _buf{mem::move(buf)} {}
 
   ~Queue() noexcept {
     this->clear();
@@ -47,19 +46,24 @@ class [[nodiscard]] Queue {
       : _pos{mem::take(other._pos)}, _len{mem::take(other._len)}, _buf{mem::move(other._buf)} {}
 
   Queue& operator=(Queue&& other) noexcept {
-    if (this == &other) return *this;
-    mem::swap(_pos, other._pos);
-    mem::swap(_len, other._len);
-    mem::swap(_buf, other._buf);
+    if (this != &other) {
+      mem::swap(_pos, other._pos);
+      mem::swap(_len, other._len);
+      mem::swap(_buf, other._buf);
+    }
     return *this;
   }
 
+  static auto new_(A alloc = {}) -> Queue {
+    return Queue{RawBuf<T, A>::new_(alloc)};
+  }
+
   static auto with_capacity(usize capacity, A alloc = {}) -> Queue {
-    auto res = Queue{};
-    res._buf = Buf::with_capacity(capacity, mem::move(alloc));
+    auto res = Queue{RawBuf<T, A>::with_capacity(capacity, alloc)};
     return res;
   }
 
+ public:
   auto capacity() const noexcept -> usize {
     return _buf.cap();
   }

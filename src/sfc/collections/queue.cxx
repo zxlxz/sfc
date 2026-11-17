@@ -1,11 +1,10 @@
-#include "sfc/collections/queue.h"
 #include "sfc/test/test.h"
-#include "sfc/io.h"
+#include "sfc/collections/queue.h"
 
 namespace sfc::collections::queue::test {
 
 SFC_TEST(push_pop) {
-  auto q = Queue<int>{};
+  auto q = Queue<int>::new_();
   for (auto i = 0; i < 6; ++i) {
     q.push(i);
   }
@@ -27,7 +26,7 @@ SFC_TEST(push_pop) {
 }
 
 SFC_TEST(reserve) {
-  auto q = Queue<int>{};
+  auto q = Queue<int>::new_();
   q.push(0);
   q.reserve(10);
 

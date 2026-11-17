@@ -6,20 +6,18 @@ namespace sfc::raw_buf {
 
 template <class T, class A = alloc::Global>
 class RawBuf {
-  static constexpr usize kMaxCap = usize{1ULL << 40};  // 1TB
+  T* _ptr;
+  usize _cap;
+  [[no_unique_address]] A _a;
 
-  T* _ptr{nullptr};
-  usize _cap{0};
-  [[no_unique_address]] A _a{};
+  explicit RawBuf(T* ptr, usize cap, A a) noexcept : _ptr{ptr}, _cap{cap}, _a{a} {}
 
  public:
-  explicit RawBuf(A alloc = {}) noexcept : _a{alloc} {}
-
   ~RawBuf() noexcept {
-    if (!_ptr) return;
-
-    const auto layout = Layout::array<T>(_cap);
-    _a.deallocate(_ptr, layout);
+    if (_ptr == nullptr) {
+      return;
+    }
+    _a.deallocate(_ptr, Layout::array<T>(_cap));
   }
 
   RawBuf(RawBuf&& other) noexcept : _ptr{mem::take(other._ptr)}, _cap{mem::take(other._cap)}, _a{mem::move(other._a)} {}
@@ -33,18 +31,26 @@ class RawBuf {
     return *this;
   }
 
-  static auto with_capacity(usize capacity, A alloc = {}) -> RawBuf {
-    auto res = RawBuf{alloc};
-    res.reserve_exact(0, capacity);
-    return res;
+  static auto new_(A a = {}) -> RawBuf {
+    return RawBuf{nullptr, 0, a};
   }
 
-  static auto with_capacity_zeroed(usize capacity, A alloc = {}) -> RawBuf {
-    const auto ptr = alloc.allocate_zeroed(Layout::array<T>(capacity));
+  static auto with_capacity(usize capacity, A a = {}) -> RawBuf {
+    if (capacity == 0) {
+      return RawBuf{nullptr, 0, a};
+    }
+    const auto p = (T*)a.allocate(Layout::array<T>(capacity));
+    test::assert_(p != nullptr, "RawBuf::with_capacity(capacity={}): allocate failed", capacity);
+    return RawBuf{p, capacity, a};
+  }
 
-    auto res = RawBuf{alloc};
-    res.set_ptr_and_cap(ptr, capacity);
-    return res;
+  static auto with_capacity_zeroed(usize capacity, A a = {}) -> RawBuf {
+    if (capacity == 0) {
+      return RawBuf{nullptr, 0, a};
+    }
+    const auto p = (T*)a.allocate_zeroed(Layout::array<T>(capacity));
+    test::assert_(p != nullptr, "RawBuf::with_capacity_zeroed(capacity={}): allocate failed", capacity);
+    return RawBuf{p, capacity, a};
   }
 
  public:
@@ -64,27 +70,23 @@ class RawBuf {
     return _ptr[idx];
   }
 
-  auto allocator() -> A& {
+  auto allocator() const -> const A& {
     return _a;
   }
 
  public:
   void reserve(usize len, usize additional) noexcept {
     static constexpr usize kMinCap = sizeof(T) <= 4 ? 8UL : sizeof(T) <= 32 ? 4UL : 1UL;
-
-    sfc::assert_(additional <= kMaxCap, "RawBuf::reserve: additional(={}) too large", additional);
     if (additional <= _cap - len) {
       return;
     }
 
-    const auto req_cap = len + additional;
-    const auto min_cap = cmp::max(kMinCap, _cap + (_cap + 1) / 2);
-    const auto new_cap = cmp::max(req_cap, min_cap);
+    const auto min_cap = cmp::max(len + additional, _cap + (_cap + 1) / 2);
+    const auto new_cap = cmp::max(kMinCap, min_cap);
     this->grow_unchecked(len, new_cap - len);
   }
 
   void reserve_exact(usize len, usize additional) noexcept {
-    sfc::assert_(additional <= kMaxCap, "RawBuf::reserve_exact: additional(={}) too large", additional);
     if (additional <= _cap - len) {
       return;
     }
@@ -110,6 +112,10 @@ class RawBuf {
     const auto old_layout = Layout::array<T>(_cap);
     const auto new_layout = Layout::array<T>(new_cap);
     const auto new_ptr = _a.shrink(_ptr, old_layout, new_layout);
+    if (new_cap != 0) {
+      test::assert_(new_ptr != nullptr, "RawBuf::shrink_unchecked(new_cap={}): allocate failed", new_cap);
+    }
+
     this->set_ptr_and_cap(new_ptr, new_cap);
   }
 
@@ -117,6 +123,9 @@ class RawBuf {
     const auto old_layout = Layout::array<T>(_cap);
     const auto new_layout = Layout::array<T>(len + additional);
     const auto new_ptr = _a.grow(_ptr, old_layout, new_layout);
+    test::assert_(
+        new_ptr != nullptr, "RawBuf::grow_unchecked(len={}, additional={}): allocate failed", len, additional);
+
     this->set_ptr_and_cap(new_ptr, len + additional);
   }
 };

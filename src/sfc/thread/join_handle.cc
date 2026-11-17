@@ -46,7 +46,7 @@ auto Builder::spawn_unchecked(Box<void()> fun) -> JoinHandle {
   return JoinHandle{{sys_thread._handle}};
 }
 
-Scope::Scope() {}
+Scope::Scope() : _handles{List<JoinHandle>::new_()} {}
 
 Scope::~Scope() {
   for (auto& handle : _handles) {

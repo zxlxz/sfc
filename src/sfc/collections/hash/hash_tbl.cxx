@@ -9,7 +9,7 @@ struct Entry {
 };
 
 SFC_TEST(hash_tbl_insert_replace) {
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   sfc::assert_eq(t.insert(Entry{1, 10}).is_some(), false);
 
   sfc::assert_eq(t.insert(Entry{1, 11}).unwrap().val, 10U);
@@ -18,7 +18,7 @@ SFC_TEST(hash_tbl_insert_replace) {
 }
 
 SFC_TEST(hash_tbl_try_insert) {
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   sfc::assert_eq(t.try_insert(Entry{2, 20}).is_some(), false);
 
   // existing key: returns the stored entry and keeps the old value
@@ -29,7 +29,7 @@ SFC_TEST(hash_tbl_try_insert) {
 
 SFC_TEST(hash_tbl_grow) {
   constexpr auto n = 1000U;
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   for (auto i = 0U; i < n; ++i) {
     t.insert(Entry{i, i * 2});
   }
@@ -43,7 +43,7 @@ SFC_TEST(hash_tbl_grow) {
 }
 
 SFC_TEST(hash_tbl_remove_reinsert) {
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   for (auto i = 0U; i < 64U; ++i) {
     t.insert(Entry{i, i});
   }
@@ -77,7 +77,7 @@ SFC_TEST(hash_tbl_remove_reinsert) {
 
 SFC_TEST(hash_tbl_churn) {
   // distinct keys inserted and removed repeatedly must not lose entries
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   for (auto i = 0U; i < 10000U; ++i) {
     t.insert(Entry{i, i});
     t.remove(i);
@@ -94,7 +94,7 @@ SFC_TEST(hash_tbl_churn) {
 }
 
 SFC_TEST(hash_tbl_move) {
-  auto a = HashTbl<Entry>{};
+  auto a = HashTbl<Entry>::new_();
   for (auto i = 0U; i < 100U; ++i) {
     a.insert(Entry{i, i});
   }
@@ -104,7 +104,7 @@ SFC_TEST(hash_tbl_move) {
   sfc::assert_eq(b.len(), 100U);
   sfc::assert_eq(b.search(42U)->val, 42U);
 
-  auto c = HashTbl<Entry>{};
+  auto c = HashTbl<Entry>::new_();
   c.insert(Entry{7, 7});
   c = mem::move(b);
   sfc::assert_eq(c.len(), 100U);
@@ -113,7 +113,7 @@ SFC_TEST(hash_tbl_move) {
 }
 
 SFC_TEST(hash_tbl_clear) {
-  auto t = HashTbl<Entry>{};
+  auto t = HashTbl<Entry>::new_();
   for (auto i = 0U; i < 50U; ++i) {
     t.insert(Entry{i, i});
   }

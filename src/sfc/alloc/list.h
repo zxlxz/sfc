@@ -8,13 +8,12 @@ using slice::Range;
 
 template <class T, class A = alloc::Global>
 class [[nodiscard]] List {
-  using Buf = RawBuf<T, A>;
-  Buf _buf{};
+  RawBuf<T, A> _buf{};
   usize _len{0};
 
- public:
-  List() noexcept {}
+  List(RawBuf<T, A> buf, usize len) noexcept : _buf{mem::move(buf)}, _len{len} {}
 
+ public:
   ~List() noexcept {
     this->clear();
   }
@@ -29,18 +28,23 @@ class [[nodiscard]] List {
     return *this;
   }
 
+  static auto new_(A alloc = {}) noexcept -> List {
+    auto res = List{RawBuf<T, A>::new_(alloc), 0};
+    return res;
+  }
+
   static auto with_capacity(usize capacity, A alloc = {}) noexcept -> List {
-    auto res = List{};
-    res._buf = Buf::with_capacity(capacity, alloc);
+    auto res = List{RawBuf<T, A>::with_capacity(capacity, alloc), 0};
     return res;
   }
 
   static auto from(Slice<const T> s) -> List {
-    auto res = List{};
+    auto res = List::with_capacity(s.len());
     res.extend_from_slice(s);
     return res;
   }
 
+ public:
   auto as_ptr() const noexcept -> const T* {
     return _buf.ptr();
   }
@@ -295,7 +299,7 @@ class [[nodiscard]] List {
  public:
   // trait: Clone
   auto clone() const noexcept -> List {
-    auto res = List{};
+    auto res = List::with_capacity(_len, _buf.allocator());
     res.extend_from_slice({_buf.ptr(), _len});
     return res;
   }
@@ -325,8 +329,7 @@ class [[nodiscard]] List {
   // trait:: serde::Deserialize
   template <class D>
   static auto deserialize(D& des) -> D::template Result<List> {
-    auto res = List{};
-
+    auto res = List::new_();
     auto imp = _TRY(des.deserialize_seq());
     _TRY(imp.template for_each<T>([&](T val) { res.push(mem::move(val)); }));
     return res;

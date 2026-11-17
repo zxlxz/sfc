@@ -54,25 +54,23 @@ class Cell {
 
 template <class T>
 class RingBuf {
-  using Idx = AtomicIdx;
-  using Buf = raw_buf::RawBuf<Cell<T>>;
-  Idx _head{};
-  Idx _tail{};
-  Buf _buf{};
+  RawBuf<Cell<T>> _buf;
+  AtomicIdx _head;
+  AtomicIdx _tail;
+
+  RingBuf(RawBuf<Cell<T>> buf, usize head, usize tail) noexcept : _buf{mem::move(buf)}, _head{head}, _tail{tail} {}
 
  public:
-  RingBuf() noexcept {}
-
   ~RingBuf() noexcept {
     this->clear();
   }
 
   RingBuf(RingBuf&& other) noexcept = default;
+
   RingBuf& operator=(RingBuf&& other) noexcept = default;
 
   static auto with_capacity(usize capacity) -> RingBuf {
-    auto res = RingBuf{};
-    res._buf = Buf::with_capacity(capacity);
+    auto res = RingBuf{RawBuf<Cell<T>>::with_capacity(capacity), 0, 0};
 
     // init
     for (auto i = 0U; i < capacity; ++i) {
@@ -101,7 +99,7 @@ class RingBuf {
  public:
   auto push(T val) noexcept -> Option<T> {
     if (this->try_push(val)) {
-      return {};
+      return option::None{};
     }
     return Option<T>{mem::move(val)};
   }

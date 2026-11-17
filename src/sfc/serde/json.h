@@ -48,11 +48,20 @@ class Serializer {
   friend class SerializeObj;
   String _buf;
 
-  void write_tok(Token tok);
+ public:
+  explicit Serializer(String buf);
+  ~Serializer();
+  Serializer(Serializer&&) noexcept;
+  Serializer& operator=(Serializer&&) noexcept;
+
+  static auto new_() -> Serializer;
 
  public:
   auto as_str() const -> Str;
   auto into_string() && -> String;
+
+ public:
+  void write_tok(Token tok);
 
   void serialize_null();
   void serialize_bool(bool val);
@@ -217,7 +226,7 @@ class Deserializer::DeserializeObj {
 
   template <class T>
   auto for_each(auto&& f) -> Result<> {
-    auto key = String{};
+    auto key = String::new_();
     while (true) {
       key.clear();
       auto key_opt = _TRY(this->next_key());
@@ -247,7 +256,7 @@ void to_writer(auto& writer, const auto& val) {
 }
 
 auto to_string(const auto& val) -> String {
-  auto ser = Serializer{};
+  auto ser = Serializer::new_();
   ser.serialize_any(val);
   return mem::move(ser).into_string();
 }

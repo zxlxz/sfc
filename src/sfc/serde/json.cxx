@@ -105,7 +105,7 @@ SFC_TEST(serde_seq) {
 SFC_TEST(serde_map) {
   // {"a":1,"b":2}
   {
-    auto dict = collections::HashMap<String, int>{};
+    auto dict = collections::HashMap<String, int>::new_();
     dict.insert(String::from("a"), 1);
     dict.insert(String::from("b"), 2);
     sfc::assert_eq(json::to_string(dict), "{\"a\": 1, \"b\": 2}");

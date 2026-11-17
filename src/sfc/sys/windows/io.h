@@ -22,9 +22,9 @@ struct File {
   auto is_console() const -> bool;
 };
 
-auto Stdin() -> File;
-auto Stdout() -> File;
-auto Stderr() -> File;
+auto Stdin() -> File&;
+auto Stdout() -> File&;
+auto Stderr() -> File&;
 
 auto os_error() -> u32;
 auto io_error(u32 code) -> io::Error;

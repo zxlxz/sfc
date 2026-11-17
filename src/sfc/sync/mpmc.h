@@ -7,12 +7,12 @@ namespace sfc::sync::mpmc {
 
 template <class T>
 class Channel {
-  RingBuf<T> _ringbuf{};
-  Atomic<bool> _closed{true};
+  RingBuf<T> _ringbuf;
+  Atomic<bool> _closed;
+
+  Channel(RingBuf<T> ringbuf, bool closed) noexcept : _ringbuf{mem::move(ringbuf)}, _closed{closed} {}
 
  public:
-  Channel() noexcept {}
-
   ~Channel() noexcept {
     this->close();
   }
@@ -21,14 +21,8 @@ class Channel {
   Channel& operator=(Channel&&) noexcept = default;
 
   static auto with_capacity(usize capacity) -> Channel {
-    if (capacity == 0) {
-      return {};
-    }
-
-    auto res = Channel{};
-    res._ringbuf = RingBuf<T>::with_capacity(capacity);
-    res._closed.store(false);
-    return res;
+    const auto closed = capacity == 0;
+    return Channel{RingBuf<T>::with_capacity(capacity), closed};
   }
 
  public:

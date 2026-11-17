@@ -8,11 +8,11 @@ struct GTestSuite;
 
 class GTestApp {
   List<GTestSuite> _suites;
-  usize _case_cnt{};
-  usize _run_cnt{};
-  usize _passed_cnt{};
-  usize _failed_cnt{};
-  usize _duration_ms{};
+  usize _case_cnt{0};
+  usize _run_cnt{0};
+  usize _passed_cnt{0};
+  usize _failed_cnt{0};
+  usize _duration_ms{0};
 
  public:
   GTestApp();

@@ -137,9 +137,10 @@ class HashTbl {
   usize _rem{0};
   [[no_unique_address]] A _a{};
 
- public:
-  HashTbl() noexcept = default;
+  HashTbl(void* ptr, usize cap, usize len, usize rem, A a) noexcept
+      : _ptr{(u8*)ptr}, _cap{cap}, _len{len}, _rem{rem}, _a{a} {}
 
+ public:
   ~HashTbl() noexcept {
     if (!_ptr) {
       return;
@@ -167,20 +168,23 @@ class HashTbl {
     return *this;
   }
 
-  static auto with_capacity(usize req_cap) -> HashTbl {
+  static auto new_(A alloc = {}) -> HashTbl {
+    return HashTbl{nullptr, 0, 0, 0, alloc};
+  }
+
+  static auto with_capacity(usize req_cap, A alloc = {}) -> HashTbl {
     static constexpr usize kMinCap = 8U;
     if (req_cap == 0) {
-      return {};
+      return HashTbl{nullptr, 0, 0, 0, alloc};
     }
 
     const auto min_cap = cmp::max(kMinCap, req_cap);
     const auto new_cap = alloc::next_power_of_two(min_cap);
+    const auto p = alloc.allocate(HashTbl::layout(new_cap));
+    test::assert_(p != nullptr, "HashTbl::with_capacity(req_cap = {}): allocate failed", req_cap);
 
-    auto res = HashTbl{};
-    res._ptr = ptr::cast<u8>(res._a.allocate(HashTbl::layout(new_cap)));
-    res._cap = new_cap;
+    auto res = HashTbl{p, new_cap, 0, new_cap, alloc};
     res.init();
-
     return res;
   }
 
@@ -314,8 +318,8 @@ class HashTbl {
   }
 
   void rehash(usize max_len) {
-    const usize min_cap = usize(__builtin_ceil(f64(max_len) / kLoadFactor));
-    auto new_tbl = HashTbl::with_capacity(min_cap);
+    const usize min_cap = usize(num::ceil(f64(max_len) / kLoadFactor));
+    auto new_tbl = HashTbl::with_capacity(min_cap, _a);
 
     // rehash all entries
     this->iter_mut().for_each([&](T& entry) {

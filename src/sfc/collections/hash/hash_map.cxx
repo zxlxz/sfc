@@ -4,7 +4,7 @@
 namespace sfc::collections::hash::test {
 
 SFC_TEST(map_get) {
-  auto t = HashMap<int, int>{};
+  auto t = HashMap<int, int>::new_();
   t.insert(1, 10);
   auto v = t.get_mut(1);
   sfc::assert_eq(v.is_some(), true);
@@ -14,7 +14,7 @@ SFC_TEST(map_get) {
 }
 
 SFC_TEST(map_try_insert) {
-  auto t = HashMap<u32, u32>{};
+  auto t = HashMap<u32, u32>::new_();
 
   for (auto i = 0U; i < 5U; ++i) {
     t.try_insert(i, i * 10);
@@ -47,7 +47,7 @@ SFC_TEST(map_try_insert) {
 }
 
 SFC_TEST(map_insert) {
-  auto t = HashMap<u32, u32>{};
+  auto t = HashMap<u32, u32>::new_();
   for (auto i = 0U; i < 10U; ++i) {
     t.insert(i, i * 10);
     sfc::assert_eq(t.get(i), Option{i * 10});
@@ -61,7 +61,7 @@ SFC_TEST(map_insert) {
 }
 
 SFC_TEST(map_remove) {
-  auto t = HashMap<int, int>{};
+  auto t = HashMap<int, int>::new_();
   for (auto i = 0; i < 3; ++i) {
     t.insert(i, i * 10);
   }

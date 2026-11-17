@@ -105,7 +105,7 @@ auto ReadDir::open(Str path) -> io::Result<ReadDir> {
 auto read(Str path) noexcept -> io::Result<List<u8>> {
   auto file = _TRY(File::open(path));
 
-  auto buf = List<u8>{};
+  auto buf = List<u8>::new_();
   _TRY(file.read_to_end(buf));
   return mem::move(buf);
 }

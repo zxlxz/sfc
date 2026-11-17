@@ -147,15 +147,15 @@ struct GTestCase {
 // GTestSuite <-> TestMod
 struct GTestSuite {
   const TestMod& _mod;
-  List<GTestCase> _matchs{};
+  List<GTestCase> _matchs;
 
-  usize _run_cnt{};
-  usize _passed_cnt{};
-  usize _failed_cnt{};
+  usize _run_cnt{0};
+  usize _passed_cnt{0};
+  usize _failed_cnt{0};
   time::Duration _duration{};
 
  public:
-  GTestSuite(const TestMod& mod) : _mod{mod} {}
+  GTestSuite(const TestMod& mod) : _mod{mod}, _matchs{List<GTestCase>::new_()} {}
 
  public:
   auto match(Slice<const Str> pats) const -> bool {
@@ -255,7 +255,7 @@ struct GTestSuite {
   }
 };
 
-GTestApp::GTestApp() : _suites{} {}
+GTestApp::GTestApp() : _suites{List<GTestSuite>::new_()} {}
 
 GTestApp::~GTestApp() {}
 
@@ -326,7 +326,7 @@ auto GTestApp::list_xml() -> String {
   const auto all_suites = test::mods();
   const auto total_cnt = all_suites.iter().fold(0UZ, [](usize n, auto& s) { return n + s.count(); });
 
-  auto buf = String{};
+  auto buf = String::new_();
   auto out = fmt::Formatter(buf);
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", total_cnt);
@@ -353,12 +353,13 @@ auto GTestApp::split_pats(Str filter) -> List<Str> {
         case ':':
           if (s[p + 1] != ':') return p;  // pass '::'
           p += 1;
+        default: break;
       }
     }
     return s._len;
   };
 
-  auto pats = List<Str>{};
+  auto pats = List<Str>::new_();
   while (!filter.is_empty()) {
     const auto pos = find_pos(filter);
     pats.push(filter[{0, pos}]);

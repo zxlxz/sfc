@@ -75,6 +75,8 @@ struct Dyn : Trait::Impl, Trait {
 }  // namespace sfc::trait
 
 namespace sfc {
+using trait::Type;
+
 using trait::same_;
 using trait::enum_;
 using trait::class_;

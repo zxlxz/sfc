@@ -3,31 +3,41 @@
 
 namespace sfc::string {
 
-auto String::with_capacity(usize capacity) noexcept -> String {
-  auto res = String{};
-  res.reserve(capacity);
-  return res;
+String::String(List<u8> buf) noexcept : _buf(mem::move(buf)) {}
+
+String::~String() {}
+
+String::String(String&& other) noexcept = default;
+
+String& String::operator=(String&& other) noexcept = default;
+
+auto String::new_() -> String {
+  return String{List<u8>::new_()};
 }
 
-auto String::from(Str s) noexcept -> String {
-  auto res = String{};
+auto String::with_capacity(usize capacity) -> String {
+  return String{List<u8>::with_capacity(capacity)};
+}
+
+auto String::from(Str s) -> String {
+  auto res = String::with_capacity(s._len);
   res.push_str(s);
   return res;
 }
 
 auto String::from_utf8(List<u8> v) -> String {
-  auto res = String{};
-  res._buf = mem::move(v);
-  return res;
+  return String{mem::move(v)};
 }
 
 auto String::from_utf16(Slice<const u16> v) -> String {
   if (v.is_empty()) {
-    return String{};
+    return String::new_();
   }
 
-  auto res = String{};
-  res.reserve(v.len());
+  // UTF-8 bytes maybe grow to 3x characters,
+  // let it grow as needed
+  auto res = String::with_capacity(v.len());
+
   chr::decode_utf16(v).for_each([&](char32_t c) { res.push(c); });
   return res;
 }

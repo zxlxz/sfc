@@ -4,20 +4,30 @@
 
 namespace sfc::collections::hash {
 
-template <class T>
+template <class T, class A = Global>
 class HashSet {
   struct Entry {
     T key;
   };
-  HashTbl<Entry> _inn = {};
+  HashTbl<Entry, A> _inn;
+
+  explicit HashSet(HashTbl<Entry, A> inn) noexcept : _inn(mem::move(inn)) {}
 
  public:
-  static auto with_capacity(usize min_capacity) noexcept -> HashSet {
-    auto res = HashSet{};
-    res._inn.reserve(min_capacity);
-    return res;
+  HashSet(HashSet&&) noexcept = default;
+  ~HashSet() = default;
+
+  HashSet& operator=(HashSet&&) noexcept = default;
+
+  static auto new_(A alloc = {}) -> HashSet {
+    return HashSet{HashTbl<Entry, A>::new_(alloc)};
   }
 
+  static auto with_capacity(usize min_capacity, A alloc = {}) noexcept -> HashSet {
+    return HashSet{HashTbl<Entry, A>::with_capacity(min_capacity, alloc)};
+  }
+
+ public:
   auto len() const noexcept -> usize {
     return _inn.len();
   }

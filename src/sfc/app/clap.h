@@ -13,9 +13,12 @@ class Clap {
   List<Item> _items;
 
  public:
-  Clap(Str name) noexcept;
+  explicit Clap(Str name) noexcept;
   ~Clap() noexcept;
+  Clap(Clap&&) noexcept;
+  Clap& operator=(Clap&&) noexcept;
 
+ public:
   void set_author(Str s);
   void set_version(Str s);
   void set_about(Str s);

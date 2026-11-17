@@ -14,12 +14,12 @@ static constexpr u32 kMaxVal = 4096U;
 auto getenv(Str key) -> String {
   const auto c_key = FixedCStr<kMaxKey>::from_str(key);
   if (!c_key) {
-    return {};
+    return String::new_();
   }
 
   const auto c_val = ::getenv(c_key);
   if (c_val == nullptr) {
-    return {};
+    return String::new_();
   }
 
   return String::from(c_val);
@@ -52,7 +52,7 @@ auto home_dir() -> String {
   struct passwd* usr = nullptr;
   const auto ret = ::getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &usr);
   if (ret != 0 || usr == nullptr || usr->pw_dir == nullptr) {
-    return {};
+    return String::new_();
   }
 
   return String::from(usr->pw_dir);
@@ -71,7 +71,7 @@ auto getcwd() -> String {
   char buf[kMaxPath];
   const auto p = ::getcwd(buf, sizeof(buf));
   if (p == nullptr) {
-    return {};
+    return String::new_();
   }
 
   return String::from(p);

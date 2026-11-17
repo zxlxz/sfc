@@ -1,6 +1,5 @@
 #include <Windows.h>
 
-#include "sfc/ffi/wstr.h"
 #include "sfc/sys/windows/io.h"
 
 namespace sfc::sys::windows {
@@ -67,19 +66,19 @@ auto File::is_console() const -> bool {
   return ::GetConsoleMode(_fd, &mode);
 }
 
-auto Stdin() -> File {
-  const auto handle = ::GetStdHandle(STD_INPUT_HANDLE);
-  return File{._fd = handle};
+auto Stdin() -> File& {
+  static auto res = File{._fd = ::GetStdHandle(STD_INPUT_HANDLE)};
+  return res;
 }
 
-auto Stdout() -> File {
-  const auto handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-  return File{._fd = handle};
+auto Stdout() -> File& {
+  static auto res = File{._fd = ::GetStdHandle(STD_OUTPUT_HANDLE)};
+  return res;
 }
 
-auto Stderr() -> File {
-  const auto handle = ::GetStdHandle(STD_ERROR_HANDLE);
-  return File{._fd = handle};
+auto Stderr() -> File& {
+  static auto res = File{._fd = ::GetStdHandle(STD_ERROR_HANDLE)};
+  return res;
 }
 
 auto os_error() -> u32 {

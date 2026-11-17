@@ -7,15 +7,23 @@ namespace sfc::string {
 using slice::Range;
 
 class [[nodiscard]] String {
-  using Buf = List<u8>;
-  Buf _buf{};
+  List<u8> _buf;
+
+  explicit String(List<u8> buf) noexcept;
 
  public:
-  static auto with_capacity(usize capacity) noexcept -> String;
-  static auto from(Str s) noexcept -> String;
+  ~String();
+  String(String&& other) noexcept;
+  String& operator=(String&& other) noexcept;
+
+  static auto new_() -> String;
+  static auto with_capacity(usize capacity) -> String;
+
+  static auto from(Str s) -> String;
   static auto from_utf8(List<u8> buf) -> String;
   static auto from_utf16(Slice<const u16> buf) -> String;
 
+ public:
   auto capacity() const noexcept -> usize;
   auto len() const noexcept -> usize;
   auto is_empty() const noexcept -> bool;
@@ -110,7 +118,7 @@ class [[nodiscard]] String {
 };
 
 auto format(const fmt::Fmts& fmts, const auto&... args) -> String {
-  auto out = String{};
+  auto out = String::new_();
   fmt::write(out, fmts, args...);
   return out;
 }

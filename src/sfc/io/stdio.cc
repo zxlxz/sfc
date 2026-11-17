@@ -6,15 +6,19 @@
 namespace sfc::io {
 
 struct Stdout::Inn {
-  BufWriter<sys::File> _inn{_inn.new_(sys::Stdout())};
-  sync::ReentrantLock _mtx{};
+  BufWriter<sys::File&> _inn;
+  sync::ReentrantLock _mtx;
 
  public:
   static auto instance() -> Inn& {
-    static auto res = Inn{};
+    static auto res = Inn{
+        BufWriter<sys::File&>::new_(sys::Stdout()),
+        sync::ReentrantLock{},
+    };
     return res;
   }
 
+ public:
   auto is_terminal() -> bool {
     return _inn.inner().is_console();
   }

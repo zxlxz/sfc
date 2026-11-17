@@ -135,7 +135,7 @@ SFC_TEST(drain) {
 
 SFC_TEST(memory) {
   auto cnt = 0;
-  auto v = List<RefCnt>{};
+  auto v = List<RefCnt>::new_();
 
   // push
   for (auto i = 0; i < 10; ++i) {
@@ -163,7 +163,7 @@ SFC_TEST(memory) {
 SFC_TEST(retain) {
   // empty
   {
-    auto v = List<int>{};
+    auto v = List<int>::new_();
     v.retain([](int) { return false; });
     sfc::assert_eq(v.len(), 0U);
   }

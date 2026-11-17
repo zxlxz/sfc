@@ -4,7 +4,7 @@
 namespace sfc::collections::hash::test {
 
 SFC_TEST(set_contains) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
   sfc::assert_eq(t.contains(1), false);
 
   t.insert(1);
@@ -20,7 +20,7 @@ SFC_TEST(set_contains) {
 }
 
 SFC_TEST(set_insert) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
 
   // First insert should return true (newly inserted)
   sfc::assert_eq(t.insert(1), true);
@@ -43,7 +43,7 @@ SFC_TEST(set_insert) {
 }
 
 SFC_TEST(set_remove) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
 
   // Remove from empty set
   sfc::assert_eq(t.remove(1), false);
@@ -72,7 +72,7 @@ SFC_TEST(set_remove) {
 }
 
 SFC_TEST(set_clear) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
 
   for (auto i = 0; i < 100; ++i) {
     t.insert(i);
@@ -105,7 +105,7 @@ SFC_TEST(set_with_capacity) {
 }
 
 SFC_TEST(set_reserve) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
   sfc::assert_eq(t.capacity(), 0U);
 
   t.reserve(100);
@@ -120,7 +120,7 @@ SFC_TEST(set_reserve) {
 }
 
 SFC_TEST(set_duplicate_inserts) {
-  auto t = HashSet<int>{};
+  auto t = HashSet<int>::new_();
 
   // Insert same value multiple times
   for (auto i = 0; i < 10; ++i) {

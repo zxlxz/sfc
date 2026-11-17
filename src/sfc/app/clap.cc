@@ -34,7 +34,7 @@ struct Clap::Item {
   Str _hint = {};
   bool _variadic = false;
 
-  String _vals = {};
+  String _vals = String::new_();
   bool _is_set = false;
 
  public:
@@ -198,7 +198,7 @@ struct Clap::Parser {
   }
 
   auto parse_opts(Slice<const Str> vals) -> List<Str> {
-    auto pos_args = List<Str>{};
+    auto pos_args = List<Str>::new_();
     auto end_of_opts = false;
 
     auto prev_item = ptr::null<Item>();
@@ -251,9 +251,18 @@ struct Clap::Parser {
   }
 };
 
-Clap::Clap(Str name) noexcept : _name{String::from(name)} {}
+Clap::Clap(Str name) noexcept
+    : _name{String::from(name)}
+    , _version{String::from("0.0.1")}
+    , _author{String::from("unknown")}
+    , _about{String::from("")}
+    , _items{List<Item>::new_()} {}
 
 Clap::~Clap() noexcept {}
+
+Clap::Clap(Clap&&) noexcept = default;
+
+Clap& Clap::operator=(Clap&&) noexcept = default;
 
 void Clap::set_author(Str s) {
   _author = String::from(s);
@@ -339,7 +348,7 @@ auto Clap::parse_cmdline(int argc, const char* argv[]) -> bool {
   }
 
   const auto c_args = Slice{argv, num::cast_unsigned(argc)};
-  const auto args = c_args[{1, $}].iter().map(&Str::from_cstr).collect<List<Str>>();
+  const auto args = c_args[{1, $}].iter().map(&Str::from_cstr).collect(List<Str>::new_());
   return this->parse(args.as_slice());
 }
 

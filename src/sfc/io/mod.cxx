@@ -36,7 +36,7 @@ SFC_TEST(read_to_end) {
   auto sb = Str{"0123456789"}.as_bytes();
   auto r = Dyn<Read>{sb};
 
-  auto v = List<u8>{};
+  auto v = List<u8>::new_();
   sfc::assert_eq(r.read_to_end(v).is_ok(), true);
   sfc::assert_eq(Str::from_utf8(v.as_slice()), "0123456789");
 }
@@ -45,7 +45,7 @@ SFC_TEST(read_to_string) {
   auto sb = Str{"0123456789"}.as_bytes();
   auto r = Dyn<Read>{sb};
 
-  auto str = String{};
+  auto str = String::new_();
   sfc::assert_eq(r.read_to_string(str), usize{10});
   sfc::assert_eq(str, "0123456789");
 }

@@ -60,16 +60,19 @@ auto File::is_console() const -> bool {
   return ret == 1;
 }
 
-auto Stdin() -> File {
-  return File{._fd = STDIN_FILENO};
+auto Stdin() -> File& {
+  static auto res = File{._fd = STDIN_FILENO};
+  return res;
 }
 
-auto Stdout() -> File {
-  return File{._fd = STDOUT_FILENO};
+auto Stdout() -> File& {
+  static auto res = File{._fd = STDOUT_FILENO};
+  return res;
 }
 
-auto Stderr() -> File {
-  return File{._fd = STDERR_FILENO};
+auto Stderr() -> File& {
+  static auto res = File{._fd = STDERR_FILENO};
+  return res;
 }
 
 auto os_error() -> int {

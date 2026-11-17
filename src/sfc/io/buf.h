@@ -5,10 +5,15 @@
 namespace sfc::io {
 
 class ReadBuf {
-  List<u8> _buf{};
-  usize _pos = 0;
+  List<u8> _buf;
+  usize _pos;
 
  public:
+  explicit ReadBuf(List<u8> buf);
+  ~ReadBuf();
+  ReadBuf(ReadBuf&& other) noexcept;
+  ReadBuf& operator=(ReadBuf&& other) noexcept;
+
   static auto with_capacity(usize capacity) -> ReadBuf;
 
  public:
@@ -30,9 +35,15 @@ class ReadBuf {
 };
 
 class WriteBuf {
-  List<u8> _buf{};
+  List<u8> _buf;
 
  public:
+  explicit WriteBuf(List<u8> buf);
+  ~WriteBuf();
+
+  WriteBuf(WriteBuf&& other) noexcept;
+  WriteBuf& operator=(WriteBuf&& other) noexcept;
+
   static auto with_capacity(usize capacity) -> WriteBuf;
 
  public:
@@ -52,17 +63,17 @@ class BufReader : public Read {
   R _inn;
   ReadBuf _buf;
 
- public:
-  explicit BufReader(R inn, ReadBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
+  explicit BufReader(R& inn, ReadBuf&& buf) noexcept : _inn{(R&&)inn}, _buf{mem::move(buf)} {}
 
+ public:
   ~BufReader() {}
 
   static auto new_(R inn) -> BufReader {
-    return BufReader{mem::move(inn), ReadBuf::with_capacity(DEFAULT_BUFF_SIZE)};
+    return BufReader{inn, ReadBuf::with_capacity(DEFAULT_BUFF_SIZE)};
   }
 
   static auto with_capacity(usize capacity, R inn) -> BufReader {
-    return BufReader{mem::move(inn), ReadBuf::with_capacity(capacity)};
+    return BufReader{inn, ReadBuf::with_capacity(capacity)};
   }
 
  public:
@@ -106,19 +117,19 @@ class BufWriter : public Write {
   W _inn;
   WriteBuf _buf = WriteBuf::with_capacity(DEFAULT_BUF_SIZE);
 
- public:
-  explicit BufWriter(W inn, WriteBuf buf) noexcept : _inn{mem::move(inn)}, _buf{mem::move(buf)} {}
+  explicit BufWriter(W& inn, WriteBuf&& buf) noexcept : _inn{(W&&)inn}, _buf{mem::move(buf)} {}
 
+ public:
   ~BufWriter() noexcept {
     (void)this->flush();
   }
 
   static auto new_(W inn) -> BufWriter {
-    return BufWriter{mem::move(inn), WriteBuf::with_capacity(DEFAULT_BUF_SIZE)};
+    return BufWriter{inn, WriteBuf::with_capacity(DEFAULT_BUF_SIZE)};
   }
 
   static auto with_capacity(usize capacity, W inn) -> BufWriter {
-    return BufWriter{mem::move(inn), WriteBuf::with_capacity(capacity)};
+    return BufWriter{inn, WriteBuf::with_capacity(capacity)};
   }
 
  public:
