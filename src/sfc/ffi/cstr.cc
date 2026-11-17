@@ -8,7 +8,7 @@ CString::~CString() {
   if (_ptr == nullptr) {
     return;
   }
-  __builtin_free(_ptr);
+  delete[] _ptr;
 }
 
 CString::CString(CString&& other) noexcept : _ptr{other._ptr} {
@@ -22,21 +22,22 @@ CString& CString::operator=(CString&& other) noexcept {
   return *this;
 }
 
-auto CString::from_str(Str s) -> CString {
-  static constexpr u32 kMaxCStrLen = 1 * 1024 * 1024;  // 1MB
-  if (s._len == 0 || s._len > kMaxCStrLen) {
-    return {};
-  }
-
+auto CString::from_raw(char* ptr) -> CString {
   auto res = CString{};
-  res._ptr = static_cast<char*>(__builtin_malloc(s._len + 1));
-  if (res._ptr == nullptr) {
-    return {};
+  res._ptr = ptr;
+  return res;
+}
+
+auto CString::from_str(Str s) -> CString {
+  if (s._len == 0) {
+    return CString{};
   }
 
-  __builtin_memcpy(res._ptr, s._ptr, s._len);
-  res._ptr[s._len] = '\0';
-  return res;
+  auto p = new char[s._len + 1];
+  __builtin_memcpy(p, s._ptr, s._len);
+  p[s._len] = '\0';
+
+  return CString::from_raw(p);
 }
 
 auto CString::as_ptr() const -> const char* {

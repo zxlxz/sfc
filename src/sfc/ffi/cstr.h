@@ -5,7 +5,7 @@
 namespace sfc::ffi {
 
 class CString {
-  char* _ptr = nullptr;
+  char* _ptr;
 
  public:
   CString();
@@ -13,6 +13,7 @@ class CString {
   CString(CString&& other) noexcept;
   CString& operator=(CString&& other) noexcept;
 
+  static auto from_raw(char* ptr) -> CString;
   static auto from_str(Str s) -> CString;
 
  public:
