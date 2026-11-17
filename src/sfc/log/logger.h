@@ -13,8 +13,7 @@ struct Record {
   Str _message;
 };
 
-struct Backend {
-  struct Impl;
+class Sink {
   struct VTbl {
     void (*push)(void*, const Record& record);
     void (*flush)(void*);
@@ -25,28 +24,29 @@ struct Backend {
       .push = [](void* x, const Record& record) { return ((X*)x)->push(record); },
       .flush = [](void* x) { return ((X*)x)->flush(); },
   };
-};
 
-struct Backend::Impl {
+  void* _self;
   const VTbl* _vtbl;
-  void* _impl;
 
  public:
-  auto push(const Record& record) -> void {
-    return (_vtbl->push)(_impl, record);
-  }
+  template <trait::not_<Sink> X>
+  Sink(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
 
-  void flush() {
-    return (_vtbl->flush)(_impl);
-  }
+ public:
+  void push(const Record& record);
+  void flush();
 };
 
 class Logger {
-  Dyn<Backend> _backend;
+  Sink _sink;
   Level _level{Level::Info};
 
  public:
-  explicit Logger(auto& backend) : _backend{backend} {}
+  explicit Logger(Sink sink) noexcept;
+  ~Logger();
+
+  Logger(Logger&&) noexcept;
+  Logger& operator=(Logger&&) noexcept;
 
  public:
   auto level() const -> Level;

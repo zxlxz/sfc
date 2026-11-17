@@ -9,8 +9,7 @@ namespace sfc::fmt {
 
 class Formatter;
 
-struct Write {
-  struct Impl;
+class Write {
   struct VTbl {
     void (*write_str)(void*, Str);
   };
@@ -19,16 +18,16 @@ struct Write {
   static constexpr auto vtbl = VTbl{
       .write_str = [](void* x, Str s) { return ((X*)x)->write_str(s); },
   };
-};
 
-struct Write::Impl {
+  void* ptr;
   const VTbl* _vtbl;
-  void* _impl;
 
  public:
-  void write_str(Str s) {
-    return (_vtbl->write_str)(_impl, s);
-  }
+  template <trait::not_<Write> X>
+  Write(X& x) : ptr{&x}, _vtbl{&vtbl<X>} {}
+
+ public:
+  void write_str(Str s);
 };
 
 struct Buf {
@@ -101,7 +100,7 @@ struct DebugTuple;
 struct DebugStruct;
 
 class Formatter {
-  Dyn<Write> _out;
+  Write _out;
   Spec _spec = {};
   u16 _depth = 0;
 

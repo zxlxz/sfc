@@ -6,13 +6,14 @@
 namespace sfc::io {
 
 struct Stdout::Inn {
-  BufWriter<sys::File&> _inn;
+  BufWriter _out;
   sync::ReentrantLock _mtx;
 
  public:
   static auto instance() -> Inn& {
+    static u8 buf[256] = {};
     static auto res = Inn{
-        BufWriter<sys::File&>::new_(sys::Stdout()),
+        BufWriter::new_(sys::Stdout(), buf),
         sync::ReentrantLock{},
     };
     return res;
@@ -20,23 +21,28 @@ struct Stdout::Inn {
 
  public:
   auto is_terminal() -> bool {
-    return _inn.inner().is_console();
+    const auto& imp = sys::Stdout();
+    return imp.is_console();
   }
 
   void flush() noexcept {
-    (void)_inn.flush();
+    (void)_out.flush();
   }
 
   auto write_str(Str s) -> Result<> {
-    const auto p = s.rfind('\n');
-    if (!p) {
-      return _inn.write_str(s);
+    if (s.is_empty()) {
+      return Ok{};
     }
 
-    const auto [a, b] = s.split_at(*p + 1);
-    _TRY(_inn.write_str(a));
-    _TRY(_inn.flush());
-    _TRY(_inn.write_str(b));
+    const auto p = s.rfind('\n');
+    if (!p) {
+      return _out.write_str(s);
+    }
+
+    const auto [a, b] = s.split_at(*p+1);
+    _TRY(_out.write_str(a));
+    _TRY(_out.flush());
+    _TRY(_out.write_str(b));
     return Ok{};
   }
 
@@ -46,29 +52,34 @@ struct Stdout::Inn {
 };
 
 struct Stderr::Inn {
-  sys::File _inn{sys::Stderr()};
-  sync::ReentrantLock _mtx{};
+  sys::File& _out;
+  sync::ReentrantLock _mtx;
 
  public:
   static auto instance() -> Inn& {
-    static auto res = Inn{};
+    static auto res = Inn{._out{sys::Stderr()}, ._mtx{}};
     return res;
   }
 
+ public:
   auto is_terminal() -> bool {
-    return _inn.is_console();
+    return _out.is_console();
   }
 
   auto write_str(Str s) -> Result<> {
     auto buf = s.as_bytes();
     while (!buf.is_empty()) {
-      const auto nwrite = _TRY(_inn.write(buf));
+      const auto nwrite = _TRY(_out.write(buf));
       if (nwrite == 0) {
         return Error::WriteZero;
       }
       buf = buf[{nwrite, buf._len}];
     }
     return Ok{};
+  }
+
+  auto flush() -> Result<> {
+    return _out.flush();
   }
 
   auto lock() noexcept -> sync::ReentrantLock::Guard {
@@ -130,7 +141,9 @@ Stderr::LockGuard::LockGuard(Inn& inn, sync::ReentrantLock::Guard lock) : _inn{i
 
 Stderr::LockGuard::~LockGuard() noexcept {}
 
-void Stderr::LockGuard::flush() {}
+void Stderr::LockGuard::flush() {
+  (void)_inn.flush();
+}
 
 void Stderr::LockGuard::write_str(Str s) {
   (void)_inn.write_str(s);

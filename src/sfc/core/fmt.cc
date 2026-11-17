@@ -289,6 +289,10 @@ auto Spec::prefix() const -> str::Str {
   }
 }
 
+void Write::write_str(Str s) {
+  _vtbl->write_str(ptr, s);
+}
+
 auto Buf::as_str() const -> Str {
   const auto len = cmp::min(_len, _buf._len);
   return Str{_buf._ptr, len};

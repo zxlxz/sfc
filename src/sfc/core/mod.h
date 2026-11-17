@@ -35,7 +35,11 @@ using f64 = double;
 
 using cstr_t = const char*;
 
-struct Unit {};
+struct Unit {
+  auto operator==(const Unit&) const noexcept {
+    return true;
+  }
+};
 
 namespace str {
 struct Str;

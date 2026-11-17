@@ -24,8 +24,7 @@ struct SeekFrom {
   }
 };
 
-struct Read {
-  struct Impl;
+class Read final {
   struct VTbl {
     Result<usize> (*read)(void*, Slice<u8>);
   };
@@ -35,53 +34,21 @@ struct Read {
       .read = [](void* x, Slice<u8> buf) { return ((X*)x)->read(buf); },
   };
 
- public:
-  auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
-    while (!buf.is_empty()) {
-      const auto cnt = _TRY(self.read(buf));
-      if (cnt == 0) {
-        return {io::Error::UnexpectedEof};
-      }
-      buf = buf[{cnt, $}];
-    }
-
-    return Ok{};
-  }
-
-  auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
-    static constexpr auto PROBE_SIZE = 256U;
-
-    const auto old_len = buf.len();
-    while (true) {
-      buf.reserve(PROBE_SIZE);
-
-      auto read_buf = buf.spare_capacity_mut();
-      const auto read_cnt = _TRY(self.read(read_buf));
-      if (read_cnt == 0) {
-        break;
-      }
-      buf.set_len(buf.len() + read_cnt);
-    }
-    return Ok{usize{buf.len() - old_len}};
-  }
-
-  auto read_to_string(this auto& self, String& buf) -> Result<usize> {
-    return self.read_to_end(buf.as_mut_list());
-  }
-};
-
-struct Read::Impl {
+  void* _self;
   const VTbl* _vtbl;
-  void* _impl;
 
  public:
-  auto read(Slice<u8> buf) -> Result<usize> {
-    return (_vtbl->read)(_impl, buf);
-  }
+  template <trait::not_<Read> X>
+  Read(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+
+ public:
+  auto read(Slice<u8> buf) -> Result<usize>;
+  auto read_exact(Slice<u8> buf) -> Result<>;
+  auto read_to_end(List<u8>& buf) -> Result<usize>;
+  auto read_to_string(String& buf) -> Result<usize>;
 };
 
-struct Write {
-  struct Impl;
+class Write final {
   struct VTbl {
     Result<usize> (*write)(void*, Slice<const u8>);
     Result<> (*flush)(void*);
@@ -93,66 +60,75 @@ struct Write {
       .flush = [](void* x) { return ((X*)x)->flush(); },
   };
 
- public:
-  auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
-    while (!buf.is_empty()) {
-      const auto cnt = _TRY(self.write(buf));
-      if (cnt == 0) {
-        return {io::Error::WriteZero};
-      }
-      buf = buf[{cnt, $}];
-    }
-
-    return Ok{};
-  }
-
-  auto write_str(this auto& self, Str buf) -> Result<> {
-    return self.write_all(buf.as_bytes());
-  }
-};
-
-struct Write::Impl {
+  void* _self;
   const VTbl* _vtbl;
-  void* _impl;
 
  public:
-  auto write(Slice<const u8> buf) -> Result<usize> {
-    return (_vtbl->write)(_impl, buf);
-  }
+  template <trait::not_<Write> X>
+  Write(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
 
-  auto flush() -> Result<> {
-    return (_vtbl->flush)(_impl);
-  }
+ public:
+  auto write(Slice<const u8> buf) -> Result<usize>;
+  auto flush() -> Result<>;
+
+  auto write_all(Slice<const u8> buf) -> Result<>;
+  auto write_str(Str buf) -> Result<>;
 };
 
-struct Seek {
-  struct Impl;
+class Seek final {
   struct VTbl {
     Result<u64> (*seek)(void*, SeekFrom);
   };
 
   template <class X>
   static constexpr auto vtbl = VTbl{
-      .seek = [](void* x, auto... u) { return ((X*)(x))->seek(u...); },
+      .seek = [](void* x, SeekFrom pos) { return ((X*)x)->seek(pos); },
   };
 
+  void* _self;
+  const VTbl* _vtbl;
+
  public:
-  auto seek_relative(this auto& self, i64 offset) -> Result<u64> {
-    return self.seek({SeekFrom::Current(offset)});
+  template <trait::not_<Seek> X>
+  Seek(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+
+ public:
+  auto seek(SeekFrom pos) -> Result<u64>;
+  auto seek_relative(i64 offset) -> Result<u64>;
+  auto stream_position() -> Result<u64>;
+};
+
+struct IRead {
+  auto read_exact(this auto& self, Slice<u8> buf) -> Result<> {
+    return Read{self}.read_exact(buf);
   }
 
-  auto stream_position(this auto& self) -> Result<u64> {
-    return self.seek({SeekFrom::Current(0)});
+  auto read_to_end(this auto& self, List<u8>& buf) -> Result<usize> {
+    return Read{self}.read_to_end(buf);
+  }
+
+  auto read_to_string(this auto& self, String& buf) -> Result<usize> {
+    return Read{self}.read_to_string(buf);
   }
 };
 
-struct Seek::Impl {
-  const VTbl* _vtbl;
-  void* _impl;
+struct IWrite {
+  auto write_all(this auto& self, Slice<const u8> buf) -> Result<> {
+    return Write{self}.write_all(buf);
+  }
 
- public:
-  auto seek(SeekFrom pos) -> Result<u64> {
-    return (_vtbl->seek)(_impl, pos);
+  auto write_str(this auto& self, Str buf) -> Result<> {
+    return Write{self}.write_all(buf.as_bytes());
+  }
+};
+
+struct ISeek {
+  auto seek_relative(this auto& self, i64 offset) -> Result<u64> {
+    return Seek{self}.seek_relative(offset);
+  }
+
+  auto stream_position(this auto& self) -> Result<u64> {
+    return Seek{self}.stream_position();
   }
 };
 

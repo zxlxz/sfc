@@ -2,6 +2,22 @@
 
 namespace sfc::log {
 
+auto Sink::push(const Record& record) -> void {
+  return (_vtbl->push)(_self, record);
+}
+
+void Sink::flush() {
+  return (_vtbl->flush)(_self);
+}
+
+Logger::Logger(Sink sink) noexcept : _sink{sink} {}
+
+Logger::~Logger() {}
+
+Logger::Logger(Logger&&) noexcept = default;
+
+Logger& Logger::operator=(Logger&&) noexcept = default;
+
 auto Logger::level() const -> Level {
   return _level;
 }
@@ -11,7 +27,7 @@ void Logger::set_level(Level level) {
 }
 
 void Logger::flush() {
-  _backend.flush();
+  _sink.flush();
 }
 
 void Logger::write_str(Level level, Str message) {
@@ -20,7 +36,7 @@ void Logger::write_str(Level level, Str message) {
   }
 
   const auto time = time::SystemTime::now();
-  _backend.push(Record{time, level, message});
+  _sink.push(Record{time, level, message});
 }
 
 void Logger::write_fmt(Level level, fmt::Args args) {
@@ -33,7 +49,7 @@ void Logger::write_fmt(Level level, fmt::Args args) {
 
   const auto time = time::SystemTime::now();
   fmt::Formatter{buf}.write_val(args);
-  _backend.push(Record{time, level, buf.as_str()});
+  _sink.push(Record{time, level, buf.as_str()});
 }
 
 }  // namespace sfc::log

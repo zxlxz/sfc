@@ -63,15 +63,6 @@ template <class T>
 concept tv_drop_ = __has_trivial_destructor(T);
 #endif
 
-template <class Trait>
-struct Dyn : Trait::Impl, Trait {
- public:
-  Dyn(const Dyn&) = default;
-
-  template <class X>
-  Dyn(X& x) : Trait::Impl{&Trait::template vtbl<X>, &x} {}
-};
-
 }  // namespace sfc::trait
 
 namespace sfc {
@@ -88,6 +79,4 @@ using trait::int_;
 using trait::sint_;
 using trait::uint_;
 using trait::flt_;
-
-using trait::Dyn;
 }  // namespace sfc

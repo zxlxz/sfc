@@ -10,7 +10,7 @@ using RawFd = void*;
 using RawFd = int;
 #endif
 
-class [[nodiscard]] File : public io::Read, public io::Write, public io::Seek {
+class [[nodiscard]] File : public io::IRead, public io::IWrite, public io::ISeek {
   struct Inn {
     RawFd _fd;
     auto* operator->();
