@@ -2,99 +2,108 @@
 
 namespace sfc::test {
 
-static auto unpack_mod_fun(Str type) -> Tuple<Str, Str> {
-  if (type.is_empty()) {
-    return {{}, {}};
+auto Test::mod_name() const noexcept -> Str {
+  // mod::_class -> mod
+  const auto colon_pos = _type.rfind(':').unwrap_or(0);
+  if (colon_pos == 0) {
+    return Str{};
   }
 
-  // mod::_fun
-  const auto p = type.rfind(':').unwrap_or(0);
-
-  auto mod_name = p == 0 ? Str{} : type[{0, p - 1}];
-  auto fun_name = p == 0 ? type : type[{p + 2, $}];
-  if (fun_name[0] == '_') {
-    fun_name = fun_name[{1, $}];
-  }
-  return {mod_name, fun_name};
+  const auto n = colon_pos - 1;
+  return _type[{0, n}];
 }
 
-auto TestFn::run() const noexcept -> bool {
+auto Test::func_name() const noexcept -> Str {
+  if (_type.is_empty()) {
+    return {};
+  }
+
+  // mod::_class -> _class
+  const auto colon_pos = _type.rfind(':').unwrap_or(0);
+  if (colon_pos == 0) {
+    return _type[{1, $}];
+  }
+
+  // _class -> class
+  const auto cls_name = _type[{colon_pos + 1, $}];
+  const auto func_name = cls_name.starts_with('_') ? cls_name[{1, $}] : cls_name;
+  return func_name;
+}
+
+void Test::set_status(Status stat) {
+  _stat = stat;
+}
+
+auto Test::run() noexcept -> bool {
+  if (_stat != Status::Ready) {
+    return false;
+  }
+
   if (_func == nullptr) {
+    this->set_status(Status::Failed);
     return false;
   }
 
   try {
+    this->set_status(Status::Running);
     _func();
+    this->set_status(Status::Passed);
   } catch (...) {
-    return false;
+    this->set_status(Status::Failed);
   }
 
-  return true;
+  return _stat == Status::Passed;
 }
 
-TestMod::TestMod(Str name) : _name{name}, _tests{List<TestFn>::with_capacity(256U)} {}
-
-TestMod::~TestMod() {}
-
-TestMod::TestMod(TestMod&&) noexcept = default;
-
-TestMod& TestMod::operator=(TestMod&&) noexcept = default;
-
-auto TestMod::name() const noexcept -> Str {
-  return _name;
+auto Test::status() const noexcept -> Status {
+  return _stat;
 }
 
-auto TestMod::count() const noexcept -> usize {
-  return _tests.len();
+auto Test::location() const noexcept -> Loc {
+  return _loc;
 }
 
-auto TestMod::tests() const noexcept -> Slice<const TestFn> {
-  return _tests.as_slice();
-}
-
-void TestMod::regist(TestFn test) {
-  _tests.push(test);
-}
-
-struct TestManager {
-  List<TestMod> _mods;
+struct TestList {
+  Test* _head = nullptr;
+  Test* _tail = nullptr;
 
  public:
-  static auto instance() -> TestManager& {
-    static auto ctx = TestManager{List<TestMod>::with_capacity(256U)};
-    return ctx;
+  static auto instance() -> TestList& {
+    static auto list = TestList{};
+    return list;
   }
 
-  auto mods() const -> Slice<const TestMod> {
-    return _mods.as_slice();
-  }
-
-  auto regist_mod(Str mod) -> TestMod& {
-    for (auto& m : _mods.as_mut_slice()) {
-      if (m._name == mod) return m;
+ public:
+  void push(Test& test) {
+    if (_tail == nullptr) {
+      _head = &test;
+      _tail = &test;
+      return;
     }
 
-    auto& ret = _mods.push(TestMod{mod});
-    return ret;
+    _tail->_next = &test;
+    _tail = &test;
   }
 
-  void regist(TestFn test) {
-    auto& mod = this->regist_mod(test._mod);
-    mod.regist(test);
+  void for_each(auto&& f) {
+    if (_head == nullptr) {
+      return;
+    }
+
+    for (auto* test = _head; test != nullptr; test = test->_next) {
+      f(*test);
+    }
   }
 };
 
-auto mods() noexcept -> Slice<const TestMod> {
-  static auto& ctx = TestManager::instance();
-  return ctx.mods();
+void regist_imp(Test& test) {
+  auto& glist = TestList::instance();
+  glist.push(test);
 }
 
-auto regist_test(Str type, Loc loc, void (*fun)()) noexcept -> bool {
-  static auto& ctx = TestManager::instance();
-
-  const auto [mod_name, fun_name] = unpack_mod_fun(type);
-  ctx.regist(TestFn{mod_name, fun_name, loc, fun});
-  return true;
+void for_each(void* ctx, void (*f)(void* ctx, Test& test)) {
+  auto& glist = TestList::instance();
+  glist.for_each([f, ctx](Test& test) { f(ctx, test); });
 }
 
 }  // namespace sfc::test

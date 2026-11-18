@@ -13,6 +13,8 @@ class RawBuf {
   explicit RawBuf(T* ptr, usize cap, A a) noexcept : _ptr{ptr}, _cap{cap}, _a{a} {}
 
  public:
+  RawBuf() noexcept = default;
+
   ~RawBuf() noexcept {
     if (_ptr == nullptr) {
       return;

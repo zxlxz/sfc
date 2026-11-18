@@ -18,26 +18,22 @@ auto main(int argc, const char* argv[]) -> int {
     return -1;
   }
 
-  auto gtest = GTestApp{};
   if (cmd.get("help")) {
-    gtest.show_help();
+    gtest_help();
     return 0;
   }
 
   if (cmd.get("gtest_list_tests")) {
     const auto out_path = cmd.get("gtest_output").unwrap_or("stdout");
-    gtest.list(out_path);
+    gtest_list(out_path);
     return 0;
   }
 
-  const auto test_filter = cmd.get("gtest_filter").unwrap_or("");
-  gtest.filt(test_filter);
-
   const auto is_terminal = io::Stdout().is_terminal();
   const auto use_color = cmd.get_flag("gtest_color").unwrap_or(is_terminal);
-  const auto run_ret = gtest.run(use_color);
-
-  return run_ret ? 0 : -1;
+  const auto test_filter = cmd.get("gtest_filter").unwrap_or("");
+  const auto run_ret = gtest_run(test_filter, use_color);
+  return run_ret;
 }
 
 }  // namespace sfc::test

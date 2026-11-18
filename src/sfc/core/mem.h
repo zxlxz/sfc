@@ -10,18 +10,23 @@ struct Layout {
 
  public:
   template <class T>
-  static auto of() noexcept -> Layout {
+  consteval static auto of() noexcept -> Layout {
     return {.size = sizeof(T), .align = alignof(T)};
   }
 
   template <class T>
-  static auto for_value(const T&) noexcept -> Layout {
+  constexpr static auto for_value(const T&) noexcept -> Layout {
     return {.size = sizeof(T), .align = alignof(T)};
   }
 
   template <class T>
-  static auto array(usize n) noexcept -> Layout {
+  constexpr static auto array(usize n) noexcept -> Layout {
     return {.size = n * sizeof(T), .align = alignof(T)};
+  }
+
+ public:
+  constexpr auto operator==(const Layout& other) const -> bool {
+    return size == other.size && align == other.align;
   }
 };
 

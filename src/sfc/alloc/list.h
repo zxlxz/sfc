@@ -14,6 +14,8 @@ class [[nodiscard]] List {
   List(RawBuf<T, A> buf, usize len) noexcept : _buf{mem::move(buf)}, _len{len} {}
 
  public:
+  List() noexcept = default;
+
   ~List() noexcept {
     this->clear();
   }

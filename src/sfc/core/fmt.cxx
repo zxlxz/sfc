@@ -210,7 +210,8 @@ SFC_TEST(unnamed_enum) {
 }
 
 SFC_TEST(str_) {
-  sfc::assert_eq(format("{}", "hello"), "hello");
+  const auto p = "hello";
+  sfc::assert_eq(format("{}", p), "hello");
 }
 
 SFC_TEST(list) {

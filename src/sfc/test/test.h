@@ -6,41 +6,41 @@ namespace sfc::test {
 
 using Loc = panic::SourceLoc;
 
-struct TestFn {
+enum class Status {
+  None,
+  Ready,
+  Running,
+  Passed,
+  Failed,
+};
+
+struct Test {
   using Fun = void (*)();
-  Str _mod;
-  Str _name;
-  Loc _loc;
+  Str _type;
   Fun _func;
+  Loc _loc;
+  Status _stat = Status::None;
+  Test* _next = nullptr;
 
  public:
-  auto run() const noexcept -> bool;
-};
-
-struct TestMod {
-  Str _name;
-  List<TestFn> _tests;
+  auto mod_name() const noexcept -> Str;
+  auto func_name() const noexcept -> Str;
+  auto status() const noexcept -> Status;
+  auto location() const noexcept -> Loc;
 
  public:
-  explicit TestMod(Str name);
-  ~TestMod();
-  TestMod(TestMod&&) noexcept;
-  TestMod& operator=(TestMod&&) noexcept;
-
-  auto name() const noexcept -> Str;
-  auto count() const noexcept -> usize;
-  auto tests() const noexcept -> Slice<const TestFn>;
-  void regist(TestFn test);
+  void set_status(Status stat);
+  auto run() noexcept -> bool;
 };
 
-auto mods() noexcept -> Slice<const TestMod>;
-auto regist_test(Str type, Loc loc, void (*fun)()) noexcept -> bool;
+void regist_imp(Test& test);
+void for_each(void* ctx, void (*f)(void* ctx, Test& test));
 
 template <class T>
 auto regist(SourceLoc loc = SourceLoc::current()) noexcept -> bool {
-  const auto func = &T::test;
-  const auto type = reflect::type_name<T>();
-  return test::regist_test(type, loc, func);
+  static auto test = Test{reflect::type_name<T>(), &T::test, loc};
+  regist_imp(test);
+  return true;
 }
 
 }  // namespace sfc::test

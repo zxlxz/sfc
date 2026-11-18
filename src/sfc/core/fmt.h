@@ -16,7 +16,7 @@ class Write {
 
   template <class X>
   static constexpr auto sVTBL = VTbl{
-      .write_str = [](void* x, Str s) { return ((X*)x)->write_str(s); },
+      .write_str = [](void* x, Str s) { (void)((X*)x)->write_str(s); },
   };
 
   void* ptr;
