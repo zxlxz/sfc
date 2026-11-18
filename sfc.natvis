@@ -27,10 +27,10 @@
   <Type Name="sfc::list::List&lt;*&gt;">
     <Expand>
       <Item Name="[_len]">_len</Item>
-      <Item Name="[_cap]">_inn._cap</Item>
+      <Item Name="[_cap]">_buf._cap</Item>
       <ArrayItems>
         <Size>_len</Size>
-        <ValuePointer>_inn._ptr</ValuePointer>
+        <ValuePointer>_buf._ptr</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
@@ -49,7 +49,7 @@
 
   <!-- sfc::string::String -->
   <Type Name="sfc::string::String">
-    <DisplayString>{_buf._inn._ptr, [_buf._len]s}</DisplayString>
+    <DisplayString>{_buf._buf._ptr, [_buf._len]s}</DisplayString>
   </Type>
 
 
