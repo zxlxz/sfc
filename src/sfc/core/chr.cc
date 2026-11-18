@@ -220,9 +220,9 @@ auto U16Chars::next() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto encode_utf8(char32_t ch, Slice<u8> buf) -> Slice<u8> {
+auto encode_utf8(char32_t ch, Slice<u8> buf) -> str::Str {
   const auto n = utf8::encode(buf, ch);
-  return {buf._ptr, n};
+  return Str{(const char*)buf._ptr, n};
 }
 
 auto decode_utf8(Slice<const u8> buf) -> Chars {

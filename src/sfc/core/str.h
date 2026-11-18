@@ -78,21 +78,13 @@ struct Str {
   }
 
  public:
-  constexpr auto operator==(Str other) const noexcept -> bool {
-    return this->eq(other);
-  }
-
-  constexpr auto operator<=>(Str other) const noexcept -> int {
-    return this->cmp(other);
-  }
-
-  constexpr auto eq(Str s) const noexcept -> bool {
+  constexpr auto operator==(Str s) const noexcept -> bool {
     if (_len != s._len) return false;
     if (_len == 0 || _ptr == s._ptr) return true;
     return __builtin_memcmp(_ptr, s._ptr, _len) == 0;
   }
 
-  constexpr auto cmp(Str other) const noexcept -> int {
+  constexpr auto operator<=>(Str other) const noexcept -> int {
     const auto min_len = _len < other._len ? _len : other._len;
     if (min_len != 0) {
       const auto ret = __builtin_memcmp(_ptr, other._ptr, min_len);

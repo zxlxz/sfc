@@ -259,6 +259,9 @@ class [[nodiscard]] List {
   /// clones and appends all elements in a slice to the List
   /// @note: user must ensure that the slice does not overlap with the list's buffer.
   void extend_from_slice(Slice<const T> other) noexcept {
+    if (other._len == 0) {
+      return;
+    }
     this->reserve(other._len);
     ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
     this->set_len(_len + other._len);
@@ -313,7 +316,7 @@ class [[nodiscard]] List {
   auto write(Slice<const T> buf) -> io::Result<usize> {
     static_assert(trait::tv_copy_<T>);
     this->extend_from_slice(buf);
-    return {buf.len()};
+    return buf.len();
   }
 
   // trait: io::Write

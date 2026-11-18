@@ -23,7 +23,7 @@ struct U16Chars : iter::Iterator<char32_t> {
   auto next() noexcept -> Option<char32_t>;
 };
 
-auto encode_utf8(char32_t ch, Slice<u8> buf) -> Slice<u8>;
+auto encode_utf8(char32_t ch, Slice<u8> buf) -> str::Str;
 auto encode_utf16(char32_t ch, Slice<u16> buf) -> Slice<u16>;
 
 auto decode_utf8(Slice<const u8> buf) -> Chars;

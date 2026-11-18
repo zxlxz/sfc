@@ -2,6 +2,8 @@
 
 namespace sfc::string::test {
 
+using String = sfc::String;
+
 SFC_TEST(property) {
   const auto test_str = String::from("abc");
   const auto null_str = String::from("");
@@ -27,9 +29,15 @@ SFC_TEST(index) {
 }
 
 SFC_TEST(cmp) {
-  const auto s = String::from("abcd");
-  sfc::assert_eq(s, "abcd");
-  sfc::assert_ne(s, "abc");
+  const auto s = String::new_();
+  sfc::assert_eq(s == "", true);       // String == cstr_t
+  sfc::assert_eq("" == s, true);       // cstr_t == String
+  sfc::assert_eq(s == Str{""}, true);  // String == Str
+  sfc::assert_eq(Str{""} == s, true);  // Str == String
+
+  const auto abc = String::from("abc");
+  sfc::assert_eq(abc, "abc");
+  sfc::assert_ne(abc, "ab");
 }
 
 SFC_TEST(find) {

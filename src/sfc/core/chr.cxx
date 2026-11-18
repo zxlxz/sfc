@@ -4,10 +4,7 @@ namespace sfc::chr::test {
 
 SFC_TEST(encode_utf8) {
   u8 buf[4] = {};
-  auto encode = [&](char32_t c) {
-    const auto v = chr::encode_utf8(c, buf);
-    return Str::from_utf8(v);
-  };
+  auto encode = [&](char32_t c) { return chr::encode_utf8(c, buf); };
 
   // 1-byte: ASCII
   sfc::assert_eq(encode(U'A'), Str{"A"});
