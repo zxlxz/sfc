@@ -6,21 +6,34 @@ namespace sfc::alloc {
 
 using mem::Layout;
 
-struct System {
+struct FixedBuf {
+  Slice<u8> _buf;
+  usize _end_idx{0};
+
+ public:
   void* allocate(Layout layout);
   void* allocate_zeroed(Layout layout);
   void deallocate(void* ptr, Layout layout);
 
-  void* grow(void* ptr, Layout old_layout, Layout new_layout);
-  void* shrink(void* ptr, Layout old_layout, Layout new_layout);
+  void* grow(void* ptr, Layout layout, usize new_size);
+  void* shrink(void* ptr, Layout layout, usize new_size);
+
+  bool is_last_allocation(void* ptr, Layout layout) const;
 };
 
-using Global = System;
+template <class A>
+class Arena {
+  [[maybe_unused]] A _allocator;
 
-auto next_power_of_two(usize val) -> usize;
+ public:
+  explicit Arena(A allocator = {}) : _allocator{mem::move(allocator)} {}
+
+  void* allocate(Layout layout);
+  void* allocate_zeroed(Layout layout);
+  void deallocate(void* ptr, Layout layout);
+
+  void* grow(void* ptr, Layout layout, usize new_size);
+  void* shrink(void* ptr, Layout layout, usize new_size);
+};
 
 }  // namespace sfc::alloc
-
-namespace sfc {
-using alloc::Global;
-}

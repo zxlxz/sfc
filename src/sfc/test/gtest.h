@@ -4,7 +4,7 @@
 
 namespace sfc::test {
 
-struct GTestSuite;
+class GTestSuite;
 
 class GTestApp {
   List<GTestSuite> _suites;

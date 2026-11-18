@@ -160,7 +160,7 @@ class [[nodiscard]] List {
     return this->pop();
   }
 
-  auto swap_remove(usize idx) noexcept -> T {
+  auto swap_remove(usize idx) -> T {
     sfc::assert_(idx < _len, "List::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
 
     const auto base_ptr = _buf.ptr();
@@ -170,7 +170,7 @@ class [[nodiscard]] List {
     return value;
   }
 
-  void truncate(usize len) noexcept {
+  void truncate(usize len) {
     if (len >= _len) {
       return;
     }
@@ -180,19 +180,19 @@ class [[nodiscard]] List {
     ptr::drop_in_place(&_buf[len], remaining_len);
   }
 
-  void reserve(usize additional) noexcept {
+  void reserve(usize additional) {
     _buf.reserve(_len, additional);
   }
 
-  void reserve_exact(usize additional) noexcept {
+  void reserve_exact(usize additional) {
     _buf.reserve_exact(_len, additional);
   }
 
-  void shrink_to(usize min_cap) noexcept {
+  void shrink_to(usize min_cap) {
     _buf.shrink_to_fit(min_cap);
   }
 
-  void shrink_to_fit() noexcept {
+  void shrink_to_fit() {
     _buf.shrink_to_fit(_len);
   }
 
@@ -202,7 +202,7 @@ class [[nodiscard]] List {
     ptr::drop_in_place(elems._ptr, elems._len);
   }
 
-  auto insert(usize idx, T val) noexcept -> T& {
+  auto insert(usize idx, T val) -> T& {
     sfc::assert_(idx <= _len, "List::insert: idx(={}) out of ids([0,{}))", idx, _len);
     this->reserve(1);
 
@@ -215,7 +215,7 @@ class [[nodiscard]] List {
     return *p;
   }
 
-  auto remove(usize idx) noexcept -> T {
+  auto remove(usize idx) -> T {
     sfc::assert_(idx < _len, "List::remove: idx(={}) out of ids([0,{}))", idx, _len);
 
     const auto p = _buf.ptr() + idx;
@@ -225,14 +225,14 @@ class [[nodiscard]] List {
     return ret;
   }
 
-  void resize(usize new_len, T value) noexcept {
+  void resize(usize new_len, T value) {
     if (new_len <= _len) {
       return this->truncate(new_len);
     }
     this->extend_with(new_len - _len, value);
   }
 
-  void append(List& other) noexcept {
+  void append(List& other) {
     if (this == &other || other._len == 0) {
       return;
     }
@@ -242,14 +242,14 @@ class [[nodiscard]] List {
     other.set_len(0);
   }
 
-  void extend(auto&& iter) noexcept {
+  void extend(auto&& iter) {
     if constexpr (requires { iter.len(); }) {
       this->reserve(iter.len());
     }
     iter.for_each([&](T val) { this->push(mem::move(val)); });
   }
 
-  void extend_with(usize cnt, const T& value) noexcept {
+  void extend_with(usize cnt, const T& value) {
     this->reserve(cnt);
     for (auto idx = 0UL; idx < cnt; ++idx) {
       this->push(value);

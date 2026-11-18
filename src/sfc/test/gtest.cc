@@ -145,7 +145,9 @@ struct GTestCase {
 };
 
 // GTestSuite <-> TestMod
-struct GTestSuite {
+class GTestSuite {
+  friend class GTestApp;
+
   const TestMod& _mod;
   List<GTestCase> _matchs;
 

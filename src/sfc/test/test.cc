@@ -32,7 +32,7 @@ auto TestFn::run() const noexcept -> bool {
   return true;
 }
 
-TestMod::TestMod(Str name) : _name{name}, _tests{List<TestFn>::new_()} {}
+TestMod::TestMod(Str name) : _name{name}, _tests{List<TestFn>::with_capacity(256U)} {}
 
 TestMod::~TestMod() {}
 
@@ -61,7 +61,7 @@ struct TestManager {
 
  public:
   static auto instance() -> TestManager& {
-    static auto ctx = TestManager{List<TestMod>::new_()};
+    static auto ctx = TestManager{List<TestMod>::with_capacity(256U)};
     return ctx;
   }
 

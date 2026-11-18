@@ -1,72 +1,97 @@
 #include "sfc/alloc/alloc.h"
-#include "sfc/sys/alloc.h"
 
 namespace sfc::alloc {
 
-// 1TB
-constexpr auto kMaxAllocSize = usize{1024ULL << 30};
-
-auto next_power_of_two(usize val) -> usize {
-  static constexpr usize kMaxPow2 = usize{1} << (sizeof(usize) * 8 - 1);
-  if (val == 0 || val > kMaxPow2) {
-    return 0;
-  }
-  if (val == 1) {
-    return 1;
+bool FixedBuf::is_last_allocation(void* ptr, Layout layout) const {
+  if (ptr == nullptr) {
+    return false;
   }
 
-  const auto x = val - 1;
-  const auto y = kMaxPow2 >> (__builtin_clzll(x) - 1);
-  return y;
+  const auto* start_ptr = ptr::cast<u8>(ptr);
+  if (start_ptr < _buf._ptr) {
+    return false;
+  }
+
+  const auto* end_ptr = start_ptr + layout.size;
+  return end_ptr == _buf._ptr + _end_idx;
 }
 
-void* System::allocate(Layout layout) {
-  if (layout.size == 0 || layout.size >= kMaxAllocSize) {
+void* FixedBuf::allocate(Layout layout) {
+  if (layout.size == 0 || layout.align == 0) {
     return nullptr;
   }
 
-  return sys::alloc(layout);
-}
-
-void* System::allocate_zeroed(Layout layout) {
-  if (layout.size == 0 || layout.size >= kMaxAllocSize) {
+  const auto remain_cap = _buf._len - _end_idx;
+  if (remain_cap < layout.size) {
     return nullptr;
   }
 
-  return sys::alloc_zeroed(layout);
+  const auto raw_ptr = _buf._ptr + _end_idx;
+  const auto pad_ext = (layout.align - (usize)raw_ptr % layout.align) % layout.align;
+
+  if (remain_cap - layout.size < pad_ext) {
+    return nullptr;
+  }
+
+  const auto aligned_ptr = raw_ptr + pad_ext;
+  _end_idx += pad_ext + layout.size;
+  return aligned_ptr;
 }
 
-void System::deallocate(void* ptr, Layout layout) {
+void* FixedBuf::allocate_zeroed(Layout layout) {
+  auto* p = this->allocate(layout);
+  if (p != nullptr) {
+    __builtin_memset(p, 0, layout.size);
+  }
+  return p;
+}
+
+void FixedBuf::deallocate(void* ptr, Layout layout) {
   if (ptr == nullptr) {
     return;
   }
 
-  sys::dealloc(ptr, layout);
+  if (this->is_last_allocation(ptr, layout)) {
+    _end_idx -= layout.size;
+  }
 }
 
-void* System::grow(void* ptr, Layout old_layout, Layout new_layout) {
-  if (old_layout.size >= new_layout.size) {
+void* FixedBuf::grow(void* ptr, Layout layout, usize new_size) {
+  // check if need to grow
+  if (new_size <= layout.size) {
     return ptr;
   }
 
-  if (old_layout.size == 0) {
-    return this->allocate(new_layout);
+  if (this->is_last_allocation(ptr, layout)) {
+    const auto remain_cap = _buf._len - _end_idx;
+    const auto additional = new_size - layout.size;
+    if (remain_cap >= additional) {
+      _end_idx += additional;
+      return ptr;
+    }
   }
 
-  return sys::realloc(ptr, old_layout, new_layout.size);
+  const auto new_layout = Layout{.size = new_size, .align = layout.align};
+  const auto new_ptr = this->allocate(new_layout);
+  if (ptr && new_ptr) {
+    __builtin_memmove(new_ptr, ptr, layout.size);
+  }
+
+  return new_ptr;
 }
 
-void* System::shrink(void* ptr, Layout old_layout, Layout new_layout) {
-  if (old_layout.size <= new_layout.size) {
+void* FixedBuf::shrink(void* ptr, Layout layout, usize new_size) {
+  // check if need to shrink
+  if (new_size >= layout.size) {
     return ptr;
   }
 
-  if (new_layout.size == 0) {
-    this->deallocate(ptr, old_layout);
-    return nullptr;
+  if (this->is_last_allocation(ptr, layout)) {
+    const auto shrink_size = layout.size - new_size;
+    _end_idx -= shrink_size;
   }
 
-  return sys::realloc(ptr, old_layout, new_layout.size);
+  return ptr;
 }
 
 }  // namespace sfc::alloc

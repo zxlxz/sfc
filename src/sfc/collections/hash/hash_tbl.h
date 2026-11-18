@@ -179,7 +179,7 @@ class HashTbl {
     }
 
     const auto min_cap = cmp::max(kMinCap, req_cap);
-    const auto new_cap = alloc::next_power_of_two(min_cap);
+    const auto new_cap = num::next_power_of_two(min_cap);
     const auto p = alloc.allocate(HashTbl::layout(new_cap));
     test::assert_(p != nullptr, "HashTbl::with_capacity(req_cap = {}): allocate failed", req_cap);
 

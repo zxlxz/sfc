@@ -1,14 +1,14 @@
 #pragma once
 
-#include "sfc/alloc/alloc.h"
+#include "sfc/alloc/global.h"
 
 namespace sfc::raw_buf {
 
 template <class T, class A = alloc::Global>
 class RawBuf {
-  T* _ptr;
-  usize _cap;
-  [[no_unique_address]] A _a;
+  T* _ptr{nullptr};
+  usize _cap{0};
+  [[no_unique_address]] A _a{};
 
   explicit RawBuf(T* ptr, usize cap, A a) noexcept : _ptr{ptr}, _cap{cap}, _a{a} {}
 
@@ -39,6 +39,7 @@ class RawBuf {
     if (capacity == 0) {
       return RawBuf{nullptr, 0, a};
     }
+
     const auto p = (T*)a.allocate(Layout::array<T>(capacity));
     test::assert_(p != nullptr, "RawBuf::with_capacity(capacity={}): allocate failed", capacity);
     return RawBuf{p, capacity, a};
@@ -81,8 +82,8 @@ class RawBuf {
       return;
     }
 
-    const auto min_cap = cmp::max(len + additional, _cap + (_cap + 1) / 2);
-    const auto new_cap = cmp::max(kMinCap, min_cap);
+    const auto min_cap = cmp::max(len + additional, kMinCap);
+    const auto new_cap = cmp::max(min_cap, _cap + (_cap + 1) / 2);
     this->grow_unchecked(len, new_cap - len);
   }
 
@@ -109,23 +110,19 @@ class RawBuf {
   }
 
   void shrink_unchecked(usize new_cap) noexcept {
-    const auto old_layout = Layout::array<T>(_cap);
-    const auto new_layout = Layout::array<T>(new_cap);
-    const auto new_ptr = _a.shrink(_ptr, old_layout, new_layout);
+    const auto layout = Layout::array<T>(_cap);
+    const auto new_ptr = _a.shrink(_ptr, layout, new_cap * sizeof(T));
     if (new_cap != 0) {
-      test::assert_(new_ptr != nullptr, "RawBuf::shrink_unchecked(new_cap={}): allocate failed", new_cap);
+      test::assert_(new_ptr, "RawBuf::shrink_unchecked(new_cap={}): allocate failed", new_cap);
     }
-
     this->set_ptr_and_cap(new_ptr, new_cap);
   }
 
   void grow_unchecked(usize len, usize additional) noexcept {
-    const auto old_layout = Layout::array<T>(_cap);
-    const auto new_layout = Layout::array<T>(len + additional);
-    const auto new_ptr = _a.grow(_ptr, old_layout, new_layout);
-    test::assert_(
-        new_ptr != nullptr, "RawBuf::grow_unchecked(len={}, additional={}): allocate failed", len, additional);
-
+    const auto layout = Layout::array<T>(_cap);
+    const auto new_cap = len + additional;
+    const auto new_ptr = _a.grow(_ptr, layout, new_cap * sizeof(T));
+    test::assert_(new_ptr, "RawBuf::grow_unchecked(len={}, additional={}): allocate failed", len, additional);
     this->set_ptr_and_cap(new_ptr, len + additional);
   }
 };

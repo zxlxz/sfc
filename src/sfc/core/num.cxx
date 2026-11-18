@@ -88,6 +88,16 @@ SFC_TEST(align_up) {
   static_assert(num::align_up(4U, 4U) == 4U);
 }
 
+SFC_TEST(next_power_of_two) {
+  static_assert(num::next_power_of_two(0U) == 0U);
+  static_assert(num::next_power_of_two(1U) == 1U);
+  static_assert(num::next_power_of_two(2U) == 2U);
+  static_assert(num::next_power_of_two(3U) == 4U);
+  static_assert(num::next_power_of_two(17U) == 32U);
+  static_assert(num::next_power_of_two(1UZ << 40) == 1UZ << 40);
+  static_assert(num::next_power_of_two((1UZ << 40) + 1) == 1UZ << 41);
+}
+
 SFC_TEST(flt_eq) {
   sfc::assert_flt_eq(1.0, 1.0);
   sfc::assert_flt_eq(-1.0, -1.0);
