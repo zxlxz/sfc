@@ -15,16 +15,16 @@ class Write {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
+  static constexpr auto sVTBL = VTbl{
       .write_str = [](void* x, Str s) { return ((X*)x)->write_str(s); },
   };
 
   void* ptr;
-  const VTbl* _vtbl;
+  const VTbl& _vtbl;
 
  public:
   template <trait::not_<Write> X>
-  Write(X& x) : ptr{&x}, _vtbl{&vtbl<X>} {}
+  Write(X& x) : ptr{&x}, _vtbl{sVTBL<X>} {}
 
  public:
   void write_str(Str s);

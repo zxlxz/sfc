@@ -3,20 +3,12 @@
 namespace sfc::log {
 
 auto Sink::push(const Record& record) -> void {
-  return (_vtbl->push)(_self, record);
+  return _vtbl.push(_self, record);
 }
 
 void Sink::flush() {
-  return (_vtbl->flush)(_self);
+  return _vtbl.flush(_self);
 }
-
-Logger::Logger(Sink sink) noexcept : _sink{sink} {}
-
-Logger::~Logger() {}
-
-Logger::Logger(Logger&&) noexcept = default;
-
-Logger& Logger::operator=(Logger&&) noexcept = default;
 
 auto Logger::level() const -> Level {
   return _level;

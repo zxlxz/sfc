@@ -1,5 +1,5 @@
+#include "sfc/test.h"
 #include "sfc/io/stdio.h"
-#include "sfc/test/test.h"
 
 namespace sfc::io::test {
 

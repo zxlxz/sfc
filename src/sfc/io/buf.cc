@@ -12,10 +12,6 @@ inline auto memchr(Slice<const u8> buf, u8 byte) -> Option<usize> {
 }
 }  // namespace detail
 
-auto BufReader::new_(Read inn, Slice<u8> buf) -> BufReader {
-  return BufReader{._inn = inn, ._buf = buf, ._start = 0, ._end = 0};
-}
-
 auto BufReader::capacity() const -> usize {
   return _buf._len;
 }
@@ -105,10 +101,6 @@ auto BufReader::read_until(u8 byte, List<u8>& buf) -> Result<usize> {
 
 auto BufReader::read_line(String& buf) -> Result<usize> {
   return this->read_until('\n', buf.as_mut_list());
-}
-
-auto BufWriter::new_(Write inn, Slice<u8> buf) -> BufWriter {
-  return BufWriter{._inn = inn, ._buf = buf, ._end = 0};
 }
 
 auto BufWriter::capacity() const -> usize {

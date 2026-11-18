@@ -30,20 +30,21 @@ class Read final {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
+  static constexpr auto sVTBL = VTbl{
       .read = [](void* x, Slice<u8> buf) { return ((X*)x)->read(buf); },
   };
 
   void* _self;
-  const VTbl* _vtbl;
+  const VTbl& _vtbl;
 
  public:
   template <trait::not_<Read> X>
-  Read(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+  explicit Read(X& x) : _self{&x}, _vtbl{sVTBL<X>} {}
 
  public:
   auto read(Slice<u8> buf) -> Result<usize>;
   auto read_exact(Slice<u8> buf) -> Result<>;
+
   auto read_to_end(List<u8>& buf) -> Result<usize>;
   auto read_to_string(String& buf) -> Result<usize>;
 };
@@ -55,17 +56,17 @@ class Write final {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
+  static constexpr auto sVTBL = VTbl{
       .write = [](void* x, Slice<const u8> buf) { return ((X*)x)->write(buf); },
       .flush = [](void* x) { return ((X*)x)->flush(); },
   };
 
   void* _self;
-  const VTbl* _vtbl;
+  const VTbl& _vtbl;
 
  public:
   template <trait::not_<Write> X>
-  Write(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+  explicit Write(X& x) : _self{&x}, _vtbl{sVTBL<X>} {}
 
  public:
   auto write(Slice<const u8> buf) -> Result<usize>;
@@ -81,16 +82,16 @@ class Seek final {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
+  static constexpr auto sVTBL = VTbl{
       .seek = [](void* x, SeekFrom pos) { return ((X*)x)->seek(pos); },
   };
 
   void* _self;
-  const VTbl* _vtbl;
+  const VTbl& _vtbl;
 
  public:
   template <trait::not_<Seek> X>
-  Seek(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+  explicit Seek(X& x) : _self{&x}, _vtbl{sVTBL<X>} {}
 
  public:
   auto seek(SeekFrom pos) -> Result<u64>;

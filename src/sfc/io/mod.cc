@@ -4,7 +4,7 @@
 namespace sfc::io {
 
 auto Read::read(Slice<u8> buf) -> Result<usize> {
-  return (_vtbl->read)(_self, buf);
+  return _vtbl.read(_self, buf);
 }
 
 auto Read::read_exact(Slice<u8> buf) -> Result<> {
@@ -41,11 +41,11 @@ auto Read::read_to_string(String& buf) -> Result<usize> {
 }
 
 auto Write::write(Slice<const u8> buf) -> Result<usize> {
-  return (_vtbl->write)(_self, buf);
+  return (_vtbl.write)(_self, buf);
 }
 
 auto Write::flush() -> Result<> {
-  return (_vtbl->flush)(_self);
+  return (_vtbl.flush)(_self);
 }
 
 auto Write::write_all(Slice<const u8> buf) -> Result<> {
@@ -65,7 +65,7 @@ auto Write::write_str(Str buf) -> Result<> {
 }
 
 auto Seek::seek(SeekFrom pos) -> Result<u64> {
-  return (_vtbl->seek)(_self, pos);
+  return (_vtbl.seek)(_self, pos);
 }
 
 auto Seek::seek_relative(i64 offset) -> Result<u64> {

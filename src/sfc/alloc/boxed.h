@@ -89,45 +89,41 @@ class [[nodiscard]] Box<R(T...)> {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
-      .call = [](void* x, T&&... u) -> R { return (*(X*)(x))((T&&)(u)...); },
+  static constexpr auto sVTBL = VTbl{
+      .call = [](void* x, T&&... u) -> R { return (*(X*)x)((T&&)(u)...); },
       .dtor = [](void* x) { delete (X*)(x); },
   };
 
-  const VTbl* _vptr;
-  void* _impl;
+  void* _self;
+  const VTbl* _vtbl;
+
+  Box(void* self, const VTbl& vtbl) noexcept : _self{self}, _vtbl{&vtbl} {}
 
  public:
-  Box() noexcept : _vptr{nullptr}, _impl{nullptr} {}
-
   ~Box() noexcept {
-    if (_impl == nullptr) {
-      return;
+    if (_self != nullptr) {
+      (_vtbl->dtor)(_self);
     }
-    (_vptr->dtor)(_impl);
   }
 
-  Box(Box&& other) noexcept : _vptr{mem::take(other._vptr)}, _impl{mem::take(other._impl)} {}
+  Box(Box&& other) noexcept : _self{mem::take(other._self)}, _vtbl{mem::take(other._vtbl)} {}
 
   Box& operator=(Box&& other) noexcept {
     if (this != &other) {
-      mem::swap(_vptr, other._vptr);
-      mem::swap(_impl, other._impl);
+      mem::swap(_self, other._self);
+      mem::swap(_vtbl, other._vtbl);
     }
     return *this;
   }
 
   template <class X>
   static auto new_(X impl) noexcept -> Box {
-    auto res = Box{};
-    res._vptr = &Box::vtbl<X>;
-    res._impl = new X{mem::move(impl)};
-    return res;
+    return Box{new X{mem::move(impl)}, Box::sVTBL<X>};
   }
 
  public:
   auto operator()(T... args) -> R {
-    return (_vptr->call)(_impl, (T&&)(args)...);
+    return _vtbl->call(_self, (T&&)(args)...);
   }
 };
 

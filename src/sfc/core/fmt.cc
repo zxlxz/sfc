@@ -290,7 +290,7 @@ auto Spec::prefix() const -> str::Str {
 }
 
 void Write::write_str(Str s) {
-  _vtbl->write_str(ptr, s);
+  _vtbl.write_str(ptr, s);
 }
 
 auto Buf::as_str() const -> Str {

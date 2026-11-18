@@ -11,7 +11,9 @@ struct BufReader : IRead {
   usize _end{0};
 
  public:
-  static auto new_(Read inn, Slice<u8> buf) -> BufReader;
+  static auto new_(auto& read, Slice<u8> buf) -> BufReader {
+    return BufReader{._inn = Read{read}, ._buf = buf};
+  }
 
  public:
   auto capacity() const -> usize;
@@ -37,7 +39,9 @@ struct BufWriter : IWrite {
   usize _end{0};
 
  public:
-  static auto new_(Write inn, Slice<u8> buf) -> BufWriter;
+  static auto new_(auto& inn, Slice<u8> buf) -> BufWriter {
+    return BufWriter{._inn = Write{inn}, ._buf = buf};
+  }
 
  public:
   auto capacity() const -> usize;

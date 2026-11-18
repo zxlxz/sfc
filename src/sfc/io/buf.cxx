@@ -1,6 +1,5 @@
+#include "sfc/test.h"
 #include "sfc/io/buf.h"
-
-#include "sfc/test/test.h"
 
 namespace sfc::io::test {
 
@@ -8,7 +7,7 @@ SFC_TEST(buf_read) {
   u8 buf[256];
 
   auto src = Str{"0123456789"}.as_bytes();
-  auto buf_read = BufReader::new_(Read{src}, buf);
+  auto buf_read = BufReader::new_(src, buf);
 
   // read
   {

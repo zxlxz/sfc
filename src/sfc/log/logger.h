@@ -20,17 +20,17 @@ class Sink {
   };
 
   template <class X>
-  static constexpr auto vtbl = VTbl{
+  static constexpr auto sVTBL = VTbl{
       .push = [](void* x, const Record& record) { return ((X*)x)->push(record); },
       .flush = [](void* x) { return ((X*)x)->flush(); },
   };
 
   void* _self;
-  const VTbl* _vtbl;
+  const VTbl& _vtbl;
 
  public:
   template <trait::not_<Sink> X>
-  Sink(X& x) : _self{&x}, _vtbl{&vtbl<X>} {}
+  explicit Sink(X& x) : _self{&x}, _vtbl{sVTBL<X>} {}
 
  public:
   void push(const Record& record);
@@ -42,11 +42,7 @@ class Logger {
   Level _level{Level::Info};
 
  public:
-  explicit Logger(Sink sink) noexcept;
-  ~Logger();
-
-  Logger(Logger&&) noexcept;
-  Logger& operator=(Logger&&) noexcept;
+  explicit Logger(auto& sink) noexcept : _sink{sink} {}
 
  public:
   auto level() const -> Level;
@@ -60,27 +56,27 @@ class Logger {
 auto global() -> Logger&;
 
 void trace(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Trace, {fmts, args...});
+  log::global().write_fmt(Level::Trace, fmt::Args{fmts, args...});
 }
 
 void debug(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Debug, {fmts, args...});
+  log::global().write_fmt(Level::Debug, fmt::Args{fmts, args...});
 }
 
 void info(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Info, {fmts, args...});
+  log::global().write_fmt(Level::Info, fmt::Args{fmts, args...});
 }
 
 void warn(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Warn, {fmts, args...});
+  log::global().write_fmt(Level::Warn, fmt::Args{fmts, args...});
 }
 
 void error(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Error, {fmts, args...});
+  log::global().write_fmt(Level::Error, fmt::Args{fmts, args...});
 }
 
 void fatal(const fmt::Fmts& fmts, const auto&... args) {
-  log::global().write_fmt(Level::Fatal, {fmts, args...});
+  log::global().write_fmt(Level::Fatal, fmt::Args{fmts, args...});
 }
 
 }  // namespace sfc::log
