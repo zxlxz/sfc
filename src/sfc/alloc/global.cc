@@ -7,7 +7,9 @@ namespace sfc::alloc {
 constexpr auto kMaxAllocSize = usize{1024ULL << 30};
 
 auto align_up(u8* ptr, usize align) -> u8* {
-  return __builtin_align_up(ptr, align);
+  const auto addr = __builtin_bit_cast(usize, ptr);
+  const auto padding = (align - (addr % align)) % align;
+  return ptr + padding;
 }
 
 void* System::allocate(Layout layout) {
