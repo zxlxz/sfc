@@ -130,16 +130,21 @@ class SerializeObj {
   }
 };
 
+class DeserializeSeq;
+class DeserializeDict;
+
 class Deserializer {
   Str _buf;
+
+  friend class DeserializeSeq;
+  friend class DeserializeDict;
 
   auto peek_tok() -> Result<Token>;
   auto next_tok() -> Result<Str>;
   auto read_tok(Token expected) -> Result<>;
 
  public:
-  template <class T = Unit>
-  using Result = json::Result<T>;
+  using Error = json::Error;
 
   static auto from_str(Str buf) -> Deserializer;
 
@@ -148,13 +153,8 @@ class Deserializer {
   auto deserialize_num() -> Result<Str>;
   auto deserialize_str() -> Result<Str>;
 
-  class DeserializeSeq;
-
-  auto deserialize_seq() -> Result<DeserializeSeq>;
-
-  class DeserializeObj;
-  auto deserialize_obj() -> Result<DeserializeObj>;
-  auto deserialize_dict() -> Result<DeserializeObj>;
+  auto as_seq() -> DeserializeSeq;
+  auto as_dict() -> DeserializeDict;
 
   template <class T>
   auto deserialize_any() -> Result<T> {
@@ -173,81 +173,54 @@ class Deserializer {
   }
 };
 
-class Deserializer::DeserializeSeq {
+class DeserializeSeq {
   Deserializer& _des;
   usize _count{0};
   bool _finished{false};
 
+ private:
+  friend class Deserializer;
+  DeserializeSeq(Deserializer& des) : _des(des) {}
+
+  auto next_entry() -> Result<>;
+
  public:
-  auto end() -> Result<>;
-
   template <class T>
-  auto next_element() -> Result<Option<T>> {
-    const auto has_next = _TRY(this->next_imp());
-    if (!has_next) {
-      return Option<T>{};
-    }
-    auto element = _TRY(_des.deserialize_any<T>());
-    return {mem::move(element)};
-  }
-
-  template <class T>
-  auto for_each(auto&& f) -> Result<> {
-    while (true) {
-      const auto has_next = _TRY(this->next_imp());
-      if (!has_next) {
-        break;
+  auto for_each(auto&& f) && -> Result<> {
+    while (!_finished) {
+      _TRY(this->next_entry());
+      if (!_finished) {
+        auto val = _TRY(_des.deserialize_any<T>());
+        f(mem::move(val));
       }
-      auto element = _TRY(_des.deserialize_any<T>());
-      f(mem::move(element));
     }
     return Ok{};
   }
-
- private:
-  friend class Deserializer;
-  DeserializeSeq(Deserializer& inn);
-  auto next_imp() -> Result<bool>;
 };
 
-class Deserializer::DeserializeObj {
+class DeserializeDict {
   Deserializer& _des;
   usize _count{0};
   bool _finished{false};
 
- public:
-  auto end() -> Result<>;
-
-  template <class T>
-  auto next_val() -> Result<T> {
-    _TRY(_des.read_tok(Token::Colon));
-    return _des.deserialize_any<T>();
-  }
-
-  template <class T>
-  auto for_each(auto&& f) -> Result<> {
-    auto key = String::new_();
-    while (true) {
-      key.clear();
-      auto key_opt = _TRY(this->next_key());
-      if (!key_opt) {
-        break;
-      }
-      key.push_str(*key_opt);
-
-      auto val = _TRY(this->next_val<T>());
-      f(key.as_str(), mem::move(val));
-    }
-    _TRY(this->end());
-    return Ok{};
-  }
-
  private:
   friend class Deserializer;
+  DeserializeDict(Deserializer& des) : _des(des) {}
 
-  DeserializeObj(Deserializer& inn);
-  auto next_imp() -> Result<bool>;
-  auto next_key() -> Result<Option<Str>>;
+  auto next_key() -> Result<Str>;
+
+ public:
+  template <class T>
+  auto for_each(auto&& f) && -> Result<> {
+    while (!_finished) {
+      const auto key = _TRY(this->next_key());
+      if (!_finished) {
+        auto val = _TRY(_des.deserialize_any<T>());
+        f(key, mem::move(val));
+      }
+    }
+    return Ok{};
+  }
 };
 
 void to_writer(auto& writer, const auto& val) {

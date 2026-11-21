@@ -349,11 +349,12 @@ class [[nodiscard]] List {
   }
 
   // trait:: serde::Deserialize
-  template <class D>
-  static auto deserialize(D& des) -> D::template Result<List> {
+  template <class D, class E = typename D::Error>
+  static auto deserialize(D& des) -> Result<List, E> {
     auto res = List::new_();
-    auto imp = _TRY(des.deserialize_seq());
-    _TRY(imp.template for_each<T>([&](T val) { res.push(mem::move(val)); }));
+    _TRY(des.as_seq().template for_each<T>([&](auto val) {
+      res.push(mem::move(val));
+    }));
     return res;
   }
 

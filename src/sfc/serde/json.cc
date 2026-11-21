@@ -340,94 +340,73 @@ auto Deserializer::deserialize_str() -> Result<Str> {
   return str[{1, str._len - 1}];
 }
 
-auto Deserializer::deserialize_seq() -> Result<DeserializeSeq> {
-  _TRY(this->read_tok(Token::ArrayBegin));
-  auto imp = DeserializeSeq{*this};
-  return imp;
+auto Deserializer::as_seq() -> DeserializeSeq {
+  return DeserializeSeq{*this};
 }
 
-auto Deserializer::deserialize_obj() -> Result<DeserializeObj> {
-  _TRY(this->read_tok(Token::ObjectBegin));
-  auto imp = DeserializeObj{*this};
-  return imp;
+auto Deserializer::as_dict() -> DeserializeDict {
+  return DeserializeDict{*this};
 }
 
-auto Deserializer::deserialize_dict() -> Result<DeserializeObj> {
-  _TRY(this->read_tok(Token::ObjectBegin));
-  auto imp = DeserializeObj{*this};
-  return imp;
-}
-
-Deserializer::DeserializeSeq::DeserializeSeq(Deserializer& inn) : _des{inn} {}
-
-auto Deserializer::DeserializeSeq::end() -> Result<> {
+auto DeserializeSeq::next_entry() -> Result<> {
   if (_finished) {
     return Ok{};
   }
 
-  _TRY(_des.read_tok(Token::ArrayEnd));
-  _finished = true;
-  return Ok{};
-}
-
-auto Deserializer::DeserializeSeq::next_imp() -> Result<bool> {
-  if (_finished) {
-    return false;
+  // '['
+  if (_count == 0) {
+    _TRY(_des.read_tok(Token::ArrayBegin));
   }
 
-  const auto tok = _TRY(_des.peek_tok());
-  if (tok == Token::ArrayEnd) {
-    _finished = true;
-    return false;
+  // ']'
+  {
+    const auto tok_end = _TRY(_des.peek_tok());
+    if (tok_end == Token::ArrayEnd) {
+      _TRY(_des.next_tok());
+      _finished = true;
+      return Ok{};
+    }
   }
 
+  // ','
   if (_count != 0) {
     _TRY(_des.read_tok(Token::Comma));
   }
 
   _count += 1;
-
-  return true;
-}
-
-Deserializer::DeserializeObj::DeserializeObj(Deserializer& inn) : _des{inn} {}
-
-auto Deserializer::DeserializeObj::end() -> Result<> {
-  if (_finished) {
-    return Ok{};
-  }
-
-  _TRY(_des.read_tok(Token::ObjectEnd));
-  _finished = true;
   return Ok{};
 }
 
-auto Deserializer::DeserializeObj::next_imp() -> Result<bool> {
+auto DeserializeDict::next_key() -> Result<Str> {
   if (_finished) {
-    return false;
+    return Str{};
   }
 
-  const auto tok = _TRY(_des.peek_tok());
-  if (tok == Token::ObjectEnd) {
-    _finished = true;
-    return false;
+  // '{'
+  if (_count == 0) {
+    _TRY(_des.read_tok(Token::ObjectBegin));
   }
 
+  // '}'
+  {
+    const auto tok_end = _TRY(_des.peek_tok());
+    if (tok_end == Token::ObjectEnd) {
+      _TRY(_des.next_tok());
+      _finished = true;
+      return Str{};
+    }
+  }
+
+  // ','
   if (_count != 0) {
     _TRY(_des.read_tok(Token::Comma));
-  }
-  _count += 1;
-  return true;
-}
-
-auto Deserializer::DeserializeObj::next_key() -> Result<Option<Str>> {
-  const auto has_next = _TRY(this->next_imp());
-  if (!has_next) {
-    return Option<Str>{};
   }
 
   const auto key = _TRY(_des.deserialize_str());
-  return Option<Str>{key};
+  _TRY(_des.read_tok(Token::Colon));
+
+  _count += 1;
+  return key;
 }
 
 }  // namespace sfc::serde::json

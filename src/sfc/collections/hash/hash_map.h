@@ -98,11 +98,11 @@ class HashMap {
   }
 
   // trait: serde::Deserialize
-  template <class D>
-  static auto deserialize(D& des) -> D::template Result<HashMap> {
+  template <class D, class E = typename D::Error>
+  static auto deserialize(D& des) -> Result<HashMap, E> {
     auto res = HashMap::new_();
-    auto imp = _TRY(des.deserialize_dict());
-    _TRY(imp.template for_each<V>([&](auto key, V val) {
+
+    _TRY(des.as_dict().template for_each<V>([&](auto key, auto val) {
       if constexpr (trait::same_<K, String>) {
         res.insert(String::from(key), mem::move(val));
       } else {
