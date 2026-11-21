@@ -48,9 +48,9 @@ struct Range {
   constexpr Range(T start, End) : _start{start}, _end{num::Int<T>::MAX} {}
 
   constexpr auto wrap(T len) const noexcept -> Range {
-    const auto s = _start < len ? _start : len;
-    const auto e = _end < len ? _end : len;
-    return {s, e};
+    const auto end = _end < len ? _end : len;
+    const auto start = _start < end ? _start : end;
+    return {start, end};
   }
 
   constexpr auto len() const noexcept -> usize {

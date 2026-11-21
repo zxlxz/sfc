@@ -40,8 +40,8 @@ class [[nodiscard]] List {
     return res;
   }
 
-  static auto from(Slice<const T> s) -> List {
-    auto res = List::with_capacity(s.len());
+  static auto from(Slice<const T> s, A alloc = {}) -> List {
+    auto res = List::with_capacity(s.len(), alloc);
     res.extend_from_slice(s);
     return res;
   }
@@ -148,45 +148,40 @@ class [[nodiscard]] List {
   }
 
   auto pop() -> Option<T> {
-    if (_len == 0) {
-      return {};
-    }
+    if (_len == 0) return {};
+
     _len -= 1;
     return ptr::read(&_buf[_len]);
   }
 
-  auto pop_if(auto&& f) -> Option<T> {
-    if (_len == 0 || !f(_buf[_len - 1])) {
-      return {};
-    }
-    return this->pop();
-  }
-
   auto swap_remove(usize idx) -> T {
-    sfc::assert_(idx < _len, "List::swap_remove: idx({}) out of ids([0,{}))", idx, _len);
+    sfc::assert_(idx < _len, "List::swap_remove: idx({}) out of range([0, {}))", idx, _len);
 
-    const auto base_ptr = _buf.ptr();
-    auto value = ptr::read(&base_ptr[idx]);
-    ptr::copy(&base_ptr[_len - 1], &base_ptr[idx], 1);
-    _len -= 1;
+    auto hole = _buf.ptr() + idx;
+    auto value = ptr::read(hole);
+    if (idx != _len - 1) {
+      auto last = _buf.ptr() + (_len - 1);
+      ptr::write(hole, ptr::read(last));
+    }
+    this->set_len(_len - 1);
     return value;
   }
 
   void truncate(usize len) {
-    if (len >= _len) {
-      return;
-    }
+    if (len >= _len) return;
 
     const auto remaining_len = _len - len;
-    this->_len = len;
-    ptr::drop_in_place(&_buf[len], remaining_len);
+    this->set_len(len);
+    ptr::drop_in_place(_buf.ptr() + len, remaining_len);
   }
 
   void reserve(usize additional) {
+    if (additional == 0) return;
     _buf.reserve(_len, additional);
   }
 
   void reserve_exact(usize additional) {
+    if (additional == 0) return;
     _buf.reserve_exact(_len, additional);
   }
 
@@ -199,13 +194,14 @@ class [[nodiscard]] List {
   }
 
   void clear() noexcept {
-    auto elems = Slice{_buf.ptr(), _len};
-    _len = 0;
-    ptr::drop_in_place(elems._ptr, elems._len);
+    const auto elms = Slice{_buf.ptr(), _len};
+    this->set_len(0);
+    ptr::drop_in_place(elms._ptr, elms._len);
   }
 
   auto insert(usize idx, T val) -> T& {
     sfc::assert_(idx <= _len, "List::insert: idx(={}) out of ids([0,{}))", idx, _len);
+
     this->reserve(1);
 
     const auto p = _buf.ptr() + idx;
@@ -235,12 +231,8 @@ class [[nodiscard]] List {
   }
 
   void append(List& other) {
-    if (this == &other || other._len == 0) {
-      return;
-    }
-    this->reserve(other._len);
-    ptr::copy_nonoverlapping(other._buf.ptr(), _buf.ptr() + _len, other._len);
-    this->set_len(_len + other._len);
+    sfc::assert_(&other != this, "List::append: cannot append self");
+    this->extend_from_slice(other.as_slice());
     other.set_len(0);
   }
 
@@ -252,18 +244,18 @@ class [[nodiscard]] List {
   }
 
   void extend_with(usize cnt, const T& value) {
+    static_assert(trait::tv_copy_<T>, "List::extend_with: T must be trivially copyable");
     this->reserve(cnt);
+
+    const auto p = _buf.ptr() + _len;
     for (auto idx = 0UL; idx < cnt; ++idx) {
-      this->push(value);
+      ptr::write(p + idx, value);
     }
+    this->set_len(_len + cnt);
   }
 
-  /// clones and appends all elements in a slice to the List
-  /// @note: user must ensure that the slice does not overlap with the list's buffer.
   void extend_from_slice(Slice<const T> other) noexcept {
-    if (other._len == 0) {
-      return;
-    }
+    static_assert(trait::tv_copy_<T>);
     this->reserve(other._len);
     ptr::copy_nonoverlapping(other._ptr, _buf.ptr() + _len, other._len);
     this->set_len(_len + other._len);
@@ -272,23 +264,46 @@ class [[nodiscard]] List {
   void retain(auto&& f) noexcept {
     const auto p = _buf.ptr();
     auto read = usize{0};
-    auto write = usize{0};
-    while (read < _len) {
-      if (f(p[read])) {
-        if (write != read) {
-          ptr::copy_nonoverlapping(p + read, p + write, 1);
-        }
-        write += 1;
-      } else {
-        ptr::drop_in_place(p + read, 1);
+    for (; read < _len; read += 1) {
+      if (!f(p[read])) {
+        break;
       }
-      read += 1;
     }
-    this->set_len(write);
+
+    // all elems are kept, return early
+    if (read == _len) {
+      return;
+    }
+
+    auto g_read = read + 1;  // guard read
+    auto g_write = read;     // guard write
+    ptr::drop_in_place(p + read);
+    // invariant: g_write < g_read (gap starts at 1 and never shrinks),
+    // so the kept element never overlaps the hole it is copied into
+    for (; g_read < _len; g_read += 1) {
+      auto& cur = p[g_read];
+      if (!f(cur)) {
+        ptr::drop_in_place(&cur, 1);
+      } else {
+        const auto hole = p + g_write;
+        ptr::copy_nonoverlapping(&cur, hole, 1);
+        g_write += 1;
+      }
+    }
+    this->set_len(g_write);
   }
 
-  class Drain;
-  auto drain(Range ids) noexcept -> Drain;
+  /// remove elmts in the specified range
+  /// @note not same as Rust's drain
+  void drain(Range range) noexcept {
+    const auto [start, end] = range.wrap(_len);
+    const auto p = _buf.ptr();
+    if (start != end) {
+      ptr::drop_in_place(p + start, end - start);
+      ptr::copy(p + end, p + start, _len - end);
+      this->set_len(_len - (end - start));
+    }
+  }
 
  public:
   using Iter = slice::Iter<const T>;
@@ -304,6 +319,7 @@ class [[nodiscard]] List {
  public:
   // trait: Clone
   auto clone() const noexcept -> List {
+    static_assert(trait::tv_copy_<T>);
     auto res = List::with_capacity(_len, _buf.allocator());
     res.extend_from_slice({_buf.ptr(), _len});
     return res;
@@ -362,40 +378,6 @@ class [[nodiscard]] List {
     return self.as_mut_ptr() + self.len();
   }
 };
-
-template <class T, class A>
-class List<T, A>::Drain {
-  List& _list;
-  Slice<T> _hole;
-
- public:
-  Drain(List& list, Range range) noexcept : _list{list}, _hole{list[range]} {}
-
-  ~Drain() noexcept {
-    ptr::drop_in_place(_hole._ptr, _hole._len);
-
-    const auto tail_ptr = _hole._ptr + _hole._len;
-    const auto tail_pos = num::cast_unsigned(tail_ptr - _list.as_ptr());
-    const auto tail_len = _list._len - tail_pos;
-    ptr::shift_elements_left(tail_ptr, tail_len, _hole._len);
-    _list._len -= _hole._len;
-  }
-
-  Drain(const Drain&) = delete;
-  Drain& operator=(const Drain&) = delete;
-
- public:
-  void for_each(auto&& f) noexcept {
-    for (auto& x : _hole) {
-      f(x);
-    }
-  }
-};
-
-template <class T, class A>
-auto List<T, A>::drain(Range ids) noexcept -> Drain {
-  return Drain{*this, ids};
-}
 
 }  // namespace sfc::list
 
