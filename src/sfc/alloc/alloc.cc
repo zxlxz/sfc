@@ -3,6 +3,12 @@
 
 namespace sfc::alloc {
 
+// align must be a power of two
+static auto padding_size(void* ptr, usize align) noexcept -> usize {
+  if (align <= 1) return 0;
+  return (~(usize)ptr + 1) & (align - 1);
+}
+
 void* System::allocate(Layout layout) {
   if (layout.size == 0) return nullptr;
   return sys::alloc(layout);
@@ -29,95 +35,77 @@ void* System::shrink(void* ptr, Layout layout, usize new_size) {
 }
 
 void* FixedBuf::allocate(Layout layout) {
-  if (layout.size == 0 || layout.align == 0) {
+  if (layout.size == 0) return nullptr;
+
+  const auto end_ptr = _buf.ptr() + _end_idx;
+  const auto pad_size = alloc::padding_size(end_ptr, layout.align);
+
+  // check if has enough space for the allocation including padding
+  if (pad_size + layout.size > _buf.len() - _end_idx) {
     return nullptr;
   }
 
-  const auto remain_cap = _buf._len - _end_idx;
-  if (remain_cap < layout.size) {
-    return nullptr;
-  }
-
-  const auto raw_ptr = _buf._ptr + _end_idx;
-  const auto pad_ext = (layout.align - (usize)raw_ptr % layout.align) % layout.align;
-
-  if (remain_cap - layout.size < pad_ext) {
-    return nullptr;
-  }
-
-  const auto aligned_ptr = raw_ptr + pad_ext;
-  _end_idx += pad_ext + layout.size;
-  return aligned_ptr;
+  _end_idx += pad_size + layout.size;
+  return end_ptr + pad_size;
 }
 
 void* FixedBuf::allocate_zeroed(Layout layout) {
-  auto* p = this->allocate(layout);
+  if (layout.size == 0) return nullptr;
+
+  const auto p = this->allocate(layout);
   if (p != nullptr) {
-    __builtin_memset(p, 0, layout.size);
+    ptr::write_bytes((u8*)p, 0, layout.size);
   }
   return p;
 }
 
 void FixedBuf::deallocate(void* ptr, Layout layout) {
-  if (ptr == nullptr) {
-    return;
-  }
+  if (!this->is_last_allocation(ptr, layout)) return;
 
-  if (this->is_last_allocation(ptr, layout)) {
-    _end_idx -= layout.size;
-  }
+  // the alignment padding before `ptr` is not reclaimed, same as bumpalo
+  _end_idx -= layout.size;
 }
 
 void* FixedBuf::grow(void* ptr, Layout layout, usize new_size) {
-  // check if need to grow
-  if (new_size <= layout.size) {
-    return ptr;
-  }
+  if (new_size <= layout.size) return ptr;
 
   if (this->is_last_allocation(ptr, layout)) {
-    const auto remain_cap = _buf._len - _end_idx;
-    const auto additional = new_size - layout.size;
-    if (remain_cap >= additional) {
-      _end_idx += additional;
-      return ptr;
-    }
+    // grow in place if there is enough remaining space
+    const auto add_size = new_size - layout.size;
+    if (add_size > _buf.len() - _end_idx) return nullptr;
+    _end_idx += add_size;
+    return ptr;
   }
 
   const auto new_layout = Layout{.size = new_size, .align = layout.align};
   const auto new_ptr = this->allocate(new_layout);
-  if (ptr && new_ptr) {
-    __builtin_memmove(new_ptr, ptr, layout.size);
+  if (new_ptr != nullptr) {
+    ptr::copy((const u8*)ptr, (u8*)new_ptr, layout.size);
+    this->deallocate(ptr, layout);
   }
-
   return new_ptr;
 }
 
 void* FixedBuf::shrink(void* ptr, Layout layout, usize new_size) {
-  // check if need to shrink
-  if (new_size >= layout.size) {
-    return ptr;
-  }
+  if (new_size >= layout.size) return ptr;
 
   if (this->is_last_allocation(ptr, layout)) {
-    const auto shrink_size = layout.size - new_size;
-    _end_idx -= shrink_size;
+    _end_idx -= layout.size - new_size;
   }
 
   return ptr;
 }
 
 bool FixedBuf::is_last_allocation(void* ptr, Layout layout) const {
-  if (ptr == nullptr) {
-    return false;
-  }
+  if (ptr == nullptr) return false;
 
-  const auto* start_ptr = ptr::cast<u8>(ptr);
-  if (start_ptr < _buf._ptr) {
-    return false;
-  }
+  const auto ptr_start = (const u8*)ptr;
+  const auto ptr_end = ptr_start + layout.size;
 
-  const auto* end_ptr = start_ptr + layout.size;
-  return end_ptr == _buf._ptr + _end_idx;
+  const auto buf_start = _buf.ptr();
+  const auto buf_end = buf_start + _end_idx;
+
+  return ptr_start >= buf_start && ptr_end == buf_end;
 }
 
 }  // namespace sfc::alloc
