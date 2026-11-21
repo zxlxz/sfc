@@ -29,7 +29,7 @@ struct Iter : iter::Iterator<T&> {
   }
 };
 
-template <class T, class A = Global>
+template <class T, class A = alloc::Global>
 class [[nodiscard]] Queue {
   usize _pos{0};
   usize _len{0};

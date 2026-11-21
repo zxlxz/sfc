@@ -1,19 +1,31 @@
 #include "sfc/alloc/alloc.h"
+#include "sfc/sys/alloc.h"
 
 namespace sfc::alloc {
 
-bool FixedBuf::is_last_allocation(void* ptr, Layout layout) const {
-  if (ptr == nullptr) {
-    return false;
-  }
+void* System::allocate(Layout layout) {
+  if (layout.size == 0) return nullptr;
+  return sys::alloc(layout);
+}
 
-  const auto* start_ptr = ptr::cast<u8>(ptr);
-  if (start_ptr < _buf._ptr) {
-    return false;
-  }
+void* System::allocate_zeroed(Layout layout) {
+  if (layout.size == 0) return nullptr;
+  return sys::alloc_zeroed(layout);
+}
 
-  const auto* end_ptr = start_ptr + layout.size;
-  return end_ptr == _buf._ptr + _end_idx;
+void System::deallocate(void* ptr, Layout layout) {
+  if (ptr == nullptr) return;
+  sys::dealloc(ptr, layout);
+}
+
+void* System::grow(void* ptr, Layout layout, usize new_size) {
+  if (layout.size >= new_size) return ptr;
+  return sys::realloc(ptr, layout, new_size);
+}
+
+void* System::shrink(void* ptr, Layout layout, usize new_size) {
+  if (layout.size <= new_size) return ptr;
+  return sys::realloc(ptr, layout, new_size);
 }
 
 void* FixedBuf::allocate(Layout layout) {
@@ -92,6 +104,20 @@ void* FixedBuf::shrink(void* ptr, Layout layout, usize new_size) {
   }
 
   return ptr;
+}
+
+bool FixedBuf::is_last_allocation(void* ptr, Layout layout) const {
+  if (ptr == nullptr) {
+    return false;
+  }
+
+  const auto* start_ptr = ptr::cast<u8>(ptr);
+  if (start_ptr < _buf._ptr) {
+    return false;
+  }
+
+  const auto* end_ptr = start_ptr + layout.size;
+  return end_ptr == _buf._ptr + _end_idx;
 }
 
 }  // namespace sfc::alloc

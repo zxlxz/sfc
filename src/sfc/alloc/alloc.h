@@ -6,6 +6,15 @@ namespace sfc::alloc {
 
 using mem::Layout;
 
+struct System {
+  void* allocate(Layout layout);
+  void* allocate_zeroed(Layout layout);
+  void deallocate(void* ptr, Layout layout);
+
+  void* grow(void* ptr, Layout layout, usize new_size);
+  void* shrink(void* ptr, Layout layout, usize new_size);
+};
+
 struct FixedBuf {
   Slice<u8> _buf;
   usize _end_idx{0};
@@ -35,5 +44,7 @@ class Arena {
   void* grow(void* ptr, Layout layout, usize new_size);
   void* shrink(void* ptr, Layout layout, usize new_size);
 };
+
+using Global = System;
 
 }  // namespace sfc::alloc

@@ -4,7 +4,7 @@
 
 namespace sfc::collections::hash {
 
-template <class K, class V, class A = Global>
+template <class K, class V, class A = alloc::Global>
 class HashMap {
   struct Entry {
     K key;

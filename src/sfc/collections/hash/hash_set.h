@@ -4,7 +4,7 @@
 
 namespace sfc::collections::hash {
 
-template <class T, class A = Global>
+template <class T, class A = alloc::Global>
 class HashSet {
   struct Entry {
     T key;

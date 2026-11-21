@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/alloc/global.h"
+#include "sfc/alloc/alloc.h"
 
 namespace sfc::raw_buf {
 
