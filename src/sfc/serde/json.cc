@@ -344,10 +344,6 @@ auto Deserializer::as_seq() -> DeserializeSeq {
   return DeserializeSeq{*this};
 }
 
-auto Deserializer::as_dict() -> DeserializeDict {
-  return DeserializeDict{*this};
-}
-
 auto DeserializeSeq::next_entry() -> Result<> {
   if (_finished) {
     return Ok{};
@@ -377,7 +373,47 @@ auto DeserializeSeq::next_entry() -> Result<> {
   return Ok{};
 }
 
-auto DeserializeDict::next_key() -> Result<Str> {
+auto Deserializer::as_map() -> DeserializeMap {
+  return DeserializeMap{*this};
+}
+
+auto DeserializeMap::next_key() -> Result<Str> {
+  if (_finished) {
+    return Str{};
+  }
+
+  // '{'
+  if (_count == 0) {
+    _TRY(_des.read_tok(Token::ObjectBegin));
+  }
+
+  // '}'
+  {
+    const auto tok_end = _TRY(_des.peek_tok());
+    if (tok_end == Token::ObjectEnd) {
+      _TRY(_des.next_tok());
+      _finished = true;
+      return Str{};
+    }
+  }
+
+  // ','
+  if (_count != 0) {
+    _TRY(_des.read_tok(Token::Comma));
+  }
+
+  const auto key = _TRY(_des.deserialize_str());
+  _TRY(_des.read_tok(Token::Colon));
+
+  _count += 1;
+  return key;
+}
+
+auto Deserializer::as_obj() -> DeserializeObj {
+    return DeserializeObj{*this};
+}
+
+auto DeserializeObj::next_key() -> Result<Str> {
   if (_finished) {
     return Str{};
   }

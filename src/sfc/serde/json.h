@@ -131,13 +131,15 @@ class SerializeObj {
 };
 
 class DeserializeSeq;
-class DeserializeDict;
+class DeserializeMap;
+class DeserializeObj;
 
 class Deserializer {
   Str _buf;
 
   friend class DeserializeSeq;
-  friend class DeserializeDict;
+  friend class DeserializeMap;
+  friend class DeserializeObj;
 
   auto peek_tok() -> Result<Token>;
   auto next_tok() -> Result<Str>;
@@ -154,7 +156,8 @@ class Deserializer {
   auto deserialize_str() -> Result<Str>;
 
   auto as_seq() -> DeserializeSeq;
-  auto as_dict() -> DeserializeDict;
+  auto as_map() -> DeserializeMap;
+  auto as_obj() -> DeserializeObj;
 
   template <class T>
   auto deserialize_any() -> Result<T> {
@@ -198,14 +201,14 @@ class DeserializeSeq {
   }
 };
 
-class DeserializeDict {
+class DeserializeMap {
   Deserializer& _des;
   usize _count{0};
   bool _finished{false};
 
  private:
   friend class Deserializer;
-  DeserializeDict(Deserializer& des) : _des(des) {}
+  DeserializeMap(Deserializer& des) : _des(des) {}
 
   auto next_key() -> Result<Str>;
 
@@ -217,6 +220,29 @@ class DeserializeDict {
       if (!_finished) {
         auto val = _TRY(_des.deserialize_any<T>());
         f(key, mem::move(val));
+      }
+    }
+    return Ok{};
+  }
+};
+
+class DeserializeObj {
+  Deserializer& _des;
+  usize _count{0};
+  bool _finished{false};
+
+ private:
+  friend class Deserializer;
+  DeserializeObj(Deserializer& des) : _des(des) {}
+
+  auto next_key() -> Result<Str>;
+
+ public:
+  auto for_each(auto&& f) && -> Result<> {
+    while (!_finished) {
+      const auto key = _TRY(this->next_key());
+      if (!_finished) {
+        f(key, _des);
       }
     }
     return Ok{};
