@@ -9,16 +9,11 @@ class HashSet {
   struct Entry {
     T key;
   };
-  HashTbl<Entry, A> _inn;
+  HashTbl<Entry, A> _tbl;
 
-  explicit HashSet(HashTbl<Entry, A> inn) noexcept : _inn(mem::move(inn)) {}
+  explicit HashSet(HashTbl<Entry, A> inn) noexcept : _tbl(mem::move(inn)) {}
 
  public:
-  HashSet(HashSet&&) noexcept = default;
-  ~HashSet() = default;
-
-  HashSet& operator=(HashSet&&) noexcept = default;
-
   static auto new_(A alloc = {}) -> HashSet {
     return HashSet{HashTbl<Entry, A>::new_(alloc)};
   }
@@ -29,41 +24,41 @@ class HashSet {
 
  public:
   auto len() const noexcept -> usize {
-    return _inn.len();
+    return _tbl.len();
   }
 
   auto capacity() const noexcept -> usize {
-    return _inn.cap();
+    return _tbl.cap();
   }
 
   void reserve(usize additional) {
-    _inn.reserve(additional);
+    _tbl.reserve(additional);
   }
 
  public:
   auto contains(const auto& val) const noexcept -> bool {
-    return _inn.search(val) != nullptr;
+    return _tbl.search(val) != nullptr;
   }
 
   // Returns whether the value was newly inserted.
   auto insert(T val) noexcept -> bool {
-    const auto res = _inn.try_insert({mem::move(val)});
+    const auto res = _tbl.try_insert({mem::move(val)});
     return !res;
   }
 
   // Returns whether the value was present in the set.
   auto remove(const auto& val) noexcept -> bool {
-    return bool(_inn.remove(val));
+    return bool(_tbl.remove(val));
   }
 
   void clear() {
-    _inn.clear();
+    _tbl.clear();
   }
 
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_set().entries(_inn.iter()).finish();
+    f.debug_set().entries(_tbl.iter()).finish();
   }
 };
 

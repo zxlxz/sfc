@@ -10,16 +10,11 @@ class HashMap {
     K key;
     V val;
   };
-  HashTbl<Entry, A> _inn;
+  HashTbl<Entry, A> _tbl;
 
-  explicit HashMap(HashTbl<Entry, A> inn) : _inn(mem::move(inn)) {}
+  explicit HashMap(HashTbl<Entry, A> inn) : _tbl(mem::move(inn)) {}
 
  public:
-  HashMap(HashMap&&) noexcept = default;
-  ~HashMap() = default;
-
-  HashMap& operator=(HashMap&&) noexcept = default;
-
   static auto new_(A alloc = {}) -> HashMap {
     return HashMap{HashTbl<Entry, A>::new_(alloc)};
   }
@@ -30,32 +25,32 @@ class HashMap {
 
  public:
   auto len() const noexcept -> usize {
-    return _inn.len();
+    return _tbl.len();
   }
 
   auto capacity() const noexcept -> usize {
-    return _inn.cap();
+    return _tbl.cap();
   }
 
   void reserve(usize additional) {
-    _inn.reserve(additional);
+    _tbl.reserve(additional);
   }
 
  public:
   auto contains_key(const auto& key) const noexcept -> bool {
-    const auto p = _inn.search(key);
+    const auto p = _tbl.search(key);
     return p != nullptr;
   }
 
   auto get(const auto& key) const noexcept -> Option<const V&> {
-    if (auto* p = _inn.search(key)) {
+    if (auto* p = _tbl.search(key)) {
       return p->val;
     }
     return {};
   }
 
   auto get_mut(const auto& key) noexcept -> Option<V&> {
-    if (auto* p = _inn.search(key)) {
+    if (auto* p = _tbl.search(key)) {
       return p->val;
     }
     return {};
@@ -63,7 +58,7 @@ class HashMap {
 
   auto try_insert(K key, V val) noexcept -> Option<V&> {
     auto tmp = Entry{mem::move(key), mem::move(val)};
-    if (auto ref = _inn.try_insert(mem::move(tmp))) {
+    if (auto ref = _tbl.try_insert(mem::move(tmp))) {
       return ref->val;
     }
     return {};
@@ -71,30 +66,30 @@ class HashMap {
 
   auto insert(K key, V val) noexcept -> Option<V> {
     auto tmp = Entry{mem::move(key), mem::move(val)};
-    if (auto res = _inn.insert(mem::move(tmp))) {
+    if (auto res = _tbl.insert(mem::move(tmp))) {
       return mem::move(res->val);
     }
     return {};
   }
 
   auto remove(const K& key) -> Option<V> {
-    return _inn.remove(key).map([](auto entry) { return mem::move(entry.val); });
+    return _tbl.remove(key).map([](auto entry) { return mem::move(entry.val); });
   }
 
   void clear() {
-    _inn.clear();
+    _tbl.clear();
   }
 
  public:
   // trait: fmt::Display
   void fmt(auto& f) const {
-    f.debug_map().entries(_inn.iter()).finish();
+    f.debug_map().entries(_tbl.iter()).finish();
   }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
     auto imp = ser.serialize_obj();
-    _inn.iter().for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
+    _tbl.iter().for_each([&](const Entry& entry) { imp.serialize_entry(entry.key, entry.val); });
   }
 
   // trait: serde::Deserialize
@@ -102,7 +97,7 @@ class HashMap {
   static auto deserialize(D& des) -> Result<HashMap, E> {
     auto res = HashMap::new_();
 
-    _TRY(des.as_dict().template for_each<V>([&](auto key, auto val) {
+    _TRY(des.as_map().template for_each<V>([&](auto key, auto val) {
       if constexpr (trait::same_<K, String>) {
         res.insert(String::from(key), mem::move(val));
       } else {
