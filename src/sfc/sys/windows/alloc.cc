@@ -6,6 +6,15 @@ namespace sfc::sys::windows {
 
 using max_align_t = double;  // see <cstddef>
 
+namespace detail {
+static auto align_up(usize size, usize align) noexcept -> usize {
+  if (align <= 1) return size;
+
+  const auto mask = align - 1;
+  return (size + mask) & ~mask;
+}
+}  // namespace detail
+
 auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.size == 0) {
     return nullptr;
@@ -15,7 +24,7 @@ auto alloc(mem::Layout layout) noexcept -> void* {
     return ::malloc(layout.size);
   }
 
-  const auto aligned_size = num::align_up(layout.size, layout.align);
+  const auto aligned_size = detail::align_up(layout.size, layout.align);
   return ::_aligned_malloc(aligned_size, layout.align);
 }
 
@@ -28,7 +37,7 @@ auto alloc_zeroed(mem::Layout layout) noexcept -> void* {
     return ::calloc(1, layout.size);
   }
 
-  const auto aligned_size = num::align_up(layout.size, layout.align);
+  const auto aligned_size = detail::align_up(layout.size, layout.align);
   auto ptr = ::_aligned_malloc(aligned_size, layout.align);
   if (ptr) {
     __builtin_memset(ptr, 0, aligned_size);
@@ -58,7 +67,7 @@ auto realloc(void* ptr, mem::Layout layout, usize new_size) noexcept -> void* {
     return ::realloc(ptr, new_size);
   }
 
-  const auto aligned_size = num::align_up(new_size, layout.align);
+  const auto aligned_size = detail::align_up(new_size, layout.align);
   return ::_aligned_realloc(ptr, aligned_size, layout.align);
 }
 

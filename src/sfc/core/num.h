@@ -139,24 +139,6 @@ constexpr auto saturating_sub(T a, T b) -> T {
   return x ? num::Int<T>::MIN : c;
 }
 
-template <trait::uint_ T>
-constexpr auto align_up(T val, T align) -> T {
-  const auto mask = T(align - T{1});
-  return T((val + mask) & ~mask);
-}
-
-template <trait::uint_ T>
-constexpr auto next_power_of_two(T val) -> T {
-  if (val == 0) return 0;
-  if ((val & (val - 1)) == 0) return val;
-
-  val -= 1;
-  for (usize i = 1; i < sizeof(T) * 8; i *= 2) {
-    val |= val >> i;
-  }
-  return val + 1;
-}
-
 template <trait::flt_ T>
 auto fabs(T val) -> T {
   if constexpr (trait::same_<T, f64>) return __builtin_fabs(val);
