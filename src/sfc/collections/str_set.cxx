@@ -21,6 +21,10 @@ SFC_TEST(insert_search) {
   sfc::assert_eq(c.idx, 2U);
   sfc::assert_eq(c.inserted, true);
 
+  const auto d = set.insert({});
+  sfc::assert_eq(d.idx, 3U);
+  sfc::assert_eq(d.inserted, true);
+
   // duplicate insert
   const auto a2 = set.insert(Str{"a"});
   sfc::assert_eq(a2.idx, 0U);
@@ -30,6 +34,7 @@ SFC_TEST(insert_search) {
   sfc::assert_eq(set.search(Str{"a"}), Option{0U});
   sfc::assert_eq(set.search(Str{"bb"}), Option{1U});
   sfc::assert_eq(set.search(Str{"ccc"}), Option{2U});
+  sfc::assert_eq(set.search(Str{}), Option{3U});
   sfc::assert_eq(set.search(Str{"dddd"}), Option<u32>{});
 }
 

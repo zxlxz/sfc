@@ -21,17 +21,13 @@ auto StrSet::with_capacity(usize capacity) -> StrSet {
 
 // - str is stored as `u8[]` with a NUL terminator and padding to align to kAlignSize
 auto StrSet::search(Str s) const -> Option<u32> {
-  if (s.is_empty()) {
-    return {};
-  }
-
   const auto [haystack_ptr, haystack_len] = _buf.as_slice();
   const auto [needle_ptr, needle_len] = s;
 
   // _buf contains str with NUL terminator and padding to align to kAlignSize
   // if `s._len < kAlignSize`, we need to copy it into a full-slot buffer for comparison
   char head_buf[kAlignSize] = {0};
-  if (needle_len < kAlignSize) {
+  if (needle_len != 0 && needle_len < kAlignSize) {
     __builtin_memcpy(head_buf, needle_ptr, needle_len);
   }
 
@@ -66,8 +62,6 @@ void StrSet::reserve(usize add_cnt) {
 }
 
 auto StrSet::insert(Str s) -> InsertResult {
-  sfc::assert_(!s.is_empty(), "StrSet::insert: cannot insert empty str");
-
   const auto search_idx = this->search(s);
   if (search_idx.is_some()) {
     return InsertResult{*search_idx, false};
