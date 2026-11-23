@@ -31,6 +31,9 @@ template <class T, class U>
 concept same_ = __is_convertible_to(Type<T>*, Type<U>*);
 #endif
 
+template <class T>
+concept array_ = __is_array(T);
+
 template <class T, class U>
 concept not_ = !same_<T, U>;
 

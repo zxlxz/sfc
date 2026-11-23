@@ -87,22 +87,28 @@ void Serializer::serialize_bool(bool val) {
   this->write_tok(tok);
 }
 
-void Serializer::serialize_num(trait::num_ auto val) {
+void Serializer::serialize_int(auto val) {
   fmt::write(_buf, "{}", val);
 }
 
-template void Serializer::serialize_num(short);
-template void Serializer::serialize_num(int);
-template void Serializer::serialize_num(long);
-template void Serializer::serialize_num(long long);
+void Serializer::serialize_flt(auto val) {
+  fmt::write(_buf, "{}", val);
+}
 
-template void Serializer::serialize_num(unsigned short);
-template void Serializer::serialize_num(unsigned int);
-template void Serializer::serialize_num(unsigned long);
-template void Serializer::serialize_num(unsigned long long);
+template void Serializer::serialize_int(signed char);
+template void Serializer::serialize_int(short);
+template void Serializer::serialize_int(int);
+template void Serializer::serialize_int(long);
+template void Serializer::serialize_int(long long);
 
-template void Serializer::serialize_num(float);
-template void Serializer::serialize_num(double);
+template void Serializer::serialize_int(unsigned char);
+template void Serializer::serialize_int(unsigned short);
+template void Serializer::serialize_int(unsigned int);
+template void Serializer::serialize_int(unsigned long);
+template void Serializer::serialize_int(unsigned long long);
+
+template void Serializer::serialize_flt(float);
+template void Serializer::serialize_flt(double);
 
 void Serializer::serialize_str(Str val) {
   fmt::write(_buf, "\"{}\"", val);
@@ -317,14 +323,43 @@ auto Deserializer::deserialize_bool() -> Result<bool> {
   return {val};
 }
 
-auto Deserializer::deserialize_num() -> Result<Str> {
+template <class T>
+auto Deserializer::deserialize_int() -> Result<T> {
   const auto tok = _TRY(this->peek_tok());
   if (tok != Token::Number) {
     return Error::InvalidNumber;
   }
 
   const auto num_str = _TRY(this->next_tok());
-  return num_str;
+  const auto num_res = num_str.parse<T>().ok_or(Error::InvalidNumber);
+  return num_res;
+}
+
+template auto Deserializer::deserialize_int() -> Result<signed char>;
+template auto Deserializer::deserialize_int() -> Result<short>;
+template auto Deserializer::deserialize_int() -> Result<int>;
+template auto Deserializer::deserialize_int() -> Result<long>;
+template auto Deserializer::deserialize_int() -> Result<long long>;
+
+template auto Deserializer::deserialize_int() -> Result<unsigned char>;
+template auto Deserializer::deserialize_int() -> Result<unsigned short>;
+template auto Deserializer::deserialize_int() -> Result<unsigned int>;
+template auto Deserializer::deserialize_int() -> Result<unsigned long>;
+template auto Deserializer::deserialize_int() -> Result<unsigned long long>;
+
+template auto Deserializer::deserialize_flt() -> Result<float>;
+template auto Deserializer::deserialize_flt() -> Result<double>;
+
+template <class T>
+auto Deserializer::deserialize_flt() -> Result<T> {
+  const auto tok = _TRY(this->peek_tok());
+  if (tok != Token::Number) {
+    return Error::InvalidNumber;
+  }
+
+  const auto num_str = _TRY(this->next_tok());
+  const auto num_res = num_str.parse<T>().ok_or(Error::InvalidNumber);
+  return num_res;
 }
 
 auto Deserializer::deserialize_str() -> Result<Str> {
@@ -410,7 +445,7 @@ auto DeserializeMap::next_key() -> Result<Str> {
 }
 
 auto Deserializer::as_obj() -> DeserializeObj {
-    return DeserializeObj{*this};
+  return DeserializeObj{*this};
 }
 
 auto DeserializeObj::next_key() -> Result<Str> {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sfc/serde/mod.h"
 #include "sfc/alloc.h"
 
 namespace sfc::serde::json {
@@ -65,28 +66,13 @@ class Serializer {
 
   void serialize_null();
   void serialize_bool(bool val);
+  void serialize_int(auto val);
+  void serialize_flt(auto val);
   void serialize_str(Str val);
   void serialize_num(trait::num_ auto val);
 
   auto serialize_seq() -> SerializeSeq;
   auto serialize_obj() -> SerializeObj;
-
-  template <class T>
-  void serialize_any(const T& val) {
-    if constexpr (requires { val.serialize(*this); }) {
-      return val.serialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
-      return this->serialize_bool(val);
-    } else if constexpr (trait::num_<T>) {
-      return this->serialize_num(val);
-    } else if constexpr (requires { Str{val}; }) {
-      return this->serialize_str(val);
-    } else if constexpr (requires { Slice{val}; }) {
-      return Slice{val}.serialize(*this);
-    } else {
-      static_assert(false, "Serialize::serialize: not serializable");
-    }
-  }
 };
 
 class SerializeSeq {
@@ -103,7 +89,7 @@ class SerializeSeq {
 
   void serialize_element(const auto& item) {
     this->serialize_imp();
-    _ser.serialize_any(item);
+    Serialize{item}.serialize(_ser);
   }
 };
 
@@ -121,7 +107,7 @@ class SerializeObj {
   void serialize_key(Str key);
 
   void serialize_value(const auto& val) {
-    _ser.serialize_any(val);
+    Serialize{val}.serialize(_ser);
   }
 
   void serialize_entry(const auto& key, const auto& val) {
@@ -152,28 +138,17 @@ class Deserializer {
 
   auto deserialize_null() -> Result<>;
   auto deserialize_bool() -> Result<bool>;
-  auto deserialize_num() -> Result<Str>;
+
+  template<class T>
+  auto deserialize_int() -> Result<T>;
+
+  template<class T>
+  auto deserialize_flt() -> Result<T>;
   auto deserialize_str() -> Result<Str>;
 
   auto as_seq() -> DeserializeSeq;
   auto as_map() -> DeserializeMap;
   auto as_obj() -> DeserializeObj;
-
-  template <class T>
-  auto deserialize_any() -> Result<T> {
-    if constexpr (requires { T::deserialize(*this); }) {
-      return T::deserialize(*this);
-    } else if constexpr (trait::same_<T, bool>) {
-      return this->deserialize_bool();
-    } else if constexpr (trait::int_<T> || trait::flt_<T>) {
-      const auto num_str = _TRY(this->deserialize_num());
-      return num_str.parse<T>().ok_or(json::Error::InvalidNumber);
-    } else if constexpr (trait::same_<T, String>) {
-      return this->deserialize_str();
-    } else {
-      static_assert(false, "json::Deserializer::deserialize: not deserializable");
-    }
-  }
 };
 
 class DeserializeSeq {
@@ -193,7 +168,7 @@ class DeserializeSeq {
     while (!_finished) {
       _TRY(this->next_entry());
       if (!_finished) {
-        auto val = _TRY(_des.deserialize_any<T>());
+        auto val = _TRY(Deserialize<T>::deserialize(_des));
         f(mem::move(val));
       }
     }
@@ -218,7 +193,7 @@ class DeserializeMap {
     while (!_finished) {
       const auto key = _TRY(this->next_key());
       if (!_finished) {
-        auto val = _TRY(_des.deserialize_any<T>());
+        auto val = _TRY(Deserialize<T>::deserialize(_des));
         f(key, mem::move(val));
       }
     }
@@ -251,12 +226,12 @@ class DeserializeObj {
 
 void to_writer(auto& writer, const auto& val) {
   auto ser = Serializer{writer};
-  ser.serialize_any(val);
+  Serialize{val}.serialize(ser);
 }
 
 auto to_string(const auto& val) -> String {
   auto ser = Serializer::new_();
-  ser.serialize_any(val);
+  Serialize{val}.serialize(ser);
   return mem::move(ser).into_string();
 }
 

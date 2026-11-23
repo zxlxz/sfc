@@ -183,6 +183,13 @@ class [[nodiscard]] String {
   void serialize(auto& s) const {
     s.serialize_str(this->as_str());
   }
+
+  // trait: seride::Deserizlie
+  template<class D>
+  static auto deserialize(D& d) -> Result<String, typename D::Error>{
+    const auto s = _TRY(d.deserialize_str());
+    return String::from(s);
+  }
 };
 
 template <class A = alloc::Global>
