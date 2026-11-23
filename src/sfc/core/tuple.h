@@ -78,10 +78,6 @@ struct Tuple : detail::Tuple<T...> {
     imp.finish();
   }
 
-  void hash(auto& state) const {
-    this->for_each([&](auto& e) { state.write_any(e); });
-  }
-
   void for_each(this auto&& self, auto&& f) {
     if constexpr (requires { self._0; }) f(self._0);
     if constexpr (requires { self._1; }) f(self._1);

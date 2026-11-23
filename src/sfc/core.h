@@ -12,7 +12,6 @@
 #include "sfc/core/io.h"
 #include "sfc/core/str.h"
 #include "sfc/core/fmt.h"
-#include "sfc/core/hash.h"
 #include "sfc/core/iter.h"
 #include "sfc/core/time.h"
 #include "sfc/core/test.h"

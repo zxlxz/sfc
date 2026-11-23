@@ -139,6 +139,14 @@ constexpr auto saturating_sub(T a, T b) -> T {
   return x ? num::Int<T>::MIN : c;
 }
 
+template <u32 N, trait::int_ T>
+constexpr auto align_up(T value) -> T {
+  static_assert(N > 0 && (N & (N - 1)) == 0);
+
+  const auto mask = static_cast<T>(N - 1);
+  return T((value + mask) & ~mask);
+}
+
 template <trait::flt_ T>
 auto fabs(T val) -> T {
   if constexpr (trait::same_<T, f64>) return __builtin_fabs(val);

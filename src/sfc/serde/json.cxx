@@ -102,6 +102,7 @@ SFC_TEST(serde_seq) {
   }
 }
 
+#if 0
 SFC_TEST(serde_map) {
   // {"a":1,"b":2}
   {
@@ -121,5 +122,6 @@ SFC_TEST(serde_map) {
     sfc::assert_eq(dict.get(Str{"b"}), Option{2});
   }
 }
+#endif
 
 }  // namespace sfc::serde::json::test

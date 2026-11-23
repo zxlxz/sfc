@@ -1,5 +1,4 @@
 #include "sfc/core/str.h"
-#include "sfc/core/hash.h"
 #include "sfc/core/fmt.h"
 #include "sfc/core/cmp.h"
 

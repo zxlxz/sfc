@@ -136,11 +136,6 @@ struct Str {
   void serialize(auto& ser) const {
     ser.serialize_str(*this);
   }
-
-  // trait: hash::Hash
-  void hash(auto& state) const noexcept {
-    state.write(this->as_bytes());
-  }
 };
 
 struct AsStr {

@@ -183,11 +183,6 @@ class [[nodiscard]] String {
   void serialize(auto& s) const {
     s.serialize_str(this->as_str());
   }
-
-  // trait: hash::Hash
-  void hash(auto& state) const {
-    this->as_str().hash(state);
-  }
 };
 
 template <class A = alloc::Global>

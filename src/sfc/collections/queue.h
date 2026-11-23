@@ -2,10 +2,10 @@
 
 #include "sfc/alloc/raw_buf.h"
 
-namespace sfc::collections::queue {
+namespace sfc::collections {
 
 template <class T>
-struct Iter : iter::Iterator<T&> {
+struct QueueIter : iter::Iterator<T&> {
   slice::Iter<T> _iter1;
   slice::Iter<T> _iter2;
 
@@ -35,9 +35,9 @@ class [[nodiscard]] Queue {
   usize _len{0};
   RawBuf<T, A> _buf{};
 
- public:
-  explicit Queue(RawBuf<T, A> buf) noexcept : _buf{mem::move(buf)} {}
+  Queue(usize pos, usize len, RawBuf<T, A> buf) noexcept : _pos{pos}, _len{len}, _buf{mem::move(buf)} {}
 
+ public:
   ~Queue() noexcept {
     this->clear();
   }
@@ -55,11 +55,11 @@ class [[nodiscard]] Queue {
   }
 
   static auto new_(A alloc = {}) -> Queue {
-    return Queue{RawBuf<T, A>::new_(alloc)};
+    return Queue{0, 0, RawBuf<T, A>::new_(alloc)};
   }
 
   static auto with_capacity(usize capacity, A alloc = {}) -> Queue {
-    auto res = Queue{RawBuf<T, A>::with_capacity(capacity, alloc)};
+    auto res = Queue{0, 0, RawBuf<T, A>::with_capacity(capacity, alloc)};
     return res;
   }
 
@@ -174,13 +174,13 @@ class [[nodiscard]] Queue {
     }
   }
 
-  using Iter = queue::Iter<const T>;
+  using Iter = QueueIter<const T>;
   auto iter() const -> Iter {
     const auto [s1, s2] = this->as_slices();
     return Iter{{}, s1.iter(), s2.iter()};
   }
 
-  using IterMut = queue::Iter<T>;
+  using IterMut = QueueIter<T>;
   auto iter_mut() -> IterMut {
     const auto [s1, s2] = this->as_mut_slices();
     return IterMut{{}, s1.iter_mut(), s2.iter_mut()};
@@ -222,8 +222,4 @@ class [[nodiscard]] Queue {
   }
 };
 
-}  // namespace sfc::collections::queue
-
-namespace sfc::collections {
-using queue::Queue;
-}
+}  // namespace sfc::collections
