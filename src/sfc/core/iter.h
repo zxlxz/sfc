@@ -63,7 +63,7 @@ struct Iterator {
   }
 
   auto position(this auto&& self, auto&& pred) noexcept -> Option<usize> {
-    auto idx = 0UL;
+    auto idx = usize{0U};
     while (auto x = self.next()) {
       if (pred(*x)) return idx;
       ++idx;

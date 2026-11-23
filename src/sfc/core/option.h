@@ -23,48 +23,40 @@ struct None {
 };
 
 template <class T>
-class Option {
+class OptionStorage {
+ protected:
   bool _tag;
   union {
-    T _1;
+    T _val;
   };
 
  public:
-  Option() noexcept : _tag{false} {}
-  Option(T val) noexcept : _tag{true}, _1{mem::move(val)} {}
-  Option(None) noexcept : _tag{false} {}
+  OptionStorage() noexcept : _tag{false} {}
+  OptionStorage(None) noexcept : _tag{false} {}
+  OptionStorage(T val) noexcept : _tag{true}, _val{mem::move(val)} {}
 
-  ~Option() requires(trait::tv_copy_<T>) = default;
-  ~Option() {
-    _tag ? mem::drop(_1) : void();
+  ~OptionStorage() {
+    _tag ? mem::drop(_val) : void();
   }
 
-  Option(const Option& other) requires(trait::tv_copy_<T>) = default;
-  Option& operator=(const Option& other) requires(trait::tv_copy_<T>) = default;
-
-  Option(Option&& other) noexcept requires(trait::tv_copy_<T>) = default;
-  Option(Option&& other) noexcept : _tag{other._tag} {
-    _tag ? ptr::write(&_1, mem::move(other._1)) : void();
+  OptionStorage(OptionStorage&& other) noexcept : _tag{other._tag} {
+    _tag ? ptr::write(&_val, mem::move(other._val)) : void();
   }
 
-  Option& operator=(Option&& other) noexcept requires(trait::tv_copy_<T>) = default;
-  Option& operator=(Option&& other) noexcept {
+  OptionStorage& operator=(OptionStorage&& other) noexcept {
     if (this != &other) {
       if (_tag == other._tag) {
-        _tag ? mem::swap(_1, other._1) : void();
+        _tag ? mem::swap(_val, other._val) : void();
       } else {
-        _tag ? mem::drop(_1) : ptr::write(&_1, mem::move(other._1));
+        _tag ? mem::drop(_val) : void();
         _tag = other._tag;
+        _tag ? ptr::write(&_val, mem::move(other._val)) : void();
       }
     }
     return *this;
   }
 
  public:
-  explicit operator bool() const noexcept {
-    return _tag;
-  }
-
   auto is_none() const noexcept -> bool {
     return !_tag;
   }
@@ -72,29 +64,88 @@ class Option {
   auto is_some() const noexcept -> bool {
     return _tag;
   }
+};
+
+template <trait::tv_copy_ T>
+class OptionStorage<T> {
+ protected:
+  bool _tag;
+  union {
+    T _val;
+  };
+
+ public:
+  OptionStorage() noexcept : _tag{false} {}
+  OptionStorage(None) noexcept : _tag{false} {}
+  OptionStorage(T val) noexcept : _tag{true}, _val{mem::move(val)} {}
+
+ public:
+  auto is_none() const noexcept -> bool {
+    return !_tag;
+  }
+
+  auto is_some() const noexcept -> bool {
+    return _tag;
+  }
+};
+
+template <class T>
+class OptionStorage<T&> {
+ protected:
+  T* _ptr;
+
+ public:
+  constexpr OptionStorage() noexcept : _ptr{nullptr} {}
+  constexpr OptionStorage(None) noexcept : _ptr{nullptr} {}
+  constexpr OptionStorage(T& val) noexcept : _ptr{&val} {}
+  constexpr OptionStorage(T* ptr) noexcept : _ptr{ptr} {}
+
+ public:
+  auto is_none() const noexcept -> bool {
+    return _ptr == nullptr;
+  }
+
+  auto is_some() const noexcept -> bool {
+    return _ptr != nullptr;
+  }
+};
+
+template <class T>
+class Option : OptionStorage<T> {
+  using Inn = OptionStorage<T>;
+  using Inn::_val;
+
+ public:
+  using Inn::Inn;
+  using Inn::is_none;
+  using Inn::is_some;
+
+  explicit operator bool() const noexcept {
+    return this->is_some();
+  }
 
   auto operator->() const -> const T* {
     sfc::assert_(this->is_some(), "Option::operator->: deref None()");
-    return &_1;
+    return &_val;
   }
 
   auto operator->() -> T* {
     sfc::assert_(this->is_some(), "Option::operator->: deref None()");
-    return &_1;
+    return &_val;
   }
 
   auto operator*() const -> const T& {
     sfc::assert_(this->is_some(), "Option::operator*: deref None()");
-    return _1;
+    return _val;
   }
 
   auto operator*() -> T& {
     sfc::assert_(this->is_some(), "Option::operator*: deref None()");
-    return _1;
+    return _val;
   }
 
   auto unwrap_unchecked() noexcept -> T {
-    return mem::move(_1);
+    return mem::move(_val);
   }
 
   auto unwrap_err_unchecked() const -> None {
@@ -104,21 +155,21 @@ class Option {
  public:
   auto expect(const fmt::Fmts& fmts, const auto&... args) && -> T {
     sfc::assert_(this->is_some(), fmts, args...);
-    return mem::move(_1);
+    return mem::move(_val);
   }
 
   auto unwrap() && -> T {
     sfc::assert_(this->is_some(), "Option::unwrap: not Some()");
-    return mem::move(_1);
+    return mem::move(_val);
   }
 
   auto unwrap_or(T default_val) && -> T {
-    if (this->is_some()) return mem::move(_1);
+    if (this->is_some()) return mem::move(_val);
     return mem::move(default_val);
   }
 
   auto unwrap_or_else(auto&& f) && -> T {
-    if (this->is_some()) return mem::move(_1);
+    if (this->is_some()) return mem::move(_val);
     return f();
   }
 
@@ -135,7 +186,7 @@ class Option {
 
   template <class F, class OptionU = ops::FnOut<F, T>>
   auto and_then(F&& op) && -> OptionU {
-    if (this->is_some()) return op(mem::move(_1));
+    if (this->is_some()) return op(mem::move(_val));
     return {};
   }
 
@@ -146,13 +197,13 @@ class Option {
 
   template <class F, class U = ops::FnOut<F, T>>
   auto map(F&& f) && -> Option<U> {
-    if (this->is_some()) return f(mem::move(_1));
+    if (this->is_some()) return f(mem::move(_val));
     return {};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) && -> U {
-    if (this->is_some()) return f(mem::move(_1));
+    if (this->is_some()) return f(mem::move(_val));
     return mem::move(default_val);
   }
 
@@ -161,13 +212,13 @@ class Option {
   auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
-    return _1 == *other;
+    return _val == *other;
   }
 
   // to result
   template <class E>
   auto ok_or(E err) -> result::Result<T, E> {
-    if (this->is_some()) return mem::move(_1);
+    if (this->is_some()) return mem::move(_val);
     return mem::move(err);
   }
 
@@ -176,52 +227,43 @@ class Option {
     if (this->is_none()) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", _1);
+      f.write_fmt("Some({})", _val);
     }
   }
 };
 
 template <class T>
-class Option<T&> {
-  T* _1;
+class Option<T&> : OptionStorage<T&> {
+  using Inn = OptionStorage<T&>;
+  using Inn::_ptr;
 
  public:
-  constexpr Option() noexcept : _1{nullptr} {}
-  constexpr Option(None) noexcept : _1{nullptr} {}
-  constexpr Option(T& val) noexcept : _1{&val} {}
-  constexpr Option(T* ptr) noexcept : _1{ptr} {}
+  using Inn::Inn;
+  using Inn::is_none;
+  using Inn::is_some;
 
- public:
   explicit operator bool() const noexcept {
-    return _1 != nullptr;
-  }
-
-  auto is_none() const noexcept -> bool {
-    return _1 == nullptr;
-  }
-
-  auto is_some() const noexcept -> bool {
-    return _1 != nullptr;
+    return _ptr != nullptr;
   }
 
   auto operator->() const -> const T* {
-    return _1;
+    return _ptr;
   }
 
   auto operator->() -> T* {
-    return _1;
+    return _ptr;
   }
 
   auto operator*() const -> const T& {
-    return *_1;
+    return *_ptr;
   }
 
   auto operator*() -> T& {
-    return *_1;
+    return *_ptr;
   }
 
   auto unwrap_unchecked() noexcept -> T& {
-    return *_1;
+    return *_ptr;
   }
 
   auto unwrap_err_unchecked() const -> None {
@@ -231,21 +273,21 @@ class Option<T&> {
  public:
   auto expect(const auto& msg) -> T& {
     sfc::assert_(this->is_some(), "Option::expect: {}", msg);
-    return *_1;
+    return *_ptr;
   }
 
   auto unwrap() -> T& {
     sfc::assert_(this->is_some(), "Option::unwrap: None()");
-    return *_1;
+    return *_ptr;
   }
 
   auto unwrap_or(T& default_val) -> T& {
-    if (this->is_some()) return *_1;
+    if (this->is_some()) return *_ptr;
     return default_val;
   }
 
   auto unwrap_or_else(auto&& f) -> T& {
-    if (this->is_some()) return *_1;
+    if (this->is_some()) return *_ptr;
     return f();
   }
 
@@ -262,7 +304,7 @@ class Option<T&> {
 
   template <class F, class OptionU = ops::FnOut<F, T&>>
   auto and_then(F&& op) -> OptionU {
-    if (this->is_some()) return op(*_1);
+    if (this->is_some()) return op(*_ptr);
     return OptionU{};
   }
 
@@ -273,13 +315,13 @@ class Option<T&> {
 
   template <class F, class U = ops::FnOut<F, T&>>
   auto map(F&& f) -> Option<U> {
-    if (this->is_some()) return Option<U>{f(*_1)};
+    if (this->is_some()) return Option<U>{f(*_ptr)};
     return Option<U>{};
   }
 
   template <class U>
   auto map_or(U default_val, auto&& f) -> U {
-    if (this->is_some()) return f(*_1);
+    if (this->is_some()) return f(*_ptr);
     return mem::move(default_val);
   }
 
@@ -288,17 +330,17 @@ class Option<T&> {
   auto operator==(const Option<U>& other) const -> bool {
     if (this->is_none()) return other.is_none();
     if (other.is_none()) return false;
-    return *_1 == *other;
+    return *_ptr == *other;
   }
 
   auto to_owned() const -> Option<T> {
     if (this->is_none()) return {};
-    return T{*_1};
+    return T{*_ptr};
   }
 
   template <class E>
   auto ok_or(E err) -> result::Result<T&, E> {
-    if (this->is_some()) return {*_1};
+    if (this->is_some()) return {*_ptr};
     return mem::move(err);
   }
 
@@ -307,7 +349,7 @@ class Option<T&> {
     if (!this->is_some()) {
       f.write_str("None()");
     } else {
-      f.write_fmt("Some({})", *_1);
+      f.write_fmt("Some({})", *_ptr);
     }
   }
 };

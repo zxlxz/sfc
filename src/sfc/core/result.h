@@ -40,7 +40,8 @@ struct Ref {
 };
 
 template <class T, class E>
-struct RawResult {
+class ResultStorage {
+ protected:
   u8 _tag;
   union {
     T _ok;
@@ -48,25 +49,29 @@ struct RawResult {
   };
 
  public:
-  RawResult(T t) noexcept : _tag{0}, _ok{mem::move(t)} {}
-  RawResult(E e) noexcept : _tag{1}, _err{mem::move(e)} {}
+  ResultStorage(T t) noexcept : _tag{0}, _ok{mem::move(t)} {}
+  ResultStorage(E e) noexcept : _tag{1}, _err{mem::move(e)} {}
 
-  RawResult(Ok<T> ok) noexcept : _tag{0}, _ok{mem::move(ok._ok)} {}
-  RawResult(Err<E> err) noexcept : _tag{1}, _err{mem::move(err._err)} {}
+  ResultStorage(Ok<T> ok) noexcept : _tag{0}, _ok{mem::move(ok._ok)} {}
+  ResultStorage(Err<E> err) noexcept : _tag{1}, _err{mem::move(err._err)} {}
 
-  ~RawResult() {
+  ~ResultStorage() {
     _tag == 0 ? mem::drop(_ok) : mem::drop(_err);
   }
 
-  RawResult(RawResult&& other) noexcept : _tag{other._tag} {
+  ResultStorage(ResultStorage&& other) noexcept : _tag{other._tag} {
     _tag == 0 ? ptr::write(&_ok, mem::move(other._ok)) : ptr::write(&_err, mem::move(other._err));
   }
 
-  RawResult& operator=(RawResult&& other) noexcept {
+  ResultStorage& operator=(ResultStorage&& other) noexcept {
     if (this != &other) {
-      _tag == 0 ? mem::drop(_ok) : mem::drop(_err);
-      _tag = other._tag;
-      _tag == 0 ? ptr::write(&_ok, mem::move(other._ok)) : ptr::write(&_err, mem::move(other._err));
+      if (_tag == other._tag) {
+        _tag == 0 ? mem::swap(_ok, other._ok) : mem::swap(_err, other._err);
+      } else {
+        _tag == 0 ? mem::drop(_ok) : mem::drop(_err);
+        _tag = other._tag;
+        _tag == 0 ? ptr::write(&_ok, mem::move(other._ok)) : ptr::write(&_err, mem::move(other._err));
+      }
     }
     return *this;
   }
@@ -82,7 +87,8 @@ struct RawResult {
 };
 
 template <trait::tv_copy_ T, trait::tv_copy_ E>
-struct RawResult<T, E> {
+class ResultStorage<T, E> {
+ protected:
   u8 _tag;
   union {
     T _ok;
@@ -90,11 +96,11 @@ struct RawResult<T, E> {
   };
 
  public:
-  RawResult(T t) noexcept : _tag{0}, _ok{mem::move(t)} {}
-  RawResult(E e) noexcept : _tag{1}, _err{mem::move(e)} {}
+  ResultStorage(T t) noexcept : _tag{0}, _ok{mem::move(t)} {}
+  ResultStorage(E e) noexcept : _tag{1}, _err{mem::move(e)} {}
 
-  RawResult(Ok<T> ok) noexcept : _tag{0}, _ok{mem::move(ok._ok)} {}
-  RawResult(Err<E> err) noexcept : _tag{1}, _err{mem::move(err._err)} {}
+  ResultStorage(Ok<T> ok) noexcept : _tag{0}, _ok{mem::move(ok._ok)} {}
+  ResultStorage(Err<E> err) noexcept : _tag{1}, _err{mem::move(err._err)} {}
 
  public:
   auto is_ok() const noexcept -> bool {
@@ -107,17 +113,18 @@ struct RawResult<T, E> {
 };
 
 template <class T, class E>
-struct RawResult<T&, E> {
+class ResultStorage<T&, E> {
+ protected:
   using R = Ref<T>;
   R _ok{nullptr};
   E _err{};
 
  public:
-  RawResult(T& t) noexcept : _ok{t} {}
-  RawResult(E e) noexcept : _err{e} {}
+  ResultStorage(T& t) noexcept : _ok{t} {}
+  ResultStorage(E e) noexcept : _err{e} {}
 
-  RawResult(Ok<T&> ok) noexcept : _ok{ok._ok} {}
-  RawResult(Err<E> err) noexcept : _err{err._err} {}
+  ResultStorage(Ok<T&> ok) noexcept : _ok{ok._ok} {}
+  ResultStorage(Err<E> err) noexcept : _err{err._err} {}
 
  public:
   auto is_ok() const noexcept -> bool {
@@ -130,8 +137,8 @@ struct RawResult<T&, E> {
 };
 
 template <class T, class E>
-class [[nodiscard]] Result : RawResult<T, E> {
-  using Inn = result::RawResult<T, E>;
+class [[nodiscard]] Result : ResultStorage<T, E> {
+  using Inn = result::ResultStorage<T, E>;
   using Inn::_tag;
   using Inn::_ok;
   using Inn::_err;
@@ -261,8 +268,8 @@ class [[nodiscard]] Result : RawResult<T, E> {
 };
 
 template <class T, class E>
-class [[nodiscard]] Result<T&, E> : RawResult<T&, E> {
-  using Inn = result::RawResult<T&, E>;
+class [[nodiscard]] Result<T&, E> : ResultStorage<T&, E> {
+  using Inn = result::ResultStorage<T&, E>;
   using Inn::_ok;
   using Inn::_err;
 
