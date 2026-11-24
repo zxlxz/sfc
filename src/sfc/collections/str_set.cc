@@ -2,63 +2,96 @@
 
 namespace sfc::collections {
 
-namespace detail {
+namespace {
 
-static auto bytes_equal(const void* a, const void* b, usize n) {
-  return n == 0 || __builtin_memcmp(a, b, n) == 0;
+template <class B>
+auto sblk_new(Str s) -> B {
+  const auto n = s._len < sizeof(B) ? s._len : sizeof(B);
+
+  auto b = B{};
+  auto p = (u8*)&b;
+  for (auto i = 0U; i < n; ++i) {
+    p[i] = s._ptr[i];
+  }
+  return b;
 }
 
-}  // namespace detail
+template <class B>
+auto sblk_count_bytes(const B& blk) -> u32 {
+  const auto p = (const u8*)&blk;
+
+  auto n = 0U;
+  for (; n < sizeof(B); ++n) {
+    if (p[n] == 0) break;
+  }
+  return n;
+}
+
+template <class B>
+auto sblk_find_tail(const B blk[]) -> usize {
+  static constexpr u32 N = sizeof(B);
+
+  auto p = blk;
+  while (((const u8*)p)[N - 1] != 0) {
+    ++p;
+  }
+  return usize(p - blk);
+}
+
+}  // namespace
+
+StrSet::StrSet(List<u64> buf) noexcept : _buf{mem::move(buf)} {}
+
+StrSet::~StrSet() {}
 
 auto StrSet::new_() -> StrSet {
-  return StrSet{List<u8>{}};
+  return StrSet{List<u64>{}};
 }
 
 auto StrSet::with_capacity(usize capacity) -> StrSet {
-  const usize str_capacity = capacity * kAlignSize;
-  return StrSet{List<u8>::with_capacity(str_capacity)};
-}
-
-// - str is stored as `u8[]` with a NUL terminator and padding to align to kAlignSize
-auto StrSet::search(Str s) const -> Option<u32> {
-  const auto [haystack_ptr, haystack_len] = _buf.as_slice();
-  const auto [needle_ptr, needle_len] = s;
-
-  // _buf contains str with NUL terminator and padding to align to kAlignSize
-  // if `s._len < kAlignSize`, we need to copy it into a full-slot buffer for comparison
-  char head_buf[kAlignSize] = {0};
-  if (needle_len != 0 && needle_len < kAlignSize) {
-    __builtin_memcpy(head_buf, needle_ptr, needle_len);
-  }
-
-  const auto tail_len = needle_len > kAlignSize ? needle_len - kAlignSize : 0;
-
-  const auto head = needle_len < kAlignSize ? head_buf : needle_ptr;
-  const auto tail = needle_ptr + needle_len - tail_len;
-
-  // haystack always contains a NUL-terminated and aligned string
-  // so we should check (needle_len + i < haystack_len) to avoid reading past the end
-  for (auto i = 0U; i + needle_len < haystack_len; i += kAlignSize) {
-    const auto p = haystack_ptr + i;
-    // check NUL terminator and alignment
-    if (p[needle_len] != 0) {
-      continue;
-    }
-    // check the head of the needle against the current slot
-    if (!detail::bytes_equal(p, head, kAlignSize)) {
-      continue;
-    }
-    // check the tail of the needle against the current slot
-    if (detail::bytes_equal(p + kAlignSize, tail, tail_len)) {
-      return u32(i / kAlignSize);
-    }
-  }
-
-  return {};
+  return StrSet{List<u64>::with_capacity(capacity)};
 }
 
 void StrSet::reserve(usize add_cnt) {
-  _buf.reserve(add_cnt * kAlignSize);
+  _buf.reserve(add_cnt);
+}
+
+auto StrSet::search(Str s) const -> Option<u32> {
+  const auto buf_ptr = _buf.as_ptr();
+  const auto buf_cnt = _buf.len();
+  const auto s0 = sblk_new<u64>(s);
+
+  struct SearchBlock {
+    const u64* _buf;
+    usize _cnt;
+
+    auto is_equal(u64 b0, Str s) const -> bool {
+      if (_buf[0] != b0) return false;       // head not match
+      if (s._len < kBlockSize) return true;  // short string matches head block
+
+      const auto blk_cap = _cnt * kBlockSize;
+      if (s._len >= blk_cap) return false;  // string too long for this block sequence
+
+      const auto tail_len = sblk_count_bytes(_buf[_cnt - 1]);
+      if (s._len != (_cnt - 1) * kBlockSize + tail_len) return false;
+
+      return __builtin_memcmp(_buf + 1, s._ptr + kBlockSize, s._len - kBlockSize) == 0;
+    }
+  };
+
+  auto bid = 0U;
+  while (bid < buf_cnt) {
+    const auto blk_ptr = buf_ptr + bid;
+    const auto blk_len = 1 + sblk_find_tail(blk_ptr);
+
+    const auto blk = SearchBlock{blk_ptr, blk_len};
+    if (blk.is_equal(s0, s)) {
+      return u32{bid};
+    }
+    bid += blk_len;
+  }
+
+  return {};
 }
 
 auto StrSet::insert(Str s) -> InsertResult {
@@ -67,20 +100,21 @@ auto StrSet::insert(Str s) -> InsertResult {
     return InsertResult{*search_idx, false};
   }
 
-  const auto old_len = _buf.len();
+  const auto [u8_ptr, u8_len] = s.as_bytes();
 
-  // store as key + '\0' + padding, occupying whole slots;
-  // the '\0' must fit inside the needle's aligned slot for search's NUL check
-  u8 padding[kAlignSize] = {0};
-  const auto aligned_size = num::align_up<kAlignSize>(s.len() + 1);
-  const auto padding_len = aligned_size - s.len();
+  // block contains 'str body with tail 0 byte'
+  const auto blk_cnt = u8_len / kBlockSize + 1;
 
-  _buf.reserve(aligned_size);
-  _buf.extend_from_slice(s.as_bytes());
-  _buf.extend_from_slice(Slice{padding, padding_len});
+  _buf.reserve(blk_cnt);
+  const auto [buf_ptr, buf_len] = _buf.as_mut_slice();
 
-  const auto ret_idx = u32(old_len / kAlignSize);
-  return InsertResult{ret_idx, true};
+  const auto dst_ptr = buf_ptr + buf_len;
+  dst_ptr[blk_cnt - 1] = 0;                   // init tail to zero
+  __builtin_memcpy(dst_ptr, u8_ptr, u8_len);  // copy content
+
+  _buf.set_len(buf_len + blk_cnt);
+
+  return InsertResult{u32(buf_len), true};
 }
 
 }  // namespace sfc::collections

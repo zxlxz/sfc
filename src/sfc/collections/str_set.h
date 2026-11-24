@@ -5,12 +5,16 @@
 namespace sfc::collections {
 
 class StrSet {
-  static constexpr usize kAlignSize = 8U;
+  static constexpr u32 kBlockSize = sizeof(u64);
 
-  List<u8> _buf;
-  StrSet(List<u8> buf) noexcept : _buf{mem::move(buf)} {}
+  List<u64> _buf;
+  StrSet(List<u64> buf) noexcept;
 
  public:
+  ~StrSet();
+  StrSet(StrSet&&) noexcept = default;
+  StrSet& operator=(StrSet&&) noexcept = default;
+
   static auto new_() -> StrSet;
   static auto with_capacity(usize capacity) -> StrSet;
 
@@ -23,9 +27,6 @@ class StrSet {
     u32 idx;
     bool inserted;
   };
-
-  /// Inserts the given string into the set.
-  /// @note if `s` is empty, insert will panic
   auto insert(Str s) -> InsertResult;
 };
 

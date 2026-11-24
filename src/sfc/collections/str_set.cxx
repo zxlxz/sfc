@@ -41,23 +41,31 @@ SFC_TEST(insert_search) {
 SFC_TEST(long_str) {
   auto set = StrSet::new_();
 
-  const auto s1 = Str{"abcdefgh"};   // exactly kAlignSize
-  const auto s2 = Str{"abcdefghij"}; // spans two slots
-  const auto s3 = Str{"0123456789abcdef"};
+  const auto s1 = Str{"abc"};       // 1blk
+  const auto s2 = Str{"01234567"};  // 2blk
+  const auto s3 = Str{"abcdfghi"};  // 2blk
 
   const auto r1 = set.insert(s1);
   const auto r2 = set.insert(s2);
   const auto r3 = set.insert(s3);
+  sfc::assert_eq(r1.idx, 0U);
+  sfc::assert_eq(r2.idx, 1U);  // +1
+  sfc::assert_eq(r3.idx, 3U);  // 2+
   sfc::assert_eq(r1.inserted, true);
   sfc::assert_eq(r2.inserted, true);
   sfc::assert_eq(r3.inserted, true);
 
   sfc::assert_eq(set.search(s1), Option{0U});
-  sfc::assert_eq(set.search(s2), Option{2U});
-  sfc::assert_eq(set.search(s3), Option{4U});
+  sfc::assert_eq(set.search(s2), Option{1U});
+  sfc::assert_eq(set.search(s3), Option{3U});
 
   sfc::assert_eq(set.search(Str{"0123456789abcde"}), Option<u32>{});
   sfc::assert_eq(set.search(Str{"0123456789abcdefX"}), Option<u32>{});
+
+  // duplicates
+  const auto s3_again = set.insert(s3);
+  sfc::assert_eq(s3_again.idx, 3U);
+  sfc::assert_eq(s3_again.inserted, false);
 }
 
 SFC_TEST(search_prefix) {
