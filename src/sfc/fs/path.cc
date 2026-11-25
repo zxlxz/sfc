@@ -3,7 +3,9 @@
 
 namespace sfc::fs {
 
-static constexpr auto is_path_delim(char c) -> bool {
+namespace {
+
+constexpr auto is_path_delim(char c) -> bool {
 #ifdef _WIN32
   return c == '/' || c == '\\';
 #else
@@ -57,6 +59,8 @@ struct FileName {
     return _str[{p + 1, $}];
   }
 };
+
+}  // namespace
 
 auto Path::as_str() const noexcept -> Str {
   return _inn;
@@ -130,28 +134,18 @@ auto Path::is_relative() const noexcept -> bool {
 }
 
 auto Path::exists() const noexcept -> bool {
-  const auto meta_ret = fs::metadata(_inn);
-  return meta_ret.is_ok();
+  const auto meta = fs::metadata(_inn).ok();
+  return bool(meta);
 }
 
 auto Path::is_file() const noexcept -> bool {
-  const auto meta_ret = fs::metadata(_inn);
-  if (meta_ret.is_err()) {
-    return false;
-  }
-
-  const auto& meta = *meta_ret.as_ok();
-  return meta.is_file();
+  const auto meta = fs::metadata(_inn).ok();
+  return meta && meta->is_file();
 }
 
 auto Path::is_dir() const noexcept -> bool {
-  const auto meta_ret = fs::metadata(_inn);
-  if (meta_ret.is_err()) {
-    return false;
-  }
-
-  const auto& meta = *meta_ret.as_ok();
-  return meta.is_dir();
+  const auto meta = fs::metadata(_inn).ok();
+  return meta && meta->is_dir();
 }
 
 auto Path::operator==(const Path& p) const noexcept -> bool {
