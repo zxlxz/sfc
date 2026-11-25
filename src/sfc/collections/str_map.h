@@ -4,7 +4,7 @@
 
 namespace sfc::collections {
 
-template <class T, class A = alloc::Global>
+template <class T>
 class StrMap {
   StrSet _keys;
   List<T> _vals;

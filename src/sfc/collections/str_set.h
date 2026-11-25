@@ -5,15 +5,15 @@
 namespace sfc::collections {
 
 class StrSet {
-  static constexpr u32 kBlockSize = sizeof(u64);
+  struct V16B;
 
-  List<u64> _buf;
-  StrSet(List<u64> buf) noexcept;
+  List<V16B> _buf;
+  StrSet(List<V16B> buf) noexcept;
 
  public:
   ~StrSet();
-  StrSet(StrSet&&) noexcept = default;
-  StrSet& operator=(StrSet&&) noexcept = default;
+  StrSet(StrSet&&) noexcept;
+  StrSet& operator=(StrSet&&) noexcept;
 
   static auto new_() -> StrSet;
   static auto with_capacity(usize capacity) -> StrSet;
