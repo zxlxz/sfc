@@ -8,8 +8,7 @@ namespace sfc::test::gtest {
 
 using time::Duration;
 
-// global configs
-static bool g_use_color = false;
+namespace {
 
 enum class Color {
   RED = 1,
@@ -21,7 +20,9 @@ enum class Color {
   RESET = 7,
 };
 
-static auto fg(Color c) -> Str {
+bool g_use_color = false;
+
+auto fg(Color c) -> Str {
   if (!g_use_color) {
     return "";
   }
@@ -37,6 +38,8 @@ static auto fg(Color c) -> Str {
     default:             return "";
   }
 }
+
+}  // namespace
 
 class GTest {
   Test* _inn{nullptr};
@@ -142,10 +145,12 @@ class GTest {
   }
 };
 
-struct Suite {
+class Suite {
   Str _name;
   List<GTest> _tests;
   time::Duration _duration{};
+
+  Suite(Str name, List<GTest> tests) : _name{name}, _tests{mem::move(tests)} {}
 
  public:
   static auto new_(Str name) -> Suite {
@@ -153,14 +158,8 @@ struct Suite {
   }
 
  public:
-  void filt(Slice<const Str> pats) {
-    for (auto& gtest : _tests) {
-      gtest.filt(pats);
-    }
-  }
-
-  void push(Test& test) {
-    _tests.push({test});
+  auto name() const -> Str {
+    return _name;
   }
 
   auto count(Status stat) const -> usize {
@@ -169,6 +168,20 @@ struct Suite {
       cnt += test.status() == stat ? 1 : 0;
     }
     return cnt;
+  }
+
+  auto tests() const -> Slice<const GTest> {
+    return _tests.as_slice();
+  }
+
+  void filt(Slice<const Str> pats) {
+    for (auto& gtest : _tests) {
+      gtest.filt(pats);
+    }
+  }
+
+  void push(Test& test) {
+    _tests.push({test});
   }
 
   void run() {
@@ -211,8 +224,10 @@ struct Suite {
   }
 };
 
-struct App {
+class App {
   List<Suite> _suites{};
+
+  explicit App(List<Suite> suites) : _suites{mem::move(suites)} {}
 
  public:
   static auto new_() -> App {
@@ -225,18 +240,9 @@ struct App {
     return res;
   }
 
-  void filt(Slice<const Str> pats) {
-    for (auto& suite : _suites) {
-      suite.filt(pats);
-    }
-  }
-
-  auto total_count() const -> usize {
-    usize cnt = 0UZ;
-    for (const auto& suite : _suites) {
-      cnt += suite._tests.len();
-    }
-    return cnt;
+ public:
+  auto suites() const -> Slice<const Suite> {
+    return _suites.as_slice();
   }
 
   auto suite_count() const -> usize {
@@ -252,6 +258,20 @@ struct App {
     usize cnt = 0;
     for (const auto& suite : _suites) {
       cnt += suite.count(stat);
+    }
+    return cnt;
+  }
+
+  void filt(Slice<const Str> pats) {
+    for (auto& suite : _suites) {
+      suite.filt(pats);
+    }
+  }
+
+  auto total_count() const -> usize {
+    usize cnt = 0UZ;
+    for (const auto& suite : _suites) {
+      cnt += suite.tests().len();
     }
     return cnt;
   }
@@ -296,7 +316,7 @@ struct App {
  private:
   auto suite(Str suite_name) -> Suite& {
     for (auto& suite : _suites) {
-      if (suite._name == suite_name) {
+      if (suite.name() == suite_name) {
         return suite;
       }
     }
@@ -316,9 +336,9 @@ void list_xml(auto& out) {
 
   out.write_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   out.write_fmt("<testsuites tests=\"{}\" name=\"AllTests\">\n", total_cnt);
-  for (const auto& suite : app._suites) {
-    const auto& tests = suite._tests;
-    out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite._name, tests.len());
+  for (const auto& suite : app.suites()) {
+    const auto tests = suite.tests();
+    out.write_fmt("  <testsuite name=\"{}\" tests=\"{}\">\n", suite.name(), tests.len());
     for (auto& test : tests) {
       const auto name = test.test_name();
       const auto loc = test.location();
