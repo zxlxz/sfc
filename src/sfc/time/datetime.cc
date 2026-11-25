@@ -3,7 +3,8 @@
 
 namespace sfc::time {
 
-static auto make_datetime(const auto& t, auto micros) -> DateTime {
+namespace {
+auto make_datetime(const auto& t, auto micros) -> DateTime {
   const auto res = DateTime{
       .year = t.year,
       .month = t.month,
@@ -15,6 +16,7 @@ static auto make_datetime(const auto& t, auto micros) -> DateTime {
   };
   return res;
 };
+}  // namespace
 
 auto DateTime::from_utc(SystemTime t) noexcept -> DateTime {
   const auto sys_time = sys::SystemTime{t._micros};

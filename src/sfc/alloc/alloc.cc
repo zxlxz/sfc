@@ -3,11 +3,13 @@
 
 namespace sfc::alloc {
 
+namespace {
 // align must be a power of two
-static auto padding_size(void* ptr, usize align) noexcept -> usize {
+auto padding_size(void* ptr, usize align) noexcept -> usize {
   if (align <= 1) return 0;
   return (~(usize)ptr + 1) & (align - 1);
 }
+}  // namespace
 
 void* System::allocate(Layout layout) {
   if (layout.size == 0) return nullptr;

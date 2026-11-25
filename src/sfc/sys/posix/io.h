@@ -5,7 +5,7 @@
 namespace sfc::sys::posix {
 
 using RawFd = int;
-static constexpr RawFd kInvalidFd = -1;
+constexpr RawFd kInvalidFd = -1;
 
 struct File {
   RawFd _fd = kInvalidFd;

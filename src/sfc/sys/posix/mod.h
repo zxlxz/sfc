@@ -4,7 +4,7 @@
 
 namespace sfc::sys::posix {
 
-static constexpr u32 kMaxPath = 1024;
+constexpr u32 kMaxPath = 1024;
 
 using cstr_t = const char*;
 

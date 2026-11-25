@@ -13,7 +13,7 @@ struct ThreadData {
   Box<void()> _fun;
 };
 
-static void* thread_start(void* p) {
+void* thread_start(void* p) {
   auto data = ptr::cast<ThreadData>(p);
   auto func = mem::move(data->_fun);
   delete data;

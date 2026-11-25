@@ -4,7 +4,8 @@
 
 namespace sfc::app {
 
-static auto yes_or_no(Str s) -> Option<bool> {
+namespace {
+auto yes_or_no(Str s) -> Option<bool> {
   if (s.is_empty()) {
     return {};
   }
@@ -19,6 +20,7 @@ static auto yes_or_no(Str s) -> Option<bool> {
 
   return {};
 }
+}  // namespace
 
 struct Clap::Item {
   enum Type {

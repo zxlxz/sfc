@@ -4,8 +4,9 @@
 
 namespace sfc::log {
 
-namespace detail {
-static auto level_str(Level level) -> Str {
+namespace {
+
+auto level_str(Level level) -> Str {
   switch (level) {
     case Level::Trace: return "[TRACE]";
     case Level::Debug: return "[DEBUG]";
@@ -17,7 +18,7 @@ static auto level_str(Level level) -> Str {
   return "[INFO] ";
 }
 
-static auto time_str(time::SystemTime time) -> Str {
+auto time_str(time::SystemTime time) -> Str {
   static thread_local char raw_buf[32];
 
   static thread_local auto buf = fmt::Buf{raw_buf};
@@ -44,20 +45,20 @@ static auto time_str(time::SystemTime time) -> Str {
   return buf.as_str();
 }
 
-static auto write_record(Slice<char> buf, const Record& record) -> Str {
-  const auto time_str = detail::time_str(record._time);
-  const auto level_str = detail::level_str(record._level);
+auto write_record(Slice<char> buf, const Record& record) -> Str {
+  const auto time_str = log::time_str(record._time);
+  const auto level_str = log::level_str(record._level);
 
   auto out = fmt::Buf{buf};
   fmt::write(out, "{} {} {}\n", time_str, level_str, record._message);
   return out.as_str();
 }
 
-}  // namespace detail
+}  // namespace
 
 void ConsoleBackend::push(const Record& record) {
   char buf[1024];
-  auto msg = detail::write_record(buf, record);
+  auto msg = write_record(buf, record);
   io::Stdout().write_str(msg);
 }
 
@@ -69,7 +70,7 @@ FileBackend::~FileBackend() = default;
 
 void FileBackend::push(const Record& record) {
   char buf[1024];
-  auto msg = detail::write_record(buf, record);
+  auto msg = write_record(buf, record);
   (void)_file.write_str(msg);
 }
 
@@ -83,7 +84,7 @@ void GlobalBackend::set_file(fs::File file) noexcept {
 
 void GlobalBackend::push(const Record& record) {
   char buf[1024];
-  auto msg = detail::write_record(buf, record);
+  auto msg = write_record(buf, record);
 
   if (!_file) {
     io::Stdout().write_str(msg);

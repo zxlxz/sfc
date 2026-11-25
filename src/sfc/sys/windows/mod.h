@@ -4,7 +4,7 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 kMaxPath = 1024;
+constexpr u32 kMaxPath = 1024;
 
 using cstr_t = const char*;
 using wstr_t = const wchar_t*;

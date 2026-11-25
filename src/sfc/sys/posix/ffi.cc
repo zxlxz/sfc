@@ -4,7 +4,7 @@
 
 namespace sfc::sys::posix {
 
-static constexpr u32 kMaxName = 256U;
+constexpr u32 kMaxName = 256U;
 
 auto load_library(Str path) -> library_t {
   const auto os_path = FixedCStr<kMaxPath>::from_str(path);

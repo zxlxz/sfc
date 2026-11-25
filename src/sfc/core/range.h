@@ -10,7 +10,7 @@
 namespace sfc::range {
 
 struct End {};
-static constexpr auto $ = End{};
+constexpr auto $ = End{};
 
 template <class T>
 struct Iter : iter::Iterator<T> {

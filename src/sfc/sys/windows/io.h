@@ -5,7 +5,7 @@
 namespace sfc::sys::windows {
 
 using RawFd = void*;
-static constexpr RawFd kInvalidFd = nullptr;
+constexpr RawFd kInvalidFd = nullptr;
 
 struct File {
   RawFd _fd = kInvalidFd;

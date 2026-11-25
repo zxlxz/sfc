@@ -4,7 +4,7 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 kMaxName = 256U;
+constexpr u32 kMaxName = 256U;
 
 auto load_library(Str path) -> module_t {
   const auto os_path = FixedWStr<kMaxPath>::from_str(path);

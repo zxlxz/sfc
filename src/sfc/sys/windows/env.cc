@@ -3,8 +3,8 @@
 
 namespace sfc::sys::windows {
 
-static constexpr u32 kMaxKey = 256U;
-static constexpr u32 kMaxVal = 4096U;
+constexpr u32 kMaxKey = 256U;
+constexpr u32 kMaxVal = 4096U;
 
 auto getenv(Str key) -> String {
   const auto os_key = FixedWStr<kMaxKey>::from_str(key);

@@ -5,14 +5,14 @@
 
 namespace sfc::sys::posix {
 
-namespace detail {
-static auto align_up(usize size, usize align) noexcept -> usize {
+namespace {
+auto align_up(usize size, usize align) noexcept -> usize {
   if (align <= 1) return size;
 
   const auto mask = align - 1;
   return (size + mask) & ~mask;
 }
-}  // namespace detail
+}  // namespace
 
 auto alloc(mem::Layout layout) noexcept -> void* {
   if (layout.size == 0) {
@@ -23,7 +23,7 @@ auto alloc(mem::Layout layout) noexcept -> void* {
     return ::malloc(layout.size);
   }
 
-  const auto aligned_size = detail::align_up(layout.size, layout.align);
+  const auto aligned_size = align_up(layout.size, layout.align);
   return ::aligned_alloc(layout.align, aligned_size);
 }
 
@@ -36,7 +36,7 @@ auto alloc_zeroed(mem::Layout layout) noexcept -> void* {
     return ::calloc(1, layout.size);
   }
 
-  const auto aligned_size = detail::align_up(layout.size, layout.align);
+  const auto aligned_size = align_up(layout.size, layout.align);
   auto ptr = ::aligned_alloc(layout.align, aligned_size);
   if (ptr) {
     __builtin_memset(ptr, 0, aligned_size);
@@ -62,7 +62,7 @@ auto realloc(void* ptr, mem::Layout layout, usize new_size) noexcept -> void* {
   }
 
   const auto copy_size = cmp::min(layout.size, new_size);
-  const auto aligned_size = detail::align_up(new_size, layout.align);
+  const auto aligned_size = align_up(new_size, layout.align);
   const auto new_ptr = ::aligned_alloc(layout.align, aligned_size);
   if (new_ptr && ptr && copy_size != 0) {
     __builtin_memcpy(new_ptr, ptr, copy_size);

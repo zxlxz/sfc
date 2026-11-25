@@ -7,7 +7,8 @@
 
 namespace sfc::sys::posix {
 
-static auto demangle(Slice<char> buf, const char* raw_name) -> bool {
+namespace {
+auto demangle(Slice<char> buf, const char* raw_name) -> bool {
   if (buf._ptr == nullptr || raw_name == nullptr) {
     return false;
   }
@@ -33,6 +34,7 @@ static auto demangle(Slice<char> buf, const char* raw_name) -> bool {
 
   return false;
 }
+}  // namespace
 
 auto StackFrame::from_addr(const void* addr) -> StackFrame {
   auto dli = ::Dl_info{};

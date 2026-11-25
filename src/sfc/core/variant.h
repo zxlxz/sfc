@@ -106,12 +106,12 @@ consteval auto idx() {
 
 template <class U, class... T>
 consteval auto tag() {
-  static constexpr u32 I = detail::idx<U, T...>();
+  constexpr u32 I = detail::idx<U, T...>();
   return tag_t<I>{};
 }
 
 template <u32 N>
-static void imap(u32 I, auto&& f) {
+void imap(u32 I, auto&& f) {
   if constexpr (N > 0) I == 0 ? f(tag_t<0U>{}) : void();
   if constexpr (N > 1) I == 1 ? f(tag_t<1U>{}) : void();
   if constexpr (N > 2) I == 2 ? f(tag_t<2U>{}) : void();
