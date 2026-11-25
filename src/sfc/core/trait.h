@@ -5,12 +5,12 @@
 namespace sfc::trait {
 
 template <class U>
-struct Type {
+struct type_t {
   using T = U;
 };
 
 template <class T>
-using arg_t = typename Type<T>::T;
+using arg_t = typename type_t<T>::T;
 
 template <auto X>
 struct const_t {
@@ -28,7 +28,7 @@ template <class T, class U>
 concept same_ = __is_same(T, U);
 #else
 template <class T, class U>
-concept same_ = __is_convertible_to(Type<T>*, Type<U>*);
+concept same_ = __is_convertible_to(type_t<T>*, type_t<U>*);
 #endif
 
 template <class T>
@@ -41,16 +41,17 @@ template <class T, class... U>
 concept any_ = (same_<T, U> || ...);
 
 template <class T>
-concept sint_ = any_<T, signed char, short, int, long, long long>;
+concept sint_ = same_<T, signed char> || same_<T, short> || same_<T, int> || same_<T, long> || same_<T, long long>;
 
 template <class T>
-concept uint_ = any_<T, unsigned char, unsigned short, unsigned int, unsigned long, unsigned long long>;
+concept uint_ = same_<T, unsigned char> || same_<T, unsigned short> || same_<T, unsigned int> ||
+                same_<T, unsigned long> || same_<T, unsigned long long>;
 
 template <class T>
 concept int_ = sint_<T> || uint_<T>;
 
 template <class T>
-concept flt_ = any_<T, float, double>;
+concept flt_ = same_<T, float> || same_<T, double>;
 
 template <class T>
 concept num_ = int_<T> || flt_<T>;
@@ -69,7 +70,9 @@ concept tv_drop_ = __has_trivial_destructor(T);
 }  // namespace sfc::trait
 
 namespace sfc {
-using trait::Type;
+using trait::type_t;
+using trait::arg_t;
+using trait::const_t;
 
 using trait::same_;
 using trait::enum_;

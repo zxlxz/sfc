@@ -5,8 +5,6 @@
 
 namespace sfc::variant {
 
-namespace detail {
-
 template <class... T>
 struct Union;
 
@@ -69,98 +67,36 @@ struct Union<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> { union{A _0; B _1;
 
 #undef _UNION_IMPL
 
-template <u32 I>
-struct tag_t {
-  static constexpr u32 VALUE = I;
-
- public:
-  static auto operator[](auto&& self) -> auto& {
-    static_assert(I < 16, "Variant::at: index out of bounds");
-    if constexpr (I == 0) return self._0;
-    if constexpr (I == 1) return self._1;
-    if constexpr (I == 2) return self._2;
-    if constexpr (I == 3) return self._3;
-    if constexpr (I == 4) return self._4;
-    if constexpr (I == 5) return self._5;
-    if constexpr (I == 6) return self._6;
-    if constexpr (I == 7) return self._7;
-    if constexpr (I == 8) return self._8;
-    if constexpr (I == 9) return self._9;
-    if constexpr (I == 10) return self._10;
-    if constexpr (I == 11) return self._11;
-    if constexpr (I == 12) return self._12;
-    if constexpr (I == 13) return self._13;
-    if constexpr (I == 14) return self._14;
-    if constexpr (I == 15) return self._15;
-  }
-};
-
-template <class U, class T, class... S>
-consteval auto idx() {
-  if constexpr (trait::same_<U, T>) {
-    return 0;
-  } else {
-    return 1 + idx<U, S...>();
-  }
-}
-
-template <class U, class... T>
-consteval auto tag() {
-  constexpr u32 I = detail::idx<U, T...>();
-  return tag_t<I>{};
-}
-
-template <u32 N>
-void imap(u32 I, auto&& f) {
-  if constexpr (N > 0) I == 0 ? f(tag_t<0U>{}) : void();
-  if constexpr (N > 1) I == 1 ? f(tag_t<1U>{}) : void();
-  if constexpr (N > 2) I == 2 ? f(tag_t<2U>{}) : void();
-  if constexpr (N > 3) I == 3 ? f(tag_t<3U>{}) : void();
-  if constexpr (N > 4) I == 4 ? f(tag_t<4U>{}) : void();
-  if constexpr (N > 5) I == 5 ? f(tag_t<5U>{}) : void();
-  if constexpr (N > 6) I == 6 ? f(tag_t<6U>{}) : void();
-  if constexpr (N > 7) I == 7 ? f(tag_t<7U>{}) : void();
-  if constexpr (N > 8) I == 8 ? f(tag_t<8U>{}) : void();
-  if constexpr (N > 9) I == 9 ? f(tag_t<9U>{}) : void();
-  if constexpr (N > 10) I == 10 ? f(tag_t<10U>{}) : void();
-  if constexpr (N > 11) I == 11 ? f(tag_t<11U>{}) : void();
-  if constexpr (N > 12) I == 12 ? f(tag_t<12U>{}) : void();
-  if constexpr (N > 13) I == 13 ? f(tag_t<13U>{}) : void();
-  if constexpr (N > 14) I == 14 ? f(tag_t<14U>{}) : void();
-  if constexpr (N > 15) I == 15 ? f(tag_t<15U>{}) : void();
-}
-
-}  // namespace detail
-
 template <class... T>
 class Variant {
   static constexpr u32 N = sizeof...(T);
-  using Inn = detail::Union<T...>;
+  using Inn = Union<T...>;
+
   u8 _tag;
   Inn _inn;
 
  public:
   template <trait::any_<T...> U>
   explicit Variant(U arg) noexcept {
-    static constexpr auto I = detail::tag<U, T...>();
-    ptr::write(&I[_inn], mem::move(arg));
-    _tag = I.VALUE;
+    static constexpr auto I = trait::const_t<type_index<U>()>{};
+    ptr::write(&(*this)[I], mem::move(arg));
+    _tag = u8(I.VALUE);
   }
 
   ~Variant() {
-    detail::imap<N>(_tag, [&](auto I) { mem::drop(I[_inn]); });
+    this->map_mut([&](auto& x) { mem::drop(x); });
     _tag = 0xFF;
   }
 
   Variant(Variant&& other) noexcept : _tag{other._tag} {
-    detail::imap<N>(_tag, [&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
+    this->imap([&](auto I) { ptr::write(&(*this)[I], mem::move(other[I])); });
   }
 
   Variant& operator=(Variant&& other) noexcept {
     if (this != &other) {
-      detail::imap<N>(_tag, [&](auto I) { mem::drop(I[_inn]); });
+      this->map_mut([&](auto& x) { mem::drop(x); });
       _tag = other._tag;
-      detail::imap<N>(_tag, [&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
+      this->imap([&](auto I) { ptr::write(&(*this)[I], mem::move(other[I])); });
     }
     return *this;
   }
@@ -168,35 +104,89 @@ class Variant {
  public:
   template <class U>
   auto is() const noexcept -> bool {
-    static constexpr auto I = detail::tag<U, T...>();
-    return _tag == I.VALUE;
+    constexpr auto I = type_index<U>();
+    return _tag == I;
   }
 
   template <class U>
   auto as() const noexcept -> Option<const U&> {
-    static constexpr auto I = detail::tag<U, T...>();
+    constexpr auto I = trait::const_t<type_index<U>()>{};
     if (_tag != I.VALUE) return {};
-    return I[_inn];
+    return (*this)[I];
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
-    static constexpr auto I = detail::tag<U, T...>();
+    constexpr auto I = trait::const_t<type_index<U>()>{};
     if (_tag != I.VALUE) return {};
-    return I[_inn];
+    return (*this)[I];
   }
 
  public:
   void map(auto&& f) const {
-    detail::imap<N>(_tag, [&](auto I) { f(I[_inn]); });
+    this->imap([&](auto I) { f((*this)[I]); });
   }
 
   void map_mut(auto&& f) {
-    detail::imap<N>(_tag, [&](auto I) { f(I[_inn]); });
+    this->imap([&](auto I) { f((*this)[I]); });
   }
 
   void fmt(auto& f) const {
-    this->map([&](auto& val) { f.write_val(val); });
+    this->map([&](const auto& x) { f.write_val(x); });
+  }
+
+ private:
+  template <class U>
+  static consteval auto type_index() -> u32 {
+    static_assert(trait::any_<U, T...>, "Type U must be one of the variant types");
+    u32 inc = 1;
+    u32 idx = 0;
+    ((trait::same_<U, T> ? inc = 0 : idx += inc), ...);
+    return idx;
+  }
+
+  template <u32 I>
+  auto operator[](this auto&& self, trait::const_t<I>) -> auto& {
+    if constexpr (I == 0) return self._inn._0;
+    if constexpr (I == 1) return self._inn._1;
+    if constexpr (I == 2) return self._inn._2;
+    if constexpr (I == 3) return self._inn._3;
+    if constexpr (I == 4) return self._inn._4;
+    if constexpr (I == 5) return self._inn._5;
+    if constexpr (I == 6) return self._inn._6;
+    if constexpr (I == 7) return self._inn._7;
+    if constexpr (I == 8) return self._inn._8;
+    if constexpr (I == 9) return self._inn._9;
+    if constexpr (I == 10) return self._inn._10;
+    if constexpr (I == 11) return self._inn._11;
+    if constexpr (I == 12) return self._inn._12;
+    if constexpr (I == 13) return self._inn._13;
+    if constexpr (I == 14) return self._inn._14;
+    if constexpr (I == 15) return self._inn._15;
+  }
+
+  void imap(auto&& f) const {
+#define IMAP_CASE(I) \
+  if constexpr (I < N) f(trait::const_t<u32(I)>{});
+    switch (_tag) {
+      case 0:  IMAP_CASE(0); break;
+      case 1:  IMAP_CASE(1); break;
+      case 2:  IMAP_CASE(2); break;
+      case 3:  IMAP_CASE(3); break;
+      case 4:  IMAP_CASE(4); break;
+      case 5:  IMAP_CASE(5); break;
+      case 6:  IMAP_CASE(6); break;
+      case 7:  IMAP_CASE(7); break;
+      case 8:  IMAP_CASE(8); break;
+      case 9:  IMAP_CASE(9); break;
+      case 10: IMAP_CASE(10); break;
+      case 11: IMAP_CASE(11); break;
+      case 12: IMAP_CASE(12); break;
+      case 13: IMAP_CASE(13); break;
+      case 14: IMAP_CASE(14); break;
+      case 15: IMAP_CASE(15); break;
+    }
+#undef IMAP_CASE
   }
 };
 

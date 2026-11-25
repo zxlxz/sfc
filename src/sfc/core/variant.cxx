@@ -22,6 +22,38 @@ SFC_TEST(variant_move) {
   sfc::assert_eq(b.as<i32>(), Option{2});
 }
 
+SFC_TEST(variant_is) {
+  auto a = Variant<i32, f32>{2};
+  sfc::assert_eq(a.is<i32>(), true);
+  sfc::assert_eq(a.is<f32>(), false);
+}
+
+SFC_TEST(variant_as) {
+  const auto a = Variant<bool, i32>{true};
+  sfc::assert_eq(a.as<bool>(), Option{true});
+  sfc::assert_eq(a.as<i32>(), None{});
+}
+
+SFC_TEST(variant_as_mut) {
+  auto a = Variant<bool, u32>{1U};
+  sfc::assert_eq(a.as_mut<u32>(), Option{1U});
+  sfc::assert_eq(a.as_mut<bool>(), None{});
+
+  a.as_mut<u32>().map([](auto& val) {
+    val += 1;
+    return Unit{};
+  });
+
+  sfc::assert_eq(a.as_mut<u32>(), Option{2U});
+}
+
+SFC_TEST(variant_map) {
+  auto a = Variant<i32, f32>{2};
+  a.map([](const auto& val) { sfc::assert_eq(val, 2); });
+  a.map_mut([](auto& val) { val += 1; });
+  a.map([](const auto& val) { sfc::assert_eq(val, 3); });
+}
+
 // Variant::fmt
 SFC_TEST(variant_fmt) {
   auto a = Variant<i32, f32>{2};
