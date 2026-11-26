@@ -4,62 +4,249 @@
 
 namespace sfc::str {
 
-namespace {
+namespace pattern {
 
-auto fast_exp10(i32 p) -> f64 {
-  static constexpr f64 TBL[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};
-
-  auto n = num::unsigned_abs(p);
-  if (n == 0) {
-    return 1.0;
-  }
-
-  auto res = 1.0;
-  for (; n >= 256; n -= 256) {
-    res *= 1e256;
-  }
-  for (; n >= 16; n -= 16) {
-    res *= 1e16;
-  }
-
-  if (n < 16) {
-#ifndef __clang_analyzer__  // make clang-analyzer happy
-    res *= TBL[n];
-#endif
-  }
-
-  if (p < 0) {
-    res = 1.0 / res;
-  }
-  return res;
-}
-}  // namespace
-
-auto Str::trim_start() const noexcept -> Str {
-  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-  return this->trim_start_matches(is_space);
+auto CharPattern::into_searcher(Str haystack) -> CharSearcher {
+  return {Searcher{._haystack = haystack}, _0};
 }
 
-auto Str::trim_end() const noexcept -> Str {
-  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-  return this->trim_end_matches(is_space);
+auto StrPattern::into_searcher(Str haystack) -> StrSearcher {
+  return {Searcher{._haystack = haystack}, _0};
 }
 
-auto Str::trim() const noexcept -> Str {
-  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
-  return this->trim_matches(is_space);
+auto CharPredPattern::into_searcher(Str haystack) -> CharPredSearcher {
+  return {Searcher{._haystack = haystack}, _0};
 }
 
-void Str::fmt(fmt::Formatter& f) const {
-  const auto type = f.type();
-  if (type == 's' || type == '?') {
-    f.write_char('"');
-    f.write_str(*this);
-    f.write_char('"');
+auto CharSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done};
+  }
+
+  const auto old_finger = _finger;
+  _finger += 1;
+
+  const auto ch = _haystack[old_finger];
+  if (ch == _needle) {
+    return {SearchStep::Match, {old_finger, _finger}};
   } else {
-    f.pad(*this);
+    return {SearchStep::Reject, {old_finger, _finger}};
   }
 }
+
+auto CharSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done};
+  }
+
+  _finger_back -= 1;
+
+  const auto ch = _haystack[_finger_back];
+  if (ch == _needle) {
+    return {SearchStep::Match, {_finger_back, _finger_back + 1}};
+  } else {
+    return {SearchStep::Reject, {_finger_back, _finger_back + 1}};
+  }
+}
+
+auto StrSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done};
+  }
+
+  const auto old_finger = _finger;
+
+  // an empty needle matches at every position
+  if (_needle._len == 0) {
+    _finger += 1;
+    return {SearchStep::Match, {old_finger, old_finger}};
+  }
+
+  if (_needle._len > _haystack._len - old_finger) {
+    _finger = _haystack._len;
+    return {SearchStep::Reject, {old_finger, _finger}};
+  }
+
+  const auto s = _haystack[{old_finger, old_finger + _needle._len}];
+  if (s == _needle) {
+    _finger += _needle._len;
+    return {SearchStep::Match, {old_finger, _finger}};
+  } else {
+    _finger += 1;
+    return {SearchStep::Reject, {old_finger, _finger}};
+  }
+}
+
+auto StrSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done};
+  }
+
+  const auto old_finger_back = _finger_back;
+
+  // an empty needle matches at every position
+  if (_needle._len == 0) {
+    _finger_back -= 1;
+    return {SearchStep::Match, {old_finger_back, old_finger_back}};
+  }
+
+  if (_needle._len > _finger_back) {
+    _finger_back = 0;
+    return {SearchStep::Reject, {0, old_finger_back}};
+  }
+
+  const auto s = _haystack[{old_finger_back - _needle._len, old_finger_back}];
+  if (s == _needle) {
+    _finger_back -= _needle._len;
+    return {SearchStep::Match, {_finger_back, old_finger_back}};
+  } else {
+    _finger_back -= 1;
+    return {SearchStep::Reject, {_finger_back, old_finger_back}};
+  }
+}
+
+auto CharPredSearcher::next() -> SearchStep {
+  if (_finger >= _haystack._len) {
+    return {SearchStep::Done};
+  }
+
+  const auto old_finger = _finger;
+  _finger += 1;
+
+  const auto ch = _haystack[old_finger];
+  if (_pred(ch)) {
+    return {SearchStep::Match, {old_finger, _finger}};
+  } else {
+    return {SearchStep::Reject, {old_finger, _finger}};
+  }
+}
+
+auto CharPredSearcher::next_back() -> SearchStep {
+  if (_finger_back == 0) {
+    return {SearchStep::Done};
+  }
+
+  _finger_back -= 1;
+
+  const auto ch = _haystack[_finger_back];
+  if (_pred(ch)) {
+    return {SearchStep::Match, {_finger_back, _finger_back + 1}};
+  } else {
+    return {SearchStep::Reject, {_finger_back, _finger_back + 1}};
+  }
+}
+
+auto Searcher::next_match(this auto& self) -> Option<Range> {
+  while (true) {
+    const auto step = self.next();
+    if (step.kind == SearchStep::Match) {
+      return step.range;
+    }
+    if (step.kind == SearchStep::Done) {
+      return {};
+    }
+  }
+}
+
+auto Searcher::next_reject(this auto& self) -> Option<Range> {
+  while (true) {
+    const auto step = self.next();
+    switch (step.kind) {
+      case SearchStep::Reject: return step.range;
+      case SearchStep::Done:   return {};
+      default:                 break;
+    }
+  }
+}
+
+auto Searcher::next_match_back(this auto& self) -> Option<Range> {
+  while (true) {
+    const auto step = self.next_back();
+    switch (step.kind) {
+      case SearchStep::Match: return step.range;
+      case SearchStep::Done:  return {};
+      default:                break;
+    }
+  }
+}
+
+auto Searcher::next_reject_back(this auto& self) -> Option<Range> {
+  while (true) {
+    const auto step = self.next_back();
+    switch (step.kind) {
+      case SearchStep::Reject: return step.range;
+      case SearchStep::Done:   return {};
+      default:                 break;
+    }
+  }
+}
+
+auto Pattern::is_contained_in(this auto self, Str hs) -> bool {
+  auto s = self.into_searcher(hs);
+  const auto m = s.next_match();
+  return m.is_some();
+}
+
+auto Pattern::is_prefix_of(this auto self, Str hs) -> bool {
+  auto s = self.into_searcher(hs);
+  const auto m = s.next_match();
+  return m && m->_start == 0;
+}
+
+auto Pattern::is_suffix_of(this auto self, Str hs) -> bool {
+  auto s = self.into_searcher(hs);
+  const auto m = s.next_match_back();
+  return m && m->_end == hs._len;
+}
+
+template <class Self>
+auto Pattern::trim_prefix_of(this Self self, Str hs) -> Str {
+  if constexpr (trait::same_<Self, StrPattern>) {
+    if (self._0._len == 0) return hs;
+  }
+
+  const auto [p, n] = hs;
+
+  auto s = self.into_searcher(hs);
+  const auto [a, _] = s.next_reject().unwrap_or({n, n});
+  return {p + a, n - a};
+}
+
+template <class Self>
+auto Pattern::trim_suffix_of(this Self self, Str hs) -> Str {
+  if constexpr (trait::same_<Self, StrPattern>) {
+    if (self._0._len == 0) return hs;
+  }
+
+  const auto [p, n] = hs;
+
+  auto s = self.into_searcher(hs);
+  const auto [_, b] = s.next_reject_back().unwrap_or({0, 0});
+  return {p, b};
+}
+
+#define IMPL_SEARCHER(T)                                             \
+  template auto Searcher::next_match(this T&) -> Option<Range>;      \
+  template auto Searcher::next_reject(this T&) -> Option<Range>;     \
+  template auto Searcher::next_match_back(this T&) -> Option<Range>; \
+  template auto Searcher::next_reject_back(this T&) -> Option<Range>;
+IMPL_SEARCHER(CharSearcher);
+IMPL_SEARCHER(StrSearcher);
+IMPL_SEARCHER(CharPredSearcher);
+#undef IMPL_SEARCHER
+
+#define IMPL_PATTERN(T)                                      \
+  template auto Pattern::is_contained_in(this T, Str)->bool; \
+  template auto Pattern::is_prefix_of(this T, Str)->bool;    \
+  template auto Pattern::is_suffix_of(this T, Str)->bool;    \
+  template auto Pattern::trim_prefix_of(this T, Str)->Str;   \
+  template auto Pattern::trim_suffix_of(this T, Str)->Str;
+IMPL_PATTERN(CharPattern);
+IMPL_PATTERN(StrPattern);
+IMPL_PATTERN(CharPredPattern);
+#undef IMPL_PATTERN
+
+}  // namespace pattern
 
 class NumParser {
   const char* _ptr;
@@ -67,6 +254,34 @@ class NumParser {
 
  public:
   NumParser(Str s) : _ptr{s._ptr}, _end{s._ptr + s._len} {}
+
+  static auto fast_exp10(i32 p) -> f64 {
+    static constexpr f64 TBL[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15};
+
+    auto n = num::unsigned_abs(p);
+    if (n == 0) {
+      return 1.0;
+    }
+
+    auto res = 1.0;
+    for (; n >= 256; n -= 256) {
+      res *= 1e256;
+    }
+    for (; n >= 16; n -= 16) {
+      res *= 1e16;
+    }
+
+    if (n < 16) {
+#ifndef __clang_analyzer__  // make clang-analyzer happy
+      res *= TBL[n];
+#endif
+    }
+
+    if (p < 0) {
+      res = 1.0 / res;
+    }
+    return res;
+  }
 
  public:
   template <trait::uint_ T>
@@ -235,6 +450,32 @@ class NumParser {
   }
 };
 
+auto Str::trim_start() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_start_matches(is_space);
+}
+
+auto Str::trim_end() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_end_matches(is_space);
+}
+
+auto Str::trim() const noexcept -> Str {
+  const auto is_space = [](char c) { return c == ' ' || ('\x09' <= c && c <= '\x0d'); };
+  return this->trim_matches(is_space);
+}
+
+void Str::fmt(fmt::Formatter& f) const {
+  const auto type = f.type();
+  if (type == 's' || type == '?') {
+    f.write_char('"');
+    f.write_str(*this);
+    f.write_char('"');
+  } else {
+    f.pad(*this);
+  }
+}
+
 template <class T>
 auto FromStr<T>::from_str(Str s) -> Option<T> {
   auto parser = NumParser{s};
@@ -255,6 +496,5 @@ template struct FromStr<signed long long>;
 
 template struct FromStr<float>;
 template struct FromStr<double>;
-
 
 }  // namespace sfc::str

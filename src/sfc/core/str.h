@@ -63,7 +63,7 @@ struct Str {
   }
 
   constexpr auto as_bytes() const noexcept -> Slice<const u8> {
-    return {ptr::cast<const u8>(_ptr), _len};
+    return {(const u8*)_ptr, _len};
   }
 
  public:
@@ -77,7 +77,7 @@ struct Str {
     return Str{_ptr + ids._start, ids.len()};
   }
 
-  auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
+  constexpr auto split_at(usize mid) const noexcept -> Tuple<Str, Str> {
     const auto x = mid < _len ? mid : _len;
     return Tuple{Str{_ptr, x}, Str{_ptr + x, _len - x}};
   }
@@ -87,17 +87,6 @@ struct Str {
     if (_len != s._len) return false;
     if (_len == 0 || _ptr == s._ptr) return true;
     return __builtin_memcmp(_ptr, s._ptr, _len) == 0;
-  }
-
-  constexpr auto operator<=>(Str other) const noexcept -> int {
-    const auto min_len = _len < other._len ? _len : other._len;
-    if (min_len != 0) {
-      const auto ret = __builtin_memcmp(_ptr, other._ptr, min_len);
-      if (ret != 0) {
-        return ret < 0 ? -1 : 1;
-      }
-    }
-    return _len == other._len ? 0 : (_len < other._len ? -1 : 1);
   }
 
   using Iter = slice::Iter<const char>;
@@ -156,54 +145,69 @@ struct SearchStep {
   Range range{0, 0};
 };
 
-template <class P>
 struct Searcher {
   Str _haystack;
-  P _pat;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
+  auto next_match(this auto& self) -> Option<Range>;
+  auto next_reject(this auto& self) -> Option<Range>;
+
+  auto next_match_back(this auto& self) -> Option<Range>;
+  auto next_reject_back(this auto& self) -> Option<Range>;
+};
+
+struct CharSearcher : Searcher {
+  char _needle;
+
+ public:
   auto next() -> SearchStep;
-  auto next_match() -> Option<Range>;
-  auto next_reject() -> Option<Range>;
-
-  auto next_match_back() -> Option<Range>;
-  auto next_reject_back() -> Option<Range>;
+  auto next_back() -> SearchStep;
 };
 
-struct Pattern {
-  auto is_contained_in(this auto self, Str haystack) -> bool;
-
-  auto is_prefix_of(this auto self, Str haystack) -> bool;
-  auto is_suffix_of(this auto self, Str haystack) -> bool;
-
-  auto strip_prefix_of(this auto self, Str haystack) -> Option<Str>;
-  auto strip_suffix_of(this auto self, Str haystack) -> Option<Str>;
-};
-
-struct CharPattern : Pattern {
-  char _ch;
+struct StrSearcher : Searcher {
+  Str _needle;
 
  public:
-  auto into_searcher(Str haystack) -> Searcher<CharPattern>;
+  auto next() -> SearchStep;
+  auto next_back() -> SearchStep;
 };
 
-struct StrPattern : Pattern {
-  Str _s;
-
- public:
-  auto into_searcher(Str haystack) -> Searcher<StrPattern>;
-};
-
-struct CharPredPattern : Pattern {
+struct CharPredSearcher : Searcher {
   ops::Fn<bool(char)> _pred;
 
  public:
-  auto into_searcher(Str haystack) -> Searcher<CharPredPattern>;
+  auto next() -> SearchStep;
+  auto next_back() -> SearchStep;
 };
 
-auto from(auto&& pat) {
+struct Pattern {
+  auto is_contained_in(this auto self, Str s) -> bool;
+
+  auto is_prefix_of(this auto self, Str s) -> bool;
+  auto is_suffix_of(this auto self, Str s) -> bool;
+
+  auto trim_prefix_of(this auto self, Str s) -> Str;
+  auto trim_suffix_of(this auto self, Str s) -> Str;
+};
+
+struct CharPattern : Pattern {
+  char _0;
+  auto into_searcher(Str haystack) -> CharSearcher;
+};
+
+struct StrPattern : Pattern {
+  Str _0;
+  auto into_searcher(Str haystack) -> StrSearcher;
+};
+
+struct CharPredPattern : Pattern {
+  ops::Fn<bool(char)> _0;
+  auto into_searcher(Str haystack) -> CharPredSearcher;
+};
+
+auto as(auto&& pat) {
   if constexpr (requires { char{pat}; }) {
     return CharPattern{{}, pat};
   } else if constexpr (requires { Str{pat}; }) {
@@ -216,53 +220,51 @@ auto from(auto&& pat) {
 }  // namespace pattern
 
 auto Str::find(auto&& p) const -> Option<usize> {
-  auto f_start = [](auto step) { return step._start; };
-  return pattern::from(p).into_searcher(*this).next_match().map(f_start);
+  auto s = pattern::as(p).into_searcher(*this);
+  return s.next_match().map([](auto s) { return s._start; });
 }
 
 auto Str::rfind(auto&& p) const -> Option<usize> {
-  auto f_start = [](auto step) { return step._start; };
-  return pattern::from(p).into_searcher(*this).next_match_back().map(f_start);
+  auto s = pattern::as(p).into_searcher(*this);
+  return s.next_match_back().map([](auto s) { return s._start; });
 }
 
 auto Str::contains(auto&& p) const -> bool {
-  return pattern::from(p).is_contained_in(*this);
+  return pattern::as(p).is_contained_in(*this);
 }
 
 auto Str::starts_with(auto&& p) const -> bool {
-  return pattern::from(p).is_prefix_of(*this);
+  return pattern::as(p).is_prefix_of(*this);
 }
 
 auto Str::ends_with(auto&& p) const -> bool {
-  return pattern::from(p).is_suffix_of(*this);
+  return pattern::as(p).is_suffix_of(*this);
 }
 
 auto Str::trim_start_matches(auto&& p) const -> Str {
-  auto m = pattern::from(p).into_searcher(*this);
-  const auto [i, _] = m.next_reject().unwrap_or({_len, _len});
-  return Str{_ptr + i, _len - i};
+  return pattern::as(p).trim_prefix_of(*this);
 }
 
 auto Str::trim_end_matches(auto&& p) const -> Str {
-  auto m = pattern::from(p).into_searcher(*this);
-  const auto [_, b] = m.next_reject_back().unwrap_or({0, 0});
-  return Str{_ptr, b};
+  return pattern::as(p).trim_suffix_of(*this);
 }
 
 auto Str::trim_matches(auto&& p) const -> Str {
-  auto m = pattern::from(p).into_searcher(*this);
-  const auto [i, _] = m.next_reject().unwrap_or({_len, _len});
-  const auto [_, b] = m.next_reject_back().unwrap_or({0, 0});
-  return Str{_ptr + i, b - i};
+  auto pat = pattern::as(p);
+  const auto s1 = pat.trim_prefix_of(*this);
+  const auto s2 = pat.trim_suffix_of(s1);
+  return s2;
 }
 
 auto Str::split_once(auto&& p) const -> Option<Tuple<Str, Str>> {
-  const auto [start, end] = _TRY(pattern::from(p).into_searcher(*this).next_match());
+  auto s = pattern::as(p).into_searcher(*this);
+  const auto [start, end] = _TRY(s.next_match());
   return Tuple{Str{_ptr, start}, Str{_ptr + end, _len - end}};
 }
 
 auto Str::rsplit_once(auto&& p) const -> Option<Tuple<Str, Str>> {
-  const auto [start, end] = _TRY(pattern::from(p).into_searcher(*this).next_match_back());
+  auto s = pattern::as(p).into_searcher(*this);
+  const auto [start, end] = _TRY(s.next_match_back());
   return Tuple{Str{_ptr, start}, Str{_ptr + end, _len - end}};
 }
 
