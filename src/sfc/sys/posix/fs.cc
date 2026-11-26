@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 
 #include "sfc/fs/file.h"
+
+#include "sfc/sys/cstr.inl"
 #include "sfc/sys/posix/fs.h"
 
 namespace sfc::sys::posix {

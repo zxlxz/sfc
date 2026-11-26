@@ -23,6 +23,7 @@ class [[nodiscard]] String {
   static auto from(Str s) -> String;
   static auto from_utf8(List<u8> buf) -> String;
   static auto from_utf16(Slice<const u16> buf) -> String;
+  static auto from_wstr(Slice<const wchar_t> buf) -> String;
 
  public:
   auto capacity() const noexcept -> usize;

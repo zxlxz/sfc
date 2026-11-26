@@ -1,7 +1,8 @@
 #pragma once
 
 #include <dirent.h>
-#include "sfc/sys/posix/mod.h"
+
+#include "sfc/sys/posix/io.h"
 
 namespace sfc::fs {
 struct Metadata;
@@ -9,8 +10,6 @@ struct OpenOptions;
 }  // namespace sfc::fs
 
 namespace sfc::sys::posix {
-
-using RawFd = int;
 
 struct FileAttr {
   u32 _attr;

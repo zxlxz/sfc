@@ -1,5 +1,7 @@
 #include <dlfcn.h>
 
+#include "sfc/sys/cstr.inl"
+#include "sfc/sys/posix/io.h"
 #include "sfc/sys/posix/ffi.h"
 
 namespace sfc::sys::posix {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/sys/posix/mod.h"
+#include "sfc/core.h"
 
 namespace sfc::sys::posix {
 

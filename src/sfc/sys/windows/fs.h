@@ -1,8 +1,6 @@
 #pragma once
 
-#include "sfc/sys/windows/mod.h"
-
-struct _WIN32_FIND_DATAW;
+#include "sfc/sys/windows/io.h"
 
 namespace sfc::fs {
 struct Metadata;
@@ -10,8 +8,6 @@ struct OpenOptions;
 }  // namespace sfc::fs
 
 namespace sfc::sys::windows {
-
-using RawFd = void*;
 
 struct FileAttr {
   u32 _attr;

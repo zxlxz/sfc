@@ -5,7 +5,9 @@
 namespace sfc::sys::windows {
 
 using RawFd = void*;
+
 constexpr RawFd kInvalidFd = nullptr;
+constexpr u32 kMaxPath = 1024U;
 
 struct File {
   RawFd _fd = kInvalidFd;

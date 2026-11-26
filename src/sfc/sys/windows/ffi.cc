@@ -1,5 +1,8 @@
 #include <Windows.h>
 
+#include "sfc/sys/cstr.inl"
+#include "sfc/sys/windows/io.h"
+#include "sfc/sys/windows/wstr.h"
 #include "sfc/sys/windows/ffi.h"
 
 namespace sfc::sys::windows {

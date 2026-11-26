@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/sys/windows/mod.h"
+#include "sfc/core.h"
 
 namespace sfc::sys::windows {
 

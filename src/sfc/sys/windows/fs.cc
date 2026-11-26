@@ -1,8 +1,13 @@
 #include <Windows.h>
 
 #include "sfc/fs/file.h"
+
 #include "sfc/sys/windows/io.h"
 #include "sfc/sys/windows/fs.h"
+#include "sfc/sys/windows/wstr.h"
+
+#define _CVT_R(expr) \
+  if (!(expr)) return io_error(os_error());
 
 namespace sfc::sys::windows {
 
@@ -31,19 +36,15 @@ auto open(Str path, fs::OpenOptions opts) -> io::Result<RawFd> {
   const DWORD flags = FILE_ATTRIBUTE_NORMAL;
 
   const auto handle = ::CreateFileW(os_path, access_mode, share_mode, nullptr, create_mode, flags, nullptr);
-  if (handle == INVALID_HANDLE_VALUE) {
-    return io::last_os_error();
-  }
+  _CVT_R(handle != INVALID_HANDLE_VALUE);
+
   return handle;
 }
 
 auto fstat(RawFd fd) -> io::Result<fs::Metadata> {
   auto attr = BY_HANDLE_FILE_INFORMATION{};
 
-  const auto ret = ::GetFileInformationByHandle(fd, &attr);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::GetFileInformationByHandle(fd, &attr));
 
   const auto size = combine_u64(attr.nFileSizeHigh, attr.nFileSizeLow);
   const auto meta = fs::Metadata{._size = size, ._attr = attr.dwFileAttributes};
@@ -57,9 +58,7 @@ auto lstat(Str path) -> io::Result<fs::Metadata> {
   }
 
   auto attr = WIN32_FILE_ATTRIBUTE_DATA{};
-  if (!::GetFileAttributesExW(os_path, GetFileExInfoStandard, &attr)) {
-    return io::last_os_error();
-  }
+  _CVT_R(::GetFileAttributesExW(os_path, GetFileExInfoStandard, &attr));
 
   const auto size = combine_u64(attr.nFileSizeHigh, attr.nFileSizeLow);
   const auto meta = fs::Metadata{._size = size, ._attr = attr.dwFileAttributes};
@@ -72,10 +71,7 @@ auto unlink(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  const auto ret = ::DeleteFileW(os_path);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::DeleteFileW(os_path));
   return Ok{};
 }
 
@@ -86,10 +82,7 @@ auto rename(Str old_path, Str new_path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  const auto ret = ::MoveFileW(os_old_path, os_new_path);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::MoveFileW(os_old_path, os_new_path));
   return Ok{};
 }
 
@@ -99,10 +92,7 @@ auto mkdir(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  const auto ret = ::CreateDirectoryW(os_path, nullptr);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::CreateDirectoryW(os_path, nullptr));
 
   return Ok{};
 }
@@ -113,10 +103,7 @@ auto rmdir(Str path) -> io::Result<> {
     return io::Error::InvalidInput;
   }
 
-  const auto ret = ::RemoveDirectoryW(os_path);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::RemoveDirectoryW(os_path));
   return Ok{};
 }
 
@@ -158,7 +145,7 @@ auto ReadDir::open(Str path) -> io::Result<ReadDir> {
       ._file_attr = data.dwFileAttributes,
       ._file_name = {},
   };
-  windows::encode_cstr(data.cFileName, res._file_name);
+  windows::cvt_w16_utf8(data.cFileName, res._file_name);
 
   return res;
 }
@@ -184,7 +171,7 @@ auto ReadDir::next() -> Option<DirEntry> {
 
     _file_size = combine_u64(dataw.nFileSizeHigh, dataw.nFileSizeLow);
     _file_attr = dataw.dwFileAttributes;
-    windows::encode_cstr(dataw.cFileName, _file_name);
+    windows::cvt_w16_utf8(dataw.cFileName, _file_name);
   }
 
   return DirEntry{

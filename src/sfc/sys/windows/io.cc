@@ -2,6 +2,9 @@
 
 #include "sfc/sys/windows/io.h"
 
+#define _CVT_R(expr) \
+  if (!(expr)) return io_error(os_error());
+
 namespace sfc::sys::windows {
 
 void File::close() {
@@ -17,9 +20,7 @@ auto File::read(Slice<u8> buf) -> io::Result<usize> {
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nread = 0UL;
-  if (!::ReadFile(_fd, buf_ptr, buf_len, &nread, nullptr)) {
-    return io::last_os_error();
-  }
+  _CVT_R(::ReadFile(_fd, buf_ptr, buf_len, &nread, nullptr));
   return usize{nread};
 }
 
@@ -28,17 +29,12 @@ auto File::write(Slice<const u8> buf) -> io::Result<usize> {
   const auto buf_len = u32(cmp::min(buf._len, U32::MAX));
 
   auto nwrite = 0UL;
-  if (!::WriteFile(_fd, buf_ptr, buf_len, &nwrite, nullptr)) {
-    return io::last_os_error();
-  }
+  _CVT_R(::WriteFile(_fd, buf_ptr, buf_len, &nwrite, nullptr));
   return usize{nwrite};
 }
 
 auto File::flush() -> io::Result<> {
-  const auto ret = ::FlushFileBuffers(_fd);
-  if (!ret) {
-    return io::last_os_error();
-  }
+  _CVT_R(::FlushFileBuffers(_fd));
   return Ok{};
 }
 
@@ -53,9 +49,7 @@ auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
 
   const auto old_pos = LARGE_INTEGER{.QuadPart = pos.offset};
   auto new_pos = LARGE_INTEGER{};
-  if (!::SetFilePointerEx(_fd, old_pos, &new_pos, move_method)) {
-    return io::last_os_error();
-  }
+  _CVT_R(::SetFilePointerEx(_fd, old_pos, &new_pos, move_method));
 
   const auto ret_pos = num::cast_unsigned(new_pos.QuadPart);
   return u64{ret_pos};

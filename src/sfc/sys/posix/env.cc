@@ -4,6 +4,8 @@
 #include <pwd.h>
 #include <sys/param.h>
 
+#include "sfc/sys/cstr.inl"
+#include "sfc/sys/posix/io.h"
 #include "sfc/sys/posix/env.h"
 
 namespace sfc::sys::posix {

@@ -30,6 +30,17 @@ auto String::from_utf16(Slice<const u16> buf) -> String {
   return res;
 }
 
+auto String::from_wstr(Slice<const wchar_t> buf) -> String {
+  auto res = String::with_capacity(buf.len());
+  if constexpr (sizeof(wchar_t) == sizeof(char32_t)) {
+    buf.iter().for_each([&](auto ch) { res.push(ch); });
+  } else if constexpr (sizeof(wchar_t) == sizeof(u16)) {
+    auto utf16_buf = Slice{(const u16*)buf._ptr, buf._len};
+    chr::decode_utf16(utf16_buf).for_each([&](char32_t c) { res.push(c); });
+  }
+  return res;
+}
+
 auto String::capacity() const noexcept -> usize {
   return _buf.capacity();
 }
@@ -78,9 +89,8 @@ auto String::pop() noexcept -> Option<char32_t> {
 }
 
 void String::push(char32_t c) noexcept {
-  u8 buf[4] = {};
-  const auto s = chr::encode_utf8(c, buf);
-  this->push_str(s);
+  const auto s = chr::encode_utf8(c);
+  _buf.extend_from_slice({s.data, s.len});
 }
 
 void String::push_str(Str s) noexcept {

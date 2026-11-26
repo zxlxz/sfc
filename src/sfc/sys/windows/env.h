@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sfc/sys/windows/mod.h"
 #include "sfc/alloc/string.h"
 
 namespace sfc::sys::windows {

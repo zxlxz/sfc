@@ -39,7 +39,7 @@ auto File::flush() -> io::Result<> {
 }
 
 auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
-  const auto whence = [=]() {
+  const auto whence = [=]() -> int {
     switch (pos._tag) {
       case io::SeekFrom::Kind::Start:   return SEEK_SET;
       case io::SeekFrom::Kind::Current: return SEEK_CUR;

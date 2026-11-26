@@ -6,6 +6,7 @@ namespace sfc::sys::posix {
 
 using RawFd = int;
 constexpr RawFd kInvalidFd = -1;
+constexpr u32 kMaxPath = 1024U;
 
 struct File {
   RawFd _fd = kInvalidFd;
