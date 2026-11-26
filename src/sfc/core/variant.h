@@ -140,10 +140,11 @@ class Variant {
   static consteval auto type_index() {
     static_assert(trait::any_<U, T...>, "Type U must be one of the variant types");
     constexpr auto f = []() {
-      u32 inc = 1;
-      u32 idx = 0;
-      ((trait::same_<U, T> ? inc = 0 : idx += inc), ...);
-      return idx;
+      const bool matches[] = {trait::same_<U, T>...};
+      for (auto i = 0U; i < N; ++i) {
+        if (matches[i]) return i;
+      }
+      return N;
     };
     return trait::index_t<f()>();
   }

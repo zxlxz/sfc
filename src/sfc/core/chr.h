@@ -23,8 +23,20 @@ struct U16Chars : iter::Iterator<char32_t> {
   auto next() noexcept -> Option<char32_t>;
 };
 
-auto encode_utf8(char32_t ch, Slice<u8> buf) -> str::Str;
-auto encode_utf16(char32_t ch, Slice<u16> buf) -> Slice<u16>;
+struct Utf8CodePoint {
+  u8 data[4] = {};
+  u8 len = 0;
+  auto as_str() const -> str::Str;
+};
+
+struct Utf16CodePoint {
+  u16 data[2] = {};
+  u8 len = 0;
+  auto as_slice() const -> Slice<const u16>;
+};
+
+auto encode_utf8(char32_t ch) -> Utf8CodePoint;
+auto encode_utf16(char32_t ch) -> Utf16CodePoint;
 
 auto decode_utf8(Slice<const u8> buf) -> Chars;
 auto decode_utf16(Slice<const u16> buf) -> U16Chars;

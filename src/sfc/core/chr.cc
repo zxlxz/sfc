@@ -223,18 +223,34 @@ auto U16Chars::next() noexcept -> Option<char32_t> {
   return ch;
 }
 
-auto encode_utf8(char32_t ch, Slice<u8> buf) -> str::Str {
-  const auto n = utf8::encode(buf, ch);
-  return Str{(const char*)buf._ptr, n};
+auto Utf8CodePoint::as_str() const -> Str {
+  return Str::from_utf8({data, len});
+}
+
+auto Utf16CodePoint::as_slice() const -> Slice<const u16> {
+  return Slice{data, len};
+}
+
+auto encode_utf8(char32_t ch) -> Utf8CodePoint {
+  auto cp = Utf8CodePoint{};
+
+  const auto n = utf8::encode(cp.data, ch);
+  cp.len = n;
+
+  return cp;
 }
 
 auto decode_utf8(Slice<const u8> buf) -> Chars {
   return Chars{{}, buf};
 }
 
-auto encode_utf16(char32_t ch, Slice<u16> buf) -> Slice<u16> {
-  const auto n = utf16::encode(buf, ch);
-  return {buf._ptr, n};
+auto encode_utf16(char32_t ch) -> Utf16CodePoint {
+  auto cp = Utf16CodePoint{};
+
+  const auto n = utf16::encode(cp.data, ch);
+  cp.len = n;
+
+  return cp;
 }
 
 auto decode_utf16(Slice<const u16> buf) -> U16Chars {

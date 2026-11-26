@@ -320,17 +320,13 @@ void Debug::fmt(char val, Formatter& f) {
 }
 
 void Debug::fmt(char16_t val, Formatter& f) {
-  u8 buf[4] = {};
-
-  const auto s = chr::encode_utf8(val, buf);
-  f.write_str(s);
+  const auto cp = chr::encode_utf8(val);
+  f.write_str(Str::from_utf8({cp.data, cp.len}));
 }
 
 void Debug::fmt(char32_t val, Formatter& f) {
-  u8 buf[4] = {};
-
-  const auto s = chr::encode_utf8(val, buf);
-  f.write_str(s);
+  const auto cp = chr::encode_utf8(val);
+  f.write_str(Str::from_utf8({cp.data, cp.len}));
 }
 
 void Debug::fmt(unsigned int val, Formatter& f) {
