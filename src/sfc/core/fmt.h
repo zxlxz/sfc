@@ -281,16 +281,18 @@ struct DebugStruct {
 };
 
 Args::Args(const Fmts& fmts, const auto&... args) : _fmts{fmts}, _args{&args...} {
-  static_assert(sizeof...(args) <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
+  constexpr u32 kLen = sizeof...(args);
+  static_assert(kLen <= kMaxLen, "fmt::Args: too many arguments, should(<= 16)");
 
 #if !defined(__INTELLISENSE__) && !defined(__clang_analyzer__)
   using args_t = decltype(tuple::bind(args...));
   _fmt = [](const Args& self, fmt::Formatter& f) {
     const auto& fmts = self._fmts;
     const auto& args = *(const args_t*)self._args;
-    args.for_each([&, idx = 0U](const auto& val) mutable {
-      if (idx >= fmts._len) return;
-      const auto [fill, spec] = fmts._vals[idx++];
+    trait::for_each<0, kLen>([&](auto I) {
+      if (I.VALUE >= fmts._len) return;
+      const auto& val = I[args];
+      const auto [fill, spec] = fmts._vals[I.VALUE];
       f.write_str({fill._ptr, fill._len});
       f.write_arg(spec, val);
     });

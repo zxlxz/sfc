@@ -33,18 +33,4 @@ SFC_TEST(fmt) {
   sfc::assert_eq(string::format("{}", t), "(1, 2, 3)");
 }
 
-SFC_TEST(for_each) {
-  const auto t = Tuple{1, 2, 3};
-
-  auto sum = 0;
-  t.for_each([&](const auto& val) { sum += val; });
-  sfc::assert_eq(sum, 6);
-}
-
-SFC_TEST(fold) {
-  const auto t = Tuple{1, 2, 3};
-  auto result = t.fold(0, [](auto acc, auto val) { return acc + val; });
-  sfc::assert_eq(result, 6);
-}
-
 }  // namespace sfc::tuple::test

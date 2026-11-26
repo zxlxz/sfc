@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sfc/core/mod.h"
+#include "sfc/core/trait.h"
 
 namespace sfc::tuple {
 
@@ -72,41 +72,28 @@ struct Tuple : detail::Tuple<T...> {
   constexpr Tuple(T... args) noexcept : Inn{(T&&)(args)...} {}
 
  public:
-  void for_each(this auto&& self, auto&& f) {
-    if constexpr (requires { self._0; }) f(self._0);
-    if constexpr (requires { self._1; }) f(self._1);
-    if constexpr (requires { self._2; }) f(self._2);
-    if constexpr (requires { self._3; }) f(self._3);
-    if constexpr (requires { self._4; }) f(self._4);
-    if constexpr (requires { self._5; }) f(self._5);
-    if constexpr (requires { self._6; }) f(self._6);
-    if constexpr (requires { self._7; }) f(self._7);
-    if constexpr (requires { self._8; }) f(self._8);
-    if constexpr (requires { self._9; }) f(self._9);
-    if constexpr (requires { self._10; }) f(self._10);
-    if constexpr (requires { self._11; }) f(self._11);
-    if constexpr (requires { self._12; }) f(self._12);
-    if constexpr (requires { self._13; }) f(self._13);
-    if constexpr (requires { self._14; }) f(self._14);
-    if constexpr (requires { self._15; }) f(self._15);
+  template <u32 I>
+  auto operator[](trait::index_t<I> x) const -> auto& {
+    return x[*this];
   }
 
-  template <class B>
-  auto fold(this auto&& self, B init, auto&& f) -> B {
-    auto accum = init;
-    self.for_each([&](const auto& val) { accum = f(accum, val); });
-    return accum;
-  }
-
- public:
-  void fmt(auto& f) const {
-    auto imp = f.debug_tuple("");
-    this->for_each([&](const auto& val) { imp.field(val); });
-    imp.finish();
+  template <u32 I>
+  auto operator[](trait::index_t<I> x) -> auto& {
+    return x[*this];
   }
 
   auto operator==(const Tuple& other) const -> bool {
-    return this->fold(true, [&](bool acc, const auto& val) { return acc && (val == other._0); });
+    auto accum = true;
+    trait::for_each<0, COUNT>([&](auto I){
+      accum = accum && (I[*this] == I[other]);
+    });
+    return accum;
+  }
+
+  void fmt(auto& f) const {
+    auto imp = f.debug_tuple("");
+    trait::for_each<0, COUNT>([&](auto I) { imp.field(I[*this]); });
+    imp.finish();
   }
 };
 

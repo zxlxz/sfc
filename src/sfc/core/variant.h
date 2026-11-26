@@ -78,8 +78,8 @@ class Variant {
  public:
   template <trait::any_<T...> U>
   explicit Variant(U arg) noexcept {
-    static constexpr auto I = trait::const_t<type_index<U>()>{};
-    ptr::write(&(*this)[I], mem::move(arg));
+    constexpr auto I = type_index<U>();
+    ptr::write(&I[_inn], mem::move(arg));
     _tag = u8(I.VALUE);
   }
 
@@ -89,14 +89,14 @@ class Variant {
   }
 
   Variant(Variant&& other) noexcept : _tag{other._tag} {
-    this->imap([&](auto I) { ptr::write(&(*this)[I], mem::move(other[I])); });
+    this->imap([&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
   }
 
   Variant& operator=(Variant&& other) noexcept {
     if (this != &other) {
       this->map_mut([&](auto& x) { mem::drop(x); });
       _tag = other._tag;
-      this->imap([&](auto I) { ptr::write(&(*this)[I], mem::move(other[I])); });
+      this->imap([&](auto I) { ptr::write(&I[_inn], mem::move(I[other._inn])); });
     }
     return *this;
   }
@@ -105,30 +105,30 @@ class Variant {
   template <class U>
   auto is() const noexcept -> bool {
     constexpr auto I = type_index<U>();
-    return _tag == I;
+    return _tag == I.VALUE;
   }
 
   template <class U>
   auto as() const noexcept -> Option<const U&> {
-    constexpr auto I = trait::const_t<type_index<U>()>{};
+    constexpr auto I = type_index<U>();
     if (_tag != I.VALUE) return {};
-    return (*this)[I];
+    return I[_inn];
   }
 
   template <class U>
   auto as_mut() noexcept -> Option<U&> {
-    constexpr auto I = trait::const_t<type_index<U>()>{};
+    constexpr auto I = type_index<U>();
     if (_tag != I.VALUE) return {};
-    return (*this)[I];
+    return I[_inn];
   }
 
  public:
   void map(auto&& f) const {
-    this->imap([&](auto I) { f((*this)[I]); });
+    this->imap([&](auto I) { f(I[_inn]); });
   }
 
   void map_mut(auto&& f) {
-    this->imap([&](auto I) { f((*this)[I]); });
+    this->imap([&](auto I) { f(I[_inn]); });
   }
 
   void fmt(auto& f) const {
@@ -137,37 +137,20 @@ class Variant {
 
  private:
   template <class U>
-  static consteval auto type_index() -> u32 {
+  static consteval auto type_index() {
     static_assert(trait::any_<U, T...>, "Type U must be one of the variant types");
-    u32 inc = 1;
-    u32 idx = 0;
-    ((trait::same_<U, T> ? inc = 0 : idx += inc), ...);
-    return idx;
-  }
-
-  template <u32 I>
-  auto operator[](this auto&& self, trait::const_t<I>) -> auto& {
-    if constexpr (I == 0) return self._inn._0;
-    if constexpr (I == 1) return self._inn._1;
-    if constexpr (I == 2) return self._inn._2;
-    if constexpr (I == 3) return self._inn._3;
-    if constexpr (I == 4) return self._inn._4;
-    if constexpr (I == 5) return self._inn._5;
-    if constexpr (I == 6) return self._inn._6;
-    if constexpr (I == 7) return self._inn._7;
-    if constexpr (I == 8) return self._inn._8;
-    if constexpr (I == 9) return self._inn._9;
-    if constexpr (I == 10) return self._inn._10;
-    if constexpr (I == 11) return self._inn._11;
-    if constexpr (I == 12) return self._inn._12;
-    if constexpr (I == 13) return self._inn._13;
-    if constexpr (I == 14) return self._inn._14;
-    if constexpr (I == 15) return self._inn._15;
+    constexpr auto f = []() {
+      u32 inc = 1;
+      u32 idx = 0;
+      ((trait::same_<U, T> ? inc = 0 : idx += inc), ...);
+      return idx;
+    };
+    return trait::index_t<f()>();
   }
 
   void imap(auto&& f) const {
 #define IMAP_CASE(I) \
-  if constexpr (I < N) f(trait::const_t<u32(I)>{});
+  if constexpr (I < N) f(trait::index_t<I>{});
     switch (_tag) {
       case 0:  IMAP_CASE(0); break;
       case 1:  IMAP_CASE(1); break;
