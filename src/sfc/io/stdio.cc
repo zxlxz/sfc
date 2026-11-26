@@ -5,28 +5,61 @@
 
 namespace sfc::io {
 
-struct Stdout::Inn {
-  BufWriter _out;
-  sync::ReentrantLock _mtx;
+struct RawStdout {
+  static auto write(Slice<const u8> buf) -> io::Result<usize> {
+    return sys::Stdout().write(buf);
+  }
+
+  static auto flush() -> io::Result<> {
+    return Ok{};
+  }
+
+  static auto is_terminal() -> bool {
+    return sys::Stdout().is_terminal();
+  }
+};
+
+struct RawStderr {
+  static auto write(Slice<const u8> buf) -> io::Result<usize> {
+    return sys::Stderr().write(buf);
+  }
+
+  static auto flush() -> io::Result<> {
+    return Ok{};
+  }
+
+  static auto is_terminal() -> bool {
+    return sys::Stderr().is_terminal();
+  }
+};
+
+class Stdout::Inn {
+  RawStdout _out{};
+  u8 _buf[256] = {};
+  BufWriter _write{BufWriter::new_(_out, _buf)};
+  sync::ReentrantLock _mtx{};
 
  public:
+  Inn() {}
+
+  ~Inn() {}
+
   static auto instance() -> Inn& {
-    static u8 buf[256] = {};
-    static auto res = Inn{
-        BufWriter::new_(sys::Stdout(), buf),
-        sync::ReentrantLock{},
-    };
+    static auto res = Inn{};
     return res;
   }
 
  public:
+  auto lock() noexcept -> sync::ReentrantLock::Guard {
+    return _mtx.lock();
+  }
+
   auto is_terminal() -> bool {
-    const auto& imp = sys::Stdout();
-    return imp.is_console();
+    return _out.is_terminal();
   }
 
   void flush() noexcept {
-    (void)_out.flush();
+    (void)_write.flush();
   }
 
   auto write_str(Str s) -> Result<> {
@@ -36,34 +69,34 @@ struct Stdout::Inn {
 
     const auto p = s.rfind('\n');
     if (!p) {
-      return _out.write_str(s);
+      return _write.write_str(s);
     }
 
-    const auto [a, b] = s.split_at(*p+1);
-    _TRY(_out.write_str(a));
-    _TRY(_out.flush());
-    _TRY(_out.write_str(b));
+    const auto [a, b] = s.split_at(*p + 1);
+    _TRY(_write.write_str(a));
+    _TRY(_write.flush());
+    _TRY(_write.write_str(b));
     return Ok{};
-  }
-
-  auto lock() noexcept -> sync::ReentrantLock::Guard {
-    return _mtx.lock();
   }
 };
 
-struct Stderr::Inn {
-  sys::File& _out;
-  sync::ReentrantLock _mtx;
+class Stderr::Inn {
+  RawStderr _out{};
+  sync::ReentrantLock _mtx{};
 
  public:
   static auto instance() -> Inn& {
-    static auto res = Inn{._out{sys::Stderr()}, ._mtx{}};
+    static auto res = Inn{};
     return res;
   }
 
  public:
+  auto lock() noexcept -> sync::ReentrantLock::Guard {
+    return _mtx.lock();
+  }
+
   auto is_terminal() -> bool {
-    return _out.is_console();
+    return _out.is_terminal();
   }
 
   auto write_str(Str s) -> Result<> {
@@ -79,17 +112,12 @@ struct Stderr::Inn {
   }
 
   auto flush() -> Result<> {
-    return _out.flush();
-  }
-
-  auto lock() noexcept -> sync::ReentrantLock::Guard {
-    return _mtx.lock();
+    return Ok{};
   }
 };
 
 auto Stdout::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  return inn.is_terminal();
+  return RawStdout::is_terminal();
 }
 
 auto Stdout::lock() -> LockGuard {
@@ -107,8 +135,7 @@ void Stdout::write_str(Str s) {
 }
 
 auto Stderr::is_terminal() -> bool {
-  auto& inn = Inn::instance();
-  return inn.is_terminal();
+  return RawStderr::is_terminal();
 }
 
 auto Stderr::lock() -> LockGuard {

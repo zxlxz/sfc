@@ -6,9 +6,12 @@ namespace sfc::fs {
 
 struct Metadata;
 
-class [[nodiscard]] File : public io::File {
- public:
+class [[nodiscard]] File : public io::IRead, public io::IWrite, public io::ISeek {
+  io::File _inn;
+
   explicit File(io::File file) noexcept;
+
+ public:
   ~File();
 
   File(File&&) noexcept;
@@ -19,6 +22,11 @@ class [[nodiscard]] File : public io::File {
   static auto create(Str path) noexcept -> io::Result<File>;
 
  public:
+  auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
+  auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;
+  auto flush() noexcept -> io::Result<>;
+  auto seek(io::SeekFrom pos) noexcept -> io::Result<u64>;
+
   auto metadata() noexcept -> io::Result<Metadata>;
 };
 

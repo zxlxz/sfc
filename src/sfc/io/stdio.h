@@ -6,7 +6,7 @@
 namespace sfc::io {
 
 class Stdout {
-  struct Inn;
+  class Inn;
 
  public:
   class LockGuard;
@@ -18,7 +18,7 @@ class Stdout {
 };
 
 class Stderr {
-  struct Inn;
+  class Inn;
 
  public:
   class LockGuard;

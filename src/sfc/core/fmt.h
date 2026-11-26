@@ -36,6 +36,7 @@ struct Buf {
 
  public:
   auto as_str() const -> Str;
+
   void truncate(usize new_len);
   void write_str(Str s) noexcept;
 };

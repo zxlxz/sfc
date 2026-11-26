@@ -5,6 +5,14 @@
 
 namespace sfc::io {
 
+#ifdef _WIN32
+using RawFd = void*;
+constexpr RawFd kInvalidFd = nullptr;
+#else
+using RawFd = int;
+constexpr RawFd kInvalidFd = -1;
+#endif
+
 struct SeekFrom {
   enum class Kind { Start = 0, Current = 1, End = 2 };
   Kind _tag{};

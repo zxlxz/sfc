@@ -9,7 +9,7 @@ auto Read::read(Slice<u8> buf) -> Result<usize> {
 
 auto Read::read_exact(Slice<u8> buf) -> Result<> {
   while (!buf.is_empty()) {
-    const auto cnt = _TRY(read(buf));
+    const auto cnt = _TRY(this->read(buf));
     if (cnt == 0) {
       return {io::Error::UnexpectedEof};
     }
@@ -27,7 +27,7 @@ auto Read::read_to_end(List<u8>& buf) -> Result<usize> {
     buf.reserve(PROBE_SIZE);
 
     auto read_buf = buf.spare_capacity_mut();
-    const auto read_cnt = _TRY(read(read_buf));
+    const auto read_cnt = _TRY(this->read(read_buf));
     if (read_cnt == 0) {
       break;
     }

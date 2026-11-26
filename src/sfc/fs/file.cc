@@ -5,16 +5,23 @@
 
 namespace sfc::fs {
 
-File::File(io::File file) noexcept : io::File{mem::move(file)} {}
+File::File(io::File file) noexcept : _inn{mem::move(file)} {}
 
-File::~File() = default;
+File::~File() {
+  (void)_inn.close();
+}
 
-File::File(File&&) noexcept = default;
+File::File(File&& other) noexcept : _inn{mem::take(other._inn)} {}
 
-auto File::operator=(File&&) noexcept -> File& = default;
+auto File::operator=(File&& other) noexcept -> File& {
+  if (this != &other) {
+    _inn = mem::take(other._inn);
+  }
+  return *this;
+}
 
 auto File::from_raw_fd(io::RawFd fd) -> File {
-  auto res = File{io::File::from_raw_fd(fd)};
+  auto res = File{io::File{fd}};
   return res;
 }
 
@@ -28,9 +35,24 @@ auto File::create(Str path) noexcept -> io::Result<File> {
   return opts.open(path);
 }
 
+auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
+  return _inn.read(buf);
+}
+
+auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
+  return _inn.write(buf);
+}
+
+auto File::flush() noexcept -> io::Result<> {
+  return _inn.flush();
+}
+
+auto File::seek(io::SeekFrom pos) noexcept -> io::Result<u64> {
+  return _inn.seek(pos);
+}
+
 auto File::metadata() noexcept -> io::Result<fs::Metadata> {
-  const auto fd = this->as_raw_fd();
-  return sys::fstat(fd);
+  return sys::fstat(_inn._fd);
 }
 
 auto OpenOptions::open(Str path) const noexcept -> io::Result<File> {

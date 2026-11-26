@@ -3,76 +3,63 @@
 
 #include "sfc/sys/posix/io.h"
 
+#define _CVT_R(expr)                           \
+  ({                                           \
+    auto ret = (expr);                         \
+    if (ret == -1) return io::last_os_error(); \
+    ret;                                       \
+  })
+
 namespace sfc::sys::posix {
 
-void File::close() {
-  if (_fd == -1) {
-    return;
-  }
-
-  (void)::close(_fd);
-  _fd = -1;
-}
-
-auto File::read(Slice<u8> buf) -> io::Result<usize> {
-  const auto nret = ::read(_fd, buf._ptr, buf._len);
-  if (nret == -1) {
-    return io::last_os_error();
-  }
-  return usize(nret);
-}
-
-auto File::write(Slice<const u8> buf) -> io::Result<usize> {
-  const auto nret = ::write(_fd, buf._ptr, buf._len);
-  if (nret == -1) {
-    return io::last_os_error();
-  }
-  return usize(nret);
-}
-
-auto File::flush() -> io::Result<> {
-  const auto ret = ::fsync(_fd);
-  if (ret == -1) {
-    return io::last_os_error();
-  }
+auto close(RawFd fd) -> io::Result<> {
+  _CVT_R(::close(fd));
   return Ok{};
 }
 
-auto File::seek(io::SeekFrom pos) -> io::Result<u64> {
+auto read(RawFd fd, Slice<u8> buf) -> io::Result<usize> {
+  const auto nret = _CVT_R(::read(fd, buf._ptr, buf._len));
+  return usize(nret);
+}
+
+auto write(RawFd fd, Slice<const u8> buf) -> io::Result<usize> {
+  const auto nret = _CVT_R(::write(fd, buf._ptr, buf._len));
+  return usize(nret);
+}
+
+auto flush(RawFd fd) -> io::Result<> {
+  _CVT_R(::fsync(fd));
+  return Ok{};
+}
+
+auto seek(RawFd fd, io::SeekFrom pos) -> io::Result<u64> {
   const auto whence = [=]() -> int {
     switch (pos._tag) {
       case io::SeekFrom::Kind::Start:   return SEEK_SET;
       case io::SeekFrom::Kind::Current: return SEEK_CUR;
       case io::SeekFrom::Kind::End:     return SEEK_END;
     }
-    return SEEK_SET;
   }();
 
-  const auto nret = ::lseek(_fd, pos.offset, whence);
-  if (nret == -1) {
-    return io::last_os_error();
-  }
+  const auto nret = _CVT_R(::lseek(fd, pos.offset, whence));
   return u64(nret);
 }
 
-auto File::is_console() const -> bool {
-  const auto ret = ::isatty(_fd);
+auto is_console(RawFd fd) -> bool {
+  const auto ret = ::isatty(fd);
   return ret == 1;
 }
 
-auto Stdin() -> File& {
-  static auto res = File{._fd = STDIN_FILENO};
-  return res;
+auto Stdin() -> File {
+  return File{STDIN_FILENO};
 }
 
-auto Stdout() -> File& {
-  static auto res = File{._fd = STDOUT_FILENO};
-  return res;
+auto Stdout() -> File {
+  return File{STDOUT_FILENO};
 }
 
-auto Stderr() -> File& {
-  static auto res = File{._fd = STDERR_FILENO};
-  return res;
+auto Stderr() -> File {
+  return File{STDERR_FILENO};
 }
 
 auto os_error() -> int {

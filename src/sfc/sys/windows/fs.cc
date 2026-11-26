@@ -6,8 +6,12 @@
 #include "sfc/sys/windows/fs.h"
 #include "sfc/sys/windows/wstr.h"
 
-#define _CVT_R(expr) \
-  if (!(expr)) return io_error(os_error());
+#define _CVT_R(expr)                              \
+  ({                                              \
+    auto ret = (expr);                            \
+    if (ret == FALSE) return io::last_os_error(); \
+    ret;                                          \
+  })
 
 namespace sfc::sys::windows {
 

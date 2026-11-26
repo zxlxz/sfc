@@ -4,35 +4,24 @@
 
 namespace sfc::io {
 
-#ifdef _WIN32
-using RawFd = void*;
-#else
-using RawFd = int;
-#endif
-
-class [[nodiscard]] File : public io::IRead, public io::IWrite, public io::ISeek {
-  struct Inn {
-    RawFd _fd;
-    auto* operator->();
-  };
-  Inn _inn;
+struct File {
+  RawFd _fd = kInvalidFd;
 
  public:
-  explicit File(RawFd fd) noexcept;
+  explicit File(RawFd fd = kInvalidFd) noexcept;
   ~File() noexcept;
-  File(File&&) noexcept;
-  File& operator=(File&&) noexcept;
-
-  static auto from_raw_fd(RawFd fd) noexcept -> File;
+  File(File&& other) noexcept;
+  File& operator=(File&& other) noexcept;
 
  public:
-  auto as_raw_fd() const noexcept -> RawFd;
-
- public:
+  auto close() noexcept -> io::Result<>;
   auto read(Slice<u8> buf) noexcept -> io::Result<usize>;
   auto write(Slice<const u8> buf) noexcept -> io::Result<usize>;
   auto flush() noexcept -> io::Result<>;
   auto seek(SeekFrom pos) noexcept -> io::Result<u64>;
+
+ public:
+  auto is_terminal() const noexcept -> bool;
 };
 
 }  // namespace sfc::io

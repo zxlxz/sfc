@@ -10,10 +10,22 @@ void SourceLoc::fmt(fmt::Formatter& f) const {
 }
 
 void panic_imp(PanicInfo info) {
-  char raw_buf[4096];
-  auto fmt_buf = fmt::Buf{raw_buf};
+  constexpr usize kBufSize = 4096;
 
-  auto fmter = fmt::Formatter{fmt_buf};
+  struct Buf {
+    u8 _buf[kBufSize];
+    usize _len = 0;
+
+   public:
+    void write_str(Str s) noexcept {
+      const auto n = cmp::min(s._len, kBufSize - _len);
+      __builtin_memcpy(_buf + _len, s._ptr, n);
+      _len += n;
+    }
+  };
+
+  auto buf = Buf{};
+  auto fmter = fmt::Formatter{buf};
   fmter.write_fmt("thread panicked at {}\n{}\n", info._loc, info._args);
 
   auto bt = sys::Backtrace::capture();
@@ -23,7 +35,7 @@ void panic_imp(PanicInfo info) {
   }
 
   auto sys_out = sys::Stderr();
-  (void)sys_out.write(fmt_buf.as_str().as_bytes());
+  (void)sys_out.write({buf._buf, buf._len});
 
   throw info;
 }

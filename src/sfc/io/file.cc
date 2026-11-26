@@ -3,54 +3,51 @@
 
 namespace sfc::io {
 
-auto* File::Inn::operator->() {
-  static_assert(sizeof(Inn) == sizeof(sys::File));
-  static_assert(alignof(Inn) == alignof(sys::File));
-  return (sys::File*)this;
-}
-
-File::File(RawFd fd) noexcept : _inn{fd} {}
+File::File(RawFd fd) noexcept : _fd{fd} {}
 
 File::~File() noexcept {
-  if (_inn._fd == sys::kInvalidFd) {
-    return;
-  }
-  _inn->close();
+  // not owns fd, so don't close it here
 }
 
-File::File(File&& other) noexcept : _inn{other._inn} {
-  other._inn._fd = sys::kInvalidFd;
+File::File(File&& other) noexcept : _fd{other._fd} {
+  other._fd = kInvalidFd;
 }
 
 File& File::operator=(File&& other) noexcept {
   if (this != &other) {
-    mem::swap(_inn, other._inn);
+    mem::swap(_fd, other._fd);
   }
   return *this;
 }
 
-auto File::from_raw_fd(RawFd fd) noexcept -> File {
-  return File{fd};
-}
+auto File::close() noexcept -> io::Result<> {
+  if (_fd == kInvalidFd) {
+    return Ok{};
+  }
 
-auto File::as_raw_fd() const noexcept -> RawFd {
-  return _inn._fd;
+  _TRY(sys::close(_fd));
+  _fd = kInvalidFd;
+  return Ok{};
 }
 
 auto File::read(Slice<u8> buf) noexcept -> io::Result<usize> {
-  return _inn->read(buf);
+  return sys::read(_fd, buf);
 }
 
 auto File::write(Slice<const u8> buf) noexcept -> io::Result<usize> {
-  return _inn->write(buf);
+  return sys::write(_fd, buf);
 }
 
 auto File::flush() noexcept -> io::Result<> {
-  return _inn->flush();
+  return sys::flush(_fd);
 }
 
 auto File::seek(SeekFrom pos) noexcept -> io::Result<u64> {
-  return _inn->seek(pos);
+  return sys::seek(_fd, pos);
+}
+
+auto File::is_terminal() const noexcept -> bool {
+  return sys::is_console(_fd);
 }
 
 }  // namespace sfc::io
