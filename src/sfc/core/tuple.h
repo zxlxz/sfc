@@ -72,12 +72,6 @@ struct Tuple : detail::Tuple<T...> {
   constexpr Tuple(T... args) noexcept : Inn{(T&&)(args)...} {}
 
  public:
-  void fmt(auto& f) const {
-    auto imp = f.debug_tuple("");
-    this->for_each([&](const auto& val) { imp.field(val); });
-    imp.finish();
-  }
-
   void for_each(this auto&& self, auto&& f) {
     if constexpr (requires { self._0; }) f(self._0);
     if constexpr (requires { self._1; }) f(self._1);
@@ -95,6 +89,24 @@ struct Tuple : detail::Tuple<T...> {
     if constexpr (requires { self._13; }) f(self._13);
     if constexpr (requires { self._14; }) f(self._14);
     if constexpr (requires { self._15; }) f(self._15);
+  }
+
+  template <class B>
+  auto fold(this auto&& self, B init, auto&& f) -> B {
+    auto accum = init;
+    self.for_each([&](const auto& val) { accum = f(accum, val); });
+    return accum;
+  }
+
+ public:
+  void fmt(auto& f) const {
+    auto imp = f.debug_tuple("");
+    this->for_each([&](const auto& val) { imp.field(val); });
+    imp.finish();
+  }
+
+  auto operator==(const Tuple& other) const -> bool {
+    return this->fold(true, [&](bool acc, const auto& val) { return acc && (val == other._0); });
   }
 };
 
