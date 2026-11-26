@@ -110,8 +110,8 @@ class SerializeObj {
     Serialize{val}.serialize(_ser);
   }
 
-  void serialize_entry(const auto& key, const auto& val) {
-    this->serialize_key(str::AsStr::as_str(key));
+  void serialize_entry(Str key, const auto& val) {
+    this->serialize_key(key);
     this->serialize_value(val);
   }
 };

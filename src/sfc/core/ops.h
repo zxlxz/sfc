@@ -86,10 +86,10 @@ struct Fn<R(T...)> {
   static constexpr auto kOpCall = [](const void* p, T&&... t) -> R { return (*(const X*)p)((T&&)t...); };
 
  public:
-  explicit Fn(pfn_t pf) : _self{nullptr}, _pfn{pf} {}
+  Fn(pfn_t pf) : _self{nullptr}, _pfn{pf} {}
 
   template <class X>
-  explicit Fn(const X& x, mfn_t mf = Fn::kOpCall<X>) : _self{&x}, _mfn{mf} {}
+  Fn(const X& x, mfn_t mf = Fn::kOpCall<X>) : _self{&x}, _mfn{mf} {}
 
  public:
   auto operator()(T... t) const -> R {

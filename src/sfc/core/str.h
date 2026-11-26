@@ -8,6 +8,11 @@ namespace sfc::str {
 using slice::Range;
 using chr::Chars;
 
+template <class T>
+struct FromStr {
+  static auto from_str(Str) -> Option<T>;
+};
+
 struct Str {
   const char* _ptr = nullptr;
   usize _len = 0;
@@ -130,7 +135,13 @@ struct Str {
 
   // trait: str::FromStr
   template <class T>
-  auto parse() const -> Option<T>;
+  auto parse() const -> Option<T> {
+    if constexpr (requires { T::from_str(*this); }) {
+      return T::from_str(*this);
+    } else {
+      return FromStr<T>::from_str(*this);
+    }
+  }
 
   // trait: serde::Serialize
   void serialize(auto& ser) const {
@@ -138,220 +149,121 @@ struct Str {
   }
 };
 
-struct AsStr {
-  static auto as_str(const auto& self) -> Str {
-    if constexpr (requires { Str{self}; }) {
-      return Str{self};
-    } else {
-      return self.as_str();
-    }
-  }
-};
-
-template <class T>
-struct FromStr {
-  static auto from_str(Str) -> Option<T>;
-};
-
-template <class T>
-auto Str::parse() const -> Option<T> {
-  if constexpr (requires { T::from_str(*this); }) {
-    return T::from_str(*this);
-  } else {
-    return FromStr<T>::from_str(*this);
-  }
-}
-
+namespace pattern {
 struct SearchStep {
   enum Kind { Done = 0, Match = 1, Reject = 2 };
   Kind kind;
   Range range{0, 0};
 };
 
+template <class P>
 struct Searcher {
-  auto next_match(this auto& self) -> SearchStep;
-  auto next_reject(this auto& self) -> SearchStep;
-  auto next_match_back(this auto& self) -> SearchStep;
-  auto next_reject_back(this auto& self) -> SearchStep;
-};
-
-class CharSearcher : public Searcher {
   Str _haystack;
-  char _needle;
+  P _pat;
   usize _finger = 0;
   usize _finger_back = _haystack._len;
 
  public:
-  CharSearcher(Str haystack, char needle) : _haystack{haystack}, _needle{needle} {}
-
   auto next() -> SearchStep;
-  auto next_back() -> SearchStep;
-};
+  auto next_match() -> Option<Range>;
+  auto next_reject() -> Option<Range>;
 
-class StrSearcher : public Searcher {
-  Str _haystack;
-  Str _needle;
-  usize _finger = 0;
-  usize _finger_back = _haystack._len;
-
- public:
-  StrSearcher(Str haystack, Str needle) : _haystack{haystack}, _needle{needle} {}
-
-  auto next() -> SearchStep;
-  auto next_back() -> SearchStep;
-};
-
-class CharPredicateSearcher : public Searcher {
-  using Pred = ops::Fn<bool(char)>;
-  Str _haystack;
-  Pred _pred;
-  usize _finger = 0;
-  usize _finger_back = _haystack._len;
-
- public:
-  CharPredicateSearcher(Str haystack, auto& pred) : _haystack{haystack}, _pred{Pred{pred}} {}
-  auto next() -> SearchStep;
-  auto next_back() -> SearchStep;
+  auto next_match_back() -> Option<Range>;
+  auto next_reject_back() -> Option<Range>;
 };
 
 struct Pattern {
-  static auto into_searcher(auto&& self, Str haystack) {
-    if constexpr (requires { char{self}; }) {
-      return CharSearcher{haystack, self};
-    } else if constexpr (requires { Str{self}; }) {
-      return StrSearcher{haystack, self};
-    } else if constexpr (requires { self(char{0}); }) {
-      return CharPredicateSearcher{haystack, self};
-    }
-  }
+  auto is_contained_in(this auto self, Str haystack) -> bool;
+
+  auto is_prefix_of(this auto self, Str haystack) -> bool;
+  auto is_suffix_of(this auto self, Str haystack) -> bool;
+
+  auto strip_prefix_of(this auto self, Str haystack) -> Option<Str>;
+  auto strip_suffix_of(this auto self, Str haystack) -> Option<Str>;
 };
 
-auto Str::find(auto&& pat) const -> Option<usize> {
-  if (_len == 0) {
-    return {};
-  }
+struct CharPattern : Pattern {
+  char _ch;
 
-  auto s = Pattern::into_searcher(pat, *this);
-  const auto [kind, step] = s.next_match();
-  if (kind != SearchStep::Match) {
-    return {};
+ public:
+  auto into_searcher(Str haystack) -> Searcher<CharPattern>;
+};
+
+struct StrPattern : Pattern {
+  Str _s;
+
+ public:
+  auto into_searcher(Str haystack) -> Searcher<StrPattern>;
+};
+
+struct CharPredPattern : Pattern {
+  ops::Fn<bool(char)> _pred;
+
+ public:
+  auto into_searcher(Str haystack) -> Searcher<CharPredPattern>;
+};
+
+auto from(auto&& pat) {
+  if constexpr (requires { char{pat}; }) {
+    return CharPattern{{}, pat};
+  } else if constexpr (requires { Str{pat}; }) {
+    return StrPattern{{}, pat};
+  } else if constexpr (requires { pat(char{0}); }) {
+    return CharPredPattern{{}, pat};
   }
-  return step._start;
 }
 
-auto Str::rfind(auto&& pat) const -> Option<usize> {
-  if (_len == 0) {
-    return {};
-  }
+}  // namespace pattern
 
-  auto s = Pattern::into_searcher(pat, *this);
-  const auto [kind, step] = s.next_match_back();
-  if (kind != SearchStep::Match) {
-    return {};
-  }
-  return step._start;
+auto Str::find(auto&& p) const -> Option<usize> {
+  auto f_start = [](auto step) { return step._start; };
+  return pattern::from(p).into_searcher(*this).next_match().map(f_start);
 }
 
-auto Str::contains(auto&& pat) const -> bool {
-  if (_len == 0) {
-    return false;
-  }
-
-  auto s = Pattern::into_searcher(pat, *this);
-  const auto [kind, step] = s.next_match();
-  return kind == SearchStep::Match;
+auto Str::rfind(auto&& p) const -> Option<usize> {
+  auto f_start = [](auto step) { return step._start; };
+  return pattern::from(p).into_searcher(*this).next_match_back().map(f_start);
 }
 
-auto Str::starts_with(auto&& pat) const -> bool {
-  if (_len == 0) {
-    return false;
-  }
-
-  auto ss = Pattern::into_searcher(pat, *this);
-  const auto step = ss.next();
-  return step.kind == SearchStep::Match;
+auto Str::contains(auto&& p) const -> bool {
+  return pattern::from(p).is_contained_in(*this);
 }
 
-auto Str::ends_with(auto&& pat) const -> bool {
-  if (_len == 0) {
-    return false;
-  }
-
-  auto searcher = Pattern::into_searcher(pat, *this);
-  const auto step = searcher.next_back();
-  return step.kind == SearchStep::Match;
+auto Str::starts_with(auto&& p) const -> bool {
+  return pattern::from(p).is_prefix_of(*this);
 }
 
-auto Str::trim_start_matches(auto&& pat) const -> Str {
-  if (_len == 0) {
-    return {};
-  }
+auto Str::ends_with(auto&& p) const -> bool {
+  return pattern::from(p).is_suffix_of(*this);
+}
 
-  auto s = Pattern::into_searcher(pat, *this);
-  auto i = _len;
-  if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
-    i = step._start;
-  }
+auto Str::trim_start_matches(auto&& p) const -> Str {
+  auto m = pattern::from(p).into_searcher(*this);
+  const auto [i, _] = m.next_reject().unwrap_or({_len, _len});
   return Str{_ptr + i, _len - i};
 }
 
-auto Str::trim_end_matches(auto&& pat) const -> Str {
-  if (_len == 0) {
-    return {};
-  }
-
-  auto s = Pattern::into_searcher(pat, *this);
-  auto j = usize{0U};
-  if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
-    j = step._end;
-  }
-  return Str{_ptr, j};
+auto Str::trim_end_matches(auto&& p) const -> Str {
+  auto m = pattern::from(p).into_searcher(*this);
+  const auto [_, b] = m.next_reject_back().unwrap_or({0, 0});
+  return Str{_ptr, b};
 }
 
-auto Str::trim_matches(auto&& pat) const -> Str {
-  if (_len == 0) {
-    return {};
-  }
-
-  auto s = Pattern::into_searcher(pat, *this);
-  auto i = usize{0U};
-  auto j = usize{0U};
-  if (auto [kind, step] = s.next_reject(); kind != SearchStep::Done) {
-    i = step._start;
-    j = step._end;
-  }
-  if (auto [kind, step] = s.next_reject_back(); kind != SearchStep::Done) {
-    j = step._end;
-  }
-  return Str{_ptr + i, j - i};
+auto Str::trim_matches(auto&& p) const -> Str {
+  auto m = pattern::from(p).into_searcher(*this);
+  const auto [i, _] = m.next_reject().unwrap_or({_len, _len});
+  const auto [_, b] = m.next_reject_back().unwrap_or({0, 0});
+  return Str{_ptr + i, b - i};
 }
 
-auto Str::split_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
-  if (_len == 0) {
-    return {};
-  }
-
-  auto s = Pattern::into_searcher(pat, *this);
-  const auto [kind, range] = s.next_match();
-  if (kind != SearchStep::Match) {
-    return {};
-  }
-  const auto [i, j] = range;
-  return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
+auto Str::split_once(auto&& p) const -> Option<Tuple<Str, Str>> {
+  const auto [start, end] = _TRY(pattern::from(p).into_searcher(*this).next_match());
+  return Tuple{Str{_ptr, start}, Str{_ptr + end, _len - end}};
 }
 
-auto Str::rsplit_once(auto&& pat) const -> Option<Tuple<Str, Str>> {
-  if (_len == 0) {
-    return {};
-  }
-
-  auto s = Pattern::into_searcher(pat, *this);
-  auto [kind, step] = s.next_match_back();
-  if (kind != SearchStep::Match) {
-    return {};
-  }
-  const auto [i, j] = step;
-  return Tuple{Str{_ptr, i}, Str{_ptr + j, _len - j}};
+auto Str::rsplit_once(auto&& p) const -> Option<Tuple<Str, Str>> {
+  const auto [start, end] = _TRY(pattern::from(p).into_searcher(*this).next_match_back());
+  return Tuple{Str{_ptr, start}, Str{_ptr + end, _len - end}};
 }
 
 }  // namespace sfc::str
